@@ -10,6 +10,24 @@ export interface Customer {
   id: string;
   name: string;
   phone?: string;
+  email?: string;
+  vehicleModel?: string; // Xe (Dòng xe)
+  licensePlate?: string; // Biển số
+  created_at?: string;
+  status?: "active" | "inactive";
+  segment?: "VIP" | "Loyal" | "Potential" | "At Risk" | "Lost" | "New";
+  loyaltyPoints?: number; // Điểm tích lũy
+  totalSpent?: number; // Tổng chi tiêu
+  visitCount?: number; // Số lần ghé thăm
+  lastVisit?: string; // Lần ghé thăm cuối
+}
+
+export interface Supplier {
+  id: string;
+  name: string;
+  phone?: string;
+  email?: string;
+  address?: string;
   created_at?: string;
 }
 
@@ -73,15 +91,21 @@ export interface WorkOrder {
   laborCost: number;
   discount?: number; // Order level discount
   partsUsed?: WorkOrderPart[];
+  additionalServices?: Array<{
+    id: string;
+    description: string;
+    quantity: number;
+    price: number;
+  }>; // Báo giá (Gia công, Đặt hàng)
   notes?: string;
   total: number; // labor + parts - discount
   branchId: string;
-  
+
   // Deposit (Đặt cọc)
   depositAmount?: number; // Số tiền đặt cọc
   depositDate?: string; // Ngày đặt cọc
   depositTransactionId?: string; // Link to deposit transaction
-  
+
   // Payment (Thanh toán)
   paymentStatus?: "unpaid" | "paid" | "partial";
   paymentMethod?: "cash" | "bank";
@@ -119,6 +143,10 @@ export type CashTransactionCategory =
   | "service_income"
   | "other_income"
   | "inventory_purchase"
+  | "salary"
+  | "loan_payment"
+  | "debt_collection"
+  | "debt_payment"
   | "sale_refund"
   | "other_expense";
 
@@ -127,12 +155,140 @@ export interface CashTransaction {
   type: "income" | "expense";
   date: string;
   amount: number;
+  recipient?: string; // Đối tượng thu/chi
   notes: string;
   paymentSourceId: string;
   branchId: string;
   category?: CashTransactionCategory;
   saleId?: string;
   workOrderId?: string;
+}
+
+// Employee & Payroll Types
+export interface Employee {
+  id: string;
+  name: string;
+  phone?: string;
+  email?: string;
+  position: string; // Chức vụ
+  department?: string; // Phòng ban
+  baseSalary: number; // Lương cơ bản
+  allowances?: number; // Phụ cấp
+  startDate: string; // Ngày vào làm
+  status: "active" | "inactive" | "terminated";
+  branchId?: string; // Chi nhánh
+  bankAccount?: string; // Số tài khoản
+  bankName?: string; // Tên ngân hàng
+  taxCode?: string; // Mã số thuế
+  created_at?: string;
+}
+
+export interface PayrollRecord {
+  id: string;
+  employeeId: string;
+  employeeName: string;
+  month: string; // Format: YYYY-MM
+  baseSalary: number; // Lương cơ bản
+  allowances: number; // Phụ cấp
+  bonus: number; // Thưởng
+  deduction: number; // Phạt/Khấu trừ
+  workDays: number; // Số ngày làm việc
+  standardWorkDays: number; // Số ngày chuẩn (26)
+  socialInsurance: number; // BHXH (8%)
+  healthInsurance: number; // BHYT (1.5%)
+  unemploymentInsurance: number; // BHTN (1%)
+  personalIncomeTax: number; // Thuế TNCN
+  netSalary: number; // Lương thực nhận
+  paymentStatus: "pending" | "paid";
+  paymentDate?: string;
+  paymentMethod?: "cash" | "bank";
+  notes?: string;
+  branchId: string;
+  created_at: string;
+}
+
+export interface AttendanceRecord {
+  id: string;
+  employeeId: string;
+  date: string; // YYYY-MM-DD
+  checkIn?: string; // HH:MM:SS
+  checkOut?: string; // HH:MM:SS
+  status: "present" | "absent" | "late" | "leave" | "holiday";
+  workHours?: number;
+  overtime?: number;
+  notes?: string;
+  branchId: string;
+}
+
+// Loan & Capital Types
+export interface Loan {
+  id: string;
+  lenderName: string; // Tên ngân hàng/người cho vay
+  loanType: "bank" | "personal" | "other"; // Loại vay
+  principal: number; // Số tiền vay gốc
+  interestRate: number; // Lãi suất %/năm
+  term: number; // Kỳ hạn (tháng)
+  startDate: string; // Ngày vay
+  endDate: string; // Ngày đến hạn
+  remainingAmount: number; // Số tiền còn nợ
+  monthlyPayment: number; // Số tiền trả hàng tháng
+  status: "active" | "paid" | "overdue";
+  purpose?: string; // Mục đích vay
+  collateral?: string; // Tài sản thế chấp
+  notes?: string;
+  branchId: string;
+  created_at: string;
+}
+
+export interface LoanPayment {
+  id: string;
+  loanId: string;
+  paymentDate: string;
+  principalAmount: number; // Tiền gốc
+  interestAmount: number; // Tiền lãi
+  totalAmount: number; // Tổng tiền trả
+  remainingAmount: number; // Số tiền còn lại sau khi trả
+  paymentMethod: "cash" | "bank";
+  notes?: string;
+  branchId: string;
+  cashTransactionId?: string;
+}
+
+export interface Capital {
+  id: string;
+  type: "owner" | "investor" | "loan"; // Vốn chủ/Nhà đầu tư/Vay
+  sourceName: string; // Tên nguồn vốn
+  amount: number; // Số tiền
+  date: string; // Ngày nhận
+  notes?: string;
+  branchId: string;
+  created_at: string;
+}
+
+export interface CustomerDebt {
+  id: string;
+  customerId: string;
+  customerName: string;
+  phone?: string;
+  licensePlate?: string;
+  description: string; // Nội dung
+  totalAmount: number; // Số tiền
+  paidAmount: number; // Đã trả
+  remainingAmount: number; // Còn nợ
+  createdDate: string;
+  branchId: string;
+}
+
+export interface SupplierDebt {
+  id: string;
+  supplierId: string;
+  supplierName: string;
+  description: string; // Nội dung
+  totalAmount: number; // Số tiền
+  paidAmount: number; // Đã trả
+  remainingAmount: number; // Còn nợ
+  createdDate: string;
+  branchId: string;
 }
 
 // High-level app state snapshot (not strictly used by context but handy)
@@ -145,4 +301,8 @@ export interface AppState {
   cartItems: CartItem[];
   paymentSources: PaymentSource[];
   cashTransactions: CashTransaction[];
+  employees: Employee[];
+  payrollRecords: PayrollRecord[];
+  loans: Loan[];
+  loanPayments: LoanPayment[];
 }

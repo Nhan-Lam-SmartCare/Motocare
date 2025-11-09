@@ -460,7 +460,7 @@ export const exportLowStockReport = (
 
   if (lowStockItems.length === 0 && outOfStockItems.length === 0) {
     doc.setFontSize(12);
-    doc.text("✅ All products are in stock!", 14, startY);
+    doc.text("All products are in stock!", 14, startY);
   }
 
   addFooter(doc);

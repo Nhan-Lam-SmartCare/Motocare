@@ -6,6 +6,7 @@ import {
   CreditCard,
   Banknote,
   Star,
+  MapPin,
 } from "lucide-react";
 import { useAppContext } from "../../contexts/AppContext";
 import { formatCurrency, formatDate } from "../../utils/format";
@@ -1454,8 +1455,11 @@ const SalesManager: React.FC = () => {
                 Nhận-Lâm SmartCare
               </h1>
               <div style={{ fontSize: "11px", lineHeight: "1.6" }}>
-                <div>
-                  📍 Địa chỉ: 4p Phú Lợi B, Phú Thuận B, Hồng Ngự, Đồng Tháp
+                <div className="flex items-center gap-1">
+                  <MapPin className="w-4 h-4" aria-hidden="true" />
+                  <span>
+                    Địa chỉ: 4p Phú Lợi B, Phú Thuận B, Hồng Ngự, Đồng Tháp
+                  </span>
                 </div>
                 <div className="flex items-center gap-1">
                   <svg

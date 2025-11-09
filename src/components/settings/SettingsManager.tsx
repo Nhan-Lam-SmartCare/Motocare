@@ -3,6 +3,16 @@ import { supabase } from "../../lib/supabase";
 import { useAuth } from "../../contexts/AuthContext";
 import { showToast } from "../../utils/toast";
 import LoadingSpinner from "../common/LoadingSpinner";
+import {
+  Lock,
+  Settings as SettingsIcon,
+  Save,
+  Info,
+  Store,
+  Palette,
+  Landmark,
+  FileText,
+} from "lucide-react";
 
 interface StoreSettings {
   id: string;
@@ -91,9 +101,10 @@ export const SettingsManager = () => {
   if (!hasRole(["owner", "manager"])) {
     return (
       <div className="flex items-center justify-center h-96">
-        <div className="text-center">
-          <p className="text-lg text-slate-600 dark:text-slate-400">
-            🔒 Chỉ chủ cửa hàng và quản lý mới có quyền truy cập cài đặt
+        <div className="text-center flex items-center gap-2 text-slate-600 dark:text-slate-400">
+          <Lock className="w-5 h-5" aria-hidden="true" />
+          <p className="text-lg">
+            Chỉ chủ cửa hàng và quản lý mới có quyền truy cập cài đặt
           </p>
         </div>
       </div>
@@ -115,8 +126,12 @@ export const SettingsManager = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-            ⚙️ Cài đặt hệ thống
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+            <SettingsIcon
+              className="w-7 h-7 text-blue-600"
+              aria-hidden="true"
+            />
+            <span>Cài đặt hệ thống</span>
           </h1>
           <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
             Quản lý thông tin cửa hàng và cấu hình hệ thống
@@ -126,18 +141,29 @@ export const SettingsManager = () => {
           <button
             onClick={handleSave}
             disabled={saving}
-            className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-400 text-white rounded-lg font-semibold transition-colors"
+            className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-400 text-white rounded-lg font-semibold transition-colors inline-flex items-center gap-2"
+            aria-label="Lưu thay đổi"
           >
-            {saving ? "Đang lưu..." : "💾 Lưu thay đổi"}
+            {saving ? (
+              <span>Đang lưu...</span>
+            ) : (
+              <>
+                <Save className="w-5 h-5" aria-hidden="true" />
+                <span>Lưu thay đổi</span>
+              </>
+            )}
           </button>
         )}
       </div>
 
       {!isOwner && (
-        <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+        <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 flex items-start gap-2">
+          <Info
+            className="w-5 h-5 text-yellow-700 dark:text-yellow-300 mt-0.5"
+            aria-hidden="true"
+          />
           <p className="text-sm text-yellow-800 dark:text-yellow-200">
-            ℹ️ Bạn chỉ có quyền xem. Chỉ chủ cửa hàng mới có thể chỉnh sửa cài
-            đặt.
+            Bạn chỉ có quyền xem. Chỉ chủ cửa hàng mới có thể chỉnh sửa cài đặt.
           </p>
         </div>
       )}
@@ -146,21 +172,38 @@ export const SettingsManager = () => {
       <div className="border-b border-slate-200 dark:border-slate-700">
         <div className="flex gap-4">
           {[
-            { id: "general", label: "🏪 Thông tin chung", icon: "🏪" },
-            { id: "branding", label: "🎨 Thương hiệu", icon: "🎨" },
-            { id: "banking", label: "🏦 Ngân hàng", icon: "🏦" },
-            { id: "invoice", label: "📄 Hóa đơn", icon: "📄" },
+            {
+              id: "general",
+              label: "Thông tin chung",
+              icon: <Store className="w-4 h-4" aria-hidden="true" />,
+            },
+            {
+              id: "branding",
+              label: "Thương hiệu",
+              icon: <Palette className="w-4 h-4" aria-hidden="true" />,
+            },
+            {
+              id: "banking",
+              label: "Ngân hàng",
+              icon: <Landmark className="w-4 h-4" aria-hidden="true" />,
+            },
+            {
+              id: "invoice",
+              label: "Hóa đơn",
+              icon: <FileText className="w-4 h-4" aria-hidden="true" />,
+            },
           ].map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as typeof activeTab)}
-              className={`px-4 py-3 font-medium border-b-2 transition-colors ${
+              className={`px-4 py-3 font-medium border-b-2 transition-colors inline-flex items-center gap-2 ${
                 activeTab === tab.id
                   ? "border-blue-600 text-blue-600 dark:text-blue-400"
                   : "border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
               }`}
             >
-              {tab.label}
+              {tab.icon}
+              <span>{tab.label}</span>
             </button>
           ))}
         </div>
@@ -457,10 +500,13 @@ export const SettingsManager = () => {
               </div>
             </div>
 
-            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mt-4">
+            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mt-4 flex items-start gap-2">
+              <Info
+                className="w-5 h-5 text-blue-700 dark:text-blue-300 mt-0.5"
+                aria-hidden="true"
+              />
               <p className="text-sm text-blue-800 dark:text-blue-200">
-                ℹ️ Thông tin này sẽ được in trên hóa đơn để khách hàng chuyển
-                khoản
+                Thông tin này sẽ được in trên hóa đơn để khách hàng chuyển khoản
               </p>
             </div>
           </div>
@@ -606,9 +652,17 @@ export const SettingsManager = () => {
           <button
             onClick={handleSave}
             disabled={saving}
-            className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-400 text-white rounded-lg font-semibold transition-colors"
+            className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-400 text-white rounded-lg font-semibold transition-colors inline-flex items-center gap-2"
+            aria-label="Lưu tất cả thay đổi"
           >
-            {saving ? "Đang lưu..." : "💾 Lưu tất cả thay đổi"}
+            {saving ? (
+              <span>Đang lưu...</span>
+            ) : (
+              <>
+                <Save className="w-5 h-5" aria-hidden="true" />
+                <span>Lưu tất cả thay đổi</span>
+              </>
+            )}
           </button>
         </div>
       )}

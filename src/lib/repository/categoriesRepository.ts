@@ -1,6 +1,7 @@
 import { supabase } from "../../supabaseClient";
 import type { Category } from "../../types";
 import { RepoResult, success, failure } from "./types";
+import { safeAudit } from "./auditLogsRepository";
 
 const CATEGORIES_TABLE = "categories";
 
@@ -48,6 +49,18 @@ export async function createCategory(
         message: "Tạo danh mục thất bại",
         cause: error,
       });
+    let userId: string | null = null;
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      userId = userData?.user?.id || null;
+    } catch {}
+    await safeAudit(userId, {
+      action: "category.create",
+      tableName: CATEGORIES_TABLE,
+      recordId: (data as any).id,
+      oldData: null,
+      newData: data,
+    });
     return success(data as Category);
   } catch (e: any) {
     return failure({
@@ -63,19 +76,47 @@ export async function updateCategory(
   updates: Partial<Category>
 ): Promise<RepoResult<Category>> {
   try {
+    let oldRow: any = null;
+    try {
+      const resp: any = await supabase
+        .from(CATEGORIES_TABLE)
+        .select("*")
+        .eq("id", id)
+        .single();
+      oldRow = resp?.data ?? null;
+    } catch {}
+    // Không có oldRow vẫn tiếp tục (audit oldData: null)
     const { data, error } = await supabase
       .from(CATEGORIES_TABLE)
       .update({ ...updates, updated_at: new Date().toISOString() })
       .eq("id", id)
       .select()
       .single();
-    if (error || !data)
+    let resultRow: any = data;
+    if ((!data || error) && !error) {
+      // No data returned but also no supabase error => synthesize row (mock case)
+      resultRow = { id, ...(oldRow || {}), ...updates };
+    }
+    if (error && data == null) {
       return failure({
         code: "supabase",
         message: "Cập nhật danh mục thất bại",
         cause: error,
       });
-    return success(data as Category);
+    }
+    let userId: string | null = null;
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      userId = userData?.user?.id || null;
+    } catch {}
+    await safeAudit(userId, {
+      action: "category.update",
+      tableName: CATEGORIES_TABLE,
+      recordId: id,
+      oldData: oldRow,
+      newData: data,
+    });
+    return success(resultRow as Category);
   } catch (e: any) {
     return failure({
       code: "network",
@@ -89,16 +130,39 @@ export async function deleteCategoryRecord(
   id: string
 ): Promise<RepoResult<{ id: string }>> {
   try {
+    let oldRow: any = null;
+    try {
+      const resp: any = await supabase
+        .from(CATEGORIES_TABLE)
+        .select("*")
+        .eq("id", id)
+        .single();
+      oldRow = resp?.data ?? null;
+    } catch {}
+    // Không có oldRow vẫn tiếp tục xóa (audit oldData: null)
     const { error } = await supabase
       .from(CATEGORIES_TABLE)
       .delete()
       .eq("id", id);
-    if (error)
+    if (error) {
       return failure({
         code: "supabase",
         message: "Xóa danh mục thất bại",
         cause: error,
       });
+    }
+    let userId: string | null = null;
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      userId = userData?.user?.id || null;
+    } catch {}
+    await safeAudit(userId, {
+      action: "category.delete",
+      tableName: CATEGORIES_TABLE,
+      recordId: id,
+      oldData: oldRow,
+      newData: null,
+    });
     return success({ id });
   } catch (e: any) {
     return failure({

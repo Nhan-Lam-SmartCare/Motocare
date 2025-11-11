@@ -108,14 +108,19 @@ export const importPartsFromExcel = (
     reader.onload = (e) => {
       try {
         const data = e.target?.result;
-        const workbook = XLSX.read(data, { type: "binary" });
+        const isCsv = /\.csv$/i.test(file.name);
+        const workbook = XLSX.read(data, { type: isCsv ? "string" : "binary" });
 
         // Get first sheet
         const sheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[sheetName];
 
         // Convert to JSON
-        const jsonData = XLSX.utils.sheet_to_json(worksheet);
+        // Keep empty cells (defval: "") so we can distinguish blank rows
+        const jsonData: any[] = XLSX.utils.sheet_to_json(worksheet, {
+          defval: "",
+          blankrows: false,
+        });
 
         // Helpers: normalize keys and parse numbers robustly
         const stripDiacritics = (s: string) =>
@@ -173,45 +178,94 @@ export const importPartsFromExcel = (
           description: ["mota", "ghichu", "note", "description"],
         };
 
-        const parts = jsonData.map((rowAny: any) => {
-          const row: Record<string, any> = rowAny || {};
-          // Create a lookup map of normalized header -> value
-          const dict: Record<string, any> = {};
-          Object.keys(row).forEach((k) => {
-            dict[norm(k)] = row[k];
-          });
-          const get = (key: keyof typeof synonyms, fallback?: any) => {
-            for (const alias of synonyms[key]) {
-              const v = dict[alias];
-              if (v != null && v !== "") return v;
+        const errors: string[] = [];
+        const parts = jsonData
+          .map((rowAny: any, rowIndex) => {
+            const row: Record<string, any> = rowAny || {};
+            // Create a lookup map of normalized header -> value
+            const dict: Record<string, any> = {};
+            Object.keys(row).forEach((k) => {
+              dict[norm(k)] = row[k];
+            });
+            const get = (key: keyof typeof synonyms, fallback?: any) => {
+              for (const alias of synonyms[key]) {
+                const v = dict[alias];
+                if (v != null && v !== "") return v;
+              }
+              return fallback;
+            };
+
+            const name = String(get("name", "")).trim();
+            const sku = String(get("sku", "")).trim();
+            const category = get("category");
+            const quantity = parseNum(get("quantity", 0));
+            const retailPrice = parseNum(get("retailPrice", 0));
+            const wholesalePrice = parseNum(get("wholesalePrice", 0));
+            const description = get("description");
+            // Fallback guess: if name/sku empty but row has other fields
+            if ((!name || !sku) && Object.values(row).some((v) => v !== "")) {
+              // Heuristic: take first non-empty string as name, second as sku
+              const nonEmpty = Object.values(row)
+                .map((v) => String(v).trim())
+                .filter((v) => v !== "");
+              if (!name && nonEmpty.length > 0) {
+                const guessedName = nonEmpty[0];
+                if (guessedName.length > 0) {
+                  row["__guessed_name"] = guessedName;
+                }
+              }
+              if (!sku && nonEmpty.length > 1) {
+                const guessedSku = nonEmpty[1];
+                if (guessedSku.length > 0) {
+                  row["__guessed_sku"] = guessedSku;
+                }
+              }
             }
-            return fallback;
-          };
+            const finalName = name || (row["__guessed_name"] as string) || "";
+            const finalSku = sku || (row["__guessed_sku"] as string) || "";
 
-          const name = String(get("name", "")).trim();
-          const sku = String(get("sku", "")).trim();
-          const category = get("category");
-          const quantity = parseNum(get("quantity", 0));
-          const retailPrice = parseNum(get("retailPrice", 0));
-          const wholesalePrice = parseNum(get("wholesalePrice", 0));
-          const description = get("description");
+            if (!finalName && !finalSku) {
+              // Completely blank or unusable row -> skip silently
+              return null;
+            }
+            if (!finalName || !finalSku) {
+              errors.push(
+                `Hàng ${rowIndex + 2}: thiếu ${
+                  !finalName ? "Tên sản phẩm" : "SKU"
+                }`
+              );
+              return null;
+            }
+            return {
+              name: finalName,
+              sku: finalSku,
+              category,
+              quantity,
+              retailPrice,
+              wholesalePrice,
+              description,
+            };
+          })
+          .filter(Boolean) as Array<{
+          name: string;
+          sku: string;
+          category?: string;
+          quantity: number;
+          retailPrice: number;
+          wholesalePrice: number;
+          description?: string;
+        }>;
 
-          if (!name || !sku) {
-            throw new Error(
-              `Dòng thiếu thông tin bắt buộc: Tên sản phẩm hoặc SKU`
-            );
-          }
-
-          return {
-            name,
-            sku,
-            category,
-            quantity,
-            retailPrice,
-            wholesalePrice,
-            description,
-          };
-        });
+        if (parts.length === 0) {
+          throw new Error(
+            errors.length > 0
+              ? `Không import được: ${errors.slice(0, 3).join("; ")}`
+              : "File không có dữ liệu hợp lệ"
+          );
+        }
+        if ((import.meta as any)?.env?.DEV && errors.length) {
+          console.warn("Một số dòng bị bỏ qua:", errors);
+        }
 
         resolve(parts);
       } catch (error) {
@@ -226,6 +280,185 @@ export const importPartsFromExcel = (
       reject(new Error("Lỗi đọc file"));
     };
 
-    reader.readAsBinaryString(file);
+    // For CSV dùng readAsText để tránh lỗi encoding BOM
+    if (/\.csv$/i.test(file.name)) {
+      reader.readAsText(file, "utf-8");
+    } else {
+      reader.readAsBinaryString(file);
+    }
+  });
+};
+
+/**
+ * Import parts with detailed result (items + non-fatal row errors)
+ * Note: Unlike importPartsFromExcel (which throws when no valid rows),
+ * this returns both parsed items and a list of skipped-row messages.
+ */
+export const importPartsFromExcelDetailed = (
+  file: File,
+  currentBranchId: string
+): Promise<{
+  items: Array<{
+    name: string;
+    sku: string;
+    category?: string;
+    quantity: number;
+    retailPrice: number;
+    wholesalePrice: number;
+    description?: string;
+  }>;
+  errors: string[];
+}> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onload = (e) => {
+      try {
+        const data = e.target?.result;
+        const isCsv = /\.csv$/i.test(file.name);
+        const workbook = XLSX.read(data, { type: isCsv ? "string" : "binary" });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        const jsonData: any[] = XLSX.utils.sheet_to_json(worksheet, {
+          defval: "",
+          blankrows: false,
+        });
+
+        const stripDiacritics = (s: string) =>
+          s
+            .normalize("NFD")
+            .replace(/\p{Diacritic}/gu, "")
+            .replace(/đ/gi, (m) => (m === "đ" ? "d" : "D"));
+        const norm = (s: string) =>
+          stripDiacritics(String(s).toLowerCase().trim()).replace(
+            /[^a-z0-9]+/g,
+            ""
+          );
+        const parseNum = (v: any) => {
+          if (v == null || v === "") return 0;
+          if (typeof v === "number") return v;
+          let t = String(v).trim();
+          t = t.replace(/\s+/g, "");
+          if (t.includes(".") && t.includes(",")) {
+            t = t.replace(/\./g, "").replace(/,/g, ".");
+          } else if (t.includes(",") && !t.includes(".")) {
+            t = t.replace(/,/g, ".");
+          } else {
+            t = t.replace(/,/g, "");
+          }
+          const n = parseFloat(t);
+          return isNaN(n) ? 0 : n;
+        };
+
+        const synonyms: Record<string, string[]> = {
+          name: [
+            "tensanpham",
+            "ten",
+            "productname",
+            "name",
+            "tenhang",
+            "tenmh",
+          ],
+          sku: ["sku", "mahang", "mah", "code", "ma", "masp", "mavt"],
+          category: ["danhmuc", "nhom", "loai", "category"],
+          quantity: ["soluongnhap", "soluong", "ton", "tonkho", "sl", "qty"],
+          retailPrice: [
+            "giabanle",
+            "giale",
+            "giaban",
+            "gia",
+            "retailprice",
+            "giabanra",
+          ],
+          wholesalePrice: ["giabansi", "giasi", "wholesaleprice", "giabuon"],
+          description: ["mota", "ghichu", "note", "description"],
+        };
+
+        const errors: string[] = [];
+        const items = jsonData
+          .map((rowAny: any, rowIndex) => {
+            const row: Record<string, any> = rowAny || {};
+            const dict: Record<string, any> = {};
+            Object.keys(row).forEach((k) => {
+              dict[norm(k)] = row[k];
+            });
+            const get = (key: keyof typeof synonyms, fallback?: any) => {
+              for (const alias of synonyms[key]) {
+                const v = dict[alias];
+                if (v != null && v !== "") return v;
+              }
+              return fallback;
+            };
+
+            const name = String(get("name", "")).trim();
+            const sku = String(get("sku", "")).trim();
+            const category = get("category");
+            const quantity = parseNum(get("quantity", 0));
+            const retailPrice = parseNum(get("retailPrice", 0));
+            const wholesalePrice = parseNum(get("wholesalePrice", 0));
+            const description = get("description");
+
+            if ((!name || !sku) && Object.values(row).some((v) => v !== "")) {
+              const nonEmpty = Object.values(row)
+                .map((v) => String(v).trim())
+                .filter((v) => v !== "");
+              if (!name && nonEmpty.length > 0) {
+                const guessedName = nonEmpty[0];
+                if (guessedName.length > 0) row["__guessed_name"] = guessedName;
+              }
+              if (!sku && nonEmpty.length > 1) {
+                const guessedSku = nonEmpty[1];
+                if (guessedSku.length > 0) row["__guessed_sku"] = guessedSku;
+              }
+            }
+            const finalName = name || (row["__guessed_name"] as string) || "";
+            const finalSku = sku || (row["__guessed_sku"] as string) || "";
+
+            if (!finalName && !finalSku) return null; // skip blank row
+            if (!finalName || !finalSku) {
+              errors.push(
+                `Hàng ${rowIndex + 2}: thiếu ${
+                  !finalName ? "Tên sản phẩm" : "SKU"
+                }`
+              );
+              return null;
+            }
+            return {
+              name: finalName,
+              sku: finalSku,
+              category,
+              quantity,
+              retailPrice,
+              wholesalePrice,
+              description,
+            };
+          })
+          .filter(Boolean) as Array<{
+          name: string;
+          sku: string;
+          category?: string;
+          quantity: number;
+          retailPrice: number;
+          wholesalePrice: number;
+          description?: string;
+        }>;
+
+        resolve({ items, errors });
+      } catch (error) {
+        const msg =
+          error instanceof Error ? error.message : "Không đọc được dữ liệu";
+        reject(new Error(msg));
+      }
+    };
+
+    reader.onerror = () => {
+      reject(new Error("Lỗi đọc file"));
+    };
+
+    if (/\.csv$/i.test(file.name)) {
+      reader.readAsText(file, "utf-8");
+    } else {
+      reader.readAsBinaryString(file);
+    }
   });
 };

@@ -3,6 +3,12 @@
 > Ngày xác nhận: 2025-11-10
 > Môi trường: Project host `uvaxkefgehiokxkvaqge.supabase.co`
 
+## Cập nhật 2025-11-11
+
+- sale_create_atomic: thêm kiểm tra nội bộ UNAUTHORIZED (chỉ owner/manager) và BRANCH_MISMATCH (không cho phép khác chi nhánh).
+- Bật RLS cho audit_logs, cho phép SELECT/INSERT cho authenticated (xem dữ liệu qua view mask audit_logs_with_user), UPDATE/DELETE chỉ owner.
+- Thêm index `idx_sales_branch_date` cho sales(branchId, date DESC) để tối ưu lọc theo chi nhánh/thời gian.
+
 ## Vai trò
 
 | Role    | Mô tả             | Phạm vi dự kiến                                                                                                                               |

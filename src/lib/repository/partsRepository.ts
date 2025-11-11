@@ -1,6 +1,7 @@
 import { supabase } from "../../supabaseClient";
 import type { Part } from "../../types";
 import { RepoResult, success, failure } from "./types";
+import { safeAudit } from "./auditLogsRepository";
 
 // Centralized table name constant
 const PARTS_TABLE = "parts";
@@ -23,6 +24,49 @@ export async function fetchParts(): Promise<RepoResult<Part[]>> {
     return failure({
       code: "network",
       message: "Lỗi kết nối tới máy chủ",
+      cause: e,
+    });
+  }
+}
+
+// Fetch parts with pagination & optional filters
+export async function fetchPartsPaged(params?: {
+  page?: number; // 1-based
+  pageSize?: number;
+  search?: string; // match name or sku
+  category?: string; // exact match
+}): Promise<RepoResult<Part[]>> {
+  try {
+    const pageSize =
+      params?.pageSize && params.pageSize > 0 ? params.pageSize : 50;
+    const page = params?.page && params.page > 0 ? params.page : 1;
+    const from = (page - 1) * pageSize;
+    const to = from + pageSize - 1;
+    let query = supabase
+      .from(PARTS_TABLE)
+      .select("*", { count: "exact" })
+      .order("name")
+      .range(from, to);
+    if (params?.category && params.category !== "all") {
+      query = query.eq("category", params.category);
+    }
+    if (params?.search && params.search.trim()) {
+      const term = params.search.trim();
+      // Supabase 'or' syntax; ilike for case-insensitive partial match
+      query = query.or(`name.ilike.%${term}%,sku.ilike.%${term}%`);
+    }
+    const { data, error, count } = await query;
+    if (error)
+      return failure({
+        code: "supabase",
+        message: "Không thể tải danh sách phụ tùng (phân trang)",
+        cause: error,
+      });
+    return success((data || []) as Part[], { total: count, page, pageSize });
+  } catch (e: any) {
+    return failure({
+      code: "network",
+      message: "Lỗi kết nối tới máy chủ khi tải phụ tùng (phân trang)",
       cause: e,
     });
   }
@@ -58,6 +102,19 @@ export async function createPart(
         message: "Tạo phụ tùng thất bại",
         cause: error,
       });
+    // Audit tạo phụ tùng
+    let userId: string | null = null;
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      userId = userData?.user?.id || null;
+    } catch {}
+    await safeAudit(userId, {
+      action: "part.create",
+      tableName: PARTS_TABLE,
+      recordId: (data as any).id,
+      oldData: null,
+      newData: data,
+    });
     return success(data as Part);
   } catch (e: any) {
     return failure({
@@ -74,6 +131,19 @@ export async function updatePart(
   updates: Partial<Part>
 ): Promise<RepoResult<Part>> {
   try {
+    // Lấy dữ liệu cũ để audit
+    const { data: oldRows, error: oldErr } = await supabase
+      .from(PARTS_TABLE)
+      .select("*")
+      .eq("id", id)
+      .single();
+    if (oldErr || !oldRows) {
+      return failure({
+        code: "supabase",
+        message: "Không tìm thấy phụ tùng để cập nhật",
+        cause: oldErr,
+      });
+    }
     const { data, error } = await supabase
       .from(PARTS_TABLE)
       .update(updates)
@@ -86,6 +156,19 @@ export async function updatePart(
         message: "Cập nhật phụ tùng thất bại",
         cause: error,
       });
+    // Audit cập nhật phụ tùng
+    let userId: string | null = null;
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      userId = userData?.user?.id || null;
+    } catch {}
+    await safeAudit(userId, {
+      action: "part.update",
+      tableName: PARTS_TABLE,
+      recordId: id,
+      oldData: oldRows,
+      newData: data,
+    });
     return success(data as Part);
   } catch (e: any) {
     return failure({
@@ -160,6 +243,19 @@ export async function deletePartById(
   id: string
 ): Promise<RepoResult<{ id: string }>> {
   try {
+    // Lấy dữ liệu cũ để audit
+    const { data: oldRows, error: oldErr } = await supabase
+      .from(PARTS_TABLE)
+      .select("*")
+      .eq("id", id)
+      .single();
+    if (oldErr || !oldRows) {
+      return failure({
+        code: "supabase",
+        message: "Không tìm thấy phụ tùng để xóa",
+        cause: oldErr,
+      });
+    }
     const { error } = await supabase.from(PARTS_TABLE).delete().eq("id", id);
     if (error)
       return failure({
@@ -167,11 +263,51 @@ export async function deletePartById(
         message: "Xóa phụ tùng thất bại",
         cause: error,
       });
+    // Audit xóa phụ tùng
+    let userId: string | null = null;
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      userId = userData?.user?.id || null;
+    } catch {}
+    await safeAudit(userId, {
+      action: "part.delete",
+      tableName: PARTS_TABLE,
+      recordId: id,
+      oldData: oldRows,
+      newData: null,
+    });
     return success({ id });
   } catch (e: any) {
     return failure({
       code: "network",
       message: "Lỗi kết nối khi xóa phụ tùng",
+      cause: e,
+    });
+  }
+}
+
+// Find a part by SKU
+export async function fetchPartBySku(
+  sku: string
+): Promise<RepoResult<Part | null>> {
+  try {
+    const { data, error } = await supabase
+      .from(PARTS_TABLE)
+      .select("*")
+      .eq("sku", sku)
+      .maybeSingle();
+    if (error) {
+      return failure({
+        code: "supabase",
+        message: "Không thể tìm phụ tùng theo SKU",
+        cause: error,
+      });
+    }
+    return success((data as Part) || null);
+  } catch (e: any) {
+    return failure({
+      code: "network",
+      message: "Lỗi kết nối khi tìm phụ tùng theo SKU",
       cause: e,
     });
   }

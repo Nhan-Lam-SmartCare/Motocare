@@ -14,6 +14,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { useAppContext } from "../../contexts/AppContext";
+import { useInventorySummary } from "../../hooks/useInventorySummary";
 import { formatCurrency } from "../../utils/format";
 import { loadDemoData, clearDemoData } from "../../utils/demoData";
 import {
@@ -46,6 +47,17 @@ const Dashboard: React.FC = () => {
 
   const [showDemoButton, setShowDemoButton] = useState(sales.length === 0);
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
+
+  // Server-side inventory summary (Supabase view)
+  const { data: invSummary, isLoading: invLoading } = useInventorySummary();
+  const totalInvQty = useMemo(
+    () => (invSummary || []).reduce((s, r) => s + r.total_quantity, 0),
+    [invSummary]
+  );
+  const totalInvValue = useMemo(
+    () => (invSummary || []).reduce((s, r) => s + r.total_value, 0),
+    [invSummary]
+  );
 
   const handleLoadDemo = () => {
     loadDemoData();
@@ -268,6 +280,24 @@ const Dashboard: React.FC = () => {
           subtitle="Tài khoản ngân hàng"
           colorKey="violet"
           icon={<Landmark className="w-5 h-5" />}
+        />
+      </div>
+
+      {/* Inventory KPIs from server (if available) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <StatCard
+          title="Tổng SL tồn kho"
+          value={invLoading ? "..." : `${totalInvQty}`}
+          subtitle="Gộp tất cả chi nhánh"
+          colorKey="blue"
+          icon={<Boxes className="w-5 h-5" />}
+        />
+        <StatCard
+          title="Tổng giá trị tồn kho"
+          value={invLoading ? "..." : formatCurrency(totalInvValue)}
+          subtitle="Theo giá bán lẻ hiện tại"
+          colorKey="violet"
+          icon={<Package className="w-5 h-5" />}
         />
       </div>
 

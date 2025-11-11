@@ -386,7 +386,17 @@ const { data } = await supabase.from("user_profiles").select("*");
 **Status:** By design  
 **Fix:** Verify user role is correct in user_profiles table
 
-### **Issue 3: Logo not showing in Settings**
+### **Issue 3: Atomic sale RPC rejects staff**
+
+**Status:** By design (function enforces manager/owner only).  
+**Fix:** Elevate role or provide separate staff-facing workflow without stock mutation.
+
+### **Issue 4: Cross-branch sale attempt fails (BRANCH_MISMATCH)**
+
+**Status:** By design (prevents manipulating other branch stock).  
+**Fix:** Ensure profile.branch_id matches intended sale branch; avoid manually overriding branch in client.
+
+### **Issue 5: Logo not showing in Settings**
 
 **Status:** Expected if URL invalid  
 **Fix:** Use valid image URL (Imgur, Cloudinary, etc.)

@@ -1,4 +1,10 @@
-import React, { useMemo, useState, useEffect, useCallback } from "react";
+import React, {
+  useMemo,
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+} from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import { canDo } from "../../utils/permissions";
 import {
@@ -17,8 +23,11 @@ import {
 } from "../../hooks/usePartsRepository";
 import {
   useSalesRepo,
-  useCreateSaleRepo,
+  useSalesPagedRepo,
+  useCreateSaleAtomicRepo,
+  UseSalesPagedParams,
 } from "../../hooks/useSalesRepository";
+import { useLowStock } from "../../hooks/useLowStock";
 import { useCreateInventoryTxRepo } from "../../hooks/useInventoryTransactionsRepository";
 import { formatCurrency, formatDate } from "../../utils/format";
 import { printElementById } from "../../utils/print";
@@ -29,8 +38,8 @@ import { useCreateCashTxRepo } from "../../hooks/useCashTransactionsRepository";
 import { safeAudit } from "../../lib/repository/auditLogsRepository";
 import { useUpdatePaymentSourceBalanceRepo } from "../../hooks/usePaymentSourcesRepository";
 
-// Sales History Modal Component
-const SalesHistoryModal: React.FC<{
+// Sales History Modal Component (refactored to accept pagination & search props)
+interface SalesHistoryModalProps {
   isOpen: boolean;
   onClose: () => void;
   sales: Sale[];
@@ -38,7 +47,28 @@ const SalesHistoryModal: React.FC<{
   onPrintReceipt: (sale: Sale) => void;
   onEditSale: (sale: Sale) => void;
   onDeleteSale: (saleId: string) => void;
-}> = ({
+  page: number;
+  totalPages: number;
+  total: number;
+  hasMore: boolean;
+  pageSize: number;
+  onPrevPage: () => void;
+  onNextPage: () => void;
+  onPageSizeChange: (size: number) => void;
+  search: string;
+  onSearchChange: (s: string) => void;
+  fromDate?: string;
+  toDate?: string;
+  onDateRangeChange: (from?: string, to?: string) => void;
+  status?: "all" | "completed" | "cancelled" | "refunded";
+  onStatusChange?: (s: "all" | "completed" | "cancelled" | "refunded") => void;
+  paymentMethodFilter?: "all" | "cash" | "bank";
+  onPaymentMethodFilterChange?: (m: "all" | "cash" | "bank") => void;
+  keysetMode?: boolean;
+  onToggleKeyset?: (checked: boolean) => void;
+}
+
+const SalesHistoryModal: React.FC<SalesHistoryModalProps> = ({
   isOpen,
   onClose,
   sales,
@@ -46,10 +76,28 @@ const SalesHistoryModal: React.FC<{
   onPrintReceipt,
   onEditSale,
   onDeleteSale,
+  page,
+  totalPages,
+  total,
+  hasMore,
+  pageSize,
+  onPrevPage,
+  onNextPage,
+  onPageSizeChange,
+  search,
+  onSearchChange,
+  fromDate,
+  toDate,
+  onDateRangeChange,
+  status = "all",
+  onStatusChange,
+  paymentMethodFilter = "all",
+  onPaymentMethodFilterChange,
+  keysetMode = false,
+  onToggleKeyset,
 }) => {
   const [activeTimeFilter, setActiveTimeFilter] = useState("today");
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState(status);
   const [sortOrder, setSortOrder] = useState("newest");
   const [customStartDate, setCustomStartDate] = useState(
     formatDate(new Date(), true)
@@ -57,6 +105,86 @@ const SalesHistoryModal: React.FC<{
   const [customEndDate, setCustomEndDate] = useState(
     formatDate(new Date(), true)
   );
+
+  // Compute and push date range to parent when filter changes
+  useEffect(() => {
+    const today = new Date();
+    const startOfDay = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate()
+    );
+    const endOfDay = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate(),
+      23,
+      59,
+      59,
+      999
+    );
+    let from: Date | undefined;
+    let to: Date | undefined;
+    switch (activeTimeFilter) {
+      case "today":
+        from = startOfDay;
+        to = endOfDay;
+        break;
+      case "yesterday": {
+        const y = new Date(today);
+        y.setDate(y.getDate() - 1);
+        from = new Date(y.getFullYear(), y.getMonth(), y.getDate());
+        to = new Date(
+          y.getFullYear(),
+          y.getMonth(),
+          y.getDate(),
+          23,
+          59,
+          59,
+          999
+        );
+        break;
+      }
+      case "7days": {
+        const s = new Date(today);
+        s.setDate(s.getDate() - 6); // include today
+        from = new Date(s.getFullYear(), s.getMonth(), s.getDate());
+        to = endOfDay;
+        break;
+      }
+      case "30days": {
+        const s = new Date(today);
+        s.setDate(s.getDate() - 29);
+        from = new Date(s.getFullYear(), s.getMonth(), s.getDate());
+        to = endOfDay;
+        break;
+      }
+      case "mtd": {
+        const s = new Date(today.getFullYear(), today.getMonth(), 1);
+        from = s;
+        to = endOfDay;
+        break;
+      }
+      case "qtd": {
+        const quarterStartMonth = Math.floor(today.getMonth() / 3) * 3;
+        const s = new Date(today.getFullYear(), quarterStartMonth, 1);
+        from = s;
+        to = endOfDay;
+        break;
+      }
+      case "custom": {
+        const cs = new Date(customStartDate);
+        const ce = new Date(customEndDate + "T23:59:59");
+        from = cs;
+        to = ce;
+        break;
+      }
+    }
+    onDateRangeChange(
+      from ? from.toISOString() : undefined,
+      to ? to.toISOString() : undefined
+    );
+  }, [activeTimeFilter, customStartDate, customEndDate, onDateRangeChange]);
 
   // Filter sales based on selected criteria
   const filteredSales = useMemo(() => {
@@ -130,12 +258,27 @@ const SalesHistoryModal: React.FC<{
         break;
     }
 
+    // Status filter (client-side fallback for now; server already filters)
+    if (statusFilter && statusFilter !== "all") {
+      if (statusFilter === "refunded")
+        filtered = filtered.filter((s) => (s as any).refunded === true);
+      else if (statusFilter === "completed")
+        filtered = filtered.filter((s) => !(s as any).refunded);
+      else if (statusFilter === "cancelled")
+        filtered = filtered.filter((s) => (s as any).refunded === true); // alias
+    }
+    // Payment method filter (client-side fallback)
+    if (paymentMethodFilter && paymentMethodFilter !== "all") {
+      filtered = filtered.filter(
+        (s) => s.paymentMethod === paymentMethodFilter
+      );
+    }
     // Search filter
-    if (searchTerm) {
+    if (search) {
       filtered = filtered.filter(
         (sale) =>
-          sale.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          sale.customer.name.toLowerCase().includes(searchTerm.toLowerCase())
+          sale.id.toLowerCase().includes(search.toLowerCase()) ||
+          sale.customer.name.toLowerCase().includes(search.toLowerCase())
       );
     }
 
@@ -156,7 +299,7 @@ const SalesHistoryModal: React.FC<{
     sales,
     currentBranchId,
     activeTimeFilter,
-    searchTerm,
+    search,
     statusFilter,
     sortOrder,
     customStartDate,
@@ -203,6 +346,8 @@ const SalesHistoryModal: React.FC<{
               { key: "yesterday", label: "Hôm qua" },
               { key: "7days", label: "7 ngày" },
               { key: "30days", label: "30 ngày" },
+              { key: "mtd", label: "Tháng này" },
+              { key: "qtd", label: "Quý này" },
               { key: "custom", label: "Tùy chỉnh" },
             ].map((filter) => (
               <button
@@ -240,23 +385,52 @@ const SalesHistoryModal: React.FC<{
 
           {/* Search and Sort */}
           <div className="flex flex-wrap gap-4">
-            <div className="flex-1 min-w-64">
+            <div className="flex-1 min-w-64 relative">
               <input
                 type="text"
                 placeholder="Tìm mã hóa đơn hoặc tên khách hàng"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
+                value={search}
+                onChange={(e) => {
+                  onSearchChange(e.target.value);
+                }}
+                className="w-full pr-10 px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
               />
+              {search?.length ? (
+                <button
+                  type="button"
+                  onClick={() => onSearchChange("")}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                  aria-label="Xoá tìm kiếm"
+                  title="Xoá tìm kiếm"
+                >
+                  ×
+                </button>
+              ) : null}
             </div>
             <select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
+              onChange={(e) => {
+                const v = e.target.value as any;
+                setStatusFilter(v);
+                onStatusChange?.(v);
+              }}
               className="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
             >
               <option value="all">Tất cả</option>
               <option value="completed">Hoàn thành</option>
+              <option value="refunded">Hoàn tiền</option>
               <option value="cancelled">Đã hủy</option>
+            </select>
+            <select
+              value={paymentMethodFilter}
+              onChange={(e) =>
+                onPaymentMethodFilterChange?.(e.target.value as any)
+              }
+              className="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
+            >
+              <option value="all">Mọi PTTT</option>
+              <option value="cash">Tiền mặt</option>
+              <option value="bank">Chuyển khoản</option>
             </select>
             <select
               value={sortOrder}
@@ -469,11 +643,60 @@ const SalesHistoryModal: React.FC<{
           )}
         </div>
 
-        {/* Footer */}
-        <div className="p-6 border-t border-slate-200 dark:border-slate-700 flex justify-between items-center">
-          <div className="text-sm text-slate-500">Trang 1 / 1</div>
-          <div className="text-sm text-slate-500">
-            Hiển thị {filteredSales.length} hóa đơn
+        <div className="p-6 border-t border-slate-200 dark:border-slate-700 flex justify-between items-center gap-3">
+          <div className="flex items-center gap-2">
+            <button
+              className="px-3 py-1 rounded bg-slate-100 dark:bg-slate-700 disabled:opacity-40"
+              disabled={keysetMode ? true : page <= 1}
+              onClick={onPrevPage}
+            >
+              ← Trước
+            </button>
+            {!keysetMode && (
+              <span className="text-sm text-slate-600 dark:text-slate-300">
+                Trang {page} / {totalPages}
+              </span>
+            )}
+            <button
+              className="px-3 py-1 rounded bg-slate-100 dark:bg-slate-700 disabled:opacity-40"
+              disabled={!hasMore}
+              onClick={onNextPage}
+            >
+              {keysetMode ? "Tải thêm" : "Sau →"}
+            </button>
+            <select
+              value={pageSize}
+              onChange={(e) => {
+                onPageSizeChange(Number(e.target.value));
+              }}
+              className="px-2 py-1 rounded border border-slate-300 dark:border-slate-600 text-sm"
+            >
+              {[10, 20, 50].map((sz) => (
+                <option key={sz} value={sz}>
+                  {sz}/trang
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="flex items-center gap-3 text-sm text-slate-500">
+            {!keysetMode && <span>Tổng: {total} hóa đơn</span>}
+            {keysetMode && (
+              <span>
+                Keyset mode · pageSize {pageSize}
+                {hasMore ? " (còn nữa)" : " (hết)"}
+              </span>
+            )}
+            <label className="inline-flex items-center gap-1 text-xs font-medium">
+              <input
+                type="checkbox"
+                className="accent-indigo-600"
+                checked={!!keysetMode}
+                onChange={(e) =>
+                  onToggleKeyset && onToggleKeyset(e.target.checked)
+                }
+              />
+              Keyset
+            </label>
           </div>
         </div>
       </div>
@@ -501,17 +724,93 @@ const SalesManager: React.FC = () => {
     isLoading: loadingParts,
     error: partsError,
   } = usePartsRepo();
+  // Server-side sales pagination parameters
+  const [salesPage, setSalesPage] = useState(1);
+  const [salesPageSize, setSalesPageSize] = useState(20);
+  const [salesSearchInput, setSalesSearchInput] = useState("");
+  const [salesSearch, setSalesSearch] = useState("");
+  const [salesFromDate, setSalesFromDate] = useState<string | undefined>();
+  const [salesToDate, setSalesToDate] = useState<string | undefined>();
+  const [salesStatus, setSalesStatus] = useState<
+    "all" | "completed" | "cancelled" | "refunded"
+  >("all");
+  const [salesPaymentMethod, setSalesPaymentMethod] = useState<
+    "all" | "cash" | "bank"
+  >("all");
+  const [useKeysetMode, setUseKeysetMode] = useState(false);
+  const [keysetCursor, setKeysetCursor] = useState<{
+    afterDate?: string;
+    afterId?: string;
+  } | null>(null);
+  const salesParams: UseSalesPagedParams = {
+    branchId: currentBranchId,
+    page: useKeysetMode ? undefined : salesPage,
+    pageSize: salesPageSize,
+    search: salesSearch || undefined,
+    fromDate: salesFromDate,
+    toDate: salesToDate,
+    mode: useKeysetMode ? "keyset" : "offset",
+    afterDate: useKeysetMode ? keysetCursor?.afterDate : undefined,
+    afterId: useKeysetMode ? keysetCursor?.afterId : undefined,
+    status:
+      salesStatus === "all"
+        ? undefined
+        : salesStatus === "cancelled"
+        ? "refunded"
+        : salesStatus === "completed"
+        ? "completed"
+        : salesStatus,
+    paymentMethod:
+      salesPaymentMethod === "all" ? undefined : salesPaymentMethod,
+  };
   const {
-    data: repoSales = [],
+    data: pagedSalesData,
     isLoading: loadingSales,
     error: salesError,
-  } = useSalesRepo();
-  const { mutateAsync: createSaleAsync } = useCreateSaleRepo();
+  } = useSalesPagedRepo(salesParams);
+  const repoSales = pagedSalesData?.data || [];
+  const salesMeta = pagedSalesData?.meta || {
+    page: 1,
+    totalPages: 1,
+    total: repoSales.length,
+    hasMore: false,
+  };
+  // Advance keyset cursor when in keyset mode and new page loaded
+  useEffect(() => {
+    if (useKeysetMode && pagedSalesData?.meta?.mode === "keyset") {
+      setKeysetCursor({
+        afterDate: (pagedSalesData.meta as any).nextAfterDate,
+        afterId: (pagedSalesData.meta as any).nextAfterId,
+      });
+    }
+  }, [useKeysetMode, pagedSalesData]);
+  const { mutateAsync: createSaleAtomicAsync } = useCreateSaleAtomicRepo();
   const { mutateAsync: updatePartAsync } = useUpdatePartRepo();
   const { mutateAsync: createInventoryTxAsync } = useCreateInventoryTxRepo();
   const { mutateAsync: createCashTxAsync } = useCreateCashTxRepo();
   const { mutateAsync: updatePaymentSourceBalanceAsync } =
     useUpdatePaymentSourceBalanceRepo();
+
+  // Pagination handlers
+  const goPrevPage = useCallback(
+    () => setSalesPage((p) => Math.max(1, p - 1)),
+    []
+  );
+  const goNextPage = useCallback(() => setSalesPage((p) => p + 1), []);
+  const changePageSize = useCallback((sz: number) => {
+    setSalesPageSize(sz);
+    setSalesPage(1);
+    if (useKeysetMode) setKeysetCursor(null);
+  }, []);
+
+  // Debounce search (300ms) áp dụng vào tham số query
+  useEffect(() => {
+    const h = setTimeout(() => {
+      setSalesSearch(salesSearchInput);
+      setSalesPage(1);
+    }, 300);
+    return () => clearTimeout(h);
+  }, [salesSearchInput]);
 
   // States
   const [partSearch, setPartSearch] = useState("");
@@ -661,6 +960,28 @@ const SalesManager: React.FC = () => {
         part.sku.toLowerCase().includes(partSearch.toLowerCase())
     );
   }, [repoParts, partSearch, loadingParts, partsError]);
+
+  // Low stock monitoring (threshold = 5)
+  const { lowStockCount, outOfStockCount } = useLowStock(
+    repoParts,
+    currentBranchId,
+    5
+  );
+
+  // One-time toast to notify low stock when opening screen
+  const lowStockToastShown = useRef(false);
+  useEffect(() => {
+    if (
+      !lowStockToastShown.current &&
+      (lowStockCount > 0 || outOfStockCount > 0)
+    ) {
+      const msgParts = [] as string[];
+      if (outOfStockCount > 0) msgParts.push(`Hết hàng: ${outOfStockCount}`);
+      if (lowStockCount > 0) msgParts.push(`Tồn thấp: ${lowStockCount}`);
+      showToast.info(msgParts.join(" · "));
+      lowStockToastShown.current = true;
+    }
+  }, [lowStockCount, outOfStockCount]);
 
   // Filter customers by search
   const filteredCustomers = useMemo(() => {
@@ -886,84 +1207,18 @@ const SalesManager: React.FC = () => {
           });
         }
       }
-      // Ghi hóa đơn lên Supabase
-      await createSaleAsync({
+      // Gọi RPC atomic đảm bảo tất cả bước (xuất kho, tiền mặt, cập nhật tồn, ghi hóa đơn, audit) thực hiện trong 1 transaction server
+      const rpcRes = await createSaleAtomicAsync({
         id: saleId,
-        date: new Date().toISOString(),
         items: cartItems,
-        subtotal: lineSubtotal,
         discount: orderDiscount + lineDiscounts,
-        total,
         customer: customerObj,
         paymentMethod: paymentMethod!,
-        userId: "local-user",
-        userName: "Local User",
+        userId: profile?.id || "local-user",
+        userName: profile?.full_name || profile?.email || "Local User",
         branchId: currentBranchId,
-      });
-
-      // Audit: tạo hóa đơn
-      void safeAudit(profile?.id || null, {
-        action: "sale.create",
-        tableName: "sales",
-        recordId: saleId,
-        oldData: null,
-        newData: {
-          items: cartItems,
-          subtotal: lineSubtotal,
-          discount: orderDiscount + lineDiscounts,
-          total,
-          customer: customerObj,
-          paymentMethod,
-          branchId: currentBranchId,
-        },
-      });
-
-      // Giảm tồn kho cho từng sản phẩm & ghi giao dịch kho
-      for (const item of cartItems) {
-        const part = repoParts.find((p) => p.id === item.partId);
-        if (!part) continue;
-        const current = part.stock?.[currentBranchId] ?? 0;
-        const next = Math.max(0, current - item.quantity);
-        try {
-          await updatePartAsync({
-            id: part.id,
-            updates: { stock: { ...part.stock, [currentBranchId]: next } },
-          });
-          // Ghi lịch sử xuất kho lên Supabase
-          await createInventoryTxAsync({
-            type: "Xuất kho",
-            partId: part.id,
-            partName: part.name,
-            quantity: item.quantity,
-            date: new Date().toISOString(),
-            unitPrice: item.sellingPrice,
-            totalPrice: item.sellingPrice * item.quantity,
-            branchId: currentBranchId,
-            notes: "Bán hàng",
-            saleId,
-          });
-        } catch (e) {
-          console.error("Lỗi cập nhật tồn kho", part.id, e);
-          showToast.error(`Cập nhật tồn kho thất bại cho ${part.name}`);
-        }
-      }
-
-      // Ghi sổ quỹ lên Supabase & cập nhật số dư nguồn thanh toán
-      await createCashTxAsync({
-        type: "income",
-        amount: total,
-        branchId: currentBranchId,
-        paymentSourceId: paymentMethod!,
-        notes: "Thu tiền bán hàng",
-        category: "sale_income",
-        saleId,
-        recipient: customerObj.name,
-      });
-      await updatePaymentSourceBalanceAsync({
-        id: paymentMethod!,
-        branchId: currentBranchId,
-        delta: total,
-      });
+      } as any);
+      if ((rpcRes as any)?.error) throw (rpcRes as any).error;
 
       // Clear form
       setSelectedCustomer(null);
@@ -980,9 +1235,9 @@ const SalesManager: React.FC = () => {
       setTimeout(() => {
         printElementById("last-receipt");
       }, 100);
-    } catch (error) {
-      console.error("Error finalizing sale:", error);
-      showToast.error("Có lỗi khi tạo hóa đơn. Vui lòng thử lại.");
+    } catch (error: any) {
+      console.error("Error finalizing sale (atomic):", error);
+      showToast.error(error?.message || "Có lỗi khi tạo hóa đơn (atomic)");
     }
   };
 
@@ -1015,6 +1270,14 @@ const SalesManager: React.FC = () => {
                   onChange={(e) => setPartSearch(e.target.value)}
                   className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500"
                 />
+              </div>
+              <div className="hidden sm:flex items-center gap-2 text-xs">
+                <span className="px-2 py-1 rounded-full bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300">
+                  Tồn thấp: {lowStockCount}
+                </span>
+                <span className="px-2 py-1 rounded-full bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300">
+                  Hết hàng: {outOfStockCount}
+                </span>
               </div>
               <button
                 onClick={() => setShowSalesHistory(true)}
@@ -1543,6 +1806,61 @@ const SalesManager: React.FC = () => {
         onPrintReceipt={handlePrintReceipt}
         onEditSale={handleEditSale}
         onDeleteSale={handleDeleteSale}
+        page={salesMeta.page}
+        totalPages={salesMeta.totalPages}
+        total={salesMeta.total}
+        hasMore={salesMeta.hasMore}
+        pageSize={salesPageSize}
+        onPrevPage={goPrevPage}
+        onNextPage={() => {
+          if (useKeysetMode) {
+            const nextAfterDate = (pagedSalesData?.meta as any)?.nextAfterDate;
+            const nextAfterId = (pagedSalesData?.meta as any)?.nextAfterId;
+            if (nextAfterDate || nextAfterId) {
+              setKeysetCursor({
+                afterDate: nextAfterDate,
+                afterId: nextAfterId,
+              });
+            }
+          } else {
+            goNextPage();
+          }
+        }}
+        onPageSizeChange={changePageSize}
+        search={salesSearchInput}
+        onSearchChange={(s) => {
+          setSalesSearchInput(s);
+          if (!s) {
+            // Khi xoá nhanh chuỗi tìm kiếm, reset ngay về trang 1 để UX tốt hơn
+            setSalesPage(1);
+          }
+        }}
+        fromDate={salesFromDate}
+        toDate={salesToDate}
+        onDateRangeChange={(from?: string, to?: string) => {
+          setSalesFromDate(from);
+          setSalesToDate(to);
+          setSalesPage(1);
+          if (useKeysetMode) setKeysetCursor(null);
+        }}
+        status={salesStatus}
+        onStatusChange={(s) => {
+          setSalesStatus(s);
+          setSalesPage(1);
+          if (useKeysetMode) setKeysetCursor(null);
+        }}
+        paymentMethodFilter={salesPaymentMethod}
+        onPaymentMethodFilterChange={(m) => {
+          setSalesPaymentMethod(m);
+          setSalesPage(1);
+          if (useKeysetMode) setKeysetCursor(null);
+        }}
+        keysetMode={useKeysetMode}
+        onToggleKeyset={(checked) => {
+          setUseKeysetMode(checked);
+          setSalesPage(1);
+          setKeysetCursor(null);
+        }}
       />
 
       {/* Receipt Print Section (Hidden) - A5 Format */}

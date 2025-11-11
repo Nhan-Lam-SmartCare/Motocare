@@ -1,6 +1,7 @@
 import { supabase } from "../../supabaseClient";
 import type { PaymentSource } from "../../types";
 import { RepoResult, success, failure } from "./types";
+import { safeAudit } from "./auditLogsRepository";
 
 const TABLE = "payment_sources";
 
@@ -63,6 +64,19 @@ export async function updatePaymentSourceBalance(
         message: "Cập nhật số dư thất bại",
         cause: error,
       });
+    // Audit balance adjustment
+    let userId: string | null = null;
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      userId = userData?.user?.id || null;
+    } catch {}
+    await safeAudit(userId, {
+      action: "payment_source.balance_adjust",
+      tableName: TABLE,
+      recordId: id,
+      oldData: { balance },
+      newData: { balance: newBalance, delta, branchId },
+    });
     return success(data as PaymentSource);
   } catch (e: any) {
     return failure({

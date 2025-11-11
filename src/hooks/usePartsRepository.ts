@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   fetchParts,
+  fetchPartsPaged,
   createPart,
   updatePart,
   deletePartById,
@@ -17,6 +18,30 @@ export const usePartsRepo = () => {
       if (!res.ok) throw res.error;
       return res.data;
     },
+  });
+};
+
+// New: paged repo hook with filters
+export const usePartsRepoPaged = (params: {
+  page: number;
+  pageSize: number;
+  search?: string;
+  category?: string;
+}) => {
+  return useQuery({
+    queryKey: [
+      "partsRepoPaged",
+      params.page,
+      params.pageSize,
+      params.search || "",
+      params.category || "all",
+    ],
+    queryFn: async () => {
+      const res = await fetchPartsPaged(params);
+      if (!res.ok) throw res.error;
+      return res;
+    },
+    staleTime: 30_000,
   });
 };
 

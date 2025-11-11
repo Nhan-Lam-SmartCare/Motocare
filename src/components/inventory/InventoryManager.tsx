@@ -4,8 +4,9 @@ import { canDo } from "../../utils/permissions";
 import { Boxes, Package, Search, FileText } from "lucide-react";
 import { useAppContext } from "../../contexts/AppContext";
 import { safeAudit } from "../../lib/repository/auditLogsRepository";
+import { supabase } from "../../supabaseClient";
 import {
-  usePartsRepo,
+  usePartsRepoPaged,
   useCreatePartRepo,
   useUpdatePartRepo,
   useDeletePartRepo,
@@ -15,6 +16,7 @@ import {
   exportPartsToExcel,
   exportInventoryTemplate,
   importPartsFromExcel,
+  importPartsFromExcelDetailed,
 } from "../../utils/excel";
 import { showToast } from "../../utils/toast";
 import { useConfirm } from "../../hooks/useConfirm";
@@ -22,6 +24,7 @@ import ConfirmModal from "../common/ConfirmModal";
 import CategoriesManager from "../categories/CategoriesManager";
 import LookupManager from "../lookup/LookupManager";
 import type { Part, InventoryTransaction } from "../../types";
+import { fetchPartBySku } from "../../lib/repository/partsRepository";
 import { useCreateInventoryTxRepo } from "../../hooks/useInventoryTransactionsRepository";
 
 // Add New Product Modal Component
@@ -1400,6 +1403,8 @@ const InventoryManager: React.FC = () => {
   const [showGoodsReceipt, setShowGoodsReceipt] = useState(false);
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [editingPart, setEditingPart] = useState<Part | null>(null);
   const [showImportModal, setShowImportModal] = useState(false);
@@ -1408,24 +1413,21 @@ const InventoryManager: React.FC = () => {
   const { confirm, confirmState, handleConfirm, handleCancel } = useConfirm();
 
   const {
-    data: repoParts = [],
+    data: pagedResult,
     isLoading: partsLoading,
     isError: partsError,
-    refetch: refetchParts,
-  } = usePartsRepo();
+  } = usePartsRepoPaged({
+    page,
+    pageSize,
+    search,
+    category: categoryFilter === "all" ? undefined : categoryFilter,
+  });
+  const repoParts = pagedResult?.data || [];
+  const totalParts = pagedResult?.meta?.total || 0;
+  const totalPages = Math.max(1, Math.ceil(totalParts / pageSize));
 
-  const filteredParts = useMemo(() => {
-    const q = search.toLowerCase();
-    let filtered = repoParts.filter(
-      (p) => p.name.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q)
-    );
-
-    if (categoryFilter !== "all") {
-      filtered = filtered.filter((p) => p.category === categoryFilter);
-    }
-
-    return filtered;
-  }, [repoParts, search, categoryFilter]);
+  // Sau khi chuyển sang server filter, filteredParts = repoParts (có thể thêm client filter tồn kho nếu cần)
+  const filteredParts = useMemo(() => repoParts, [repoParts]);
 
   const totalStockValue = useMemo(() => {
     return repoParts.reduce((sum, part) => {
@@ -1733,12 +1735,18 @@ const InventoryManager: React.FC = () => {
                   type="text"
                   placeholder="Tìm kiếm theo tên hoặc SKU..."
                   value={search}
-                  onChange={(e) => setSearch(e.target.value)}
+                  onChange={(e) => {
+                    setPage(1); // reset page khi thay đổi search
+                    setSearch(e.target.value);
+                  }}
                   className="flex-1 px-4 py-2.5 border border-secondary-border rounded-lg bg-primary-bg text-primary-text placeholder-tertiary-text focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-colors"
                 />
                 <select
                   value={categoryFilter}
-                  onChange={(e) => setCategoryFilter(e.target.value)}
+                  onChange={(e) => {
+                    setPage(1); // reset page khi đổi filter
+                    setCategoryFilter(e.target.value);
+                  }}
                   className="px-4 py-2.5 border border-secondary-border rounded-lg bg-primary-bg text-secondary-text focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-colors"
                 >
                   <option value="all">Còn hàng</option>
@@ -1752,7 +1760,7 @@ const InventoryManager: React.FC = () => {
               </div>
             </div>
 
-            {/* Stock Table */}
+            {/* Stock Table + Pagination */}
             <div className="rounded-lg overflow-hidden border border-primary-border">
               {/* Bulk Actions Bar */}
               {selectedItems.length > 0 && (
@@ -1942,6 +1950,43 @@ const InventoryManager: React.FC = () => {
                   </tbody>
                 </table>
               </div>
+              {/* Pagination Controls */}
+              <div className="flex items-center justify-between px-6 py-4 border-t border-primary-border bg-primary-bg">
+                <div className="text-sm text-secondary-text">
+                  Trang {page}/{totalPages} • Tổng {totalParts} phụ tùng
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    disabled={page === 1 || partsLoading}
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    className="px-3 py-1.5 border border-secondary-border rounded disabled:opacity-40"
+                  >
+                    ← Trước
+                  </button>
+                  <button
+                    disabled={page >= totalPages || partsLoading}
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    className="px-3 py-1.5 border border-secondary-border rounded disabled:opacity-40"
+                  >
+                    Sau →
+                  </button>
+                  <select
+                    value={pageSize}
+                    onChange={(e) => {
+                      const newSize = Number(e.target.value) || 20;
+                      setPageSize(newSize);
+                      setPage(1);
+                    }}
+                    className="px-2 py-1.5 border border-secondary-border rounded"
+                  >
+                    {[10, 20, 50, 100].map((s) => (
+                      <option key={s} value={s}>
+                        {s}/trang
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
             </div>
           </div>
         )}
@@ -1995,17 +2040,30 @@ const InventoryManager: React.FC = () => {
           onDownloadTemplate={handleDownloadTemplate}
           onImport={async (file) => {
             try {
-              const importedData = await importPartsFromExcel(
-                file,
-                currentBranchId
-              );
+              const { items: importedData, errors: rowErrors } =
+                await importPartsFromExcelDetailed(file, currentBranchId);
+
+              if (importedData.length === 0) {
+                const msg = rowErrors.length
+                  ? `Không import được: ${rowErrors.slice(0, 3).join("; ")}`
+                  : "File không có dữ liệu hợp lệ";
+                throw new Error(msg);
+              }
 
               // Process imported data
-              importedData.forEach((item) => {
-                // Check if part exists by SKU
-                const existingPart = repoParts.find((p) => p.sku === item.sku);
+              let createdCount = 0;
+              let updatedCount = 0;
+              for (const item of importedData) {
+                // Check if part exists by SKU (paged có thể không có hết -> fallback fetch)
+                let existingPart = repoParts.find((p) => p.sku === item.sku);
+                if (!existingPart) {
+                  const skuLookup = await fetchPartBySku(item.sku);
+                  if (skuLookup.ok && skuLookup.data)
+                    existingPart = skuLookup.data;
+                }
 
                 if (existingPart) {
+                  updatedCount += 1;
                   // Update existing part
                   updatePartMutation.mutate({
                     id: existingPart.id,
@@ -2027,6 +2085,7 @@ const InventoryManager: React.FC = () => {
                     },
                   });
                 } else {
+                  createdCount += 1;
                   // Create new part
                   createPartMutation.mutate({
                     name: item.name,
@@ -2044,12 +2103,17 @@ const InventoryManager: React.FC = () => {
                     },
                   });
                 }
-              });
+              }
 
               // Record inventory transactions for each imported item
               const importDate = new Date().toISOString();
-              importedData.forEach((item) => {
-                const existingPart = repoParts.find((p) => p.sku === item.sku);
+              for (const item of importedData) {
+                let existingPart = repoParts.find((p) => p.sku === item.sku);
+                if (!existingPart) {
+                  const skuLookup = await fetchPartBySku(item.sku);
+                  if (skuLookup.ok && skuLookup.data)
+                    existingPart = skuLookup.data;
+                }
                 if (existingPart) {
                   createInventoryTxAsync({
                     type: "Nhập kho",
@@ -2063,12 +2127,32 @@ const InventoryManager: React.FC = () => {
                     notes: `Nhập kho từ file Excel`,
                   });
                 }
-              });
+              }
+
+              // Audit summary for import (best-effort)
+              try {
+                const { data: userData } = await supabase.auth.getUser();
+                await safeAudit(userData?.user?.id || null, {
+                  action: "inventory.import",
+                  tableName: "inventory_transactions",
+                  oldData: null,
+                  newData: {
+                    totalRows: importedData.length + rowErrors.length,
+                    created: createdCount,
+                    updated: updatedCount,
+                    skipped: rowErrors.length,
+                    sampleErrors: rowErrors.slice(0, 10),
+                    branchId: currentBranchId,
+                    at: importDate,
+                  },
+                });
+              } catch {}
 
               setShowImportModal(false);
-              showToast.success(
-                `Import thành công ${importedData.length} sản phẩm!`
-              );
+              const summaryMsg =
+                `Import: tạo mới ${createdCount}, cập nhật ${updatedCount}` +
+                (rowErrors.length ? `, bỏ qua ${rowErrors.length}` : "");
+              showToast.success(summaryMsg);
             } catch (error) {
               console.error("Import error:", error);
               showToast.error(`Lỗi import: ${error}`);

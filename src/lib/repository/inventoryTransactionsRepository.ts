@@ -1,6 +1,7 @@
 import { supabase } from "../../supabaseClient";
 import type { InventoryTransaction } from "../../types";
 import { RepoResult, success, failure } from "./types";
+import { safeAudit } from "./auditLogsRepository";
 
 const TABLE = "inventory_transactions";
 
@@ -98,6 +99,20 @@ export async function createInventoryTransaction(
         message: "Ghi lịch sử kho thất bại",
         cause: error,
       });
+    // Audit inventory transaction
+    let userId: string | null = null;
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      userId = userData?.user?.id || null;
+    } catch {}
+    await safeAudit(userId, {
+      action:
+        input.type === "Nhập kho" ? "inventory.receipt" : "inventory.adjust",
+      tableName: TABLE,
+      recordId: (data as any).id,
+      oldData: null,
+      newData: data,
+    });
     return success(data as InventoryTransaction);
   } catch (e: any) {
     return failure({

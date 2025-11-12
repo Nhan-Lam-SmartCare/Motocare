@@ -18,10 +18,7 @@ import {
   MapPin,
 } from "lucide-react";
 import { useAppContext } from "../../contexts/AppContext";
-import {
-  usePartsRepo,
-  useUpdatePartRepo,
-} from "../../hooks/usePartsRepository";
+import { usePartsRepo } from "../../hooks/usePartsRepository";
 import {
   useSalesRepo,
   useSalesPagedRepo,
@@ -29,15 +26,12 @@ import {
   UseSalesPagedParams,
 } from "../../hooks/useSalesRepository";
 import { useLowStock } from "../../hooks/useLowStock";
-import { useCreateInventoryTxRepo } from "../../hooks/useInventoryTransactionsRepository";
 import { formatCurrency, formatDate } from "../../utils/format";
 import { printElementById } from "../../utils/print";
 import { showToast } from "../../utils/toast";
 import { PlusIcon, XMarkIcon } from "../Icons";
 import type { CartItem, Part, Customer, Sale } from "../../types";
-import { useCreateCashTxRepo } from "../../hooks/useCashTransactionsRepository";
 import { safeAudit } from "../../lib/repository/auditLogsRepository";
-import { useUpdatePaymentSourceBalanceRepo } from "../../hooks/usePaymentSourcesRepository";
 
 // Sale Detail Modal Component (for viewing/editing sale details)
 interface SaleDetailModalProps {
@@ -941,6 +935,9 @@ const SalesHistoryModal: React.FC<SalesHistoryModalProps> = ({
   const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [dropdownOpenSaleId, setDropdownOpenSaleId] = useState<string | null>(
+    null
+  );
 
   // Compute date range when filter changes
   useEffect(() => {
@@ -1050,6 +1047,21 @@ const SalesHistoryModal: React.FC<SalesHistoryModalProps> = ({
   const totalRevenue = useMemo(() => {
     return filteredSales.reduce((sum, sale) => sum + sale.total, 0);
   }, [filteredSales]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      if (!target.closest(".dropdown-menu-container")) {
+        setDropdownOpenSaleId(null);
+      }
+    };
+    if (dropdownOpenSaleId) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () =>
+        document.removeEventListener("mousedown", handleClickOutside);
+    }
+  }, [dropdownOpenSaleId]);
 
   if (!isOpen) return null;
 
@@ -1275,20 +1287,106 @@ const SalesHistoryModal: React.FC<SalesHistoryModalProps> = ({
                           />
                         </svg>
                       </button>
-                      <button
-                        className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
-                        title="Thêm tùy chọn"
-                      >
-                        <svg
-                          className="w-5 h-5"
-                          fill="currentColor"
-                          viewBox="0 0 24 24"
+                      <div className="relative dropdown-menu-container">
+                        <button
+                          onClick={() =>
+                            setDropdownOpenSaleId(
+                              dropdownOpenSaleId === sale.id ? null : sale.id
+                            )
+                          }
+                          className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+                          title="Thêm tùy chọn"
                         >
-                          <circle cx="12" cy="5" r="2" />
-                          <circle cx="12" cy="12" r="2" />
-                          <circle cx="12" cy="19" r="2" />
-                        </svg>
-                      </button>
+                          <svg
+                            className="w-5 h-5"
+                            fill="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <circle cx="12" cy="5" r="2" />
+                            <circle cx="12" cy="12" r="2" />
+                            <circle cx="12" cy="19" r="2" />
+                          </svg>
+                        </button>
+                        {dropdownOpenSaleId === sale.id && (
+                          <div className="absolute right-0 mt-1 w-48 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 z-50">
+                            <button
+                              onClick={() => {
+                                onPrintReceipt(sale);
+                                setDropdownOpenSaleId(null);
+                              }}
+                              className="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2 rounded-t-lg"
+                            >
+                              <svg
+                                className="w-4 h-4"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"
+                                />
+                              </svg>
+                              In lại hóa đơn
+                            </button>
+                            <button
+                              onClick={() => {
+                                setSelectedSale(sale);
+                                setShowDetailModal(true);
+                                setDropdownOpenSaleId(null);
+                              }}
+                              className="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2"
+                            >
+                              <svg
+                                className="w-4 h-4"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                                />
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                                />
+                              </svg>
+                              Xem chi tiết
+                            </button>
+                            <button
+                              onClick={() => {
+                                if (onDeleteSale) {
+                                  onDeleteSale(sale.id);
+                                }
+                                setDropdownOpenSaleId(null);
+                              }}
+                              className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2 rounded-b-lg"
+                            >
+                              <svg
+                                className="w-4 h-4"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                />
+                              </svg>
+                              Xóa hóa đơn
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 );
@@ -1467,11 +1565,6 @@ const SalesManager: React.FC = () => {
     }
   }, [useKeysetMode, pagedSalesData]);
   const { mutateAsync: createSaleAtomicAsync } = useCreateSaleAtomicRepo();
-  const { mutateAsync: updatePartAsync } = useUpdatePartRepo();
-  const { mutateAsync: createInventoryTxAsync } = useCreateInventoryTxRepo();
-  const { mutateAsync: createCashTxAsync } = useCreateCashTxRepo();
-  const { mutateAsync: updatePaymentSourceBalanceAsync } =
-    useUpdatePaymentSourceBalanceRepo();
 
   // Pagination handlers
   const goPrevPage = useCallback(
@@ -1745,7 +1838,20 @@ const SalesManager: React.FC = () => {
     setReceiptId(sale.id);
     setCustomerName(sale.customer.name);
     setCustomerPhone(sale.customer.phone || "");
-    setReceiptItems(sale.items);
+
+    // Normalize items to ensure they have all required fields
+    const normalizedItems: CartItem[] = sale.items.map((item: any) => ({
+      partId: item.partId || item.partid || "",
+      partName: item.partName || item.partname || "",
+      sku: item.sku || "",
+      quantity: item.quantity || 0,
+      sellingPrice:
+        item.sellingPrice || item.sellingprice || (item as any).price || 0,
+      stockSnapshot: item.stockSnapshot || 0,
+      discount: item.discount || 0,
+    }));
+
+    setReceiptItems(normalizedItems);
     setReceiptDiscount(sale.discount || 0);
 
     // Wait for state update then print

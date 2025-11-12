@@ -12,15 +12,19 @@ import {
   ClipboardList,
   HandCoins,
 } from "lucide-react";
+import { useAuth } from "../../contexts/AuthContext";
 import { useAppContext } from "../../contexts/AppContext";
 import type { WorkOrder, Part, WorkOrderPart } from "../../types";
 import { formatCurrency, formatDate } from "../../utils/format";
+import { useCreateWorkOrderAtomicRepo } from "../../hooks/useWorkOrdersRepository";
+import { usePartsRepo } from "../../hooks/usePartsRepository";
+import { showToast } from "../../utils/toast";
 
 type WorkOrderStatus = "Tiếp nhận" | "Đang sửa" | "Đã sửa xong" | "Trả máy";
 
 export default function ServiceManager() {
   const {
-    parts,
+    parts: contextParts,
     customers,
     employees,
     upsertCustomer,
@@ -31,6 +35,12 @@ export default function ServiceManager() {
     workOrders,
     setWorkOrders,
   } = useAppContext();
+
+  // Fetch parts from Supabase
+  const { data: fetchedParts, isLoading: partsLoading } = usePartsRepo();
+
+  // Use fetched parts if available, otherwise use context parts
+  const parts = fetchedParts || contextParts;
 
   const [showModal, setShowModal] = useState(false);
   const [showTemplateModal, setShowTemplateModal] = useState(false);
@@ -599,6 +609,7 @@ export default function ServiceManager() {
             setEditingOrder(undefined);
           }}
           parts={parts}
+          partsLoading={partsLoading}
           customers={customers}
           employees={employees}
           upsertCustomer={upsertCustomer}
@@ -618,6 +629,7 @@ const WorkOrderModal: React.FC<{
   onClose: () => void;
   onSave: (order: WorkOrder) => void;
   parts: Part[];
+  partsLoading: boolean;
   customers: any[];
   employees: any[];
   upsertCustomer: (customer: any) => void;
@@ -630,6 +642,7 @@ const WorkOrderModal: React.FC<{
   onClose,
   onSave,
   parts,
+  partsLoading,
   customers,
   employees,
   upsertCustomer,
@@ -638,6 +651,10 @@ const WorkOrderModal: React.FC<{
   paymentSources,
   currentBranchId,
 }) => {
+  const { profile } = useAuth();
+  const { mutateAsync: createWorkOrderAtomicAsync } =
+    useCreateWorkOrderAtomicRepo();
+
   const [formData, setFormData] = useState<Partial<WorkOrder>>(() => {
     if (order?.id) return order;
     return {
@@ -732,12 +749,16 @@ const WorkOrderModal: React.FC<{
     }
   }, [order]);
 
-  // Filter customers based on search
-  const filteredCustomers = customers.filter(
-    (c) =>
-      c.name.toLowerCase().includes(customerSearch.toLowerCase()) ||
-      c.phone?.toLowerCase().includes(customerSearch.toLowerCase())
-  );
+  // Filter customers based on search - show all if search is empty
+  const filteredCustomers = useMemo(() => {
+    if (!customerSearch.trim()) return customers;
+
+    return customers.filter(
+      (c) =>
+        c.name.toLowerCase().includes(customerSearch.toLowerCase()) ||
+        c.phone?.toLowerCase().includes(customerSearch.toLowerCase())
+    );
+  }, [customers, customerSearch]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -781,7 +802,7 @@ const WorkOrderModal: React.FC<{
   const totalPaid = totalDeposit + totalAdditionalPayment;
   const remainingAmount = Math.max(0, total - totalPaid);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     // Add/update customer
     if (formData.customerName && formData.customerPhone) {
       const existingCustomer = customers.find(
@@ -813,6 +834,51 @@ const WorkOrderModal: React.FC<{
       paymentStatus = "partial";
     }
 
+    // If this is a NEW work order with parts, use atomic RPC
+    if (!order?.id && selectedParts.length > 0) {
+      try {
+        const orderId = `WO-${Date.now()}`;
+
+        const rpcRes = await createWorkOrderAtomicAsync({
+          id: orderId,
+          customerName: formData.customerName || "",
+          customerPhone: formData.customerPhone || "",
+          vehicleModel: formData.vehicleModel || "",
+          licensePlate: formData.licensePlate || "",
+          issueDescription: formData.issueDescription || "",
+          technicianName: formData.technicianName || "",
+          status: formData.status || "Tiếp nhận",
+          laborCost: formData.laborCost || 0,
+          discount: discount,
+          partsUsed: selectedParts,
+          additionalServices:
+            additionalServices.length > 0 ? additionalServices : undefined,
+          total: total,
+          branchId: currentBranchId,
+          paymentStatus: paymentStatus,
+          paymentMethod: formData.paymentMethod,
+          depositAmount: depositAmount > 0 ? depositAmount : undefined,
+          additionalPayment:
+            totalAdditionalPayment > 0 ? totalAdditionalPayment : undefined,
+          totalPaid: totalPaid > 0 ? totalPaid : undefined,
+          remainingAmount: remainingAmount,
+          creationDate: new Date().toISOString(),
+          userId: profile?.id || "unknown",
+        } as any);
+
+        if ((rpcRes as any)?.error) throw (rpcRes as any).error;
+
+        // Close modal after success
+        onClose();
+        showToast.success("Đã tạo phiếu sửa chữa thành công!");
+      } catch (error: any) {
+        console.error("Error creating work order (atomic):", error);
+        showToast.error(error?.message || "Có lỗi khi tạo phiếu sửa chữa");
+      }
+      return;
+    }
+
+    // Otherwise, use old logic for updates or orders without parts
     const finalOrder: WorkOrder = {
       id: formData.id || `WO-${Date.now()}`,
       customerName: formData.customerName || "",
@@ -962,9 +1028,9 @@ const WorkOrderModal: React.FC<{
     });
   }, [parts, currentBranchId]);
 
-  // Filter parts based on search
+  // Filter parts based on search - show all available parts if search is empty
   const filteredParts = useMemo(() => {
-    if (!searchPart.trim()) return [];
+    if (!searchPart.trim()) return availableParts;
 
     return availableParts.filter(
       (p) =>
@@ -1035,35 +1101,33 @@ const WorkOrderModal: React.FC<{
                     />
 
                     {/* Customer Dropdown */}
-                    {showCustomerDropdown &&
-                      customerSearch &&
-                      filteredCustomers.length > 0 && (
-                        <div className="absolute z-10 w-full mt-1 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                          {filteredCustomers.map((customer) => (
-                            <button
-                              key={customer.id}
-                              type="button"
-                              onClick={() => {
-                                setFormData({
-                                  ...formData,
-                                  customerName: customer.name,
-                                  customerPhone: customer.phone,
-                                });
-                                setCustomerSearch(customer.name);
-                                setShowCustomerDropdown(false);
-                              }}
-                              className="w-full text-left px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-600 text-sm border-b border-slate-200 dark:border-slate-600 last:border-0"
-                            >
-                              <div className="font-medium text-slate-900 dark:text-slate-100">
-                                {customer.name}
-                              </div>
-                              <div className="text-xs text-slate-500 dark:text-slate-400">
-                                {customer.phone}
-                              </div>
-                            </button>
-                          ))}
-                        </div>
-                      )}
+                    {showCustomerDropdown && filteredCustomers.length > 0 && (
+                      <div className="absolute z-10 w-full mt-1 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                        {filteredCustomers.map((customer) => (
+                          <button
+                            key={customer.id}
+                            type="button"
+                            onClick={() => {
+                              setFormData({
+                                ...formData,
+                                customerName: customer.name,
+                                customerPhone: customer.phone,
+                              });
+                              setCustomerSearch(customer.name);
+                              setShowCustomerDropdown(false);
+                            }}
+                            className="w-full text-left px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-600 text-sm border-b border-slate-200 dark:border-slate-600 last:border-0"
+                          >
+                            <div className="font-medium text-slate-900 dark:text-slate-100">
+                              {customer.name}
+                            </div>
+                            <div className="text-xs text-slate-500 dark:text-slate-400">
+                              {customer.phone}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                   <button
                     type="button"
@@ -1330,37 +1394,39 @@ const WorkOrderModal: React.FC<{
                   className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
                   autoFocus
                 />
-                {searchPart && (
-                  <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg shadow-lg max-h-60 overflow-y-auto z-10">
-                    {filteredParts.length === 0 ? (
-                      <div className="px-4 py-3 text-sm text-slate-500">
-                        Không tìm thấy phụ tùng
-                      </div>
-                    ) : (
-                      filteredParts.slice(0, 10).map((part) => (
-                        <button
-                          key={part.id}
-                          onClick={() => handleAddPart(part)}
-                          className="w-full px-4 py-2 text-left hover:bg-slate-100 dark:hover:bg-slate-600 flex items-center justify-between"
-                        >
-                          <div>
-                            <div className="text-sm font-medium text-slate-900 dark:text-slate-100">
-                              {part.name}
-                            </div>
-                            <div className="text-xs text-slate-500">
-                              {part.sku}
-                            </div>
+                <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg shadow-lg max-h-60 overflow-y-auto z-10">
+                  {partsLoading ? (
+                    <div className="px-4 py-3 text-sm text-slate-500">
+                      Đang tải phụ tùng...
+                    </div>
+                  ) : filteredParts.length === 0 ? (
+                    <div className="px-4 py-3 text-sm text-slate-500">
+                      Không tìm thấy phụ tùng
+                    </div>
+                  ) : (
+                    filteredParts.slice(0, 10).map((part) => (
+                      <button
+                        key={part.id}
+                        onClick={() => handleAddPart(part)}
+                        className="w-full px-4 py-2 text-left hover:bg-slate-100 dark:hover:bg-slate-600 flex items-center justify-between"
+                      >
+                        <div>
+                          <div className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                            {part.name}
                           </div>
-                          <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                            {formatCurrency(
-                              part.retailPrice[currentBranchId] || 0
-                            )}
+                          <div className="text-xs text-slate-500">
+                            {part.sku}
                           </div>
-                        </button>
-                      ))
-                    )}
-                  </div>
-                )}
+                        </div>
+                        <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                          {formatCurrency(
+                            part.retailPrice[currentBranchId] || 0
+                          )}
+                        </div>
+                      </button>
+                    ))
+                  )}
+                </div>
               </div>
             )}
 

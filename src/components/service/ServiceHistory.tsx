@@ -788,9 +788,10 @@ export const ServiceHistory: React.FC<ServiceHistoryProps> = ({
                   0
                 ) || 0;
 
-              const serviceFee =
+              const servicesTotal =
                 order.additionalServices?.reduce(
-                  (sum: number, s: any) => sum + (s.price || 0),
+                  (sum: number, s: any) =>
+                    sum + (s.price || 0) * (s.quantity || 1),
                   0
                 ) || 0;
 
@@ -863,11 +864,11 @@ export const ServiceHistory: React.FC<ServiceHistoryProps> = ({
                     {/* Column 4: All Price Details */}
                     <div className="w-56">
                       <div className="space-y-1 text-xs text-right mb-3">
-                        {serviceFee > 0 && (
+                        {laborCost > 0 && (
                           <div className="flex justify-between">
-                            <span className="text-slate-500">Phí dịch vụ:</span>
+                            <span className="text-slate-500">Tiền công:</span>
                             <span className="text-slate-300">
-                              {formatCurrency(serviceFee)}
+                              {formatCurrency(laborCost)}
                             </span>
                           </div>
                         )}
@@ -881,13 +882,13 @@ export const ServiceHistory: React.FC<ServiceHistoryProps> = ({
                             </span>
                           </div>
                         )}
-                        {laborCost > 0 && (
+                        {servicesTotal > 0 && (
                           <div className="flex justify-between">
                             <span className="text-slate-500">
                               Giá công/Đặt hàng:
                             </span>
                             <span className="text-slate-300">
-                              {formatCurrency(laborCost)}
+                              {formatCurrency(servicesTotal)}
                             </span>
                           </div>
                         )}
@@ -910,7 +911,7 @@ export const ServiceHistory: React.FC<ServiceHistoryProps> = ({
                         {order.additionalPayment &&
                           order.additionalPayment > 0 && (
                             <div className="flex justify-between text-right text-xs text-green-500">
-                              <span>Thanh toán thêm:</span>
+                              <span>Thanh toán trước:</span>
                               <span>
                                 -{formatCurrency(order.additionalPayment)}
                               </span>
@@ -1402,7 +1403,7 @@ export const ServiceHistory: React.FC<ServiceHistoryProps> = ({
                               fontSize: "10pt",
                             }}
                           >
-                            Giá công/Đặt hàng:
+                            Phí dịch vụ:
                           </td>
                           <td
                             style={{
@@ -1412,6 +1413,32 @@ export const ServiceHistory: React.FC<ServiceHistoryProps> = ({
                             }}
                           >
                             {formatCurrency(printOrder.laborCost || 0)}
+                          </td>
+                        </tr>
+                        <tr>
+                          <td
+                            style={{
+                              fontWeight: "bold",
+                              paddingBottom: "2mm",
+                              fontSize: "10pt",
+                            }}
+                          >
+                            Giá công/Đặt hàng:
+                          </td>
+                          <td
+                            style={{
+                              textAlign: "right",
+                              paddingBottom: "2mm",
+                              fontSize: "10pt",
+                            }}
+                          >
+                            {formatCurrency(
+                              printOrder.additionalServices?.reduce(
+                                (sum: number, s: any) =>
+                                  sum + (s.price || 0) * (s.quantity || 1),
+                                0
+                              ) || 0
+                            )}
                           </td>
                         </tr>
                         <tr style={{ borderTop: "2px solid #333" }}>

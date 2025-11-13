@@ -108,7 +108,9 @@ export default function ServiceManager() {
   // Open modal automatically if navigated from elsewhere with editOrder state
   const location = useLocation();
   useEffect(() => {
-    const state = (location && (location as any).state) as { editOrder?: WorkOrder } | null;
+    const state = (location && (location as any).state) as {
+      editOrder?: WorkOrder;
+    } | null;
     console.log("[ServiceManager] location.state:", state);
     if (state && state.editOrder) {
       setEditingOrder(state.editOrder);
@@ -635,14 +637,15 @@ export default function ServiceManager() {
                       0
                     ) || 0;
 
-                  // Phí dịch vụ = additionalServices cost (if any)
-                  const serviceFee =
+                  // Gia công/Đặt hàng = additionalServices total (price * qty)
+                  const servicesTotal =
                     order.additionalServices?.reduce(
-                      (sum: number, s: any) => sum + (s.price || 0),
+                      (sum: number, s: any) =>
+                        sum + (s.price || 0) * (s.quantity || 1),
                       0
                     ) || 0;
 
-                  // Giá công/Đặt hàng = laborCost
+                  // Phí dịch vụ = laborCost
                   const laborCost = order.laborCost || 0;
 
                   return (
@@ -727,9 +730,9 @@ export default function ServiceManager() {
                         <div className="space-y-1 min-w-[160px] text-xs">
                           {/* Compact summary - inline to save space */}
                           <div className="text-xs text-slate-400 dark:text-slate-500">
-                            {serviceFee > 0 && (
+                            {laborCost > 0 && (
                               <span className="mr-2">
-                                DV: {formatCurrency(serviceFee)}
+                                DV: {formatCurrency(laborCost)}
                               </span>
                             )}
                             {partsCost > 0 && (
@@ -737,9 +740,9 @@ export default function ServiceManager() {
                                 P/tùng: {formatCurrency(partsCost)}
                               </span>
                             )}
-                            {laborCost > 0 && (
+                            {servicesTotal > 0 && (
                               <span className="mr-2">
-                                Công: {formatCurrency(laborCost)}
+                                Công: {formatCurrency(servicesTotal)}
                               </span>
                             )}
                           </div>
@@ -1448,7 +1451,7 @@ export default function ServiceManager() {
                               fontSize: "10pt",
                             }}
                           >
-                            Giá công/Đặt hàng:
+                            Phí dịch vụ:
                           </td>
                           <td
                             style={{
@@ -1460,34 +1463,33 @@ export default function ServiceManager() {
                             {formatCurrency(printOrder.laborCost || 0)}
                           </td>
                         </tr>
-                        {printOrder.additionalServices &&
-                          printOrder.additionalServices.length > 0 && (
-                            <tr>
-                              <td
-                                style={{
-                                  fontWeight: "bold",
-                                  paddingBottom: "2mm",
-                                  fontSize: "10pt",
-                                }}
-                              >
-                                Dịch vụ bổ sung:
-                              </td>
-                              <td
-                                style={{
-                                  textAlign: "right",
-                                  paddingBottom: "2mm",
-                                  fontSize: "10pt",
-                                }}
-                              >
-                                {formatCurrency(
-                                  printOrder.additionalServices.reduce(
-                                    (sum, s) => sum + s.price * s.quantity,
-                                    0
-                                  )
-                                )}
-                              </td>
-                            </tr>
-                          )}
+                        <tr>
+                          <td
+                            style={{
+                              fontWeight: "bold",
+                              paddingBottom: "2mm",
+                              fontSize: "10pt",
+                            }}
+                          >
+                            Giá công/Đặt hàng:
+                          </td>
+                          <td
+                            style={{
+                              textAlign: "right",
+                              paddingBottom: "2mm",
+                              fontSize: "10pt",
+                            }}
+                          >
+                            {formatCurrency(
+                              printOrder.additionalServices?.reduce(
+                                (sum: number, s: any) =>
+                                  sum + (s.price || 0) * (s.quantity || 1),
+                                0
+                              ) || 0
+                            )}
+                          </td>
+                        </tr>
+                        {/* additionalServices aggregated above as Giá công/Đặt hàng */}
                         {printOrder.discount != null &&
                           printOrder.discount > 0 && (
                             <tr>

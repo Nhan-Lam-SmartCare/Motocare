@@ -892,14 +892,16 @@ export const ServiceHistory: React.FC<ServiceHistoryProps> = ({
                             </span>
                           </div>
                         )}
-                        <div className="flex justify-between pt-2 border-t border-slate-700 text-sm">
-                          <span className="text-slate-300 font-bold">
-                            Tổng cộng:
-                          </span>
-                          <span className="text-blue-400 font-bold text-sm">
-                            {formatCurrency(order.total)}
-                          </span>
-                        </div>
+                        {order.total > 0 && (
+                          <div className="flex justify-between pt-2 border-t border-slate-700 text-sm">
+                            <span className="text-slate-300 font-bold">
+                              Tổng cộng:
+                            </span>
+                            <span className="text-blue-400 font-bold text-sm">
+                              {formatCurrency(order.total)}
+                            </span>
+                          </div>
+                        )}
                         {order.discount && order.discount > 0 && (
                           <div className="flex justify-between text-right text-xs">
                             <span className="text-red-500">Giảm giá:</span>

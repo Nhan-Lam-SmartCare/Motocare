@@ -746,14 +746,16 @@ export default function ServiceManager() {
                               </span>
                             )}
                           </div>
-                          <div className="flex items-center justify-between pt-1.5 mt-1.5 border-t border-slate-200 dark:border-slate-600">
-                            <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-                              Tổng cộng:
-                            </span>
-                            <span className="text-sm font-semibold text-blue-500 dark:text-blue-400 tabular-nums">
-                              {formatCurrency(order.total).replace("₫", "")} đ
-                            </span>
-                          </div>
+                          {order.total > 0 && (
+                            <div className="flex items-center justify-between pt-1.5 mt-1.5 border-t border-slate-200 dark:border-slate-600">
+                              <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+                                Tổng cộng:
+                              </span>
+                              <span className="text-sm font-semibold text-blue-500 dark:text-blue-400 tabular-nums">
+                                {formatCurrency(order.total).replace("₫", "")} đ
+                              </span>
+                            </div>
+                          )}
 
                           {/* Optional discount */}
                           {order.discount && order.discount > 0 && (
@@ -1966,37 +1968,16 @@ export default function ServiceManager() {
                       fontSize: "10pt",
                     }}
                   >
-                    {formatCurrency(printOrder.laborCost || 0)}
+                    {formatCurrency(
+                      printOrder.additionalServices?.reduce(
+                        (sum: number, s: any) =>
+                          sum + (s.price || 0) * (s.quantity || 1),
+                        0
+                      ) || 0
+                    )}
                   </td>
                 </tr>
-                {printOrder.additionalServices &&
-                  printOrder.additionalServices.length > 0 && (
-                    <tr>
-                      <td
-                        style={{
-                          fontWeight: "bold",
-                          paddingBottom: "2mm",
-                          fontSize: "10pt",
-                        }}
-                      >
-                        Dịch vụ bổ sung:
-                      </td>
-                      <td
-                        style={{
-                          textAlign: "right",
-                          paddingBottom: "2mm",
-                          fontSize: "10pt",
-                        }}
-                      >
-                        {formatCurrency(
-                          printOrder.additionalServices.reduce(
-                            (sum, s) => sum + s.price * s.quantity,
-                            0
-                          )
-                        )}
-                      </td>
-                    </tr>
-                  )}
+                {/* Dịch vụ bổ sung aggregated above as Giá công/Đặt hàng */}
                 {printOrder.discount != null && printOrder.discount > 0 && (
                   <tr>
                     <td

@@ -73,22 +73,79 @@ export async function createCustomerDebt(
 
     console.log("[debtsRepository] Upserting debt:", newDebt);
 
-    // 🔹 UPSERT by work_order_id, sale_id, or id
-    let conflictKey = "id";
-    if ((debt as any).workOrderId) {
-      conflictKey = "work_order_id,branch_id";
-    } else if ((debt as any).saleId) {
-      conflictKey = "sale_id,branch_id";
+    // 🔹 Use appropriate upsert strategy
+    let upsertResult;
+
+    if ((debt as any).saleId) {
+      // For sale debts, try to upsert by sale_id
+      // First check if a debt already exists for this sale
+      const { data: existing, error: checkError } = await supabase
+        .from("customer_debts")
+        .select("id")
+        .eq("sale_id", (debt as any).saleId)
+        .eq("branch_id", newDebt.branch_id)
+        .maybeSingle();
+
+      if (existing && !checkError) {
+        // Update existing debt
+        console.log(
+          "[debtsRepository] Updating existing sale debt:",
+          existing.id
+        );
+        upsertResult = await supabase
+          .from("customer_debts")
+          .update(newDebt)
+          .eq("id", existing.id)
+          .select()
+          .single();
+      } else {
+        // Insert new debt
+        console.log("[debtsRepository] Inserting new sale debt");
+        upsertResult = await supabase
+          .from("customer_debts")
+          .insert(newDebt)
+          .select()
+          .single();
+      }
+    } else if ((debt as any).workOrderId) {
+      // For work order debts
+      const { data: existing, error: checkError } = await supabase
+        .from("customer_debts")
+        .select("id")
+        .eq("work_order_id", (debt as any).workOrderId)
+        .eq("branch_id", newDebt.branch_id)
+        .maybeSingle();
+
+      if (existing && !checkError) {
+        console.log(
+          "[debtsRepository] Updating existing work order debt:",
+          existing.id
+        );
+        upsertResult = await supabase
+          .from("customer_debts")
+          .update(newDebt)
+          .eq("id", existing.id)
+          .select()
+          .single();
+      } else {
+        console.log("[debtsRepository] Inserting new work order debt");
+        upsertResult = await supabase
+          .from("customer_debts")
+          .insert(newDebt)
+          .select()
+          .single();
+      }
+    } else {
+      // Generic debt - just insert
+      console.log("[debtsRepository] Inserting generic debt");
+      upsertResult = await supabase
+        .from("customer_debts")
+        .insert(newDebt)
+        .select()
+        .single();
     }
 
-    const { data, error } = await supabase
-      .from("customer_debts")
-      .upsert(newDebt, {
-        onConflict: conflictKey,
-        ignoreDuplicates: false,
-      })
-      .select()
-      .single();
+    const { data, error } = upsertResult;
 
     if (error || !data)
       return failure({

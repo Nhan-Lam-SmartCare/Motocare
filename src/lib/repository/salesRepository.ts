@@ -9,17 +9,29 @@ const SALES_TABLE = "sales";
 
 export async function fetchSales(): Promise<RepoResult<Sale[]>> {
   try {
+    // Fetch without join first to avoid FK errors with old data
     const { data, error } = await supabase
       .from(SALES_TABLE)
       .select("*")
       .order("date", { ascending: false });
+
     if (error)
       return failure({
         code: "supabase",
         message: "Không thể tải danh sách hóa đơn",
         cause: error,
       });
-    return success((data || []) as Sale[]);
+
+    // Map database columns to TypeScript interface
+    const salesWithUserName = (data || []).map((sale: any) => ({
+      ...sale,
+      userName: sale.username || "N/A",
+      paymentMethod: sale.paymentmethod || sale.paymentMethod || "cash", // Map lowercase to camelCase
+      userId: sale.userid || sale.userId,
+      branchId: sale.branchid || sale.branchId,
+    }));
+
+    return success(salesWithUserName as Sale[]);
   } catch (e: any) {
     return failure({
       code: "network",
@@ -61,10 +73,12 @@ export async function fetchSalesPaged(
     afterId,
   } = query || {};
   try {
+    // Fetch without join to avoid FK errors with old data
     let builder = supabase
       .from(SALES_TABLE)
       .select("*", { count: "exact" })
       .order("date", { ascending: false });
+
     if (branchId) builder = builder.eq("branchid", branchId);
     if (fromDate) builder = builder.gte("date", fromDate);
     if (toDate) builder = builder.lte("date", toDate);
@@ -72,7 +86,7 @@ export async function fetchSalesPaged(
       // OR filter for id or customer.name (customer->>name JSON path)
       const escaped = search.replace(/[%_]/g, "");
       builder = builder.or(
-        `id.ilike.%${escaped}%,customer->>name.ilike.%${escaped}%`
+        `id.ilike.%${escaped}%,customer->>name.ilike.%${escaped}%,sale_code.ilike.%${escaped}%`
       );
     }
     if (paymentMethod) builder = builder.eq("paymentmethod", paymentMethod);
@@ -105,7 +119,17 @@ export async function fetchSalesPaged(
           message: "Không thể tải danh sách hóa đơn (keyset)",
           cause: error,
         });
-      const rows: Sale[] = (data || []) as Sale[];
+
+      // Map database columns to TypeScript interface
+      const rowsWithUserName = (data || []).map((sale: any) => ({
+        ...sale,
+        userName: sale.username || "N/A",
+        paymentMethod: sale.paymentmethod || sale.paymentMethod || "cash",
+        userId: sale.userid || sale.userId,
+        branchId: sale.branchid || sale.branchId,
+      }));
+      const rows: Sale[] = rowsWithUserName as Sale[];
+
       meta = {
         mode: "keyset",
         pageSize,
@@ -125,6 +149,16 @@ export async function fetchSalesPaged(
           message: "Không thể tải danh sách hóa đơn (phân trang)",
           cause: error,
         });
+
+      // Map database columns to TypeScript interface
+      const salesWithUserName = (data || []).map((sale: any) => ({
+        ...sale,
+        userName: sale.username || "N/A",
+        paymentMethod: sale.paymentmethod || sale.paymentMethod || "cash",
+        userId: sale.userid || sale.userId,
+        branchId: sale.branchid || sale.branchId,
+      }));
+
       const total = count || 0;
       const totalPages = Math.max(1, Math.ceil(total / pageSize));
       meta = {
@@ -135,7 +169,7 @@ export async function fetchSalesPaged(
         totalPages,
         hasMore: page < totalPages,
       };
-      return success((data || []) as Sale[], meta);
+      return success(salesWithUserName as Sale[], meta);
     }
   } catch (e: any) {
     return failure({
@@ -360,36 +394,43 @@ export async function deleteSaleById(
   id: string
 ): Promise<RepoResult<{ id: string }>> {
   try {
-    let oldRow: any = null;
-    try {
-      const resp: any = await supabase
-        .from(SALES_TABLE)
-        .select("*")
-        .eq("id", id)
-        .single();
-      oldRow = resp?.data ?? null;
-    } catch {}
-    // Không fetch được oldRow vẫn tiến hành xóa (audit oldData: null)
-    const { error } = await supabase.from(SALES_TABLE).delete().eq("id", id);
+    // Use atomic delete function that restores inventory
+    const { data, error } = await supabase.rpc("sale_delete_atomic", {
+      p_sale_id: id,
+    });
+
     if (error) {
+      // Map error messages
+      const msg = error.message || "";
+      if (msg.includes("SALE_NOT_FOUND")) {
+        return failure({
+          code: "not_found",
+          message: "Không tìm thấy hóa đơn",
+          cause: error,
+        });
+      }
       return failure({
         code: "supabase",
         message: "Xóa hóa đơn thất bại",
         cause: error,
       });
     }
+
+    // Audit log
     let userId: string | null = null;
     try {
       const { data: userData } = await supabase.auth.getUser();
       userId = userData?.user?.id || null;
     } catch {}
+
     await safeAudit(userId, {
       action: "sale.delete",
       tableName: SALES_TABLE,
       recordId: id,
-      oldData: oldRow,
-      newData: null,
+      oldData: null,
+      newData: data,
     });
+
     return success({ id });
   } catch (e: any) {
     return failure({

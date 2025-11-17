@@ -70,6 +70,7 @@ export interface CartItem {
 
 export interface Sale {
   id: string;
+  sale_code?: string; // Mã phiếu bán hàng (VD: BH-20241117-001)
   date: string; // ISO
   items: CartItem[];
   subtotal: number; // Sum of (sellingPrice * quantity) before discounts

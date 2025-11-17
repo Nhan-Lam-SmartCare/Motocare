@@ -42,12 +42,18 @@ export function useCreateCustomerDebtRepo() {
       }
       return result.data;
     },
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["customer_debts"] });
-      showToast.success("Thêm công nợ thành công!");
+      // Only show toast if not from sale (sale will handle its own toast)
+      if (!(variables as any).saleId) {
+        showToast.success("Thêm công nợ thành công!");
+      }
     },
-    onError: (error: any) => {
-      showToast.error(error?.message || "Có lỗi xảy ra");
+    onError: (error: any, variables) => {
+      // Only show toast if not from sale (sale will handle its own toast)
+      if (!(variables as any).saleId) {
+        showToast.error(error?.message || "Có lỗi xảy ra");
+      }
     },
   });
 }

@@ -96,7 +96,7 @@ const SaleDetailModal: React.FC<SaleDetailModalProps> = ({
                 Mã đơn hàng
               </label>
               <div className="text-base font-semibold text-slate-900 dark:text-slate-100">
-                {formatAnyId(sale.id) || sale.id}
+                {sale.sale_code || formatAnyId(sale.id) || sale.id}
               </div>
             </div>
             <div>
@@ -483,7 +483,7 @@ const EditSaleModal: React.FC<EditSaleModalProps> = ({
         {/* Header */}
         <div className="flex justify-between items-center p-4 border-b border-slate-200 dark:border-slate-700">
           <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">
-            ✏️ [Chỉnh sửa] Đơn Xuất Bán {formatAnyId(sale.id)}
+            ✏️ [Chỉnh sửa] Đơn Xuất Bán {sale.sale_code || formatAnyId(sale.id)}
           </h2>
           <button
             onClick={onClose}
@@ -1044,6 +1044,9 @@ const SalesHistoryModal: React.FC<SalesHistoryModalProps> = ({
       filtered = filtered.filter(
         (sale) =>
           sale.id.toLowerCase().includes(searchText.toLowerCase()) ||
+          (sale.sale_code || "")
+            .toLowerCase()
+            .includes(searchText.toLowerCase()) ||
           sale.customer.name.toLowerCase().includes(searchText.toLowerCase()) ||
           ((sale as any).username || sale.userName || "")
             .toLowerCase()
@@ -1082,339 +1085,396 @@ const SalesHistoryModal: React.FC<SalesHistoryModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-slate-800 rounded-lg w-full max-w-7xl max-h-[95vh] overflow-hidden flex flex-col">
-        {/* Header with time filter and stats */}
-        <div className="p-4 border-b border-slate-200 dark:border-slate-700">
-          <div className="flex items-center justify-between mb-4">
-            {/* Time filter buttons */}
-            <div className="flex gap-2 flex-wrap">
-              <button
-                onClick={() => setActiveTimeFilter("7days")}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  activeTimeFilter === "7days"
-                    ? "bg-blue-600 text-white"
-                    : "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600"
-                }`}
-              >
-                7 ngày qua
-              </button>
-              <button
-                onClick={() => setActiveTimeFilter("week")}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  activeTimeFilter === "week"
-                    ? "bg-blue-600 text-white"
-                    : "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600"
-                }`}
-              >
-                Tuần
-              </button>
-              <button
-                onClick={() => setActiveTimeFilter("month")}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  activeTimeFilter === "month"
-                    ? "bg-blue-600 text-white"
-                    : "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600"
-                }`}
-              >
-                Tháng
-              </button>
-              <button
-                onClick={() => setActiveTimeFilter("30days")}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  activeTimeFilter === "30days"
-                    ? "bg-blue-600 text-white"
-                    : "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600"
-                }`}
-              >
-                30 ngày qua
-              </button>
-              <button
-                onClick={() => setActiveTimeFilter("custom")}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  activeTimeFilter === "custom"
-                    ? "bg-blue-600 text-white"
-                    : "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600"
-                }`}
-              >
-                Tùy chọn
-              </button>
-              <button
-                onClick={() => setActiveTimeFilter("all")}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  activeTimeFilter === "all"
-                    ? "bg-blue-600 text-white"
-                    : "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600"
-                }`}
-              >
-                Tất cả
-              </button>
+    <React.Fragment>
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white dark:bg-slate-800 rounded-lg w-full max-w-7xl max-h-[95vh] overflow-hidden flex flex-col">
+          {/* Header with time filter and stats */}
+          <div className="p-4 border-b border-slate-200 dark:border-slate-700">
+            <div className="flex items-center justify-between mb-4">
+              {/* Time filter buttons */}
+              <div className="flex gap-2 flex-wrap">
+                <button
+                  onClick={() => setActiveTimeFilter("7days")}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    activeTimeFilter === "7days"
+                      ? "bg-blue-600 text-white"
+                      : "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600"
+                  }`}
+                >
+                  7 ngày qua
+                </button>
+                <button
+                  onClick={() => setActiveTimeFilter("week")}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    activeTimeFilter === "week"
+                      ? "bg-blue-600 text-white"
+                      : "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600"
+                  }`}
+                >
+                  Tuần
+                </button>
+                <button
+                  onClick={() => setActiveTimeFilter("month")}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    activeTimeFilter === "month"
+                      ? "bg-blue-600 text-white"
+                      : "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600"
+                  }`}
+                >
+                  Tháng
+                </button>
+                <button
+                  onClick={() => setActiveTimeFilter("30days")}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    activeTimeFilter === "30days"
+                      ? "bg-blue-600 text-white"
+                      : "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600"
+                  }`}
+                >
+                  30 ngày qua
+                </button>
+                <button
+                  onClick={() => setActiveTimeFilter("custom")}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    activeTimeFilter === "custom"
+                      ? "bg-blue-600 text-white"
+                      : "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600"
+                  }`}
+                >
+                  Tùy chọn
+                </button>
+                <button
+                  onClick={() => setActiveTimeFilter("all")}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    activeTimeFilter === "all"
+                      ? "bg-blue-600 text-white"
+                      : "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600"
+                  }`}
+                >
+                  Tất cả
+                </button>
+              </div>
+
+              {/* Search and close */}
+              <div className="flex items-center gap-3">
+                <input
+                  type="text"
+                  value={searchText}
+                  onChange={(e) => setSearchText(e.target.value)}
+                  placeholder="Tìm 1 đơn xuất bán"
+                  className="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 text-sm w-64"
+                />
+                <div className="text-right">
+                  <div className="text-xs text-slate-500 dark:text-slate-400">
+                    Tổng doanh thu:
+                  </div>
+                  <div className="text-lg font-bold text-green-600 dark:text-green-400">
+                    {formatCurrency(totalRevenue)}
+                  </div>
+                </div>
+                <button
+                  onClick={onClose}
+                  className="text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 text-2xl p-2"
+                >
+                  ×
+                </button>
+              </div>
             </div>
 
-            {/* Search and close */}
-            <div className="flex items-center gap-3">
-              <input
-                type="text"
-                value={searchText}
-                onChange={(e) => setSearchText(e.target.value)}
-                placeholder="Tìm 1 đơn xuất bán"
-                className="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 text-sm w-64"
-              />
-              <div className="text-right">
-                <div className="text-xs text-slate-500 dark:text-slate-400">
-                  Tổng doanh thu:
-                </div>
-                <div className="text-lg font-bold text-green-600 dark:text-green-400">
-                  {formatCurrency(totalRevenue)}
-                </div>
+            {/* Custom date range picker */}
+            {activeTimeFilter === "custom" && (
+              <div className="flex items-center gap-3 mt-3">
+                <span className="text-sm text-slate-600 dark:text-slate-400">
+                  Từ:
+                </span>
+                <input
+                  type="date"
+                  value={customStartDate}
+                  onChange={(e) => setCustomStartDate(e.target.value)}
+                  className="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 text-sm"
+                />
+                <span className="text-sm text-slate-600 dark:text-slate-400">
+                  Đến:
+                </span>
+                <input
+                  type="date"
+                  value={customEndDate}
+                  onChange={(e) => setCustomEndDate(e.target.value)}
+                  className="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 text-sm"
+                />
               </div>
-              <button
-                onClick={onClose}
-                className="text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 text-2xl p-2"
-              >
-                ×
-              </button>
-            </div>
+            )}
           </div>
 
-          {/* Custom date range picker */}
-          {activeTimeFilter === "custom" && (
-            <div className="flex items-center gap-3 mt-3">
-              <span className="text-sm text-slate-600 dark:text-slate-400">
-                Từ:
-              </span>
-              <input
-                type="date"
-                value={customStartDate}
-                onChange={(e) => setCustomStartDate(e.target.value)}
-                className="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 text-sm"
-              />
-              <span className="text-sm text-slate-600 dark:text-slate-400">
-                Đến:
-              </span>
-              <input
-                type="date"
-                value={customEndDate}
-                onChange={(e) => setCustomEndDate(e.target.value)}
-                className="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 text-sm"
-              />
-            </div>
-          )}
-        </div>
+          {/* Sales list */}
+          <div className="flex-1 overflow-y-auto">
+            {filteredSales.length === 0 ? (
+              <div className="text-center py-12 text-slate-400">
+                Không có hóa đơn nào
+              </div>
+            ) : (
+              <div className="divide-y divide-slate-200 dark:divide-slate-700">
+                {filteredSales.map((sale) => {
+                  const saleDate = new Date(sale.date);
+                  const subtotal = sale.items.reduce(
+                    (sum, item) =>
+                      sum + item.quantity * (item as any).sellingPrice,
+                    0
+                  );
+                  const paidAmount = sale.total; // Assume fully paid if no debt info
+                  const hasDebt = false; // TODO: Check if this sale has associated debt
 
-        {/* Sales list */}
-        <div className="flex-1 overflow-y-auto">
-          {filteredSales.length === 0 ? (
-            <div className="text-center py-12 text-slate-400">
-              Không có hóa đơn nào
-            </div>
-          ) : (
-            <div className="divide-y divide-slate-200 dark:divide-slate-700">
-              {filteredSales.map((sale) => {
-                const saleDate = new Date(sale.date);
-                const itemsText = sale.items
-                  .map(
-                    (item) =>
-                      `${item.quantity} x ${item.partName} (${formatCurrency(
-                        (item as any).sellingPrice || 0
-                      )})`
-                  )
-                  .join("\n");
-
-                return (
-                  <div
-                    key={sale.id}
-                    className="p-4 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors flex items-center gap-4"
-                  >
-                    {/* Checkbox */}
-                    <input
-                      type="checkbox"
-                      className="w-4 h-4 rounded border-slate-300"
-                    />
-
-                    {/* Date */}
-                    <div className="w-32 flex-shrink-0">
-                      <div className="text-sm font-medium text-slate-900 dark:text-slate-100">
-                        {saleDate.getDate()}-{saleDate.getMonth() + 1}-
-                        {saleDate.getFullYear()}
-                      </div>
-                      <div className="text-xs text-slate-500">
-                        {saleDate.getHours()}:
-                        {String(saleDate.getMinutes()).padStart(2, "0")}{" "}
-                        {saleDate.getDate()}-{saleDate.getMonth() + 1}-
-                        {saleDate.getFullYear()}
-                      </div>
-                    </div>
-
-                    {/* Customer */}
-                    <div className="w-40 flex-shrink-0">
-                      <div className="text-sm text-slate-900 dark:text-slate-100">
-                        {sale.customer?.name || "Khách vãng lai"}
-                      </div>
-                    </div>
-
-                    {/* Items content */}
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm text-slate-700 dark:text-slate-300 space-y-1">
-                        {sale.items.map((item, idx) => (
-                          <div key={idx} className="truncate">
-                            {item.quantity} x {item.partName}
-                            <span className="text-slate-400 text-xs ml-1">
-                              ({formatCurrency((item as any).sellingPrice || 0)}
-                              )
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                      <div className="text-xs text-blue-600 dark:text-blue-400 mt-1">
-                        NV Bán hàng:{" "}
-                        {(sale as any).username || sale.userName || "Không rõ"}
-                      </div>
-                    </div>
-
-                    {/* Revenue */}
-                    <div className="w-32 flex-shrink-0 text-right">
-                      <div className="text-base font-semibold text-slate-900 dark:text-slate-100">
-                        {formatCurrency(sale.total)}
-                      </div>
-                    </div>
-
-                    {/* Actions */}
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      <button
-                        onClick={() => {
-                          setSelectedSale(sale);
-                          setShowEditModal(true);
-                        }}
-                        className="p-2 text-slate-400 hover:text-amber-600 dark:hover:text-amber-400"
-                        title="Chỉnh sửa đơn hàng"
-                      >
-                        <svg
-                          className="w-5 h-5"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                  return (
+                    <div
+                      key={sale.id}
+                      className="p-4 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
+                    >
+                      <div className="grid grid-cols-12 gap-4 items-start">
+                        {/* Checkbox */}
+                        <div className="col-span-1 flex items-start pt-1">
+                          <input
+                            type="checkbox"
+                            className="w-4 h-4 rounded border-slate-300"
                           />
-                        </svg>
-                      </button>
-                      <div className="relative dropdown-menu-container">
-                        <button
-                          onClick={() =>
-                            setDropdownOpenSaleId(
-                              dropdownOpenSaleId === sale.id ? null : sale.id
-                            )
-                          }
-                          className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
-                          title="Thêm tùy chọn"
-                        >
-                          <svg
-                            className="w-5 h-5"
-                            fill="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <circle cx="12" cy="5" r="2" />
-                            <circle cx="12" cy="12" r="2" />
-                            <circle cx="12" cy="19" r="2" />
-                          </svg>
-                        </button>
-                        {dropdownOpenSaleId === sale.id && (
-                          <div className="absolute right-0 mt-1 w-48 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 z-50">
-                            <button
-                              onClick={() => {
-                                onPrintReceipt(sale);
-                                setDropdownOpenSaleId(null);
-                              }}
-                              className="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2 rounded-t-lg"
-                            >
-                              <svg
-                                className="w-4 h-4"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"
-                                />
-                              </svg>
-                              In lại hóa đơn
-                            </button>
-                            <button
-                              onClick={() => {
-                                setSelectedSale(sale);
-                                setShowDetailModal(true);
-                                setDropdownOpenSaleId(null);
-                              }}
-                              className="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2"
-                            >
-                              <svg
-                                className="w-4 h-4"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                                />
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                                />
-                              </svg>
-                              Xem chi tiết
-                            </button>
-                            <button
-                              onClick={() => {
-                                if (onDeleteSale) {
-                                  onDeleteSale(sale.id);
-                                }
-                                setDropdownOpenSaleId(null);
-                              }}
-                              className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2 rounded-b-lg"
-                            >
-                              <svg
-                                className="w-4 h-4"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                                />
-                              </svg>
-                              Xóa hóa đơn
-                            </button>
+                        </div>
+
+                        {/* Cột 1: Mã Phiếu + Thông tin */}
+                        <div className="col-span-2">
+                          <div className="space-y-1">
+                            {sale.sale_code && (
+                              <div className="text-sm font-bold text-blue-600 dark:text-blue-400">
+                                {sale.sale_code}
+                              </div>
+                            )}
+                            <div className="text-xs text-slate-500 dark:text-slate-400">
+                              {saleDate.getDate()}/{saleDate.getMonth() + 1}/
+                              {saleDate.getFullYear()}{" "}
+                              {String(saleDate.getHours()).padStart(2, "0")}:
+                              {String(saleDate.getMinutes()).padStart(2, "0")}
+                            </div>
+                            <div className="text-xs text-slate-600 dark:text-slate-300">
+                              <span className="font-medium">NV:</span>{" "}
+                              {sale.userName || (sale as any).username || "N/A"}
+                            </div>
                           </div>
-                        )}
+                        </div>
+
+                        {/* Cột 2: Khách hàng */}
+                        <div className="col-span-2">
+                          <div className="space-y-1">
+                            <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                              {sale.customer?.name || "Khách vãng lai"}
+                            </div>
+                            {sale.customer?.phone && (
+                              <div className="text-xs text-slate-500 dark:text-slate-400">
+                                📞 {sale.customer.phone}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Cột 3: Chi tiết sản phẩm */}
+                        <div className="col-span-4">
+                          <div className="space-y-1">
+                            {sale.items.map((item, idx) => (
+                              <div
+                                key={idx}
+                                className="text-xs text-slate-700 dark:text-slate-300"
+                              >
+                                <span className="font-medium">
+                                  {item.quantity} x
+                                </span>{" "}
+                                {item.partName}
+                                <span className="text-slate-400 ml-1">
+                                  (
+                                  {formatCurrency(
+                                    (item as any).sellingPrice || 0
+                                  )}
+                                  )
+                                </span>
+                                {" = "}
+                                <span className="font-semibold text-slate-900 dark:text-slate-100">
+                                  {formatCurrency(
+                                    item.quantity *
+                                      ((item as any).sellingPrice || 0)
+                                  )}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Cột 4: Thông tin thanh toán */}
+                        <div className="col-span-2">
+                          <div className="space-y-1">
+                            <div className="text-xs text-slate-600 dark:text-slate-400">
+                              Tổng tiền:
+                            </div>
+                            <div className="text-base font-bold text-slate-900 dark:text-slate-100">
+                              {formatCurrency(sale.total)}
+                            </div>
+
+                            {/* Payment status - will be enhanced when we have debt info */}
+                            <div className="mt-2">
+                              <div
+                                className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium ${
+                                  hasDebt
+                                    ? "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300"
+                                    : "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300"
+                                }`}
+                              >
+                                {hasDebt ? "⚠️ Còn nợ" : "✓ Đã thanh toán"}
+                              </div>
+                            </div>
+
+                            <div className="text-xs text-slate-500 mt-1">
+                              {sale.paymentMethod === "cash"
+                                ? "💵 Tiền mặt"
+                                : "🏦 Chuyển khoản"}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="col-span-1 flex items-start justify-end gap-2 pt-1">
+                          <button
+                            onClick={() => {
+                              setSelectedSale(sale);
+                              setShowEditModal(true);
+                            }}
+                            className="p-1.5 text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 transition-colors"
+                            title="Chỉnh sửa"
+                          >
+                            <svg
+                              className="w-4 h-4"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                              />
+                            </svg>
+                          </button>
+                          <div className="relative dropdown-menu-container">
+                            <button
+                              onClick={() =>
+                                setDropdownOpenSaleId(
+                                  dropdownOpenSaleId === sale.id
+                                    ? null
+                                    : sale.id
+                                )
+                              }
+                              className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+                              title="Tùy chọn"
+                            >
+                              <svg
+                                className="w-4 h-4"
+                                fill="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <circle cx="12" cy="5" r="2" />
+                                <circle cx="12" cy="12" r="2" />
+                                <circle cx="12" cy="19" r="2" />
+                              </svg>
+                            </button>
+                            {dropdownOpenSaleId === sale.id && (
+                              <div className="absolute right-0 mt-1 w-48 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 z-50">
+                                <button
+                                  onClick={() => {
+                                    onPrintReceipt(sale);
+                                    setDropdownOpenSaleId(null);
+                                  }}
+                                  className="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2 rounded-t-lg"
+                                >
+                                  <svg
+                                    className="w-4 h-4"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"
+                                    />
+                                  </svg>
+                                  In lại hóa đơn
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setSelectedSale(sale);
+                                    setShowDetailModal(true);
+                                    setDropdownOpenSaleId(null);
+                                  }}
+                                  className="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2"
+                                >
+                                  <svg
+                                    className="w-4 h-4"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                                    />
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                                    />
+                                  </svg>
+                                  Xem chi tiết
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    if (onDeleteSale) {
+                                      onDeleteSale(sale.id);
+                                    }
+                                    setDropdownOpenSaleId(null);
+                                  }}
+                                  className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2 rounded-b-lg"
+                                >
+                                  <svg
+                                    className="w-4 h-4"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                    />
+                                  </svg>
+                                  Xóa hóa đơn
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
 
-        {/* Footer with pagination */}
-        <div className="p-4 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between">
-          <div className="text-sm text-slate-600 dark:text-slate-400">
-            Hiển thị {filteredSales.length} đơn hàng
+          {/* Footer with pagination */}
+          <div className="p-4 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between">
+            <div className="text-sm text-slate-600 dark:text-slate-400">
+              Hiển thị {filteredSales.length} đơn hàng
+            </div>
           </div>
         </div>
       </div>
@@ -1494,7 +1554,7 @@ const SalesHistoryModal: React.FC<SalesHistoryModalProps> = ({
           }
         }}
       />
-    </div>
+    </React.Fragment>
   );
 };
 
@@ -1894,7 +1954,9 @@ const SalesManager: React.FC = () => {
     if (!printSale) return;
 
     // Set receipt data for hidden element
-    setReceiptId(formatAnyId(printSale.id) || printSale.id);
+    setReceiptId(
+      printSale.sale_code || formatAnyId(printSale.id) || printSale.id
+    );
     setCustomerName(printSale.customer.name);
     setCustomerPhone(printSale.customer.phone || "");
 
@@ -1922,7 +1984,7 @@ const SalesManager: React.FC = () => {
 
   // Handle delete sale
   const { profile } = useAuth();
-  const handleDeleteSale = (saleId: string) => {
+  const handleDeleteSale = async (saleId: string) => {
     if (!canDo(profile?.role, "sale.delete")) {
       showToast.error("Bạn không có quyền xóa hóa đơn");
       return;
@@ -1932,18 +1994,35 @@ const SalesManager: React.FC = () => {
     ) {
       return;
     }
-    // Try to capture old sale data for audit (best effort)
-    const oldSale = repoSales.find((s) => s.id === saleId) || null;
-    deleteSale(saleId);
-    showToast.success("Đã xóa hóa đơn thành công!");
-    // Best-effort audit log (non-blocking)
-    void safeAudit(profile?.id || null, {
-      action: "sale.delete",
-      tableName: "sales",
-      recordId: saleId,
-      oldData: oldSale,
-      newData: null,
-    });
+
+    try {
+      // Import deleteSaleById directly
+      const { deleteSaleById } = await import(
+        "../../lib/repository/salesRepository"
+      );
+      const result = await deleteSaleById(saleId);
+
+      if (!result.ok) {
+        showToast.error(result.error?.message || "Xóa hóa đơn thất bại!");
+        return;
+      }
+
+      // Invalidate and refetch sales query
+      queryClient.invalidateQueries({ queryKey: ["sales"] });
+      showToast.success("Đã xóa hóa đơn thành công!");
+
+      // Best-effort audit log (non-blocking)
+      void safeAudit(profile?.id || null, {
+        action: "sale.delete",
+        tableName: "sales",
+        recordId: saleId,
+        oldData: null,
+        newData: null,
+      });
+    } catch (error) {
+      showToast.error("Xóa hóa đơn thất bại!");
+      console.error("Delete sale error:", error);
+    }
   };
 
   // Handle edit sale (reopen in cart)
@@ -2051,9 +2130,9 @@ const SalesManager: React.FC = () => {
       const safeCustomerName =
         sale.customer.name?.trim() || sale.customer.phone || "Khách lẻ";
 
-      // Tạo nội dung chi tiết từ hóa đơn bán hàng
-      const saleNumber = sale.id.split("-").pop() || "";
-      let description = `Bán hàng - Hóa đơn #${saleNumber}`;
+      // Tạo nội dung chi tiết từ hóa đơn bán hàng - dùng sale_code thay vì UUID
+      const saleCode = sale.sale_code || sale.id;
+      let description = `Bán hàng - Hóa đơn ${saleCode}`;
 
       // Danh sách sản phẩm đã mua
       if (sale.items && sale.items.length > 0) {
@@ -2103,13 +2182,23 @@ const SalesManager: React.FC = () => {
       const result = await createCustomerDebt.mutateAsync(payload as any);
       console.log("[SalesManager] createCustomerDebt result:", result);
       showToast.success(
-        `Đã tạo công nợ ${formatCurrency(remainingAmount)} (Mã: ${
-          result?.id || "N/A"
-        })`
+        `Đã tạo công nợ ${formatCurrency(
+          remainingAmount
+        )} cho ${safeCustomerName}`
       );
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error creating customer debt:", error);
-      showToast.error("Không thể tạo công nợ tự động");
+      // Log chi tiết error để debug
+      console.error("Error details:", {
+        message: error?.message,
+        cause: error?.cause,
+        stack: error?.stack,
+      });
+      showToast.error(
+        `Không thể tạo công nợ tự động: ${
+          error?.message || "Lỗi không xác định"
+        }`
+      );
     }
   };
 
@@ -2215,20 +2304,69 @@ const SalesManager: React.FC = () => {
 
       const remainingAmount = total - paidAmount;
 
+      console.log("[SalesManager] Payment details:", {
+        paymentType,
+        total,
+        paidAmount,
+        partialAmount,
+        remainingAmount,
+        hasCustomer: !!(selectedCustomer || customerName || customerPhone),
+      });
+
       // Create customer debt if there's remaining amount
-      if (
-        remainingAmount > 0 &&
-        (selectedCustomer || customerName || customerPhone)
-      ) {
-        const saleData = (rpcRes as any)?.sale || {
-          id: saleId,
-          items: cartItems,
-          discount: orderDiscount + lineDiscounts,
-          total: total,
-          customer: customerObj,
-          paymentmethod: paymentMethod,
-          username: profile?.email || profile?.full_name || "Local User",
-        };
+      if (remainingAmount > 0) {
+        console.log("[SalesManager] Creating debt because remaining > 0");
+
+        // Fetch the newly created sale to get the sale_code (generated by trigger)
+        const { data: createdSale, error: fetchError } = await supabase
+          .from("sales")
+          .select(
+            `
+            *,
+            user:userid(
+              full_name,
+              display_name,
+              email
+            )
+          `
+          )
+          .eq("id", saleId)
+          .single();
+
+        if (fetchError) {
+          console.error("[SalesManager] Error fetching sale:", fetchError);
+        }
+
+        // Map user info to userName
+        const saleWithUserName = createdSale
+          ? {
+              ...createdSale,
+              userName:
+                createdSale.user?.full_name ||
+                createdSale.user?.display_name ||
+                createdSale.user?.email ||
+                "N/A",
+            }
+          : null;
+
+        const saleData: Sale =
+          saleWithUserName ||
+          ({
+            id: saleId,
+            sale_code: undefined,
+            date: new Date().toISOString(),
+            items: cartItems,
+            subtotal: subtotal,
+            discount: orderDiscount + lineDiscounts,
+            total: total,
+            customer: customerObj,
+            paymentMethod: paymentMethod,
+            userName: profile?.email || profile?.full_name || "Local User",
+            userId: profile?.id || "",
+            branchId: currentBranchId || "",
+          } as Sale);
+
+        console.log("[SalesManager] Sale data for debt:", saleData);
 
         await createCustomerDebtIfNeeded(
           saleData,
@@ -2236,6 +2374,8 @@ const SalesManager: React.FC = () => {
           total,
           paidAmount
         );
+      } else {
+        console.log("[SalesManager] No debt needed, paid in full");
       }
 
       // Clear form

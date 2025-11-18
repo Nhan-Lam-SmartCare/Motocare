@@ -4677,7 +4677,9 @@ const WorkOrderModal: React.FC<{
                   <div className="mt-3 space-y-2">
                     <div className="flex items-center justify-between">
                       <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
-                        {customerVehicles.length > 0 ? 'Chọn xe' : 'Xe của khách hàng'}
+                        {customerVehicles.length > 0
+                          ? "Chọn xe"
+                          : "Xe của khách hàng"}
                         {customerVehicles.length > 0 && (
                           <span className="text-xs text-slate-500 ml-1">
                             ({customerVehicles.length} xe)
@@ -4693,59 +4695,59 @@ const WorkOrderModal: React.FC<{
                         + Thêm xe
                       </button>
                     </div>
-                    
+
                     {customerVehicles.length > 0 ? (
                       <div className="space-y-2">
-                      {customerVehicles.map((vehicle: Vehicle) => {
-                        const isSelected = formData.vehicleId === vehicle.id;
-                        const isPrimary = vehicle.isPrimary;
+                        {customerVehicles.map((vehicle: Vehicle) => {
+                          const isSelected = formData.vehicleId === vehicle.id;
+                          const isPrimary = vehicle.isPrimary;
 
-                        return (
-                          <button
-                            key={vehicle.id}
-                            type="button"
-                            onClick={() => handleSelectVehicle(vehicle)}
-                            className={`w-full text-left px-3 py-2.5 rounded-lg border-2 transition-all ${
-                              isSelected
-                                ? "border-blue-500 bg-blue-50 dark:bg-blue-900/30"
-                                : "border-slate-200 dark:border-slate-600 hover:border-blue-300 dark:hover:border-blue-700 bg-white dark:bg-slate-700"
-                            }`}
-                          >
-                            <div className="flex items-center gap-2">
-                              {isPrimary && (
-                                <span
-                                  className="text-yellow-500"
-                                  title="Xe chính"
-                                >
-                                  ⭐
-                                </span>
-                              )}
-                              <div className="flex-1">
-                                <div className="font-medium text-sm text-slate-900 dark:text-slate-100">
-                                  {vehicle.model}
+                          return (
+                            <button
+                              key={vehicle.id}
+                              type="button"
+                              onClick={() => handleSelectVehicle(vehicle)}
+                              className={`w-full text-left px-3 py-2.5 rounded-lg border-2 transition-all ${
+                                isSelected
+                                  ? "border-blue-500 bg-blue-50 dark:bg-blue-900/30"
+                                  : "border-slate-200 dark:border-slate-600 hover:border-blue-300 dark:hover:border-blue-700 bg-white dark:bg-slate-700"
+                              }`}
+                            >
+                              <div className="flex items-center gap-2">
+                                {isPrimary && (
+                                  <span
+                                    className="text-yellow-500"
+                                    title="Xe chính"
+                                  >
+                                    ⭐
+                                  </span>
+                                )}
+                                <div className="flex-1">
+                                  <div className="font-medium text-sm text-slate-900 dark:text-slate-100">
+                                    {vehicle.model}
+                                  </div>
+                                  <div className="text-xs font-mono text-slate-600 dark:text-slate-400 mt-0.5">
+                                    {vehicle.licensePlate}
+                                  </div>
                                 </div>
-                                <div className="text-xs font-mono text-slate-600 dark:text-slate-400 mt-0.5">
-                                  {vehicle.licensePlate}
-                                </div>
+                                {isSelected && (
+                                  <svg
+                                    className="w-5 h-5 text-blue-500"
+                                    fill="currentColor"
+                                    viewBox="0 0 20 20"
+                                  >
+                                    <path
+                                      fillRule="evenodd"
+                                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                      clipRule="evenodd"
+                                    />
+                                  </svg>
+                                )}
                               </div>
-                              {isSelected && (
-                                <svg
-                                  className="w-5 h-5 text-blue-500"
-                                  fill="currentColor"
-                                  viewBox="0 0 20 20"
-                                >
-                                  <path
-                                    fillRule="evenodd"
-                                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                                    clipRule="evenodd"
-                                  />
-                                </svg>
-                              )}
-                            </div>
-                          </button>
-                        );
-                      })}
-                    </div>
+                            </button>
+                          );
+                        })}
+                      </div>
                     ) : (
                       <div className="text-center py-4 px-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg border border-dashed border-slate-300 dark:border-slate-600">
                         <p className="text-sm text-slate-500 dark:text-slate-400">

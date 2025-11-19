@@ -52,8 +52,6 @@ export function ServiceManagerMobile({
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [showFilterPopup, setShowFilterPopup] = useState(false);
-  const [kpiPage, setKpiPage] = useState(0); // 0: Trạng thái, 1: Tài chính
-  const [swipedCardId, setSwipedCardId] = useState<string | null>(null);
 
   // Calculate KPIs
   const kpis = useMemo(() => {
@@ -142,233 +140,163 @@ export function ServiceManagerMobile({
 
   return (
     <div className="md:hidden flex flex-col h-screen bg-[#151521]">
-      {/* TOP BAR (HEADER) */}
-      <div className="flex items-center justify-between px-4 py-3 bg-[#151521] border-b border-gray-800">
-        <button className="p-2 hover:bg-[#1e1e2d] rounded-lg transition-colors">
-          <Menu className="w-6 h-6 text-white" />
-        </button>
-        <div className="flex items-center gap-2">
-          <div className="w-10 h-10 bg-gradient-to-br from-[#009ef7] to-[#0077b6] rounded-xl flex items-center justify-center">
-            <Wrench className="w-5 h-5 text-white" />
-          </div>
-          <span className="text-lg font-semibold text-white">Sửa chữa</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <button className="p-2 hover:bg-[#1e1e2d] rounded-lg transition-colors relative">
-            <Bell className="w-5 h-5 text-white" />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full"></span>
-          </button>
-          <button className="p-2 hover:bg-[#1e1e2d] rounded-lg transition-colors">
-            <Settings className="w-5 h-5 text-white" />
-          </button>
-        </div>
-      </div>
-
-      {/* KHỐI KPI TỔNG QUAN - CAROUSEL WITH PAGINATION */}
+      {/* KPI DASHBOARD - Single Row Scroll */}
       <div className="bg-[#1e1e2d] border-b border-gray-800">
-        <div className="relative overflow-hidden">
-          <div
-            className="flex transition-transform duration-300 ease-out"
-            style={{ transform: `translateX(-${kpiPage * 100}%)` }}
-          >
-            {/* Page 1: Trạng thái công việc */}
-            <div className="w-full flex-shrink-0 p-3">
-              <div className="grid grid-cols-3 gap-2">
-                {/* Tiếp nhận */}
-                <div className="bg-gradient-to-br from-[#009ef7] to-[#0077b6] rounded-xl p-3 shadow-lg">
-                  <div className="flex justify-center mb-2">
-                    <FileText className="w-6 h-6 text-white" />
-                  </div>
-                  <div className="text-2xl font-bold text-white text-center mb-1">
-                    {kpis.tiepNhan}
-                  </div>
-                  <div className="text-xs text-white/80 text-center">
-                    Tiếp nhận
-                  </div>
-                </div>
-
-                {/* Đang sửa */}
-                <div className="bg-gradient-to-br from-[#f1416c] to-[#d11a4e] rounded-xl p-3 shadow-lg">
-                  <div className="flex justify-center mb-2">
-                    <Wrench className="w-6 h-6 text-white" />
-                  </div>
-                  <div className="text-2xl font-bold text-white text-center mb-1">
-                    {kpis.dangSua}
-                  </div>
-                  <div className="text-xs text-white/80 text-center">
-                    Đang sửa
-                  </div>
-                </div>
-
-                {/* Đã xong */}
-                <div className="bg-gradient-to-br from-[#50cd89] to-[#39a96a] rounded-xl p-3 shadow-lg">
-                  <div className="flex justify-center mb-2">
-                    <Check className="w-6 h-6 text-white" />
-                  </div>
-                  <div className="text-2xl font-bold text-white text-center mb-1">
-                    {kpis.daHoanThanh}
-                  </div>
-                  <div className="text-xs text-white/80 text-center">
-                    Đã xong
-                  </div>
-                </div>
+        <div className="overflow-x-auto scrollbar-hide">
+          <div className="flex gap-3 p-3 min-w-max">
+            {/* Tiếp nhận */}
+            <div className="flex-shrink-0 w-36 bg-gradient-to-br from-[#009ef7] to-[#0077b6] rounded-2xl p-4 shadow-lg">
+              <div className="flex justify-center mb-3">
+                <FileText className="w-8 h-8 text-white" />
+              </div>
+              <div className="text-3xl font-bold text-white text-center mb-2">
+                {kpis.tiepNhan}
+              </div>
+              <div className="text-sm text-white/90 text-center font-medium">
+                Tiếp nhận
               </div>
             </div>
 
-            {/* Page 2: Hiệu suất tài chính */}
-            <div className="w-full flex-shrink-0 p-3">
-              <div className="grid grid-cols-2 gap-2">
-                {/* Doanh thu hôm nay */}
-                <div className="bg-[#2b2b40] rounded-xl p-4 border border-emerald-500/20">
-                  <div className="flex items-center gap-2 mb-2">
-                    <TrendingUp className="w-5 h-5 text-emerald-500" />
-                    <span className="text-xs text-gray-400">
-                      Doanh thu hôm nay
-                    </span>
-                  </div>
-                  <div className="text-xl font-bold text-white mb-1">
-                    {formatCurrency(kpis.doanhThu)}
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <div className="flex-1 h-1 bg-gray-700 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-emerald-500 rounded-full"
-                        style={{ width: "75%" }}
-                      ></div>
-                    </div>
-                    <span className="text-xs text-emerald-500">+15%</span>
-                  </div>
-                </div>
+            {/* Đang sửa */}
+            <div className="flex-shrink-0 w-36 bg-gradient-to-br from-[#f1416c] to-[#d11a4e] rounded-2xl p-4 shadow-lg">
+              <div className="flex justify-center mb-3">
+                <Wrench className="w-8 h-8 text-white" />
+              </div>
+              <div className="text-3xl font-bold text-white text-center mb-2">
+                {kpis.dangSua}
+              </div>
+              <div className="text-sm text-white/90 text-center font-medium">
+                Đang sửa
+              </div>
+            </div>
 
-                {/* Lợi nhuận hôm nay */}
-                <div className="bg-[#2b2b40] rounded-xl p-4 border border-cyan-500/20">
-                  <div className="flex items-center gap-2 mb-2">
-                    <DollarSign className="w-5 h-5 text-cyan-500" />
-                    <span className="text-xs text-gray-400">
-                      Lợi nhuận hôm nay
-                    </span>
-                  </div>
-                  <div className="text-xl font-bold text-white mb-1">
-                    {formatCurrency(kpis.loiNhuan)}
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <div className="flex-1 h-1 bg-gray-700 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-cyan-500 rounded-full"
-                        style={{ width: "60%" }}
-                      ></div>
-                    </div>
-                    <span className="text-xs text-cyan-500">+12%</span>
-                  </div>
-                </div>
+            {/* Đã xong */}
+            <div className="flex-shrink-0 w-36 bg-gradient-to-br from-[#50cd89] to-[#39a96a] rounded-2xl p-4 shadow-lg">
+              <div className="flex justify-center mb-3">
+                <Check className="w-8 h-8 text-white" />
+              </div>
+              <div className="text-3xl font-bold text-white text-center mb-2">
+                {kpis.daHoanThanh}
+              </div>
+              <div className="text-sm text-white/90 text-center font-medium">
+                Đã xong
+              </div>
+            </div>
+
+            {/* Doanh thu */}
+            <div className="flex-shrink-0 w-40 bg-[#2b2b40] rounded-2xl p-4 border-2 border-emerald-500/30">
+              <div className="flex justify-center mb-2">
+                <TrendingUp className="w-7 h-7 text-emerald-500" />
+              </div>
+              <div className="text-lg font-bold text-white text-center mb-1">
+                {formatCurrency(kpis.doanhThu)}
+              </div>
+              <div className="text-xs text-gray-400 text-center">
+                Doanh thu hôm nay
+              </div>
+            </div>
+
+            {/* Lợi nhuận */}
+            <div className="flex-shrink-0 w-40 bg-[#2b2b40] rounded-2xl p-4 border-2 border-cyan-500/30">
+              <div className="flex justify-center mb-2">
+                <DollarSign className="w-7 h-7 text-cyan-500" />
+              </div>
+              <div className="text-lg font-bold text-white text-center mb-1">
+                {formatCurrency(kpis.loiNhuan)}
+              </div>
+              <div className="text-xs text-gray-400 text-center">
+                Lợi nhuận hôm nay
               </div>
             </div>
           </div>
         </div>
-
-        {/* Pagination Dots */}
-        <div className="flex justify-center gap-2 pb-3">
-          {[0, 1].map((page) => (
-            <button
-              key={page}
-              onClick={() => setKpiPage(page)}
-              className={`h-1.5 rounded-full transition-all ${
-                kpiPage === page
-                  ? "w-6 bg-[#009ef7]"
-                  : "w-1.5 bg-gray-600 hover:bg-gray-500"
-              }`}
-            />
-          ))}
-        </div>
       </div>
 
-      {/* KHỐI B: STICKY SEARCH HEADER */}
-      <div className="sticky top-0 z-40 bg-[#1e1e2d] border-b border-gray-800 p-2">
-        {/* Search Bar - Removed filter button */}
+      {/* SEARCH BAR */}
+      <div className="bg-[#1e1e2d] border-b border-gray-800 p-3">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-6 h-6 text-gray-500" />
           <input
             type="text"
             placeholder="Tìm tên, SĐT, biển số..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 bg-[#2b2b40] border border-gray-700 rounded-xl text-white placeholder-gray-500 text-base focus:outline-none focus:border-[#009ef7]"
+            className="w-full pl-12 pr-4 py-4 bg-[#2b2b40] border-2 border-gray-700 rounded-2xl text-white placeholder-gray-500 text-lg focus:outline-none focus:border-[#009ef7]"
           />
         </div>
       </div>
 
-      {/* THANH TAB TRẠNG THÁI - WITH FILTER BUTTON */}
-      <div className="sticky top-[60px] z-40 bg-[#1e1e2d] border-b border-gray-800">
+      {/* STATUS TABS */}
+      <div className="bg-[#1e1e2d] border-b border-gray-800">
         <div className="overflow-x-auto scrollbar-hide">
-          <div className="flex gap-2 p-2 min-w-max">
+          <div className="flex gap-2 p-3 min-w-max">
             <button
               onClick={() => setStatusFilter("all")}
-              className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all ${
+              className={`px-6 py-3 rounded-2xl text-base font-semibold whitespace-nowrap transition-all ${
                 statusFilter === "all"
                   ? "bg-[#009ef7] text-white shadow-lg shadow-[#009ef7]/30"
-                  : "bg-[#2b2b40] text-gray-400 hover:bg-[#3a3a52]"
+                  : "bg-[#2b2b40] text-gray-400"
               }`}
             >
               Tất cả ({workOrders.length})
             </button>
             <button
               onClick={() => setStatusFilter("Tiếp nhận")}
-              className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all ${
+              className={`px-6 py-3 rounded-2xl text-base font-semibold whitespace-nowrap transition-all ${
                 statusFilter === "Tiếp nhận"
                   ? "bg-[#009ef7] text-white shadow-lg shadow-[#009ef7]/30"
-                  : "bg-[#2b2b40] text-gray-400 hover:bg-[#3a3a52]"
+                  : "bg-[#2b2b40] text-gray-400"
               }`}
             >
               Tiếp nhận ({kpis.tiepNhan})
             </button>
             <button
               onClick={() => setStatusFilter("Đang sửa")}
-              className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all ${
+              className={`px-6 py-3 rounded-2xl text-base font-semibold whitespace-nowrap transition-all ${
                 statusFilter === "Đang sửa"
                   ? "bg-[#f1416c] text-white shadow-lg shadow-[#f1416c]/30"
-                  : "bg-[#2b2b40] text-gray-400 hover:bg-[#3a3a52]"
+                  : "bg-[#2b2b40] text-gray-400"
               }`}
             >
               Đang sửa ({kpis.dangSua})
             </button>
             <button
               onClick={() => setStatusFilter("Đã sửa xong")}
-              className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all ${
+              className={`px-6 py-3 rounded-2xl text-base font-semibold whitespace-nowrap transition-all ${
                 statusFilter === "Đã sửa xong"
                   ? "bg-[#50cd89] text-white shadow-lg shadow-[#50cd89]/30"
-                  : "bg-[#2b2b40] text-gray-400 hover:bg-[#3a3a52]"
+                  : "bg-[#2b2b40] text-gray-400"
               }`}
             >
-              Đã xong ({kpis.daHoanThanh})
+              Đã sửa xong ({kpis.daHoanThanh})
             </button>
             <button
               onClick={() => setStatusFilter("Trả máy")}
-              className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all ${
+              className={`px-6 py-3 rounded-2xl text-base font-semibold whitespace-nowrap transition-all ${
                 statusFilter === "Trả máy"
                   ? "bg-purple-500 text-white shadow-lg shadow-purple-500/30"
-                  : "bg-[#2b2b40] text-gray-400 hover:bg-[#3a3a52]"
+                  : "bg-[#2b2b40] text-gray-400"
               }`}
             >
               Trả máy ({kpis.traMay})
             </button>
-            {/* Filter button at the end */}
             <button
               onClick={() => setShowFilterPopup(!showFilterPopup)}
-              className={`px-4 py-2 rounded-xl transition-all flex items-center gap-2 ${
+              className={`px-6 py-3 rounded-2xl transition-all flex items-center gap-2 ${
                 showFilterPopup
                   ? "bg-[#009ef7] text-white"
-                  : "bg-[#2b2b40] text-gray-400 hover:bg-[#3a3a52]"
+                  : "bg-[#2b2b40] text-gray-400"
               }`}
             >
-              <Filter className="w-4 h-4" />
-              <span className="text-sm font-medium">Lọc</span>
+              <Filter className="w-5 h-5" />
+              <span className="text-base font-semibold">Lọc</span>
             </button>
           </div>
         </div>
       </div>
 
       {/* DANH SÁCH PHIẾU SỬA CHỮA */}
-      <div className="flex-1 overflow-y-auto p-2 space-y-2 pb-20">
+      <div className="flex-1 overflow-y-auto p-3 space-y-3 pb-20">
         {filteredWorkOrders.length === 0 ? (
           /* Empty State */
           <div className="flex flex-col items-center justify-center h-full text-center px-6">
@@ -401,143 +329,112 @@ export function ServiceManagerMobile({
             </button>
           </div>
         ) : (
-          /* Work Order Cards with Swipe Actions */
+          /* Work Order Cards - Simplified for Mobile */
           filteredWorkOrders.map((workOrder) => (
             <div
               key={workOrder.id}
-              className="relative"
-              onTouchStart={(e) => {
-                const touch = e.touches[0];
-                (e.currentTarget as any).startX = touch.clientX;
-                (e.currentTarget as any).currentX = touch.clientX;
-              }}
-              onTouchMove={(e) => {
-                const touch = e.touches[0];
-                const el = e.currentTarget as any;
-                el.currentX = touch.clientX;
-                const diffX = el.currentX - el.startX;
-
-                if (Math.abs(diffX) > 10) {
-                  e.preventDefault();
-                  const card = el.querySelector(".card-content");
-                  if (card) {
-                    const translateX = Math.max(-120, Math.min(0, diffX));
-                    card.style.transform = `translateX(${translateX}px)`;
-                  }
-                }
-              }}
-              onTouchEnd={(e) => {
-                const el = e.currentTarget as any;
-                const card = el.querySelector(".card-content");
-                if (card) {
-                  const diffX = el.currentX - el.startX;
-                  if (diffX < -60) {
-                    card.style.transform = "translateX(-120px)";
-                    setSwipedCardId(workOrder.id);
-                  } else {
-                    card.style.transform = "translateX(0)";
-                    setSwipedCardId(null);
-                  }
-                }
-              }}
+              onClick={() => onEditWorkOrder(workOrder)}
+              className="bg-[#1e1e2d] rounded-2xl border-2 border-gray-800 overflow-hidden active:scale-[0.98] transition-transform"
             >
-              {/* Swipe Actions Background */}
-              <div className="absolute right-0 top-0 bottom-0 flex items-center gap-2 pr-2">
-                <button
-                  onClick={() => onCallCustomer(workOrder.customerPhone || "")}
-                  className="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center"
-                >
-                  <Phone className="w-5 h-5 text-white" />
-                </button>
-                <button
-                  onClick={() => {
-                    onEditWorkOrder(workOrder);
-                    setSwipedCardId(null);
-                  }}
-                  className="w-10 h-10 bg-[#009ef7] rounded-lg flex items-center justify-center"
-                >
-                  <Edit2 className="w-5 h-5 text-white" />
-                </button>
-                <button
-                  onClick={() => {
-                    onDeleteWorkOrder(workOrder);
-                    setSwipedCardId(null);
-                  }}
-                  className="w-10 h-10 bg-[#f1416c] rounded-lg flex items-center justify-center"
-                >
-                  <Trash2 className="w-5 h-5 text-white" />
-                </button>
-              </div>
-
               {/* Card Content */}
-              <div
-                className="card-content bg-[#1e1e2d] rounded-xl border border-gray-800 overflow-hidden transition-transform duration-200"
-                onClick={() => {
-                  if (swipedCardId !== workOrder.id) {
-                    onEditWorkOrder(workOrder);
-                  }
-                }}
-              >
-                {/* Card Header */}
-                <div className="p-4 border-b border-gray-800">
-                  <div className="flex items-start justify-between mb-2">
+              <div className="p-4">
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex-1">
+                    <div className="text-[#009ef7] font-mono text-base font-semibold mb-1">
+                      {formatWorkOrderId(workOrder.id)}
+                    </div>
+                    <div className="text-sm text-gray-500">
+                      {formatDate(workOrder.creationDate)}
+                    </div>
+                  </div>
+                  <div
+                    className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl border-2 text-sm font-bold ${getStatusColor(
+                      workOrder.status
+                    )}`}
+                  >
+                    {getStatusIcon(workOrder.status)}
+                    {workOrder.status}
+                  </div>
+                </div>
+
+                {/* Customer & Vehicle */}
+                <div className="space-y-3 mb-4">
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl">👤</span>
                     <div className="flex-1">
-                      <div className="text-[#009ef7] font-mono text-sm mb-1">
-                        {formatWorkOrderId(workOrder.id)}
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        {formatDate(workOrder.creationDate)}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Customer & Vehicle */}
-                  <div className="space-y-2 mb-3">
-                    <div className="flex items-center gap-2">
-                      <span className="text-gray-500 text-sm">👤</span>
-                      <span className="text-white font-medium">
+                      <div className="text-white font-semibold text-base">
                         {workOrder.customerName}
-                      </span>
-                      <span className="text-gray-500">-</span>
-                      <span className="text-gray-400 text-sm">
+                      </div>
+                      <div className="text-gray-400 text-sm">
                         {workOrder.customerPhone}
-                      </span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-gray-500 text-sm">🏍️</span>
-                      <span className="text-gray-300 text-sm">
-                        Xe: {workOrder.vehicleModel}
-                      </span>
-                      <span className="text-gray-500">-</span>
-                      <span className="text-[#009ef7] text-sm font-mono">
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl">🏍️</span>
+                    <div className="flex-1">
+                      <div className="text-gray-300 text-base">
+                        {workOrder.vehicleModel}
+                      </div>
+                      <div className="text-[#009ef7] text-sm font-mono font-semibold">
                         {workOrder.licensePlate}
-                      </span>
+                      </div>
                     </div>
                   </div>
+                </div>
 
-                  {/* Status Badge */}
-                  <div className="flex items-center justify-between">
-                    <div
-                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm font-medium ${getStatusColor(
-                        workOrder.status
-                      )}`}
-                    >
-                      {getStatusIcon(workOrder.status)}
-                      {workOrder.status}
-                    </div>
-                    <div className="text-white font-semibold">
-                      {formatCurrency(workOrder.total || 0)}
-                    </div>
-                  </div>
-
-                  {/* Technician */}
-                  <div className="mt-3 text-sm text-gray-400">
+                {/* Footer */}
+                <div className="flex items-center justify-between pt-3 border-t-2 border-gray-800">
+                  <div className="text-sm text-gray-400">
                     KTV:{" "}
-                    <span className="text-gray-300">
+                    <span className="text-gray-300 font-medium">
                       {workOrder.technicianName || "Chưa phân"}
                     </span>
                   </div>
+                  <div className="text-white font-bold text-lg">
+                    {formatCurrency(workOrder.total || 0)}
+                  </div>
                 </div>
+              </div>
+
+              {/* Action Buttons Row */}
+              <div className="grid grid-cols-3 border-t-2 border-gray-800">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onCallCustomer(workOrder.customerPhone || "");
+                  }}
+                  className="flex items-center justify-center gap-2 py-4 bg-green-500/10 hover:bg-green-500/20 transition-colors border-r border-gray-800"
+                >
+                  <Phone className="w-5 h-5 text-green-500" />
+                  <span className="text-sm font-semibold text-green-500">
+                    Gọi
+                  </span>
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEditWorkOrder(workOrder);
+                  }}
+                  className="flex items-center justify-center gap-2 py-4 bg-[#009ef7]/10 hover:bg-[#009ef7]/20 transition-colors border-r border-gray-800"
+                >
+                  <Edit2 className="w-5 h-5 text-[#009ef7]" />
+                  <span className="text-sm font-semibold text-[#009ef7]">
+                    Sửa
+                  </span>
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDeleteWorkOrder(workOrder);
+                  }}
+                  className="flex items-center justify-center gap-2 py-4 bg-[#f1416c]/10 hover:bg-[#f1416c]/20 transition-colors"
+                >
+                  <Trash2 className="w-5 h-5 text-[#f1416c]" />
+                  <span className="text-sm font-semibold text-[#f1416c]">
+                    Xóa
+                  </span>
+                </button>
               </div>
             </div>
           ))

@@ -1,6 +1,6 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { X, Plus, Minus, Check, ChevronDown, Search } from "lucide-react";
-import { formatCurrency } from "../../utils/format";
+import { formatCurrency, formatWorkOrderId } from "../../utils/format";
 import type { WorkOrder, Part, Customer, Vehicle, Employee } from "../../types";
 
 interface WorkOrderMobileModalProps {
@@ -26,19 +26,100 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
   employees,
   currentBranchId,
 }) => {
+  // Find customer and vehicle from workOrder data
+  const initialCustomer = useMemo(() => {
+    if (!workOrder) return null;
+    const foundCustomer = customers.find(
+      (c) =>
+        c.phone === workOrder.customerPhone || c.name === workOrder.customerName
+    );
+
+    // If not found, create a temporary customer object from workOrder data
+    if (!foundCustomer && workOrder.customerName) {
+      return {
+        id: `temp-${Date.now()}`,
+        name: workOrder.customerName,
+        phone: workOrder.customerPhone || "",
+        vehicles: workOrder.licensePlate
+          ? [
+              {
+                id: `temp-veh-${Date.now()}`,
+                licensePlate: workOrder.licensePlate,
+                model: workOrder.vehicleModel || "",
+                customerId: `temp-${Date.now()}`,
+              },
+            ]
+          : [],
+      } as Customer;
+    }
+
+    return foundCustomer || null;
+  }, [workOrder, customers]);
+
+  const initialVehicles = useMemo(() => {
+    if (!initialCustomer?.vehicles) return [];
+    return initialCustomer.vehicles;
+  }, [initialCustomer]);
+
+  const initialVehicle = useMemo(() => {
+    if (!workOrder) return null;
+    if (!initialVehicles.length) return null;
+
+    // Try to find by license plate first
+    let foundVehicle = initialVehicles.find(
+      (v) => v.licensePlate === workOrder.licensePlate
+    );
+
+    // If not found by license plate, try by model
+    if (!foundVehicle && workOrder.vehicleModel) {
+      foundVehicle = initialVehicles.find(
+        (v) => v.model === workOrder.vehicleModel
+      );
+    }
+
+    // If still not found, use first vehicle or create temp vehicle from workOrder data
+    if (!foundVehicle) {
+      if (workOrder.licensePlate || workOrder.vehicleModel) {
+        return {
+          id: `temp-veh-${Date.now()}`,
+          licensePlate: workOrder.licensePlate || "",
+          model: workOrder.vehicleModel || "",
+          customerId: initialCustomer?.id || "",
+        } as Vehicle;
+      }
+      return initialVehicles[0] || null;
+    }
+
+    return foundVehicle;
+  }, [workOrder, initialVehicles, initialCustomer]);
+
   // States
   const [status, setStatus] = useState<WorkOrderStatus>(
     (workOrder?.status as WorkOrderStatus) || "Tiếp nhận"
   );
   const [selectedTechnicianId, setSelectedTechnicianId] = useState(
-    workOrder?.technicianId || ""
+    employees.find((e) => e.name === workOrder?.technicianName)?.id || ""
   );
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(
-    workOrder?.customer || null
+    null
   );
-  const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(
-    workOrder?.vehicle || null
-  );
+  const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
+
+  // Update selectedCustomer and selectedVehicle when workOrder changes
+  useEffect(() => {
+    console.log("[WorkOrderMobileModal] workOrder:", workOrder);
+    console.log("[WorkOrderMobileModal] initialCustomer:", initialCustomer);
+    console.log("[WorkOrderMobileModal] initialVehicle:", initialVehicle);
+
+    if (workOrder) {
+      setSelectedCustomer(initialCustomer);
+      setSelectedVehicle(initialVehicle);
+    } else {
+      setSelectedCustomer(null);
+      setSelectedVehicle(null);
+    }
+  }, [workOrder, initialCustomer, initialVehicle]);
+
   const [currentKm, setCurrentKm] = useState(
     workOrder?.currentKm?.toString() || ""
   );
@@ -52,7 +133,7 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
       quantity: number;
       sellingPrice: number;
     }>
-  >(workOrder?.parts || []);
+  >(workOrder?.partsUsed || []);
   const [additionalServices, setAdditionalServices] = useState<
     Array<{
       id: string;
@@ -301,7 +382,9 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
             <X className="w-4 h-4" />
           </button>
           <h2 className="text-sm font-semibold text-white">
-            {workOrder ? `Phiếu #${workOrder.id}` : "Tạo phiếu sửa chữa"}
+            {workOrder
+              ? `Phiếu #${formatWorkOrderId(workOrder.id)}`
+              : "Tạo phiếu sửa chữa"}
           </h2>
           <div className="w-8"></div>
         </div>

@@ -38,6 +38,7 @@ import { showToast } from "../../utils/toast";
 import { printElementById } from "../../utils/print";
 import { supabase } from "../../supabaseClient";
 import { WorkOrderMobileModal } from "./WorkOrderMobileModal";
+import { ServiceManagerMobile } from "./ServiceManagerMobile";
 
 interface StoreSettings {
   store_name?: string;
@@ -761,6 +762,83 @@ export default function ServiceManager() {
       showToast.error("Lỗi khi hủy đơn sửa chữa");
     }
   };
+
+  // Handle call customer
+  const handleCallCustomer = (phone: string) => {
+    if (phone) {
+      window.location.href = `tel:${phone}`;
+    }
+  };
+
+  // Handle delete work order
+  const handleDelete = async (workOrder: WorkOrder) => {
+    if (!confirm(`Xác nhận xóa phiếu ${formatWorkOrderId(workOrder.id)}?`)) {
+      return;
+    }
+    try {
+      const { error } = await supabase
+        .from("work_orders")
+        .delete()
+        .eq("id", workOrder.id);
+
+      if (error) throw error;
+
+      setWorkOrders((prev) => prev.filter((w) => w.id !== workOrder.id));
+      showToast.success("Đã xóa phiếu sửa chữa");
+    } catch (error) {
+      console.error("Error deleting work order:", error);
+      showToast.error("Lỗi khi xóa phiếu sửa chữa");
+    }
+  };
+
+  // Mobile view
+  const isMobile = window.innerWidth < 768;
+  if (isMobile) {
+    return (
+      <>
+        <ServiceManagerMobile
+          workOrders={displayWorkOrders || []}
+          onCreateWorkOrder={() => {
+            setEditingOrder(undefined);
+            setShowMobileModal(true);
+          }}
+          onEditWorkOrder={(workOrder) => {
+            setEditingOrder(workOrder);
+            setShowMobileModal(true);
+          }}
+          onDeleteWorkOrder={handleDelete}
+          onCallCustomer={handleCallCustomer}
+          currentBranchId={currentBranchId}
+        />
+
+        {/* Mobile Modal */}
+        {showMobileModal && (
+          <WorkOrderMobileModal
+            isOpen={showMobileModal}
+            onClose={() => {
+              setShowMobileModal(false);
+              setEditingOrder(undefined);
+            }}
+            onSave={(workOrderData) => {
+              // Mobile save handler
+              console.log("Mobile Work Order Data:", workOrderData);
+              setShowMobileModal(false);
+              setEditingOrder(undefined);
+              // Reload work orders from repo hook
+              if (refetchWorkOrders) {
+                refetchWorkOrders();
+              }
+            }}
+            workOrder={editingOrder}
+            customers={displayCustomers}
+            parts={fetchedParts || []}
+            employees={displayEmployees}
+            currentBranchId={currentBranchId}
+          />
+        )}
+      </>
+    );
+  }
 
   return (
     <div className="space-y-6">

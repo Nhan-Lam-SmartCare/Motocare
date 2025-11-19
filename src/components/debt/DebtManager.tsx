@@ -661,183 +661,203 @@ const DebtManager: React.FC = () => {
               </div>
             ) : (
               <div className="space-y-3">
+                {/* Header Row */}
+                <div className="grid grid-cols-12 gap-4 px-4 py-2 bg-slate-100 dark:bg-slate-700 rounded-lg text-sm font-semibold text-slate-700 dark:text-slate-300">
+                  <div className="col-span-4">Nhà cung cấp</div>
+                  <div className="col-span-3">Nội dung</div>
+                  <div className="col-span-1 text-right">Số tiền</div>
+                  <div className="col-span-1 text-right">Đã trả</div>
+                  <div className="col-span-2 text-right">Còn nợ</div>
+                  <div className="col-span-1"></div>
+                </div>
+
                 {filteredSupplierDebts.map((debt) => (
                   <div
-                    key={debt.supplierId}
-                    className="bg-primary-bg border border-primary-border rounded-lg p-4 hover:border-secondary-border transition-colors"
+                    key={debt.id}
+                    className="grid grid-cols-12 gap-4 items-start bg-primary-bg border border-primary-border rounded-lg p-4 hover:border-cyan-500 hover:shadow-md transition-all cursor-pointer group"
+                    onClick={() => {
+                      setSelectedDebt(debt);
+                      setShowDetailModal(true);
+                    }}
                   >
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-start gap-3 flex-1">
-                        <input
-                          type="checkbox"
-                          checked={selectedSupplierIds.includes(
-                            debt.supplierId
-                          )}
-                          onChange={(e) =>
-                            handleSupplierCheckbox(
-                              debt.supplierId,
-                              e.target.checked
-                            )
-                          }
-                          className="mt-1 w-4 h-4 rounded border-secondary-border bg-primary-bg text-cyan-600 focus:ring-cyan-500 focus:ring-offset-0"
-                        />
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h3 className="text-primary-text font-semibold text-lg">
-                              {debt.supplierName}
-                            </h3>
+                    {/* Cột 1: Nhà cung cấp (4 cols) */}
+                    <div className="col-span-4 flex items-start gap-3">
+                      <input
+                        type="checkbox"
+                        checked={selectedSupplierIds.includes(debt.supplierId)}
+                        onChange={(e) => {
+                          e.stopPropagation();
+                          handleSupplierCheckbox(
+                            debt.supplierId,
+                            e.target.checked
+                          );
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                        className="mt-1 w-4 h-4 rounded border-secondary-border text-cyan-600 focus:ring-cyan-500"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-primary-text font-semibold text-base mb-1 truncate">
+                          {debt.supplierName}
+                        </h3>
+                        <div className="space-y-0.5 text-xs text-secondary-text">
+                          <div className="flex items-center gap-1">
+                            <svg
+                              className="w-3 h-3"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                              />
+                            </svg>
+                            <span>
+                              {formatDate(new Date(debt.createdDate))}
+                            </span>
                           </div>
                         </div>
                       </div>
+                    </div>
 
-                      <div className="text-right">
-                        <div className="mb-2">
-                          <div className="text-tertiary-text text-xs mb-1">
-                            NỘI DUNG
-                          </div>
-                          <div className="text-primary-text text-sm">
-                            {debt.description}
-                          </div>
-                        </div>
+                    {/* Cột 2: Nội dung (3 cols) */}
+                    <div className="col-span-3">
+                      <div className="text-sm text-primary-text">
+                        {debt.description}
                       </div>
+                    </div>
 
-                      <div className="text-right ml-8">
-                        <div className="mb-2">
-                          <div className="text-tertiary-text text-xs mb-1">
-                            SỐ TIỀN
-                          </div>
-                          <div className="text-primary-text font-semibold">
-                            {formatCurrency(debt.totalAmount)}
-                          </div>
-                        </div>
+                    {/* Cột 3: Số tiền (1 col) */}
+                    <div className="col-span-1 text-right">
+                      <div className="text-sm text-primary-text font-semibold">
+                        {formatCurrency(debt.totalAmount)}
                       </div>
+                    </div>
 
-                      <div className="text-right ml-8">
-                        <div className="mb-2">
-                          <div className="text-tertiary-text text-xs mb-1">
-                            ĐÃ TRẢ
-                          </div>
-                          <div className="text-primary-text font-semibold">
-                            {formatCurrency(debt.paidAmount)}
-                          </div>
-                        </div>
+                    {/* Cột 4: Đã trả (1 col) */}
+                    <div className="col-span-1 text-right">
+                      <div className="text-sm text-green-600 dark:text-green-400 font-semibold">
+                        {formatCurrency(debt.paidAmount)}
                       </div>
+                    </div>
 
-                      <div className="text-right ml-8">
-                        <div className="mb-2">
-                          <div className="text-tertiary-text text-xs mb-1">
-                            CÒN NỢ
-                          </div>
-                          <div className="text-red-600 dark:text-red-400 font-bold text-lg">
-                            {formatCurrency(debt.remainingAmount)}
-                          </div>
-                        </div>
+                    {/* Cột 5: Còn nợ (2 cols) */}
+                    <div className="col-span-2 text-right">
+                      <div className="text-base text-red-600 dark:text-red-400 font-bold">
+                        {formatCurrency(debt.remainingAmount)}
                       </div>
+                    </div>
 
-                      <div className="ml-4 relative debt-menu-dropdown">
-                        <button
-                          onClick={() =>
-                            setOpenMenuId(
-                              openMenuId === debt.id ? null : debt.id
-                            )
-                          }
-                          className="p-2 text-secondary-text hover:text-primary-text transition-colors"
+                    {/* Cột 6: Menu actions (1 col) */}
+                    <div className="col-span-1 flex justify-end relative debt-menu-dropdown">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setOpenMenuId(
+                            openMenuId === debt.id ? null : debt.id
+                          );
+                        }}
+                        className="p-1 text-secondary-text hover:text-primary-text transition-colors opacity-0 group-hover:opacity-100"
+                      >
+                        <svg
+                          className="w-5 h-5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
                         >
-                          <svg
-                            className="w-5 h-5"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
-                            />
-                          </svg>
-                        </button>
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
+                          />
+                        </svg>
+                      </button>
 
-                        {openMenuId === debt.id && (
-                          <div className="absolute right-0 mt-1 w-48 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 py-1 z-10">
-                            <button
-                              onClick={() => {
-                                setSelectedDebt(debt);
-                                setShowDetailModal(true);
-                                setOpenMenuId(null);
-                              }}
-                              className="w-full px-4 py-2 text-left text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2"
+                      {openMenuId === debt.id && (
+                        <div className="absolute right-0 top-8 w-48 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 py-1 z-10">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedDebt(debt);
+                              setShowDetailModal(true);
+                              setOpenMenuId(null);
+                            }}
+                            className="w-full px-4 py-2 text-left text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2"
+                          >
+                            <svg
+                              className="w-4 h-4"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
                             >
-                              <svg
-                                className="w-4 h-4"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                                />
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                                />
-                              </svg>
-                              Xem chi tiết
-                            </button>
-                            <button
-                              onClick={() => {
-                                setSelectedDebt(debt);
-                                setShowEditDebtModal(true);
-                                setOpenMenuId(null);
-                              }}
-                              className="w-full px-4 py-2 text-left text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2"
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                              />
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                              />
+                            </svg>
+                            Xem chi tiết
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedDebt(debt);
+                              setShowEditDebtModal(true);
+                              setOpenMenuId(null);
+                            }}
+                            className="w-full px-4 py-2 text-left text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2"
+                          >
+                            <svg
+                              className="w-4 h-4"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
                             >
-                              <svg
-                                className="w-4 h-4"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                                />
-                              </svg>
-                              Sửa
-                            </button>
-                            <button
-                              onClick={() => {
-                                setSelectedDebt(debt);
-                                setShowDeleteConfirm(true);
-                                setOpenMenuId(null);
-                              }}
-                              className="w-full px-4 py-2 text-left text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2"
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                              />
+                            </svg>
+                            Sửa
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedDebt(debt);
+                              setShowDeleteConfirm(true);
+                              setOpenMenuId(null);
+                            }}
+                            className="w-full px-4 py-2 text-left text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2"
+                          >
+                            <svg
+                              className="w-4 h-4"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
                             >
-                              <svg
-                                className="w-4 h-4"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                                />
-                              </svg>
-                              Xóa
-                            </button>
-                          </div>
-                        )}
-                      </div>
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                              />
+                            </svg>
+                            Xóa
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}

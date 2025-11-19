@@ -44,8 +44,10 @@ import {
   useCreateInventoryTxRepo,
   useInventoryTxRepo,
 } from "../../hooks/useInventoryTransactionsRepository";
+import { useSupplierDebtsRepo } from "../../hooks/useDebtsRepository";
 import FormattedNumberInput from "../common/FormattedNumberInput";
 import { validatePriceAndQty } from "../../utils/validation";
+import { GoodsReceiptMobileModal } from "./GoodsReceiptMobileModal";
 
 // Add New Product Modal Component
 const AddProductModal: React.FC<{
@@ -335,6 +337,191 @@ const AddProductModal: React.FC<{
   );
 };
 
+// Mobile Goods Receipt Wrapper - manages state and renders mobile modal
+const GoodsReceiptMobileWrapper: React.FC<{
+  isOpen: boolean;
+  onClose: () => void;
+  parts: Part[];
+  currentBranchId: string;
+  onSave: (
+    items: Array<{
+      partId: string;
+      partName: string;
+      quantity: number;
+      importPrice: number;
+      sellingPrice: number;
+      wholesalePrice?: number;
+    }>,
+    supplierId: string,
+    totalAmount: number,
+    note: string,
+    paymentInfo?: {
+      paymentMethod: "cash" | "bank";
+      paymentType: "full" | "partial" | "note";
+      paidAmount: number;
+      discount: number;
+    }
+  ) => void;
+}> = ({ isOpen, onClose, parts, currentBranchId, onSave }) => {
+  const [receiptItems, setReceiptItems] = useState<
+    Array<{
+      partId: string;
+      partName: string;
+      sku: string;
+      quantity: number;
+      importPrice: number;
+      sellingPrice: number;
+      wholesalePrice: number;
+    }>
+  >([]);
+  const [selectedSupplier, setSelectedSupplier] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [discount, setDiscount] = useState(0);
+  const [discountType, setDiscountType] = useState<"amount" | "percent">(
+    "amount"
+  );
+  const [paymentMethod, setPaymentMethod] = useState<"cash" | "bank">("cash");
+  const [paymentType, setPaymentType] = useState<"full" | "partial" | "note">(
+    "full"
+  );
+  const [partialAmount, setPartialAmount] = useState(0);
+  const [showAddProductModal, setShowAddProductModal] = useState(false);
+  const createPartMutation = useCreatePartRepo();
+
+  // Debug logging
+  console.log(
+    "📦 GoodsReceiptMobileWrapper - parts received:",
+    parts?.length || 0,
+    parts?.slice(0, 2)
+  );
+  console.log("📦 currentBranchId:", currentBranchId);
+
+  // Reset state when modal closes
+  useEffect(() => {
+    if (!isOpen) {
+      setReceiptItems([]);
+      setSelectedSupplier("");
+      setSearchTerm("");
+      setDiscount(0);
+      setDiscountType("amount");
+      setPaymentMethod("cash");
+      setPaymentType("full");
+      setPartialAmount(0);
+    }
+  }, [isOpen]);
+
+  const handleAddNewProduct = (productData: any) => {
+    // Auto-create and add to receipt
+    (async () => {
+      try {
+        const newPart = await createPartMutation.mutateAsync({
+          name: productData.name,
+          sku: productData.sku || `SKU-${Date.now()}`,
+          category: productData.category,
+          stock: { [currentBranchId]: productData.quantity },
+          costPrice: { [currentBranchId]: productData.importPrice },
+          retailPrice: { [currentBranchId]: productData.retailPrice },
+          wholesalePrice: {
+            [currentBranchId]: productData.wholesalePrice || 0,
+          },
+        });
+        setReceiptItems((items) => [
+          ...items,
+          {
+            partId: newPart.id,
+            partName: productData.name,
+            sku: productData.sku || `SKU-${Date.now()}`,
+            quantity: productData.quantity,
+            importPrice: productData.importPrice,
+            sellingPrice: productData.retailPrice,
+            wholesalePrice: productData.wholesalePrice || 0,
+          },
+        ]);
+        showToast.success("Đã tạo phụ tùng mới và thêm vào phiếu nhập");
+      } catch (e: any) {
+        showToast.error(e?.message || "Lỗi tạo phụ tùng mới");
+      } finally {
+        setShowAddProductModal(false);
+      }
+    })();
+  };
+
+  const handleSave = () => {
+    if (!selectedSupplier) {
+      showToast.error("Vui lòng chọn nhà cung cấp");
+      return;
+    }
+    if (receiptItems.length === 0) {
+      showToast.error("Vui lòng thêm sản phẩm");
+      return;
+    }
+
+    const subtotal = receiptItems.reduce(
+      (sum, item) => sum + item.quantity * item.importPrice,
+      0
+    );
+    const discountAmount =
+      discountType === "percent"
+        ? Math.round((subtotal * discount) / 100)
+        : discount;
+    const totalAmount = Math.max(0, subtotal - discountAmount);
+
+    // Calculate paid amount based on payment type
+    let paidAmount = 0;
+    if (paymentType === "full") {
+      paidAmount = totalAmount;
+    } else if (paymentType === "partial") {
+      paidAmount = partialAmount;
+    }
+    // paymentType === "note" => paidAmount = 0
+
+    onSave(receiptItems, selectedSupplier, totalAmount, "", {
+      paymentMethod,
+      paymentType,
+      paidAmount,
+      discount: discountAmount,
+    });
+    onClose();
+  };
+
+  return (
+    <>
+      <GoodsReceiptMobileModal
+        isOpen={isOpen}
+        onClose={onClose}
+        parts={parts}
+        receiptItems={receiptItems}
+        setReceiptItems={setReceiptItems}
+        selectedSupplier={selectedSupplier}
+        setSelectedSupplier={setSelectedSupplier}
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
+        onSave={handleSave}
+        discount={discount}
+        setDiscount={setDiscount}
+        discountType={discountType}
+        setDiscountType={setDiscountType}
+        paymentMethod={paymentMethod}
+        setPaymentMethod={setPaymentMethod}
+        paymentType={paymentType}
+        setPaymentType={setPaymentType}
+        partialAmount={partialAmount}
+        setPartialAmount={setPartialAmount}
+        showAddProductModal={showAddProductModal}
+        setShowAddProductModal={setShowAddProductModal}
+        onAddNewProduct={handleAddNewProduct}
+        currentBranchId={currentBranchId}
+      />
+      {/* Add Product Modal */}
+      <AddProductModal
+        isOpen={showAddProductModal}
+        onClose={() => setShowAddProductModal(false)}
+        onSave={handleAddNewProduct}
+      />
+    </>
+  );
+};
+
 // Goods Receipt Modal Component (Ảnh 2)
 const GoodsReceiptModal: React.FC<{
   isOpen: boolean;
@@ -349,13 +536,20 @@ const GoodsReceiptModal: React.FC<{
       importPrice: number;
       sellingPrice: number;
     }>,
-    supplier: string,
+    supplierId: string,
     totalAmount: number,
-    note: string
+    note: string,
+    paymentInfo?: {
+      paymentMethod: "cash" | "bank";
+      paymentType: "full" | "partial" | "note";
+      paidAmount: number;
+      discount: number;
+    }
   ) => void;
 }> = ({ isOpen, onClose, parts, currentBranchId, onSave }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedSupplier, setSelectedSupplier] = useState("");
+  const [step, setStep] = useState<1 | 2>(1); // 1: Chọn hàng, 2: Thanh toán
   const { data: suppliers = [] } = useSuppliers();
   const createSupplier = useCreateSupplier();
   const [showSupplierModal, setShowSupplierModal] = useState(false);
@@ -380,12 +574,10 @@ const GoodsReceiptModal: React.FC<{
   >([]);
 
   // Payment states
-  const [paymentMethod, setPaymentMethod] = useState<"cash" | "bank" | null>(
-    null
+  const [paymentMethod, setPaymentMethod] = useState<"cash" | "bank">("cash");
+  const [paymentType, setPaymentType] = useState<"full" | "partial" | "note">(
+    "full"
   );
-  const [paymentType, setPaymentType] = useState<
-    "full" | "partial" | "note" | null
-  >(null);
   const [partialAmount, setPartialAmount] = useState(0);
   const [discount, setDiscount] = useState(0);
   const [discountType, setDiscountType] = useState<"amount" | "percent">(
@@ -394,11 +586,30 @@ const GoodsReceiptModal: React.FC<{
   const [discountPercent, setDiscountPercent] = useState(0);
 
   const filteredParts = useMemo(() => {
-    const q = searchTerm.toLowerCase();
-    if (!searchTerm) return parts; // Show all parts when no search term
-    return parts.filter(
-      (p) => p.name.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q)
+    console.log(
+      "🔍 Desktop Modal - parts:",
+      parts?.length || 0,
+      parts?.slice(0, 2)
     );
+    console.log("🔍 Desktop Modal - searchTerm:", searchTerm);
+
+    if (!parts || parts.length === 0) {
+      console.log("⚠️ parts is empty or undefined");
+      return [];
+    }
+
+    if (!searchTerm || searchTerm.trim() === "") {
+      console.log("✅ Showing all parts:", parts.length);
+      return parts;
+    }
+
+    const q = searchTerm.toLowerCase().trim();
+    const filtered = parts.filter(
+      (p) =>
+        p.name?.toLowerCase().includes(q) || p.sku?.toLowerCase().includes(q)
+    );
+    console.log("✅ Filtered results:", filtered.length);
+    return filtered;
   }, [parts, searchTerm]);
 
   const addToReceipt = (part: Part) => {
@@ -467,7 +678,21 @@ const GoodsReceiptModal: React.FC<{
     }
     const supplierName =
       suppliers.find((s: any) => s.id === selectedSupplier)?.name || "";
-    onSave(receiptItems, supplierName, totalAmount, "");
+
+    // Calculate paidAmount based on paymentType
+    const calculatedPaidAmount =
+      paymentType === "full"
+        ? totalAmount
+        : paymentType === "partial"
+        ? partialAmount
+        : 0;
+
+    onSave(receiptItems, selectedSupplier, totalAmount, "", {
+      paymentMethod,
+      paymentType,
+      paidAmount: calculatedPaidAmount,
+      discount,
+    });
     setReceiptItems([]);
     setSelectedSupplier("");
     setSearchTerm("");
@@ -517,12 +742,12 @@ const GoodsReceiptModal: React.FC<{
 
   return (
     <>
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white dark:bg-slate-800 rounded-lg w-full max-w-6xl max-h-[90vh] overflow-hidden flex">
+      <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div className="bg-white dark:bg-slate-800 w-full h-full sm:h-auto sm:max-h-[90vh] sm:max-w-6xl sm:rounded-lg rounded-t-3xl sm:rounded-xl overflow-hidden flex flex-col sm:flex-row">
           {/* Left Side - Product Selection */}
-          <div className="flex-1 flex flex-col bg-slate-50 dark:bg-slate-900">
+          <div className="flex-1 flex flex-col bg-slate-50 dark:bg-slate-900 max-h-[50vh] sm:max-h-none">
             {/* Header */}
-            <div className="flex justify-between items-center p-6 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
+            <div className="flex justify-between items-center p-4 sm:p-6 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
               <div className="flex items-center gap-3">
                 <button
                   onClick={onClose}
@@ -530,32 +755,33 @@ const GoodsReceiptModal: React.FC<{
                 >
                   ←
                 </button>
-                <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">
+                <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-slate-100">
                   Chọn sản phẩm nhập kho
                 </h2>
               </div>
               <button
                 onClick={() => setShowAddProductModal(true)}
-                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium"
+                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 sm:px-4 sm:py-2 rounded-lg text-sm sm:text-base font-medium"
               >
                 <span className="text-xl">+</span>
-                <span>Thêm sản phẩm mới</span>
+                <span className="hidden sm:inline">Thêm sản phẩm mới</span>
+                <span className="sm:hidden">Thêm</span>
               </button>
             </div>
 
             {/* Search */}
-            <div className="p-6 bg-white dark:bg-slate-800">
+            <div className="p-3 sm:p-6 bg-white dark:bg-slate-800">
               <input
                 type="text"
                 placeholder="Tìm theo tên sản phẩm, SKU..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
+                className="w-full px-3 py-2 sm:px-4 sm:py-3 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 text-sm sm:text-base"
               />
             </div>
 
             {/* Products List */}
-            <div className="flex-1 overflow-y-auto p-6">
+            <div className="flex-1 overflow-y-auto p-3 sm:p-6">
               {filteredParts.length === 0 ? (
                 <div className="text-center text-slate-500 py-8">
                   Không tìm thấy sản phẩm nào
@@ -582,9 +808,9 @@ const GoodsReceiptModal: React.FC<{
           </div>
 
           {/* Right Side - Receipt Details */}
-          <div className="w-[500px] bg-white dark:bg-slate-800 border-l border-slate-200 dark:border-slate-700 flex flex-col">
+          <div className="w-full sm:w-[500px] bg-white dark:bg-slate-800 border-t sm:border-t-0 sm:border-l border-slate-200 dark:border-slate-700 flex flex-col max-h-[50vh] sm:max-h-none">
             {/* Supplier Selection */}
-            <div className="p-6 border-b border-slate-200 dark:border-slate-700">
+            <div className="p-4 sm:p-6 border-b border-slate-200 dark:border-slate-700">
               <div className="flex items-center justify-between mb-2">
                 <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
                   Nhà cung cấp (NCC):
@@ -758,12 +984,12 @@ const GoodsReceiptModal: React.FC<{
             )}
 
             {/* Receipt Items */}
-            <div className="flex-1 overflow-y-auto p-4">
+            <div className="flex-1 overflow-y-auto p-3 sm:p-4">
               <div className="flex items-center justify-between mb-3">
-                <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                <h3 className="text-base sm:text-lg font-semibold text-slate-900 dark:text-slate-100">
                   Giỏ hàng nhập kho
                 </h3>
-                <span className="text-sm text-slate-500">
+                <span className="text-xs sm:text-sm text-slate-500">
                   ({receiptItems.length} sản phẩm)
                 </span>
               </div>
@@ -2219,6 +2445,7 @@ const InventoryHistorySection: React.FC<{
   transactions: InventoryTransaction[];
 }> = ({ transactions }) => {
   const queryClient = useQueryClient();
+  const { data: supplierDebts = [] } = useSupplierDebtsRepo();
   const [activeTimeFilter, setActiveTimeFilter] = useState("7days");
   const [customStartDate, setCustomStartDate] = useState(
     formatDate(new Date(), true)
@@ -2326,18 +2553,32 @@ const InventoryHistorySection: React.FC<{
       .map(([key, items], index) => {
         const firstItem = items[0];
         const date = new Date(firstItem.date);
-        const dateStr = `${date.getFullYear()}${String(
-          date.getMonth() + 1
-        ).padStart(2, "0")}${String(date.getDate()).padStart(2, "0")}`;
-        const receiptCode = `PN-${dateStr}-${String(
-          groups.size - index
-        ).padStart(3, "0")}`;
+
+        // Extract receipt code from notes if exists (format: "NH-20251119-XXX | NCC: ...")
+        let receiptCode = "";
+        if (firstItem.notes) {
+          const match = firstItem.notes.match(/NH-\d{8}-\d{3}/);
+          if (match) {
+            receiptCode = match[0];
+          }
+        }
+
+        // If no receipt code in notes, generate one
+        if (!receiptCode) {
+          const dateStr = `${date.getFullYear()}${String(
+            date.getMonth() + 1
+          ).padStart(2, "0")}${String(date.getDate()).padStart(2, "0")}`;
+          receiptCode = `NH-${dateStr}-${String(groups.size - index).padStart(
+            3,
+            "0"
+          )}`;
+        }
 
         return {
           receiptCode,
           date: firstItem.date,
           supplier: firstItem.notes?.includes("NCC:")
-            ? firstItem.notes.split("NCC:")[1]?.trim()
+            ? firstItem.notes.split("NCC:")[1]?.split("|")[0]?.trim()
             : "Không xác định",
           items,
           total: items.reduce((sum, item) => sum + item.totalPrice, 0),
@@ -2353,13 +2594,13 @@ const InventoryHistorySection: React.FC<{
   return (
     <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
       {/* Header */}
-      <div className="p-6 border-b border-slate-200 dark:border-slate-700">
-        <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 mb-4">
+      <div className="p-3 sm:p-6 border-b border-slate-200 dark:border-slate-700">
+        <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-slate-100 mb-3 sm:mb-4">
           Lịch sử nhập kho
         </h2>
 
         {/* Time Filter Buttons */}
-        <div className="flex flex-wrap gap-2 mb-4">
+        <div className="flex flex-wrap gap-2 mb-3 sm:mb-4">
           {[
             { key: "7days", label: "7 ngày qua" },
             { key: "30days", label: "30 ngày qua" },
@@ -2369,7 +2610,7 @@ const InventoryHistorySection: React.FC<{
             <button
               key={filter.key}
               onClick={() => setActiveTimeFilter(filter.key)}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-sm sm:text-base font-medium transition-colors ${
                 activeTimeFilter === filter.key
                   ? "bg-blue-600 text-white"
                   : "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600"
@@ -2382,27 +2623,27 @@ const InventoryHistorySection: React.FC<{
 
         {/* Custom Date Range */}
         {activeTimeFilter === "custom" && (
-          <div className="flex gap-4 mb-4">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-3 sm:mb-4">
             <div className="flex-1">
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+              <label className="block text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                 Từ ngày
               </label>
               <input
                 type="date"
                 value={customStartDate}
                 onChange={(e) => setCustomStartDate(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 text-sm sm:text-base"
               />
             </div>
             <div className="flex-1">
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+              <label className="block text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                 Đến ngày
               </label>
               <input
                 type="date"
                 value={customEndDate}
                 onChange={(e) => setCustomEndDate(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 text-sm sm:text-base"
               />
             </div>
           </div>
@@ -2414,24 +2655,24 @@ const InventoryHistorySection: React.FC<{
           placeholder="Nhà cung cấp, SKU, tên phụ tùng..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
+          className="w-full px-3 py-2 sm:px-4 sm:py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 text-sm sm:text-base"
         />
       </div>
 
       {/* Summary */}
-      <div className="px-6 py-4 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
+      <div className="px-3 py-3 sm:px-6 sm:py-4 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
         <div className="flex justify-between items-center">
-          <div className="text-sm text-slate-600 dark:text-slate-400">
+          <div className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
             Tổng số tiền:{" "}
-            <span className="text-lg font-bold text-slate-900 dark:text-slate-100">
+            <span className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100">
               {groupedReceipts.length}
             </span>
           </div>
           <div className="text-right">
-            <div className="text-sm text-slate-600 dark:text-slate-400">
+            <div className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
               Tổng giá trị
             </div>
-            <div className="text-lg font-bold text-blue-600">
+            <div className="text-base sm:text-lg font-bold text-blue-600">
               {formatCurrency(totalAmount)}
             </div>
           </div>
@@ -2440,150 +2681,287 @@ const InventoryHistorySection: React.FC<{
 
       {/* Receipts List */}
       <div className="divide-y divide-slate-200 dark:divide-slate-700">
+        {/* Header Row - Desktop only */}
+        {groupedReceipts.length > 0 && (
+          <div className="hidden md:grid grid-cols-12 gap-4 px-4 py-3 bg-slate-100 dark:bg-slate-700 border-b border-slate-200 dark:border-slate-600 sticky top-0 z-10">
+            <div className="col-span-1 text-xs font-semibold text-slate-600 dark:text-slate-300"></div>
+            <div className="col-span-2 text-xs font-semibold text-slate-600 dark:text-slate-300">
+              Mã phiếu
+            </div>
+            <div className="col-span-2 text-xs font-semibold text-slate-600 dark:text-slate-300">
+              Nhà cung cấp
+            </div>
+            <div className="col-span-4 text-xs font-semibold text-slate-600 dark:text-slate-300">
+              Chi tiết
+            </div>
+            <div className="col-span-2 text-xs font-semibold text-slate-600 dark:text-slate-300">
+              Thanh toán
+            </div>
+            <div className="col-span-1 text-xs font-semibold text-slate-600 dark:text-slate-300">
+              Thao tác
+            </div>
+          </div>
+        )}
+
         {groupedReceipts.length === 0 ? (
-          <div className="px-6 py-12 text-center text-slate-500">
-            <div className="text-6xl mb-4">📦</div>
-            <div>Không có dữ liệu</div>
+          <div className="px-3 py-8 sm:px-6 sm:py-12 text-center text-slate-500">
+            <div className="text-4xl sm:text-6xl mb-4">📦</div>
+            <div className="text-sm sm:text-base">Không có dữ liệu</div>
           </div>
         ) : (
-          groupedReceipts.map((receipt) => (
-            <div
-              key={receipt.receiptCode}
-              className="p-4 hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors"
-            >
-              {/* Receipt Row - Horizontal Layout */}
-              <div className="flex items-start gap-3">
-                {/* Checkbox */}
-                <input
-                  type="checkbox"
-                  checked={selectedReceipts.has(receipt.receiptCode)}
-                  onChange={(e) => {
-                    const newSelected = new Set(selectedReceipts);
-                    if (e.target.checked) {
-                      newSelected.add(receipt.receiptCode);
-                    } else {
-                      newSelected.delete(receipt.receiptCode);
-                    }
-                    setSelectedReceipts(newSelected);
-                  }}
-                  className="mt-1 w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500 flex-shrink-0"
-                />
+          groupedReceipts.map((receipt) => {
+            const receiptDate = new Date(receipt.date);
+            const formattedDate = receiptDate.toLocaleDateString("vi-VN", {
+              day: "2-digit",
+              month: "2-digit",
+              year: "numeric",
+            });
+            const formattedTime = receiptDate.toLocaleTimeString("vi-VN", {
+              hour: "2-digit",
+              minute: "2-digit",
+            });
 
-                {/* Date Column */}
-                <div className="w-28 flex-shrink-0">
-                  <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                    {new Date(receipt.date).toLocaleDateString("vi-VN", {
-                      day: "2-digit",
-                      month: "2-digit",
-                      year: "numeric",
-                    })}
-                  </div>
-                  <div className="text-xs text-slate-500 dark:text-slate-400">
-                    {new Date(receipt.date).toLocaleTimeString("vi-VN", {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </div>
-                </div>
+            // Check if this receipt has debt
+            const receiptDebt = supplierDebts.find((debt) =>
+              debt.description?.includes(receipt.receiptCode)
+            );
 
-                {/* Supplier Column */}
-                <div className="w-40 flex-shrink-0">
-                  <div className="text-sm text-slate-900 dark:text-slate-100">
-                    {receipt.supplier}
-                  </div>
-                  {receipt.items[0].notes?.includes("Phone:") && (
-                    <div className="text-xs text-slate-500">
-                      Phone: {receipt.items[0].notes.split("Phone:")[1]?.trim()}
+            const paidAmount = receiptDebt
+              ? receiptDebt.totalAmount - receiptDebt.remainingAmount
+              : receipt.total;
+            const remainingDebt = receiptDebt?.remainingAmount || 0;
+            const hasDebt = remainingDebt > 0;
+
+            return (
+              <div
+                key={receipt.receiptCode}
+                className="p-4 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
+              >
+                {/* Mobile Card */}
+                <div className="md:hidden flex flex-col gap-3 bg-white dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700 p-4 shadow-sm">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <div className="flex items-center gap-2 text-sm font-semibold text-cyan-600 dark:text-cyan-300">
+                        📦 {receipt.receiptCode}
+                      </div>
+                      <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-1">
+                        📅{" "}
+                        <span>
+                          {formattedDate} · {formattedTime}
+                        </span>
+                      </div>
                     </div>
-                  )}
-                </div>
-
-                {/* Items Details Column - Flex grow */}
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm text-slate-600 dark:text-slate-400 mb-1">
-                    Chi tiết nhập kho:
+                    <div className="text-right">
+                      <div className="text-xs text-slate-500 dark:text-slate-400">
+                        Tổng tiền
+                      </div>
+                      <div className="text-lg font-bold text-slate-900 dark:text-white">
+                        {formatCurrency(receipt.total)}
+                      </div>
+                    </div>
                   </div>
-                  <div className="space-y-0.5">
+
+                  <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-900/30 rounded-2xl p-3">
+                    <div className="w-12 h-12 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center text-orange-600 dark:text-orange-200 font-semibold text-lg">
+                      🏢
+                    </div>
+                    <div>
+                      <div className="text-base font-semibold text-slate-900 dark:text-white">
+                        {receipt.supplier}
+                      </div>
+                      {receipt.items[0].notes?.includes("Phone:") && (
+                        <div className="text-xs text-slate-500 dark:text-slate-400">
+                          📞 {receipt.items[0].notes.split("Phone:")[1]?.trim()}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
                     {receipt.items.map((item, idx) => (
                       <div
                         key={item.id}
-                        className="text-sm text-slate-900 dark:text-slate-100"
+                        className="flex items-start justify-between text-sm text-slate-700 dark:text-slate-200"
                       >
-                        <span className="text-slate-600 dark:text-slate-400">
-                          {item.quantity}x{" "}
-                        </span>
-                        <span>{item.partName}</span>
-                        <span className="text-slate-500">
-                          {" "}
-                          (ĐG: {formatCurrency(item.unitPrice || 0)})
+                        <div>
+                          <span className="font-semibold">
+                            {item.quantity} x {item.partName}
+                          </span>
+                          <div className="text-xs text-slate-400">
+                            {formatCurrency(item.unitPrice || 0)} / sản phẩm
+                          </div>
+                        </div>
+                        <span className="font-bold text-slate-900 dark:text-white">
+                          {formatCurrency(
+                            item.quantity * (item.unitPrice || 0)
+                          )}
                         </span>
                       </div>
                     ))}
                   </div>
-                  <div className="text-xs text-blue-600 dark:text-blue-400 mt-1">
-                    NV: Nhập kho:{" "}
-                    {receipt.items[0].notes
-                      ?.split("NV:")[1]
-                      ?.split("NCC:")[0]
-                      ?.trim() || "Xuân Nhan"}
+
+                  <div className="flex flex-wrap gap-2">
+                    {hasDebt ? (
+                      <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-200">
+                        ⚠️ Còn nợ {formatCurrency(remainingDebt)}
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-200">
+                        ✓ Đã thanh toán
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex flex-wrap gap-2 pt-3 border-t border-dashed border-slate-200 dark:border-slate-700">
+                    <button
+                      onClick={() =>
+                        setEditingReceipt({
+                          ...receipt,
+                          date: new Date(receipt.date),
+                        })
+                      }
+                      className="flex-1 min-w-[120px] px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-sm font-medium"
+                    >
+                      Chỉnh sửa
+                    </button>
                   </div>
                 </div>
 
-                {/* Amount Column */}
-                <div className="w-32 text-right flex-shrink-0">
-                  <div className="text-lg font-bold text-slate-900 dark:text-slate-100">
-                    {formatCurrency(receipt.total)}
+                {/* Desktop Grid */}
+                <div className="hidden md:grid grid-cols-12 gap-4 items-start">
+                  {/* Checkbox */}
+                  <div className="col-span-1 flex items-start pt-1">
+                    <input
+                      type="checkbox"
+                      checked={selectedReceipts.has(receipt.receiptCode)}
+                      onChange={(e) => {
+                        const newSelected = new Set(selectedReceipts);
+                        if (e.target.checked) {
+                          newSelected.add(receipt.receiptCode);
+                        } else {
+                          newSelected.delete(receipt.receiptCode);
+                        }
+                        setSelectedReceipts(newSelected);
+                      }}
+                      className="w-4 h-4 rounded border-slate-300"
+                    />
                   </div>
-                </div>
 
-                {/* Actions Column */}
-                <div className="flex items-center gap-1 flex-shrink-0">
-                  <button
-                    onClick={() =>
-                      setEditingReceipt({
-                        ...receipt,
-                        date: new Date(receipt.date),
-                      })
-                    }
-                    className="p-1.5 text-blue-400 hover:bg-blue-500/20 rounded transition-colors"
-                    title="Chỉnh sửa"
-                  >
-                    <svg
-                      className="w-5 h-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
+                  {/* Cột 1: Mã Phiếu + Thông tin */}
+                  <div className="col-span-2">
+                    <div className="space-y-1">
+                      <div className="text-sm font-bold text-cyan-600 dark:text-cyan-400">
+                        {receipt.receiptCode}
+                      </div>
+                      <div className="text-xs text-slate-500 dark:text-slate-400">
+                        {formattedDate} {formattedTime}
+                      </div>
+                      <div className="text-xs text-slate-600 dark:text-slate-300">
+                        <span className="font-medium">NV:</span>{" "}
+                        {receipt.items[0].notes
+                          ?.split("NV:")[1]
+                          ?.split("NCC:")[0]
+                          ?.trim() || "Xuân Nhan"}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Cột 2: Nhà cung cấp */}
+                  <div className="col-span-2">
+                    <div className="space-y-1">
+                      <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                        {receipt.supplier}
+                      </div>
+                      {receipt.items[0].notes?.includes("Phone:") && (
+                        <div className="text-xs text-slate-500 dark:text-slate-400">
+                          📞 {receipt.items[0].notes.split("Phone:")[1]?.trim()}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Cột 3: Chi tiết sản phẩm */}
+                  <div className="col-span-4">
+                    <div className="space-y-1">
+                      {receipt.items.map((item, idx) => (
+                        <div
+                          key={item.id}
+                          className="text-xs text-slate-700 dark:text-slate-300"
+                        >
+                          <span className="font-medium">{item.quantity} x</span>{" "}
+                          {item.partName}
+                          <span className="text-slate-400 ml-1">
+                            ({formatCurrency(item.unitPrice || 0)})
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Cột 4: Thanh toán */}
+                  <div className="col-span-2">
+                    <div className="space-y-1">
+                      <div className="text-xs text-slate-600 dark:text-slate-400">
+                        Tổng tiền:
+                      </div>
+                      <div className="text-base font-bold text-slate-900 dark:text-white">
+                        {formatCurrency(receipt.total)}
+                      </div>
+
+                      {/* Payment details */}
+                      {hasDebt ? (
+                        <div className="mt-2 space-y-1">
+                          <div className="text-xs text-green-600 dark:text-green-400">
+                            Đã trả: {formatCurrency(paidAmount)}
+                          </div>
+                          <div className="text-xs font-semibold text-red-600 dark:text-red-400">
+                            Còn nợ: {formatCurrency(remainingDebt)}
+                          </div>
+                          <div className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300">
+                            ⚠️ Còn nợ
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="mt-2">
+                          <div className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300">
+                            ✓ Đã thanh toán
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Cột 5: Thao tác */}
+                  <div className="col-span-1">
+                    <button
+                      onClick={() =>
+                        setEditingReceipt({
+                          ...receipt,
+                          date: new Date(receipt.date),
+                        })
+                      }
+                      className="p-1.5 text-blue-400 hover:bg-blue-500/20 rounded transition-colors"
+                      title="Chỉnh sửa"
                     >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                      />
-                    </svg>
-                  </button>
-                  <button
-                    className="p-1.5 text-slate-400 hover:bg-slate-500/20 rounded transition-colors"
-                    title="Thêm tùy chọn"
-                  >
-                    <svg
-                      className="w-5 h-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
-                      />
-                    </svg>
-                  </button>
+                      <svg
+                        className="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                        />
+                      </svg>
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
 
@@ -3353,7 +3731,7 @@ const InventoryManager: React.FC = () => {
 
   const { profile } = useAuth();
   const handleSaveGoodsReceipt = useCallback(
-    (
+    async (
       items: Array<{
         partId: string;
         partName: string;
@@ -3362,87 +3740,149 @@ const InventoryManager: React.FC = () => {
         sellingPrice: number;
         wholesalePrice?: number;
       }>,
-      supplier: string,
+      supplierId: string,
       totalAmount: number,
-      note: string
+      note: string,
+      paymentInfo?: {
+        paymentMethod: "cash" | "bank";
+        paymentType: "full" | "partial" | "note";
+        paidAmount: number;
+        discount: number;
+      }
     ) => {
+      // Generate receipt code: NH-YYYYMMDD-XXX
+      const today = new Date();
+      const dateStr = today.toISOString().split("T")[0].replace(/-/g, "");
+      const receiptCode = `NH-${dateStr}-${Math.floor(Math.random() * 1000)
+        .toString()
+        .padStart(3, "0")}`;
+
+      console.log("📦 Saving goods receipt:", {
+        receiptCode,
+        supplierId,
+        totalAmount,
+        paymentInfo,
+        itemCount: items.length,
+      });
+
+      // Get supplier name
+      const { data: suppliers } = await supabase
+        .from("suppliers")
+        .select("name")
+        .eq("id", supplierId)
+        .single();
+      const supplierName = suppliers?.name || "Không xác định";
+
+      // Calculate debt amount
+      const paidAmount = paymentInfo?.paidAmount || 0;
+      const debtAmount = totalAmount - paidAmount;
+
       // ⚠️ IMPORTANT: Stock is now auto-updated by trigger (trg_inventory_tx_after_insert)
       // We only need to:
       // 1. Create inventory_transaction (trigger will update stock)
       // 2. Update prices (retailPrice, wholesalePrice) - not handled by trigger
+      // 3. Create supplier debt if needed
 
-      items.forEach(async (item) => {
-        const part = repoParts.find((p) => p.id === item.partId);
+      try {
+        // Save all items
+        for (const item of items) {
+          const part = allPartsData?.find((p: any) => p.id === item.partId);
 
-        // Create inventory transaction - trigger will auto-update stock
-        try {
+          // Create inventory transaction - trigger will auto-update stock
           await createInventoryTxAsync({
             type: "Nhập kho",
             partId: item.partId,
             partName: item.partName,
             quantity: item.quantity,
-            date: new Date().toISOString(),
+            date: today.toISOString(),
             unitPrice: item.importPrice,
             totalPrice: item.importPrice * item.quantity,
             branchId: currentBranchId,
-            notes: supplier ? `NCC: ${supplier}` : note,
-          });
-        } catch (err: any) {
-          console.error("Lỗi lưu lịch sử kho:", err);
-          showToast.error(`Lỗi lưu lịch sử: ${err.message || "Không rõ"}`);
-          return; // Skip price update if transaction failed
-        }
-
-        // Update only prices (not stock - trigger handles stock)
-        if (part) {
-          updatePartMutation.mutate({
-            id: item.partId,
-            updates: {
-              retailPrice: {
-                ...part.retailPrice,
-                [currentBranchId]: item.sellingPrice,
-              },
-              wholesalePrice: {
-                ...part.wholesalePrice,
-                [currentBranchId]: item.wholesalePrice || 0,
-              },
-            },
+            notes: `${receiptCode} | NCC: ${supplierName}${
+              note ? " | " + note : ""
+            }`,
           });
 
-          // Audit price update if price changed
-          if (part.retailPrice[currentBranchId] !== item.sellingPrice) {
-            void safeAudit(profile?.id || null, {
-              action: "part.update_price",
-              tableName: "parts",
-              recordId: part.id,
-              oldData: { retailPrice: part.retailPrice[currentBranchId] },
-              newData: { retailPrice: item.sellingPrice },
+          // Update only prices (not stock - trigger handles stock)
+          if (part) {
+            updatePartMutation.mutate({
+              id: item.partId,
+              updates: {
+                retailPrice: {
+                  ...part.retailPrice,
+                  [currentBranchId]: item.sellingPrice,
+                },
+                wholesalePrice: {
+                  ...part.wholesalePrice,
+                  [currentBranchId]: item.wholesalePrice || 0,
+                },
+              },
             });
           }
         }
-      });
 
-      setShowGoodsReceipt(false);
-      showToast.success("Nhập kho thành công!");
-      // High-level audit of goods receipt batch
-      void safeAudit(profile?.id || null, {
-        action: "inventory.receipt",
-        tableName: "inventory_transactions",
-        oldData: null,
-        newData: {
-          supplier,
-          items: items.map((i) => ({
-            partId: i.partId,
-            quantity: i.quantity,
-            importPrice: i.importPrice,
-            sellingPrice: i.sellingPrice,
-          })),
-          totalAmount,
-        },
-      });
+        // Create supplier debt if payment is partial or deferred
+        if (debtAmount > 0 && paymentInfo) {
+          const debtId = `DEBT-${dateStr}-${Math.random()
+            .toString(36)
+            .substring(2, 5)
+            .toUpperCase()}`;
+          const { error: debtError } = await supabase
+            .from("supplier_debts")
+            .insert({
+              id: debtId,
+              supplier_id: supplierId,
+              supplier_name: supplierName,
+              branch_id: currentBranchId,
+              total_amount: debtAmount,
+              paid_amount: 0,
+              remaining_amount: debtAmount,
+              description: `Nhập kho ${receiptCode} - Thanh toán ${paidAmount.toLocaleString()}/${totalAmount.toLocaleString()} đ`,
+              created_date: today.toISOString().split("T")[0],
+              created_at: today.toISOString(),
+            });
+
+          if (debtError) {
+            console.error("❌ Error creating debt:", debtError);
+            showToast.error("Lỗi tạo công nợ: " + debtError.message);
+          } else {
+            console.log(
+              `✅ Created supplier debt: ${debtAmount.toLocaleString()} đ`
+            );
+          }
+        }
+
+        setShowGoodsReceipt(false);
+        showToast.success(`Nhập kho thành công! Mã phiếu: ${receiptCode}`);
+
+        // High-level audit of goods receipt batch
+        void safeAudit(profile?.id || null, {
+          action: "inventory.receipt",
+          tableName: "inventory_transactions",
+          oldData: null,
+          newData: {
+            receiptCode,
+            supplierId,
+            supplierName,
+            items: items.map((i) => ({
+              partId: i.partId,
+              quantity: i.quantity,
+              importPrice: i.importPrice,
+              sellingPrice: i.sellingPrice,
+            })),
+            totalAmount,
+            paidAmount,
+            debtAmount,
+            paymentInfo,
+          },
+        });
+      } catch (err: any) {
+        console.error("🛑 Lỗi lưu phiếu nhập kho:", err);
+        showToast.error(`Lỗi: ${err.message || "Không rõ"}`);
+      }
     },
     [
-      repoParts,
+      allPartsData,
       currentBranchId,
       updatePartMutation,
       createInventoryTxAsync,
@@ -4205,23 +4645,35 @@ const InventoryManager: React.FC = () => {
         )}
 
         {activeTab === "categories" && (
-          <div className="bg-[#0f172a] -m-6">
+          <div className="bg-[#0f172a] -m-3 sm:-m-6">
             <CategoriesManager />
           </div>
         )}
 
         {activeTab === "lookup" && (
-          <div className="bg-[#0f172a] -m-6">
+          <div className="bg-[#0f172a] -m-3 sm:-m-6">
             <LookupManager />
           </div>
         )}
       </div>
 
       {/* Modals */}
-      <GoodsReceiptModal
+      {/* Desktop Version - Original */}
+      <div className="hidden sm:block">
+        <GoodsReceiptModal
+          isOpen={showGoodsReceipt}
+          onClose={() => setShowGoodsReceipt(false)}
+          parts={allPartsData || []}
+          currentBranchId={currentBranchId}
+          onSave={handleSaveGoodsReceipt}
+        />
+      </div>
+
+      {/* Mobile Version - New 2-step design */}
+      <GoodsReceiptMobileWrapper
         isOpen={showGoodsReceipt}
         onClose={() => setShowGoodsReceipt(false)}
-        parts={repoParts}
+        parts={allPartsData || []}
         currentBranchId={currentBranchId}
         onSave={handleSaveGoodsReceipt}
       />

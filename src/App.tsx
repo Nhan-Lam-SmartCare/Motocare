@@ -655,15 +655,10 @@ const NavLink: React.FC<{
 const BottomNav: React.FC = () => {
   const location = useLocation();
 
-  // Always show bottom nav on mobile, except maybe login which is handled by layout
-  // if (
-  //   location.pathname === "/dashboard" ||
-  //   location.pathname === "/" ||
-  //   location.pathname === "/inventory" ||
-  //   location.pathname === "/service"
-  // ) {
-  //   return null;
-  // }
+  // Hide bottom nav on inventory page for mobile
+  if (location.pathname === "/inventory") {
+    return null;
+  }
 
   const navItems = [
     {

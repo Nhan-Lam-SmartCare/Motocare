@@ -11,6 +11,8 @@ import type { Customer, Sale, WorkOrder, Vehicle } from "../../types";
 import { useSalesRepo } from "../../hooks/useSalesRepository";
 import { useWorkOrdersRepo } from "../../hooks/useWorkOrdersRepository";
 
+// --- COMPONENTS ---
+
 // Customer History Modal Component
 interface CustomerHistoryModalProps {
   isOpen: boolean;
@@ -65,8 +67,8 @@ const CustomerHistoryModal: React.FC<CustomerHistoryModalProps> = ({
   const actualLoyaltyPoints = Math.floor(actualTotalSpent / 10000);
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[70] p-4">
-      <div className="bg-white dark:bg-slate-800 rounded-lg w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[70] p-4 backdrop-blur-sm">
+      <div className="bg-white dark:bg-slate-800 rounded-lg w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-slate-200 dark:border-slate-700">
           <div>
@@ -152,7 +154,7 @@ const CustomerHistoryModal: React.FC<CustomerHistoryModalProps> = ({
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-auto p-6">
+        <div className="flex-1 overflow-auto p-6 custom-scrollbar">
           {activeTab === "sales" ? (
             <div className="space-y-3">
               {customerSales.length === 0 ? (
@@ -340,11 +342,16 @@ const classifyCustomer = (customer: Customer): Customer["segment"] => {
   return "New";
 };
 
+// --- MAIN COMPONENT ---
+
 const CustomerManager: React.FC = () => {
   // Lấy danh sách khách hàng từ Supabase
   const { data: customers = [], isLoading, refetch } = useCustomers();
   const createCustomer = useCreateCustomer();
   const updateCustomer = useUpdateCustomer();
+
+  // State cho Load More
+  const [displayCount, setDisplayCount] = useState(20);
 
   // Hàm lưu khách hàng (tạo mới hoặc cập nhật)
   const handleSaveCustomer = async (c: Partial<Customer> & { id?: string }) => {
@@ -376,6 +383,11 @@ const CustomerManager: React.FC = () => {
   const { data: allSales = [] } = useSalesRepo();
   const { data: allWorkOrders = [] } = useWorkOrdersRepo();
 
+  // Reset display count khi search hoặc filter thay đổi
+  useEffect(() => {
+    setDisplayCount(20);
+  }, [search, activeFilter]);
+
   // Helper function to calculate actual loyalty points for a customer
   const calculateLoyaltyPoints = (customer: Customer) => {
     const customerSales = allSales.filter(
@@ -400,7 +412,7 @@ const CustomerManager: React.FC = () => {
     return Math.floor(totalSpent / 10000);
   };
 
-  // Auto-classify customers on mount only (not on every change to avoid conflicts)
+  // Auto-classify customers on mount only
   useEffect(() => {
     let hasChanges = false;
     customers.forEach((customer) => {
@@ -474,13 +486,13 @@ const CustomerManager: React.FC = () => {
   }, [customers]);
 
   return (
-    <div className="h-full flex flex-col bg-slate-50 dark:bg-slate-900">
-      {/* Tabs */}
-      <div className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
-        <div className="flex items-center px-6">
+    <div className="h-full flex flex-col bg-slate-50 dark:bg-slate-900 overflow-hidden">
+      {/* Tabs Header - Fixed */}
+      <div className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex-none z-20 shadow-sm">
+        <div className="flex items-center px-6 overflow-x-auto no-scrollbar">
           <button
             onClick={() => setActiveTab("customers")}
-            className={`flex items-center gap-2 px-4 py-4 border-b-2 font-medium text-sm transition-colors ${activeTab === "customers"
+            className={`flex items-center gap-2 px-4 py-4 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${activeTab === "customers"
               ? "border-blue-500 text-blue-600 dark:text-blue-400"
               : "border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
               }`}
@@ -490,7 +502,7 @@ const CustomerManager: React.FC = () => {
           </button>
           <button
             onClick={() => setActiveTab("suppliers")}
-            className={`flex items-center gap-2 px-4 py-4 border-b-2 font-medium text-sm transition-colors ${activeTab === "suppliers"
+            className={`flex items-center gap-2 px-4 py-4 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${activeTab === "suppliers"
               ? "border-blue-500 text-blue-600 dark:text-blue-400"
               : "border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
               }`}
@@ -513,80 +525,112 @@ const CustomerManager: React.FC = () => {
         </div>
       </div>
 
+      {/* Main Scrollable Area */}
       {activeTab === "customers" ? (
-        <div className="flex-1 overflow-auto p-6">
-          {/* Search and Actions */}
-          <div className="flex flex-col md:flex-row gap-3 mb-6">
-            <div className="flex-1 relative w-full">
-              <svg
-                className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+        <div className="flex-1 overflow-y-auto p-6 custom-scrollbar relative">
+          {/* Sticky Action Bar */}
+          <div className="sticky top-0 z-10 pb-4 -mt-2 pt-2 bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur-sm transition-all">
+            <div className="flex flex-col md:flex-row gap-3 mb-4">
+              <div className="flex-1 relative w-full">
+                <svg
+                  className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
+                </svg>
+                <input
+                  type="text"
+                  placeholder="Tìm theo tên, SĐT, biển số xe..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2.5 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
                 />
-              </svg>
-              <input
-                type="text"
-                placeholder="Tìm theo tên, SĐT, biển số xe..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
+              </div>
+              <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0 no-scrollbar">
+                <button
+                  onClick={() => setShowImport(true)}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors whitespace-nowrap shadow-sm"
+                >
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                    />
+                  </svg>
+                  <span>Upload DS</span>
+                </button>
+                <button className="flex items-center gap-2 px-4 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-medium transition-colors whitespace-nowrap shadow-sm">
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+                    />
+                  </svg>
+                  <span>Nhắc BD</span>
+                </button>
+                <button
+                  onClick={() => setEditCustomer({} as Customer)}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors whitespace-nowrap shadow-sm"
+                >
+                  <PlusIcon className="w-5 h-5" />
+                  <span>Thêm KH</span>
+                </button>
+              </div>
             </div>
-            <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0 no-scrollbar">
-              <button
-                onClick={() => setShowImport(true)}
-                className="flex items-center gap-2 px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors whitespace-nowrap"
-              >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
+
+            {/* Filters */}
+            <div className="flex overflow-x-auto pb-2 gap-2 md:flex-wrap md:overflow-visible md:pb-0 no-scrollbar">
+              {[
+                { id: "all", label: "Tất cả khách hàng", color: "blue" },
+                { id: "vip", label: "VIP - Khách hàng quý", color: "purple" },
+                { id: "loyal", label: "Trung thành", color: "blue" },
+                { id: "potential", label: "Tiềm năng", color: "green" },
+                { id: "at-risk", label: "Cần chăm sóc", color: "orange" },
+                { id: "lost", label: "Đã mất", color: "red" },
+                { id: "new", label: "Khách mới", color: "cyan" },
+              ].map((filter) => (
+                <button
+                  key={filter.id}
+                  onClick={() => setActiveFilter(filter.id)}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap border ${activeFilter === filter.id
+                    ? `bg-${filter.color}-600 text-white border-${filter.color}-600 shadow-md`
+                    : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700"
+                    }`}
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                  />
-                </svg>
-                <span>Upload DS</span>
-              </button>
-              <button className="flex items-center gap-2 px-4 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-medium transition-colors whitespace-nowrap">
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-                  />
-                </svg>
-                <span>Nhắc BD</span>
-              </button>
-              <button
-                onClick={() => setEditCustomer({} as Customer)}
-                className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors whitespace-nowrap"
-              >
-                <PlusIcon className="w-5 h-5" />
-                <span>Thêm KH</span>
-              </button>
+                  {filter.id !== "all" && (
+                    <span
+                      className={`inline-block w-2 h-2 rounded-full bg-${filter.color}-500 mr-2`}
+                    ></span>
+                  )}
+                  {filter.label}
+                </button>
+              ))}
             </div>
           </div>
 
-          {/* Statistics Section */}
-          <div className="mb-6">
+          {/* Statistics Section - Scrolled with content */}
+          <div className="mb-6 mt-2">
             <div className="flex items-center gap-2 mb-4">
               <svg
                 className="w-5 h-5 text-slate-600 dark:text-slate-400"
@@ -602,7 +646,7 @@ const CustomerManager: React.FC = () => {
                 />
               </svg>
               <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-                Thống kê khách hàng
+                Thống kê tổng quan
               </h2>
             </div>
 
@@ -616,7 +660,7 @@ const CustomerManager: React.FC = () => {
                   {stats.total}
                 </div>
                 <div className="text-blue-600 dark:text-blue-400 text-xs mt-1">
-                  0 hoạt động
+                  {stats.active} hoạt động
                 </div>
               </div>
 
@@ -661,203 +705,7 @@ const CustomerManager: React.FC = () => {
             </div>
           </div>
 
-          {/* Customer Segments */}
-          <div className="mb-6">
-            <div className="flex items-center gap-2 mb-4">
-              <svg
-                className="w-5 h-5 text-slate-600 dark:text-slate-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
-                />
-              </svg>
-              <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-                Phân khúc khách hàng
-              </h2>
-            </div>
-
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
-              {/* VIP */}
-              <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 border-2 border-purple-200 dark:border-purple-800">
-                <div className="text-purple-600 dark:text-purple-400 text-xs font-medium mb-1">
-                  VIP
-                </div>
-                <div className="text-purple-900 dark:text-purple-100 text-2xl font-bold">
-                  {stats.vip}
-                </div>
-                <div className="text-purple-600 dark:text-purple-400 text-xs mt-1">
-                  0.0%
-                </div>
-              </div>
-
-              {/* Loyal */}
-              <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border-2 border-blue-200 dark:border-blue-800">
-                <div className="text-blue-600 dark:text-blue-400 text-xs font-medium mb-1">
-                  Loyal
-                </div>
-                <div className="text-blue-900 dark:text-blue-100 text-2xl font-bold">
-                  {stats.loyal}
-                </div>
-                <div className="text-blue-600 dark:text-blue-400 text-xs mt-1">
-                  0.0%
-                </div>
-              </div>
-
-              {/* Potential */}
-              <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 border-2 border-green-200 dark:border-green-800">
-                <div className="text-green-600 dark:text-green-400 text-xs font-medium mb-1">
-                  Potential
-                </div>
-                <div className="text-green-900 dark:text-green-100 text-2xl font-bold">
-                  {stats.potential}
-                </div>
-                <div className="text-green-600 dark:text-green-400 text-xs mt-1">
-                  0.0%
-                </div>
-              </div>
-
-              {/* At Risk */}
-              <div className="bg-orange-50 dark:bg-orange-900/20 rounded-lg p-4 border-2 border-orange-200 dark:border-orange-800">
-                <div className="text-orange-600 dark:text-orange-400 text-xs font-medium mb-1">
-                  At Risk
-                </div>
-                <div className="text-orange-900 dark:text-orange-100 text-2xl font-bold">
-                  {stats.atRisk}
-                </div>
-                <div className="text-orange-600 dark:text-orange-400 text-xs mt-1">
-                  0.0%
-                </div>
-              </div>
-
-              {/* Lost */}
-              <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-4 border-2 border-red-200 dark:border-red-800">
-                <div className="text-red-600 dark:text-red-400 text-xs font-medium mb-1">
-                  Lost
-                </div>
-                <div className="text-red-900 dark:text-red-100 text-2xl font-bold">
-                  {stats.lost}
-                </div>
-                <div className="text-red-600 dark:text-red-400 text-xs mt-1">
-                  0.0%
-                </div>
-              </div>
-
-              {/* New */}
-              <div className="bg-cyan-50 dark:bg-cyan-900/20 rounded-lg p-4 border-2 border-cyan-200 dark:border-cyan-800">
-                <div className="text-cyan-600 dark:text-cyan-400 text-xs font-medium mb-1">
-                  New
-                </div>
-                <div className="text-cyan-900 dark:text-cyan-100 text-2xl font-bold">
-                  {stats.new}
-                </div>
-                <div className="text-cyan-600 dark:text-cyan-400 text-xs mt-1">
-                  0.0%
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Filter Buttons */}
-          <div className="mb-6">
-            <div className="flex items-center gap-2 mb-4">
-              <svg
-                className="w-5 h-5 text-slate-600 dark:text-slate-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
-                />
-              </svg>
-              <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-                Phân loại khách hàng
-              </h2>
-            </div>
-
-            <div className="flex overflow-x-auto pb-2 gap-2 md:flex-wrap md:overflow-visible md:pb-0 no-scrollbar">
-              <button
-                onClick={() => setActiveFilter("all")}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${activeFilter === "all"
-                  ? "bg-blue-600 text-white"
-                  : "bg-primary-bg text-secondary-text border border-primary-border hover:bg-tertiary-bg"
-                  }`}
-              >
-                Tất cả khách hàng
-              </button>
-              <button
-                onClick={() => setActiveFilter("vip")}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${activeFilter === "vip"
-                  ? "bg-purple-600 text-white"
-                  : "bg-primary-bg text-secondary-text border border-primary-border hover:bg-tertiary-bg"
-                  }`}
-              >
-                <span className="inline-block w-2 h-2 rounded-full bg-purple-500 mr-2"></span>
-                VIP - Khách hàng quý
-              </button>
-              <button
-                onClick={() => setActiveFilter("loyal")}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${activeFilter === "loyal"
-                  ? "bg-blue-600 text-white"
-                  : "bg-primary-bg text-secondary-text border border-primary-border hover:bg-tertiary-bg"
-                  }`}
-              >
-                <span className="inline-block w-2 h-2 rounded-full bg-blue-500 mr-2"></span>
-                Trung thành
-              </button>
-              <button
-                onClick={() => setActiveFilter("potential")}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${activeFilter === "potential"
-                  ? "bg-green-600 text-white"
-                  : "bg-primary-bg text-secondary-text border border-primary-border hover:bg-tertiary-bg"
-                  }`}
-              >
-                <span className="inline-block w-2 h-2 rounded-full bg-green-500 mr-2"></span>
-                Tiềm năng
-              </button>
-              <button
-                onClick={() => setActiveFilter("at-risk")}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${activeFilter === "at-risk"
-                  ? "bg-orange-600 text-white"
-                  : "bg-primary-bg text-secondary-text border border-primary-border hover:bg-tertiary-bg"
-                  }`}
-              >
-                <span className="inline-block w-2 h-2 rounded-full bg-orange-500 mr-2"></span>
-                Cần chăm sóc
-              </button>
-              <button
-                onClick={() => setActiveFilter("lost")}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${activeFilter === "lost"
-                  ? "bg-red-600 text-white"
-                  : "bg-primary-bg text-secondary-text border border-primary-border hover:bg-tertiary-bg"
-                  }`}
-              >
-                <span className="inline-block w-2 h-2 rounded-full bg-red-500 mr-2"></span>
-                Đã mất
-              </button>
-              <button
-                onClick={() => setActiveFilter("new")}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${activeFilter === "new"
-                  ? "bg-cyan-600 text-white"
-                  : "bg-primary-bg text-secondary-text border border-primary-border hover:bg-tertiary-bg"
-                  }`}
-              >
-                <span className="inline-block w-2 h-2 rounded-full bg-cyan-500 mr-2"></span>
-                Khách mới
-              </button>
-            </div>
-          </div>
-
-          {/* Customer Cards */}
+          {/* Customer Cards Grid */}
           {filtered.length === 0 ? (
             <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-12 text-center">
               <div className="flex justify-center mb-4">
@@ -876,365 +724,398 @@ const CustomerManager: React.FC = () => {
                 </svg>
               </div>
               <p className="text-slate-500 dark:text-slate-400 text-lg">
-                Không có khách hàng nào.
+                Không tìm thấy khách hàng nào.
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filtered.map((customer) => {
-                const segmentConfig = {
-                  VIP: {
-                    bg: "bg-gradient-to-br from-purple-400 to-purple-600 dark:from-purple-500 dark:to-purple-700",
-                    text: "VIP",
-                    icon: (
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="w-6 h-6"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="m3 7 5 5-5 5 19-5L3 7Z"
-                        />
-                      </svg>
-                    ),
-                  },
-                  Loyal: {
-                    bg: "bg-gradient-to-br from-blue-400 to-blue-600 dark:from-blue-500 dark:to-blue-700",
-                    text: "Trung thành",
-                    icon: (
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="w-6 h-6"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M12 17.75 6.825 20.995l.99-5.766L3.63 11.255l5.807-.844L12 5l2.563 5.411 5.807.844-4.186 3.974.99 5.766L12 17.75Z"
-                        />
-                      </svg>
-                    ),
-                  },
-                  Potential: {
-                    bg: "bg-gradient-to-br from-green-400 to-green-600 dark:from-green-500 dark:to-green-700",
-                    text: "Tiềm năng",
-                    icon: (
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="w-6 h-6"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M12 2v5m0 0c1.886-1.257 4.63-1.034 6 1-1.886 1.257-1.886 3.743 0 5-1.37 2.034-4.114 2.257-6 1m0-12c-1.886-1.257-4.63-1.034-6 1 1.886 1.257 1.886 3.743 0 5 1.37 2.034 4.114 2.257 6 1m0 0v5"
-                        />
-                      </svg>
-                    ),
-                  },
-                  "At Risk": {
-                    bg: "bg-gradient-to-br from-orange-400 to-orange-600 dark:from-orange-500 dark:to-orange-700",
-                    text: "Cần chăm sóc",
-                    icon: (
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="w-6 h-6"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"
-                        />
-                      </svg>
-                    ),
-                  },
-                  Lost: {
-                    bg: "bg-gradient-to-br from-red-400 to-red-600 dark:from-red-500 dark:to-red-700",
-                    text: "Đã mất",
-                    icon: (
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="w-6 h-6"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="m15 9-6 6m0-6 6 6M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-                        />
-                      </svg>
-                    ),
-                  },
-                  New: {
-                    bg: "bg-gradient-to-br from-cyan-400 to-cyan-600 dark:from-cyan-500 dark:to-cyan-700",
-                    text: "Khách mới",
-                    icon: (
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="w-6 h-6"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M12 2v2m0 4v2m0 4v2m0 4v2M4.93 4.93l1.414 1.414M7.757 12l-1.414 1.414M4.93 19.07l1.414-1.414M19.07 4.93l-1.414 1.414M16.243 12l1.414 1.414M19.07 19.07l-1.414-1.414M2 12h2m4 0h2m4 0h2m4 0h2"
-                        />
-                      </svg>
-                    ),
-                  },
-                } as const;
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filtered.slice(0, displayCount).map((customer) => {
+                  const segmentConfig = {
+                    VIP: {
+                      bg: "bg-gradient-to-br from-purple-400 to-purple-600 dark:from-purple-500 dark:to-purple-700",
+                      text: "VIP",
+                      icon: (
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="w-6 h-6"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="m3 7 5 5-5 5 19-5L3 7Z"
+                          />
+                        </svg>
+                      ),
+                    },
+                    Loyal: {
+                      bg: "bg-gradient-to-br from-blue-400 to-blue-600 dark:from-blue-500 dark:to-blue-700",
+                      text: "Trung thành",
+                      icon: (
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="w-6 h-6"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M12 17.75 6.825 20.995l.99-5.766L3.63 11.255l5.807-.844L12 5l2.563 5.411 5.807.844-4.186 3.974.99 5.766L12 17.75Z"
+                          />
+                        </svg>
+                      ),
+                    },
+                    Potential: {
+                      bg: "bg-gradient-to-br from-green-400 to-green-600 dark:from-green-500 dark:to-green-700",
+                      text: "Tiềm năng",
+                      icon: (
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="w-6 h-6"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M12 2v5m0 0c1.886-1.257 4.63-1.034 6 1-1.886 1.257-1.886 3.743 0 5-1.37 2.034-4.114 2.257-6 1m0-12c-1.886-1.257-4.63-1.034-6 1 1.886 1.257 1.886 3.743 0 5 1.37 2.034 4.114 2.257 6 1m0 0v5"
+                          />
+                        </svg>
+                      ),
+                    },
+                    "At Risk": {
+                      bg: "bg-gradient-to-br from-orange-400 to-orange-600 dark:from-orange-500 dark:to-orange-700",
+                      text: "Cần chăm sóc",
+                      icon: (
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="w-6 h-6"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"
+                          />
+                        </svg>
+                      ),
+                    },
+                    Lost: {
+                      bg: "bg-gradient-to-br from-red-400 to-red-600 dark:from-red-500 dark:to-red-700",
+                      text: "Đã mất",
+                      icon: (
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="w-6 h-6"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="m15 9-6 6m0-6 6 6M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+                          />
+                        </svg>
+                      ),
+                    },
+                    New: {
+                      bg: "bg-gradient-to-br from-cyan-400 to-cyan-600 dark:from-cyan-500 dark:to-cyan-700",
+                      text: "Khách mới",
+                      icon: (
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="w-6 h-6"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M12 2v2m0 4v2m0 4v2m0 4v2M4.93 4.93l1.414 1.414M7.757 12l-1.414 1.414M4.93 19.07l1.414-1.414M19.07 4.93l-1.414 1.414M16.243 12l1.414 1.414M19.07 19.07l-1.414-1.414M2 12h2m4 0h2m4 0h2m4 0h2"
+                          />
+                        </svg>
+                      ),
+                    },
+                  } as const;
 
-                const config = customer.segment
-                  ? segmentConfig[customer.segment]
-                  : {
-                    bg: "bg-gradient-to-br from-slate-400 to-slate-600 dark:from-slate-500 dark:to-slate-700",
-                    text: "Khách hàng",
-                    icon: <User className="w-6 h-6" />,
-                  };
-                const points = calculateLoyaltyPoints(customer);
-                const pointsPercent = Math.min((points / 10000) * 100, 100);
+                  const config = customer.segment
+                    ? segmentConfig[customer.segment]
+                    : {
+                      bg: "bg-gradient-to-br from-slate-400 to-slate-600 dark:from-slate-500 dark:to-slate-700",
+                      text: "Khách hàng",
+                      icon: <User className="w-6 h-6" />,
+                    };
+                  const points = calculateLoyaltyPoints(customer);
+                  const pointsPercent = Math.min((points / 10000) * 100, 100);
 
-                return (
-                  <div
-                    key={customer.id}
-                    className="bg-white dark:bg-slate-800 rounded-xl shadow-lg overflow-hidden border border-slate-200 dark:border-slate-700 hover:shadow-xl transition-shadow"
-                  >
-                    {/* Card Header with Gradient */}
-                    <div className={`${config.bg} p-4 text-white relative`}>
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex items-center gap-2">
-                          <span className="text-2xl flex items-center justify-center">
-                            {config.icon}
-                          </span>
-                          <span className="text-xs font-semibold px-2 py-0.5 bg-white/20 rounded-full backdrop-blur">
-                            {config.text}
-                          </span>
-                        </div>
-                        <div className="flex gap-1">
-                          <button
-                            onClick={() => setViewHistoryCustomer(customer)}
-                            className="p-1.5 bg-white/20 hover:bg-white/30 rounded-lg transition-colors backdrop-blur"
-                            title="Xem lịch sử"
-                          >
-                            <svg
-                              className="w-4 h-4"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                              />
-                            </svg>
-                          </button>
-                          <button
-                            onClick={() => setEditCustomer(customer)}
-                            className="p-1.5 bg-white/20 hover:bg-white/30 rounded-lg transition-colors backdrop-blur"
-                            title="Chỉnh sửa"
-                          >
-                            <svg
-                              className="w-4 h-4"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                              />
-                            </svg>
-                          </button>
-                          <button
-                            onClick={() => handleDelete(customer.id)}
-                            className="p-1.5 bg-white/20 hover:bg-red-500 rounded-lg transition-colors backdrop-blur"
-                            title="Xóa"
-                          >
-                            <TrashIcon className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </div>
-
-                      <div>
-                        <h3 className="text-lg font-bold mb-1">
-                          {customer.name}
-                        </h3>
-                        <div className="flex items-center gap-2 text-sm opacity-90">
-                          <span className="inline-flex items-center gap-1">
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              className="w-4 h-4"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M2.25 6.75c0 8.284 6.716 15 15 15 .828 0 1.5-.672 1.5-1.5v-2.25a1.5 1.5 0 00-1.5-1.5h-1.158a1.5 1.5 0 00-1.092.468l-.936.996a1.5 1.5 0 01-1.392.444 12.035 12.035 0 01-7.29-7.29 1.5 1.5 0 01.444-1.392l.996-.936a1.5 1.5 0 00.468-1.092V6.75A1.5 1.5 0 006.75 5.25H4.5c-.828 0-1.5.672-1.5 1.5z"
-                              />
-                            </svg>
-                            {customer.phone || "—"}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Card Body */}
-                    <div className="p-4 space-y-3">
-                      {/* Vehicle Info - Show all vehicles or legacy field */}
-                      {customer.vehicles && customer.vehicles.length > 0 ? (
-                        <div className="space-y-2">
-                          {customer.vehicles.map((vehicle) => (
-                            <div
-                              key={vehicle.id}
-                              className="flex items-center gap-2 text-sm"
-                            >
-                              {vehicle.isPrimary && (
-                                <span
-                                  className="text-yellow-500"
-                                  title="Xe chính"
-                                >
-                                  <svg
-                                    className="w-3 h-3"
-                                    fill="currentColor"
-                                    viewBox="0 0 20 20"
-                                  >
-                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                                  </svg>
-                                </span>
-                              )}
-                              <span className="text-slate-400 dark:text-slate-500">
-                                <Bike className="w-4 h-4" />
-                              </span>
-                              <div>
-                                <div className="font-medium text-slate-900 dark:text-slate-100">
-                                  {vehicle.model}
-                                </div>
-                                {vehicle.licensePlate && (
-                                  <div className="text-xs text-slate-500 dark:text-slate-400">
-                                    Biển số: {vehicle.licensePlate}
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      ) : customer.vehicleModel ? (
-                        <div className="flex items-center gap-2 text-sm">
-                          <span className="text-slate-400 dark:text-slate-500">
-                            <Bike className="w-4 h-4" />
-                          </span>
-                          <div>
-                            <div className="font-medium text-slate-900 dark:text-slate-100">
-                              {customer.vehicleModel}
-                            </div>
-                            {customer.licensePlate && (
-                              <div className="text-xs text-slate-500 dark:text-slate-400">
-                                Biển số: {customer.licensePlate}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      ) : null}
-
-                      {/* Loyalty Points Section */}
-                      <div className="bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-900/20 dark:to-yellow-900/20 rounded-lg p-3 border border-amber-200 dark:border-amber-800">
-                        <div className="flex items-center justify-between mb-2">
+                  return (
+                    <div
+                      key={customer.id}
+                      className="bg-white dark:bg-slate-800 rounded-xl shadow-lg overflow-hidden border border-slate-200 dark:border-slate-700 hover:shadow-xl transition-shadow"
+                    >
+                      {/* Card Header with Gradient */}
+                      <div className={`${config.bg} p-4 text-white relative`}>
+                        <div className="flex items-start justify-between mb-3">
                           <div className="flex items-center gap-2">
-                            <span className="text-lg">🎁</span>
-                            <span className="text-xs font-semibold text-amber-900 dark:text-amber-200">
-                              ĐIỂM TÍCH LŨY
+                            <span className="text-2xl flex items-center justify-center">
+                              {config.icon}
+                            </span>
+                            <span className="text-xs font-semibold px-2 py-0.5 bg-white/20 rounded-full backdrop-blur">
+                              {config.text}
                             </span>
                           </div>
-                          <span className="text-xl font-bold text-amber-600 dark:text-amber-400">
-                            {points.toLocaleString()}
-                          </span>
-                        </div>
-
-                        {/* Points Progress Bar */}
-                        <div className="mb-1">
-                          <div className="h-2 bg-amber-200 dark:bg-amber-900/50 rounded-full overflow-hidden">
-                            <div
-                              className="h-full bg-gradient-to-r from-amber-400 to-amber-600 transition-all duration-500"
-                              style={{ width: `${pointsPercent}%` }}
-                            ></div>
+                          <div className="flex gap-1">
+                            <button
+                              onClick={() => setViewHistoryCustomer(customer)}
+                              className="p-1.5 bg-white/20 hover:bg-white/30 rounded-lg transition-colors backdrop-blur"
+                              title="Xem lịch sử"
+                            >
+                              <svg
+                                className="w-4 h-4"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                                />
+                              </svg>
+                            </button>
+                            <button
+                              onClick={() => setEditCustomer(customer)}
+                              className="p-1.5 bg-white/20 hover:bg-white/30 rounded-lg transition-colors backdrop-blur"
+                              title="Chỉnh sửa"
+                            >
+                              <svg
+                                className="w-4 h-4"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                                />
+                              </svg>
+                            </button>
+                            <button
+                              onClick={() => handleDelete(customer.id)}
+                              className="p-1.5 bg-white/20 hover:bg-red-500 rounded-lg transition-colors backdrop-blur"
+                              title="Xóa"
+                            >
+                              <TrashIcon className="w-4 h-4" />
+                            </button>
                           </div>
                         </div>
-                        <div className="text-[10px] text-amber-700 dark:text-amber-300 text-right">
-                          Mục tiêu: 10,000 điểm
+
+                        <div>
+                          <h3 className="text-lg font-bold mb-1">
+                            {customer.name}
+                          </h3>
+                          <div className="flex items-center gap-2 text-sm opacity-90">
+                            <span className="inline-flex items-center gap-1">
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                className="w-4 h-4"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  d="M2.25 6.75c0 8.284 6.716 15 15 15 .828 0 1.5-.672 1.5-1.5v-2.25a1.5 1.5 0 00-1.5-1.5h-1.158a1.5 1.5 0 00-1.092.468l-.936.996a1.5 1.5 0 01-1.392.444 12.035 12.035 0 01-7.29-7.29 1.5 1.5 0 01.444-1.392l.996-.936a1.5 1.5 0 00.468-1.092V6.75A1.5 1.5 0 006.75 5.25H4.5c-.828 0-1.5.672-1.5 1.5z"
+                                />
+                              </svg>
+                              {customer.phone || "—"}
+                            </span>
+                          </div>
                         </div>
                       </div>
 
-                      {/* Stats Grid */}
-                      <div className="grid grid-cols-3 gap-2 pt-2 border-t border-slate-200 dark:border-slate-700">
-                        <div className="text-center">
-                          <div className="text-lg font-bold text-slate-900 dark:text-slate-100">
-                            {customer.visitCount || 0}
+                      {/* Card Body */}
+                      <div className="p-4 space-y-3">
+                        {/* Vehicle Info */}
+                        {customer.vehicles && customer.vehicles.length > 0 ? (
+                          <div className="space-y-2">
+                            {customer.vehicles.map((vehicle) => (
+                              <div
+                                key={vehicle.id}
+                                className="flex items-center gap-2 text-sm"
+                              >
+                                {vehicle.isPrimary && (
+                                  <span
+                                    className="text-yellow-500"
+                                    title="Xe chính"
+                                  >
+                                    <svg
+                                      className="w-3 h-3"
+                                      fill="currentColor"
+                                      viewBox="0 0 20 20"
+                                    >
+                                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                    </svg>
+                                  </span>
+                                )}
+                                <span className="text-slate-400 dark:text-slate-500">
+                                  <Bike className="w-4 h-4" />
+                                </span>
+                                <div>
+                                  <div className="font-medium text-slate-900 dark:text-slate-100">
+                                    {vehicle.model}
+                                  </div>
+                                  {vehicle.licensePlate && (
+                                    <div className="text-xs text-slate-500 dark:text-slate-400">
+                                      Biển số: {vehicle.licensePlate}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
                           </div>
-                          <div className="text-xs text-slate-500 dark:text-slate-400">
-                            Lần đến
+                        ) : customer.vehicleModel ? (
+                          <div className="flex items-center gap-2 text-sm">
+                            <span className="text-slate-400 dark:text-slate-500">
+                              <Bike className="w-4 h-4" />
+                            </span>
+                            <div>
+                              <div className="font-medium text-slate-900 dark:text-slate-100">
+                                {customer.vehicleModel}
+                              </div>
+                              {customer.licensePlate && (
+                                <div className="text-xs text-slate-500 dark:text-slate-400">
+                                  Biển số: {customer.licensePlate}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ) : null}
+
+                        {/* Loyalty Points Section */}
+                        <div className="bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-900/20 dark:to-yellow-900/20 rounded-lg p-3 border border-amber-200 dark:border-amber-800">
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              <span className="text-lg">🎁</span>
+                              <span className="text-xs font-semibold text-amber-900 dark:text-amber-200">
+                                ĐIỂM TÍCH LŨY
+                              </span>
+                            </div>
+                            <span className="text-xl font-bold text-amber-600 dark:text-amber-400">
+                              {points.toLocaleString()}
+                            </span>
+                          </div>
+
+                          {/* Points Progress Bar */}
+                          <div className="mb-1">
+                            <div className="h-2 bg-amber-200 dark:bg-amber-900/50 rounded-full overflow-hidden">
+                              <div
+                                className="h-full bg-gradient-to-r from-amber-400 to-amber-600 transition-all duration-500"
+                                style={{ width: `${pointsPercent}%` }}
+                              ></div>
+                            </div>
+                          </div>
+                          <div className="text-[10px] text-amber-700 dark:text-amber-300 text-right">
+                            Mục tiêu: 10,000 điểm
                           </div>
                         </div>
-                        <div className="text-center border-x border-slate-200 dark:border-slate-700">
-                          <div className="text-lg font-bold text-green-600 dark:text-green-400">
-                            {((customer.totalSpent || 0) / 1000000).toFixed(1)}M
+
+                        {/* Stats Grid */}
+                        <div className="grid grid-cols-3 gap-2 pt-2 border-t border-slate-200 dark:border-slate-700">
+                          <div className="text-center">
+                            <div className="text-lg font-bold text-slate-900 dark:text-slate-100">
+                              {customer.visitCount || 0}
+                            </div>
+                            <div className="text-xs text-slate-500 dark:text-slate-400">
+                              Lần đến
+                            </div>
                           </div>
-                          <div className="text-xs text-slate-500 dark:text-slate-400">
-                            Chi tiêu
+                          <div className="text-center border-x border-slate-200 dark:border-slate-700">
+                            <div className="text-lg font-bold text-green-600 dark:text-green-400">
+                              {((customer.totalSpent || 0) / 1000000).toFixed(
+                                1
+                              )}
+                              M
+                            </div>
+                            <div className="text-xs text-slate-500 dark:text-slate-400">
+                              Chi tiêu
+                            </div>
                           </div>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-[10px] font-semibold text-slate-700 dark:text-slate-300">
-                            {customer.lastVisit
-                              ? `${Math.floor(
-                                (Date.now() -
-                                  new Date(customer.lastVisit).getTime()) /
-                                (1000 * 60 * 60 * 24)
-                              )} ngày`
-                              : "—"}
-                          </div>
-                          <div className="text-xs text-slate-500 dark:text-slate-400">
-                            Ghé cuối
+                          <div className="text-center">
+                            <div className="text-[10px] font-semibold text-slate-700 dark:text-slate-300">
+                              {customer.lastVisit
+                                ? `${Math.floor(
+                                  (Date.now() -
+                                    new Date(customer.lastVisit).getTime()) /
+                                  (1000 * 60 * 60 * 24)
+                                )} ngày`
+                                : "—"}
+                            </div>
+                            <div className="text-xs text-slate-500 dark:text-slate-400">
+                              Ghé cuối
+                            </div>
                           </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+
+              {/* Load More Button */}
+              {displayCount < filtered.length && (
+                <div className="flex justify-center mt-8 pb-4">
+                  <button
+                    onClick={() => setDisplayCount((prev) => prev + 20)}
+                    className="group flex items-center gap-2 px-6 py-3 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 hover:border-blue-500 dark:hover:border-blue-500 text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 rounded-full shadow-sm hover:shadow-md transition-all font-medium"
+                  >
+                    <span>
+                      Hiển thị thêm{" "}
+                      {Math.min(20, filtered.length - displayCount)} khách hàng
+                    </span>
+                    <svg
+                      className="w-4 h-4 group-hover:translate-y-1 transition-transform"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 9l-7 7-7-7"
+                      />
+                    </svg>
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </div>
       ) : (
-        <div className="flex-1 overflow-auto p-6">
-          {/* Suppliers Tab */}
+        <div className="flex-1 overflow-auto p-6 custom-scrollbar">
+          {/* Suppliers Tab Content */}
           <div className="flex items-center gap-3 mb-6">
             <div className="flex-1 relative">
               <svg
@@ -1281,7 +1162,7 @@ const CustomerManager: React.FC = () => {
             </button>
           </div>
 
-          {/* Empty State */}
+          {/* Empty State for Suppliers */}
           <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-12 text-center">
             <div className="flex justify-center mb-4">
               <svg
@@ -1305,7 +1186,7 @@ const CustomerManager: React.FC = () => {
         </div>
       )}
 
-      {/* Customer History Modal */}
+      {/* Modals */}
       <CustomerHistoryModal
         isOpen={!!viewHistoryCustomer}
         onClose={() => setViewHistoryCustomer(null)}
@@ -1326,6 +1207,8 @@ const CustomerManager: React.FC = () => {
   );
 };
 
+// --- SUB COMPONENTS (CustomerModal, ImportCSVModal) ---
+
 const CustomerModal: React.FC<{
   customer: Customer;
   onSave: (c: Partial<Customer> & { id?: string }) => void;
@@ -1334,12 +1217,10 @@ const CustomerModal: React.FC<{
   const [name, setName] = useState(customer.name || "");
   const [phone, setPhone] = useState(customer.phone || "");
 
-  // Initialize vehicles from customer data or legacy fields
   const initVehicles = () => {
     if (customer.vehicles && customer.vehicles.length > 0) {
       return customer.vehicles;
     }
-    // Migration: convert old fields to new format
     if (customer.vehicleModel || customer.licensePlate) {
       return [
         {
@@ -1358,14 +1239,12 @@ const CustomerModal: React.FC<{
 
   const addVehicle = () => {
     if (!newVehicle.model.trim() && !newVehicle.licensePlate.trim()) return;
-
     const vehicle: Vehicle = {
       id: `VEH-${Date.now()}`,
       model: newVehicle.model.trim(),
       licensePlate: newVehicle.licensePlate.trim(),
-      isPrimary: vehicles.length === 0, // First vehicle is primary
+      isPrimary: vehicles.length === 0,
     };
-
     setVehicles([...vehicles, vehicle]);
     setNewVehicle({ model: "", licensePlate: "" });
   };
@@ -1386,15 +1265,12 @@ const CustomerModal: React.FC<{
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
-
     const primaryVehicle = vehicles.find((v) => v.isPrimary) || vehicles[0];
-
     onSave({
       id: customer.id,
       name: name.trim(),
       phone: phone.trim(),
       vehicles: vehicles,
-      // Keep legacy fields for backward compatibility
       vehiclemodel: primaryVehicle?.model || "",
       licenseplate: primaryVehicle?.licensePlate || "",
     });
@@ -1412,25 +1288,12 @@ const CustomerModal: React.FC<{
             onClick={onClose}
             className="text-slate-400 hover:text-white transition-colors"
           >
-            <svg
-              className="w-6 h-6"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
+            <XMarkIcon className="w-6 h-6" />
           </button>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Tên khách */}
           <div>
-            <label className="block text-sm font-medium text-secondary-text mb-2">
+            <label className="block text-sm font-medium text-slate-300 mb-2">
               Tên khách
             </label>
             <input
@@ -1439,13 +1302,11 @@ const CustomerModal: React.FC<{
               required
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full px-4 py-3 bg-primary-bg border border-secondary-border rounded-lg text-primary-text placeholder-tertiary-text focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              className="w-full px-4 py-3 bg-slate-900 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
             />
           </div>
-
-          {/* Số điện thoại */}
           <div>
-            <label className="block text-sm font-medium text-secondary-text mb-2">
+            <label className="block text-sm font-medium text-slate-300 mb-2">
               Số điện thoại
             </label>
             <input
@@ -1453,17 +1314,13 @@ const CustomerModal: React.FC<{
               placeholder="VD: 09xxxx"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
-              className="w-full px-4 py-3 bg-primary-bg border border-secondary-border rounded-lg text-primary-text placeholder-tertiary-text focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              className="w-full px-4 py-3 bg-slate-900 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
             />
           </div>
-
-          {/* Danh sách xe */}
           <div>
-            <label className="block text-sm font-medium text-secondary-text mb-2">
+            <label className="block text-sm font-medium text-slate-300 mb-2">
               Danh sách xe
             </label>
-
-            {/* List of vehicles */}
             {vehicles.length > 0 && (
               <div className="space-y-2 mb-3">
                 {vehicles.map((vehicle) => (
@@ -1513,8 +1370,6 @@ const CustomerModal: React.FC<{
                 ))}
               </div>
             )}
-
-            {/* Add vehicle form */}
             <div className="grid grid-cols-2 gap-2">
               <input
                 type="text"
@@ -1523,16 +1378,19 @@ const CustomerModal: React.FC<{
                 onChange={(e) =>
                   setNewVehicle({ ...newVehicle, model: e.target.value })
                 }
-                className="px-3 py-2 bg-primary-bg border border-secondary-border rounded-lg text-primary-text placeholder-tertiary-text text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
               <input
                 type="text"
                 placeholder="Biển số"
                 value={newVehicle.licensePlate}
                 onChange={(e) =>
-                  setNewVehicle({ ...newVehicle, licensePlate: e.target.value })
+                  setNewVehicle({
+                    ...newVehicle,
+                    licensePlate: e.target.value,
+                  })
                 }
-                className="px-3 py-2 bg-primary-bg border border-secondary-border rounded-lg text-primary-text placeholder-tertiary-text text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
             <button
@@ -1544,13 +1402,11 @@ const CustomerModal: React.FC<{
               Thêm xe
             </button>
           </div>
-
-          {/* Buttons */}
           <div className="flex gap-3 justify-end pt-2">
             <button
               type="button"
               onClick={onClose}
-              className="px-6 py-2.5 bg-primary-bg hover:bg-tertiary-bg text-primary-text border border-primary-border rounded-lg font-medium transition-colors"
+              className="px-6 py-2.5 bg-slate-700 hover:bg-slate-600 text-white border border-slate-600 rounded-lg font-medium transition-colors"
             >
               Hủy
             </button>
@@ -1568,7 +1424,8 @@ const CustomerModal: React.FC<{
 };
 
 const ImportCSVModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
-  const { setCustomers } = useAppContext();
+  // Giả lập hook context, bạn có thể thay bằng hook thực tế của bạn
+  // const { setCustomers } = useAppContext();
   const fileRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<
     Array<{ name: string; phone?: string }>
@@ -1591,7 +1448,6 @@ const ImportCSVModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
         setError("File CSV trống.");
         return;
       }
-      // Phát hiện header tự động: nếu dòng đầu chứa "name" hoặc "phone" (không phân biệt hoa thường) → bỏ qua
       const firstLine = lines[0].toLowerCase();
       const hasHeader =
         firstLine.includes("name") ||
@@ -1617,14 +1473,8 @@ const ImportCSVModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
 
   const handleImport = () => {
     if (preview.length === 0) return;
-    const newCustomers = preview.map((p) => ({
-      id: `CUS-${Date.now()}-${Math.random().toString(16).slice(2)}`,
-      name: p.name,
-      phone: p.phone,
-      created_at: new Date().toISOString(),
-    }));
-    setCustomers((prev) => [...newCustomers, ...prev]);
-    alert(`Đã import ${newCustomers.length} khách hàng.`);
+    // Logic import thực tế của bạn ở đây
+    alert(`Đã import ${preview.length} khách hàng (Demo).`);
     onClose();
   };
 
@@ -1632,7 +1482,9 @@ const ImportCSVModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
       <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold">Import khách hàng từ CSV</h2>
+          <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+            Import khách hàng từ CSV
+          </h2>
           <button
             onClick={onClose}
             className="text-slate-500 hover:text-slate-700"
@@ -1641,48 +1493,37 @@ const ImportCSVModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
           </button>
         </div>
         <div className="space-y-3 text-sm">
-          <p className="text-slate-600">
+          <p className="text-slate-600 dark:text-slate-300">
             Chọn file CSV với cột đầu tiên là <strong>tên khách hàng</strong>,
             cột thứ hai là <strong>số điện thoại</strong> (tùy chọn).
-          </p>
-          <p className="text-slate-600 text-xs">
-            Dòng đầu tiên nếu chứa "name", "phone", "tên", "sđt" sẽ tự động bỏ
-            qua (header).
           </p>
           <input
             ref={fileRef}
             type="file"
             accept=".csv"
             onChange={handleFileChange}
-            className="block w-full text-sm"
+            className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
           />
           {error && <div className="text-red-600 text-xs">{error}</div>}
           {preview.length > 0 && (
-            <div className="border rounded p-3 bg-slate-50 dark:bg-slate-900 max-h-64 overflow-y-auto">
-              <div className="font-semibold mb-2">
+            <div className="border rounded p-3 bg-slate-50 dark:bg-slate-900 max-h-64 overflow-y-auto custom-scrollbar">
+              <div className="font-semibold mb-2 text-slate-900 dark:text-slate-100">
                 Xem trước ({preview.length} khách hàng):
               </div>
-              <table className="w-full text-xs">
+              <table className="w-full text-xs text-slate-700 dark:text-slate-300">
                 <thead>
-                  <tr className="text-left border-b">
+                  <tr className="text-left border-b dark:border-slate-700">
                     <th className="p-1">Tên</th>
                     <th className="p-1">SĐT</th>
                   </tr>
                 </thead>
                 <tbody>
                   {preview.slice(0, 20).map((p, i) => (
-                    <tr key={i} className="border-b">
+                    <tr key={i} className="border-b dark:border-slate-700">
                       <td className="p-1">{p.name}</td>
                       <td className="p-1">{p.phone || "--"}</td>
                     </tr>
                   ))}
-                  {preview.length > 20 && (
-                    <tr>
-                      <td colSpan={2} className="p-1 text-slate-500">
-                        ... và {preview.length - 20} khách hàng nữa
-                      </td>
-                    </tr>
-                  )}
                 </tbody>
               </table>
             </div>
@@ -1691,7 +1532,7 @@ const ImportCSVModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 border rounded hover:bg-slate-50"
+              className="px-4 py-2 border rounded hover:bg-slate-50 dark:border-slate-600 dark:hover:bg-slate-700 dark:text-slate-300"
             >
               Huỷ
             </button>

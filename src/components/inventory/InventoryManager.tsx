@@ -4148,78 +4148,80 @@ const InventoryManager: React.FC = () => {
         </div>
       </div>
 
-      {/* Desktop Filters - Hidden on Mobile */}
-      <div className="hidden sm:block bg-primary-bg border-b border-primary-border px-4 py-4">
-        <div className="flex items-start gap-4">
-          {/* Left Side - Stats Cards */}
-          <div className="flex gap-4">
-            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg p-4 min-w-[140px]">
-              <p className="text-xs text-blue-600 dark:text-blue-400 font-medium mb-1">
-                Tổng SL tồn
-              </p>
-              <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">
-                {totalStockQuantity.toLocaleString()}
-              </p>
+      {/* Desktop Filters - Hidden on Mobile - Only for Stock Tab */}
+      {activeTab === "stock" && (
+        <div className="hidden sm:block bg-primary-bg border-b border-primary-border px-4 py-4">
+          <div className="flex items-start gap-4">
+            {/* Left Side - Stats Cards */}
+            <div className="flex gap-4">
+              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg p-4 min-w-[140px]">
+                <p className="text-xs text-blue-600 dark:text-blue-400 font-medium mb-1">
+                  Tổng SL tồn
+                </p>
+                <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">
+                  {totalStockQuantity.toLocaleString()}
+                </p>
+              </div>
+
+              <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg p-4 min-w-[140px]">
+                <p className="text-xs text-green-600 dark:text-green-400 font-medium mb-1">
+                  Tổng giá trị tồn
+                </p>
+                <p className="text-2xl font-bold text-green-900 dark:text-green-100">
+                  {formatCurrency(totalStockValue)}
+                </p>
+              </div>
             </div>
 
-            <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg p-4 min-w-[140px]">
-              <p className="text-xs text-green-600 dark:text-green-400 font-medium mb-1">
-                Tổng giá trị tồn
-              </p>
-              <p className="text-2xl font-bold text-green-900 dark:text-green-100">
-                {formatCurrency(totalStockValue)}
-              </p>
-            </div>
-          </div>
+            {/* Right Side - Search and Filters */}
+            <div className="flex-1 flex gap-4">
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Tìm kiếm theo tên hoặc SKU..."
+                  value={search}
+                  onChange={(e) => {
+                    setPage(1);
+                    setSearch(e.target.value);
+                  }}
+                  className="w-full pl-10 pr-4 py-2.5 border border-primary-border rounded-lg bg-primary-bg text-primary-text focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
 
-          {/* Right Side - Search and Filters */}
-          <div className="flex-1 flex gap-4">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-              <input
-                type="text"
-                placeholder="Tìm kiếm theo tên hoặc SKU..."
-                value={search}
+              <select
+                value={stockFilter}
                 onChange={(e) => {
                   setPage(1);
-                  setSearch(e.target.value);
+                  setStockFilter(e.target.value);
                 }}
-                className="w-full pl-10 pr-4 py-2.5 border border-primary-border rounded-lg bg-primary-bg text-primary-text focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
+                className="px-4 py-2.5 border border-primary-border rounded-lg bg-primary-bg text-primary-text focus:ring-2 focus:ring-blue-500 focus:border-transparent whitespace-nowrap"
+              >
+                <option value="all">Tất cả tồn kho</option>
+                <option value="in-stock">Còn hàng</option>
+                <option value="low-stock">Sắp hết</option>
+                <option value="out-of-stock">Hết hàng</option>
+              </select>
+
+              <select
+                value={categoryFilter}
+                onChange={(e) => {
+                  setPage(1);
+                  setCategoryFilter(e.target.value);
+                }}
+                className="px-4 py-2.5 border border-primary-border rounded-lg bg-primary-bg text-primary-text focus:ring-2 focus:ring-blue-500 focus:border-transparent whitespace-nowrap"
+              >
+                <option value="all">Tất cả danh mục</option>
+                {allCategories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </option>
+                ))}
+              </select>
             </div>
-
-            <select
-              value={stockFilter}
-              onChange={(e) => {
-                setPage(1);
-                setStockFilter(e.target.value);
-              }}
-              className="px-4 py-2.5 border border-primary-border rounded-lg bg-primary-bg text-primary-text focus:ring-2 focus:ring-blue-500 focus:border-transparent whitespace-nowrap"
-            >
-              <option value="all">Tất cả tồn kho</option>
-              <option value="in-stock">Còn hàng</option>
-              <option value="low-stock">Sắp hết</option>
-              <option value="out-of-stock">Hết hàng</option>
-            </select>
-
-            <select
-              value={categoryFilter}
-              onChange={(e) => {
-                setPage(1);
-                setCategoryFilter(e.target.value);
-              }}
-              className="px-4 py-2.5 border border-primary-border rounded-lg bg-primary-bg text-primary-text focus:ring-2 focus:ring-blue-500 focus:border-transparent whitespace-nowrap"
-            >
-              <option value="all">Tất cả danh mục</option>
-              {allCategories.map((cat) => (
-                <option key={cat.id} value={cat.id}>
-                  {cat.name}
-                </option>
-              ))}
-            </select>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-3 sm:p-4">

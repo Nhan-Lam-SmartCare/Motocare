@@ -1,9 +1,17 @@
 import React, { useState, useMemo } from "react";
 import { useAppContext } from "../../contexts/AppContext";
 import { formatCurrency, formatDate } from "../../utils/format";
+import { usePartsRepoPaged } from "../../hooks/usePartsRepository";
 
 const LookupManagerMobile: React.FC = () => {
-    const { parts, sales, workOrders, currentBranchId } = useAppContext();
+    const { sales, workOrders, currentBranchId } = useAppContext();
+
+    // Fetch parts data directly from Supabase
+    const { data: pagedResult, isLoading } = usePartsRepoPaged({
+        page: 1,
+        pageSize: 20, // Load 20 products at a time for better performance
+    });
+    const parts = pagedResult?.data || [];
 
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedCategory, setSelectedCategory] = useState<string>("all");

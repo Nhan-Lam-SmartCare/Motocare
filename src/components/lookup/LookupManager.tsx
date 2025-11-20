@@ -1,10 +1,23 @@
 import React, { useState, useMemo } from "react";
 import { useAppContext } from "../../contexts/AppContext";
 import { formatCurrency, formatDate } from "../../utils/format";
+import { usePartsRepoPaged } from "../../hooks/usePartsRepository";
 
 const LookupManager: React.FC = () => {
-  const { parts, sales, workOrders, customers, currentBranchId } =
-    useAppContext();
+  const { sales, workOrders, currentBranchId } = useAppContext();
+
+  // Pagination states
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(20);
+
+  // Fetch parts data with pagination
+  const { data: pagedResult, isLoading } = usePartsRepoPaged({
+    page,
+    pageSize,
+  });
+  const parts = pagedResult?.data || [];
+  const totalParts = pagedResult?.meta?.total || 0;
+  const totalPages = Math.max(1, Math.ceil(totalParts / pageSize));
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
@@ -101,8 +114,8 @@ const LookupManager: React.FC = () => {
       lastSold:
         partSales.length > 0
           ? partSales.sort(
-              (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-            )[0].date
+            (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+          )[0].date
           : null,
       workOrdersCount: partWorkOrders.length,
     };
@@ -180,10 +193,10 @@ const LookupManager: React.FC = () => {
                     onChange={(e) =>
                       setStockFilter(
                         e.target.value as
-                          | "all"
-                          | "in-stock"
-                          | "low-stock"
-                          | "out-of-stock"
+                        | "all"
+                        | "in-stock"
+                        | "low-stock"
+                        | "out-of-stock"
                       )
                     }
                     className="w-4 h-4 text-blue-600"
@@ -263,11 +276,10 @@ const LookupManager: React.FC = () => {
                 <div
                   key={part.id}
                   onClick={() => setSelectedPart(part.id)}
-                  className={`bg-white dark:bg-[#1e293b] rounded-lg shadow-sm border-2 transition-all cursor-pointer ${
-                    selectedPart === part.id
-                      ? "border-blue-500 shadow-md"
-                      : "border-slate-200 dark:border-slate-700 hover:shadow-md"
-                  }`}
+                  className={`bg-white dark:bg-[#1e293b] rounded-lg shadow-sm border-2 transition-all cursor-pointer ${selectedPart === part.id
+                    ? "border-blue-500 shadow-md"
+                    : "border-slate-200 dark:border-slate-700 hover:shadow-md"
+                    }`}
                 >
                   <div className="p-4">
                     <div className="flex items-start justify-between mb-2">
@@ -373,6 +385,29 @@ const LookupManager: React.FC = () => {
               </p>
             </div>
           )}
+        </div>
+
+        {/* Pagination Controls */}
+        <div className="flex items-center justify-between px-6 py-4 border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1e293b]">
+          <div className="text-sm text-slate-600 dark:text-slate-400">
+            Trang {page}/{totalPages} • Tổng {totalParts} sản phẩm
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              disabled={page === 1 || isLoading}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              className="px-3 py-1.5 border border-slate-300 dark:border-slate-600 rounded disabled:opacity-40 hover:bg-slate-50 dark:hover:bg-slate-700"
+            >
+              ← Trước
+            </button>
+            <button
+              disabled={page >= totalPages || isLoading}
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              className="px-3 py-1.5 border border-slate-300 dark:border-slate-600 rounded disabled:opacity-40 hover:bg-slate-50 dark:hover:bg-slate-700"
+            >
+              Sau →
+            </button>
+          </div>
         </div>
       </div>
 

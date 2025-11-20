@@ -163,17 +163,44 @@ const StatusItem: React.FC<{
   );
 };
 
-// QuickActionCard Component với nhiều màu sắc
-const QUICK_ACTION_COLORS: Record<string, { from: string; to: string }> = {
-  purple: { from: "from-purple-600", to: "to-purple-700" },
-  orange: { from: "from-orange-600", to: "to-orange-700" },
-  emerald: { from: "from-emerald-600", to: "to-emerald-700" },
-  cyan: { from: "from-cyan-600", to: "to-cyan-700" },
-  blue: { from: "from-blue-600", to: "to-blue-700" },
-  amber: { from: "from-amber-600", to: "to-amber-700" },
-  rose: { from: "from-rose-600", to: "to-rose-700" },
-  violet: { from: "from-violet-600", to: "to-violet-700" },
-  slate: { from: "from-slate-600", to: "to-slate-700" },
+// QuickActionCard Component với style tối giản cho mobile
+const QUICK_ACTION_COLORS: Record<string, { text: string; bg: string }> = {
+  purple: {
+    text: "text-purple-600 dark:text-purple-400",
+    bg: "bg-purple-50 dark:bg-purple-900/20",
+  },
+  orange: {
+    text: "text-orange-600 dark:text-orange-400",
+    bg: "bg-orange-50 dark:bg-orange-900/20",
+  },
+  emerald: {
+    text: "text-emerald-600 dark:text-emerald-400",
+    bg: "bg-emerald-50 dark:bg-emerald-900/20",
+  },
+  cyan: {
+    text: "text-cyan-600 dark:text-cyan-400",
+    bg: "bg-cyan-50 dark:bg-cyan-900/20",
+  },
+  blue: {
+    text: "text-blue-600 dark:text-blue-400",
+    bg: "bg-blue-50 dark:bg-blue-900/20",
+  },
+  amber: {
+    text: "text-amber-600 dark:text-amber-400",
+    bg: "bg-amber-50 dark:bg-amber-900/20",
+  },
+  rose: {
+    text: "text-rose-600 dark:text-rose-400",
+    bg: "bg-rose-50 dark:bg-rose-900/20",
+  },
+  violet: {
+    text: "text-violet-600 dark:text-violet-400",
+    bg: "bg-violet-50 dark:bg-violet-900/20",
+  },
+  slate: {
+    text: "text-slate-600 dark:text-slate-400",
+    bg: "bg-slate-50 dark:bg-slate-800",
+  },
 };
 
 const QuickActionCard: React.FC<{
@@ -197,13 +224,15 @@ const QuickActionCard: React.FC<{
   return (
     <Link
       to={to}
-      className={`flex flex-col items-center justify-center gap-2 p-3 md:p-4 bg-gradient-to-br ${colors.from} ${colors.to} dark:${colors.from} dark:${colors.to} rounded-xl text-white hover:shadow-lg hover:scale-105 transition-all duration-200`}
+      className="flex flex-col items-center justify-center gap-2 p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all duration-200 group"
     >
-      <div className="w-11 h-11 md:w-12 md:h-12 bg-white/20 rounded-full flex items-center justify-center">
+      <div
+        className={`w-12 h-12 rounded-2xl ${colors.bg} ${colors.text} flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform duration-200`}
+      >
         {icon}
       </div>
       <span
-        className={`text-[11px] md:text-xs font-medium text-center leading-tight ${labelClassName || ""
+        className={`text-[11px] font-medium text-center leading-tight text-slate-700 dark:text-slate-300 ${labelClassName || ""
           }`}
       >
         {label}
@@ -621,84 +650,80 @@ const Dashboard: React.FC = () => {
           Truy cập nhanh
         </h3>
         <div className="grid grid-cols-4 gap-3 md:gap-4">
-          {/* Nhóm Kho hàng - Purple */}
-          <QuickActionCard
-            to="/inventory"
-            icon={<Boxes className="w-7 h-7 md:w-8 md:h-8" />}
-            label="Kho hàng"
-            color="purple"
-          />
-          <QuickActionCard
-            to="/categories"
-            icon={<List className="w-7 h-7 md:w-8 md:h-8" />}
-            label="Danh mục"
-            color="purple"
-          />
-          <QuickActionCard
-            to="/lookup"
-            icon={<Search className="w-7 h-7 md:w-8 md:h-8" />}
-            label="Tra cứu"
-            color="purple"
-          />
-
-          {/* Nhóm Dịch vụ - Orange */}
-          <QuickActionCard
-            to="/service"
-            icon={<Wrench className="w-7 h-7 md:w-8 md:h-8" />}
-            label="Sửa chữa"
-            color="orange"
-          />
+          {/* Nhóm Chính - Hàng 1 */}
           <QuickActionCard
             to="/sales"
-            icon={<ShoppingCart className="w-7 h-7 md:w-8 md:h-8" />}
+            icon={<ShoppingCart className="w-6 h-6 md:w-7 md:h-7" />}
             label="Bán hàng"
             color="emerald"
           />
-
-          {/* Nhóm Khách hàng - Cyan */}
+          <QuickActionCard
+            to="/service"
+            icon={<Wrench className="w-6 h-6 md:w-7 md:h-7" />}
+            label="Sửa chữa"
+            color="blue"
+          />
+          <QuickActionCard
+            to="/inventory"
+            icon={<Boxes className="w-6 h-6 md:w-7 md:h-7" />}
+            label="Kho hàng"
+            color="orange"
+          />
           <QuickActionCard
             to="/customers"
-            icon={<Users className="w-7 h-7 md:w-8 md:h-8" />}
+            icon={<Users className="w-6 h-6 md:w-7 md:h-7" />}
             label="Khách hàng"
             color="cyan"
           />
 
-          {/* Nhóm Tài chính - Blue/Amber */}
+          {/* Nhóm Tài chính - Hàng 2 */}
           <QuickActionCard
             to="/finance"
-            icon={<Landmark className="w-7 h-7 md:w-8 md:h-8" />}
+            icon={<Landmark className="w-6 h-6 md:w-7 md:h-7" />}
             label="Tài chính"
-            color="blue"
-          />
-          <QuickActionCard
-            to="/debt"
-            icon={<HandCoins className="w-7 h-7 md:w-8 md:h-8" />}
-            label="Công nợ"
-            color="amber"
-          />
-          <QuickActionCard
-            to="/cashbook"
-            icon={<Wallet className="w-7 h-7 md:w-8 md:h-8" />}
-            label="Sổ quỹ"
-            color="blue"
-          />
-
-          {/* Nhóm Báo cáo & Quản lý - Rose/Violet */}
-          <QuickActionCard
-            to="/reports"
-            icon={<FileText className="w-7 h-7 md:w-8 md:h-8" />}
-            label="Báo cáo"
-            color="rose"
-          />
-          <QuickActionCard
-            to="/analytics"
-            icon={<LineChartIcon className="w-7 h-7 md:w-8 md:h-8" />}
-            label="Phân tích"
             color="violet"
           />
           <QuickActionCard
+            to="/debt"
+            icon={<HandCoins className="w-6 h-6 md:w-7 md:h-7" />}
+            label="Công nợ"
+            color="rose"
+          />
+          <QuickActionCard
+            to="/cashbook"
+            icon={<Wallet className="w-6 h-6 md:w-7 md:h-7" />}
+            label="Sổ quỹ"
+            color="amber"
+          />
+          <QuickActionCard
+            to="/reports"
+            icon={<FileText className="w-6 h-6 md:w-7 md:h-7" />}
+            label="Báo cáo"
+            color="slate"
+          />
+
+          {/* Nhóm Quản lý & Khác - Hàng 3 */}
+          <QuickActionCard
+            to="/employees"
+            icon={<BriefcaseBusiness className="w-6 h-6 md:w-7 md:h-7" />}
+            label="Nhân viên"
+            color="purple"
+          />
+          <QuickActionCard
+            to="/categories"
+            icon={<List className="w-6 h-6 md:w-7 md:h-7" />}
+            label="Danh mục"
+            color="slate"
+          />
+          <QuickActionCard
+            to="/lookup"
+            icon={<Search className="w-6 h-6 md:w-7 md:h-7" />}
+            label="Tra cứu"
+            color="slate"
+          />
+          <QuickActionCard
             to="/settings"
-            icon={<Settings className="w-7 h-7 md:w-8 md:h-8" />}
+            icon={<Settings className="w-6 h-6 md:w-7 md:h-7" />}
             label="Cài đặt"
             color="slate"
           />

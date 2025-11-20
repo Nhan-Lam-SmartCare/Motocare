@@ -97,7 +97,7 @@ function Nav() {
 
   return (
     <nav className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-50">
-      <div className="max-w-[1600px] mx-auto px-4 md:px-6 py-3">
+      <div className="max-w-[1600px] mx-auto px-2 md:px-6 py-2 md:py-3">
         <div className="flex items-center justify-between">
           {/* Left: Brand and Branch Selector */}
           <div className="flex items-center gap-2 md:gap-4">
@@ -120,7 +120,7 @@ function Nav() {
                 <img
                   src="/logo-smartcare.png"
                   alt="SmartCare Logo"
-                  className="w-12 h-12 md:w-14 md:h-14 rounded-xl shadow-sm ring-1 ring-slate-200 dark:ring-slate-700 group-hover:shadow-md group-hover:ring-emerald-400/60 dark:group-hover:ring-emerald-500/60 transition"
+                  className="w-9 h-9 md:w-14 md:h-14 rounded-xl shadow-sm ring-1 ring-slate-200 dark:ring-slate-700 group-hover:shadow-md group-hover:ring-emerald-400/60 dark:group-hover:ring-emerald-500/60 transition"
                 />
                 <span className="font-bold text-lg md:text-xl tracking-tight bg-gradient-to-r from-emerald-600 to-blue-600 text-transparent bg-clip-text dark:from-emerald-400 dark:to-blue-400 hidden lg:inline">
                   Nhạn Lâm SmartCare
@@ -173,8 +173,8 @@ function Nav() {
                               {profile.role === "owner"
                                 ? "Chủ cửa hàng"
                                 : profile.role === "manager"
-                                ? "Quản lý"
-                                : "Nhân viên"}
+                                  ? "Quản lý"
+                                  : "Nhân viên"}
                             </span>
                           </div>
                         </div>
@@ -315,8 +315,16 @@ function Nav() {
             />
           </div>
 
-          {/* Right: empty (user menu integrated into settings) */}
-          <div className="flex items-center" />
+          {/* Right: Home Icon */}
+          <div className="flex items-center">
+            <Link
+              to="/dashboard"
+              className="p-2 text-slate-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+              title="Trang chủ"
+            >
+              <LayoutDashboard className="w-6 h-6" />
+            </Link>
+          </div>
         </div>
 
         {/* Mobile Menu Drawer - For Secondary Functions */}
@@ -362,8 +370,8 @@ function Nav() {
                           {profile.role === "owner"
                             ? "Chủ cửa hàng"
                             : profile.role === "manager"
-                            ? "Quản lý"
-                            : "Nhân viên"}
+                              ? "Quản lý"
+                              : "Nhân viên"}
                         </span>
                       </div>
                     </div>
@@ -585,11 +593,10 @@ const MobileDrawerLink: React.FC<{
     <Link
       to={to}
       onClick={onClick}
-      className={`flex items-center gap-3 px-4 py-3 rounded-xl transition ${
-        isActive
-          ? `${colorConfig.bg} ${colorConfig.text} shadow-sm`
-          : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/50"
-      }`}
+      className={`flex items-center gap-3 px-4 py-3 rounded-xl transition ${isActive
+        ? `${colorConfig.bg} ${colorConfig.text} shadow-sm`
+        : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/50"
+        }`}
     >
       <div className={`${isActive ? colorConfig.text : ""}`}>{icon}</div>
       <span className="font-medium text-sm">{label}</span>
@@ -610,11 +617,10 @@ const MobileNavLink: React.FC<{
     <Link
       to={to}
       onClick={onClick}
-      className={`flex items-center gap-3 px-4 py-3 rounded-lg transition ${
-        isActive
-          ? "bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
-          : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
-      }`}
+      className={`flex items-center gap-3 px-4 py-3 rounded-lg transition ${isActive
+        ? "bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
+        : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
+        }`}
     >
       {icon}
       <span className="font-medium">{label}</span>
@@ -634,11 +640,10 @@ const NavLink: React.FC<{
   return (
     <Link
       to={to}
-      className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition ${
-        isActive
-          ? `${NAV_COLORS[colorKey].bg} ${NAV_COLORS[colorKey].text}`
-          : `text-slate-600 dark:text-slate-300 ${NAV_COLORS[colorKey].hoverBg}`
-      }`}
+      className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition ${isActive
+        ? `${NAV_COLORS[colorKey].bg} ${NAV_COLORS[colorKey].text}`
+        : `text-slate-600 dark:text-slate-300 ${NAV_COLORS[colorKey].hoverBg}`
+        }`}
     >
       <span className="flex items-center justify-center">{icon}</span>
       <span className="text-xs font-medium whitespace-nowrap">{label}</span>
@@ -650,15 +655,15 @@ const NavLink: React.FC<{
 const BottomNav: React.FC = () => {
   const location = useLocation();
 
-  // Ẩn bottom nav khi đang ở Dashboard, Inventory, hoặc Service (có UI riêng cho mobile)
-  if (
-    location.pathname === "/dashboard" ||
-    location.pathname === "/" ||
-    location.pathname === "/inventory" ||
-    location.pathname === "/service"
-  ) {
-    return null;
-  }
+  // Always show bottom nav on mobile, except maybe login which is handled by layout
+  // if (
+  //   location.pathname === "/dashboard" ||
+  //   location.pathname === "/" ||
+  //   location.pathname === "/inventory" ||
+  //   location.pathname === "/service"
+  // ) {
+  //   return null;
+  // }
 
   const navItems = [
     {
@@ -698,7 +703,7 @@ const BottomNav: React.FC = () => {
       {/* Backdrop blur effect for modern look */}
       <div className="absolute inset-0 bg-white/80 dark:bg-slate-800/80 backdrop-blur-lg -z-10"></div>
 
-      <div className="grid grid-cols-5 gap-1 px-2 py-2">
+      <div className="grid grid-cols-5 gap-1 px-2 py-1.5">
         {navItems.map((item) => {
           const isActive = location.pathname === item.to;
           const colorKey = item.color as ColorKey;
@@ -707,36 +712,33 @@ const BottomNav: React.FC = () => {
             <Link
               key={item.to}
               to={item.to}
-              className={`flex flex-col items-center gap-1 px-2 py-2 rounded-xl transition-all duration-200 ${
-                isActive
-                  ? `${NAV_COLORS[colorKey].bg} ${NAV_COLORS[colorKey].text} scale-105`
-                  : "text-slate-600 dark:text-slate-400 active:scale-95"
-              }`}
+              className={`flex flex-col items-center gap-0.5 px-1 py-1 rounded-lg transition-all duration-200 ${isActive
+                ? `${NAV_COLORS[colorKey].bg} ${NAV_COLORS[colorKey].text}`
+                : "text-slate-600 dark:text-slate-400 active:scale-95"
+                }`}
             >
               <div
-                className={`transition-transform ${
-                  isActive ? "scale-110" : ""
-                }`}
+                className={`transition-transform ${isActive ? "scale-105" : ""
+                  }`}
               >
-                {item.icon}
+                {React.cloneElement(
+                  item.icon as React.ReactElement<{ className?: string }>,
+                  {
+                    className: "w-5 h-5",
+                  }
+                )}
               </div>
               <span
-                className={`text-[10px] font-medium truncate w-full text-center ${
-                  isActive ? "font-semibold" : ""
-                }`}
+                className={`text-[9px] font-medium truncate w-full text-center ${isActive ? "font-semibold" : ""
+                  }`}
               >
                 {item.label}
               </span>
-              {isActive && (
-                <div
-                  className={`h-1 w-8 rounded-full ${NAV_COLORS[colorKey].bg} mt-0.5`}
-                ></div>
-              )}
             </Link>
           );
         })}
-      </div>
-    </div>
+      </div >
+    </div >
   );
 };
 
@@ -764,6 +766,108 @@ const queryClient = new QueryClient({
 // Attach global error handlers using built-in callbacks by extending QueryCache/MutationCache
 // Simplified: we rely on per-query onError via a wrapper helper if needed; fallback here is noop.
 
+const MainLayout: React.FC = () => {
+  const location = useLocation();
+  const isSalesPage = location.pathname === "/sales";
+
+  return (
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 transition-colors pb-20 md:pb-0">
+      {!isSalesPage && <Nav />}
+      <main
+        className={`max-w-[1600px] mx-auto ${isSalesPage ? "p-0" : "p-0 md:p-6"
+          }`}
+      >
+        <Routes>
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/sales" element={<Sales />} />
+          <Route
+            path="/audit-logs"
+            element={
+              <ProtectedRoute requiredRoles={["owner"]}>
+                <AuditLogsViewer />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/inventory" element={<Inventory />} />
+          <Route path="/categories" element={<CategoriesPage />} />
+          <Route path="/lookup" element={<LookupPage />} />
+          <Route path="/service" element={<Service />} />
+          <Route path="/service-history" element={<ServiceHistoryPage />} />
+          <Route path="/customers" element={<Customers />} />
+          <Route
+            path="/debt"
+            element={
+              <ProtectedRoute requiredRoles={["owner", "manager"]}>
+                <Debt />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/cashbook"
+            element={
+              <ProtectedRoute requiredRoles={["owner", "manager"]}>
+                <CashBookPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/loans"
+            element={
+              <ProtectedRoute requiredRoles={["owner", "manager"]}>
+                <LoansPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/payroll"
+            element={
+              <ProtectedRoute requiredRoles={["owner", "manager"]}>
+                <PayrollPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/employees"
+            element={
+              <ProtectedRoute requiredRoles={["owner", "manager"]}>
+                <EmployeesPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/finance"
+            element={
+              <ProtectedRoute requiredRoles={["owner", "manager"]}>
+                <FinancePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/analytics"
+            element={
+              <ProtectedRoute requiredRoles={["owner", "manager"]}>
+                <AnalyticsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/reports" element={<ReportsPage />} />
+          <Route
+            path="/settings"
+            element={
+              <ProtectedRoute requiredRoles={["owner", "manager"]}>
+                <SettingsPage />
+              </ProtectedRoute>
+            }
+          />
+        </Routes>
+      </main>
+      {/* Bottom Navigation for Mobile */}
+      <BottomNav />
+    </div>
+  );
+};
+
 export default function App() {
   const { ready } = useFakeAuth();
   if (!ready) return null;
@@ -785,134 +889,7 @@ export default function App() {
                     path="/*"
                     element={
                       <ProtectedRoute>
-                        <div className="min-h-screen bg-slate-50 dark:bg-slate-900 transition-colors pb-20 md:pb-0">
-                          <Nav />
-                          <main className="max-w-[1600px] mx-auto p-4 md:p-6">
-                            <Routes>
-                              <Route
-                                path="/"
-                                element={<Navigate to="/dashboard" replace />}
-                              />
-                              <Route
-                                path="/dashboard"
-                                element={<Dashboard />}
-                              />
-                              <Route path="/sales" element={<Sales />} />
-                              <Route
-                                path="/audit-logs"
-                                element={
-                                  <ProtectedRoute requiredRoles={["owner"]}>
-                                    <AuditLogsViewer />
-                                  </ProtectedRoute>
-                                }
-                              />
-                              <Route
-                                path="/inventory"
-                                element={<Inventory />}
-                              />
-                              <Route
-                                path="/categories"
-                                element={<CategoriesPage />}
-                              />
-                              <Route path="/lookup" element={<LookupPage />} />
-                              <Route path="/service" element={<Service />} />
-                              <Route
-                                path="/service-history"
-                                element={<ServiceHistoryPage />}
-                              />
-                              <Route
-                                path="/customers"
-                                element={<Customers />}
-                              />
-                              <Route
-                                path="/debt"
-                                element={
-                                  <ProtectedRoute
-                                    requiredRoles={["owner", "manager"]}
-                                  >
-                                    <Debt />
-                                  </ProtectedRoute>
-                                }
-                              />
-                              <Route
-                                path="/cashbook"
-                                element={
-                                  <ProtectedRoute
-                                    requiredRoles={["owner", "manager"]}
-                                  >
-                                    <CashBookPage />
-                                  </ProtectedRoute>
-                                }
-                              />
-                              <Route
-                                path="/loans"
-                                element={
-                                  <ProtectedRoute
-                                    requiredRoles={["owner", "manager"]}
-                                  >
-                                    <LoansPage />
-                                  </ProtectedRoute>
-                                }
-                              />
-                              <Route
-                                path="/payroll"
-                                element={
-                                  <ProtectedRoute
-                                    requiredRoles={["owner", "manager"]}
-                                  >
-                                    <PayrollPage />
-                                  </ProtectedRoute>
-                                }
-                              />
-                              <Route
-                                path="/employees"
-                                element={
-                                  <ProtectedRoute
-                                    requiredRoles={["owner", "manager"]}
-                                  >
-                                    <EmployeesPage />
-                                  </ProtectedRoute>
-                                }
-                              />
-                              <Route
-                                path="/finance"
-                                element={
-                                  <ProtectedRoute
-                                    requiredRoles={["owner", "manager"]}
-                                  >
-                                    <FinancePage />
-                                  </ProtectedRoute>
-                                }
-                              />
-                              <Route
-                                path="/analytics"
-                                element={
-                                  <ProtectedRoute
-                                    requiredRoles={["owner", "manager"]}
-                                  >
-                                    <AnalyticsPage />
-                                  </ProtectedRoute>
-                                }
-                              />
-                              <Route
-                                path="/reports"
-                                element={<ReportsPage />}
-                              />
-                              <Route
-                                path="/settings"
-                                element={
-                                  <ProtectedRoute
-                                    requiredRoles={["owner", "manager"]}
-                                  >
-                                    <SettingsPage />
-                                  </ProtectedRoute>
-                                }
-                              />
-                            </Routes>
-                          </main>
-                          {/* Bottom Navigation for Mobile */}
-                          <BottomNav />
-                        </div>
+                        <MainLayout />
                       </ProtectedRoute>
                     }
                   />

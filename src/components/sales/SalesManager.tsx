@@ -792,21 +792,19 @@ const EditSaleModal: React.FC<EditSaleModalProps> = ({
               <div className="flex gap-2">
                 <button
                   onClick={() => setEditPaymentMethod("cash")}
-                  className={`flex-1 py-2 rounded-lg border transition-colors text-sm font-medium ${
-                    editPaymentMethod === "cash"
-                      ? "bg-green-600 text-white border-green-600"
-                      : "border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"
-                  }`}
+                  className={`flex-1 py-2 rounded-lg border transition-colors text-sm font-medium ${editPaymentMethod === "cash"
+                    ? "bg-green-600 text-white border-green-600"
+                    : "border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"
+                    }`}
                 >
                   Tiền mặt
                 </button>
                 <button
                   onClick={() => setEditPaymentMethod("bank")}
-                  className={`flex-1 py-2 rounded-lg border transition-colors text-sm font-medium ${
-                    editPaymentMethod === "bank"
-                      ? "bg-blue-600 text-white border-blue-600"
-                      : "border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"
-                  }`}
+                  className={`flex-1 py-2 rounded-lg border transition-colors text-sm font-medium ${editPaymentMethod === "bank"
+                    ? "bg-blue-600 text-white border-blue-600"
+                    : "border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"
+                    }`}
                 >
                   Chuyển khoản
                 </button>
@@ -1129,11 +1127,10 @@ const SalesHistoryModal: React.FC<SalesHistoryModalProps> = ({
                   <button
                     key={filter.key}
                     onClick={() => setActiveTimeFilter(filter.key)}
-                    className={`px-4 py-2 rounded-2xl text-sm font-medium whitespace-nowrap border transition-all min-w-[96px] ${
-                      activeTimeFilter === filter.key
-                        ? "bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-500/30"
-                        : "bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-200 border-transparent"
-                    }`}
+                    className={`px-4 py-2 rounded-2xl text-sm font-medium whitespace-nowrap border transition-all min-w-[96px] ${activeTimeFilter === filter.key
+                      ? "bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-500/30"
+                      : "bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-200 border-transparent"
+                      }`}
                   >
                     {filter.label}
                   </button>
@@ -1375,7 +1372,7 @@ const SalesHistoryModal: React.FC<SalesHistoryModalProps> = ({
                                 <span className="font-bold text-slate-900 dark:text-white">
                                   {formatCurrency(
                                     item.quantity *
-                                      ((item as any).sellingPrice || 0)
+                                    ((item as any).sellingPrice || 0)
                                   )}
                                 </span>
                               </div>
@@ -1505,7 +1502,7 @@ const SalesHistoryModal: React.FC<SalesHistoryModalProps> = ({
                                   <span className="font-semibold text-slate-900 dark:text-slate-100">
                                     {formatCurrency(
                                       item.quantity *
-                                        ((item as any).sellingPrice || 0)
+                                      ((item as any).sellingPrice || 0)
                                     )}
                                   </span>
                                 </div>
@@ -1834,10 +1831,10 @@ const SalesManager: React.FC = () => {
       salesStatus === "all"
         ? undefined
         : salesStatus === "cancelled"
-        ? "refunded"
-        : salesStatus === "completed"
-        ? "completed"
-        : salesStatus,
+          ? "refunded"
+          : salesStatus === "completed"
+            ? "completed"
+            : salesStatus,
     paymentMethod:
       salesPaymentMethod === "all" ? undefined : salesPaymentMethod,
   };
@@ -2365,9 +2362,8 @@ const SalesManager: React.FC = () => {
         sale.items.forEach((item: any) => {
           const itemTotal = item.quantity * item.sellingPrice;
           const itemDiscount = item.discount || 0;
-          description += `\n  • ${item.quantity} x ${
-            item.partName
-          } - ${formatCurrency(itemTotal)}`;
+          description += `\n  • ${item.quantity} x ${item.partName
+            } - ${formatCurrency(itemTotal)}`;
           if (itemDiscount > 0) {
             description += ` (Giảm: ${formatCurrency(itemDiscount)})`;
           }
@@ -2420,8 +2416,7 @@ const SalesManager: React.FC = () => {
         stack: error?.stack,
       });
       showToast.error(
-        `Không thể tạo công nợ tự động: ${
-          error?.message || "Lỗi không xác định"
+        `Không thể tạo công nợ tự động: ${error?.message || "Lỗi không xác định"
         }`
       );
     }
@@ -2524,8 +2519,8 @@ const SalesManager: React.FC = () => {
         paymentType === "full"
           ? total
           : paymentType === "partial"
-          ? partialAmount
-          : 0; // paymentType === "note" (ghi nợ)
+            ? partialAmount
+            : 0; // paymentType === "note" (ghi nợ)
 
       const remainingAmount = total - paidAmount;
 
@@ -2565,13 +2560,13 @@ const SalesManager: React.FC = () => {
         // Map user info to userName
         const saleWithUserName = createdSale
           ? {
-              ...createdSale,
-              userName:
-                createdSale.user?.full_name ||
-                createdSale.user?.display_name ||
-                createdSale.user?.email ||
-                "N/A",
-            }
+            ...createdSale,
+            userName:
+              createdSale.user?.full_name ||
+              createdSale.user?.display_name ||
+              createdSale.user?.email ||
+              "N/A",
+          }
           : null;
 
         const saleData: Sale =
@@ -2646,11 +2641,10 @@ const SalesManager: React.FC = () => {
         <div className="grid grid-cols-2">
           <button
             onClick={() => setMobileTab("products")}
-            className={`py-3 px-4 font-medium transition-colors relative ${
-              mobileTab === "products"
-                ? "text-blue-600 dark:text-blue-400"
-                : "text-slate-600 dark:text-slate-400"
-            }`}
+            className={`py-3 px-4 font-medium transition-colors relative ${mobileTab === "products"
+              ? "text-blue-600 dark:text-blue-400"
+              : "text-slate-600 dark:text-slate-400"
+              }`}
           >
             <div className="flex items-center justify-center gap-2">
               <Boxes className="w-5 h-5" />
@@ -2662,11 +2656,10 @@ const SalesManager: React.FC = () => {
           </button>
           <button
             onClick={() => setMobileTab("cart")}
-            className={`py-3 px-4 font-medium transition-colors relative ${
-              mobileTab === "cart"
-                ? "text-blue-600 dark:text-blue-400"
-                : "text-slate-600 dark:text-slate-400"
-            }`}
+            className={`py-3 px-4 font-medium transition-colors relative ${mobileTab === "cart"
+              ? "text-blue-600 dark:text-blue-400"
+              : "text-slate-600 dark:text-slate-400"
+              }`}
           >
             <div className="flex items-center justify-center gap-2">
               <ShoppingCart className="w-5 h-5" />
@@ -2687,12 +2680,11 @@ const SalesManager: React.FC = () => {
       <div className="flex h-screen">
         {/* Main Content Area - Products Grid */}
         <div
-          className={`flex-1 flex flex-col transition-all duration-300 ${
-            mobileTab === "cart" ? "hidden md:flex" : "animate-fade-in"
-          }`}
+          className={`flex-1 flex flex-col transition-all duration-300 ${mobileTab === "cart" ? "hidden md:flex" : "animate-fade-in"
+            }`}
         >
           {/* Search Bar */}
-          <div className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 p-3 md:p-4">
+          <div className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 p-2 md:p-4">
             <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3 md:gap-4">
               <div className="flex-1">
                 <input
@@ -2732,7 +2724,7 @@ const SalesManager: React.FC = () => {
           </div>
 
           {/* Products Grid */}
-          <div className="flex-1 p-3 md:p-6 overflow-y-auto bg-slate-50 dark:bg-slate-900">
+          <div className="flex-1 p-0 md:p-6 overflow-y-auto bg-slate-50 dark:bg-slate-900 pb-24 md:pb-6">
             {filteredParts.length === 0 ? (
               <div className="text-center text-slate-400 mt-20">
                 <div className="mb-4 flex items-center justify-center">
@@ -2761,11 +2753,10 @@ const SalesManager: React.FC = () => {
                       key={part.id}
                       onClick={() => !isOutOfStock && addToCart(part)}
                       disabled={isOutOfStock}
-                      className={`group relative p-3 md:p-4 rounded-xl border transition-all duration-200 ${
-                        isOutOfStock
-                          ? "bg-primary-bg/50 border-primary-border opacity-50 cursor-not-allowed"
-                          : "bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-slate-700 dark:to-slate-800 border-blue-200 dark:border-slate-600 hover:shadow-xl hover:scale-105 active:scale-95"
-                      }`}
+                      className={`group relative p-3 md:p-4 rounded-xl border transition-all duration-200 ${isOutOfStock
+                        ? "bg-primary-bg/50 border-primary-border opacity-50 cursor-not-allowed"
+                        : "bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-slate-700 dark:to-slate-800 border-blue-200 dark:border-slate-600 hover:shadow-xl hover:scale-105 active:scale-95"
+                        }`}
                     >
                       <div className="flex flex-col h-full">
                         {/* Product Image with Icon */}
@@ -2797,13 +2788,12 @@ const SalesManager: React.FC = () => {
                           </div>
                           <div className="text-right">
                             <span
-                              className={`inline-flex items-center justify-center min-w-[2.5rem] px-2 py-1 text-[10px] md:text-xs font-bold rounded-md ${
-                                isOutOfStock
-                                  ? "bg-red-600 text-white"
-                                  : stock <= 5
+                              className={`inline-flex items-center justify-center min-w-[2.5rem] px-2 py-1 text-[10px] md:text-xs font-bold rounded-md ${isOutOfStock
+                                ? "bg-red-600 text-white"
+                                : stock <= 5
                                   ? "bg-orange-600 text-white"
                                   : "bg-green-600 text-white"
-                              }`}
+                                }`}
                             >
                               {isOutOfStock ? "Hết" : stock}
                             </span>
@@ -2820,9 +2810,8 @@ const SalesManager: React.FC = () => {
 
         {/* Right Sidebar - Customer, Cart & Checkout */}
         <div
-          className={`w-full md:w-96 bg-white dark:bg-slate-800 md:border-l border-slate-200 dark:border-slate-700 flex flex-col transition-all duration-300 ${
-            mobileTab === "products" ? "hidden md:flex" : "animate-fade-in"
-          }`}
+          className={`w-full md:w-96 bg-white dark:bg-slate-800 md:border-l border-slate-200 dark:border-slate-700 flex flex-col transition-all duration-300 ${mobileTab === "products" ? "hidden md:flex" : "animate-fade-in"
+            }`}
         >
           {/* Customer Selection */}
           <div className="p-3 md:p-4 border-b border-slate-200 dark:border-slate-700">
@@ -2896,7 +2885,7 @@ const SalesManager: React.FC = () => {
           </div>
 
           {/* Cart Items */}
-          <div className="flex-1 overflow-y-auto p-4">
+          <div className="flex-1 overflow-y-auto p-0 md:p-4 pb-24 md:pb-4">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
                 Giỏ hàng
@@ -3080,22 +3069,20 @@ const SalesManager: React.FC = () => {
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     onClick={() => setPaymentMethod("cash")}
-                    className={`flex items-center justify-center gap-1.5 px-3 py-2.5 md:py-2 rounded-lg border-2 transition-all min-h-[44px] ${
-                      paymentMethod === "cash"
-                        ? "border-green-500 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400"
-                        : "border-slate-300 dark:border-slate-600 hover:border-slate-400"
-                    }`}
+                    className={`flex items-center justify-center gap-1.5 px-3 py-2.5 md:py-2 rounded-lg border-2 transition-all min-h-[44px] ${paymentMethod === "cash"
+                      ? "border-green-500 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400"
+                      : "border-slate-300 dark:border-slate-600 hover:border-slate-400"
+                      }`}
                   >
                     <Banknote className="w-4 h-4" />
                     <span className="font-medium text-sm">Tiền mặt</span>
                   </button>
                   <button
                     onClick={() => setPaymentMethod("bank")}
-                    className={`flex items-center justify-center gap-1.5 px-3 py-2.5 md:py-2 rounded-lg border-2 transition-all min-h-[44px] ${
-                      paymentMethod === "bank"
-                        ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400"
-                        : "border-slate-300 dark:border-slate-600 hover:border-slate-400"
-                    }`}
+                    className={`flex items-center justify-center gap-1.5 px-3 py-2.5 md:py-2 rounded-lg border-2 transition-all min-h-[44px] ${paymentMethod === "bank"
+                      ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400"
+                      : "border-slate-300 dark:border-slate-600 hover:border-slate-400"
+                      }`}
                   >
                     <CreditCard className="w-4 h-4" />
                     <span className="font-medium text-sm">Chuyển khoản</span>
@@ -3115,21 +3102,19 @@ const SalesManager: React.FC = () => {
                         setPaymentType("full");
                         setPartialAmount(0);
                       }}
-                      className={`px-3 py-2.5 md:py-2 text-sm rounded-lg border transition-all min-h-[44px] ${
-                        paymentType === "full"
-                          ? "border-orange-500 bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400 font-semibold"
-                          : "border-slate-300 dark:border-slate-600 hover:border-slate-400"
-                      }`}
+                      className={`px-3 py-2.5 md:py-2 text-sm rounded-lg border transition-all min-h-[44px] ${paymentType === "full"
+                        ? "border-orange-500 bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400 font-semibold"
+                        : "border-slate-300 dark:border-slate-600 hover:border-slate-400"
+                        }`}
                     >
                       Thanh toán đủ
                     </button>
                     <button
                       onClick={() => setPaymentType("partial")}
-                      className={`px-3 py-2.5 md:py-2 text-sm rounded-lg border transition-all min-h-[44px] ${
-                        paymentType === "partial"
-                          ? "border-orange-500 bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400 font-semibold"
-                          : "border-slate-300 dark:border-slate-600 hover:border-slate-400"
-                      }`}
+                      className={`px-3 py-2.5 md:py-2 text-sm rounded-lg border transition-all min-h-[44px] ${paymentType === "partial"
+                        ? "border-orange-500 bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400 font-semibold"
+                        : "border-slate-300 dark:border-slate-600 hover:border-slate-400"
+                        }`}
                     >
                       Thanh toán 1 phần
                     </button>
@@ -3138,11 +3123,10 @@ const SalesManager: React.FC = () => {
                         setPaymentType("note");
                         setPartialAmount(0);
                       }}
-                      className={`px-3 py-2.5 md:py-2 text-sm rounded-lg border transition-all min-h-[44px] ${
-                        paymentType === "note"
-                          ? "border-orange-500 bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400 font-semibold"
-                          : "border-slate-300 dark:border-slate-600 hover:border-slate-400"
-                      }`}
+                      className={`px-3 py-2.5 md:py-2 text-sm rounded-lg border transition-all min-h-[44px] ${paymentType === "note"
+                        ? "border-orange-500 bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400 font-semibold"
+                        : "border-slate-300 dark:border-slate-600 hover:border-slate-400"
+                        }`}
                     >
                       Ghi nợ
                     </button>
@@ -3234,11 +3218,10 @@ const SalesManager: React.FC = () => {
                 <button
                   onClick={handleFinalize}
                   disabled={!paymentMethod || !paymentType}
-                  className={`flex-1 px-4 py-3 font-bold rounded-lg transition-all min-h-[44px] ${
-                    paymentMethod && paymentType
-                      ? "bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white shadow-lg hover:shadow-xl"
-                      : "bg-slate-300 dark:bg-slate-700 text-slate-500 dark:text-slate-500 cursor-not-allowed"
-                  }`}
+                  className={`flex-1 px-4 py-3 font-bold rounded-lg transition-all min-h-[44px] ${paymentMethod && paymentType
+                    ? "bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white shadow-lg hover:shadow-xl"
+                    : "bg-slate-300 dark:bg-slate-700 text-slate-500 dark:text-slate-500 cursor-not-allowed"
+                    }`}
                 >
                   XUẤT BÁN
                 </button>
@@ -3689,8 +3672,8 @@ const SalesManager: React.FC = () => {
                 {paymentType === "full"
                   ? "✓ Đã thanh toán đủ"
                   : paymentType === "partial"
-                  ? `Thanh toán một phần: ${formatCurrency(partialAmount)}`
-                  : "Ghi nợ"}
+                    ? `Thanh toán một phần: ${formatCurrency(partialAmount)}`
+                    : "Ghi nợ"}
               </div>
             </div>
 

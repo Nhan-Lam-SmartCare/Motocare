@@ -45,6 +45,47 @@ export const useUpdateCustomer = () => {
   });
 };
 
+// Suppliers hooks
+export const useSuppliers = () => {
+  return useQuery({
+    queryKey: ["suppliers"],
+    queryFn: supabaseHelpers.getSuppliers,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+  });
+};
+
+export const useCreateSupplier = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: supabaseHelpers.createSupplier,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["suppliers"] });
+    },
+  });
+};
+
+export const useCreateSuppliersBulk = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: supabaseHelpers.createSuppliersBulk,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["suppliers"] });
+    },
+  });
+};
+
+export const useUpdateSupplier = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, updates }: { id: string; updates: Partial<Customer> }) =>
+      supabaseHelpers.updateSupplier(id, updates),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["suppliers"] });
+    },
+  });
+};
+
 // Parts hooks
 export const useParts = () => {
   return useQuery({

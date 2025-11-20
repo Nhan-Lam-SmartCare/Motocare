@@ -49,6 +49,50 @@ export const supabaseHelpers = {
     return data;
   },
 
+  // Suppliers
+  async getSuppliers() {
+    const { data, error } = await supabase
+      .from("suppliers")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) throw error;
+    return data;
+  },
+
+  async createSupplier(supplier: any) {
+    const { data, error } = await supabase
+      .from("suppliers")
+      .insert([supplier])
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  },
+
+  async createSuppliersBulk(suppliers: any[]) {
+    const { data, error } = await supabase
+      .from("suppliers")
+      .insert(suppliers)
+      .select();
+
+    if (error) throw error;
+    return data;
+  },
+
+  async updateSupplier(id: string, updates: any) {
+    const { data, error } = await supabase
+      .from("suppliers")
+      .update(updates)
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  },
+
   // Parts
   async getParts() {
     const { data, error } = await supabase

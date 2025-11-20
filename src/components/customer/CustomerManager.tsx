@@ -4,6 +4,7 @@ import {
   useCustomers,
   useCreateCustomer,
   useUpdateCustomer,
+  useCreateCustomersBulk,
 } from "../../hooks/useSupabase";
 import { formatDate, formatCurrency, formatAnyId } from "../../utils/format";
 import { PlusIcon, TrashIcon, XMarkIcon, UsersIcon } from "../Icons";
@@ -136,8 +137,8 @@ const CustomerHistoryModal: React.FC<CustomerHistoryModalProps> = ({
           <button
             onClick={() => setActiveTab("sales")}
             className={`px-4 py-2 font-medium transition-colors ${activeTab === "sales"
-              ? "text-blue-600 dark:text-blue-400 border-b-2 border-blue-600"
-              : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
+                ? "text-blue-600 dark:text-blue-400 border-b-2 border-blue-600"
+                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
               }`}
           >
             🛒 Hóa đơn ({customerSales.length})
@@ -145,8 +146,8 @@ const CustomerHistoryModal: React.FC<CustomerHistoryModalProps> = ({
           <button
             onClick={() => setActiveTab("workorders")}
             className={`px-4 py-2 font-medium transition-colors ${activeTab === "workorders"
-              ? "text-blue-600 dark:text-blue-400 border-b-2 border-blue-600"
-              : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
+                ? "text-blue-600 dark:text-blue-400 border-b-2 border-blue-600"
+                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
               }`}
           >
             🔧 Phiếu sửa chữa ({customerWorkOrders.length})
@@ -371,6 +372,10 @@ const CustomerManager: React.FC = () => {
   };
   const [search, setSearch] = useState("");
   const [editCustomer, setEditCustomer] = useState<Customer | null>(null);
+
+  // STATE MỚI: Cho việc thêm Nhà cung cấp
+  const [showSupplierModal, setShowSupplierModal] = useState(false);
+
   const [showImport, setShowImport] = useState(false);
   const [activeTab, setActiveTab] = useState<"customers" | "suppliers">(
     "customers"
@@ -493,8 +498,8 @@ const CustomerManager: React.FC = () => {
           <button
             onClick={() => setActiveTab("customers")}
             className={`flex items-center gap-2 px-4 py-4 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${activeTab === "customers"
-              ? "border-blue-500 text-blue-600 dark:text-blue-400"
-              : "border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
+                ? "border-blue-500 text-blue-600 dark:text-blue-400"
+                : "border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
               }`}
           >
             <UsersIcon className="w-5 h-5" />
@@ -503,8 +508,8 @@ const CustomerManager: React.FC = () => {
           <button
             onClick={() => setActiveTab("suppliers")}
             className={`flex items-center gap-2 px-4 py-4 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${activeTab === "suppliers"
-              ? "border-blue-500 text-blue-600 dark:text-blue-400"
-              : "border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
+                ? "border-blue-500 text-blue-600 dark:text-blue-400"
+                : "border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
               }`}
           >
             <svg
@@ -573,7 +578,7 @@ const CustomerManager: React.FC = () => {
                   </svg>
                   <span>Upload DS</span>
                 </button>
-                <button className="flex items-center gap-2 px-4 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-medium transition-colors whitespace-nowrap shadow-sm">
+                <button className="flex items-center gap-2 px-4 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-medium transition-colors whitespace-nowrap shadow-sm" onClick={() => alert("Tính năng đang phát triển")}>
                   <svg
                     className="w-5 h-5"
                     fill="none"
@@ -614,8 +619,8 @@ const CustomerManager: React.FC = () => {
                   key={filter.id}
                   onClick={() => setActiveFilter(filter.id)}
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap border ${activeFilter === filter.id
-                    ? `bg-${filter.color}-600 text-white border-${filter.color}-600 shadow-md`
-                    : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700"
+                      ? `bg-${filter.color}-600 text-white border-${filter.color}-600 shadow-md`
+                      : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700"
                     }`}
                 >
                   {filter.id !== "all" && (
@@ -1140,7 +1145,10 @@ const CustomerManager: React.FC = () => {
             <div className="text-slate-600 dark:text-slate-400 text-sm font-medium">
               Tổng: <span className="font-bold">0</span> nhà cung cấp
             </div>
-            <button className="flex items-center gap-2 px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors">
+            <button
+              onClick={() => setShowImport(true)}
+              className="flex items-center gap-2 px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors"
+            >
               <svg
                 className="w-5 h-5"
                 fill="none"
@@ -1156,7 +1164,10 @@ const CustomerManager: React.FC = () => {
               </svg>
               <span>Upload CSV</span>
             </button>
-            <button className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors">
+            <button
+              onClick={() => setShowSupplierModal(true)}
+              className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+            >
               <PlusIcon className="w-5 h-5" />
               <span>Thêm mới</span>
             </button>
@@ -1202,12 +1213,22 @@ const CustomerManager: React.FC = () => {
           onClose={() => setEditCustomer(null)}
         />
       )}
-      {showImport && <ImportCSVModal onClose={() => setShowImport(false)} />}
+
+      {showSupplierModal && (
+        <SupplierModal onClose={() => setShowSupplierModal(false)} />
+      )}
+
+      {showImport && (
+        <ImportCSVModal
+          onClose={() => setShowImport(false)}
+          type={activeTab}
+        />
+      )}
     </div>
   );
 };
 
-// --- SUB COMPONENTS (CustomerModal, ImportCSVModal) ---
+// --- SUB COMPONENTS (CustomerModal, SupplierModal, ImportCSVModal) ---
 
 const CustomerModal: React.FC<{
   customer: Customer;
@@ -1332,8 +1353,8 @@ const CustomerModal: React.FC<{
                       type="button"
                       onClick={() => setPrimaryVehicle(vehicle.id)}
                       className={`flex-shrink-0 ${vehicle.isPrimary
-                        ? "text-yellow-400"
-                        : "text-slate-500 hover:text-yellow-400"
+                          ? "text-yellow-400"
+                          : "text-slate-500 hover:text-yellow-400"
                         }`}
                       title={
                         vehicle.isPrimary ? "Xe chính" : "Đặt làm xe chính"
@@ -1423,14 +1444,121 @@ const CustomerModal: React.FC<{
   );
 };
 
-const ImportCSVModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
-  // Giả lập hook context, bạn có thể thay bằng hook thực tế của bạn
-  // const { setCustomers } = useAppContext();
+// --- SUPPLIER MODAL (NEW) ---
+const SupplierModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [address, setAddress] = useState("");
+  const [note, setNote] = useState("");
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim()) return;
+
+    // TODO: Gọi API tạo Supplier ở đây khi bạn đã có hook useCreateSupplier
+    // const newSupplier = { name, phone, address, note };
+    // await createSupplier.mutateAsync(newSupplier);
+
+    alert(`[Mô phỏng] Đã lưu nhà cung cấp: ${name}`);
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+      <div className="bg-slate-800 rounded-xl shadow-2xl max-w-md w-full p-6 border border-slate-700">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-semibold text-white">
+            Thêm nhà cung cấp
+          </h2>
+          <button
+            onClick={onClose}
+            className="text-slate-400 hover:text-white transition-colors"
+          >
+            <XMarkIcon className="w-6 h-6" />
+          </button>
+        </div>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-2">
+              Tên nhà cung cấp <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              placeholder="Nhập tên NCC"
+              required
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full px-4 py-3 bg-slate-900 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-2">
+              Số điện thoại
+            </label>
+            <input
+              type="text"
+              placeholder="VD: 09xxxx"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              className="w-full px-4 py-3 bg-slate-900 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-2">
+              Địa chỉ
+            </label>
+            <input
+              type="text"
+              placeholder="Địa chỉ liên hệ"
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              className="w-full px-4 py-3 bg-slate-900 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-2">
+              Ghi chú
+            </label>
+            <textarea
+              rows={3}
+              placeholder="Ghi chú thêm..."
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              className="w-full px-4 py-3 bg-slate-900 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none"
+            />
+          </div>
+
+          <div className="flex gap-3 justify-end pt-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-6 py-2.5 bg-slate-700 hover:bg-slate-600 text-white border border-slate-600 rounded-lg font-medium transition-colors"
+            >
+              Hủy
+            </button>
+            <button
+              type="submit"
+              className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+            >
+              Lưu
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+// --- UPDATED IMPORT MODAL ---
+
+const ImportCSVModal: React.FC<{ onClose: () => void; type: "customers" | "suppliers" }> = ({ onClose, type }) => {
+  const createCustomersBulk = useCreateCustomersBulk();
   const fileRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<
     Array<{ name: string; phone?: string }>
   >([]);
   const [error, setError] = useState("");
+  const [importing, setImporting] = useState(false);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -1471,19 +1599,49 @@ const ImportCSVModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     reader.readAsText(file);
   };
 
-  const handleImport = () => {
+  const handleImport = async () => {
     if (preview.length === 0) return;
-    // Logic import thực tế của bạn ở đây
-    alert(`Đã import ${preview.length} khách hàng (Demo).`);
-    onClose();
+
+    setImporting(true);
+    try {
+      if (type === "customers") {
+        // Import Khách hàng
+        const newCustomers = preview.map((p) => ({
+          id: typeof crypto !== "undefined" && crypto.randomUUID
+            ? crypto.randomUUID()
+            : `CUS-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+          name: p.name,
+          phone: p.phone || "",
+          created_at: new Date().toISOString(),
+        }));
+        await createCustomersBulk.mutateAsync(newCustomers);
+        alert(`Đã import thành công ${newCustomers.length} khách hàng!`);
+      } else {
+        // Import Nhà cung cấp
+        // LƯU Ý: Hiện tại chưa có hook useCreateSuppliersBulk, nên mình để tạm alert
+        // Bạn cần tạo hook này tương tự như useCreateCustomersBulk trong useSupabase.ts
+        alert("Chức năng import Nhà cung cấp đang được phát triển. Vui lòng thêm hook useCreateSuppliersBulk để kích hoạt.");
+        // Ví dụ logic khi có hook:
+        // await createSuppliersBulk.mutateAsync(newSuppliers);
+      }
+
+      onClose();
+    } catch (err) {
+      console.error("Import error:", err);
+      setError("Có lỗi xảy ra khi import. Vui lòng thử lại.");
+    } finally {
+      setImporting(false);
+    }
   };
+
+  const isCustomer = type === "customers";
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
       <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-            Import khách hàng từ CSV
+            Import {isCustomer ? "khách hàng" : "nhà cung cấp"} từ CSV
           </h2>
           <button
             onClick={onClose}
@@ -1494,7 +1652,7 @@ const ImportCSVModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
         </div>
         <div className="space-y-3 text-sm">
           <p className="text-slate-600 dark:text-slate-300">
-            Chọn file CSV với cột đầu tiên là <strong>tên khách hàng</strong>,
+            Chọn file CSV với cột đầu tiên là <strong>tên {isCustomer ? "khách hàng" : "nhà cung cấp"}</strong>,
             cột thứ hai là <strong>số điện thoại</strong> (tùy chọn).
           </p>
           <input
@@ -1508,7 +1666,7 @@ const ImportCSVModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
           {preview.length > 0 && (
             <div className="border rounded p-3 bg-slate-50 dark:bg-slate-900 max-h-64 overflow-y-auto custom-scrollbar">
               <div className="font-semibold mb-2 text-slate-900 dark:text-slate-100">
-                Xem trước ({preview.length} khách hàng):
+                Xem trước ({preview.length} mục):
               </div>
               <table className="w-full text-xs text-slate-700 dark:text-slate-300">
                 <thead>
@@ -1537,11 +1695,13 @@ const ImportCSVModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
               Huỷ
             </button>
             <button
-              disabled={preview.length === 0}
+              disabled={preview.length === 0 || importing}
               onClick={handleImport}
               className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Import {preview.length > 0 && `(${preview.length})`}
+              {importing
+                ? "Đang import..."
+                : `Import ${preview.length > 0 ? `(${preview.length})` : ""}`}
             </button>
           </div>
         </div>

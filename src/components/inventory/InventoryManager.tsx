@@ -576,10 +576,12 @@ const GoodsReceiptModal: React.FC<{
   >([]);
 
   // Payment states
-  const [paymentMethod, setPaymentMethod] = useState<"cash" | "bank">("cash");
-  const [paymentType, setPaymentType] = useState<"full" | "partial" | "note">(
-    "full"
+  const [paymentMethod, setPaymentMethod] = useState<"cash" | "bank" | null>(
+    null
   );
+  const [paymentType, setPaymentType] = useState<
+    "full" | "partial" | "note" | null
+  >(null);
   const [partialAmount, setPartialAmount] = useState(0);
   const [discount, setDiscount] = useState(0);
   const [discountType, setDiscountType] = useState<"amount" | "percent">(
@@ -744,62 +746,152 @@ const GoodsReceiptModal: React.FC<{
 
   return (
     <>
-      <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-        <div className="bg-white dark:bg-slate-800 w-full max-w-7xl h-[90vh] rounded-xl overflow-hidden flex">
-          {/* Left Side - Product Selection (35%) */}
-          <div className="w-[35%] flex flex-col bg-slate-50 dark:bg-slate-900 border-r border-slate-200 dark:border-slate-700">
-            {/* Header - Compact */}
-            <div className="flex items-center justify-between p-3 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
-              <div className="flex items-center gap-2">
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 w-full max-w-7xl h-[92vh] rounded-2xl shadow-2xl overflow-hidden flex">
+          {/* Left Panel - Product Browser (50%) */}
+          <div className="w-1/2 flex flex-col bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border-r border-slate-200/50 dark:border-slate-700/50">
+            {/* Modern Header */}
+            <div className="flex items-center justify-between p-4 border-b border-slate-200/50 dark:border-slate-700/50 bg-gradient-to-r from-blue-50/50 to-indigo-50/50 dark:from-slate-800/50 dark:to-slate-800/50">
+              <div className="flex items-center gap-3">
                 <button
                   onClick={onClose}
-                  className="w-7 h-7 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-700 rounded text-slate-600 dark:text-slate-400"
+                  className="w-9 h-9 flex items-center justify-center hover:bg-white/80 dark:hover:bg-slate-700/80 rounded-lg text-slate-600 dark:text-slate-400 transition-all hover:scale-105"
                 >
-                  ←
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M15 19l-7-7 7-7"
+                    />
+                  </svg>
                 </button>
-                <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100">
-                  Chọn sản phẩm
-                </h2>
+                <div>
+                  <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">
+                    Danh mục sản phẩm
+                  </h2>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                    Chọn để thêm vào giỏ
+                  </p>
+                </div>
               </div>
               <button
                 onClick={() => setShowAddProductModal(true)}
-                className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white px-2.5 py-1.5 rounded text-xs font-medium"
+                className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-3 py-2 rounded-lg text-xs font-semibold shadow-lg shadow-blue-500/30 transition-all hover:scale-105"
               >
-                <span className="text-lg leading-none">+</span>
-                <span>Thêm</span>
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 4v16m8-8H4"
+                  />
+                </svg>
+                <span>Thêm mới</span>
               </button>
             </div>
 
-            {/* Search - Compact */}
-            <div className="p-2 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
-              <input
-                type="text"
-                placeholder="Tìm tên, SKU..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full px-2.5 py-1.5 border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 text-xs placeholder:text-slate-400"
-              />
+            {/* Search Bar with Icon */}
+            <div className="p-3 bg-white/50 dark:bg-slate-800/50">
+              <div className="relative">
+                <svg
+                  className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
+                </svg>
+                <input
+                  type="text"
+                  placeholder="Tìm kiếm tên, SKU, mã sản phẩm..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2.5 border border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 text-sm placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all"
+                />
+              </div>
             </div>
 
-            {/* Products List - Scrollable */}
-            <div className="flex-1 overflow-y-auto p-2">
+            {/* Products Grid */}
+            <div className="flex-1 overflow-y-auto p-3">
               {filteredParts.length === 0 ? (
-                <div className="text-center text-slate-500 py-8 text-xs">
-                  Không tìm thấy sản phẩm
+                <div className="flex flex-col items-center justify-center h-full text-slate-400">
+                  <svg
+                    className="w-16 h-16 mb-3 opacity-30"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={1.5}
+                      d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
+                    />
+                  </svg>
+                  <p className="text-sm font-medium">Không tìm thấy sản phẩm</p>
+                  <p className="text-xs mt-1">Thử tìm kiếm với từ khóa khác</p>
                 </div>
               ) : (
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   {filteredParts.map((part) => (
                     <div
                       key={part.id}
                       onClick={() => addToReceipt(part)}
-                      className="p-2.5 bg-white dark:bg-slate-800 rounded hover:bg-blue-50 dark:hover:bg-slate-700 cursor-pointer border border-slate-200 dark:border-slate-600 transition-colors"
+                      className="group p-3 bg-white dark:bg-slate-800 rounded-xl hover:shadow-lg hover:shadow-blue-500/10 cursor-pointer border border-slate-200 dark:border-slate-700 hover:border-blue-400 dark:hover:border-blue-600 transition-all duration-200 hover:scale-[1.02]"
                     >
-                      <div className="font-medium text-xs text-slate-900 dark:text-slate-100 line-clamp-1">
-                        {part.name}
-                      </div>
-                      <div className="text-[10px] text-slate-500 mt-0.5">
-                        SKU: {part.sku}
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-900/30 dark:to-indigo-900/30 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                          <svg
+                            className="w-5 h-5 text-blue-600 dark:text-blue-400"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+                            />
+                          </svg>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-semibold text-sm text-slate-900 dark:text-slate-100 line-clamp-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                            {part.name}
+                          </div>
+                          <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
+                            SKU: <span className="font-mono">{part.sku}</span>
+                          </div>
+                        </div>
+                        <svg
+                          className="w-5 h-5 text-slate-300 dark:text-slate-600 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9 5l7 7-7 7"
+                          />
+                        </svg>
                       </div>
                     </div>
                   ))}
@@ -808,13 +900,26 @@ const GoodsReceiptModal: React.FC<{
             </div>
           </div>
 
-          {/* Right Side - Receipt Cart & Payment (65%) */}
-          <div className="w-[65%] bg-white dark:bg-slate-800 flex flex-col">
-            {/* Supplier Selection - Compact */}
-            <div className="p-2.5 border-b border-slate-200 dark:border-slate-700">
-              <div className="flex items-center gap-2 mb-1.5">
-                <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
-                  Nhà cung cấp (NCC):
+          {/* Right Panel - Cart & Checkout (50%) */}
+          <div className="w-1/2 bg-white dark:bg-slate-800 flex flex-col">
+            {/* Supplier Selection - Modern */}
+            <div className="p-4 border-b border-slate-200 dark:border-slate-700 bg-gradient-to-r from-emerald-50/30 to-teal-50/30 dark:from-slate-800/50 dark:to-slate-800/50">
+              <div className="flex items-center gap-2 mb-2">
+                <svg
+                  className="w-4 h-4 text-emerald-600 dark:text-emerald-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                  />
+                </svg>
+                <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                  Nhà cung cấp
                 </label>
                 <button
                   onClick={() => {
@@ -826,21 +931,33 @@ const GoodsReceiptModal: React.FC<{
                     });
                     setShowSupplierModal(true);
                   }}
-                  className="flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-slate-700 dark:text-blue-400 font-medium"
+                  className="ml-auto flex items-center gap-1 text-xs px-2 py-1 rounded-lg bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:hover:bg-emerald-900/50 font-medium transition-all"
                 >
-                  <span className="text-sm leading-none">+</span>
+                  <svg
+                    className="w-3.5 h-3.5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 4v16m8-8H4"
+                    />
+                  </svg>
                   Thêm NCC
                 </button>
               </div>
               <select
                 value={selectedSupplier}
                 onChange={(e) => setSelectedSupplier(e.target.value)}
-                className="w-full px-2.5 py-1.5 border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 text-xs"
+                className="w-full px-4 py-2.5 border border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 text-sm font-medium focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all"
               >
-                <option value="">Tìm/Chọn nhà cung cấp</option>
+                <option value="">Chọn nhà cung cấp...</option>
                 {suppliers.map((s: any) => (
                   <option key={s.id} value={s.id}>
-                    {s.name} {s.phone ? `(${s.phone})` : ""}
+                    {s.name} {s.phone ? `• ${s.phone}` : ""}
                   </option>
                 ))}
               </select>
@@ -956,60 +1073,91 @@ const GoodsReceiptModal: React.FC<{
               </div>
             )}
 
-            {/* Receipt Items - Optimized for space */}
-            <div className="flex-1 overflow-y-auto p-2.5">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                  Giỏ hàng nhập kho
-                </h3>
-                <span className="text-[10px] text-slate-500 bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded-full">
-                  {receiptItems.length} SP
+            {/* Cart Items - Modern Cards */}
+            <div className="flex-1 overflow-y-auto p-4">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <svg
+                    className="w-5 h-5 text-blue-600 dark:text-blue-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
+                    />
+                  </svg>
+                  <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
+                    Giỏ hàng nhập
+                  </h3>
+                </div>
+                <span className="text-xs text-white bg-gradient-to-r from-blue-600 to-indigo-600 px-3 py-1 rounded-full font-semibold shadow-lg">
+                  {receiptItems.length} sản phẩm
                 </span>
               </div>
 
               {receiptItems.length === 0 ? (
-                <div className="text-center text-slate-400 py-8">
-                  <Boxes className="w-8 h-8 mx-auto text-slate-300 mb-2" />
-                  <div className="text-xs">Giỏ hàng trống</div>
-                  <div className="text-[10px] text-slate-400 mt-0.5">
-                    Chọn sản phẩm bên trái
+                <div className="flex flex-col items-center justify-center h-full text-slate-400">
+                  <div className="w-24 h-24 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700 rounded-2xl flex items-center justify-center mb-4">
+                    <svg
+                      className="w-12 h-12 text-slate-300 dark:text-slate-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={1.5}
+                        d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
+                      />
+                    </svg>
                   </div>
+                  <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">
+                    Giỏ hàng trống
+                  </p>
+                  <p className="text-xs text-slate-400 mt-1">
+                    Chọn sản phẩm bên trái để thêm vào
+                  </p>
                 </div>
               ) : (
-                <div className="space-y-2">
-                  {receiptItems.map((item) => (
+                <div className="space-y-3">
+                  {receiptItems.map((item, index) => (
                     <div
                       key={item.partId}
-                      className="border border-slate-200 dark:border-slate-600 rounded-lg p-2"
+                      className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 hover:shadow-md transition-shadow"
                     >
-                      {/* Header - Compact */}
-                      <div className="flex items-start gap-2 mb-2">
-                        <div className="w-8 h-8 bg-slate-100 dark:bg-slate-700 rounded flex items-center justify-center flex-shrink-0">
-                          <Boxes className="w-4 h-4 text-slate-500" />
+                      {/* Compact Header: #, Name, SKU, Delete - All in one line */}
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="w-6 h-6 bg-blue-600 rounded flex items-center justify-center flex-shrink-0">
+                          <span className="text-xs font-bold text-white">
+                            #{index + 1}
+                          </span>
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="font-medium text-xs text-slate-900 dark:text-slate-100 line-clamp-1">
+                          <div className="font-medium text-xs text-slate-900 dark:text-slate-100 truncate">
                             {item.partName}
                           </div>
-                          <div className="text-[10px] text-slate-500">
+                          <div className="text-[9px] text-slate-500 dark:text-slate-400">
                             SKU: {item.sku}
                           </div>
                         </div>
                         <button
                           onClick={() => removeReceiptItem(item.partId)}
-                          className="w-6 h-6 flex items-center justify-center bg-red-100 dark:bg-red-900/20 rounded text-red-600 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/30 flex-shrink-0 text-sm"
+                          className="w-6 h-6 flex items-center justify-center bg-red-100 dark:bg-red-900/30 rounded text-red-600 dark:text-red-400 hover:bg-red-200 flex-shrink-0"
                           title="Xóa"
                         >
                           ×
                         </button>
                       </div>
 
-                      {/* Quantity Controls */}
-                      <div className="flex items-center justify-between mb-3 pb-3 border-b border-slate-200 dark:border-slate-700">
-                        <span className="text-xs text-slate-600 dark:text-slate-400 font-medium">
-                          Số lượng:
-                        </span>
-                        <div className="flex items-center gap-2">
+                      {/* All inputs in ONE row: Quantity | Import Price | Selling Price | Total */}
+                      <div className="flex items-center gap-2">
+                        {/* Quantity controls */}
+                        <div className="flex items-center gap-1">
                           <button
                             onClick={() =>
                               updateReceiptItem(
@@ -1018,13 +1166,24 @@ const GoodsReceiptModal: React.FC<{
                                 Math.max(1, item.quantity - 1)
                               )
                             }
-                            className="w-8 h-8 flex items-center justify-center bg-slate-100 dark:bg-slate-600 rounded-full text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-500"
+                            className="w-6 h-6 flex items-center justify-center bg-slate-100 dark:bg-slate-700 rounded text-slate-600 dark:text-slate-300 hover:bg-blue-50 text-sm"
                           >
                             -
                           </button>
-                          <span className="w-8 text-center font-medium text-sm text-slate-900 dark:text-slate-100">
-                            {item.quantity}
-                          </span>
+                          <input
+                            type="number"
+                            value={item.quantity}
+                            onChange={(e) => {
+                              const val = parseInt(e.target.value) || 1;
+                              updateReceiptItem(
+                                item.partId,
+                                "quantity",
+                                Math.max(1, val)
+                              );
+                            }}
+                            className="w-10 px-1 py-1 text-center border border-blue-300 dark:border-blue-700 rounded bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 text-xs font-semibold"
+                            min="1"
+                          />
                           <button
                             onClick={() =>
                               updateReceiptItem(
@@ -1033,96 +1192,64 @@ const GoodsReceiptModal: React.FC<{
                                 item.quantity + 1
                               )
                             }
-                            className="w-8 h-8 flex items-center justify-center bg-slate-100 dark:bg-slate-600 rounded-full text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-500"
+                            className="w-6 h-6 flex items-center justify-center bg-slate-100 dark:bg-slate-700 rounded text-slate-600 dark:text-slate-300 hover:bg-blue-50 text-sm"
                           >
                             +
                           </button>
                         </div>
-                      </div>
 
-                      {/* Price Inputs */}
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <label className="text-xs text-slate-600 dark:text-slate-400 font-medium">
-                            Giá nhập:
-                          </label>
-                          <FormattedNumberInput
-                            value={item.importPrice}
-                            onValue={(val) => {
-                              const { clean } = validatePriceAndQty(
-                                val,
-                                item.quantity
-                              );
-                              const newImport = clean.importPrice;
-                              const autoPrice = Math.round(newImport * 1.5);
-                              setReceiptItems((items) =>
-                                items.map((it) =>
-                                  it.partId === item.partId
-                                    ? {
-                                        ...it,
-                                        importPrice: newImport,
-                                        sellingPrice:
-                                          it.sellingPrice === 0 ||
-                                          it.sellingPrice ===
-                                            Math.round(
-                                              (it.importPrice || 0) * 1.5
-                                            )
-                                            ? autoPrice
-                                            : it.sellingPrice,
-                                      }
-                                    : it
-                                )
-                              );
-                            }}
-                            className="w-40 px-2 py-1 border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 text-sm text-right focus:ring-2 focus:ring-blue-500"
-                            placeholder="0"
-                          />
-                        </div>
-
-                        <div className="flex items-center justify-between">
-                          <label className="text-xs text-slate-600 dark:text-slate-400 font-medium">
-                            Giá bán lẻ:
-                          </label>
-                          <FormattedNumberInput
-                            value={item.sellingPrice}
-                            onValue={(val) =>
-                              updateReceiptItem(
-                                item.partId,
-                                "sellingPrice",
-                                Math.max(0, Math.round(val))
+                        {/* Import price */}
+                        <FormattedNumberInput
+                          value={item.importPrice}
+                          onValue={(val) => {
+                            const { clean } = validatePriceAndQty(
+                              val,
+                              item.quantity
+                            );
+                            const newImport = clean.importPrice;
+                            const autoPrice = Math.round(newImport * 1.5);
+                            setReceiptItems((items) =>
+                              items.map((it) =>
+                                it.partId === item.partId
+                                  ? {
+                                      ...it,
+                                      importPrice: newImport,
+                                      sellingPrice:
+                                        it.sellingPrice === 0 ||
+                                        it.sellingPrice ===
+                                          Math.round(
+                                            (it.importPrice || 0) * 1.5
+                                          )
+                                          ? autoPrice
+                                          : it.sellingPrice,
+                                    }
+                                  : it
                               )
-                            }
-                            className="w-40 px-2 py-1 border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 text-sm text-right focus:ring-2 focus:ring-blue-500"
-                            placeholder="0"
-                          />
-                        </div>
+                            );
+                          }}
+                          className="flex-1 px-2 py-1 border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 text-right text-xs font-medium focus:border-blue-500"
+                          placeholder="Giá nhập"
+                        />
 
-                        <div className="flex items-center justify-between">
-                          <label className="text-xs text-slate-600 dark:text-slate-400 font-medium">
-                            Giá bán sỉ:
-                          </label>
-                          <FormattedNumberInput
-                            value={item.wholesalePrice || 0}
-                            onValue={(val) =>
-                              updateReceiptItem(
-                                item.partId,
-                                "wholesalePrice",
-                                Math.max(0, Math.round(val))
-                              )
-                            }
-                            className="w-40 px-2 py-1 border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 text-sm text-right focus:ring-2 focus:ring-blue-500"
-                            placeholder="0"
-                          />
-                        </div>
+                        {/* Selling price */}
+                        <FormattedNumberInput
+                          value={item.sellingPrice}
+                          onValue={(val) =>
+                            updateReceiptItem(
+                              item.partId,
+                              "sellingPrice",
+                              Math.max(0, Math.round(val))
+                            )
+                          }
+                          className="flex-1 px-2 py-1 border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 text-right text-xs font-medium focus:border-emerald-500"
+                          placeholder="Giá bán"
+                        />
 
-                        {/* Subtotal */}
-                        <div className="flex justify-between items-center pt-2 mt-2 border-t border-slate-200 dark:border-slate-700">
-                          <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
-                            Thành tiền:
-                          </span>
-                          <span className="font-bold text-sm text-blue-600 dark:text-blue-400">
+                        {/* Total amount */}
+                        <div className="w-20 text-right">
+                          <div className="text-xs font-bold text-blue-600 dark:text-blue-400">
                             {formatCurrency(item.importPrice * item.quantity)}
-                          </span>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -1131,142 +1258,165 @@ const GoodsReceiptModal: React.FC<{
               )}
             </div>
 
-            {/* Payment Section - ULTRA COMPACT */}
-            <div className="p-2 border-t border-slate-200 dark:border-slate-700 space-y-1.5">
-              {/* Total & Amount to Pay combined */}
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-slate-600 dark:text-slate-400">
-                  Tổng:
-                </span>
-                <span className="text-sm font-bold text-blue-600 dark:text-blue-400">
-                  {formatCurrency(totalAmount)}
-                </span>
+            {/* Payment Section - Compact */}
+            <div className="p-3 border-t-2 border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
+              {/* Total Display - Always visible */}
+              <div className="mb-3 p-3 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg shadow">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-white uppercase">
+                    Tổng thanh toán
+                  </span>
+                  <div className="text-right">
+                    <div className="text-xl font-black text-white">
+                      {formatCurrency(totalAmount)}
+                    </div>
+                    <div className="text-[10px] text-white/70">
+                      {receiptItems.length} SP
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              {/* Payment Method - Ultra Compact Icons Only */}
-              <div>
-                <label className="block text-[10px] font-medium text-slate-700 dark:text-slate-300 mb-1">
-                  Phương thức <span className="text-red-500">*</span>
+              {/* Payment Method - Compact buttons */}
+              <div className="mb-3">
+                <label className="block text-[10px] font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                  Phương thức thanh toán <span className="text-red-500">*</span>
                 </label>
-                <div className="grid grid-cols-2 gap-1.5">
+                <div className="grid grid-cols-2 gap-2">
                   <button
                     onClick={() => setPaymentMethod("cash")}
-                    className={`flex items-center justify-center gap-1 px-2 py-1.5 border rounded text-[11px] font-medium transition-all ${
+                    className={`flex items-center justify-center gap-1.5 px-3 py-2 border-2 rounded-lg text-xs font-bold transition-all ${
                       paymentMethod === "cash"
-                        ? "border-green-500 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400"
+                        ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400"
                         : "border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300"
                     }`}
                   >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      className="w-3.5 h-3.5"
-                    >
-                      <rect x="2" y="6" width="20" height="12" rx="2" ry="2" />
-                      <circle cx="12" cy="12" r="3" />
-                    </svg>
-                    Tiền mặt
+                    💵 Tiền mặt
                   </button>
                   <button
                     onClick={() => setPaymentMethod("bank")}
-                    className={`flex items-center justify-center gap-1 px-2 py-1.5 border rounded text-[11px] font-medium transition-all ${
+                    className={`flex items-center justify-center gap-1.5 px-3 py-2 border-2 rounded-lg text-xs font-bold transition-all ${
                       paymentMethod === "bank"
-                        ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400"
+                        ? "border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400"
                         : "border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300"
                     }`}
                   >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      className="w-3.5 h-3.5"
-                    >
-                      <rect x="2" y="6" width="20" height="12" rx="2" ry="2" />
-                      <path d="M2 10h20" />
-                    </svg>
-                    CK
+                    🏦 Chuyển khoản
                   </button>
                 </div>
               </div>
 
-              {/* Payment Type - Ultra Compact */}
+              {/* Show details only when payment method is selected */}
               {paymentMethod && (
-                <div>
-                  <label className="block text-[10px] font-medium text-slate-700 dark:text-slate-300 mb-1">
-                    Hình thức
-                  </label>
-                  <div className="grid grid-cols-3 gap-1">
-                    <button
-                      onClick={() => {
-                        setPaymentType("full");
-                        setPartialAmount(0);
-                      }}
-                      className={`px-1.5 py-1 border rounded text-[11px] font-medium transition-all ${
-                        paymentType === "full"
-                          ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400"
-                          : "border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300"
-                      }`}
-                    >
-                      Đủ
-                    </button>
-                    <button
-                      onClick={() => setPaymentType("partial")}
-                      className={`px-1.5 py-1 border rounded text-[11px] font-medium transition-all ${
-                        paymentType === "partial"
-                          ? "border-orange-500 bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400"
-                          : "border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300"
-                      }`}
-                    >
-                      1 phần
-                    </button>
-                    <button
-                      onClick={() => {
-                        setPaymentType("note");
-                        setPartialAmount(0);
-                      }}
-                      className={`px-1.5 py-1 border rounded text-[11px] font-medium transition-all ${
-                        paymentType === "note"
-                          ? "border-red-500 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400"
-                          : "border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300"
-                      }`}
-                    >
-                      Nợ
-                    </button>
+                <>
+                  {/* Payment Type */}
+                  <div className="mb-3">
+                    <label className="block text-[10px] font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                      Hình thức thanh toán
+                    </label>
+                    <div className="grid grid-cols-3 gap-1.5">
+                      <button
+                        onClick={() => {
+                          setPaymentType("full");
+                          setPartialAmount(0);
+                        }}
+                        className={`px-2 py-1.5 border-2 rounded-lg text-[10px] font-bold transition-all ${
+                          paymentType === "full"
+                            ? "border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400"
+                            : "border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300"
+                        }`}
+                      >
+                        Đủ
+                      </button>
+                      <button
+                        onClick={() => setPaymentType("partial")}
+                        className={`px-2 py-1.5 border-2 rounded-lg text-[10px] font-bold transition-all ${
+                          paymentType === "partial"
+                            ? "border-orange-500 bg-orange-50 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400"
+                            : "border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300"
+                        }`}
+                      >
+                        1 phần
+                      </button>
+                      <button
+                        onClick={() => {
+                          setPaymentType("note");
+                          setPartialAmount(0);
+                        }}
+                        className={`px-2 py-1.5 border-2 rounded-lg text-[10px] font-bold transition-all ${
+                          paymentType === "note"
+                            ? "border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400"
+                            : "border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300"
+                        }`}
+                      >
+                        Công nợ
+                      </button>
+                    </div>
                   </div>
-                </div>
+
+                  {/* Partial Payment Input */}
+                  {paymentType === "partial" && (
+                    <div className="mb-3">
+                      <label className="block text-[10px] font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                        Số tiền khách trả
+                      </label>
+                      <FormattedNumberInput
+                        value={partialAmount}
+                        onValue={(v) =>
+                          setPartialAmount(Math.max(0, Math.round(v)))
+                        }
+                        className="w-full px-3 py-2 border-2 border-orange-300 dark:border-orange-700 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 text-right text-sm font-bold focus:border-orange-500"
+                        placeholder="Nhập số tiền..."
+                      />
+                      <div className="mt-1.5 flex items-center justify-between text-[10px]">
+                        <span className="text-slate-500">Còn lại:</span>
+                        <span className="font-bold text-red-600 dark:text-red-400">
+                          {formatCurrency(
+                            Math.max(0, totalAmount - partialAmount)
+                          )}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Transaction Type */}
+                  {paymentType && (
+                    <div className="mb-3">
+                      <label className="block text-[10px] font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                        Loại hạch toán
+                      </label>
+                      <select className="w-full px-3 py-2 border-2 border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 text-xs font-semibold focus:border-blue-500">
+                        <option>Mua hàng/nhập kho</option>
+                        <option>Nhập trả hàng</option>
+                        <option>Khác</option>
+                      </select>
+                    </div>
+                  )}
+                </>
               )}
 
-              {/* Partial Payment Input */}
-              {paymentType === "partial" && (
-                <FormattedNumberInput
-                  value={partialAmount}
-                  onValue={(v) => setPartialAmount(Math.max(0, Math.round(v)))}
-                  className="w-full px-2 py-1 border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 text-right text-xs"
-                  placeholder="Số tiền trả"
-                />
-              )}
-
-              {/* Hạch toán - Inline */}
-              {paymentMethod && paymentType && (
-                <select className="w-full px-2 py-1 border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 text-[11px]">
-                  <option>Mua hàng/nhập kho</option>
-                  <option>Nhập trả hàng</option>
-                  <option>Khác</option>
-                </select>
-              )}
-
-              {/* Action Buttons - Ultra Compact */}
-              <div className="flex gap-1.5 pt-1">
+              {/* Action Buttons - Always visible */}
+              <div className="flex gap-2">
                 <button
                   onClick={onClose}
-                  className="flex-1 bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-900 dark:text-slate-100 px-2 py-1.5 rounded font-medium text-xs transition-colors"
+                  className="flex-1 bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-900 dark:text-slate-100 px-3 py-2.5 rounded-lg font-bold text-xs transition-all"
                 >
-                  LƯU NHÁP
+                  <div className="flex items-center justify-center gap-2">
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"
+                      />
+                    </svg>
+                    LƯU NHÁP
+                  </div>
                 </button>
                 <button
                   onClick={() => {
@@ -1289,9 +1439,24 @@ const GoodsReceiptModal: React.FC<{
                     !paymentType ||
                     (paymentType === "partial" && partialAmount <= 0)
                   }
-                  className="flex-1 bg-orange-500 hover:bg-orange-600 text-white px-2 py-1.5 rounded font-medium text-xs transition-colors disabled:bg-slate-300 disabled:text-slate-500 disabled:cursor-not-allowed dark:disabled:bg-slate-600 dark:disabled:text-slate-400"
+                  className="flex-1 bg-orange-500 hover:bg-orange-600 text-white px-3 py-2.5 rounded-lg font-bold text-xs transition-all disabled:bg-slate-300 disabled:text-slate-500 disabled:cursor-not-allowed dark:disabled:bg-slate-600 dark:disabled:text-slate-400"
                 >
-                  NHẬP KHO
+                  <div className="flex items-center justify-center gap-2">
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"
+                      />
+                    </svg>
+                    NHẬP KHO
+                  </div>
                 </button>
               </div>
             </div>

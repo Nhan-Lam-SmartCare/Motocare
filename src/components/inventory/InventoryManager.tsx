@@ -686,8 +686,8 @@ const GoodsReceiptModal: React.FC<{
       paymentType === "full"
         ? totalAmount
         : paymentType === "partial"
-          ? partialAmount
-          : 0;
+        ? partialAmount
+        : 0;
 
     onSave(receiptItems, selectedSupplier, totalAmount, "", {
       paymentMethod,
@@ -744,62 +744,61 @@ const GoodsReceiptModal: React.FC<{
 
   return (
     <>
-      <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
-        <div className="bg-white dark:bg-slate-800 w-full h-full sm:h-auto sm:max-h-[90vh] sm:max-w-6xl sm:rounded-lg rounded-t-3xl sm:rounded-xl overflow-hidden flex flex-col sm:flex-row">
-          {/* Left Side - Product Selection */}
-          <div className="flex-1 flex flex-col bg-slate-50 dark:bg-slate-900 max-h-[50vh] sm:max-h-none">
-            {/* Header */}
-            <div className="flex justify-between items-center p-4 sm:p-6 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
-              <div className="flex items-center gap-3">
+      <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+        <div className="bg-white dark:bg-slate-800 w-full max-w-7xl h-[90vh] rounded-xl overflow-hidden flex">
+          {/* Left Side - Product Selection (35%) */}
+          <div className="w-[35%] flex flex-col bg-slate-50 dark:bg-slate-900 border-r border-slate-200 dark:border-slate-700">
+            {/* Header - Compact */}
+            <div className="flex items-center justify-between p-3 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
+              <div className="flex items-center gap-2">
                 <button
                   onClick={onClose}
-                  className="text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 text-2xl"
+                  className="w-7 h-7 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-700 rounded text-slate-600 dark:text-slate-400"
                 >
                   ←
                 </button>
-                <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-slate-100">
-                  Chọn sản phẩm nhập kho
+                <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                  Chọn sản phẩm
                 </h2>
               </div>
               <button
                 onClick={() => setShowAddProductModal(true)}
-                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 sm:px-4 sm:py-2 rounded-lg text-sm sm:text-base font-medium"
+                className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white px-2.5 py-1.5 rounded text-xs font-medium"
               >
-                <span className="text-xl">+</span>
-                <span className="hidden sm:inline">Thêm sản phẩm mới</span>
-                <span className="sm:hidden">Thêm</span>
+                <span className="text-lg leading-none">+</span>
+                <span>Thêm</span>
               </button>
             </div>
 
-            {/* Search */}
-            <div className="p-3 sm:p-6 bg-white dark:bg-slate-800">
+            {/* Search - Compact */}
+            <div className="p-2 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
               <input
                 type="text"
-                placeholder="Tìm theo tên sản phẩm, SKU..."
+                placeholder="Tìm tên, SKU..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full px-3 py-2 sm:px-4 sm:py-3 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 text-sm sm:text-base"
+                className="w-full px-2.5 py-1.5 border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 text-xs placeholder:text-slate-400"
               />
             </div>
 
-            {/* Products List */}
-            <div className="flex-1 overflow-y-auto p-3 sm:p-6">
+            {/* Products List - Scrollable */}
+            <div className="flex-1 overflow-y-auto p-2">
               {filteredParts.length === 0 ? (
-                <div className="text-center text-slate-500 py-8">
-                  Không tìm thấy sản phẩm nào
+                <div className="text-center text-slate-500 py-8 text-xs">
+                  Không tìm thấy sản phẩm
                 </div>
               ) : (
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   {filteredParts.map((part) => (
                     <div
                       key={part.id}
                       onClick={() => addToReceipt(part)}
-                      className="p-4 bg-white dark:bg-slate-800 rounded-lg hover:bg-blue-50 dark:hover:bg-slate-700 cursor-pointer border border-slate-200 dark:border-slate-600 transition-colors"
+                      className="p-2.5 bg-white dark:bg-slate-800 rounded hover:bg-blue-50 dark:hover:bg-slate-700 cursor-pointer border border-slate-200 dark:border-slate-600 transition-colors"
                     >
-                      <div className="font-medium text-slate-900 dark:text-slate-100">
+                      <div className="font-medium text-xs text-slate-900 dark:text-slate-100 line-clamp-1">
                         {part.name}
                       </div>
-                      <div className="text-sm text-slate-500 mt-1">
+                      <div className="text-[10px] text-slate-500 mt-0.5">
                         SKU: {part.sku}
                       </div>
                     </div>
@@ -809,12 +808,12 @@ const GoodsReceiptModal: React.FC<{
             </div>
           </div>
 
-          {/* Right Side - Receipt Details */}
-          <div className="w-full sm:w-[500px] bg-white dark:bg-slate-800 border-t sm:border-t-0 sm:border-l border-slate-200 dark:border-slate-700 flex flex-col max-h-[50vh] sm:max-h-none">
-            {/* Supplier Selection */}
-            <div className="p-4 sm:p-6 border-b border-slate-200 dark:border-slate-700">
-              <div className="flex items-center justify-between mb-2">
-                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+          {/* Right Side - Receipt Cart & Payment (65%) */}
+          <div className="w-[65%] bg-white dark:bg-slate-800 flex flex-col">
+            {/* Supplier Selection - Compact */}
+            <div className="p-2.5 border-b border-slate-200 dark:border-slate-700">
+              <div className="flex items-center gap-2 mb-1.5">
+                <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
                   Nhà cung cấp (NCC):
                 </label>
                 <button
@@ -827,16 +826,16 @@ const GoodsReceiptModal: React.FC<{
                     });
                     setShowSupplierModal(true);
                   }}
-                  className="flex items-center gap-1 text-xs px-2 py-1 rounded bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-slate-700 dark:text-blue-400"
+                  className="flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-slate-700 dark:text-blue-400 font-medium"
                 >
-                  <span className="text-base leading-none">+</span>
+                  <span className="text-sm leading-none">+</span>
                   Thêm NCC
                 </button>
               </div>
               <select
                 value={selectedSupplier}
                 onChange={(e) => setSelectedSupplier(e.target.value)}
-                className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
+                className="w-full px-2.5 py-1.5 border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 text-xs"
               >
                 <option value="">Tìm/Chọn nhà cung cấp</option>
                 {suppliers.map((s: any) => (
@@ -845,34 +844,6 @@ const GoodsReceiptModal: React.FC<{
                   </option>
                 ))}
               </select>
-              {selectedSupplier && (
-                <div className="mt-2 text-xs text-slate-500 dark:text-slate-400">
-                  {(() => {
-                    const s = suppliers.find(
-                      (x: any) => x.id === selectedSupplier
-                    );
-                    if (!s) return null;
-                    return (
-                      <div className="space-y-1">
-                        <div>
-                          <span className="font-medium">Tên:</span> {s.name}
-                        </div>
-                        {s.phone && (
-                          <div>
-                            <span className="font-medium">ĐT:</span> {s.phone}
-                          </div>
-                        )}
-                        {s.address && (
-                          <div>
-                            <span className="font-medium">Đ/c:</span>{" "}
-                            {s.address}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })()}
-                </div>
-              )}
             </div>
 
             {showSupplierModal && (
@@ -985,50 +956,48 @@ const GoodsReceiptModal: React.FC<{
               </div>
             )}
 
-            {/* Receipt Items */}
-            <div className="flex-1 overflow-y-auto p-3 sm:p-4">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-base sm:text-lg font-semibold text-slate-900 dark:text-slate-100">
+            {/* Receipt Items - Optimized for space */}
+            <div className="flex-1 overflow-y-auto p-2.5">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                   Giỏ hàng nhập kho
                 </h3>
-                <span className="text-xs sm:text-sm text-slate-500">
-                  ({receiptItems.length} sản phẩm)
+                <span className="text-[10px] text-slate-500 bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded-full">
+                  {receiptItems.length} SP
                 </span>
               </div>
 
               {receiptItems.length === 0 ? (
-                <div className="text-center text-slate-400 py-12">
-                  <div className="text-4xl mb-2">
-                    <Boxes className="w-10 h-10 mx-auto text-slate-300" />
-                  </div>
-                  <div className="text-sm">Giỏ hàng trống</div>
-                  <div className="text-xs text-slate-400 mt-1">
-                    Chọn sản phẩm để thêm vào giỏ
+                <div className="text-center text-slate-400 py-8">
+                  <Boxes className="w-8 h-8 mx-auto text-slate-300 mb-2" />
+                  <div className="text-xs">Giỏ hàng trống</div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">
+                    Chọn sản phẩm bên trái
                   </div>
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {receiptItems.map((item) => (
                     <div
                       key={item.partId}
-                      className="border border-slate-200 dark:border-slate-600 rounded-lg p-3"
+                      className="border border-slate-200 dark:border-slate-600 rounded-lg p-2"
                     >
-                      {/* Header: Product Info + Delete */}
-                      <div className="flex items-start gap-3 mb-3">
-                        <div className="w-12 h-12 bg-slate-100 dark:bg-slate-700 rounded-lg flex items-center justify-center flex-shrink-0">
-                          <Boxes className="w-6 h-6 text-slate-500" />
+                      {/* Header - Compact */}
+                      <div className="flex items-start gap-2 mb-2">
+                        <div className="w-8 h-8 bg-slate-100 dark:bg-slate-700 rounded flex items-center justify-center flex-shrink-0">
+                          <Boxes className="w-4 h-4 text-slate-500" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="font-medium text-sm text-slate-900 dark:text-slate-100 line-clamp-1">
+                          <div className="font-medium text-xs text-slate-900 dark:text-slate-100 line-clamp-1">
                             {item.partName}
                           </div>
-                          <div className="text-xs text-slate-500 mt-0.5">
+                          <div className="text-[10px] text-slate-500">
                             SKU: {item.sku}
                           </div>
                         </div>
                         <button
                           onClick={() => removeReceiptItem(item.partId)}
-                          className="w-8 h-8 flex items-center justify-center bg-red-100 dark:bg-red-900/20 rounded-full text-red-600 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/30 flex-shrink-0"
+                          className="w-6 h-6 flex items-center justify-center bg-red-100 dark:bg-red-900/20 rounded text-red-600 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/30 flex-shrink-0 text-sm"
                           title="Xóa"
                         >
                           ×
@@ -1090,17 +1059,17 @@ const GoodsReceiptModal: React.FC<{
                                 items.map((it) =>
                                   it.partId === item.partId
                                     ? {
-                                      ...it,
-                                      importPrice: newImport,
-                                      sellingPrice:
-                                        it.sellingPrice === 0 ||
+                                        ...it,
+                                        importPrice: newImport,
+                                        sellingPrice:
+                                          it.sellingPrice === 0 ||
                                           it.sellingPrice ===
-                                          Math.round(
-                                            (it.importPrice || 0) * 1.5
-                                          )
-                                          ? autoPrice
-                                          : it.sellingPrice,
-                                    }
+                                            Math.round(
+                                              (it.importPrice || 0) * 1.5
+                                            )
+                                            ? autoPrice
+                                            : it.sellingPrice,
+                                      }
                                     : it
                                 )
                               );
@@ -1162,118 +1131,31 @@ const GoodsReceiptModal: React.FC<{
               )}
             </div>
 
-            {/* Payment Section */}
-            <div className="p-4 border-t border-slate-200 dark:border-slate-700 space-y-4">
-              {/* Total Amount */}
-              <div className="flex justify-between items-center text-lg font-bold">
-                <span className="text-slate-700 dark:text-slate-300">
-                  Tổng tiền hàng
+            {/* Payment Section - ULTRA COMPACT */}
+            <div className="p-2 border-t border-slate-200 dark:border-slate-700 space-y-1.5">
+              {/* Total & Amount to Pay combined */}
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-slate-600 dark:text-slate-400">
+                  Tổng:
                 </span>
-                <span className="text-slate-900 dark:text-slate-100">
+                <span className="text-sm font-bold text-blue-600 dark:text-blue-400">
                   {formatCurrency(totalAmount)}
                 </span>
               </div>
 
-              {/* Discount - Optional */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-slate-600 dark:text-slate-400">
-                    Giảm giá:
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="number"
-                      value={
-                        discountType === "amount"
-                          ? discount || ""
-                          : discountPercent
-                      }
-                      onChange={(e) => {
-                        const value = Number(e.target.value) || 0;
-                        if (discountType === "amount") {
-                          if (value > subtotal) {
-                            showToast.warning(
-                              "Giảm giá không được lớn hơn tổng tiền!"
-                            );
-                            setDiscount(subtotal);
-                          } else {
-                            setDiscount(value);
-                          }
-                        } else {
-                          const percent = Math.min(value, 100);
-                          setDiscountPercent(percent);
-                          setDiscount(Math.round((subtotal * percent) / 100));
-                        }
-                      }}
-                      placeholder="0"
-                      className="w-20 px-2 py-1 border border-slate-300 dark:border-slate-600 rounded text-right bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 text-sm"
-                      min="0"
-                      max={discountType === "amount" ? subtotal : 100}
-                    />
-                    <select
-                      value={discountType}
-                      onChange={(e) => {
-                        const newType = e.target.value as "amount" | "percent";
-                        setDiscountType(newType);
-                        setDiscount(0);
-                        setDiscountPercent(0);
-                      }}
-                      className="px-2 py-1 border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 text-sm"
-                    >
-                      <option value="amount">₫</option>
-                      <option value="percent">%</option>
-                    </select>
-                  </div>
-                </div>
-
-                {/* Quick percent buttons */}
-                {discountType === "percent" && (
-                  <div className="flex gap-1 justify-end">
-                    {[5, 10, 15, 20].map((percent) => (
-                      <button
-                        key={percent}
-                        onClick={() => {
-                          setDiscountPercent(percent);
-                          setDiscount(Math.round((subtotal * percent) / 100));
-                        }}
-                        className="px-2 py-1 text-xs bg-slate-100 dark:bg-slate-700 hover:bg-blue-100 dark:hover:bg-blue-900/30 text-slate-700 dark:text-slate-300 rounded transition-colors"
-                      >
-                        {percent}%
-                      </button>
-                    ))}
-                  </div>
-                )}
-
-                {/* Show amount if percent mode */}
-                {discountType === "percent" && discountPercent > 0 && (
-                  <div className="text-xs text-slate-500 dark:text-slate-400 text-right">
-                    = {formatCurrency(discount)}
-                  </div>
-                )}
-              </div>
-
-              {/* Amount to Pay */}
-              <div className="flex justify-between items-center text-xl font-bold pt-2 border-t border-slate-200 dark:border-slate-700">
-                <span className="text-slate-900 dark:text-slate-100">
-                  Khách phải trả
-                </span>
-                <span className="text-blue-600 dark:text-blue-400">
-                  {formatCurrency(totalAmount)}
-                </span>
-              </div>
-
-              {/* Payment Method Selection */}
+              {/* Payment Method - Ultra Compact Icons Only */}
               <div>
-                <label className="block text-sm font-medium text-slate-900 dark:text-slate-100 mb-3">
-                  Phương thức thanh toán <span className="text-red-500">*</span>
+                <label className="block text-[10px] font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  Phương thức <span className="text-red-500">*</span>
                 </label>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-1.5">
                   <button
                     onClick={() => setPaymentMethod("cash")}
-                    className={`flex items-center justify-center gap-2 px-4 py-3 border-2 rounded-lg transition-all ${paymentMethod === "cash"
-                      ? "border-green-500 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400"
-                      : "border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:border-slate-400"
-                      }`}
+                    className={`flex items-center justify-center gap-1 px-2 py-1.5 border rounded text-[11px] font-medium transition-all ${
+                      paymentMethod === "cash"
+                        ? "border-green-500 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400"
+                        : "border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300"
+                    }`}
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -1281,19 +1163,20 @@ const GoodsReceiptModal: React.FC<{
                       fill="none"
                       stroke="currentColor"
                       strokeWidth="2"
-                      className="w-6 h-6"
+                      className="w-3.5 h-3.5"
                     >
                       <rect x="2" y="6" width="20" height="12" rx="2" ry="2" />
                       <circle cx="12" cy="12" r="3" />
                     </svg>
-                    <span className="font-medium">Tiền mặt</span>
+                    Tiền mặt
                   </button>
                   <button
                     onClick={() => setPaymentMethod("bank")}
-                    className={`flex items-center justify-center gap-2 px-4 py-3 border-2 rounded-lg transition-all ${paymentMethod === "bank"
-                      ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400"
-                      : "border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:border-slate-400"
-                      }`}
+                    className={`flex items-center justify-center gap-1 px-2 py-1.5 border rounded text-[11px] font-medium transition-all ${
+                      paymentMethod === "bank"
+                        ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400"
+                        : "border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300"
+                    }`}
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -1301,100 +1184,87 @@ const GoodsReceiptModal: React.FC<{
                       fill="none"
                       stroke="currentColor"
                       strokeWidth="2"
-                      className="w-6 h-6"
+                      className="w-3.5 h-3.5"
                     >
                       <rect x="2" y="6" width="20" height="12" rx="2" ry="2" />
                       <path d="M2 10h20" />
-                      <path d="M6 14h4" />
                     </svg>
-                    <span className="font-medium">Chuyển khoản</span>
+                    CK
                   </button>
                 </div>
               </div>
 
-              {/* Payment Type - Only show after payment method is selected */}
+              {/* Payment Type - Ultra Compact */}
               {paymentMethod && (
                 <div>
-                  <label className="block text-sm font-medium text-slate-900 dark:text-slate-100 mb-3">
+                  <label className="block text-[10px] font-medium text-slate-700 dark:text-slate-300 mb-1">
                     Hình thức
                   </label>
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-3 gap-1">
                     <button
                       onClick={() => {
                         setPaymentType("full");
                         setPartialAmount(0);
                       }}
-                      className={`px-3 py-2.5 border-2 rounded-lg text-sm font-medium transition-all ${paymentType === "full"
-                        ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400"
-                        : "border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:border-slate-400"
-                        }`}
+                      className={`px-1.5 py-1 border rounded text-[11px] font-medium transition-all ${
+                        paymentType === "full"
+                          ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400"
+                          : "border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300"
+                      }`}
                     >
-                      Thanh toán đủ
+                      Đủ
                     </button>
                     <button
                       onClick={() => setPaymentType("partial")}
-                      className={`px-3 py-2.5 border-2 rounded-lg text-sm font-medium transition-all ${paymentType === "partial"
-                        ? "border-orange-500 bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400"
-                        : "border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:border-slate-400"
-                        }`}
+                      className={`px-1.5 py-1 border rounded text-[11px] font-medium transition-all ${
+                        paymentType === "partial"
+                          ? "border-orange-500 bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400"
+                          : "border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300"
+                      }`}
                     >
-                      Thanh toán 1 phần
+                      1 phần
                     </button>
                     <button
                       onClick={() => {
                         setPaymentType("note");
                         setPartialAmount(0);
                       }}
-                      className={`px-3 py-2.5 border-2 rounded-lg text-sm font-medium transition-all ${paymentType === "note"
-                        ? "border-red-500 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400"
-                        : "border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:border-slate-400"
-                        }`}
+                      className={`px-1.5 py-1 border rounded text-[11px] font-medium transition-all ${
+                        paymentType === "note"
+                          ? "border-red-500 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400"
+                          : "border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300"
+                      }`}
                     >
-                      Ghi nợ
+                      Nợ
                     </button>
                   </div>
                 </div>
               )}
 
-              {/* Partial Payment Amount Input */}
+              {/* Partial Payment Input */}
               {paymentType === "partial" && (
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                    Số tiền khách trả
-                  </label>
-                  <FormattedNumberInput
-                    value={partialAmount}
-                    onValue={(v) =>
-                      setPartialAmount(Math.max(0, Math.round(v)))
-                    }
-                    className="w-full px-3 py-2.5 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 text-right text-lg font-medium"
-                    placeholder="0"
-                  />
-                  <div className="text-xs text-slate-500 mt-1">
-                    Còn lại:{" "}
-                    {formatCurrency(Math.max(0, totalAmount - partialAmount))} ₫
-                  </div>
-                </div>
+                <FormattedNumberInput
+                  value={partialAmount}
+                  onValue={(v) => setPartialAmount(Math.max(0, Math.round(v)))}
+                  className="w-full px-2 py-1 border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 text-right text-xs"
+                  placeholder="Số tiền trả"
+                />
               )}
 
-              {/* Account Category */}
+              {/* Hạch toán - Inline */}
               {paymentMethod && paymentType && (
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                    Hạch toán:
-                  </label>
-                  <select className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100">
-                    <option>Mua hàng/nhập kho</option>
-                    <option>Nhập trả hàng</option>
-                    <option>Khác</option>
-                  </select>
-                </div>
+                <select className="w-full px-2 py-1 border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 text-[11px]">
+                  <option>Mua hàng/nhập kho</option>
+                  <option>Nhập trả hàng</option>
+                  <option>Khác</option>
+                </select>
               )}
 
-              <div className="flex gap-3 pt-4">
+              {/* Action Buttons - Ultra Compact */}
+              <div className="flex gap-1.5 pt-1">
                 <button
                   onClick={onClose}
-                  className="flex-1 bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-900 dark:text-slate-100 px-4 py-3 rounded-lg font-medium transition-colors"
+                  className="flex-1 bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-900 dark:text-slate-100 px-2 py-1.5 rounded font-medium text-xs transition-colors"
                 >
                   LƯU NHÁP
                 </button>
@@ -1419,7 +1289,7 @@ const GoodsReceiptModal: React.FC<{
                     !paymentType ||
                     (paymentType === "partial" && partialAmount <= 0)
                   }
-                  className="flex-1 bg-orange-500 hover:bg-orange-600 text-white px-4 py-3 rounded-lg font-medium transition-colors disabled:bg-slate-300 disabled:text-slate-500 disabled:cursor-not-allowed dark:disabled:bg-slate-600 dark:disabled:text-slate-400"
+                  className="flex-1 bg-orange-500 hover:bg-orange-600 text-white px-2 py-1.5 rounded font-medium text-xs transition-colors disabled:bg-slate-300 disabled:text-slate-500 disabled:cursor-not-allowed dark:disabled:bg-slate-600 dark:disabled:text-slate-400"
                 >
                   NHẬP KHO
                 </button>
@@ -2158,10 +2028,11 @@ const EditReceiptModal: React.FC<{
                     {items.map((item, index) => (
                       <tr
                         key={item.id}
-                        className={`hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors ${editingItemIndex === index
-                          ? "bg-blue-50 dark:bg-blue-900/20"
-                          : ""
-                          }`}
+                        className={`hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors ${
+                          editingItemIndex === index
+                            ? "bg-blue-50 dark:bg-blue-900/20"
+                            : ""
+                        }`}
                       >
                         <td className="px-3 py-3 text-sm text-slate-900 dark:text-slate-100">
                           {index + 1}
@@ -2606,10 +2477,11 @@ const InventoryHistorySection: React.FC<{
             <button
               key={filter.key}
               onClick={() => setActiveTimeFilter(filter.key)}
-              className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-sm sm:text-base font-medium transition-colors ${activeTimeFilter === filter.key
-                ? "bg-blue-600 text-white"
-                : "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600"
-                }`}
+              className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-sm sm:text-base font-medium transition-colors ${
+                activeTimeFilter === filter.key
+                  ? "bg-blue-600 text-white"
+                  : "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600"
+              }`}
             >
               {filter.label}
             </button>
@@ -3064,14 +2936,16 @@ const InventoryHistorySection: React.FC<{
                     quantity: item.quantity,
                     unitPrice: item.unitPrice,
                     totalPrice: item.totalPrice,
-                    notes: `NV:${updatedData.items[0].notes
-                      ?.split("NV:")[1]
-                      ?.split("NCC:")[0]
-                      ?.trim() || "Xuân Nhan"
-                      } NCC:${updatedData.supplier}${updatedData.supplierPhone
+                    notes: `NV:${
+                      updatedData.items[0].notes
+                        ?.split("NV:")[1]
+                        ?.split("NCC:")[0]
+                        ?.trim() || "Xuân Nhan"
+                    } NCC:${updatedData.supplier}${
+                      updatedData.supplierPhone
                         ? ` Phone:${updatedData.supplierPhone}`
                         : ""
-                      }`,
+                    }`,
                   })
                   .eq("id", item.id);
 
@@ -3177,14 +3051,16 @@ const InventoryHistorySection: React.FC<{
                     unitPrice: newItem.unitPrice,
                     totalPrice: newItem.totalPrice,
                     branchId: currentBranchId,
-                    notes: `NV:${updatedData.items[0].notes
-                      ?.split("NV:")[1]
-                      ?.split("NCC:")[0]
-                      ?.trim() || "Xuân Nhan"
-                      } NCC:${updatedData.supplier}${updatedData.supplierPhone
+                    notes: `NV:${
+                      updatedData.items[0].notes
+                        ?.split("NV:")[1]
+                        ?.split("NCC:")[0]
+                        ?.trim() || "Xuân Nhan"
+                    } NCC:${updatedData.supplier}${
+                      updatedData.supplierPhone
                         ? ` Phone:${updatedData.supplierPhone}`
                         : ""
-                      }`,
+                    }`,
                   });
 
                 if (insertError) {
@@ -3321,10 +3197,11 @@ const InventoryHistoryModal: React.FC<{
               <button
                 key={filter.key}
                 onClick={() => setActiveTimeFilter(filter.key)}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors ${activeTimeFilter === filter.key
-                  ? "bg-blue-600 text-white"
-                  : "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600"
-                  }`}
+                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                  activeTimeFilter === filter.key
+                    ? "bg-blue-600 text-white"
+                    : "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600"
+                }`}
               >
                 {filter.label}
               </button>
@@ -3444,7 +3321,7 @@ const InventoryHistoryModal: React.FC<{
                       <div className="text-sm text-slate-900 dark:text-slate-100">
                         {transaction.notes && transaction.notes.includes("NCC:")
                           ? transaction.notes.split("NCC:")[1]?.trim() ||
-                          "Chưa rõ"
+                            "Chưa rõ"
                           : "Chưa rõ"}
                       </div>
                     </td>
@@ -3788,7 +3665,9 @@ const InventoryManager: React.FC = () => {
           supplierId,
           branchId: currentBranchId,
           userId: profile?.id || "unknown",
-          notes: `${receiptCode} | NCC: ${supplierName}${note ? " | " + note : ""}`,
+          notes: `${receiptCode} | NCC: ${supplierName}${
+            note ? " | " + note : ""
+          }`,
         });
 
         // Create supplier debt if payment is partial or deferred
@@ -3980,8 +3859,9 @@ const InventoryManager: React.FC = () => {
   const handleExportExcel = () => {
     try {
       const now = new Date();
-      const filename = `ton-kho-${now.getDate()}-${now.getMonth() + 1
-        }-${now.getFullYear()}.xlsx`;
+      const filename = `ton-kho-${now.getDate()}-${
+        now.getMonth() + 1
+      }-${now.getFullYear()}.xlsx`;
       exportPartsToExcel(repoParts, currentBranchId, filename);
       showToast.success("Xuất file Excel thành công!");
     } catch (error) {
@@ -4035,10 +3915,11 @@ const InventoryManager: React.FC = () => {
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors ${activeTab === tab.key
-                  ? "bg-blue-600 text-white"
-                  : "text-secondary-text hover:bg-tertiary-bg"
-                  }`}
+                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                  activeTab === tab.key
+                    ? "bg-blue-600 text-white"
+                    : "text-secondary-text hover:bg-tertiary-bg"
+                }`}
               >
                 <span className="inline-flex items-center gap-1">
                   {tab.icon}
@@ -4219,10 +4100,11 @@ const InventoryManager: React.FC = () => {
                     </h3>
                     <button
                       onClick={() => setShowDuplicatesOnly(!showDuplicatesOnly)}
-                      className={`mt-1 px-2 py-1 rounded text-xs font-medium transition ${showDuplicatesOnly
-                        ? "bg-orange-600 text-white"
-                        : "bg-orange-100 dark:bg-orange-900/40 text-orange-800 dark:text-orange-300"
-                        }`}
+                      className={`mt-1 px-2 py-1 rounded text-xs font-medium transition ${
+                        showDuplicatesOnly
+                          ? "bg-orange-600 text-white"
+                          : "bg-orange-100 dark:bg-orange-900/40 text-orange-800 dark:text-orange-300"
+                      }`}
                     >
                       {showDuplicatesOnly ? "✓ Đang lọc" : "🔍 Lọc"}
                     </button>
@@ -4272,8 +4154,9 @@ const InventoryManager: React.FC = () => {
                     return (
                       <div
                         key={part.id}
-                        className={`flex items-center gap-3 p-3 rounded-xl bg-[#2d3748] border border-slate-600 transition ${isDuplicate ? "border-l-4 border-l-orange-500" : ""
-                          }`}
+                        className={`flex items-center gap-3 p-3 rounded-xl bg-[#2d3748] border border-slate-600 transition ${
+                          isDuplicate ? "border-l-4 border-l-orange-500" : ""
+                        }`}
                         role="listitem"
                       >
                         <div className="w-14 h-14 bg-slate-600 rounded-lg overflow-hidden flex items-center justify-center flex-shrink-0">
@@ -4314,12 +4197,13 @@ const InventoryManager: React.FC = () => {
                           </div>
                           <div className="mt-2 flex items-center justify-between">
                             <span
-                              className={`inline-flex px-2 py-0.5 text-sm font-bold rounded ${stock === 0
-                                ? "text-red-400 bg-red-900/30"
-                                : stock < 10
+                              className={`inline-flex px-2 py-0.5 text-sm font-bold rounded ${
+                                stock === 0
+                                  ? "text-red-400 bg-red-900/30"
+                                  : stock < 10
                                   ? "text-yellow-400 bg-yellow-900/30"
                                   : "text-emerald-400 bg-emerald-900/30"
-                                }`}
+                              }`}
                             >
                               {stock}
                             </span>
@@ -4448,12 +4332,13 @@ const InventoryManager: React.FC = () => {
                         return (
                           <tr
                             key={part.id}
-                            className={`border-b border-primary-border hover:bg-tertiary-bg transition-colors ${isSelected
-                              ? "bg-blue-900/20 dark:bg-blue-900/20"
-                              : isDuplicate
+                            className={`border-b border-primary-border hover:bg-tertiary-bg transition-colors ${
+                              isSelected
+                                ? "bg-blue-900/20 dark:bg-blue-900/20"
+                                : isDuplicate
                                 ? "bg-orange-500/10 border-l-4 border-l-orange-500"
                                 : ""
-                              }`}
+                            }`}
                           >
                             <td className="px-6 py-4 text-center">
                               <input
@@ -4493,12 +4378,13 @@ const InventoryManager: React.FC = () => {
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-center">
                               <span
-                                className={`inline-flex px-3 py-1 text-sm font-bold rounded ${stock === 0
-                                  ? "text-red-600 dark:text-red-400"
-                                  : stock < 10
+                                className={`inline-flex px-3 py-1 text-sm font-bold rounded ${
+                                  stock === 0
+                                    ? "text-red-600 dark:text-red-400"
+                                    : stock < 10
                                     ? "text-yellow-600 dark:text-yellow-400"
                                     : "text-emerald-600 dark:text-emerald-400"
-                                  }`}
+                                }`}
                               >
                                 {stock}
                               </span>
@@ -4936,7 +4822,7 @@ const InventoryManager: React.FC = () => {
                     at: importDate,
                   },
                 });
-              } catch { }
+              } catch {}
 
               setShowImportModal(false);
 
@@ -4992,40 +4878,44 @@ const InventoryManager: React.FC = () => {
         <div className="grid grid-cols-4 gap-0.5 px-1 py-1">
           <button
             onClick={() => setActiveTab("stock")}
-            className={`flex flex-col items-center gap-0.5 px-1 py-1 rounded-lg transition ${activeTab === "stock"
-              ? "bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400"
-              : "text-slate-600 dark:text-slate-400"
-              }`}
+            className={`flex flex-col items-center gap-0.5 px-1 py-1 rounded-lg transition ${
+              activeTab === "stock"
+                ? "bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400"
+                : "text-slate-600 dark:text-slate-400"
+            }`}
           >
             <Boxes className="w-4 h-4" />
             <span className="text-[9px] font-medium">Tồn kho</span>
           </button>
           <button
             onClick={() => setActiveTab("categories")}
-            className={`flex flex-col items-center gap-0.5 px-1 py-1 rounded-lg transition ${activeTab === "categories"
-              ? "bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400"
-              : "text-slate-600 dark:text-slate-400"
-              }`}
+            className={`flex flex-col items-center gap-0.5 px-1 py-1 rounded-lg transition ${
+              activeTab === "categories"
+                ? "bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400"
+                : "text-slate-600 dark:text-slate-400"
+            }`}
           >
             <Package className="w-4 h-4" />
             <span className="text-[9px] font-medium">Danh mục</span>
           </button>
           <button
             onClick={() => setActiveTab("lookup")}
-            className={`flex flex-col items-center gap-0.5 px-1 py-1 rounded-lg transition ${activeTab === "lookup"
-              ? "bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
-              : "text-slate-600 dark:text-slate-400"
-              }`}
+            className={`flex flex-col items-center gap-0.5 px-1 py-1 rounded-lg transition ${
+              activeTab === "lookup"
+                ? "bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
+                : "text-slate-600 dark:text-slate-400"
+            }`}
           >
             <Search className="w-4 h-4" />
             <span className="text-[9px] font-medium">Tra cứu</span>
           </button>
           <button
             onClick={() => setActiveTab("history")}
-            className={`flex flex-col items-center gap-0.5 px-1 py-1 rounded-lg transition ${activeTab === "history"
-              ? "bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400"
-              : "text-slate-600 dark:text-slate-400"
-              }`}
+            className={`flex flex-col items-center gap-0.5 px-1 py-1 rounded-lg transition ${
+              activeTab === "history"
+                ? "bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400"
+                : "text-slate-600 dark:text-slate-400"
+            }`}
           >
             <FileText className="w-4 h-4" />
             <span className="text-[9px] font-medium">Lịch sử</span>

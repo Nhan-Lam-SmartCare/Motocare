@@ -25,6 +25,7 @@
 ### 1.1 Tại sao cần Backup?
 
 Backup dữ liệu bảo vệ bạn khỏi:
+
 - ❌ **Lỗi người dùng**: Xóa nhầm, cập nhật sai
 - ❌ **Lỗi hệ thống**: Crash, corruption
 - ❌ **Tấn công**: Ransomware, hacking
@@ -45,6 +46,7 @@ Backup dữ liệu bảo vệ bạn khỏi:
 **Khi nào**: Hàng tuần (Chủ nhật 2:00 AM)
 
 **Bao gồm**:
+
 - Tất cả bảng dữ liệu
 - Schema (cấu trúc)
 - Functions, triggers
@@ -73,10 +75,12 @@ Backup dữ liệu bảo vệ bạn khỏi:
 ### 3.1 Supabase Automatic Backups
 
 **Free Tier**:
+
 - ✅ Daily backups (7 ngày gần nhất)
 - ✅ Point-in-time recovery (PITR): Không có
 
 **Pro Plan** ($25/month):
+
 - ✅ Daily backups (30 ngày)
 - ✅ PITR: 7 ngày
 - ✅ Custom schedules
@@ -90,6 +94,7 @@ Backup dữ liệu bảo vệ bạn khỏi:
 **Bước 3**: Menu **Database** → **Backups**
 
 **Bước 4**: Xem danh sách backups:
+
 ```
 ✅ 2025-11-23 02:00:00   Full Backup   120 MB
 ✅ 2025-11-22 02:00:00   Full Backup   118 MB
@@ -117,10 +122,12 @@ Backup dữ liệu bảo vệ bạn khỏi:
 ### 4.1 Backup qua pg_dump
 
 **Yêu cầu**:
+
 - PostgreSQL client (`pg_dump`) đã cài
 - Connection string từ Supabase
 
 **Lấy Connection String**:
+
 1. Supabase Dashboard → **Settings** → **Database**
 2. Copy **Connection string** (URI)
    ```
@@ -163,42 +170,49 @@ $env:PGPASSWORD = "your-password"
 
 ```javascript
 // scripts/maintenance/backup-database.mjs
-import { createClient } from '@supabase/supabase-js'
-import fs from 'fs'
+import { createClient } from "@supabase/supabase-js";
+import fs from "fs";
 
 const supabase = createClient(
   process.env.VITE_SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY // Service key!
-)
+);
 
 async function backupTable(tableName) {
-  const { data, error } = await supabase.from(tableName).select('*')
-  
+  const { data, error } = await supabase.from(tableName).select("*");
+
   if (error) {
-    console.error(`❌ Error backing up ${tableName}:`, error)
-    return
+    console.error(`❌ Error backing up ${tableName}:`, error);
+    return;
   }
-  
-  const filename = `backup_${tableName}_${Date.now()}.json`
-  fs.writeFileSync(filename, JSON.stringify(data, null, 2))
-  console.log(`✅ Backed up ${tableName}: ${data.length} rows → ${filename}`)
+
+  const filename = `backup_${tableName}_${Date.now()}.json`;
+  fs.writeFileSync(filename, JSON.stringify(data, null, 2));
+  console.log(`✅ Backed up ${tableName}: ${data.length} rows → ${filename}`);
 }
 
 async function backupAll() {
   const tables = [
-    'parts', 'sales', 'sale_items', 'work_orders',
-    'customers', 'inventory_transactions', 'payment_sources',
-    'financial_transactions', 'profiles', 'branches'
-  ]
-  
+    "parts",
+    "sales",
+    "sale_items",
+    "work_orders",
+    "customers",
+    "inventory_transactions",
+    "payment_sources",
+    "financial_transactions",
+    "profiles",
+    "branches",
+  ];
+
   for (const table of tables) {
-    await backupTable(table)
+    await backupTable(table);
   }
-  
-  console.log('🎉 Full backup completed!')
+
+  console.log("🎉 Full backup completed!");
 }
 
-backupAll()
+backupAll();
 ```
 
 **Chạy script**:
@@ -210,6 +224,7 @@ node scripts/maintenance/backup-database.mjs
 ### 4.3 Backup qua Excel Export
 
 **Trong ứng dụng**:
+
 1. Menu **"Cài đặt"** → **"Xuất dữ liệu"**
 2. Chọn bảng: `parts`, `sales`, `customers`, v.v.
 3. Click **"Xuất Excel"**
@@ -232,6 +247,7 @@ node scripts/maintenance/backup-database.mjs
 **Bước 3**: Click **"..."** → **"Restore"**
 
 **Bước 4**: Xác nhận:
+
 ```
 ⚠️ Warning: This will overwrite your current database.
 Are you sure?
@@ -276,32 +292,35 @@ $env:PGPASSWORD = "your-password"
 
 ```javascript
 // scripts/maintenance/restore-from-json.mjs
-import { createClient } from '@supabase/supabase-js'
-import fs from 'fs'
+import { createClient } from "@supabase/supabase-js";
+import fs from "fs";
 
 const supabase = createClient(
   process.env.VITE_SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
-)
+);
 
 async function restoreTable(tableName, filename) {
-  const data = JSON.parse(fs.readFileSync(filename, 'utf8'))
-  
+  const data = JSON.parse(fs.readFileSync(filename, "utf8"));
+
   // Xóa dữ liệu cũ (cẩn thận!)
-  await supabase.from(tableName).delete().neq('id', '00000000-0000-0000-0000-000000000000')
-  
+  await supabase
+    .from(tableName)
+    .delete()
+    .neq("id", "00000000-0000-0000-0000-000000000000");
+
   // Insert dữ liệu mới
-  const { error } = await supabase.from(tableName).insert(data)
-  
+  const { error } = await supabase.from(tableName).insert(data);
+
   if (error) {
-    console.error(`❌ Error restoring ${tableName}:`, error)
+    console.error(`❌ Error restoring ${tableName}:`, error);
   } else {
-    console.log(`✅ Restored ${tableName}: ${data.length} rows`)
+    console.log(`✅ Restored ${tableName}: ${data.length} rows`);
   }
 }
 
 // Restore một bảng
-restoreTable('parts', 'backup_parts_1732348800000.json')
+restoreTable("parts", "backup_parts_1732348800000.json");
 ```
 
 ### 5.4 Point-in-Time Recovery (PITR)
@@ -311,6 +330,7 @@ restoreTable('parts', 'backup_parts_1732348800000.json')
 **Bước 1**: Dashboard → **Database** → **Backups** → **PITR**
 
 **Bước 2**: Chọn thời điểm:
+
 ```
 Date: 2025-11-23
 Time: 14:30:00
@@ -330,59 +350,68 @@ Time: 14:30:00
 
 ```javascript
 // scripts/maintenance/export-all-tables.mjs
-import { createClient } from '@supabase/supabase-js'
-import fs from 'fs'
-import path from 'path'
+import { createClient } from "@supabase/supabase-js";
+import fs from "fs";
+import path from "path";
 
 const supabase = createClient(
   process.env.VITE_SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
-)
+);
 
 const TABLES = [
-  'parts', 'sales', 'sale_items', 'work_orders', 'work_order_items',
-  'customers', 'inventory_transactions', 'payment_sources',
-  'financial_transactions', 'profiles', 'branches', 'debts'
-]
+  "parts",
+  "sales",
+  "sale_items",
+  "work_orders",
+  "work_order_items",
+  "customers",
+  "inventory_transactions",
+  "payment_sources",
+  "financial_transactions",
+  "profiles",
+  "branches",
+  "debts",
+];
 
 async function exportAllTables() {
-  const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
-  const backupDir = `backups/backup_${timestamp}`
-  
+  const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+  const backupDir = `backups/backup_${timestamp}`;
+
   if (!fs.existsSync(backupDir)) {
-    fs.mkdirSync(backupDir, { recursive: true })
+    fs.mkdirSync(backupDir, { recursive: true });
   }
-  
+
   for (const table of TABLES) {
     try {
-      const { data, error } = await supabase.from(table).select('*')
-      
-      if (error) throw error
-      
-      const filename = path.join(backupDir, `${table}.json`)
-      fs.writeFileSync(filename, JSON.stringify(data, null, 2))
-      
-      console.log(`✅ ${table}: ${data.length} rows`)
+      const { data, error } = await supabase.from(table).select("*");
+
+      if (error) throw error;
+
+      const filename = path.join(backupDir, `${table}.json`);
+      fs.writeFileSync(filename, JSON.stringify(data, null, 2));
+
+      console.log(`✅ ${table}: ${data.length} rows`);
     } catch (err) {
-      console.error(`❌ ${table}:`, err.message)
+      console.error(`❌ ${table}:`, err.message);
     }
   }
-  
+
   // Tạo metadata file
   const metadata = {
     timestamp: new Date().toISOString(),
     tables: TABLES,
-    version: '1.3.0'
-  }
+    version: "1.3.0",
+  };
   fs.writeFileSync(
-    path.join(backupDir, 'metadata.json'),
+    path.join(backupDir, "metadata.json"),
     JSON.stringify(metadata, null, 2)
-  )
-  
-  console.log(`\n🎉 Backup completed: ${backupDir}`)
+  );
+
+  console.log(`\n🎉 Backup completed: ${backupDir}`);
 }
 
-exportAllTables()
+exportAllTables();
 ```
 
 **Chạy**:
@@ -409,80 +438,80 @@ backups/
 
 ```javascript
 // scripts/maintenance/import-from-backup.mjs
-import { createClient } from '@supabase/supabase-js'
-import fs from 'fs'
-import path from 'path'
+import { createClient } from "@supabase/supabase-js";
+import fs from "fs";
+import path from "path";
 
 const supabase = createClient(
   process.env.VITE_SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
-)
+);
 
 async function importTable(tableName, backupDir) {
-  const filename = path.join(backupDir, `${tableName}.json`)
-  
+  const filename = path.join(backupDir, `${tableName}.json`);
+
   if (!fs.existsSync(filename)) {
-    console.log(`⏭️  Skipping ${tableName} (file not found)`)
-    return
+    console.log(`⏭️  Skipping ${tableName} (file not found)`);
+    return;
   }
-  
-  const data = JSON.parse(fs.readFileSync(filename, 'utf8'))
-  
-  console.log(`📥 Importing ${tableName}: ${data.length} rows...`)
-  
+
+  const data = JSON.parse(fs.readFileSync(filename, "utf8"));
+
+  console.log(`📥 Importing ${tableName}: ${data.length} rows...`);
+
   // Xóa dữ liệu cũ (CẨNN THẬN!)
   const { error: deleteError } = await supabase
     .from(tableName)
     .delete()
-    .neq('id', '00000000-0000-0000-0000-000000000000')
-  
+    .neq("id", "00000000-0000-0000-0000-000000000000");
+
   if (deleteError) {
-    console.error(`❌ Error deleting old data:`, deleteError)
-    return
+    console.error(`❌ Error deleting old data:`, deleteError);
+    return;
   }
-  
+
   // Insert dữ liệu mới (batch 100 rows)
   for (let i = 0; i < data.length; i += 100) {
-    const batch = data.slice(i, i + 100)
-    const { error } = await supabase.from(tableName).insert(batch)
-    
+    const batch = data.slice(i, i + 100);
+    const { error } = await supabase.from(tableName).insert(batch);
+
     if (error) {
-      console.error(`❌ Error inserting batch ${i}-${i+100}:`, error)
-      break
+      console.error(`❌ Error inserting batch ${i}-${i + 100}:`, error);
+      break;
     }
-    
-    console.log(`   ✅ ${i}-${Math.min(i+100, data.length)}/${data.length}`)
+
+    console.log(`   ✅ ${i}-${Math.min(i + 100, data.length)}/${data.length}`);
   }
-  
-  console.log(`✅ ${tableName} imported successfully`)
+
+  console.log(`✅ ${tableName} imported successfully`);
 }
 
 async function importFromBackup(backupDir) {
-  const metadataFile = path.join(backupDir, 'metadata.json')
-  
+  const metadataFile = path.join(backupDir, "metadata.json");
+
   if (!fs.existsSync(metadataFile)) {
-    console.error('❌ metadata.json not found in backup folder')
-    return
+    console.error("❌ metadata.json not found in backup folder");
+    return;
   }
-  
-  const metadata = JSON.parse(fs.readFileSync(metadataFile, 'utf8'))
-  console.log(`📦 Restoring backup from ${metadata.timestamp}`)
-  
+
+  const metadata = JSON.parse(fs.readFileSync(metadataFile, "utf8"));
+  console.log(`📦 Restoring backup from ${metadata.timestamp}`);
+
   for (const table of metadata.tables) {
-    await importTable(table, backupDir)
+    await importTable(table, backupDir);
   }
-  
-  console.log('\n🎉 Import completed!')
+
+  console.log("\n🎉 Import completed!");
 }
 
 // Usage: node import-from-backup.mjs backups/backup_2025-11-23T10-30-00-000Z
-const backupDir = process.argv[2]
+const backupDir = process.argv[2];
 if (!backupDir) {
-  console.error('Usage: node import-from-backup.mjs <backup-folder>')
-  process.exit(1)
+  console.error("Usage: node import-from-backup.mjs <backup-folder>");
+  process.exit(1);
 }
 
-importFromBackup(backupDir)
+importFromBackup(backupDir);
 ```
 
 **Chạy**:
@@ -497,16 +526,17 @@ node scripts/maintenance/import-from-backup.mjs backups/backup_2025-11-23T10-30-
 
 ### 7.1 Lịch Backup
 
-| Loại | Tần suất | Retention |
-|------|----------|-----------|
-| **Auto Daily** | 2:00 AM | 7 ngày |
-| **Weekly Full** | Chủ nhật 2:00 AM | 4 tuần |
-| **Monthly** | Ngày 1 hàng tháng | 12 tháng |
-| **Before Update** | Manual | Permanent |
+| Loại              | Tần suất          | Retention |
+| ----------------- | ----------------- | --------- |
+| **Auto Daily**    | 2:00 AM           | 7 ngày    |
+| **Weekly Full**   | Chủ nhật 2:00 AM  | 4 tuần    |
+| **Monthly**       | Ngày 1 hàng tháng | 12 tháng  |
+| **Before Update** | Manual            | Permanent |
 
 ### 7.2 Kiểm tra Backup
 
 **Hàng tuần**:
+
 1. Restore backup vào test database
 2. Verify data integrity
 3. Test critical functions
@@ -524,14 +554,17 @@ psql test_db -c "SELECT COUNT(*) FROM sales;"
 ### 7.3 Lưu trữ Backup
 
 **Local**:
+
 - `C:\Backups\Motocare\` (Windows)
 - External HDD (backup hàng tuần)
 
 **Cloud**:
+
 - Google Drive / OneDrive
 - AWS S3 (long-term storage)
 
 **Offsite**:
+
 - USB drive ở nhà chủ shop
 - Cloud storage với encryption
 
@@ -557,6 +590,7 @@ psql test_db -c "SELECT COUNT(*) FROM sales;"
 **Tình huống**: Xóa nhầm 50 đơn hàng
 
 **Giải pháp**:
+
 1. Stop ngay, không làm gì thêm
 2. Restore từ backup gần nhất (PITR nếu có)
 3. Verify dữ liệu đã về
@@ -569,6 +603,7 @@ psql test_db -c "SELECT COUNT(*) FROM sales;"
 **Tình huống**: Database bị lỗi, không truy cập được
 
 **Giải pháp**:
+
 1. Liên hệ Supabase Support ngay
 2. Restore từ latest backup
 3. Nhập lại dữ liệu mới (sau lần backup)
@@ -580,6 +615,7 @@ psql test_db -c "SELECT COUNT(*) FROM sales;"
 **Tình huống**: Account bị hack/xóa
 
 **Giải pháp**:
+
 1. Restore từ local backups
 2. Tạo Supabase project mới
 3. Import dữ liệu từ backups
@@ -592,6 +628,7 @@ psql test_db -c "SELECT COUNT(*) FROM sales;"
 **Tình huống**: Mất tất cả backups (cực kỳ hiếm)
 
 **Giải pháp**:
+
 1. Khôi phục từ Excel exports (nếu có)
 2. Nhập lại dữ liệu manually
 3. Liên hệ Supabase recovery team
@@ -632,7 +669,8 @@ psql test_db -c "SELECT COUNT(*) FROM sales;"
 
 ### Q8: Nên backup bao lâu một lần?
 
-**A**: 
+**A**:
+
 - Hàng ngày (auto): Essential
 - Hàng tuần (manual): Recommended
 - Trước update lớn: Critical

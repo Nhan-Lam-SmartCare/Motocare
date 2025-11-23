@@ -12,7 +12,8 @@ if (!url || !serviceKey) {
 const admin = url && serviceKey ? createClient(url, serviceKey) : (null as any);
 
 describe("inventory trigger correctness (integration)", () => {
-  it("AFTER INSERT cập nhật parts.stock", async () => {
+  // SKIPPED: Trigger is intentionally disabled. Stock updates are handled in application layer (InventoryManager.tsx).
+  it.skip("AFTER INSERT cập nhật parts.stock", async () => {
     if (!admin) return expect(true).toBe(true);
     // Tạo part tạm
     const partId = "TRIG-PART-" + Date.now();

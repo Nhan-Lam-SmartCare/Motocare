@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   fetchInventoryTransactions,
   createInventoryTransaction,
+  useCreateReceiptAtomicRepo,
   type CreateInventoryTxInput,
 } from "../lib/repository/inventoryTransactionsRepository";
 import { showToast } from "../utils/toast";
@@ -46,3 +47,6 @@ export const useCreateInventoryTxRepo = () => {
     },
   });
 };
+
+// Re-export the atomic receipt hook
+export { useCreateReceiptAtomicRepo };

@@ -37,20 +37,20 @@ import ConfirmModal from "../common/ConfirmModal";
 import CategoriesManager from "../categories/CategoriesManager";
 import LookupManager from "../lookup/LookupManager";
 import LookupManagerMobile from "../lookup/LookupManagerMobile";
-import InventoryHistorySectionMobile from "./InventoryHistorySectionMobile";
+import {
+  useInventoryTxRepo,
+  useCreateInventoryTxRepo,
+  useCreateReceiptAtomicRepo,
+} from "../../hooks/useInventoryTransactionsRepository";
 import { useCategories, useCreateCategory } from "../../hooks/useCategories";
 import { useSuppliers, useCreateSupplier } from "../../hooks/useSuppliers";
 import type { Part, InventoryTransaction } from "../../types";
 import { fetchPartBySku } from "../../lib/repository/partsRepository";
-import {
-  useCreateInventoryTxRepo,
-  useInventoryTxRepo,
-} from "../../hooks/useInventoryTransactionsRepository";
 import { useSupplierDebtsRepo } from "../../hooks/useDebtsRepository";
 import FormattedNumberInput from "../common/FormattedNumberInput";
 import { validatePriceAndQty } from "../../utils/validation";
 import { GoodsReceiptMobileModal } from "./GoodsReceiptMobileModal";
-
+import InventoryHistorySectionMobile from "./InventoryHistorySectionMobile";
 // Add New Product Modal Component
 const AddProductModal: React.FC<{
   isOpen: boolean;
@@ -3552,6 +3552,7 @@ const InventoryManager: React.FC = () => {
   const { currentBranchId } = useAppContext();
   // Supabase repository mutation for inventory transactions
   const { mutateAsync: createInventoryTxAsync } = useCreateInventoryTxRepo();
+  const createReceiptAtomicMutation = useCreateReceiptAtomicRepo();
   const { data: invTx = [] } = useInventoryTxRepo({
     branchId: currentBranchId,
   });
@@ -3774,41 +3775,21 @@ const InventoryManager: React.FC = () => {
       // 3. Create supplier debt if needed
 
       try {
-        // Save all items
-        for (const item of items) {
-          const part = allPartsData?.find((p: any) => p.id === item.partId);
-
-          // Create inventory transaction - trigger will auto-update stock
-          await createInventoryTxAsync({
-            type: "Nhập kho",
+        // Use atomic RPC for receipt creation and stock update
+        await createReceiptAtomicMutation.mutateAsync({
+          items: items.map((item) => ({
             partId: item.partId,
             partName: item.partName,
             quantity: item.quantity,
-            date: today.toISOString(),
-            unitPrice: item.importPrice,
-            totalPrice: item.importPrice * item.quantity,
-            branchId: currentBranchId,
-            notes: `${receiptCode} | NCC: ${supplierName}${note ? " | " + note : ""
-              }`,
-          });
-
-          // Update only prices (not stock - trigger handles stock)
-          if (part) {
-            updatePartMutation.mutate({
-              id: item.partId,
-              updates: {
-                retailPrice: {
-                  ...part.retailPrice,
-                  [currentBranchId]: item.sellingPrice,
-                },
-                wholesalePrice: {
-                  ...part.wholesalePrice,
-                  [currentBranchId]: item.wholesalePrice || 0,
-                },
-              },
-            });
-          }
-        }
+            importPrice: item.importPrice,
+            sellingPrice: item.sellingPrice,
+            wholesalePrice: item.wholesalePrice || 0,
+          })),
+          supplierId,
+          branchId: currentBranchId,
+          userId: profile?.id || "unknown",
+          notes: `${receiptCode} | NCC: ${supplierName}${note ? " | " + note : ""}`,
+        });
 
         // Create supplier debt if payment is partial or deferred
         if (debtAmount > 0 && paymentInfo) {

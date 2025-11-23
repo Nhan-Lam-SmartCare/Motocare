@@ -1,6 +1,13 @@
 import { supabase } from "../../supabaseClient";
-import type { InventoryTransaction } from "../../types";
-import { RepoResult, success, failure } from "./types";
+import {
+  RepoResult,
+  success,
+  failure,
+  RepoSuccess,
+  RepoError,
+} from "./types";
+import { InventoryTransaction } from "../../types";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { safeAudit } from "./auditLogsRepository";
 
 const TABLE = "inventory_transactions";
@@ -116,7 +123,7 @@ export async function createInventoryTransaction(
     try {
       const { data: userData } = await supabase.auth.getUser();
       userId = userData?.user?.id || null;
-    } catch {}
+    } catch { }
     await safeAudit(userId, {
       action:
         input.type === "Nhập kho" ? "inventory.receipt" : "inventory.adjust",
@@ -133,4 +140,73 @@ export async function createInventoryTransaction(
       cause: e,
     });
   }
+}
+
+export async function createReceiptAtomic(
+  items: any[],
+  supplierId: string,
+  branchId: string,
+  userId: string,
+  notes: string
+): Promise<RepoResult<any>> {
+  try {
+    const { data, error } = await supabase.rpc("receipt_create_atomic", {
+      p_items: items,
+      p_supplier_id: supplierId,
+      p_branch_id: branchId,
+      p_user_id: userId,
+      p_notes: notes,
+    });
+
+    if (error) {
+      return failure({
+        code: "supabase",
+        message: error.message,
+        cause: error,
+      });
+    }
+
+    if (data && !data.success) {
+      return failure({
+        code: "validation",
+        message: data.message,
+      });
+    }
+
+    return success(data);
+  } catch (e: any) {
+    return failure({
+      code: "network",
+      message: "Lỗi kết nối khi tạo phiếu nhập",
+      cause: e,
+    });
+  }
+}
+
+export function useCreateReceiptAtomicRepo() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (params: {
+      items: any[];
+      supplierId: string;
+      branchId: string;
+      userId: string;
+      notes: string;
+    }) => {
+      const res = await createReceiptAtomic(
+        params.items,
+        params.supplierId,
+        params.branchId,
+        params.userId,
+        params.notes
+      );
+      if (!res.ok) throw res.error;
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["inventoryTransactions"] });
+      queryClient.invalidateQueries({ queryKey: ["partsRepo"] });
+      queryClient.invalidateQueries({ queryKey: ["partsRepoPaged"] });
+    },
+  });
 }

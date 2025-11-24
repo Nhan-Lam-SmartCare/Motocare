@@ -152,8 +152,16 @@ export const GoodsReceiptMobileModal: React.FC<Props> = ({
       addToReceipt(foundPart);
       setBarcodeInput("");
     } else {
-      showToast.error(`Không tìm thấy sản phẩm có mã: ${barcode}`);
-      setBarcodeInput("");
+      // Sản phẩm chưa có trong kho - mở form thêm mới
+      showToast.info(
+        `Sản phẩm mã ${barcode} chưa có. Vui lòng thêm thông tin sản phẩm mới.`,
+        {
+          autoClose: 3000,
+        }
+      );
+      setTimeout(() => {
+        setShowAddProductModal(true);
+      }, 500);
     }
   };
 
@@ -165,12 +173,19 @@ export const GoodsReceiptMobileModal: React.FC<Props> = ({
         p.name?.toLowerCase().includes(barcode.toLowerCase())
     );
 
+    setShowCameraScanner(false);
+
     if (foundPart) {
       addToReceipt(foundPart);
-      setShowCameraScanner(false);
     } else {
-      showToast.error(`Không tìm thấy sản phẩm có mã: ${barcode}`);
-      setShowCameraScanner(false);
+      // Sản phẩm chưa có trong kho - mở form thêm mới
+      showToast.info(
+        `Sản phẩm mã ${barcode} chưa có. Vui lòng thêm thông tin sản phẩm mới.`
+      );
+      setBarcodeInput(barcode); // Điền sẵn mã vào ô nhập
+      setTimeout(() => {
+        setShowAddProductModal(true);
+      }, 500);
     }
   };
 

@@ -37,8 +37,8 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({
             stopScanner();
           },
           (errorMessage) => {
-            // Lỗi quét (bình thường khi chưa nhìn thấy mã)
-            console.log("Scanning...", errorMessage);
+            // Bỏ qua lỗi quét (bình thường khi chưa nhìn thấy mã)
+            // Không log để tránh spam console
           }
         );
         setIsScanning(true);

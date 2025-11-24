@@ -31,8 +31,10 @@ const LoansManager: React.FC = () => {
   const deleteLoan = useDeleteLoanRepo();
   const createLoanPayment = useCreateLoanPaymentRepo();
   const [showAddLoanModal, setShowAddLoanModal] = useState(false);
+  const [showEditLoanModal, setShowEditLoanModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedLoan, setSelectedLoan] = useState<Loan | null>(null);
+  const [editingLoan, setEditingLoan] = useState<Loan | null>(null);
 
   // Calculate summary
   const summary = useMemo(() => {
@@ -169,6 +171,10 @@ const LoansManager: React.FC = () => {
                         setSelectedLoan(loan);
                         setShowPaymentModal(true);
                       }}
+                      onEdit={() => {
+                        setEditingLoan(loan);
+                        setShowEditLoanModal(true);
+                      }}
                     />
                   ))}
                 </div>
@@ -189,6 +195,10 @@ const LoansManager: React.FC = () => {
                       onPayment={() => {
                         setSelectedLoan(loan);
                         setShowPaymentModal(true);
+                      }}
+                      onEdit={() => {
+                        setEditingLoan(loan);
+                        setShowEditLoanModal(true);
                       }}
                       isOverdue
                     />
@@ -232,6 +242,29 @@ const LoansManager: React.FC = () => {
         />
       )}
 
+      {showEditLoanModal && editingLoan && (
+        <EditLoanModal
+          loan={editingLoan}
+          onClose={() => {
+            setShowEditLoanModal(false);
+            setEditingLoan(null);
+          }}
+          onSave={async (updates) => {
+            try {
+              await updateLoan.mutateAsync({
+                id: editingLoan.id,
+                updates,
+              });
+              showToast.success("Đã cập nhật khoản vay thành công");
+              setShowEditLoanModal(false);
+              setEditingLoan(null);
+            } catch (error: any) {
+              showToast.error(error.message || "Không thể cập nhật khoản vay");
+            }
+          }}
+        />
+      )}
+
       {showPaymentModal && selectedLoan && (
         <LoanPaymentModal
           loan={selectedLoan}
@@ -266,10 +299,11 @@ const LoansManager: React.FC = () => {
                 date: payment.paymentDate,
                 amount: payment.totalAmount,
                 recipient: selectedLoan.lenderName,
-                notes: `Trả nợ vay - ${selectedLoan.lenderName
-                  } (Gốc: ${formatCurrency(
-                    payment.principalAmount
-                  )}, Lãi: ${formatCurrency(payment.interestAmount)})`,
+                notes: `Trả nợ vay - ${
+                  selectedLoan.lenderName
+                } (Gốc: ${formatCurrency(
+                  payment.principalAmount
+                )}, Lãi: ${formatCurrency(payment.interestAmount)})`,
                 paymentSourceId: payment.paymentMethod,
                 branchId: currentBranchId,
                 category: "loan_payment" as const,
@@ -282,14 +316,14 @@ const LoansManager: React.FC = () => {
                 paymentSources.map((ps) =>
                   ps.id === payment.paymentMethod
                     ? {
-                      ...ps,
-                      balance: {
-                        ...ps.balance,
-                        [currentBranchId]:
-                          (ps.balance[currentBranchId] || 0) -
-                          payment.totalAmount,
-                      },
-                    }
+                        ...ps,
+                        balance: {
+                          ...ps.balance,
+                          [currentBranchId]:
+                            (ps.balance[currentBranchId] || 0) -
+                            payment.totalAmount,
+                        },
+                      }
                     : ps
                 )
               );
@@ -310,24 +344,26 @@ const LoansManager: React.FC = () => {
 const LoanCard: React.FC<{
   loan: Loan;
   onPayment?: () => void;
+  onEdit?: () => void;
   isOverdue?: boolean;
   isPaid?: boolean;
-}> = ({ loan, onPayment, isOverdue, isPaid }) => {
+}> = ({ loan, onPayment, onEdit, isOverdue, isPaid }) => {
   const progressPercent =
     ((loan.principal - loan.remainingAmount) / loan.principal) * 100;
   const daysUntilDue = Math.ceil(
     (new Date(loan.endDate).getTime() - new Date().getTime()) /
-    (1000 * 60 * 60 * 24)
+      (1000 * 60 * 60 * 24)
   );
 
   return (
     <div
-      className={`bg-white dark:bg-slate-800 rounded-lg border-2 p-6 ${isOverdue
+      className={`bg-white dark:bg-slate-800 rounded-lg border-2 p-6 ${
+        isOverdue
           ? "border-orange-300 dark:border-orange-700"
           : isPaid
-            ? "border-green-300 dark:border-green-700"
-            : "border-slate-200 dark:border-slate-700"
-        }`}
+          ? "border-green-300 dark:border-green-700"
+          : "border-slate-200 dark:border-slate-700"
+      }`}
     >
       <div className="flex items-start justify-between mb-4">
         <div className="flex-1">
@@ -336,18 +372,19 @@ const LoanCard: React.FC<{
               {loan.lenderName}
             </h3>
             <span
-              className={`px-2 py-1 rounded-full text-xs font-medium ${loan.loanType === "bank"
+              className={`px-2 py-1 rounded-full text-xs font-medium ${
+                loan.loanType === "bank"
                   ? "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400"
                   : loan.loanType === "personal"
-                    ? "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400"
-                    : "bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-400"
-                }`}
+                  ? "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400"
+                  : "bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-400"
+              }`}
             >
               {loan.loanType === "bank"
                 ? "Ngân hàng"
                 : loan.loanType === "personal"
-                  ? "Cá nhân"
-                  : "Khác"}
+                ? "Cá nhân"
+                : "Khác"}
             </span>
           </div>
           <p className="text-sm text-slate-600 dark:text-slate-400">
@@ -355,12 +392,20 @@ const LoanCard: React.FC<{
           </p>
         </div>
         {!isPaid && (
-          <button
-            onClick={onPayment}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
-          >
-            Trả nợ
-          </button>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <button
+              onClick={onEdit}
+              className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-sm font-medium transition-colors whitespace-nowrap"
+            >
+              ✏️ Sửa
+            </button>
+            <button
+              onClick={onPayment}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors whitespace-nowrap"
+            >
+              💰 Trả nợ
+            </button>
+          </div>
         )}
       </div>
 
@@ -408,18 +453,19 @@ const LoanCard: React.FC<{
               (isOverdue
                 ? "Quá hạn"
                 : daysUntilDue > 0
-                  ? `Còn ${daysUntilDue} ngày`
-                  : "Đến hạn hôm nay")}
+                ? `Còn ${daysUntilDue} ngày`
+                : "Đến hạn hôm nay")}
           </span>
         </div>
         <div className="h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
           <div
-            className={`h-full transition-all ${isOverdue
+            className={`h-full transition-all ${
+              isOverdue
                 ? "bg-orange-500"
                 : isPaid
-                  ? "bg-green-500"
-                  : "bg-blue-500"
-              }`}
+                ? "bg-green-500"
+                : "bg-blue-500"
+            }`}
             style={{ width: `${progressPercent}%` }}
           />
         </div>
@@ -621,6 +667,201 @@ const AddLoanModal: React.FC<{
               className="flex-1 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
             >
               Thêm khoản vay
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+// Edit Loan Modal
+const EditLoanModal: React.FC<{
+  loan: Loan;
+  onClose: () => void;
+  onSave: (loan: Partial<Loan>) => void;
+}> = ({ loan, onClose, onSave }) => {
+  const [lenderName, setLenderName] = useState(loan.lenderName);
+  const [loanType, setLoanType] = useState<"bank" | "personal" | "other">(
+    loan.loanType
+  );
+  const [principal, setPrincipal] = useState(loan.principal.toString());
+  const [interestRate, setInterestRate] = useState(
+    loan.interestRate.toString()
+  );
+  const [term, setTerm] = useState(loan.term.toString());
+  const [startDate, setStartDate] = useState(loan.startDate.split("T")[0]);
+  const [purpose, setPurpose] = useState(loan.purpose || "");
+  const [collateral, setCollateral] = useState(loan.collateral || "");
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    const principalAmount = parseFloat(principal);
+    const rate = parseFloat(interestRate);
+    const termMonths = parseInt(term);
+
+    // Calculate monthly payment (simple calculation)
+    const monthlyRate = rate / 100 / 12;
+    const monthlyPayment =
+      (principalAmount *
+        (monthlyRate * Math.pow(1 + monthlyRate, termMonths))) /
+      (Math.pow(1 + monthlyRate, termMonths) - 1);
+
+    const start = new Date(startDate);
+    const end = new Date(start);
+    end.setMonth(end.getMonth() + termMonths);
+
+    const updates = {
+      lenderName,
+      loanType,
+      principal: principalAmount,
+      interestRate: rate,
+      term: termMonths,
+      startDate: start.toISOString(),
+      endDate: end.toISOString(),
+      monthlyPayment: isNaN(monthlyPayment) ? 0 : monthlyPayment,
+      purpose,
+      collateral,
+    };
+
+    onSave(updates);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl max-w-2xl w-full border border-slate-200 dark:border-slate-700 max-h-[90vh] overflow-y-auto">
+        <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 sticky top-0 bg-white dark:bg-slate-800">
+          <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
+            Chỉnh sửa khoản vay
+          </h2>
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                Tên ngân hàng/Người cho vay *
+              </label>
+              <input
+                type="text"
+                value={lenderName}
+                onChange={(e) => setLenderName(e.target.value)}
+                className="w-full px-4 py-2.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                Loại vay *
+              </label>
+              <select
+                value={loanType}
+                onChange={(e) => setLoanType(e.target.value as any)}
+                className="w-full px-4 py-2.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white"
+              >
+                <option value="bank">Ngân hàng</option>
+                <option value="personal">Cá nhân</option>
+                <option value="other">Khác</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                Số tiền vay *
+              </label>
+              <input
+                type="number"
+                value={principal}
+                onChange={(e) => setPrincipal(e.target.value)}
+                className="w-full px-4 py-2.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                Lãi suất (%/năm) *
+              </label>
+              <input
+                type="number"
+                step="0.1"
+                value={interestRate}
+                onChange={(e) => setInterestRate(e.target.value)}
+                className="w-full px-4 py-2.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                Kỳ hạn (tháng) *
+              </label>
+              <input
+                type="number"
+                value={term}
+                onChange={(e) => setTerm(e.target.value)}
+                className="w-full px-4 py-2.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white"
+                required
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+              Ngày vay *
+            </label>
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="w-full px-4 py-2.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+              Mục đích vay
+            </label>
+            <input
+              type="text"
+              value={purpose}
+              onChange={(e) => setPurpose(e.target.value)}
+              placeholder="Ví dụ: Mở rộng cửa hàng, mua thiết bị..."
+              className="w-full px-4 py-2.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+              Tài sản thế chấp
+            </label>
+            <input
+              type="text"
+              value={collateral}
+              onChange={(e) => setCollateral(e.target.value)}
+              placeholder="Ví dụ: Sổ đỏ nhà, giấy tờ xe..."
+              className="w-full px-4 py-2.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white"
+            />
+          </div>
+
+          <div className="flex gap-3 pt-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 px-4 py-2.5 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-900 dark:text-white rounded-lg font-medium transition-colors"
+            >
+              Hủy
+            </button>
+            <button
+              type="submit"
+              className="flex-1 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+            >
+              Cập nhật
             </button>
           </div>
         </form>

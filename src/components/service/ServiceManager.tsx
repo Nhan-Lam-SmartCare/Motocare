@@ -942,7 +942,7 @@ export default function ServiceManager() {
                   <button
                     onClick={async () => {
                       try {
-                        showToast.loading("Đang tạo hình ảnh...");
+                        showToast.info("Đang tạo hình ảnh...");
                         
                         // Import html2canvas dynamically
                         const html2canvas = (await import("html2canvas")).default;

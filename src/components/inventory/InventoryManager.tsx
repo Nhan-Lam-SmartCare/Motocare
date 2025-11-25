@@ -75,30 +75,38 @@ const FILTER_THEME_STYLES: Record<
     buttonInactive:
       "border-primary-border bg-primary-bg hover:border-blue-300/70",
     badgeActive:
-      "border-blue-500 text-blue-600 bg-white/60 dark:bg-slate-900/40",
+      "border-blue-500 text-blue-600 bg-white/60 dark:bg-slate-900/40 dark:text-blue-400",
     badgeInactive: "border-secondary-border text-secondary-text",
   },
   success: {
     buttonActive:
-      "border-emerald-500 bg-emerald-50 shadow-[0_5px_25px_rgba(16,185,129,0.2)] text-emerald-900",
+      "border-emerald-500 bg-emerald-50 shadow-[0_5px_25px_rgba(16,185,129,0.2)] text-emerald-900 dark:bg-emerald-950/50 dark:text-emerald-200",
     buttonInactive:
-      "border-emerald-200 bg-emerald-50/40 hover:border-emerald-400/70",
-    badgeActive: "border-emerald-500 text-emerald-700 bg-emerald-50",
-    badgeInactive: "border-emerald-200 text-emerald-600",
+      "border-emerald-200 bg-emerald-50/40 hover:border-emerald-400/70 dark:border-emerald-800 dark:bg-emerald-950/20",
+    badgeActive:
+      "border-emerald-500 text-emerald-700 bg-emerald-50 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-600",
+    badgeInactive:
+      "border-emerald-200 text-emerald-600 dark:border-emerald-700 dark:text-emerald-400",
   },
   warning: {
     buttonActive:
-      "border-amber-500 bg-amber-50 shadow-[0_5px_25px_rgba(245,158,11,0.25)] text-amber-900",
-    buttonInactive: "border-amber-200 bg-amber-50/40 hover:border-amber-400/70",
-    badgeActive: "border-amber-500 text-amber-700 bg-amber-50",
-    badgeInactive: "border-amber-200 text-amber-600",
+      "border-amber-500 bg-amber-50 shadow-[0_5px_25px_rgba(245,158,11,0.25)] text-amber-900 dark:bg-amber-950/50 dark:text-amber-200",
+    buttonInactive:
+      "border-amber-200 bg-amber-50/40 hover:border-amber-400/70 dark:border-amber-800 dark:bg-amber-950/20",
+    badgeActive:
+      "border-amber-500 text-amber-700 bg-amber-50 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-600",
+    badgeInactive:
+      "border-amber-200 text-amber-600 dark:border-amber-700 dark:text-amber-400",
   },
   danger: {
     buttonActive:
-      "border-red-500 bg-red-50 shadow-[0_5px_25px_rgba(239,68,68,0.25)] text-red-900",
-    buttonInactive: "border-red-200 bg-red-50/40 hover:border-red-400/70",
-    badgeActive: "border-red-500 text-red-700 bg-red-50",
-    badgeInactive: "border-red-200 text-red-600",
+      "border-red-500 bg-red-50 shadow-[0_5px_25px_rgba(239,68,68,0.25)] text-red-900 dark:bg-red-950/50 dark:text-red-200",
+    buttonInactive:
+      "border-red-200 bg-red-50/40 hover:border-red-400/70 dark:border-red-800 dark:bg-red-950/20",
+    badgeActive:
+      "border-red-500 text-red-700 bg-red-50 dark:bg-red-950/50 dark:text-red-300 dark:border-red-700",
+    badgeInactive:
+      "border-red-200 text-red-600 dark:border-red-700 dark:text-red-400",
   },
 };
 // Add New Product Modal Component
@@ -4543,14 +4551,14 @@ const InventoryManager: React.FC = () => {
             </div>
 
             {shouldShowLowStockBanner && (
-              <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-amber-900">
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-amber-900 dark:border-amber-800 dark:bg-amber-950/50 dark:text-amber-200">
                 <div className="flex items-center gap-3">
                   <span className="text-xl">⚠️</span>
                   <div>
                     <p className="font-semibold">
                       {stockHealth.lowStock} sản phẩm sắp hết hàng
                     </p>
-                    <p className="text-xs text-amber-700">
+                    <p className="text-xs text-amber-700 dark:text-amber-400">
                       Chiếm {lowStockPercent}% danh mục hiện tại
                     </p>
                   </div>
@@ -4558,13 +4566,13 @@ const InventoryManager: React.FC = () => {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => handleStockFilterChange("low-stock")}
-                    className="px-3 py-1.5 rounded-lg bg-amber-600 text-white text-sm font-semibold hover:bg-amber-700 transition"
+                    className="px-3 py-1.5 rounded-lg bg-amber-600 text-white text-sm font-semibold hover:bg-amber-700 transition dark:bg-amber-700 dark:hover:bg-amber-600"
                   >
                     Lọc nhanh
                   </button>
                   <button
                     onClick={() => setShowGoodsReceipt(true)}
-                    className="px-3 py-1.5 rounded-lg border border-amber-400 text-sm font-medium text-amber-800 hover:bg-amber-100 transition"
+                    className="px-3 py-1.5 rounded-lg border border-amber-400 text-sm font-medium text-amber-800 hover:bg-amber-100 transition dark:border-amber-600 dark:text-amber-300 dark:hover:bg-amber-950/30"
                   >
                     Tạo phiếu nhập
                   </button>
@@ -4891,10 +4899,10 @@ const InventoryManager: React.FC = () => {
                         const isDuplicate = hasDuplicateName(part.name);
                         const stockStatusClass =
                           stock === 0
-                            ? "border-red-300 bg-red-50 text-red-700"
+                            ? "border-red-300 bg-red-50 text-red-700 dark:border-red-700 dark:bg-red-950/50 dark:text-red-300"
                             : stock <= LOW_STOCK_THRESHOLD
-                            ? "border-amber-300 bg-amber-50 text-amber-700"
-                            : "border-emerald-300 bg-emerald-50 text-emerald-700";
+                            ? "border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-600 dark:bg-amber-950/50 dark:text-amber-300"
+                            : "border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-300";
                         const stockStatusLabel =
                           stock === 0
                             ? "Hết hàng"
@@ -4903,10 +4911,10 @@ const InventoryManager: React.FC = () => {
                             : "Ổn định";
                         const stockQtyClass =
                           stock === 0
-                            ? "text-red-600"
+                            ? "text-red-600 dark:text-red-400"
                             : stock <= LOW_STOCK_THRESHOLD
-                            ? "text-amber-600"
-                            : "text-emerald-700";
+                            ? "text-amber-600 dark:text-amber-400"
+                            : "text-emerald-700 dark:text-emerald-400";
                         const productInitial =
                           part.name?.charAt(0)?.toUpperCase() || "?";
                         const rowHighlight = isSelected

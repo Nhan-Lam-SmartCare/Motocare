@@ -19,6 +19,7 @@ import {
   Printer,
   CalendarDays,
   Receipt,
+  ScanLine,
 } from "lucide-react";
 import { useAppContext } from "../../contexts/AppContext";
 import { usePartsRepo } from "../../hooks/usePartsRepository";
@@ -53,6 +54,10 @@ interface StoreSettings {
   bank_account_holder?: string;
   bank_branch?: string;
 }
+
+type StockFilter = "all" | "low" | "out";
+
+const LOW_STOCK_THRESHOLD = 5;
 
 // Sale Detail Modal Component (for viewing/editing sale details)
 interface SaleDetailModalProps {
@@ -1885,10 +1890,11 @@ const SalesManager: React.FC = () => {
     }, 300);
     return () => clearTimeout(h);
   }, [salesSearchInput]);
-
   // States
   const [partSearch, setPartSearch] = useState("");
+  const [stockFilter, setStockFilter] = useState<StockFilter>("all");
   const [barcodeInput, setBarcodeInput] = useState("");
+  const [showBarcodeInput, setShowBarcodeInput] = useState(false);
   const barcodeInputRef = useRef<HTMLInputElement>(null);
   const [customerSearch, setCustomerSearch] = useState("");
 
@@ -1924,6 +1930,12 @@ const SalesManager: React.FC = () => {
   >(null);
   const [partialAmount, setPartialAmount] = useState(0);
   const [autoPrintReceipt, setAutoPrintReceipt] = useState(false);
+
+  useEffect(() => {
+    if (showBarcodeInput) {
+      barcodeInputRef.current?.focus();
+    }
+  }, [showBarcodeInput]);
 
   // Print preview states
   const [showPrintPreview, setShowPrintPreview] = useState(false);
@@ -2044,6 +2056,12 @@ const SalesManager: React.FC = () => {
     [subtotal, orderDiscount]
   );
 
+  const cartItemById = useMemo(() => {
+    const map = new Map<string, CartItem>();
+    cartItems.forEach((item) => map.set(item.partId, item));
+    return map;
+  }, [cartItems]);
+
   // Receipt calculations
   const receiptSubtotal = useMemo(
     () =>
@@ -2069,12 +2087,6 @@ const SalesManager: React.FC = () => {
     if (loadingParts || partsError) return [];
     let filtered = repoParts;
 
-    // Filter out products with no stock in current branch
-    filtered = filtered.filter((part) => {
-      const branchStock = part.stock?.[currentBranchId];
-      return branchStock && branchStock > 0;
-    });
-
     if (partSearch) {
       filtered = filtered.filter(
         (part) =>
@@ -2083,9 +2095,40 @@ const SalesManager: React.FC = () => {
       );
     }
 
-    // Limit to 20 products to avoid heavy page load
-    return filtered.slice(0, 20);
-  }, [repoParts, partSearch, loadingParts, partsError, currentBranchId]);
+    return filtered;
+  }, [repoParts, partSearch, loadingParts, partsError]);
+
+  const displayedParts = useMemo(() => {
+    if (!filteredParts.length) return [];
+
+    const normalized = filteredParts.filter((part) => {
+      const branchStock = Number(part.stock?.[currentBranchId] ?? 0);
+      if (stockFilter === "low") {
+        return branchStock > 0 && branchStock <= LOW_STOCK_THRESHOLD;
+      }
+      if (stockFilter === "out") {
+        return branchStock <= 0;
+      }
+      return true;
+    });
+
+    const weight = (stock: number) => {
+      if (stock <= 0) return 2;
+      if (stock <= LOW_STOCK_THRESHOLD) return 1;
+      return 0;
+    };
+
+    return normalized
+      .slice()
+      .sort((a, b) => {
+        const aStock = Number(a.stock?.[currentBranchId] ?? 0);
+        const bStock = Number(b.stock?.[currentBranchId] ?? 0);
+        const weightDiff = weight(aStock) - weight(bStock);
+        if (weightDiff !== 0) return weightDiff;
+        return a.name.localeCompare(b.name);
+      })
+      .slice(0, 36);
+  }, [filteredParts, stockFilter, currentBranchId]);
 
   // Handle barcode scan for quick add to cart
   const handleBarcodeSubmit = (e: React.FormEvent) => {
@@ -2093,7 +2136,7 @@ const SalesManager: React.FC = () => {
     if (!barcodeInput.trim()) return;
 
     const barcode = barcodeInput.trim();
-    const foundPart = displayedParts.find(
+    const foundPart = filteredParts.find(
       (p) =>
         p.sku?.toLowerCase() === barcode.toLowerCase() ||
         p.name?.toLowerCase().includes(barcode.toLowerCase())
@@ -2115,8 +2158,44 @@ const SalesManager: React.FC = () => {
   const { lowStockCount, outOfStockCount } = useLowStock(
     repoParts,
     currentBranchId,
-    5
+    LOW_STOCK_THRESHOLD
   );
+
+  const stockFilterOptions: Array<{
+    key: StockFilter;
+    label: string;
+    count: number;
+    activeClass: string;
+    inactiveClass: string;
+  }> = [
+    {
+      key: "all",
+      label: "Tất cả",
+      count: filteredParts.length,
+      activeClass:
+        "bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-transparent shadow-blue-500/30",
+      inactiveClass:
+        "bg-white/80 dark:bg-slate-900/50 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700",
+    },
+    {
+      key: "low",
+      label: "Tồn thấp",
+      count: lowStockCount,
+      activeClass:
+        "bg-gradient-to-r from-amber-500 to-orange-500 text-white border-transparent shadow-amber-500/30",
+      inactiveClass:
+        "bg-white/80 dark:bg-slate-900/50 text-amber-700 dark:text-amber-200 border border-amber-200/70 dark:border-amber-800/60",
+    },
+    {
+      key: "out",
+      label: "Hết hàng",
+      count: outOfStockCount,
+      activeClass:
+        "bg-gradient-to-r from-rose-500 to-red-500 text-white border-transparent shadow-rose-500/30",
+      inactiveClass:
+        "bg-white/80 dark:bg-slate-900/50 text-rose-700 dark:text-rose-200 border border-rose-200/70 dark:border-rose-800/60",
+    },
+  ];
 
   // One-time toast to notify low stock when opening screen
   const lowStockToastShown = useRef(false);
@@ -2721,37 +2800,10 @@ const SalesManager: React.FC = () => {
           <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border-b border-slate-200/50 dark:border-slate-700/50 p-3 md:p-4 shadow-sm">
             <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3">
               <div className="flex-1 space-y-2">
-                {/* Barcode Scanner Input */}
-                <form onSubmit={handleBarcodeSubmit} className="relative">
-                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-500">
-                    <svg
-                      className="w-5 h-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"
-                      />
-                    </svg>
-                  </div>
-                  <input
-                    ref={barcodeInputRef}
-                    type="text"
-                    placeholder="📷 Quét mã vạch để thêm nhanh..."
-                    value={barcodeInput}
-                    onChange={(e) => setBarcodeInput(e.target.value)}
-                    className="w-full pl-10 pr-10 py-2.5 border-2 border-blue-400 dark:border-blue-600 rounded-xl bg-blue-50/50 dark:bg-blue-900/20 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm md:text-base transition-all placeholder:text-blue-500/70 font-mono"
-                  />
-                  {barcodeInput && (
-                    <button
-                      type="button"
-                      onClick={() => setBarcodeInput("")}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
-                    >
+                <div className="flex items-stretch gap-2">
+                  {/* Manual Search */}
+                  <div className="relative flex-1">
+                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
                       <svg
                         className="w-5 h-5"
                         fill="none"
@@ -2762,56 +2814,83 @@ const SalesManager: React.FC = () => {
                           strokeLinecap="round"
                           strokeLinejoin="round"
                           strokeWidth={2}
-                          d="M6 18L18 6M6 6l12 12"
+                          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
                         />
                       </svg>
-                    </button>
-                  )}
-                </form>
-
-                {/* Manual Search */}
-                <div className="relative">
-                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
-                    <svg
-                      className="w-5 h-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                      />
-                    </svg>
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="Tìm kiếm sản phẩm..."
+                      value={partSearch}
+                      onChange={(e) => setPartSearch(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2.5 border-2 border-slate-300/50 dark:border-slate-600/50 rounded-xl bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm md:text-base transition-all placeholder:text-slate-400"
+                    />
                   </div>
-                  <input
-                    type="text"
-                    placeholder="Hoặc tìm kiếm thủ công..."
-                    value={partSearch}
-                    onChange={(e) => setPartSearch(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2.5 border-2 border-slate-300/50 dark:border-slate-600/50 rounded-xl bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm md:text-base transition-all placeholder:text-slate-400"
-                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowBarcodeInput((prev) => !prev)}
+                    className={`px-4 py-2 rounded-xl border-2 font-semibold text-sm flex items-center gap-2 transition-all ${
+                      showBarcodeInput
+                        ? "border-blue-500 text-blue-600 bg-blue-50 dark:bg-blue-900/20"
+                        : "border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-200 bg-white dark:bg-slate-800"
+                    }`}
+                  >
+                    <ScanLine className="w-4 h-4" />
+                    <span className="hidden md:inline">
+                      {showBarcodeInput ? "Đóng quét" : "Quét mã"}
+                    </span>
+                  </button>
                 </div>
+                {showBarcodeInput && (
+                  <form onSubmit={handleBarcodeSubmit} className="relative">
+                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-500">
+                      <svg
+                        className="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"
+                        />
+                      </svg>
+                    </div>
+                    <input
+                      ref={barcodeInputRef}
+                      type="text"
+                      placeholder="Nhập hoặc quét mã vạch..."
+                      value={barcodeInput}
+                      onChange={(e) => setBarcodeInput(e.target.value)}
+                      className="w-full pl-10 pr-10 py-2.5 border-2 border-blue-400 dark:border-blue-600 rounded-xl bg-blue-50/50 dark:bg-blue-900/20 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm md:text-base transition-all placeholder:text-blue-500/70 font-mono"
+                    />
+                    {barcodeInput && (
+                      <button
+                        type="button"
+                        onClick={() => setBarcodeInput("")}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+                      >
+                        <svg
+                          className="w-5 h-5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M6 18L18 6M6 6l12 12"
+                          />
+                        </svg>
+                      </button>
+                    )}
+                  </form>
+                )}
               </div>
               <div className="flex items-center gap-2">
-                <div className="flex md:hidden flex-1 items-center gap-2">
-                  <span className="px-2.5 py-1 rounded-full bg-gradient-to-r from-orange-100 to-amber-100 text-orange-700 dark:from-orange-900/30 dark:to-amber-900/30 dark:text-orange-300 whitespace-nowrap text-xs font-bold shadow-sm">
-                    ⚠️ {lowStockCount}
-                  </span>
-                  <span className="px-2.5 py-1 rounded-full bg-gradient-to-r from-red-100 to-pink-100 text-red-700 dark:from-red-900/30 dark:to-pink-900/30 dark:text-red-300 whitespace-nowrap text-xs font-bold shadow-sm">
-                    ❌ {outOfStockCount}
-                  </span>
-                </div>
-                <div className="hidden md:flex items-center gap-2">
-                  <span className="px-3 py-1.5 rounded-full bg-gradient-to-r from-orange-100 to-amber-100 text-orange-700 dark:from-orange-900/30 dark:to-amber-900/30 dark:text-orange-300 text-xs font-bold shadow-sm">
-                    ⚠️ Tồn thấp: {lowStockCount}
-                  </span>
-                  <span className="px-3 py-1.5 rounded-full bg-gradient-to-r from-red-100 to-pink-100 text-red-700 dark:from-red-900/30 dark:to-pink-900/30 dark:text-red-300 text-xs font-bold shadow-sm">
-                    ❌ Hết hàng: {outOfStockCount}
-                  </span>
-                </div>
                 <button
                   onClick={() => setShowSalesHistory(true)}
                   className="px-3 md:px-4 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl whitespace-nowrap transition-all inline-flex items-center gap-2 text-sm font-bold shadow-lg hover:shadow-xl hover:scale-105 active:scale-95"
@@ -2823,110 +2902,175 @@ const SalesManager: React.FC = () => {
             </div>
           </div>
 
+          {/* Filter Pills */}
+          <div className="bg-white/80 dark:bg-slate-800/80 border-b border-slate-200/60 dark:border-slate-700/60 px-3 md:px-6 py-3 flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+            <div className="text-xs md:text-sm text-slate-600 dark:text-slate-400 font-medium">
+              Hiển thị {displayedParts.length} / {filteredParts.length || 0} sản
+              phẩm
+              {partSearch && " theo từ khóa"}
+            </div>
+            <div className="flex items-center gap-2 overflow-x-auto pb-1">
+              {stockFilterOptions.map((option) => {
+                const isActive = stockFilter === option.key;
+                return (
+                  <button
+                    type="button"
+                    key={option.key}
+                    aria-pressed={isActive}
+                    onClick={() => setStockFilter(option.key)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all whitespace-nowrap ${
+                      isActive ? option.activeClass : option.inactiveClass
+                    }`}
+                  >
+                    <span>{option.label}</span>
+                    <span
+                      className={`px-1.5 py-0.5 rounded-full text-[10px] font-black ${
+                        isActive
+                          ? "bg-white/30"
+                          : "bg-slate-100 dark:bg-slate-800"
+                      }`}
+                    >
+                      {option.count}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           {/* Products Grid */}
           <div className="flex-1 p-0 md:p-6 overflow-y-auto bg-slate-50 dark:bg-slate-900 pb-24 md:pb-6">
-            {filteredParts.length === 0 ? (
+            {displayedParts.length === 0 ? (
               <div className="text-center text-slate-400 mt-20">
                 <div className="mb-4 flex items-center justify-center">
                   <Boxes className="w-16 h-16 text-slate-300" />
                 </div>
                 <div className="text-xl font-medium mb-2">
-                  {partSearch
-                    ? "Không tìm thấy sản phẩm nào"
-                    : "Chưa có sản phẩm"}
+                  {filteredParts.length === 0
+                    ? partSearch
+                      ? "Không tìm thấy sản phẩm nào"
+                      : "Chưa có sản phẩm"
+                    : stockFilter === "low"
+                    ? "Không có sản phẩm tồn thấp"
+                    : "Không có sản phẩm hết hàng"}
                 </div>
                 <div className="text-sm">
-                  {partSearch
-                    ? "Hãy thử một từ khóa tìm kiếm khác"
-                    : "Vui lòng thêm sản phẩm vào hệ thống"}
+                  {filteredParts.length === 0
+                    ? partSearch
+                      ? "Hãy thử một từ khóa tìm kiếm khác"
+                      : "Vui lòng thêm sản phẩm vào hệ thống"
+                    : "Hãy chọn bộ lọc khác để xem thêm sản phẩm"}
                 </div>
               </div>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-2.5 md:gap-3">
-                {filteredParts.map((part) => {
-                  const price = part.retailPrice?.[currentBranchId] ?? 0;
-                  const stock = part.stock?.[currentBranchId] ?? 0;
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5 md:gap-3">
+                {displayedParts.map((part) => {
+                  const price = Number(
+                    part.retailPrice?.[currentBranchId] ?? 0
+                  );
+                  const stock = Number(part.stock?.[currentBranchId] ?? 0);
                   const isOutOfStock = stock <= 0;
+                  const isLowStock = stock > 0 && stock <= LOW_STOCK_THRESHOLD;
+                  const cartItem = cartItemById.get(part.id);
+                  const inCart = Boolean(cartItem);
+                  const statusLabel = isOutOfStock
+                    ? "Hết hàng"
+                    : isLowStock
+                    ? "Tồn thấp"
+                    : "Sẵn hàng";
+                  const statusClass = isOutOfStock
+                    ? "bg-rose-50 text-rose-600 dark:bg-rose-900/20 dark:text-rose-200"
+                    : isLowStock
+                    ? "bg-amber-50 text-amber-600 dark:bg-amber-900/20 dark:text-amber-200"
+                    : "bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-200";
+                  const stockBadgeClass = isOutOfStock
+                    ? "bg-gradient-to-r from-rose-500 to-red-500 text-white"
+                    : isLowStock
+                    ? "bg-gradient-to-r from-amber-500 to-orange-500 text-white"
+                    : "bg-gradient-to-r from-emerald-500 to-green-500 text-white";
 
                   return (
                     <button
+                      type="button"
                       key={part.id}
                       onClick={() => !isOutOfStock && addToCart(part)}
                       disabled={isOutOfStock}
-                      className={`group relative p-3 md:p-4 rounded-2xl border-2 backdrop-blur-sm transition-all duration-300 overflow-hidden ${
+                      className={`group relative text-left p-3 md:p-4 rounded-2xl border transition-all duration-200 h-full ${
                         isOutOfStock
-                          ? "bg-slate-50/80 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 opacity-60 cursor-not-allowed"
-                          : "bg-white/90 dark:bg-slate-800/90 border-slate-200/50 dark:border-slate-700/50 hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-2xl hover:shadow-blue-500/20 hover:-translate-y-2 active:translate-y-0"
+                          ? "bg-slate-50/70 dark:bg-slate-900/30 border-slate-200 dark:border-slate-800 cursor-not-allowed"
+                          : "bg-white dark:bg-slate-800/70 border-slate-200/70 dark:border-slate-700 hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-xl"
+                      } ${
+                        inCart
+                          ? "ring-2 ring-blue-200 dark:ring-blue-500/40"
+                          : ""
                       }`}
                     >
-                      {/* Out of stock overlay */}
-                      {isOutOfStock && (
-                        <div className="absolute inset-0 bg-gradient-to-br from-red-500/10 to-pink-500/10 backdrop-blur-[2px] flex items-center justify-center z-10">
-                          <span className="px-3 py-1.5 bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs font-black rounded-full shadow-lg">
-                            ❌ HẾT HÀNG
-                          </span>
-                        </div>
-                      )}
-
-                      <div className="flex flex-col h-full relative">
-                        {/* Product Icon */}
-                        <div className="flex items-center justify-center mb-3">
-                          <div
-                            className={`w-16 h-16 md:w-20 md:h-20 rounded-2xl flex items-center justify-center transition-all duration-300 ${
-                              isOutOfStock
-                                ? "bg-slate-100 dark:bg-slate-700"
-                                : "bg-gradient-to-br from-orange-100 via-amber-50 to-yellow-100 dark:from-orange-900/40 dark:via-amber-900/30 dark:to-yellow-900/20 group-hover:scale-110 group-hover:rotate-6 shadow-lg shadow-orange-200/50 dark:shadow-orange-900/30"
-                            }`}
-                          >
-                            <Boxes
-                              className={`w-8 h-8 md:w-10 md:h-10 transition-colors ${
+                      <div className="flex flex-col h-full">
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex items-center gap-3">
+                            <div
+                              className={`w-12 h-12 rounded-xl flex items-center justify-center ${
                                 isOutOfStock
-                                  ? "text-slate-400"
-                                  : "text-orange-500 dark:text-orange-400"
+                                  ? "bg-slate-100 dark:bg-slate-700"
+                                  : "bg-slate-100 text-orange-500 dark:bg-slate-700/70"
                               }`}
-                            />
+                            >
+                              <Boxes
+                                className={`w-6 h-6 ${
+                                  isOutOfStock
+                                    ? "text-slate-400"
+                                    : "text-orange-500 dark:text-orange-300"
+                                }`}
+                              />
+                            </div>
+                            <span
+                              className={`px-2 py-0.5 rounded-full text-[11px] font-semibold ${statusClass}`}
+                            >
+                              {statusLabel}
+                            </span>
                           </div>
+                          {inCart && (
+                            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-200">
+                              Đã chọn ×{cartItem?.quantity}
+                            </span>
+                          )}
                         </div>
 
-                        {/* Product Name */}
-                        <div className="text-left mb-2.5 flex-1">
+                        <div className="space-y-1 mb-4">
                           <h3
-                            className="font-bold text-xs md:text-sm text-slate-900 dark:text-slate-100 line-clamp-2 mb-1.5 leading-tight"
+                            className="font-semibold text-xs md:text-sm text-slate-900 dark:text-slate-100 line-clamp-2"
                             title={part.name}
                           >
                             {part.name}
                           </h3>
-                          <div className="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-100 dark:bg-slate-700 rounded-md">
-                            <span className="text-[9px] md:text-[10px] text-slate-500 dark:text-slate-400 font-bold">
-                              {part.sku}
-                            </span>
+                          <div className="text-[11px] text-slate-500 dark:text-slate-400 font-mono truncate">
+                            {part.sku}
                           </div>
                         </div>
 
-                        {/* Price and Stock */}
-                        <div className="flex justify-between items-center pt-2.5 border-t-2 border-slate-100 dark:border-slate-700">
-                          <div className="text-left">
-                            <div
-                              className={`text-sm md:text-base font-black ${
+                        <div className="flex items-center justify-between mt-auto pt-3 border-t border-slate-100 dark:border-slate-700">
+                          <div>
+                            <p className="text-[11px] uppercase tracking-wide text-slate-400 dark:text-slate-500 font-semibold">
+                              Giá bán
+                            </p>
+                            <p
+                              className={`text-sm md:text-base font-bold ${
                                 isOutOfStock
-                                  ? "text-slate-400"
-                                  : "bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 bg-clip-text text-transparent"
+                                  ? "text-slate-400 dark:text-slate-500"
+                                  : "text-blue-600 dark:text-blue-300"
                               }`}
                             >
                               {formatCurrency(price)}
-                            </div>
+                            </p>
                           </div>
                           <div className="text-right">
+                            <p className="text-[11px] uppercase tracking-wide text-slate-400 dark:text-slate-500 font-semibold">
+                              Tồn kho
+                            </p>
                             <span
-                              className={`inline-flex items-center justify-center min-w-[2.5rem] px-2.5 py-1 text-[10px] font-black rounded-lg shadow-lg ${
-                                isOutOfStock
-                                  ? "bg-gradient-to-r from-red-500 to-pink-500 text-white"
-                                  : stock <= 5
-                                  ? "bg-gradient-to-r from-orange-500 to-amber-500 text-white animate-pulse"
-                                  : "bg-gradient-to-r from-emerald-500 to-green-500 text-white"
-                              }`}
+                              className={`inline-flex items-center justify-center min-w-[2.75rem] px-2.5 py-1 text-[11px] font-black rounded-lg ${stockBadgeClass}`}
                             >
-                              {isOutOfStock ? "0" : stock}
+                              {Math.max(0, Math.floor(stock))}
                             </span>
                           </div>
                         </div>

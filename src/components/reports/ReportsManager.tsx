@@ -33,6 +33,66 @@ import {
 type ReportTab = "revenue" | "cashflow" | "inventory" | "payroll" | "debt";
 type DateRange = "today" | "week" | "month" | "quarter" | "year" | "custom";
 
+const REPORT_TAB_CONFIGS: Array<{
+  key: ReportTab;
+  label: string;
+  icon: React.ReactNode;
+  activeClass: string;
+  inactiveClass: string;
+  dotClass: string;
+}> = [
+  {
+    key: "revenue",
+    label: "Doanh thu",
+    icon: <DollarSign className="w-4 h-4" />,
+    activeClass:
+      "bg-gradient-to-r from-blue-600 to-sky-500 text-white border-transparent shadow-lg shadow-blue-500/30",
+    inactiveClass:
+      "bg-white dark:bg-slate-900/60 text-blue-700 dark:text-blue-200 border-blue-200 dark:border-blue-700 hover:bg-blue-50/80 dark:hover:bg-blue-900/20",
+    dotClass: "bg-blue-400",
+  },
+  {
+    key: "cashflow",
+    label: "Thu chi",
+    icon: <Wallet className="w-4 h-4" />,
+    activeClass:
+      "bg-gradient-to-r from-emerald-500 to-lime-500 text-white border-transparent shadow-lg shadow-emerald-500/30",
+    inactiveClass:
+      "bg-white dark:bg-slate-900/60 text-emerald-700 dark:text-emerald-200 border-emerald-200 dark:border-emerald-800 hover:bg-emerald-50/70 dark:hover:bg-emerald-900/20",
+    dotClass: "bg-emerald-400",
+  },
+  {
+    key: "inventory",
+    label: "Tồn kho",
+    icon: <Boxes className="w-4 h-4" />,
+    activeClass:
+      "bg-gradient-to-r from-amber-500 to-orange-500 text-white border-transparent shadow-lg shadow-orange-500/30",
+    inactiveClass:
+      "bg-white dark:bg-slate-900/60 text-amber-700 dark:text-amber-200 border-amber-200 dark:border-amber-800 hover:bg-amber-50/70 dark:hover:bg-amber-900/20",
+    dotClass: "bg-amber-400",
+  },
+  {
+    key: "payroll",
+    label: "Lương",
+    icon: <BriefcaseBusiness className="w-4 h-4" />,
+    activeClass:
+      "bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white border-transparent shadow-lg shadow-violet-500/30",
+    inactiveClass:
+      "bg-white dark:bg-slate-900/60 text-violet-700 dark:text-violet-200 border-violet-200 dark:border-violet-800 hover:bg-violet-50/70 dark:hover:bg-violet-900/20",
+    dotClass: "bg-violet-400",
+  },
+  {
+    key: "debt",
+    label: "Công nợ",
+    icon: <ClipboardList className="w-4 h-4" />,
+    activeClass:
+      "bg-gradient-to-r from-rose-500 to-red-500 text-white border-transparent shadow-lg shadow-rose-500/30",
+    inactiveClass:
+      "bg-white dark:bg-slate-900/60 text-rose-700 dark:text-rose-200 border-rose-200 dark:border-rose-800 hover:bg-rose-50/70 dark:hover:bg-rose-900/20",
+    dotClass: "bg-rose-400",
+  },
+];
+
 const ReportsManager: React.FC = () => {
   const { payrollRecords, customers, suppliers, currentBranchId, employees } =
     useAppContext();
@@ -441,48 +501,31 @@ const ReportsManager: React.FC = () => {
       {/* Desktop Controls - Hidden on Mobile */}
       <div className="hidden md:flex items-center gap-3 flex-wrap">
         {/* Report Tabs */}
-        {[
-          {
-            key: "revenue",
-            label: "Doanh thu",
-            icon: <DollarSign className="w-4 h-4" />,
-          },
-          {
-            key: "cashflow",
-            label: "Thu chi",
-            icon: <Wallet className="w-4 h-4" />,
-          },
-          {
-            key: "inventory",
-            label: "Tồn kho",
-            icon: <Boxes className="w-4 h-4" />,
-          },
-          {
-            key: "payroll",
-            label: "Lương",
-            icon: <BriefcaseBusiness className="w-4 h-4" />,
-          },
-          {
-            key: "debt",
-            label: "Công nợ",
-            icon: <ClipboardList className="w-4 h-4" />,
-          },
-        ].map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key as ReportTab)}
-            className={`px-6 py-2 rounded-lg font-medium whitespace-nowrap transition-all ${
-              activeTab === tab.key
-                ? "bg-blue-600 text-white shadow-lg"
-                : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700"
-            }`}
-          >
-            <span className="inline-flex items-center gap-1">
-              {tab.icon}
-              {tab.label}
-            </span>
-          </button>
-        ))}
+        {REPORT_TAB_CONFIGS.map((tab) => {
+          const isActive = activeTab === tab.key;
+          return (
+            <button
+              type="button"
+              aria-pressed={isActive}
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className={`px-6 py-2 rounded-xl font-medium whitespace-nowrap transition-all border ${
+                isActive ? tab.activeClass : tab.inactiveClass
+              }`}
+            >
+              <span className="inline-flex items-center gap-2">
+                <span
+                  aria-hidden
+                  className={`w-2.5 h-2.5 rounded-full ${
+                    isActive ? "bg-white/90" : tab.dotClass
+                  }`}
+                ></span>
+                {tab.icon}
+                {tab.label}
+              </span>
+            </button>
+          );
+        })}
 
         {/* Divider */}
         <div className="h-8 w-px bg-slate-300 dark:bg-slate-600 mx-2"></div>

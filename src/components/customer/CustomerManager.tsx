@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect } from "react";
-import { User, Bike } from "lucide-react";
+import { Bike, LayoutGrid, List } from "lucide-react";
 import {
   useCustomers,
   useCreateCustomer,
@@ -386,6 +386,8 @@ const CustomerManager: React.FC = () => {
   const [activeFilter, setActiveFilter] = useState("all");
   const [viewHistoryCustomer, setViewHistoryCustomer] =
     useState<Customer | null>(null);
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [showActionSheet, setShowActionSheet] = useState(false);
 
   // Fetch sales and work orders for history
   const { data: allSales = [] } = useSalesRepo();
@@ -460,6 +462,11 @@ const CustomerManager: React.FC = () => {
     return result;
   }, [customers, search, activeFilter]);
 
+  const displayedCustomers = useMemo(
+    () => filtered.slice(0, displayCount),
+    [filtered, displayCount]
+  );
+
   const handleDelete = async (id: string) => {
     if (!confirm("Xác nhận xoá khách hàng này?")) return;
     // Xóa khách hàng trên Supabase
@@ -493,6 +500,181 @@ const CustomerManager: React.FC = () => {
     };
   }, [customers]);
 
+  const filterOptions = useMemo(
+    () => [
+      {
+        id: "all",
+        label: "Tất cả",
+        hint: "Toàn bộ danh sách",
+        count: stats.total,
+        icon: "🌐",
+        activeClasses:
+          "border-slate-300 bg-slate-100/80 text-slate-900 shadow-sm",
+      },
+      {
+        id: "vip",
+        label: "VIP",
+        hint: "≥ 5.000 điểm",
+        count: stats.vip,
+        icon: "👑",
+        activeClasses:
+          "border-purple-200 bg-purple-50 text-purple-700 shadow-sm",
+      },
+      {
+        id: "loyal",
+        label: "Trung thành",
+        hint: "10+ lượt",
+        count: stats.loyal,
+        icon: "💎",
+        activeClasses: "border-blue-200 bg-blue-50 text-blue-700 shadow-sm",
+      },
+      {
+        id: "potential",
+        label: "Tiềm năng",
+        hint: "2-9 lượt",
+        count: stats.potential,
+        icon: "⭐",
+        activeClasses: "border-green-200 bg-green-50 text-green-700 shadow-sm",
+      },
+      {
+        id: "at-risk",
+        label: "Cần chăm sóc",
+        hint: ">90 ngày chưa đến",
+        count: stats.atRisk,
+        icon: "⚠️",
+        activeClasses:
+          "border-orange-200 bg-orange-50 text-orange-700 shadow-sm",
+      },
+      {
+        id: "lost",
+        label: "Đã mất",
+        hint: "Không quay lại",
+        count: stats.lost,
+        icon: "❌",
+        activeClasses: "border-red-200 bg-red-50 text-red-700 shadow-sm",
+      },
+      {
+        id: "new",
+        label: "Khách mới",
+        hint: "Tháng này",
+        count: stats.new,
+        icon: "🆕",
+        activeClasses: "border-cyan-200 bg-cyan-50 text-cyan-700 shadow-sm",
+      },
+    ],
+    [stats]
+  );
+
+  const overviewCards = useMemo(
+    () => [
+      {
+        id: "total",
+        title: "Tổng KH",
+        value: stats.total.toLocaleString(),
+        subLabel: `${stats.active} hoạt động`,
+        gradient:
+          "from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/20",
+        border: "border-blue-200 dark:border-blue-800",
+        labelClass: "text-blue-700 dark:text-blue-300",
+        valueClass: "text-blue-900 dark:text-blue-100",
+      },
+      {
+        id: "new",
+        title: "Khách mới",
+        value: stats.newThisMonth.toLocaleString(),
+        subLabel: "↑ 0% tháng này",
+        gradient:
+          "from-green-50 to-emerald-100 dark:from-green-900/30 dark:to-emerald-800/20",
+        border: "border-green-200 dark:border-green-800",
+        labelClass: "text-green-700 dark:text-green-300",
+        valueClass: "text-green-900 dark:text-green-100",
+      },
+      {
+        id: "avg",
+        title: "DT TB",
+        value: "0 đ",
+        subLabel: "/ khách hàng",
+        gradient:
+          "from-purple-50 to-violet-100 dark:from-purple-900/30 dark:to-violet-800/20",
+        border: "border-purple-200 dark:border-purple-800",
+        labelClass: "text-purple-700 dark:text-purple-300",
+        valueClass: "text-purple-900 dark:text-purple-100",
+      },
+      {
+        id: "atRisk",
+        title: "Cần CS",
+        value: stats.atRisk.toLocaleString(),
+        subLabel: "0đ tiềm năng",
+        gradient:
+          "from-orange-50 to-amber-100 dark:from-orange-900/30 dark:to-amber-800/20",
+        border: "border-orange-200 dark:border-orange-800",
+        labelClass: "text-orange-700 dark:text-orange-300",
+        valueClass: "text-orange-900 dark:text-orange-100",
+      },
+    ],
+    [stats]
+  );
+
+  const segmentStyles: Record<
+    string,
+    {
+      label: string;
+      badgeClass: string;
+      avatarClass: string;
+      icon: string;
+    }
+  > = {
+    VIP: {
+      label: "VIP",
+      badgeClass:
+        "bg-purple-100 text-purple-700 border border-purple-200 dark:bg-purple-900/30 dark:text-purple-200 dark:border-purple-700",
+      avatarClass: "bg-purple-50 text-purple-700 dark:bg-purple-900/40",
+      icon: "👑",
+    },
+    Loyal: {
+      label: "Trung thành",
+      badgeClass:
+        "bg-blue-100 text-blue-700 border border-blue-200 dark:bg-blue-900/30 dark:text-blue-200 dark:border-blue-700",
+      avatarClass: "bg-blue-50 text-blue-700 dark:bg-blue-900/40",
+      icon: "💎",
+    },
+    Potential: {
+      label: "Tiềm năng",
+      badgeClass:
+        "bg-green-100 text-green-700 border border-green-200 dark:bg-green-900/30 dark:text-green-200 dark:border-green-700",
+      avatarClass: "bg-green-50 text-green-700 dark:bg-green-900/40",
+      icon: "⭐",
+    },
+    "At Risk": {
+      label: "Cần chăm sóc",
+      badgeClass:
+        "bg-orange-100 text-orange-700 border border-orange-200 dark:bg-orange-900/30 dark:text-orange-200 dark:border-orange-700",
+      avatarClass: "bg-orange-50 text-orange-700 dark:bg-orange-900/40",
+      icon: "⚠️",
+    },
+    Lost: {
+      label: "Đã mất",
+      badgeClass:
+        "bg-red-100 text-red-600 border border-red-200 dark:bg-red-900/30 dark:text-red-200 dark:border-red-700",
+      avatarClass: "bg-red-50 text-red-600 dark:bg-red-900/40",
+      icon: "❌",
+    },
+    New: {
+      label: "Khách mới",
+      badgeClass:
+        "bg-cyan-100 text-cyan-700 border border-cyan-200 dark:bg-cyan-900/30 dark:text-cyan-200 dark:border-cyan-700",
+      avatarClass: "bg-cyan-50 text-cyan-700 dark:bg-cyan-900/40",
+      icon: "🆕",
+    },
+    default: {
+      label: "Khách hàng",
+      badgeClass:
+        "bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-600",
+      avatarClass: "bg-slate-100 text-slate-600 dark:bg-slate-800",
+      icon: "👤",
+    },
+  };
+
   return (
     <div className="h-full flex flex-col bg-slate-50 dark:bg-slate-900 overflow-hidden">
       {/* Tabs Header - Fixed */}
@@ -500,7 +682,7 @@ const CustomerManager: React.FC = () => {
         <div className="flex items-center px-6 overflow-x-auto no-scrollbar">
           <button
             onClick={() => setActiveTab("customers")}
-            className={`flex items-center gap-2 px-4 py-4 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${
+            className={`flex items-center gap-2 px-4 py-3 md:py-4 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${
               activeTab === "customers"
                 ? "border-blue-500 text-blue-600 dark:text-blue-400"
                 : "border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
@@ -511,7 +693,7 @@ const CustomerManager: React.FC = () => {
           </button>
           <button
             onClick={() => setActiveTab("suppliers")}
-            className={`flex items-center gap-2 px-4 py-4 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${
+            className={`flex items-center gap-2 px-4 py-3 md:py-4 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${
               activeTab === "suppliers"
                 ? "border-blue-500 text-blue-600 dark:text-blue-400"
                 : "border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
@@ -560,10 +742,29 @@ const CustomerManager: React.FC = () => {
                   placeholder="Tìm theo tên, SĐT, biển số xe..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
+                  className="w-full pl-10 pr-14 md:pr-4 py-2.5 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
                 />
+                <button
+                  onClick={() => setShowActionSheet(true)}
+                  className="md:hidden absolute right-2 top-1/2 -translate-y-1/2 inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-semibold text-slate-600 shadow-sm transition-colors hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                >
+                  <svg
+                    className="h-4 w-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 6.75a.75.75 0 100-1.5.75.75 0 000 1.5zm0 6a.75.75 0 100-1.5.75.75 0 000 1.5zm0 6a.75.75 0 100-1.5.75.75 0 000 1.5z"
+                    />
+                  </svg>
+                  <span>Tác vụ</span>
+                </button>
               </div>
-              <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0 no-scrollbar">
+              <div className="hidden md:flex gap-2 overflow-x-auto pb-2 md:pb-0 no-scrollbar">
                 <button
                   onClick={() => setShowImport(true)}
                   className="flex items-center gap-2 px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors whitespace-nowrap shadow-sm"
@@ -613,72 +814,69 @@ const CustomerManager: React.FC = () => {
             </div>
 
             {/* Filters */}
-            <div className="flex flex-wrap gap-2">
-              {[
-                {
-                  id: "all",
-                  label: "Tất cả",
-                  shortLabel: "Tất cả",
-                  color: "blue",
-                  icon: "●",
-                },
-                {
-                  id: "vip",
-                  label: "VIP",
-                  shortLabel: "VIP",
-                  color: "purple",
-                  icon: "👑",
-                },
-                {
-                  id: "loyal",
-                  label: "Trung thành",
-                  shortLabel: "Trung thành",
-                  color: "blue",
-                  icon: "💎",
-                },
-                {
-                  id: "potential",
-                  label: "Tiềm năng",
-                  shortLabel: "Tiềm năng",
-                  color: "green",
-                  icon: "⭐",
-                },
-                {
-                  id: "at-risk",
-                  label: "Cần chăm sóc",
-                  shortLabel: "Cần CS",
-                  color: "orange",
-                  icon: "⚠️",
-                },
-                {
-                  id: "lost",
-                  label: "Đã mất",
-                  shortLabel: "Đã mất",
-                  color: "red",
-                  icon: "❌",
-                },
-                {
-                  id: "new",
-                  label: "Khách mới",
-                  shortLabel: "Khách mới",
-                  color: "cyan",
-                  icon: "🆕",
-                },
-              ].map((filter) => (
-                <button
-                  key={filter.id}
-                  onClick={() => setActiveFilter(filter.id)}
-                  className={`px-2 py-1 md:px-3 md:py-1.5 rounded-md text-[10px] md:text-xs font-medium transition-all whitespace-nowrap border flex items-center gap-0.5 md:gap-1 ${
-                    activeFilter === filter.id
-                      ? `bg-${filter.color}-600 text-white border-${filter.color}-600 shadow-md`
-                      : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700"
-                  }`}
-                >
-                  <span className="text-xs md:text-sm">{filter.icon}</span>
-                  <span className="hidden sm:inline">{filter.label}</span>
-                  <span className="inline sm:hidden">{filter.shortLabel}</span>
-                </button>
-              ))}
+            <div className="rounded-2xl border border-slate-200 bg-white/80 p-4 shadow-sm dark:border-slate-700 dark:bg-slate-800/60 md:border-none md:bg-transparent md:p-0 md:shadow-none">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                    Phân khúc khách hàng
+                  </p>
+                  <p className="text-xs text-slate-400">Chạm để lọc nhanh</p>
+                </div>
+                <div className="hidden sm:inline-flex rounded-2xl border border-slate-200 bg-white p-1 text-xs font-semibold dark:border-slate-600 dark:bg-slate-900/40">
+                  <button
+                    onClick={() => setViewMode("grid")}
+                    className={`flex flex-1 items-center justify-center gap-1 rounded-xl px-3 py-2 transition-colors sm:flex-none ${
+                      viewMode === "grid"
+                        ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900"
+                        : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+                    }`}
+                  >
+                    <LayoutGrid className="h-4 w-4" />
+                    <span>Thẻ</span>
+                  </button>
+                  <button
+                    onClick={() => setViewMode("list")}
+                    className={`flex flex-1 items-center justify-center gap-1 rounded-xl px-3 py-2 transition-colors sm:flex-none ${
+                      viewMode === "list"
+                        ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900"
+                        : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+                    }`}
+                  >
+                    <List className="h-4 w-4" />
+                    <span>Danh sách</span>
+                  </button>
+                </div>
+              </div>
+              <div className="mt-3 flex gap-3 overflow-x-auto pb-1 no-scrollbar snap-x snap-mandatory md:mt-4 md:snap-none">
+                {filterOptions.map((filter) => (
+                  <button
+                    key={filter.id}
+                    onClick={() => setActiveFilter(filter.id)}
+                    className={`min-w-[190px] snap-start rounded-2xl border px-4 py-3 text-left transition-all md:min-w-0 ${
+                      activeFilter === filter.id
+                        ? `${filter.activeClasses} dark:bg-slate-800/80 dark:border-slate-600 dark:text-white`
+                        : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-slate-300"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <span className="text-lg">{filter.icon}</span>
+                        <div>
+                          <p className="text-sm font-semibold">
+                            {filter.label}
+                          </p>
+                          <p className="text-[11px] text-slate-500">
+                            {filter.hint}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-lg font-black text-slate-900 dark:text-slate-100">
+                        {filter.count}
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
@@ -702,59 +900,27 @@ const CustomerManager: React.FC = () => {
                 Thống kê tổng quan
               </h2>
             </div>
-
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6">
-              {/* Total Customers */}
-              <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/20 rounded-lg p-3 md:p-4 border border-blue-200 dark:border-blue-800">
-                <div className="text-blue-700 dark:text-blue-300 text-[11px] md:text-sm font-semibold mb-1">
-                  Tổng KH
+            <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory md:grid md:grid-cols-4 md:gap-4 md:overflow-visible md:snap-none">
+              {overviewCards.map((card) => (
+                <div
+                  key={card.id}
+                  className={`snap-start min-w-[170px] rounded-lg border bg-gradient-to-br p-3 md:p-4 ${card.gradient} ${card.border}`}
+                >
+                  <div
+                    className={`text-[10px] md:text-sm font-semibold mb-1 uppercase ${card.labelClass}`}
+                  >
+                    {card.title}
+                  </div>
+                  <div
+                    className={`text-2xl md:text-3xl font-black ${card.valueClass}`}
+                  >
+                    {card.value}
+                  </div>
+                  <div className="text-[10px] md:text-xs mt-0.5 text-slate-600 dark:text-slate-300">
+                    {card.subLabel}
+                  </div>
                 </div>
-                <div className="text-blue-900 dark:text-blue-100 text-2xl md:text-3xl font-black">
-                  {stats.total}
-                </div>
-                <div className="text-blue-600 dark:text-blue-400 text-[10px] md:text-xs mt-0.5">
-                  {stats.active} hoạt động
-                </div>
-              </div>
-
-              {/* New This Month */}
-              <div className="bg-gradient-to-br from-green-50 to-emerald-100 dark:from-green-900/30 dark:to-emerald-800/20 rounded-lg p-3 md:p-4 border border-green-200 dark:border-green-800">
-                <div className="text-green-700 dark:text-green-300 text-[11px] md:text-sm font-semibold mb-1">
-                  Khách mới
-                </div>
-                <div className="text-green-900 dark:text-green-100 text-2xl md:text-3xl font-black">
-                  {stats.newThisMonth}
-                </div>
-                <div className="text-green-600 dark:text-green-400 text-[10px] md:text-xs mt-0.5">
-                  ↑ 0% tháng này
-                </div>
-              </div>
-
-              {/* Average Revenue */}
-              <div className="bg-gradient-to-br from-purple-50 to-violet-100 dark:from-purple-900/30 dark:to-violet-800/20 rounded-lg p-3 md:p-4 border border-purple-200 dark:border-purple-800">
-                <div className="text-purple-700 dark:text-purple-300 text-[11px] md:text-sm font-semibold mb-1">
-                  DT TB
-                </div>
-                <div className="text-purple-900 dark:text-purple-100 text-2xl md:text-3xl font-black">
-                  0 đ
-                </div>
-                <div className="text-purple-600 dark:text-purple-400 text-[10px] md:text-xs mt-0.5">
-                  / khách hàng
-                </div>
-              </div>
-
-              {/* At Risk */}
-              <div className="bg-gradient-to-br from-orange-50 to-amber-100 dark:from-orange-900/30 dark:to-amber-800/20 rounded-lg p-3 md:p-4 border border-orange-200 dark:border-orange-800">
-                <div className="text-orange-700 dark:text-orange-300 text-[11px] md:text-sm font-semibold mb-1">
-                  Cần CS
-                </div>
-                <div className="text-orange-900 dark:text-orange-100 text-2xl md:text-3xl font-black">
-                  {stats.atRisk}
-                </div>
-                <div className="text-orange-600 dark:text-orange-400 text-[10px] md:text-xs mt-0.5">
-                  0đ tiềm năng
-                </div>
-              </div>
+              ))}
             </div>
           </div>
 
@@ -782,373 +948,303 @@ const CustomerManager: React.FC = () => {
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filtered.slice(0, displayCount).map((customer) => {
-                  const segmentConfig = {
-                    VIP: {
-                      bg: "bg-gradient-to-br from-purple-400 to-purple-600 dark:from-purple-500 dark:to-purple-700",
-                      text: "VIP",
-                      icon: (
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="w-6 h-6"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="m3 7 5 5-5 5 19-5L3 7Z"
-                          />
-                        </svg>
-                      ),
-                    },
-                    Loyal: {
-                      bg: "bg-gradient-to-br from-blue-400 to-blue-600 dark:from-blue-500 dark:to-blue-700",
-                      text: "Trung thành",
-                      icon: (
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="w-6 h-6"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M12 17.75 6.825 20.995l.99-5.766L3.63 11.255l5.807-.844L12 5l2.563 5.411 5.807.844-4.186 3.974.99 5.766L12 17.75Z"
-                          />
-                        </svg>
-                      ),
-                    },
-                    Potential: {
-                      bg: "bg-gradient-to-br from-green-400 to-green-600 dark:from-green-500 dark:to-green-700",
-                      text: "Tiềm năng",
-                      icon: (
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="w-6 h-6"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M12 2v5m0 0c1.886-1.257 4.63-1.034 6 1-1.886 1.257-1.886 3.743 0 5-1.37 2.034-4.114 2.257-6 1m0-12c-1.886-1.257-4.63-1.034-6 1 1.886 1.257 1.886 3.743 0 5 1.37 2.034 4.114 2.257 6 1m0 0v5"
-                          />
-                        </svg>
-                      ),
-                    },
-                    "At Risk": {
-                      bg: "bg-gradient-to-br from-orange-400 to-orange-600 dark:from-orange-500 dark:to-orange-700",
-                      text: "Cần chăm sóc",
-                      icon: (
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="w-6 h-6"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"
-                          />
-                        </svg>
-                      ),
-                    },
-                    Lost: {
-                      bg: "bg-gradient-to-br from-red-400 to-red-600 dark:from-red-500 dark:to-red-700",
-                      text: "Đã mất",
-                      icon: (
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="w-6 h-6"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="m15 9-6 6m0-6 6 6M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-                          />
-                        </svg>
-                      ),
-                    },
-                    New: {
-                      bg: "bg-gradient-to-br from-cyan-400 to-cyan-600 dark:from-cyan-500 dark:to-cyan-700",
-                      text: "Khách mới",
-                      icon: (
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="w-6 h-6"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M12 2v2m0 4v2m0 4v2m0 4v2M4.93 4.93l1.414 1.414M7.757 12l-1.414 1.414M4.93 19.07l1.414-1.414M19.07 4.93l-1.414 1.414M16.243 12l1.414 1.414M19.07 19.07l-1.414-1.414M2 12h2m4 0h2m4 0h2m4 0h2"
-                          />
-                        </svg>
-                      ),
-                    },
-                  } as const;
+              {viewMode === "grid" ? (
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {displayedCustomers.map((customer) => {
+                    const config =
+                      (customer.segment && segmentStyles[customer.segment]) ||
+                      segmentStyles.default;
+                    const points = calculateLoyaltyPoints(customer);
+                    const pointsPercent = Math.min((points / 10000) * 100, 100);
+                    const totalSpent = customer.totalSpent || 0;
+                    const visitCount = customer.visitCount || 0;
+                    const vehicles =
+                      (customer.vehicles as Vehicle[] | undefined) || [];
+                    const primaryVehicle =
+                      vehicles.find((v) => v.isPrimary) || vehicles[0];
+                    const hasExtraVehicles = vehicles.length > 2;
 
-                  const config = customer.segment
-                    ? segmentConfig[customer.segment]
-                    : {
-                        bg: "bg-gradient-to-br from-slate-400 to-slate-600 dark:from-slate-500 dark:to-slate-700",
-                        text: "Khách hàng",
-                        icon: <User className="w-6 h-6" />,
-                      };
-                  const points = calculateLoyaltyPoints(customer);
-                  const pointsPercent = Math.min((points / 10000) * 100, 100);
-
-                  return (
-                    <div
-                      key={customer.id}
-                      className="bg-white dark:bg-slate-800 rounded-xl shadow-lg overflow-hidden border border-slate-200 dark:border-slate-700 hover:shadow-xl transition-shadow"
-                    >
-                      {/* Card Header with Gradient */}
-                      <div className={`${config.bg} p-4 text-white relative`}>
-                        <div className="flex items-start justify-between mb-3">
-                          <div className="flex items-center gap-2">
-                            <span className="text-2xl flex items-center justify-center">
+                    return (
+                      <div
+                        key={customer.id}
+                        className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-lg dark:border-slate-700 dark:bg-slate-800"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div
+                              className={`flex h-12 w-12 items-center justify-center rounded-2xl text-2xl ${config.avatarClass}`}
+                            >
                               {config.icon}
-                            </span>
-                            <span className="text-xs font-semibold px-2 py-0.5 bg-white/20 rounded-full backdrop-blur">
-                              {config.text}
-                            </span>
-                          </div>
-                          <div className="flex gap-1">
-                            <button
-                              onClick={() => setViewHistoryCustomer(customer)}
-                              className="p-1.5 bg-white/20 hover:bg-white/30 rounded-lg transition-colors backdrop-blur"
-                              title="Xem lịch sử"
-                            >
-                              <svg
-                                className="w-4 h-4"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                                />
-                              </svg>
-                            </button>
-                            <button
-                              onClick={() => setEditCustomer(customer)}
-                              className="p-1.5 bg-white/20 hover:bg-white/30 rounded-lg transition-colors backdrop-blur"
-                              title="Chỉnh sửa"
-                            >
-                              <svg
-                                className="w-4 h-4"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                                />
-                              </svg>
-                            </button>
-                            <button
-                              onClick={() => handleDelete(customer.id)}
-                              className="p-1.5 bg-white/20 hover:bg-red-500 rounded-lg transition-colors backdrop-blur"
-                              title="Xóa"
-                            >
-                              <TrashIcon className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </div>
-
-                        <div>
-                          <h3 className="text-lg font-bold mb-1">
-                            {customer.name}
-                          </h3>
-                          <div className="flex items-center gap-2 text-sm opacity-90">
-                            <span className="inline-flex items-center gap-1">
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                className="w-4 h-4"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  d="M2.25 6.75c0 8.284 6.716 15 15 15 .828 0 1.5-.672 1.5-1.5v-2.25a1.5 1.5 0 00-1.5-1.5h-1.158a1.5 1.5 0 00-1.092.468l-.936.996a1.5 1.5 0 01-1.392.444 12.035 12.035 0 01-7.29-7.29 1.5 1.5 0 01.444-1.392l.996-.936a1.5 1.5 0 00.468-1.092V6.75A1.5 1.5 0 006.75 5.25H4.5c-.828 0-1.5.672-1.5 1.5z"
-                                />
-                              </svg>
-                              {customer.phone || "—"}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Card Body */}
-                      <div className="p-4 space-y-3">
-                        {/* Vehicle Info */}
-                        {customer.vehicles && customer.vehicles.length > 0 ? (
-                          <div className="space-y-2">
-                            {customer.vehicles.map((vehicle) => (
-                              <div
-                                key={vehicle.id}
-                                className="flex items-center gap-2 text-sm"
-                              >
-                                {vehicle.isPrimary && (
-                                  <span
-                                    className="text-yellow-500"
-                                    title="Xe chính"
-                                  >
-                                    <svg
-                                      className="w-3 h-3"
-                                      fill="currentColor"
-                                      viewBox="0 0 20 20"
-                                    >
-                                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                                    </svg>
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-base font-semibold text-slate-900 dark:text-slate-100 truncate">
+                                {customer.name || "Chưa đặt tên"}
+                              </p>
+                              <p className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                                <span>{customer.phone || "Chưa có số"}</span>
+                                {customer.lastVisit && (
+                                  <span className="text-slate-400">
+                                    • Lần cuối {formatDate(customer.lastVisit)}
                                   </span>
                                 )}
-                                <span className="text-slate-400 dark:text-slate-500">
-                                  <Bike className="w-4 h-4" />
-                                </span>
-                                <div>
-                                  <div className="font-medium text-slate-900 dark:text-slate-100">
-                                    {vehicle.model}
-                                  </div>
-                                  {vehicle.licensePlate && (
-                                    <div className="text-xs text-slate-500 dark:text-slate-400">
-                                      Biển số: {vehicle.licensePlate}
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
+                              </p>
+                            </div>
+                          </div>
+                          <span
+                            className={`text-[10px] font-semibold uppercase px-3 py-1 rounded-full ${config.badgeClass}`}
+                          >
+                            {config.label}
+                          </span>
+                        </div>
+                        {vehicles.length > 0 ? (
+                          <div className="mt-4 flex flex-wrap gap-2">
+                            {vehicles.slice(0, 2).map((vehicle) => (
+                              <span
+                                key={vehicle.id}
+                                className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200"
+                              >
+                                {vehicle.isPrimary && (
+                                  <span className="text-amber-500">★</span>
+                                )}
+                                <span>{vehicle.model || "Không rõ"}</span>
+                                {vehicle.licensePlate && (
+                                  <span className="text-[10px] text-slate-400">
+                                    • {vehicle.licensePlate}
+                                  </span>
+                                )}
+                              </span>
                             ))}
+                            {hasExtraVehicles && (
+                              <span className="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-500 dark:bg-slate-700 dark:text-slate-300">
+                                +{vehicles.length - 2} xe nữa
+                              </span>
+                            )}
                           </div>
                         ) : customer.vehicleModel ? (
-                          <div className="flex items-center gap-2 text-sm">
-                            <span className="text-slate-400 dark:text-slate-500">
-                              <Bike className="w-4 h-4" />
+                          <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs text-slate-600 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200">
+                            <Bike className="h-3.5 w-3.5" />
+                            <span>
+                              {customer.vehicleModel}
+                              {customer.licensePlate
+                                ? ` • ${customer.licensePlate}`
+                                : ""}
                             </span>
-                            <div>
-                              <div className="font-medium text-slate-900 dark:text-slate-100">
-                                {customer.vehicleModel}
-                              </div>
-                              {customer.licensePlate && (
-                                <div className="text-xs text-slate-500 dark:text-slate-400">
-                                  Biển số: {customer.licensePlate}
-                                </div>
-                              )}
-                            </div>
                           </div>
                         ) : null}
-
-                        {/* Loyalty Points Section */}
-                        <div className="bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 dark:from-amber-900/30 dark:via-yellow-900/20 dark:to-orange-900/20 rounded-lg p-2.5 md:p-3 border-2 border-amber-300 dark:border-amber-700">
-                          <div className="flex items-center justify-between mb-1.5">
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-base md:text-lg">🎁</span>
-                              <span className="text-[10px] md:text-xs font-black text-amber-800 dark:text-amber-200">
-                                ĐIỂM TÍCH LŨY
-                              </span>
-                            </div>
-                            <span className="text-lg md:text-xl font-black text-amber-700 dark:text-amber-300">
-                              {points.toLocaleString()}
-                            </span>
+                        <div className="mt-4 grid grid-cols-3 gap-3 text-sm">
+                          <div>
+                            <p className="text-[11px] uppercase text-slate-500">
+                              Tổng chi
+                            </p>
+                            <p className="text-base font-semibold text-slate-900 dark:text-slate-100">
+                              {formatCurrency(totalSpent)}
+                            </p>
                           </div>
-
-                          {/* Points Progress Bar */}
-                          <div className="mb-1">
-                            <div className="h-1.5 md:h-2 bg-amber-200/50 dark:bg-amber-900/50 rounded-full overflow-hidden">
-                              <div
-                                className="h-full bg-gradient-to-r from-amber-500 via-yellow-500 to-orange-500 transition-all duration-500"
-                                style={{ width: `${pointsPercent}%` }}
-                              ></div>
-                            </div>
+                          <div>
+                            <p className="text-[11px] uppercase text-slate-500">
+                              Lần đến
+                            </p>
+                            <p className="text-base font-semibold text-slate-900 dark:text-slate-100">
+                              {visitCount}
+                            </p>
                           </div>
-                          <div className="text-[9px] md:text-[10px] text-amber-700 dark:text-amber-400 text-right font-medium">
-                            Mục tiêu: 10,000đ
+                          <div>
+                            <p className="text-[11px] uppercase text-slate-500">
+                              Cuối cùng
+                            </p>
+                            <p className="text-base font-semibold text-slate-900 dark:text-slate-100">
+                              {customer.lastVisit
+                                ? formatDate(customer.lastVisit)
+                                : "—"}
+                            </p>
                           </div>
                         </div>
-
-                        {/* Stats Grid */}
-                        <div className="grid grid-cols-3 gap-2 pt-2 border-t border-slate-200 dark:border-slate-700">
-                          <div className="text-center">
-                            <div className="text-base md:text-lg font-black text-blue-600 dark:text-blue-400">
-                              {customer.visitCount || 0}
-                            </div>
-                            <div className="text-[10px] md:text-xs text-slate-600 dark:text-slate-400 font-medium">
-                              Lần đến
-                            </div>
+                        <div className="mt-3">
+                          <div className="flex items-center justify-between text-[11px] font-semibold text-amber-700 dark:text-amber-300">
+                            <span>Điểm tích luỹ</span>
+                            <span>{points.toLocaleString()}</span>
                           </div>
-                          <div className="text-center border-x border-slate-200 dark:border-slate-700">
-                            <div className="text-base md:text-lg font-black text-emerald-600 dark:text-emerald-400">
-                              {((customer.totalSpent || 0) / 1000000).toFixed(
-                                1
-                              )}
-                              M
-                            </div>
-                            <div className="text-[10px] md:text-xs text-slate-600 dark:text-slate-400 font-medium">
-                              Chi tiêu
-                            </div>
+                          <div className="mt-1 h-1.5 rounded-full bg-amber-100 dark:bg-amber-900/50">
+                            <div
+                              className="h-full rounded-full bg-gradient-to-r from-amber-500 via-yellow-400 to-orange-500"
+                              style={{ width: `${pointsPercent}%` }}
+                            ></div>
                           </div>
-                          <div className="text-center">
-                            <div className="text-[11px] md:text-xs font-bold text-slate-800 dark:text-slate-200">
-                              {customer.lastVisit
-                                ? `${Math.floor(
-                                    (Date.now() -
-                                      new Date(customer.lastVisit).getTime()) /
-                                      (1000 * 60 * 60 * 24)
-                                  )}d`
-                                : "—"}
-                            </div>
-                            <div className="text-[10px] md:text-xs text-slate-600 dark:text-slate-400 font-medium">
-                              Ghé cuối
-                            </div>
-                          </div>
+                        </div>
+                        Chạm để lọc nhanh
+                        <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-dashed border-slate-200 pt-3 dark:border-slate-700">
+                          <button
+                            onClick={() => setViewHistoryCustomer(customer)}
+                            className="rounded-full bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-600 transition-colors hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-300"
+                          >
+                            Xem lịch sử
+                          </button>
+                          <button
+                            onClick={() => setEditCustomer(customer)}
+                            className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-200"
+                          >
+                            Chỉnh sửa
+                          </button>
+                          <button
+                            onClick={() => handleDelete(customer.id)}
+                            className="rounded-full bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-600 transition-colors hover:bg-red-100 dark:bg-red-900/30 dark:text-red-300"
+                          >
+                            Xóa
+                          </button>
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800">
+                  <table className="min-w-full text-sm">
+                    <thead className="bg-slate-50 text-left text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:bg-slate-900/40 dark:text-slate-300">
+                      <tr>
+                        <th className="px-4 py-3">Khách hàng</th>
+                        <th className="px-4 py-3">Liên hệ</th>
+                        <th className="px-4 py-3">Xe</th>
+                        <th className="px-4 py-3">Tổng chi</th>
+                        <th className="px-4 py-3">Lần đến</th>
+                        <th className="px-4 py-3">Lần cuối</th>
+                        <th className="px-4 py-3 text-right">Tác vụ</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {displayedCustomers.map((customer) => {
+                        const config =
+                          (customer.segment &&
+                            segmentStyles[customer.segment]) ||
+                          segmentStyles.default;
+                        const vehicles =
+                          (customer.vehicles as Vehicle[] | undefined) || [];
+                        const primaryVehicle =
+                          vehicles.find((v) => v.isPrimary) || vehicles[0];
+                        const vehicleLabel = primaryVehicle
+                          ? `${primaryVehicle.model || "Không rõ"}${
+                              primaryVehicle.licensePlate
+                                ? ` • ${primaryVehicle.licensePlate}`
+                                : ""
+                            }`
+                          : customer.vehicleModel
+                          ? `${customer.vehicleModel}${
+                              customer.licensePlate
+                                ? ` • ${customer.licensePlate}`
+                                : ""
+                            }`
+                          : "—";
 
-              {/* Load More Button */}
+                        return (
+                          <tr
+                            key={customer.id}
+                            className="border-t border-slate-100 text-slate-600 dark:border-slate-700/60 dark:text-slate-300"
+                          >
+                            <td className="px-4 py-3 align-top">
+                              <div className="font-semibold text-slate-900 dark:text-slate-100">
+                                {customer.name || "Chưa đặt tên"}
+                              </div>
+                              <span
+                                className={`mt-1 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${config.badgeClass}`}
+                              >
+                                {config.icon} {config.label}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 align-top">
+                              <div className="font-medium text-slate-900 dark:text-slate-100">
+                                {customer.phone || "—"}
+                              </div>
+                              <div className="text-xs text-slate-500 dark:text-slate-400">
+                                Điểm:{" "}
+                                {calculateLoyaltyPoints(
+                                  customer
+                                ).toLocaleString()}
+                              </div>
+                            </td>
+                            <td className="px-4 py-3 align-top text-slate-900 dark:text-slate-100">
+                              {vehicleLabel}
+                            </td>
+                            <td className="px-4 py-3 align-top font-semibold text-slate-900 dark:text-slate-100">
+                              {formatCurrency(customer.totalSpent || 0)}
+                            </td>
+                            <td className="px-4 py-3 align-top text-slate-900 dark:text-slate-100">
+                              {customer.visitCount || 0}
+                            </td>
+                            <td className="px-4 py-3 align-top text-slate-900 dark:text-slate-100">
+                              {customer.lastVisit
+                                ? formatDate(customer.lastVisit)
+                                : "—"}
+                            </td>
+                            <td className="px-4 py-3 align-top">
+                              <div className="flex items-center justify-end gap-2">
+                                <button
+                                  onClick={() =>
+                                    setViewHistoryCustomer(customer)
+                                  }
+                                  className="rounded-lg border border-slate-200 p-2 text-slate-500 transition-colors hover:border-blue-500 hover:text-blue-600 dark:border-slate-600 dark:text-slate-400 dark:hover:border-blue-500"
+                                  title="Xem lịch sử"
+                                >
+                                  <svg
+                                    className="h-4 w-4"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                                    />
+                                  </svg>
+                                </button>
+                                <button
+                                  onClick={() => setEditCustomer(customer)}
+                                  className="rounded-lg border border-slate-200 p-2 text-slate-500 transition-colors hover:border-blue-500 hover:text-blue-600 dark:border-slate-600 dark:text-slate-400 dark:hover:border-blue-500"
+                                  title="Chỉnh sửa"
+                                >
+                                  <svg
+                                    className="h-4 w-4"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                                    />
+                                  </svg>
+                                </button>
+                                <button
+                                  onClick={() => handleDelete(customer.id)}
+                                  className="rounded-lg border border-red-200 p-2 text-red-500 transition-colors hover:bg-red-50 dark:border-red-900/60 dark:text-red-300 dark:hover:bg-red-900/40"
+                                  title="Xóa"
+                                >
+                                  <TrashIcon className="h-4 w-4" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
               {displayCount < filtered.length && (
-                <div className="flex justify-center mt-8 pb-4">
+                <div className="flex justify-center pb-4 pt-8">
                   <button
                     onClick={() => setDisplayCount((prev) => prev + 20)}
-                    className="group flex items-center gap-2 px-6 py-3 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 hover:border-blue-500 dark:hover:border-blue-500 text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 rounded-full shadow-sm hover:shadow-md transition-all font-medium"
+                    className="group flex items-center gap-2 rounded-full border border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-600 shadow-sm transition hover:border-blue-500 hover:text-blue-600 hover:shadow-md dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200"
                   >
                     <span>
                       Hiển thị thêm{" "}
                       {Math.min(20, filtered.length - displayCount)} khách hàng
                     </span>
                     <svg
-                      className="w-4 h-4 group-hover:translate-y-1 transition-transform"
+                      className="h-4 w-4 transition-transform group-hover:translate-y-1"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
@@ -1164,6 +1260,87 @@ const CustomerManager: React.FC = () => {
                 </div>
               )}
             </>
+          )}
+
+          {/* Floating Add Button for mobile */}
+          <button
+            onClick={() => setEditCustomer({} as Customer)}
+            className="md:hidden fixed bottom-28 right-5 z-40 inline-flex items-center justify-center rounded-full bg-blue-600 p-4 text-white shadow-lg transition hover:bg-blue-700"
+          >
+            <PlusIcon className="h-6 w-6" />
+            <span className="sr-only">Thêm khách hàng</span>
+          </button>
+
+          {/* Mobile action sheet */}
+          {showActionSheet && (
+            <div className="md:hidden fixed inset-0 z-30">
+              <button
+                onClick={() => setShowActionSheet(false)}
+                className="absolute inset-0 bg-black/40"
+                aria-label="Đóng"
+              ></button>
+              <div className="absolute inset-x-0 bottom-0 rounded-t-3xl bg-white p-5 shadow-2xl dark:bg-slate-800">
+                <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-slate-200 dark:bg-slate-600" />
+                <h3 className="mb-4 text-sm font-semibold text-slate-600 dark:text-slate-300">
+                  Tác vụ nhanh
+                </h3>
+                <div className="space-y-3">
+                  <button
+                    onClick={() => {
+                      setShowActionSheet(false);
+                      setShowImport(true);
+                    }}
+                    className="flex w-full items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-left text-sm font-semibold text-slate-700 transition hover:border-blue-500 dark:border-slate-700 dark:bg-slate-700/40 dark:text-slate-200"
+                  >
+                    <svg
+                      className="h-5 w-5 text-green-500"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                      />
+                    </svg>
+                    Upload danh sách
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowActionSheet(false);
+                      alert("Tính năng đang phát triển");
+                    }}
+                    className="flex w-full items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-left text-sm font-semibold text-slate-700 transition hover:border-blue-500 dark:border-slate-700 dark:bg-slate-700/40 dark:text-slate-200"
+                  >
+                    <svg
+                      className="h-5 w-5 text-orange-500"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+                      />
+                    </svg>
+                    Nhắc bảo dưỡng
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowActionSheet(false);
+                      setEditCustomer({} as Customer);
+                    }}
+                    className="flex w-full items-center gap-3 rounded-2xl bg-blue-600 px-4 py-3 text-left text-sm font-semibold text-white shadow-lg transition hover:bg-blue-700"
+                  >
+                    <PlusIcon className="h-5 w-5" /> Thêm khách hàng
+                  </button>
+                </div>
+              </div>
+            </div>
           )}
         </div>
       ) : (

@@ -2539,6 +2539,12 @@ const SalesManager: React.FC = () => {
       return;
     }
 
+    // Kiểm tra bắt buộc phải có thông tin khách hàng
+    if (!selectedCustomer && !customerName && !customerPhone) {
+      alert("Vui lòng nhập thông tin khách hàng trước khi bán hàng");
+      return;
+    }
+
     if (!paymentMethod) {
       alert("Vui lòng chọn phương thức thanh toán");
       return;

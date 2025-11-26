@@ -3096,7 +3096,7 @@ const SalesManager: React.FC = () => {
           }`}
         >
           {/* Customer Selection */}
-          <div className="p-3 md:p-4 border-b border-slate-200 md:border-slate-200/50 dark:border-slate-700/50 bg-slate-50 md:bg-gradient-to-r md:from-emerald-50/30 md:via-teal-50/20 md:to-cyan-50/30 dark:from-slate-800/50 dark:via-slate-800/30 dark:to-slate-800/50">
+          <div className="p-3 md:p-4 border-b border-slate-200 md:border-slate-200/50 dark:border-slate-700/50 bg-white dark:bg-slate-800 md:bg-gradient-to-r md:from-emerald-50/30 md:via-teal-50/20 md:to-cyan-50/30 dark:md:from-slate-800/50 dark:md:via-slate-800/30 dark:md:to-slate-800/50">
             <div className="customer-dropdown-container">
               <label className="flex items-center gap-2 text-sm font-semibold md:font-bold text-slate-900 dark:text-slate-100 mb-2 md:mb-3">
                 <div className="w-7 h-7 md:w-8 md:h-8 bg-emerald-500 md:bg-gradient-to-br md:from-emerald-500 md:to-teal-500 rounded-lg flex items-center justify-center md:shadow-lg">
@@ -3176,7 +3176,7 @@ const SalesManager: React.FC = () => {
                 )}
               </div>
               {selectedCustomer && (
-                <div className="mt-2 md:mt-3 p-2 md:p-3.5 bg-blue-50 md:bg-gradient-to-r md:from-emerald-50 md:to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 rounded-lg md:rounded-xl border md:border-2 border-blue-200 md:border-emerald-200 dark:border-emerald-800 md:shadow-sm">
+                <div className="mt-2 md:mt-3 p-2 md:p-3.5 bg-emerald-50 dark:bg-emerald-900/20 md:bg-gradient-to-r md:from-emerald-50 md:to-teal-50 dark:md:from-emerald-900/20 dark:md:to-teal-900/20 rounded-lg md:rounded-xl border md:border-2 border-emerald-200 dark:border-emerald-800 md:shadow-sm">
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-2 md:gap-2.5 flex-1 min-w-0">
                       <div className="hidden md:flex w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-lg items-center justify-center shadow-lg flex-shrink-0">
@@ -3195,11 +3195,11 @@ const SalesManager: React.FC = () => {
                         </svg>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="font-medium md:font-bold text-blue-900 md:text-emerald-900 dark:text-emerald-100 truncate text-sm md:text-base">
+                        <div className="font-medium md:font-bold text-emerald-900 dark:text-emerald-100 truncate text-sm md:text-base">
                           {selectedCustomer.name}
                         </div>
                         {selectedCustomer.phone && (
-                          <div className="text-xs text-blue-700 md:text-emerald-700 dark:text-emerald-300 flex items-center gap-1 mt-0.5">
+                          <div className="text-xs text-emerald-700 dark:text-emerald-300 flex items-center gap-1 mt-0.5">
                             <svg
                               className="w-3 h-3 flex-shrink-0 hidden md:inline"
                               fill="none"
@@ -3294,7 +3294,7 @@ const SalesManager: React.FC = () => {
                           </div>
                         </div>
                       </div>
-                      
+
                       {/* Footer: Price + Quantity controls */}
                       <div className="flex items-center justify-between">
                         <div className="text-sm font-bold text-blue-600 dark:text-blue-400">
@@ -3332,7 +3332,7 @@ const SalesManager: React.FC = () => {
                         </div>
                       </div>
                     </div>
-                    
+
                     {/* Desktop: Horizontal layout (original) */}
                     <div className="hidden md:flex items-center gap-3">
                       <div className="w-12 h-12 bg-gradient-to-br from-orange-100 to-amber-100 dark:from-orange-900/30 dark:to-amber-900/30 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm group-hover:scale-110 transition-transform">
@@ -3393,7 +3393,7 @@ const SalesManager: React.FC = () => {
 
           {/* Checkout Section */}
           {cartItems.length > 0 && (
-            <div className="border-t md:border-t-2 border-slate-200 md:border-slate-200/50 dark:border-slate-700/50 bg-slate-50 md:bg-gradient-to-br md:from-slate-50 md:to-blue-50/30 dark:from-slate-800 dark:to-slate-800/50">
+            <div className="border-t md:border-t-2 border-slate-200 md:border-slate-200/50 dark:border-slate-700/50 bg-slate-50 dark:bg-slate-800 md:bg-gradient-to-br md:from-slate-50 md:to-blue-50/30 dark:md:from-slate-800 dark:md:to-slate-800/50">
               {/* Summary */}
               <div className="p-3 md:p-4 space-y-2 md:space-y-3 pb-20 md:pb-3">
                 <div className="flex justify-between text-xs md:text-sm">
@@ -3580,10 +3580,10 @@ const SalesManager: React.FC = () => {
                     onChange={(e) =>
                       setPartialAmount(Number(e.target.value) || 0)
                     }
-                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700"
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
                     placeholder="0"
                   />
-                  <div className="text-xs text-slate-500 mt-1">
+                  <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                     Còn lại:{" "}
                     {formatCurrency(
                       Math.max(0, total - orderDiscount - partialAmount)

@@ -752,6 +752,192 @@ export default function ServiceManager() {
   const createCustomerDebt = useCreateCustomerDebtRepo();
   const updateCustomerDebt = useUpdateCustomerDebtRepo();
 
+  // 🔹 Handle Mobile Save - Similar to desktop handleSave
+  const handleMobileSave = async (workOrderData: any) => {
+    try {
+      console.log("[handleMobileSave] Mobile Work Order Data:", workOrderData);
+
+      // Validate required fields
+      if (!workOrderData.customer?.name) {
+        showToast.error("Vui lòng nhập tên khách hàng");
+        return;
+      }
+      if (!workOrderData.customer?.phone) {
+        showToast.error("Vui lòng nhập số điện thoại");
+        return;
+      }
+
+      // Extract data from workOrderData
+      const {
+        status,
+        customer,
+        vehicle,
+        issueDescription,
+        technicianId,
+        parts = [],
+        additionalServices = [],
+        laborCost = 0,
+        discount = 0,
+        total = 0,
+        depositAmount = 0,
+        paymentMethod,
+        paymentType,
+        totalPaid = 0,
+        remainingAmount = 0,
+      } = workOrderData;
+
+      // Determine payment status
+      let paymentStatus: "unpaid" | "paid" | "partial" = "unpaid";
+      if (totalPaid >= total) {
+        paymentStatus = "paid";
+      } else if (totalPaid > 0) {
+        paymentStatus = "partial";
+      }
+
+      // Find technician name
+      const technician = displayEmployees.find(
+        (e: any) => e.id === technicianId
+      );
+      const technicianName = technician?.name || "";
+
+      // If this is a NEW work order
+      if (!editingOrder?.id) {
+        const orderId = `${
+          storeSettings?.work_order_prefix || "SC"
+        }-${Date.now()}`;
+
+        const responseData = await createWorkOrderAtomicAsync({
+          id: orderId,
+          customerName: customer.name,
+          customerPhone: customer.phone,
+          vehicleModel: vehicle?.model || "",
+          licensePlate: vehicle?.licensePlate || "",
+          issueDescription: issueDescription || "",
+          technicianName: technicianName,
+          status: status,
+          laborCost: laborCost,
+          discount: discount,
+          partsUsed: parts,
+          additionalServices:
+            additionalServices.length > 0 ? additionalServices : undefined,
+          total: total,
+          branchId: currentBranchId,
+          paymentStatus: paymentStatus,
+          paymentMethod: paymentMethod,
+          depositAmount: depositAmount > 0 ? depositAmount : undefined,
+          additionalPayment:
+            totalPaid > depositAmount ? totalPaid - depositAmount : undefined,
+          totalPaid: totalPaid > 0 ? totalPaid : undefined,
+          remainingAmount: remainingAmount,
+          creationDate: new Date().toISOString(),
+        } as any);
+
+        const finalOrder: WorkOrder = {
+          id: orderId,
+          customerName: customer.name,
+          customerPhone: customer.phone,
+          vehicleModel: vehicle?.model || "",
+          licensePlate: vehicle?.licensePlate || "",
+          issueDescription: issueDescription || "",
+          technicianName: technicianName,
+          status: status,
+          laborCost: laborCost,
+          discount: discount,
+          partsUsed: parts,
+          additionalServices:
+            additionalServices.length > 0 ? additionalServices : undefined,
+          total: total,
+          branchId: currentBranchId,
+          depositAmount: depositAmount > 0 ? depositAmount : undefined,
+          paymentStatus: paymentStatus,
+          paymentMethod: paymentMethod,
+          totalPaid: totalPaid > 0 ? totalPaid : undefined,
+          remainingAmount: remainingAmount,
+          creationDate: new Date().toISOString(),
+        };
+
+        // Auto-create customer debt if status is "Trả máy" and there's remaining amount
+        if (status === "Trả máy" && remainingAmount > 0) {
+          await createCustomerDebtIfNeeded(
+            finalOrder,
+            remainingAmount,
+            total,
+            totalPaid
+          );
+        }
+
+        showToast.success("Tạo phiếu sửa chữa thành công!");
+      } else {
+        // Update existing work order
+        const responseData = await updateWorkOrderAtomicAsync({
+          id: editingOrder.id,
+          customerName: customer.name,
+          customerPhone: customer.phone,
+          vehicleModel: vehicle?.model || "",
+          licensePlate: vehicle?.licensePlate || "",
+          issueDescription: issueDescription || "",
+          technicianName: technicianName,
+          status: status,
+          laborCost: laborCost,
+          discount: discount,
+          partsUsed: parts,
+          additionalServices:
+            additionalServices.length > 0 ? additionalServices : undefined,
+          total: total,
+          branchId: currentBranchId,
+          paymentStatus: paymentStatus,
+          paymentMethod: paymentMethod,
+          depositAmount: depositAmount > 0 ? depositAmount : undefined,
+          additionalPayment:
+            totalPaid > depositAmount ? totalPaid - depositAmount : undefined,
+          totalPaid: totalPaid > 0 ? totalPaid : undefined,
+          remainingAmount: remainingAmount,
+        } as any);
+
+        const finalOrder: WorkOrder = {
+          ...editingOrder,
+          customerName: customer.name,
+          customerPhone: customer.phone,
+          vehicleModel: vehicle?.model || "",
+          licensePlate: vehicle?.licensePlate || "",
+          issueDescription: issueDescription || "",
+          technicianName: technicianName,
+          status: status,
+          laborCost: laborCost,
+          discount: discount,
+          partsUsed: parts,
+          additionalServices:
+            additionalServices.length > 0 ? additionalServices : undefined,
+          total: total,
+          paymentStatus: paymentStatus,
+          paymentMethod: paymentMethod,
+          totalPaid: totalPaid > 0 ? totalPaid : undefined,
+          remainingAmount: remainingAmount,
+        };
+
+        // Auto-create customer debt if status is "Trả máy" and there's remaining amount
+        if (status === "Trả máy" && remainingAmount > 0) {
+          await createCustomerDebtIfNeeded(
+            finalOrder,
+            remainingAmount,
+            total,
+            totalPaid
+          );
+        }
+
+        showToast.success("Cập nhật phiếu sửa chữa thành công!");
+      }
+
+      setShowMobileModal(false);
+      setEditingOrder(undefined);
+    } catch (error: any) {
+      console.error("[handleMobileSave] Error:", error);
+      showToast.error(
+        `Lỗi: ${error.message || "Không thể lưu phiếu sửa chữa"}`
+      );
+    }
+  };
+
   const handleRefundOrder = (order: WorkOrder) => {
     setRefundingOrder(order);
     setRefundReason("");
@@ -913,13 +1099,7 @@ export default function ServiceManager() {
               setShowMobileModal(false);
               setEditingOrder(undefined);
             }}
-            onSave={(workOrderData) => {
-              // Mobile save handler
-              console.log("Mobile Work Order Data:", workOrderData);
-              setShowMobileModal(false);
-              setEditingOrder(undefined);
-              // Work orders will be refreshed automatically via fetchedWorkOrders
-            }}
+            onSave={handleMobileSave}
             workOrder={editingOrder}
             customers={displayCustomers}
             parts={fetchedParts || []}
@@ -944,16 +1124,19 @@ export default function ServiceManager() {
                     onClick={async () => {
                       try {
                         showToast.info("Đang tạo hình ảnh...");
-                        
+
                         // Import html2canvas dynamically
-                        const html2canvas = (await import("html2canvas")).default;
-                        
-                        const element = document.getElementById("mobile-print-preview-content");
+                        const html2canvas = (await import("html2canvas"))
+                          .default;
+
+                        const element = document.getElementById(
+                          "mobile-print-preview-content"
+                        );
                         if (!element) {
                           showToast.error("Không tìm thấy nội dung phiếu!");
                           return;
                         }
-                        
+
                         // Capture the element as canvas
                         const canvas = await html2canvas(element, {
                           scale: 2, // Higher quality
@@ -961,22 +1144,30 @@ export default function ServiceManager() {
                           useCORS: true,
                           logging: false,
                         });
-                        
+
                         // Convert canvas to blob
                         const blob = await new Promise<Blob>((resolve) => {
                           canvas.toBlob((b) => resolve(b!), "image/png", 1.0);
                         });
-                        
-                        const fileName = `Phieu_${formatWorkOrderId(printOrder.id, storeSettings?.work_order_prefix)}.png`;
-                        
+
+                        const fileName = `Phieu_${formatWorkOrderId(
+                          printOrder.id,
+                          storeSettings?.work_order_prefix
+                        )}.png`;
+
                         // Try to share as image file
                         if (navigator.share && navigator.canShare) {
-                          const file = new File([blob], fileName, { type: "image/png" });
+                          const file = new File([blob], fileName, {
+                            type: "image/png",
+                          });
                           const shareData = {
                             files: [file],
-                            title: `Phiếu sửa chữa - ${formatWorkOrderId(printOrder.id, storeSettings?.work_order_prefix)}`,
+                            title: `Phiếu sửa chữa - ${formatWorkOrderId(
+                              printOrder.id,
+                              storeSettings?.work_order_prefix
+                            )}`,
                           };
-                          
+
                           if (navigator.canShare(shareData)) {
                             await navigator.share(shareData);
                             showToast.success("Chia sẻ thành công!");
@@ -1051,25 +1242,47 @@ export default function ServiceManager() {
                   style={{ maxWidth: "100%", color: "#000", padding: "4mm" }}
                 >
                   {/* Store Info Header with Logo */}
-                  <div style={{ display: "flex", gap: "3mm", marginBottom: "3mm", borderBottom: "2px solid #3b82f6", paddingBottom: "2mm", alignItems: "flex-start" }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: "3mm",
+                      marginBottom: "3mm",
+                      borderBottom: "2px solid #3b82f6",
+                      paddingBottom: "2mm",
+                      alignItems: "flex-start",
+                    }}
+                  >
                     {/* Logo */}
                     {storeSettings?.logo_url && (
                       <div style={{ flexShrink: 0 }}>
                         <img
                           src={storeSettings.logo_url}
                           alt="Logo"
-                          style={{ height: "15mm", width: "auto", objectFit: "contain" }}
+                          style={{
+                            height: "15mm",
+                            width: "auto",
+                            objectFit: "contain",
+                          }}
                           crossOrigin="anonymous"
                         />
                       </div>
                     )}
                     {/* Store Info */}
                     <div style={{ flex: 1, fontSize: "9pt" }}>
-                      <div style={{ fontWeight: "bold", fontSize: "12pt", color: "#1e40af", marginBottom: "1mm" }}>
+                      <div
+                        style={{
+                          fontWeight: "bold",
+                          fontSize: "12pt",
+                          color: "#1e40af",
+                          marginBottom: "1mm",
+                        }}
+                      >
                         {storeSettings?.store_name || "Nhạn Lâm SmartCare"}
                       </div>
                       <div style={{ color: "#000" }}>
-                        📍 {storeSettings?.address || "Ấp Phú Lợi B, Xã Long Phú Thuận, Đông Tháp"}
+                        📍{" "}
+                        {storeSettings?.address ||
+                          "Ấp Phú Lợi B, Xã Long Phú Thuận, Đông Tháp"}
                       </div>
                       <div style={{ color: "#000" }}>
                         📞 {storeSettings?.phone || "0947.747.907"}
@@ -1079,116 +1292,350 @@ export default function ServiceManager() {
 
                   {/* Title */}
                   <div style={{ textAlign: "center", marginBottom: "3mm" }}>
-                    <h1 style={{ fontSize: "14pt", fontWeight: "bold", margin: "0", color: "#1e40af" }}>
+                    <h1
+                      style={{
+                        fontSize: "14pt",
+                        fontWeight: "bold",
+                        margin: "0",
+                        color: "#1e40af",
+                      }}
+                    >
                       PHIẾU DỊCH VỤ SỬA CHỮA
                     </h1>
-                    <div style={{ fontSize: "9pt", color: "#666", marginTop: "1mm" }}>
-                      Mã: {formatWorkOrderId(printOrder.id, storeSettings?.work_order_prefix)}
+                    <div
+                      style={{
+                        fontSize: "9pt",
+                        color: "#666",
+                        marginTop: "1mm",
+                      }}
+                    >
+                      Mã:{" "}
+                      {formatWorkOrderId(
+                        printOrder.id,
+                        storeSettings?.work_order_prefix
+                      )}
                     </div>
                     <div style={{ fontSize: "8pt", color: "#666" }}>
-                      {new Date(printOrder.creationDate).toLocaleString("vi-VN")}
+                      {new Date(printOrder.creationDate).toLocaleString(
+                        "vi-VN"
+                      )}
                     </div>
                   </div>
 
                   {/* Customer Info */}
-                  <div style={{ border: "1px solid #ddd", padding: "2mm", marginBottom: "2mm", borderRadius: "2mm", backgroundColor: "#f8fafc", fontSize: "9pt" }}>
-                    <div><strong>Khách hàng:</strong> {printOrder.customerName} - {printOrder.customerPhone}</div>
-                    <div><strong>Xe:</strong> {printOrder.vehicleModel} - <span style={{ color: "#3b82f6" }}>{printOrder.licensePlate}</span></div>
+                  <div
+                    style={{
+                      border: "1px solid #ddd",
+                      padding: "2mm",
+                      marginBottom: "2mm",
+                      borderRadius: "2mm",
+                      backgroundColor: "#f8fafc",
+                      fontSize: "9pt",
+                    }}
+                  >
+                    <div>
+                      <strong>Khách hàng:</strong> {printOrder.customerName} -{" "}
+                      {printOrder.customerPhone}
+                    </div>
+                    <div>
+                      <strong>Xe:</strong> {printOrder.vehicleModel} -{" "}
+                      <span style={{ color: "#3b82f6" }}>
+                        {printOrder.licensePlate}
+                      </span>
+                    </div>
                   </div>
 
                   {/* Issue Description */}
                   {printOrder.issueDescription && (
-                    <div style={{ border: "1px solid #ddd", padding: "2mm", marginBottom: "2mm", borderRadius: "2mm", fontSize: "9pt" }}>
-                      <strong>Mô tả sự cố:</strong> {printOrder.issueDescription}
+                    <div
+                      style={{
+                        border: "1px solid #ddd",
+                        padding: "2mm",
+                        marginBottom: "2mm",
+                        borderRadius: "2mm",
+                        fontSize: "9pt",
+                      }}
+                    >
+                      <strong>Mô tả sự cố:</strong>{" "}
+                      {printOrder.issueDescription}
                     </div>
                   )}
 
                   {/* Parts Table */}
                   {printOrder.partsUsed && printOrder.partsUsed.length > 0 && (
                     <div style={{ marginBottom: "2mm" }}>
-                      <p style={{ fontWeight: "bold", margin: "0 0 1mm 0", fontSize: "10pt" }}>Phụ tùng:</p>
-                      <table style={{ width: "100%", borderCollapse: "collapse", border: "1px solid #ddd", fontSize: "9pt" }}>
+                      <p
+                        style={{
+                          fontWeight: "bold",
+                          margin: "0 0 1mm 0",
+                          fontSize: "10pt",
+                        }}
+                      >
+                        Phụ tùng:
+                      </p>
+                      <table
+                        style={{
+                          width: "100%",
+                          borderCollapse: "collapse",
+                          border: "1px solid #ddd",
+                          fontSize: "9pt",
+                        }}
+                      >
                         <thead>
                           <tr style={{ backgroundColor: "#f5f5f5" }}>
-                            <th style={{ border: "1px solid #ddd", padding: "1.5mm", textAlign: "left" }}>Tên</th>
-                            <th style={{ border: "1px solid #ddd", padding: "1.5mm", textAlign: "center", width: "12%" }}>SL</th>
-                            <th style={{ border: "1px solid #ddd", padding: "1.5mm", textAlign: "right", width: "28%" }}>Thành tiền</th>
+                            <th
+                              style={{
+                                border: "1px solid #ddd",
+                                padding: "1.5mm",
+                                textAlign: "left",
+                              }}
+                            >
+                              Tên
+                            </th>
+                            <th
+                              style={{
+                                border: "1px solid #ddd",
+                                padding: "1.5mm",
+                                textAlign: "center",
+                                width: "12%",
+                              }}
+                            >
+                              SL
+                            </th>
+                            <th
+                              style={{
+                                border: "1px solid #ddd",
+                                padding: "1.5mm",
+                                textAlign: "right",
+                                width: "28%",
+                              }}
+                            >
+                              Thành tiền
+                            </th>
                           </tr>
                         </thead>
                         <tbody>
-                          {printOrder.partsUsed.map((part: WorkOrderPart, idx: number) => (
-                            <tr key={idx}>
-                              <td style={{ border: "1px solid #ddd", padding: "1.5mm" }}>{part.partName}</td>
-                              <td style={{ border: "1px solid #ddd", padding: "1.5mm", textAlign: "center" }}>{part.quantity}</td>
-                              <td style={{ border: "1px solid #ddd", padding: "1.5mm", textAlign: "right", fontWeight: "bold" }}>
-                                {formatCurrency(part.price * part.quantity)}
-                              </td>
-                            </tr>
-                          ))}
+                          {printOrder.partsUsed.map(
+                            (part: WorkOrderPart, idx: number) => (
+                              <tr key={idx}>
+                                <td
+                                  style={{
+                                    border: "1px solid #ddd",
+                                    padding: "1.5mm",
+                                  }}
+                                >
+                                  {part.partName}
+                                </td>
+                                <td
+                                  style={{
+                                    border: "1px solid #ddd",
+                                    padding: "1.5mm",
+                                    textAlign: "center",
+                                  }}
+                                >
+                                  {part.quantity}
+                                </td>
+                                <td
+                                  style={{
+                                    border: "1px solid #ddd",
+                                    padding: "1.5mm",
+                                    textAlign: "right",
+                                    fontWeight: "bold",
+                                  }}
+                                >
+                                  {formatCurrency(part.price * part.quantity)}
+                                </td>
+                              </tr>
+                            )
+                          )}
                         </tbody>
                       </table>
                     </div>
                   )}
 
                   {/* Additional Services */}
-                  {printOrder.additionalServices && printOrder.additionalServices.length > 0 && (
-                    <div style={{ marginBottom: "2mm", fontSize: "9pt" }}>
-                      <p style={{ fontWeight: "bold", margin: "0 0 1mm 0", fontSize: "10pt" }}>Dịch vụ bổ sung:</p>
-                      {printOrder.additionalServices.map((service: any, idx: number) => (
-                        <div key={idx} style={{ display: "flex", justifyContent: "space-between" }}>
-                          <span>{service.description}</span>
-                          <span style={{ fontWeight: "bold" }}>{formatCurrency(service.price * (service.quantity || 1))}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                  {printOrder.additionalServices &&
+                    printOrder.additionalServices.length > 0 && (
+                      <div style={{ marginBottom: "2mm", fontSize: "9pt" }}>
+                        <p
+                          style={{
+                            fontWeight: "bold",
+                            margin: "0 0 1mm 0",
+                            fontSize: "10pt",
+                          }}
+                        >
+                          Dịch vụ bổ sung:
+                        </p>
+                        {printOrder.additionalServices.map(
+                          (service: any, idx: number) => (
+                            <div
+                              key={idx}
+                              style={{
+                                display: "flex",
+                                justifyContent: "space-between",
+                              }}
+                            >
+                              <span>{service.description}</span>
+                              <span style={{ fontWeight: "bold" }}>
+                                {formatCurrency(
+                                  service.price * (service.quantity || 1)
+                                )}
+                              </span>
+                            </div>
+                          )
+                        )}
+                      </div>
+                    )}
 
                   {/* Cost Summary */}
-                  <div style={{ border: "1px solid #ddd", padding: "2mm", borderRadius: "2mm", backgroundColor: "#f9f9f9", fontSize: "9pt" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "1mm" }}>
+                  <div
+                    style={{
+                      border: "1px solid #ddd",
+                      padding: "2mm",
+                      borderRadius: "2mm",
+                      backgroundColor: "#f9f9f9",
+                      fontSize: "9pt",
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        marginBottom: "1mm",
+                      }}
+                    >
                       <span>Tiền phụ tùng:</span>
-                      <span>{formatCurrency(printOrder.partsUsed?.reduce((sum: number, p: WorkOrderPart) => sum + p.price * p.quantity, 0) || 0)}</span>
+                      <span>
+                        {formatCurrency(
+                          printOrder.partsUsed?.reduce(
+                            (sum: number, p: WorkOrderPart) =>
+                              sum + p.price * p.quantity,
+                            0
+                          ) || 0
+                        )}
+                      </span>
                     </div>
-                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "1mm" }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        marginBottom: "1mm",
+                      }}
+                    >
                       <span>Phí dịch vụ:</span>
                       <span>{formatCurrency(printOrder.laborCost || 0)}</span>
                     </div>
-                    {printOrder.additionalServices && printOrder.additionalServices.length > 0 && (
-                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "1mm" }}>
-                        <span>Giá công/Đặt hàng:</span>
-                        <span>{formatCurrency(printOrder.additionalServices.reduce((sum: number, s: any) => sum + (s.price || 0) * (s.quantity || 1), 0))}</span>
-                      </div>
-                    )}
+                    {printOrder.additionalServices &&
+                      printOrder.additionalServices.length > 0 && (
+                        <div
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            marginBottom: "1mm",
+                          }}
+                        >
+                          <span>Giá công/Đặt hàng:</span>
+                          <span>
+                            {formatCurrency(
+                              printOrder.additionalServices.reduce(
+                                (sum: number, s: any) =>
+                                  sum + (s.price || 0) * (s.quantity || 1),
+                                0
+                              )
+                            )}
+                          </span>
+                        </div>
+                      )}
                     {printOrder.discount != null && printOrder.discount > 0 && (
-                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "1mm", color: "#e74c3c" }}>
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          marginBottom: "1mm",
+                          color: "#e74c3c",
+                        }}
+                      >
                         <span>Giảm giá:</span>
                         <span>-{formatCurrency(printOrder.discount)}</span>
                       </div>
                     )}
-                    <div style={{ display: "flex", justifyContent: "space-between", paddingTop: "2mm", borderTop: "2px solid #3b82f6", fontSize: "12pt", fontWeight: "bold", color: "#1e40af" }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        paddingTop: "2mm",
+                        borderTop: "2px solid #3b82f6",
+                        fontSize: "12pt",
+                        fontWeight: "bold",
+                        color: "#1e40af",
+                      }}
+                    >
                       <span>TỔNG CỘNG:</span>
                       <span>{formatCurrency(printOrder.total || 0)}</span>
                     </div>
-                    {printOrder.depositAmount != null && printOrder.depositAmount > 0 && (
-                      <>
-                        <div style={{ display: "flex", justifyContent: "space-between", marginTop: "1mm", color: "#16a34a" }}>
-                          <span>Đã đặt cọc:</span>
-                          <span>{formatCurrency(printOrder.depositAmount)}</span>
-                        </div>
-                        <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold", color: "#dc2626" }}>
-                          <span>Còn lại:</span>
-                          <span>{formatCurrency(printOrder.remainingAmount || (printOrder.total - printOrder.depositAmount))}</span>
-                        </div>
-                      </>
-                    )}
+                    {printOrder.depositAmount != null &&
+                      printOrder.depositAmount > 0 && (
+                        <>
+                          <div
+                            style={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                              marginTop: "1mm",
+                              color: "#16a34a",
+                            }}
+                          >
+                            <span>Đã đặt cọc:</span>
+                            <span>
+                              {formatCurrency(printOrder.depositAmount)}
+                            </span>
+                          </div>
+                          <div
+                            style={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                              fontWeight: "bold",
+                              color: "#dc2626",
+                            }}
+                          >
+                            <span>Còn lại:</span>
+                            <span>
+                              {formatCurrency(
+                                printOrder.remainingAmount ||
+                                  printOrder.total - printOrder.depositAmount
+                              )}
+                            </span>
+                          </div>
+                        </>
+                      )}
                   </div>
 
                   {/* Bank Info Section */}
                   {storeSettings?.bank_name && (
-                    <div style={{ marginTop: "3mm", border: "1px solid #ddd", padding: "2mm", borderRadius: "2mm", backgroundColor: "#f0f9ff", fontSize: "9pt" }}>
-                      <div style={{ display: "flex", alignItems: "flex-start", gap: "3mm" }}>
+                    <div
+                      style={{
+                        marginTop: "3mm",
+                        border: "1px solid #ddd",
+                        padding: "2mm",
+                        borderRadius: "2mm",
+                        backgroundColor: "#f0f9ff",
+                        fontSize: "9pt",
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "flex-start",
+                          gap: "3mm",
+                        }}
+                      >
                         <div style={{ flex: 1 }}>
-                          <div style={{ fontWeight: "bold", marginBottom: "1mm", color: "#1e40af" }}>
+                          <div
+                            style={{
+                              fontWeight: "bold",
+                              marginBottom: "1mm",
+                              color: "#1e40af",
+                            }}
+                          >
                             🏦 Thông tin thanh toán
                           </div>
                           <div style={{ color: "#000" }}>
@@ -1196,7 +1643,10 @@ export default function ServiceManager() {
                           </div>
                           {storeSettings.bank_account_number && (
                             <div style={{ color: "#000" }}>
-                              STK: <strong>{storeSettings.bank_account_number}</strong>
+                              STK:{" "}
+                              <strong>
+                                {storeSettings.bank_account_number}
+                              </strong>
                             </div>
                           )}
                           {storeSettings.bank_account_holder && (
@@ -1216,7 +1666,11 @@ export default function ServiceManager() {
                             <img
                               src={storeSettings.bank_qr_url}
                               alt="QR Banking"
-                              style={{ height: "20mm", width: "20mm", objectFit: "contain" }}
+                              style={{
+                                height: "20mm",
+                                width: "20mm",
+                                objectFit: "contain",
+                              }}
                               crossOrigin="anonymous"
                             />
                           </div>
@@ -1226,13 +1680,34 @@ export default function ServiceManager() {
                   )}
 
                   {/* Footer Note */}
-                  <div style={{ marginTop: "3mm", padding: "2mm", backgroundColor: "#fff9e6", border: "1px solid #ffd700", borderRadius: "2mm", fontSize: "8pt", textAlign: "center" }}>
-                    <p style={{ margin: "0", fontStyle: "italic" }}>Cảm ơn quý khách đã sử dụng dịch vụ!</p>
-                    <p style={{ margin: "1mm 0 0 0", fontStyle: "italic" }}>Vui lòng giữ phiếu này để đối chiếu khi nhận xe</p>
+                  <div
+                    style={{
+                      marginTop: "3mm",
+                      padding: "2mm",
+                      backgroundColor: "#fff9e6",
+                      border: "1px solid #ffd700",
+                      borderRadius: "2mm",
+                      fontSize: "8pt",
+                      textAlign: "center",
+                    }}
+                  >
+                    <p style={{ margin: "0", fontStyle: "italic" }}>
+                      Cảm ơn quý khách đã sử dụng dịch vụ!
+                    </p>
+                    <p style={{ margin: "1mm 0 0 0", fontStyle: "italic" }}>
+                      Vui lòng giữ phiếu này để đối chiếu khi nhận xe
+                    </p>
                   </div>
 
                   {/* KTV Info */}
-                  <div style={{ marginTop: "2mm", fontSize: "9pt", textAlign: "right", color: "#666" }}>
+                  <div
+                    style={{
+                      marginTop: "2mm",
+                      fontSize: "9pt",
+                      textAlign: "right",
+                      color: "#666",
+                    }}
+                  >
                     KTV: {printOrder.technicianName || "Chưa phân công"}
                   </div>
                 </div>

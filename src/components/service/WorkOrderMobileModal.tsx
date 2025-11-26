@@ -15,7 +15,7 @@ interface WorkOrderMobileModalProps {
   upsertCustomer?: (customer: any) => void;
 }
 
-type WorkOrderStatus = "Tiếp nhận" | "Đang sửa" | "Chờ vật tư" | "Trả máy";
+type WorkOrderStatus = "Tiếp nhận" | "Đang sửa" | "Đã sửa xong" | "Trả máy";
 
 export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
   isOpen,
@@ -58,9 +58,9 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
     // If not, add it as a temporary vehicle
     if (foundCustomer && workOrder.licensePlate) {
       const vehicleExists = foundCustomer.vehicles?.some(
-        v => v.licensePlate === workOrder.licensePlate
+        (v) => v.licensePlate === workOrder.licensePlate
       );
-      
+
       if (!vehicleExists) {
         // Clone customer and add temp vehicle
         return {
@@ -189,6 +189,8 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
   const [isDeposit, setIsDeposit] = useState(false);
   const [depositAmount, setDepositAmount] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState<"cash" | "bank">("cash");
+  const [showPaymentInput, setShowPaymentInput] = useState(false);
+  const [partialAmount, setPartialAmount] = useState(0);
 
   // UI States - khởi tạo showCustomerSearch dựa trên initialCustomer để đảm bảo đúng khi edit
   const [showCustomerSearch, setShowCustomerSearch] = useState(
@@ -263,13 +265,16 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
   const customerVehicles = useMemo(() => {
     if (!selectedCustomer) return [];
     const existingVehicles = selectedCustomer.vehicles || [];
-    
+
     // Nếu đang edit workOrder và có selectedVehicle là temp vehicle (không có trong danh sách)
     // thì thêm nó vào để hiển thị
-    if (selectedVehicle && !existingVehicles.find(v => v.id === selectedVehicle.id)) {
+    if (
+      selectedVehicle &&
+      !existingVehicles.find((v) => v.id === selectedVehicle.id)
+    ) {
       return [...existingVehicles, selectedVehicle];
     }
-    
+
     return existingVehicles;
   }, [selectedCustomer, selectedVehicle]);
 
@@ -393,10 +398,10 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
 
   const handleAddNewCustomer = () => {
     if (!newCustomerName || !newCustomerPhone) return;
-    
+
     const customerId = `CUST-${Date.now()}`;
     const vehicleId = `VEH-${Date.now()}`;
-    
+
     // Create vehicles array if vehicle info provided
     const vehicles: Vehicle[] = [];
     if (newCustomerVehicleModel || newCustomerLicensePlate) {
@@ -407,7 +412,7 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
         isPrimary: true,
       } as Vehicle);
     }
-    
+
     // Create new customer object
     const newCustomerObj: Customer = {
       id: customerId,
@@ -424,18 +429,18 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
       lastVisit: new Date().toISOString(),
       created_at: new Date().toISOString(),
     };
-    
+
     // Save to database if upsertCustomer is available
     if (upsertCustomer) {
       upsertCustomer(newCustomerObj);
     }
-    
+
     // Set selected customer and vehicle
     setSelectedCustomer(newCustomerObj);
     if (vehicles.length > 0) {
       setSelectedVehicle(vehicles[0]);
     }
-    
+
     // Reset form and close modal
     setShowCustomerSearch(false);
     setShowAddCustomer(false);
@@ -452,6 +457,12 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
       return;
     }
 
+    // Calculate total paid and remaining based on showPaymentInput (similar to desktop logic)
+    const totalDeposit = isDeposit ? depositAmount : 0;
+    const additionalPayment = showPaymentInput ? partialAmount : 0;
+    const totalPaid = totalDeposit + additionalPayment;
+    const remainingAmount = total - totalPaid;
+
     const workOrderData = {
       status,
       technicianId: selectedTechnicianId,
@@ -463,9 +474,11 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
       additionalServices,
       laborCost,
       discount: discountAmount,
-      total,
-      depositAmount: isDeposit ? depositAmount : 0,
+      total: total,
+      depositAmount: totalDeposit,
       paymentMethod,
+      totalPaid: status === "Trả máy" ? totalPaid : undefined,
+      remainingAmount: status === "Trả máy" ? remainingAmount : undefined,
     };
 
     onSave(workOrderData);
@@ -478,8 +491,8 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
         return "bg-blue-500";
       case "Đang sửa":
         return "bg-yellow-500";
-      case "Chờ vật tư":
-        return "bg-red-500";
+      case "Đã sửa xong":
+        return "bg-green-500";
       case "Trả máy":
         return "bg-green-500";
       default:
@@ -535,8 +548,8 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
                 >
                   <option value="Tiếp nhận">🔧 Tiếp nhận</option>
                   <option value="Đang sửa">⚙️ Đang sửa</option>
-                  <option value="Chờ vật tư">⏳ Chờ vật tư</option>
-                  <option value="Trả máy">✅ Trả máy</option>
+                  <option value="Đã sửa xong">✅ Đã sửa xong</option>
+                  <option value="Trả máy">🚗 Trả xe</option>
                 </select>
                 <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white pointer-events-none" />
               </div>
@@ -597,14 +610,14 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
                       </div>
                     </div>
                   ))}
-                  
+
                   {/* Show add new customer when no results or always at bottom */}
                   {customerSearchTerm && filteredCustomers.length === 0 && (
                     <div className="text-center py-3 text-slate-400 text-xs">
                       Không tìm thấy khách hàng
                     </div>
                   )}
-                  
+
                   {/* Add new customer button */}
                   <button
                     type="button"
@@ -1059,6 +1072,100 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
                       </button>
                     </div>
 
+                    {/* Payment at return - only show when status is "Trả máy" */}
+                    {status === "Trả máy" && (
+                      <div className="mt-3">
+                        {/* Checkbox to enable payment */}
+                        <div className="flex items-center justify-between p-3 bg-[#2b2b40] rounded-lg">
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center">
+                              <span className="text-lg">✅</span>
+                            </div>
+                            <span className="text-white font-medium text-sm">
+                              Thanh toán khi trả xe
+                            </span>
+                          </div>
+                          <button
+                            onClick={() => {
+                              const newValue = !showPaymentInput;
+                              setShowPaymentInput(newValue);
+                              if (!newValue) {
+                                setPartialAmount(0);
+                              }
+                            }}
+                            className={`relative w-12 h-6 rounded-full transition-colors ${
+                              showPaymentInput
+                                ? "bg-emerald-500"
+                                : "bg-slate-600"
+                            }`}
+                          >
+                            <div
+                              className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow-md transition-transform ${
+                                showPaymentInput ? "right-0.5" : "left-0.5"
+                              }`}
+                            >
+                              {showPaymentInput && (
+                                <span className="absolute inset-0 flex items-center justify-center text-emerald-500 text-[10px] font-bold">
+                                  ON
+                                </span>
+                              )}
+                            </div>
+                          </button>
+                        </div>
+
+                        {/* Payment Input - show when checkbox is enabled */}
+                        {showPaymentInput && (
+                          <div className="mt-3 p-3 bg-[#151521] border-2 border-emerald-500 rounded-lg">
+                            <label className="block text-xs font-medium text-slate-400 mb-2">
+                              Số tiền thanh toán thêm:
+                            </label>
+                            <input
+                              type="text"
+                              value={formatNumberWithDots(partialAmount)}
+                              onChange={(e) =>
+                                setPartialAmount(
+                                  parseFormattedNumber(e.target.value)
+                                )
+                              }
+                              placeholder="0"
+                              className="w-full px-3 py-2.5 bg-[#2b2b40] border border-slate-600 rounded-lg text-white text-sm focus:border-emerald-500 focus:outline-none transition-colors mb-2"
+                            />
+                            {/* Quick amount buttons */}
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => setPartialAmount(0)}
+                                className="flex-1 px-3 py-2 bg-slate-600 hover:bg-slate-500 text-white rounded-lg text-xs font-medium transition-colors"
+                              >
+                                0%
+                              </button>
+                              <button
+                                onClick={() => {
+                                  const remainingToPay =
+                                    total - (isDeposit ? depositAmount : 0);
+                                  setPartialAmount(
+                                    Math.round(remainingToPay * 0.5)
+                                  );
+                                }}
+                                className="flex-1 px-3 py-2 bg-slate-600 hover:bg-slate-500 text-white rounded-lg text-xs font-medium transition-colors"
+                              >
+                                50%
+                              </button>
+                              <button
+                                onClick={() => {
+                                  const remainingToPay =
+                                    total - (isDeposit ? depositAmount : 0);
+                                  setPartialAmount(remainingToPay);
+                                }}
+                                className="flex-1 px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-medium transition-colors"
+                              >
+                                100%
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
                     {/* Info Note */}
                     <div className="mt-3 p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg flex items-start gap-2">
                       <div className="flex-shrink-0 w-5 h-5 rounded-full bg-blue-500/20 flex items-center justify-center mt-0.5">
@@ -1072,60 +1179,145 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
                   </div>
 
                   {/* Summary - Moved to end */}
-                  <div className="pt-2 border-t border-slate-700 space-y-1">
+                  <div className="pt-2 border-t border-slate-700 space-y-2">
+                    <h3 className="text-xs font-semibold text-slate-300 mb-2">
+                      Tổng kết
+                    </h3>
+
                     <div className="flex justify-between text-xs">
-                      <span className="text-slate-400">Tiền công:</span>
-                      <span className="text-white">
+                      <span className="text-slate-400">Phí dịch vụ:</span>
+                      <span className="text-white font-medium">
                         {formatCurrency(laborCost)}
                       </span>
                     </div>
                     <div className="flex justify-between text-xs">
                       <span className="text-slate-400">Tiền phụ tùng:</span>
-                      <span className="text-white">
+                      <span className="text-white font-medium">
                         {formatCurrency(partsTotal)}
                       </span>
                     </div>
                     <div className="flex justify-between text-xs">
-                      <span className="text-slate-400">Tiền gia công:</span>
-                      <span className="text-white">
+                      <span className="text-slate-400">Gia công/Đặt hàng:</span>
+                      <span className="text-white font-medium">
                         {formatCurrency(servicesTotal)}
                       </span>
                     </div>
 
                     {/* Discount */}
-                    <div className="flex gap-2 items-center">
-                      <label className="text-slate-400 text-xs flex-shrink-0">
-                        Giảm giá:
-                      </label>
-                      <input
-                        type="text"
-                        value={formatNumberWithDots(discount)}
-                        onChange={(e) =>
-                          setDiscount(parseFormattedNumber(e.target.value))
-                        }
-                        placeholder="0"
-                        className="flex-1 px-2 py-1 bg-[#2b2b40] rounded text-white text-xs"
-                      />
-                      <select
-                        value={discountType}
-                        onChange={(e) =>
-                          setDiscountType(
-                            e.target.value as "amount" | "percent"
-                          )
-                        }
-                        className="px-2 py-1 bg-[#2b2b40] rounded text-white text-xs"
-                      >
-                        <option value="amount">₫</option>
-                        <option value="percent">%</option>
-                      </select>
+                    <div className="pt-2 border-t border-slate-700">
+                      <div className="flex gap-2 items-center justify-between mb-2">
+                        <label className="text-red-400 text-xs font-medium">
+                          Giảm giá:
+                        </label>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="text"
+                            value={formatNumberWithDots(discount)}
+                            onChange={(e) =>
+                              setDiscount(parseFormattedNumber(e.target.value))
+                            }
+                            placeholder="0"
+                            className="w-20 px-2 py-1.5 bg-[#2b2b40] border border-slate-600 rounded text-white text-xs text-right focus:border-red-500 focus:outline-none"
+                          />
+                          <select
+                            value={discountType}
+                            onChange={(e) =>
+                              setDiscountType(
+                                e.target.value as "amount" | "percent"
+                              )
+                            }
+                            className="px-2 py-1.5 bg-[#2b2b40] border border-slate-600 rounded text-white text-xs focus:border-red-500 focus:outline-none"
+                          >
+                            <option value="amount">₫</option>
+                            <option value="percent">%</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      {/* Quick percent buttons - only show in percent mode */}
+                      {discountType === "percent" && (
+                        <div className="flex gap-1.5 justify-end">
+                          {[5, 10, 15, 20].map((percent) => (
+                            <button
+                              key={percent}
+                              onClick={() => setDiscount(percent)}
+                              className="px-2.5 py-1 text-xs bg-slate-700 hover:bg-slate-600 text-slate-300 rounded transition-colors"
+                            >
+                              {percent}%
+                            </button>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Show discount amount if in percent mode */}
+                      {discountType === "percent" && discount > 0 && (
+                        <div className="text-xs text-slate-400 text-right mt-1">
+                          = {formatCurrency(discountAmount)}
+                        </div>
+                      )}
                     </div>
 
                     {/* Total */}
-                    <div className="flex justify-between text-sm font-bold pt-2 border-t border-slate-700">
-                      <span className="text-white">TỔNG CỘNG:</span>
-                      <span className="text-[#50cd89]">
-                        {formatCurrency(total)}
-                      </span>
+                    <div className="pt-2 border-t-2 border-slate-600">
+                      <div className="flex justify-between text-sm font-bold mb-2">
+                        <span className="text-white">Tổng cộng:</span>
+                        <span className="text-blue-400 text-base">
+                          {formatCurrency(total)}
+                        </span>
+                      </div>
+
+                      {/* Payment breakdown - only show if there's deposit or additional payment */}
+                      {((isDeposit && depositAmount > 0) ||
+                        (showPaymentInput && partialAmount > 0)) && (
+                        <div className="space-y-1 pt-2 border-t border-slate-700">
+                          {isDeposit && depositAmount > 0 && (
+                            <div className="flex justify-between text-xs">
+                              <span className="text-green-400">
+                                Đã đặt cọc:
+                              </span>
+                              <span className="font-medium text-green-400">
+                                -{formatCurrency(depositAmount)}
+                              </span>
+                            </div>
+                          )}
+                          {showPaymentInput && partialAmount > 0 && (
+                            <div className="flex justify-between text-xs">
+                              <span className="text-green-400">
+                                Thanh toán thêm:
+                              </span>
+                              <span className="font-medium text-green-400">
+                                -{formatCurrency(partialAmount)}
+                              </span>
+                            </div>
+                          )}
+                          <div className="flex justify-between items-center pt-2 border-t border-slate-700">
+                            <span className="text-sm font-bold text-white">
+                              {total -
+                                (isDeposit ? depositAmount : 0) -
+                                (showPaymentInput ? partialAmount : 0) >
+                              0
+                                ? "Còn phải thu:"
+                                : "Đã thanh toán đủ"}
+                            </span>
+                            <span
+                              className={`text-base font-bold ${
+                                total -
+                                  (isDeposit ? depositAmount : 0) -
+                                  (showPaymentInput ? partialAmount : 0) >
+                                0
+                                  ? "text-red-400"
+                                  : "text-green-400"
+                              }`}
+                            >
+                              {formatCurrency(
+                                total -
+                                  (isDeposit ? depositAmount : 0) -
+                                  (showPaymentInput ? partialAmount : 0)
+                              )}
+                            </span>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -1524,7 +1716,9 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
                   <input
                     type="text"
                     value={newCustomerLicensePlate}
-                    onChange={(e) => setNewCustomerLicensePlate(e.target.value.toUpperCase())}
+                    onChange={(e) =>
+                      setNewCustomerLicensePlate(e.target.value.toUpperCase())
+                    }
                     placeholder="59G1-12345"
                     className="w-full px-3 py-2.5 bg-[#2b2b40] rounded-lg text-white text-sm uppercase"
                   />

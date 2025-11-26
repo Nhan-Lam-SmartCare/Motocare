@@ -132,7 +132,7 @@ export function ServiceManagerMobile({
         return <FileText className="w-4 h-4" />;
       case "Đang sửa":
         return <Wrench className="w-4 h-4" />;
-      case "Đã hoàn thành":
+      case "Đã sửa xong":
         return <Check className="w-4 h-4" />;
       case "Trả máy":
         return <Key className="w-4 h-4" />;

@@ -1,0 +1,1 @@
+import{a as s,x as t,s as n,ae as u,Z as c}from"./index-BRrGTtgz.js";const i=()=>{const a=s();return t({mutationFn:({id:e,branchId:r,delta:o})=>u(e,r,o),onSuccess:()=>{a.invalidateQueries({queryKey:["paymentSourcesRepo"]})},onError:e=>n.error(c(e))})};export{i as u};

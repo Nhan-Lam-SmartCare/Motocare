@@ -24,6 +24,7 @@ import {
   User,
   X,
   Menu,
+  Home,
 } from "lucide-react";
 
 export function Nav() {
@@ -82,6 +83,11 @@ export function Nav() {
                   alt="SmartCare Logo"
                   className="w-9 h-9 md:w-14 md:h-14 rounded-xl shadow-sm ring-1 ring-slate-200 dark:ring-slate-700 group-hover:shadow-md group-hover:ring-emerald-400/60 dark:group-hover:ring-emerald-500/60 transition"
                 />
+                {/* Mobile: Shorter name */}
+                <span className="font-bold text-sm tracking-tight bg-gradient-to-r from-emerald-600 to-blue-600 text-transparent bg-clip-text dark:from-emerald-400 dark:to-blue-400 lg:hidden">
+                  Nhạn-Lâm SmartCare
+                </span>
+                {/* Desktop: Full name */}
                 <span className="font-bold text-lg md:text-xl tracking-tight bg-gradient-to-r from-emerald-600 to-blue-600 text-transparent bg-clip-text dark:from-emerald-400 dark:to-blue-400 hidden lg:inline">
                   Nhạn Lâm SmartCare
                 </span>
@@ -285,7 +291,7 @@ export function Nav() {
               className="p-2 text-slate-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
               title="Trang chủ"
             >
-              <LayoutDashboard className="w-6 h-6" />
+              <Home className="w-6 h-6" />
             </Link>
           </div>
         </div>

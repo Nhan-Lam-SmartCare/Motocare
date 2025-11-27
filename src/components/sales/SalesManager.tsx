@@ -1910,8 +1910,10 @@ const SalesManager: React.FC = () => {
   const barcodeInputRef = useRef<HTMLInputElement>(null);
   const [customerSearch, setCustomerSearch] = useState("");
 
-  // Mobile tab state
-  const [mobileTab, setMobileTab] = useState<"products" | "cart">("products");
+  // Mobile tab state - 3 tabs: products, cart, history
+  const [mobileTab, setMobileTab] = useState<"products" | "cart" | "history">(
+    "products"
+  );
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(
     null
   );
@@ -2185,7 +2187,7 @@ const SalesManager: React.FC = () => {
   // Handle camera barcode scan - Modal tự đóng sau khi quét
   const handleCameraScan = (barcode: string) => {
     console.log("📷 Camera scanned:", barcode);
-    
+
     const normalizedBarcode = normalizeCode(barcode);
 
     // Tìm trong TẤT CẢ sản phẩm (repoParts), không phải filteredParts
@@ -2201,7 +2203,9 @@ const SalesManager: React.FC = () => {
 
     if (foundPart) {
       // Kiểm tra đã có trong giỏ chưa - dùng cartItems thay vì cart
-      const existingItem = cartItems.find((item) => item.partId === foundPart.id);
+      const existingItem = cartItems.find(
+        (item) => item.partId === foundPart.id
+      );
       if (existingItem) {
         // Chỉ tăng số lượng, không hiện toast để tránh spam
         updateCartQuantity(foundPart.id, existingItem.quantity + 1);
@@ -2337,7 +2341,7 @@ const SalesManager: React.FC = () => {
       onError: (error) => {
         console.error("Error creating customer:", error);
         showToast.error("Không thể thêm khách hàng. Vui lòng thử lại.");
-      }
+      },
     });
   };
 
@@ -2819,55 +2823,74 @@ const SalesManager: React.FC = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/20 to-indigo-50/30 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800">
-      {/* Mobile Tabs - Visible only on mobile */}
-      <div className="md:hidden sticky top-0 z-10 bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm border-b border-slate-200/50 dark:border-slate-700/50 shadow-sm">
-        <div className="grid grid-cols-2">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/20 to-indigo-50/30 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800 pb-14 md:pb-0">
+      {/* Mobile Bottom Tabs - Fixed at bottom - 3 tabs: Sản phẩm, Giỏ hàng, Lịch sử */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm border-t border-slate-200/50 dark:border-slate-700/50 shadow-lg safe-area-bottom">
+        <div className="grid grid-cols-3">
           <button
             onClick={() => setMobileTab("products")}
-            className={`py-3.5 px-4 font-bold transition-all relative ${
+            className={`py-3 px-2 font-bold transition-all relative ${
               mobileTab === "products"
                 ? "text-blue-600 dark:text-blue-400 bg-blue-50/50 dark:bg-blue-900/20"
                 : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50"
             }`}
           >
-            <div className="flex items-center justify-center gap-2">
+            <div className="flex items-center justify-center gap-1.5">
               <Boxes className="w-5 h-5" />
-              <span className="text-sm">Sản phẩm</span>
+              <span className="text-xs">Sản phẩm</span>
             </div>
             {mobileTab === "products" && (
-              <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-t-full"></div>
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-b-full"></div>
             )}
           </button>
           <button
             onClick={() => setMobileTab("cart")}
-            className={`py-3.5 px-4 font-bold transition-all relative ${
+            className={`py-3 px-2 font-bold transition-all relative ${
               mobileTab === "cart"
-                ? "text-blue-600 dark:text-blue-400 bg-blue-50/50 dark:bg-blue-900/20"
+                ? "text-emerald-600 dark:text-emerald-400 bg-emerald-50/50 dark:bg-emerald-900/20"
                 : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50"
             }`}
           >
-            <div className="flex items-center justify-center gap-2">
+            <div className="flex items-center justify-center gap-1.5">
               <ShoppingCart className="w-5 h-5" />
-              <span className="text-sm">Giỏ hàng</span>
+              <span className="text-xs">Giỏ hàng</span>
               {cartItems.length > 0 && (
-                <span className="ml-1 px-2 py-0.5 text-xs font-bold rounded-full bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-lg">
+                <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-gradient-to-r from-orange-500 to-red-500 text-white">
                   {cartItems.length}
                 </span>
               )}
             </div>
             {mobileTab === "cart" && (
-              <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-t-full"></div>
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-b-full"></div>
+            )}
+          </button>
+          <button
+            onClick={() => {
+              setMobileTab("history");
+              setShowSalesHistory(true);
+            }}
+            className={`py-3 px-2 font-bold transition-all relative ${
+              mobileTab === "history"
+                ? "text-indigo-600 dark:text-indigo-400 bg-indigo-50/50 dark:bg-indigo-900/20"
+                : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50"
+            }`}
+          >
+            <div className="flex items-center justify-center gap-1.5">
+              <History className="w-5 h-5" />
+              <span className="text-xs">Lịch sử</span>
+            </div>
+            {mobileTab === "history" && (
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-b-full"></div>
             )}
           </button>
         </div>
       </div>
 
-      <div className="flex h-[calc(100vh-57px)] md:h-screen">
+      <div className="flex h-[calc(100vh-56px)] md:h-screen">
         {/* Main Content Area - Products Grid */}
         <div
           className={`flex-1 flex flex-col transition-all duration-300 ${
-            mobileTab === "cart" ? "hidden md:flex" : "animate-fade-in"
+            mobileTab !== "products" ? "hidden md:flex" : "animate-fade-in"
           }`}
         >
           {/* Search Bar */}
@@ -2921,9 +2944,24 @@ const SalesManager: React.FC = () => {
                     className="md:hidden px-3 py-2 rounded-xl border-2 border-green-500 text-green-600 bg-green-50 dark:bg-green-900/20 font-semibold text-sm flex items-center gap-1.5 transition-all hover:bg-green-100"
                     title="Quét bằng camera"
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
+                      />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
+                      />
                     </svg>
                   </button>
                 </div>
@@ -2976,7 +3014,8 @@ const SalesManager: React.FC = () => {
                   </form>
                 )}
               </div>
-              <div className="flex items-center gap-2">
+              {/* History button - only show on desktop since mobile has tab */}
+              <div className="hidden md:flex items-center gap-2">
                 <button
                   onClick={() => setShowSalesHistory(true)}
                   className="px-4 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl whitespace-nowrap transition-all inline-flex items-center gap-2 text-sm font-bold shadow-lg hover:shadow-xl hover:scale-105 active:scale-95"
@@ -3077,26 +3116,50 @@ const SalesManager: React.FC = () => {
                     : "bg-gradient-to-r from-emerald-500 to-green-500 text-white";
 
                   return (
-                    <button
-                      type="button"
+                    <div
                       key={part.id}
-                      onClick={() => !isOutOfStock && addToCart(part)}
-                      disabled={isOutOfStock}
                       className={`group relative text-left p-3 md:p-4 rounded-2xl border transition-all duration-200 h-full ${
                         isOutOfStock
-                          ? "bg-slate-50/70 dark:bg-slate-900/30 border-slate-200 dark:border-slate-800 cursor-not-allowed"
-                          : "bg-white dark:bg-slate-800/70 border-slate-200/70 dark:border-slate-700 hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-xl"
+                          ? "bg-slate-50/70 dark:bg-slate-900/30 border-slate-200 dark:border-slate-800"
+                          : "bg-white dark:bg-slate-800/70 border-slate-200/70 dark:border-slate-700 md:hover:border-blue-400 md:dark:hover:border-blue-500 md:hover:shadow-xl md:cursor-pointer"
                       } ${
                         inCart
                           ? "ring-2 ring-blue-200 dark:ring-blue-500/40"
                           : ""
                       }`}
+                      onClick={() => {
+                        // Desktop: click anywhere to add
+                        if (window.innerWidth >= 768 && !isOutOfStock) {
+                          addToCart(part);
+                        }
+                      }}
                     >
                       <div className="flex flex-col h-full">
                         <div className="flex items-start justify-between mb-3">
                           <div className="flex items-center gap-3">
+                            {/* Mobile: Add to cart button */}
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (!isOutOfStock) addToCart(part);
+                              }}
+                              disabled={isOutOfStock}
+                              className={`md:hidden w-12 h-12 rounded-xl flex items-center justify-center transition-all ${
+                                isOutOfStock
+                                  ? "bg-slate-100 dark:bg-slate-700 cursor-not-allowed"
+                                  : "bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg active:scale-95"
+                              }`}
+                            >
+                              {isOutOfStock ? (
+                                <Boxes className="w-6 h-6 text-slate-400" />
+                              ) : (
+                                <ShoppingCart className="w-5 h-5" />
+                              )}
+                            </button>
+                            {/* Desktop: Product icon */}
                             <div
-                              className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+                              className={`hidden md:flex w-12 h-12 rounded-xl items-center justify-center ${
                                 isOutOfStock
                                   ? "bg-slate-100 dark:bg-slate-700"
                                   : "bg-slate-100 text-orange-500 dark:bg-slate-700/70"
@@ -3162,7 +3225,7 @@ const SalesManager: React.FC = () => {
                           </div>
                         </div>
                       </div>
-                    </button>
+                    </div>
                   );
                 })}
               </div>
@@ -3173,7 +3236,7 @@ const SalesManager: React.FC = () => {
         {/* Right Sidebar - Customer, Cart & Checkout */}
         <div
           className={`w-full md:w-[40%] bg-white dark:bg-slate-800 md:border-l border-slate-200 dark:border-slate-700 flex flex-col transition-all duration-300 overflow-y-auto ${
-            mobileTab === "products" ? "hidden md:flex" : "animate-fade-in"
+            mobileTab !== "cart" ? "hidden md:flex" : "animate-fade-in"
           }`}
         >
           {/* Customer Selection */}
@@ -3409,7 +3472,7 @@ const SalesManager: React.FC = () => {
                         <div className="text-sm font-bold text-blue-600 dark:text-blue-400">
                           {formatCurrency(item.sellingPrice)}
                         </div>
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-1">
                           <button
                             onClick={() =>
                               updateCartQuantity(
@@ -3417,24 +3480,24 @@ const SalesManager: React.FC = () => {
                                 Math.max(1, item.quantity - 1)
                               )
                             }
-                            className="w-8 h-8 flex items-center justify-center bg-slate-100 dark:bg-slate-700 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition-all font-bold text-lg"
+                            className="w-7 h-7 flex items-center justify-center bg-slate-100 dark:bg-slate-700 rounded-md text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition-all font-bold text-base"
                           >
                             -
                           </button>
-                          <span className="w-8 text-center font-bold text-sm text-slate-900 dark:text-slate-100 px-1 py-1 bg-slate-50 dark:bg-slate-700 rounded-lg">
+                          <span className="w-7 text-center font-bold text-xs text-slate-900 dark:text-slate-100 px-1 py-0.5 bg-slate-50 dark:bg-slate-700 rounded-md">
                             {item.quantity}
                           </span>
                           <button
                             onClick={() =>
                               updateCartQuantity(item.partId, item.quantity + 1)
                             }
-                            className="w-8 h-8 flex items-center justify-center bg-blue-500 dark:bg-blue-600 rounded-lg text-white hover:bg-blue-600 dark:hover:bg-blue-700 transition-all font-bold text-lg"
+                            className="w-7 h-7 flex items-center justify-center bg-blue-500 dark:bg-blue-600 rounded-md text-white hover:bg-blue-600 dark:hover:bg-blue-700 transition-all font-bold text-base"
                           >
                             +
                           </button>
                           <button
                             onClick={() => removeFromCart(item.partId)}
-                            className="w-8 h-8 flex items-center justify-center bg-red-500 hover:bg-red-600 rounded-lg text-white transition-all ml-1 font-bold text-lg"
+                            className="w-7 h-7 flex items-center justify-center bg-red-500 hover:bg-red-600 rounded-md text-white transition-all ml-0.5 font-bold text-base"
                           >
                             ×
                           </button>
@@ -3778,7 +3841,13 @@ const SalesManager: React.FC = () => {
       {/* Sales History Modal */}
       <SalesHistoryModal
         isOpen={showSalesHistory}
-        onClose={() => setShowSalesHistory(false)}
+        onClose={() => {
+          setShowSalesHistory(false);
+          // On mobile, switch back to products tab when closing history
+          if (mobileTab === "history") {
+            setMobileTab("products");
+          }
+        }}
         sales={repoSales}
         currentBranchId={currentBranchId}
         onPrintReceipt={handlePrintReceipt}
@@ -4758,25 +4827,6 @@ const SalesManager: React.FC = () => {
             </div>
           </div>
         </div>
-      )}
-
-      {/* Floating Cart Button - Mobile only, show when on products tab */}
-      {mobileTab === "products" && cartItems.length > 0 && (
-        <button
-          onClick={() => setMobileTab("cart")}
-          className="md:hidden fixed bottom-24 right-4 z-50 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-full shadow-2xl p-3 transition-all duration-200 hover:scale-105 active:scale-95"
-          aria-label="Mở giỏ hàng"
-        >
-          <div className="relative">
-            <ShoppingCart className="w-5 h-5" />
-            {cartItems.length > 0 && (
-              <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[11px] font-bold rounded-full w-5 h-5 flex items-center justify-center animate-pulse">
-                {cartItems.length}
-              </span>
-            )}
-          </div>
-          <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full animate-ping"></div>
-        </button>
       )}
 
       {/* Camera Barcode Scanner Modal */}

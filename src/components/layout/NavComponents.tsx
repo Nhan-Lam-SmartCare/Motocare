@@ -166,8 +166,8 @@ export const NavLink: React.FC<{
 export const BottomNav: React.FC = () => {
   const location = useLocation();
 
-  // Hide bottom nav on inventory page for mobile
-  if (location.pathname === "/inventory") {
+  // Hide bottom nav on inventory and sales page for mobile (they have their own internal tabs)
+  if (location.pathname === "/inventory" || location.pathname === "/sales") {
     return null;
   }
 

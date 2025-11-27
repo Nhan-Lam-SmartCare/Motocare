@@ -8,6 +8,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
+    "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "lint:fix": "eslint src --ext ts,tsx --fix",
     "test": "vitest run --environment jsdom",
     "test:watch": "vitest --environment jsdom"
   },
@@ -29,6 +31,7 @@
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
+    "@eslint/js": "^9.17.0",
     "@tailwindcss/typography": "^0.5.19",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^14.6.1",
@@ -37,10 +40,15 @@
     "@types/react-dom": "^19.2.2",
     "@vitejs/plugin-react": "^5.0.0",
     "autoprefixer": "^10.4.0",
+    "eslint": "^9.17.0",
+    "eslint-plugin-react-hooks": "^5.0.0",
+    "eslint-plugin-react-refresh": "^0.4.16",
+    "globals": "^15.14.0",
     "jsdom": "^27.1.0",
     "postcss": "^8.4.0",
     "tailwindcss": "^3.4.4",
     "typescript": "~5.8.2",
+    "typescript-eslint": "^8.18.2",
     "vite": "^6.2.0",
     "vitest": "^2.1.4"
   }

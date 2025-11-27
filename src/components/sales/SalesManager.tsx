@@ -1767,6 +1767,11 @@ const SalesHistoryModal: React.FC<SalesHistoryModalProps> = ({
               },
             });
 
+            // Invalidate queries to refresh data immediately
+            queryClient.invalidateQueries({ queryKey: ["salesRepo"] });
+            queryClient.invalidateQueries({ queryKey: ["salesRepoPaged"] });
+            queryClient.invalidateQueries({ queryKey: ["salesRepoKeyset"] });
+
             showToast.success("Đã cập nhật đơn hàng thành công");
             setShowEditModal(false);
             setSelectedSale(null);

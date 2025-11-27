@@ -1,8 +1,7 @@
-import React, { useState, useMemo } from "react";
+import React, { useState } from "react";
 import { useAuditLogs } from "../../hooks/useAuditLogs";
 import { useAuth } from "../../contexts/AuthContext";
-import { showToast } from "../../utils/toast";
-import { Loader2, Filter, RefreshCcw, Shield } from "lucide-react";
+import { Loader2, RefreshCcw, Shield } from "lucide-react";
 
 const ACTION_LABELS: Record<string, string> = {
   "auth.login": "Đăng nhập",
@@ -226,7 +225,7 @@ export const AuditLogsViewer: React.FC = () => {
   );
 };
 
-function safeParse(data: any): any {
+function safeParse(data: unknown): unknown {
   try {
     if (typeof data === "string") return JSON.parse(data);
     return data;
@@ -235,7 +234,7 @@ function safeParse(data: any): any {
   }
 }
 
-function exportJSON(rows: any[]) {
+function exportJSON(rows: unknown[]) {
   try {
     const blob = new Blob([JSON.stringify(rows, null, 2)], {
       type: "application/json",
@@ -246,10 +245,12 @@ function exportJSON(rows: any[]) {
     a.download = `audit-logs-${new Date().toISOString()}.json`;
     a.click();
     URL.revokeObjectURL(url);
-  } catch {}
+  } catch {
+    // Silent fail for export
+  }
 }
 
-function exportCSV(rows: any[]) {
+function exportCSV(rows: unknown[]) {
   try {
     const headers = [
       "created_at",
@@ -284,7 +285,9 @@ function exportCSV(rows: any[]) {
     a.download = `audit-logs-${new Date().toISOString()}.csv`;
     a.click();
     URL.revokeObjectURL(url);
-  } catch {}
+  } catch {
+    // Silent fail for export
+  }
 }
 
 export default AuditLogsViewer;

@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { showToast } from "../../utils/toast";
-import { Bike, Key, Crown, UserCog, User } from "lucide-react";
 
 export const LoginPage = () => {
   const navigate = useNavigate();
@@ -21,9 +20,10 @@ export const LoginPage = () => {
       await signIn(email, password);
       showToast.success("Đăng nhập thành công!");
       navigate("/dashboard");
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Login error:", err);
-      const errorMessage = err.message || "Đăng nhập thất bại";
+      const errorMessage =
+        err instanceof Error ? err.message : "Đăng nhập thất bại";
       setError(errorMessage);
       showToast.error(errorMessage);
     } finally {

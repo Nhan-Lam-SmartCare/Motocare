@@ -11,8 +11,12 @@ const mockFrom = vi.fn();
 const mockSelect = vi.fn();
 const mockInsert = vi.fn();
 const mockDelete = vi.fn();
+const mockRpc = vi.fn();
 
-vi.spyOn(client, "supabase", "get").mockReturnValue({ from: mockFrom } as any);
+vi.spyOn(client, "supabase", "get").mockReturnValue({
+  from: mockFrom,
+  rpc: mockRpc,
+} as any);
 
 mockFrom.mockImplementation((table: string) => {
   return {
@@ -34,6 +38,14 @@ mockInsert.mockImplementation((_table: string, rows: any[]) => ({
 mockDelete.mockImplementation((_table: string) => ({
   eq: () => ({ error: null }),
 }));
+
+// RPC mock for deleteSaleById (uses sale_delete_atomic)
+mockRpc.mockImplementation((fnName: string, params?: any) => {
+  if (fnName === "sale_delete_atomic") {
+    return Promise.resolve({ data: { id: params?.p_sale_id }, error: null });
+  }
+  return Promise.resolve({ data: null, error: null });
+});
 
 function injectSelectErrorOnce(errorMsg: string) {
   mockSelect.mockImplementationOnce((_table: string) => ({

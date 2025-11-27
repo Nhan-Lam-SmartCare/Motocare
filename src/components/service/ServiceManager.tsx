@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   FileText,
   Wrench,
@@ -26,6 +27,7 @@ import {
   useCreateWorkOrderAtomicRepo,
   useUpdateWorkOrderAtomicRepo,
   useRefundWorkOrderRepo,
+  useDeleteWorkOrderRepo,
   useWorkOrdersRepo,
 } from "../../hooks/useWorkOrdersRepository";
 import { usePartsRepo } from "../../hooks/usePartsRepository";
@@ -63,6 +65,8 @@ type ServiceTabKey = "all" | "pending" | "inProgress" | "done" | "delivered";
 type FilterColor = "slate" | "blue" | "orange" | "green" | "purple";
 
 export default function ServiceManager() {
+  const queryClient = useQueryClient();
+
   const {
     parts: contextParts,
     customers,
@@ -748,6 +752,9 @@ export default function ServiceManager() {
   // 🔹 Handle refund work order
   const { mutateAsync: refundWorkOrderAsync } = useRefundWorkOrderRepo();
 
+  // 🔹 Handle delete work order
+  const { mutateAsync: deleteWorkOrderAsync } = useDeleteWorkOrderRepo();
+
   // 🔹 Handle create/update customer debts
   const createCustomerDebt = useCreateCustomerDebtRepo();
   const updateCustomerDebt = useUpdateCustomerDebtRepo();
@@ -1049,24 +1056,17 @@ export default function ServiceManager() {
     }
   };
 
-  // Handle delete work order
+  // Handle delete work order - using hook for proper query invalidation
   const handleDelete = async (workOrder: WorkOrder) => {
     if (!confirm(`Xác nhận xóa phiếu ${formatWorkOrderId(workOrder.id)}?`)) {
       return;
     }
     try {
-      const { error } = await supabase
-        .from("work_orders")
-        .delete()
-        .eq("id", workOrder.id);
-
-      if (error) throw error;
-
-      setWorkOrders((prev) => prev.filter((w) => w.id !== workOrder.id));
-      showToast.success("Đã xóa phiếu sửa chữa");
+      await deleteWorkOrderAsync({ id: workOrder.id });
+      // Note: Toast and query invalidation are handled by the hook's onSuccess
     } catch (error) {
       console.error("Error deleting work order:", error);
-      showToast.error("Lỗi khi xóa phiếu sửa chữa");
+      // Note: Error toast is handled by the hook's onError
     }
   };
 
@@ -2400,20 +2400,9 @@ export default function ServiceManager() {
             setShowModal(false);
             setEditingOrder(undefined);
           }}
-          onSave={(order) => {
-            if (order.id && editingOrder?.id) {
-              // Update existing
-              setWorkOrders((prev) =>
-                prev.map((wo) => (wo.id === order.id ? order : wo))
-              );
-            } else {
-              // Create new
-              const newOrder = {
-                ...order,
-                id: `${storeSettings?.work_order_prefix || "SC"}-${Date.now()}`,
-              };
-              setWorkOrders((prev) => [...prev, newOrder]);
-            }
+          onSave={() => {
+            // React Query hooks already invalidate queries on success
+            // Just close modal - data will auto-refresh via invalidateQueries
             setShowModal(false);
             setEditingOrder(undefined);
           }}
@@ -2437,13 +2426,7 @@ export default function ServiceManager() {
           setShowMobileModal(false);
           setEditingOrder(undefined);
         }}
-        onSave={(workOrderData) => {
-          // Handle save - similar to desktop modal
-          console.log("Mobile Work Order Data:", workOrderData);
-          // You can call createWorkOrder or updateWorkOrder here
-          setShowMobileModal(false);
-          setEditingOrder(undefined);
-        }}
+        onSave={handleMobileSave}
         workOrder={editingOrder}
         customers={displayCustomers}
         parts={fetchedParts || []}

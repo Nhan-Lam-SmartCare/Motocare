@@ -1,0 +1,468 @@
+import React, { useState } from "react";
+import { Link } from "react-router-dom";
+import { useTheme } from "../../contexts/ThemeContext";
+import { useAuth } from "../../contexts/AuthContext";
+import NotificationDropdown from "../common/NotificationDropdown";
+import { NavLink, MobileDrawerLink } from "./index";
+import {
+  LayoutDashboard,
+  Wrench,
+  ShoppingCart as Cart,
+  Boxes,
+  Users,
+  BriefcaseBusiness,
+  Landmark,
+  HandCoins,
+  BarChart3,
+  FileText,
+  Settings as Cog,
+  LogOut,
+  Sun,
+  Moon,
+  Crown,
+  UserCog,
+  User,
+  X,
+  Menu,
+} from "lucide-react";
+
+export function Nav() {
+  const [showSettings, setShowSettings] = useState(false);
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const { theme, toggleTheme } = useTheme();
+  const { profile, user, signOut } = useAuth();
+  const role = profile?.role;
+  const preferredName =
+    profile?.full_name?.trim() ||
+    user?.user_metadata?.full_name?.trim() ||
+    user?.user_metadata?.name?.trim() ||
+    user?.user_metadata?.display_name?.trim();
+  const displayName =
+    preferredName && preferredName.length > 0
+      ? preferredName
+      : profile?.email || user?.email || "Tài khoản";
+  const displayInitial =
+    preferredName?.charAt(0)?.toUpperCase() ||
+    profile?.email?.charAt(0)?.toUpperCase() ||
+    user?.email?.charAt(0)?.toUpperCase() ||
+    "N";
+  const can = {
+    viewFinance: role === "owner" || role === "manager",
+    viewPayroll: role === "owner" || role === "manager",
+    viewAnalytics: role === "owner" || role === "manager",
+    viewDebt: role === "owner" || role === "manager",
+    viewEmployees: role === "owner" || role === "manager",
+    viewSettings: role === "owner" || role === "manager",
+  } as const;
+
+  return (
+    <nav className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-50">
+      <div className="max-w-[1600px] mx-auto px-2 md:px-6 py-2 md:py-3">
+        <div className="flex items-center justify-between">
+          {/* Left: Brand and Branch Selector */}
+          <div className="flex items-center gap-2 md:gap-4">
+            {/* Mobile Menu Button */}
+            <button
+              onClick={() => setShowMobileMenu(!showMobileMenu)}
+              className="md:hidden p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition"
+              aria-label="Menu"
+            >
+              <Menu className="w-6 h-6 text-slate-600 dark:text-slate-300" />
+            </button>
+
+            {/* Brand Logo acts as settings toggle */}
+            <div className="relative">
+              <button
+                onClick={() => setShowSettings(!showSettings)}
+                className="group flex items-center gap-3 focus:outline-none"
+                aria-label="Mở cài đặt và tài khoản"
+              >
+                <img
+                  src="/logo-smartcare.png"
+                  alt="SmartCare Logo"
+                  className="w-9 h-9 md:w-14 md:h-14 rounded-xl shadow-sm ring-1 ring-slate-200 dark:ring-slate-700 group-hover:shadow-md group-hover:ring-emerald-400/60 dark:group-hover:ring-emerald-500/60 transition"
+                />
+                <span className="font-bold text-lg md:text-xl tracking-tight bg-gradient-to-r from-emerald-600 to-blue-600 text-transparent bg-clip-text dark:from-emerald-400 dark:to-blue-400 hidden lg:inline">
+                  Nhạn Lâm SmartCare
+                </span>
+              </button>
+
+              {/* Integrated Settings Dropdown */}
+              {showSettings && (
+                <>
+                  <div
+                    className="fixed inset-0 z-40"
+                    onClick={() => setShowSettings(false)}
+                  ></div>
+                  <div className="absolute top-full left-0 mt-2 w-80 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 py-2 z-50">
+                    <div className="px-5 py-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
+                      <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+                        Cài đặt & tài khoản
+                      </p>
+                      <button
+                        onClick={() => setShowSettings(false)}
+                        className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition"
+                        aria-label="Đóng"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    {/* User profile summary */}
+                    {profile && (
+                      <div className="px-5 py-4 border-b border-slate-200 dark:border-slate-700 flex items-center gap-3">
+                        <div className="w-9 h-9 bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold">
+                          {displayInitial}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="text-sm font-medium text-slate-900 dark:text-white truncate">
+                            {displayName}
+                          </div>
+                          <div className="text-xs text-slate-500 dark:text-slate-400 truncate flex items-center gap-1">
+                            {profile.role === "owner" && (
+                              <Crown className="w-3.5 h-3.5 text-yellow-500" />
+                            )}
+                            {profile.role === "manager" && (
+                              <UserCog className="w-3.5 h-3.5 text-indigo-500" />
+                            )}
+                            {profile.role === "staff" && (
+                              <User className="w-3.5 h-3.5 text-slate-500" />
+                            )}
+                            <span>
+                              {profile.role === "owner"
+                                ? "Chủ cửa hàng"
+                                : profile.role === "manager"
+                                ? "Quản lý"
+                                : "Nhân viên"}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Theme toggle */}
+                    <button
+                      onClick={() => {
+                        toggleTheme();
+                        setShowSettings(false);
+                      }}
+                      className="w-full px-4 py-2 text-left hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center justify-between text-sm text-slate-700 dark:text-slate-200"
+                    >
+                      <span className="flex items-center gap-2">
+                        {theme === "dark" ? (
+                          <Moon className="w-4 h-4" />
+                        ) : (
+                          <Sun className="w-4 h-4" />
+                        )}
+                        <span>Chế độ {theme === "dark" ? "tối" : "sáng"}</span>
+                      </span>
+                      <span className="text-xs text-slate-500 dark:text-slate-400">
+                        {theme === "dark"
+                          ? "Chuyển sang sáng"
+                          : "Chuyển sang tối"}
+                      </span>
+                    </button>
+
+                    {/* Go to system settings (restricted) */}
+                    {can.viewSettings && (
+                      <Link
+                        to="/settings"
+                        onClick={() => setShowSettings(false)}
+                        className="block w-full px-4 py-2 text-left hover:bg-slate-100 dark:hover:bg-slate-700 text-sm text-slate-700 dark:text-slate-200"
+                      >
+                        <span className="flex items-center gap-2">
+                          <Cog className="w-4 h-4" />
+                          <span>Cài đặt hệ thống</span>
+                        </span>
+                      </Link>
+                    )}
+
+                    {/* Logout */}
+                    {profile && (
+                      <button
+                        onClick={async () => {
+                          try {
+                            await signOut();
+                          } finally {
+                            setShowSettings(false);
+                          }
+                        }}
+                        className="w-full px-4 py-2 text-left text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
+                      >
+                        <span className="flex items-center gap-2">
+                          <LogOut className="w-4 h-4" />
+                          <span>Đăng xuất</span>
+                        </span>
+                      </button>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+            {/* Removed redundant brand title and branch selector as requested */}
+          </div>
+
+          {/* Center: Main Navigation - Hidden on mobile */}
+          <div className="hidden md:flex items-center gap-2">
+            <NavLink
+              to="/dashboard"
+              colorKey="blue"
+              icon={<LayoutDashboard className="w-5 h-5" />}
+              label="Tổng quan"
+            />
+            <NavLink
+              to="/service"
+              colorKey="violet"
+              icon={<Wrench className="w-5 h-5" />}
+              label="Sửa chữa"
+            />
+            <NavLink
+              to="/sales"
+              colorKey="emerald"
+              icon={<Cart className="w-5 h-5" />}
+              label="Bán hàng"
+            />
+            <NavLink
+              to="/inventory"
+              colorKey="amber"
+              icon={<Boxes className="w-5 h-5" />}
+              label="Quản lý kho"
+            />
+            <NavLink
+              to="/customers"
+              colorKey="cyan"
+              icon={<Users className="w-5 h-5" />}
+              label="Khách hàng"
+            />
+            {can.viewEmployees && (
+              <NavLink
+                to="/employees"
+                colorKey="indigo"
+                icon={<BriefcaseBusiness className="w-5 h-5" />}
+                label="Nhân viên"
+              />
+            )}
+            {can.viewFinance && (
+              <NavLink
+                to="/finance"
+                colorKey="rose"
+                icon={<Landmark className="w-5 h-5" />}
+                label="Tài chính"
+              />
+            )}
+            {can.viewDebt && (
+              <NavLink
+                to="/debt"
+                colorKey="orange"
+                icon={<HandCoins className="w-5 h-5" />}
+                label="Công nợ"
+              />
+            )}
+            {can.viewAnalytics && (
+              <NavLink
+                to="/analytics"
+                colorKey="teal"
+                icon={<BarChart3 className="w-5 h-5" />}
+                label="Phân tích"
+              />
+            )}
+            <NavLink
+              to="/reports"
+              colorKey="fuchsia"
+              icon={<FileText className="w-5 h-5" />}
+              label="Báo cáo"
+            />
+          </div>
+
+          {/* Right: Notifications and Home Icon */}
+          <div className="flex items-center gap-1">
+            {/* Notification Dropdown */}
+            <NotificationDropdown />
+
+            {/* Home Button */}
+            <Link
+              to="/dashboard"
+              className="p-2 text-slate-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+              title="Trang chủ"
+            >
+              <LayoutDashboard className="w-6 h-6" />
+            </Link>
+          </div>
+        </div>
+
+        {/* Mobile Menu Drawer - For Secondary Functions */}
+        {showMobileMenu && (
+          <>
+            {/* Backdrop */}
+            <div
+              className="fixed inset-0 bg-black/50 z-40 md:hidden"
+              onClick={() => setShowMobileMenu(false)}
+            ></div>
+
+            {/* Menu Drawer - Redesigned with modern style */}
+            <div className="fixed inset-y-0 left-0 w-80 bg-gradient-to-br from-white to-slate-50 dark:from-slate-800 dark:to-slate-900 z-50 shadow-2xl md:hidden overflow-y-auto animate-slide-in-left">
+              {/* Header with Profile */}
+              <div className="relative p-6 pb-8 bg-gradient-to-br from-blue-600 to-violet-600 dark:from-blue-700 dark:to-violet-800">
+                <button
+                  onClick={() => setShowMobileMenu(false)}
+                  className="absolute top-4 right-4 p-2 hover:bg-white/10 rounded-lg transition text-white"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+
+                {profile && (
+                  <div className="flex items-center gap-3 text-white mt-2">
+                    <div className="w-14 h-14 bg-white/20 backdrop-blur rounded-full flex items-center justify-center text-xl font-bold border-2 border-white/30">
+                      {profile.full_name?.[0] || profile.email[0].toUpperCase()}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-semibold text-base truncate">
+                        {profile.full_name || profile.email}
+                      </div>
+                      <div className="text-xs text-white/80 flex items-center gap-1 mt-0.5">
+                        {profile.role === "owner" && (
+                          <Crown className="w-3 h-3" />
+                        )}
+                        {profile.role === "manager" && (
+                          <UserCog className="w-3 h-3" />
+                        )}
+                        {profile.role === "staff" && (
+                          <User className="w-3 h-3" />
+                        )}
+                        <span>
+                          {profile.role === "owner"
+                            ? "Chủ cửa hàng"
+                            : profile.role === "manager"
+                            ? "Quản lý"
+                            : "Nhân viên"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Secondary Functions - Grouped by category */}
+              <div className="p-4 space-y-6">
+                {/* Management Section */}
+                <div>
+                  <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-3 mb-2">
+                    Quản lý
+                  </div>
+                  <div className="space-y-1">
+                    {can.viewEmployees && (
+                      <MobileDrawerLink
+                        to="/employees"
+                        icon={<BriefcaseBusiness className="w-5 h-5" />}
+                        label="Nhân viên"
+                        color="indigo"
+                        onClick={() => setShowMobileMenu(false)}
+                      />
+                    )}
+                    {can.viewDebt && (
+                      <MobileDrawerLink
+                        to="/debt"
+                        icon={<HandCoins className="w-5 h-5" />}
+                        label="Công nợ"
+                        color="orange"
+                        onClick={() => setShowMobileMenu(false)}
+                      />
+                    )}
+                  </div>
+                </div>
+
+                {/* Finance & Reports Section */}
+                {(can.viewFinance || can.viewAnalytics) && (
+                  <div>
+                    <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-3 mb-2">
+                      Tài chính & Báo cáo
+                    </div>
+                    <div className="space-y-1">
+                      {can.viewFinance && (
+                        <MobileDrawerLink
+                          to="/finance"
+                          icon={<Landmark className="w-5 h-5" />}
+                          label="Tài chính"
+                          color="rose"
+                          onClick={() => setShowMobileMenu(false)}
+                        />
+                      )}
+                      {can.viewAnalytics && (
+                        <MobileDrawerLink
+                          to="/analytics"
+                          icon={<BarChart3 className="w-5 h-5" />}
+                          label="Phân tích"
+                          color="teal"
+                          onClick={() => setShowMobileMenu(false)}
+                        />
+                      )}
+                      <MobileDrawerLink
+                        to="/reports"
+                        icon={<FileText className="w-5 h-5" />}
+                        label="Báo cáo"
+                        color="fuchsia"
+                        onClick={() => setShowMobileMenu(false)}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Settings Section */}
+                <div>
+                  <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-3 mb-2">
+                    Hệ thống
+                  </div>
+                  <div className="space-y-1">
+                    <button
+                      onClick={() => {
+                        toggleTheme();
+                        setShowMobileMenu(false);
+                      }}
+                      className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700/50 transition text-slate-700 dark:text-slate-300"
+                    >
+                      {theme === "dark" ? (
+                        <Moon className="w-5 h-5" />
+                      ) : (
+                        <Sun className="w-5 h-5" />
+                      )}
+                      <span className="font-medium">
+                        Chế độ {theme === "dark" ? "tối" : "sáng"}
+                      </span>
+                    </button>
+
+                    {can.viewSettings && (
+                      <MobileDrawerLink
+                        to="/settings"
+                        icon={<Cog className="w-5 h-5" />}
+                        label="Cài đặt"
+                        color="slate"
+                        onClick={() => setShowMobileMenu(false)}
+                      />
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Logout Button - Fixed at bottom */}
+              <div className="absolute bottom-0 left-0 right-0 p-4 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700">
+                <button
+                  onClick={async () => {
+                    try {
+                      await signOut();
+                    } finally {
+                      setShowMobileMenu(false);
+                    }
+                  }}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-red-500 hover:bg-red-600 text-white rounded-xl font-medium transition shadow-lg shadow-red-500/20"
+                >
+                  <LogOut className="w-5 h-5" />
+                  <span>Đăng xuất</span>
+                </button>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+    </nav>
+  );
+}

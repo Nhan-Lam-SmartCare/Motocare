@@ -2823,70 +2823,59 @@ const SalesManager: React.FC = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/20 to-indigo-50/30 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800 pb-14 md:pb-0">
+    <div className="min-h-screen max-w-full overflow-x-hidden bg-gradient-to-br from-slate-50 via-blue-50/20 to-indigo-50/30 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800 pb-16 md:pb-0">
       {/* Mobile Bottom Tabs - Fixed at bottom - 3 tabs: Sản phẩm, Giỏ hàng, Lịch sử */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm border-t border-slate-200/50 dark:border-slate-700/50 shadow-lg safe-area-bottom">
-        <div className="grid grid-cols-3">
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 safe-area-bottom">
+        {/* Backdrop blur effect for modern look */}
+        <div className="absolute inset-0 bg-white/80 dark:bg-slate-800/80 backdrop-blur-lg -z-10"></div>
+        <div className="grid grid-cols-3 gap-1 px-2 py-2">
           <button
             onClick={() => setMobileTab("products")}
-            className={`py-3 px-2 font-bold transition-all relative ${
+            className={`flex flex-col items-center gap-1 px-1 py-1.5 rounded-lg transition-all duration-200 ${
               mobileTab === "products"
-                ? "text-blue-600 dark:text-blue-400 bg-blue-50/50 dark:bg-blue-900/20"
-                : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50"
+                ? "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30"
+                : "text-slate-600 dark:text-slate-400 active:scale-95"
             }`}
           >
-            <div className="flex items-center justify-center gap-1.5">
-              <Boxes className="w-5 h-5" />
-              <span className="text-xs">Sản phẩm</span>
-            </div>
-            {mobileTab === "products" && (
-              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-b-full"></div>
-            )}
+            <Boxes className={`w-6 h-6 transition-transform ${mobileTab === "products" ? "scale-105" : ""}`} />
+            <span className={`text-[9px] font-medium ${mobileTab === "products" ? "font-semibold" : ""}`}>Sản phẩm</span>
           </button>
           <button
             onClick={() => setMobileTab("cart")}
-            className={`py-3 px-2 font-bold transition-all relative ${
+            className={`flex flex-col items-center gap-1 px-1 py-1.5 rounded-lg transition-all duration-200 relative ${
               mobileTab === "cart"
-                ? "text-emerald-600 dark:text-emerald-400 bg-emerald-50/50 dark:bg-emerald-900/20"
-                : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50"
+                ? "text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30"
+                : "text-slate-600 dark:text-slate-400 active:scale-95"
             }`}
           >
-            <div className="flex items-center justify-center gap-1.5">
-              <ShoppingCart className="w-5 h-5" />
-              <span className="text-xs">Giỏ hàng</span>
+            <div className="relative">
+              <ShoppingCart className={`w-6 h-6 transition-transform ${mobileTab === "cart" ? "scale-105" : ""}`} />
               {cartItems.length > 0 && (
-                <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-gradient-to-r from-orange-500 to-red-500 text-white">
+                <span className="absolute -top-1 -right-2 px-1 min-w-[14px] h-[14px] text-[8px] font-bold rounded-full bg-red-500 text-white flex items-center justify-center">
                   {cartItems.length}
                 </span>
               )}
             </div>
-            {mobileTab === "cart" && (
-              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-b-full"></div>
-            )}
+            <span className={`text-[9px] font-medium ${mobileTab === "cart" ? "font-semibold" : ""}`}>Giỏ hàng</span>
           </button>
           <button
             onClick={() => {
               setMobileTab("history");
               setShowSalesHistory(true);
             }}
-            className={`py-3 px-2 font-bold transition-all relative ${
+            className={`flex flex-col items-center gap-1 px-1 py-1.5 rounded-lg transition-all duration-200 ${
               mobileTab === "history"
-                ? "text-indigo-600 dark:text-indigo-400 bg-indigo-50/50 dark:bg-indigo-900/20"
-                : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50"
+                ? "text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30"
+                : "text-slate-600 dark:text-slate-400 active:scale-95"
             }`}
           >
-            <div className="flex items-center justify-center gap-1.5">
-              <History className="w-5 h-5" />
-              <span className="text-xs">Lịch sử</span>
-            </div>
-            {mobileTab === "history" && (
-              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-b-full"></div>
-            )}
+            <History className={`w-6 h-6 transition-transform ${mobileTab === "history" ? "scale-105" : ""}`} />
+            <span className={`text-[9px] font-medium ${mobileTab === "history" ? "font-semibold" : ""}`}>Lịch sử</span>
           </button>
         </div>
       </div>
 
-      <div className="flex h-[calc(100vh-56px)] md:h-screen">
+      <div className="flex h-[calc(100vh-64px)] md:h-screen">
         {/* Main Content Area - Products Grid */}
         <div
           className={`flex-1 flex flex-col transition-all duration-300 ${

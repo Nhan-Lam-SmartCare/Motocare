@@ -384,10 +384,24 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
 
     // Add to customer vehicles
     if (selectedCustomer) {
-      selectedCustomer.vehicles = [
+      const updatedVehicles = [
         ...(selectedCustomer.vehicles || []),
         newVehicle,
       ];
+
+      // Update customer with new vehicle and save to database
+      const updatedCustomer = {
+        ...selectedCustomer,
+        vehicles: updatedVehicles,
+      };
+
+      // Save to database via upsertCustomer
+      if (upsertCustomer) {
+        upsertCustomer(updatedCustomer);
+      }
+
+      // Update local state
+      setSelectedCustomer(updatedCustomer);
       setSelectedVehicle(newVehicle);
     }
 

@@ -569,6 +569,7 @@ const GoodsReceiptMobileWrapper: React.FC<{
       paidAmount,
       discount: discountAmount,
     });
+    clearDraft(); // Xóa draft sau khi hoàn tất
     onClose();
   };
 
@@ -677,6 +678,77 @@ const GoodsReceiptModal: React.FC<{
     "amount"
   );
   const [discountPercent, setDiscountPercent] = useState(0);
+
+  // Auto-save key cho localStorage
+  const DRAFT_KEY = `goods_receipt_draft_${currentBranchId}`;
+
+  // Khôi phục dữ liệu từ localStorage khi mở modal
+  useEffect(() => {
+    if (isOpen) {
+      try {
+        const savedDraft = localStorage.getItem(DRAFT_KEY);
+        if (savedDraft) {
+          const draft = JSON.parse(savedDraft);
+          // Kiểm tra draft không quá 24h
+          if (
+            draft.timestamp &&
+            Date.now() - draft.timestamp < 24 * 60 * 60 * 1000
+          ) {
+            if (draft.receiptItems?.length > 0 || draft.selectedSupplier) {
+              const shouldRestore = window.confirm(
+                `Phát hiện phiếu nhập chưa hoàn tất (${
+                  draft.receiptItems?.length || 0
+                } sản phẩm).\n\nBạn có muốn khôi phục không?`
+              );
+              if (shouldRestore) {
+                setReceiptItems(draft.receiptItems || []);
+                setSelectedSupplier(draft.selectedSupplier || "");
+                setDiscount(draft.discount || 0);
+                setDiscountType(draft.discountType || "amount");
+                setDiscountPercent(draft.discountPercent || 0);
+                showToast.success("Đã khôi phục phiếu nhập từ bản nháp");
+              } else {
+                localStorage.removeItem(DRAFT_KEY);
+              }
+            }
+          } else {
+            // Draft quá cũ, xóa đi
+            localStorage.removeItem(DRAFT_KEY);
+          }
+        }
+      } catch (e) {
+        console.error("Lỗi khôi phục draft:", e);
+      }
+    }
+  }, [isOpen, DRAFT_KEY]);
+
+  // Auto-save vào localStorage mỗi khi có thay đổi
+  useEffect(() => {
+    if (isOpen && (receiptItems.length > 0 || selectedSupplier)) {
+      const draft = {
+        receiptItems,
+        selectedSupplier,
+        discount,
+        discountType,
+        discountPercent,
+        timestamp: Date.now(),
+      };
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+    }
+  }, [
+    isOpen,
+    receiptItems,
+    selectedSupplier,
+    discount,
+    discountType,
+    discountPercent,
+    DRAFT_KEY,
+  ]);
+
+  // Xóa draft khi hoàn tất phiếu nhập thành công
+  const clearDraft = () => {
+    localStorage.removeItem(DRAFT_KEY);
+  };
 
   const filteredParts = useMemo(() => {
     console.log(
@@ -884,6 +956,7 @@ const GoodsReceiptModal: React.FC<{
       paidAmount: calculatedPaidAmount,
       discount,
     });
+    clearDraft(); // Xóa draft sau khi hoàn tất
     setReceiptItems([]);
     setSelectedSupplier("");
     setSearchTerm("");
@@ -893,29 +966,38 @@ const GoodsReceiptModal: React.FC<{
   };
 
   const handleAddNewProduct = (productData: any) => {
-    // Persist part immediately so it shows in inventory list and can be referenced
+    // Tạo sản phẩm mới với stock = 0, stock sẽ được cập nhật khi hoàn tất phiếu nhập
     (async () => {
       try {
+        const generatedSku = `PT-${Date.now()}`;
         const createRes = await createPartMutation.mutateAsync({
           name: productData.name,
-          sku: `PT-${Date.now()}`,
+          sku: generatedSku,
           barcode: productData.barcode || "",
           category: productData.category,
           description: productData.description,
-          stock: { [currentBranchId]: productData.quantity },
+          stock: { [currentBranchId]: 0 }, // Stock = 0, sẽ cập nhật khi hoàn tất phiếu nhập
           costPrice: { [currentBranchId]: productData.importPrice },
           retailPrice: { [currentBranchId]: productData.retailPrice },
           wholesalePrice: {
             [currentBranchId]: Math.round(productData.retailPrice * 0.9),
           },
         });
+
+        // Xử lý response - có thể là { ok, data } hoặc trực tiếp Part object
+        const partData = (createRes as any)?.data || createRes;
+        const partId =
+          partData?.id ||
+          `temp-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+        const partSku = partData?.sku || generatedSku;
+
         // Add to receipt items from persisted part
         setReceiptItems((prev) => [
           ...prev,
           {
-            partId: (createRes as any).id,
+            partId: partId,
             partName: productData.name,
-            sku: (createRes as any).sku,
+            sku: partSku,
             quantity: productData.quantity,
             importPrice: productData.importPrice,
             sellingPrice: productData.retailPrice,

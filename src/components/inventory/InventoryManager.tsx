@@ -500,7 +500,7 @@ const GoodsReceiptMobileWrapper: React.FC<{
       try {
         const newPart = await createPartMutation.mutateAsync({
           name: productData.name,
-          sku: productData.sku || `SKU-${Date.now()}`,
+          sku: productData.sku || `PT-${Date.now()}`,
           barcode: productData.barcode || "",
           category: productData.category,
           stock: { [currentBranchId]: productData.quantity },
@@ -518,7 +518,7 @@ const GoodsReceiptMobileWrapper: React.FC<{
           {
             partId: newPart.data.id,
             partName: productData.name,
-            sku: productData.sku || `SKU-${Date.now()}`,
+            sku: productData.sku || `PT-${Date.now()}`,
             quantity: productData.quantity,
             importPrice: productData.importPrice,
             sellingPrice: productData.retailPrice,
@@ -898,11 +898,12 @@ const GoodsReceiptModal: React.FC<{
       try {
         const createRes = await createPartMutation.mutateAsync({
           name: productData.name,
-          sku: `SKU-${Date.now()}`,
+          sku: `PT-${Date.now()}`,
           barcode: productData.barcode || "",
           category: productData.category,
           description: productData.description,
           stock: { [currentBranchId]: productData.quantity },
+          costPrice: { [currentBranchId]: productData.importPrice },
           retailPrice: { [currentBranchId]: productData.retailPrice },
           wholesalePrice: {
             [currentBranchId]: Math.round(productData.retailPrice * 0.9),
@@ -5139,8 +5140,14 @@ const InventoryManager: React.FC = () => {
                                       </span>
                                     )}
                                   </div>
-                                  <div className="text-xs text-tertiary-text">
-                                    SKU: {part.sku || "N/A"}
+                                  <div className="text-xs text-tertiary-text font-mono">
+                                    {part.barcode ? (
+                                      <span className="text-blue-600 dark:text-blue-400">
+                                        Mã: {part.barcode}
+                                      </span>
+                                    ) : (
+                                      <span>SKU: {part.sku || "N/A"}</span>
+                                    )}
                                   </div>
                                   <div className="text-xs text-tertiary-text">
                                     {part.category || "Chưa phân loại"}

@@ -6,6 +6,7 @@ import { showToast } from "../../../utils/toast";
 import { formatCurrency } from "../../../utils/format";
 import FormattedNumberInput from "../../common/FormattedNumberInput";
 import { fetchPartBySku } from "../../../lib/repository/partsRepository";
+import AddProductModal from "./AddProductModal";
 import type { Part } from "../../../types";
 const GoodsReceiptModal: React.FC<{
   isOpen: boolean;

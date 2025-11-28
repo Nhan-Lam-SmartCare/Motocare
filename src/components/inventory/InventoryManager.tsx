@@ -135,7 +135,7 @@ const AddProductModal: React.FC<{
   const [quantity, setQuantity] = useState<number>(1);
   const [importPrice, setImportPrice] = useState<number>(0);
   const [retailPrice, setRetailPrice] = useState<number>(0);
-  const [warranty, setWarranty] = useState<number>(1);
+  const [warranty, setWarranty] = useState<number>(0);
   const [warrantyUnit, setWarrantyUnit] = useState("tháng");
   const [retailOverridden, setRetailOverridden] = useState<boolean>(false);
   const { data: categories = [] } = useCategories();

@@ -1675,34 +1675,50 @@ export default function ServiceManager() {
       </div>
 
       {/* Action Bar */}
-      <div className="bg-white dark:bg-slate-800 rounded-2xl p-5 border border-slate-200 dark:border-slate-700 space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex-1 min-w-[260px]">
-            <label className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-              Tìm kiếm nhanh
-            </label>
-            <div className="relative mt-1">
-              <input
-                type="text"
-                placeholder="Mã phiếu, tên khách, SĐT, xe, biển số..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400"
-              />
-              <Search
-                className="absolute left-3 top-2.5 w-4 h-4 text-slate-400"
-                aria-hidden="true"
-              />
+      <div className="bg-white dark:bg-slate-800 rounded-2xl p-5 border border-slate-200 dark:border-slate-700">
+        <div className="flex flex-col lg:flex-row lg:items-center gap-4">
+          {/* Search + Filters Group */}
+          <div className="flex flex-col sm:flex-row flex-1 gap-3">
+            {/* Search */}
+            <div className="flex-1 min-w-[200px]">
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Mã phiếu, tên khách, SĐT, xe, biển số..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400"
+                />
+                <Search
+                  className="absolute left-3 top-2.5 w-4 h-4 text-slate-400"
+                  aria-hidden="true"
+                />
+              </div>
+            </div>
+            
+            {/* Filters */}
+            <div className="flex flex-wrap gap-2">
+              <select className={filterInputClass}>
+                <option>Tất cả ngày</option>
+                <option>Hôm nay</option>
+                <option>7 ngày qua</option>
+                <option>30 ngày qua</option>
+              </select>
+              <select className={filterInputClass}>
+                <option>Tất cả KTV</option>
+                <option>KTV 1</option>
+                <option>KTV 2</option>
+              </select>
+              <select className={filterInputClass}>
+                <option>Tất cả thanh toán</option>
+                <option>Đã thanh toán</option>
+                <option>Chưa thanh toán</option>
+              </select>
             </div>
           </div>
 
+          {/* Action Buttons */}
           <div className="flex flex-wrap items-center gap-2">
-            <button
-              className="px-4 py-2 bg-white text-slate-600 dark:bg-slate-900/40 dark:text-slate-100 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium flex items-center gap-2"
-              aria-label="Xem báo cáo"
-            >
-              <TrendingUp className="w-4 h-4" /> Báo cáo
-            </button>
             <button
               onClick={() => setShowTemplateModal(true)}
               className="px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg text-sm font-medium flex items-center gap-2"
@@ -1729,42 +1745,6 @@ export default function ServiceManager() {
             >
               <Plus className="w-4 h-4" /> Thêm Phiếu
             </button>
-            <button
-              className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-sm font-medium flex items-center gap-2"
-              aria-label="Gửi SMS nhắc khách hàng"
-            >
-              <Smartphone className="w-4 h-4" /> SMS QH
-            </button>
-          </div>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-3">
-          <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-            Bộ lọc nâng cao
-          </span>
-          <div className="flex flex-wrap gap-2 flex-1 min-w-[240px]">
-            <div className="min-w-[160px]">
-              <select className={filterInputClass}>
-                <option>Tất cả ngày</option>
-                <option>Hôm nay</option>
-                <option>7 ngày qua</option>
-                <option>30 ngày qua</option>
-              </select>
-            </div>
-            <div className="min-w-[160px]">
-              <select className={filterInputClass}>
-                <option>Tất cả KTV</option>
-                <option>KTV 1</option>
-                <option>KTV 2</option>
-              </select>
-            </div>
-            <div className="min-w-[160px]">
-              <select className={filterInputClass}>
-                <option>Tất cả thanh toán</option>
-                <option>Đã thanh toán</option>
-                <option>Chưa thanh toán</option>
-              </select>
-            </div>
           </div>
         </div>
       </div>

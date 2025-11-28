@@ -1040,6 +1040,4 @@ const GoodsReceiptModal: React.FC<{
   );
 };
 
-
 export default GoodsReceiptModal;
-

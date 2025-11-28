@@ -327,6 +327,4 @@ const AddProductModal: React.FC<{
   );
 };
 
-
 export default AddProductModal;
-

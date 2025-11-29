@@ -5,6 +5,7 @@ import { useAppContext } from "../../../contexts/AppContext";
 import { usePartsRepo } from "../../../hooks/usePartsRepository";
 import type { CartItem, Part, Customer, Sale } from "../../../types";
 import { formatCurrency, formatDate, formatAnyId } from "../../../utils/format";
+import { getCategoryColor } from "../../../utils/categoryColors";
 import { showToast } from "../../../utils/toast";
 import { PlusIcon, XMarkIcon } from "../../Icons";
 
@@ -124,6 +125,7 @@ const EditSaleModal: React.FC<EditSaleModalProps> = ({
           partId: part.id,
           partName: part.name,
           sku: part.sku,
+          category: part.category || "",
           quantity: 1,
           sellingPrice: branchPrice,
           stockSnapshot: typeof branchStock === "number" ? branchStock : 0,
@@ -386,13 +388,24 @@ const EditSaleModal: React.FC<EditSaleModalProps> = ({
                     <button
                       key={part.id}
                       onClick={() => handleAddPart(part)}
-                      className="w-full px-3 py-2 text-left hover:bg-slate-100 dark:hover:bg-slate-600 text-sm"
+                      className="w-full px-3 py-2.5 text-left hover:bg-slate-100 dark:hover:bg-slate-600 text-sm border-b border-slate-100 dark:border-slate-600 last:border-b-0"
                     >
                       <div className="font-medium text-slate-900 dark:text-slate-100">
                         {part.name}
                       </div>
-                      <div className="text-xs text-slate-500">
-                        SKU: {part.sku}
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className="text-[10px] text-blue-600 dark:text-blue-400 font-mono">
+                          {part.sku}
+                        </span>
+                        {part.category && (
+                          <span
+                            className={`inline-flex items-center px-1.5 py-0 rounded-full text-[9px] font-medium ${
+                              getCategoryColor(part.category).bg
+                            } ${getCategoryColor(part.category).text}`}
+                          >
+                            {part.category}
+                          </span>
+                        )}
                       </div>
                     </button>
                   ))}
@@ -431,7 +444,20 @@ const EditSaleModal: React.FC<EditSaleModalProps> = ({
                         <div className="font-medium text-slate-900 dark:text-slate-100">
                           {item.partName}
                         </div>
-                        <div className="text-xs text-slate-500">{item.sku}</div>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <span className="text-[10px] text-blue-600 dark:text-blue-400 font-mono">
+                            {item.sku}
+                          </span>
+                          {item.category && (
+                            <span
+                              className={`inline-flex items-center px-1.5 py-0 rounded-full text-[9px] font-medium ${
+                                getCategoryColor(item.category).bg
+                              } ${getCategoryColor(item.category).text}`}
+                            >
+                              {item.category}
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-3 py-2">
                         <input

@@ -4,6 +4,7 @@ import { useSuppliers, useCreateSupplier } from "../../../hooks/useSuppliers";
 import { useCreatePartRepo } from "../../../hooks/usePartsRepository";
 import { showToast } from "../../../utils/toast";
 import { formatCurrency } from "../../../utils/format";
+import { getCategoryColor } from "../../../utils/categoryColors";
 import FormattedNumberInput from "../../common/FormattedNumberInput";
 import { fetchPartBySku } from "../../../lib/repository/partsRepository";
 import AddProductModal from "./AddProductModal";
@@ -345,19 +346,19 @@ const GoodsReceiptModal: React.FC<{
 
   return (
     <>
-      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <div className="bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 w-full max-w-7xl h-[92vh] rounded-2xl shadow-2xl overflow-hidden flex">
-          {/* Left Panel - Product Browser (50%) */}
-          <div className="w-1/2 flex flex-col bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border-r border-slate-200/50 dark:border-slate-700/50">
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-2 lg:p-4">
+        <div className="bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 w-full max-w-6xl h-[95vh] lg:h-[90vh] rounded-2xl shadow-2xl overflow-hidden flex">
+          {/* Left Panel - Product Browser (45%) */}
+          <div className="w-[45%] flex flex-col bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border-r border-slate-200/50 dark:border-slate-700/50">
             {/* Modern Header */}
-            <div className="flex items-center justify-between p-4 border-b border-slate-200/50 dark:border-slate-700/50 bg-gradient-to-r from-blue-50/50 to-indigo-50/50 dark:from-slate-800/50 dark:to-slate-800/50">
-              <div className="flex items-center gap-3">
+            <div className="flex items-center justify-between p-3 border-b border-slate-200/50 dark:border-slate-700/50 bg-gradient-to-r from-blue-50/50 to-indigo-50/50 dark:from-slate-800/50 dark:to-slate-800/50">
+              <div className="flex items-center gap-2">
                 <button
                   onClick={onClose}
-                  className="w-9 h-9 flex items-center justify-center hover:bg-white/80 dark:hover:bg-slate-700/80 rounded-lg text-slate-600 dark:text-slate-400 transition-all hover:scale-105"
+                  className="w-8 h-8 flex items-center justify-center hover:bg-white/80 dark:hover:bg-slate-700/80 rounded-lg text-slate-600 dark:text-slate-400 transition-all hover:scale-105"
                 >
                   <svg
-                    className="w-5 h-5"
+                    className="w-4 h-4"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -496,17 +497,17 @@ const GoodsReceiptModal: React.FC<{
                   <p className="text-xs mt-1">Th� t�m ki�m v�:i t� kh�a kh�c</p>
                 </div>
               ) : (
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   {filteredParts.map((part) => (
                     <div
                       key={part.id}
                       onClick={() => addToReceipt(part)}
-                      className="group p-3 bg-white dark:bg-slate-800 rounded-xl hover:shadow-lg hover:shadow-blue-500/10 cursor-pointer border border-slate-200 dark:border-slate-700 hover:border-blue-400 dark:hover:border-blue-600 transition-all duration-200 hover:scale-[1.02]"
+                      className="group p-2.5 bg-white dark:bg-slate-800 rounded-lg hover:shadow-md hover:shadow-blue-500/10 cursor-pointer border border-slate-200 dark:border-slate-700 hover:border-blue-400 dark:hover:border-blue-600 transition-all duration-200"
                     >
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-900/30 dark:to-indigo-900/30 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-900/30 dark:to-indigo-900/30 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
                           <svg
-                            className="w-5 h-5 text-blue-600 dark:text-blue-400"
+                            className="w-4 h-4 text-blue-600 dark:text-blue-400"
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
@@ -520,15 +521,28 @@ const GoodsReceiptModal: React.FC<{
                           </svg>
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="font-semibold text-sm text-slate-900 dark:text-slate-100 line-clamp-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                          <div className="font-medium text-[13px] text-slate-900 dark:text-slate-100 line-clamp-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                             {part.name}
                           </div>
-                          <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
-                            SKU: <span className="font-mono">{part.sku}</span>
+                          <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                            <span className="text-[10px] text-blue-600 dark:text-blue-400 font-mono bg-blue-50 dark:bg-blue-900/30 px-1.5 py-0.5 rounded">
+                              {part.sku}
+                            </span>
+                            <span
+                              className={`inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-medium ${
+                                part.category
+                                  ? `${getCategoryColor(part.category).bg} ${
+                                      getCategoryColor(part.category).text
+                                    }`
+                                  : "bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400"
+                              }`}
+                            >
+                              {part.category || "Chưa phân loại"}
+                            </span>
                           </div>
                         </div>
                         <svg
-                          className="w-5 h-5 text-slate-300 dark:text-slate-600 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors"
+                          className="w-4 h-4 text-slate-300 dark:text-slate-600 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors flex-shrink-0"
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
@@ -548,8 +562,8 @@ const GoodsReceiptModal: React.FC<{
             </div>
           </div>
 
-          {/* Right Panel - Cart & Checkout (50%) */}
-          <div className="w-1/2 bg-white dark:bg-slate-800 flex flex-col">
+          {/* Right Panel - Cart & Checkout (55%) */}
+          <div className="w-[55%] bg-white dark:bg-slate-800 flex flex-col">
             {/* Supplier Selection - Modern */}
             <div className="p-4 border-b border-slate-200 dark:border-slate-700 bg-gradient-to-r from-emerald-50/30 to-teal-50/30 dark:from-slate-800/50 dark:to-slate-800/50">
               <div className="flex items-center gap-2 mb-2">

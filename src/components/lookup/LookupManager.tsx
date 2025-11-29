@@ -2,6 +2,7 @@ import React, { useState, useMemo } from "react";
 import { useAppContext } from "../../contexts/AppContext";
 import { formatCurrency, formatDate } from "../../utils/format";
 import { usePartsRepoPaged } from "../../hooks/usePartsRepository";
+import { getCategoryColor } from "../../utils/categoryColors";
 
 const LookupManager: React.FC = () => {
   const { sales, workOrders, currentBranchId } = useAppContext();
@@ -302,7 +303,7 @@ const LookupManager: React.FC = () => {
                       )}
                     </div>
 
-                    <div className="text-sm text-slate-600 dark:text-slate-400 mb-3">
+                    <div className="text-xs text-blue-600 dark:text-blue-400 font-mono mb-3">
                       SKU: {part.sku}
                     </div>
 
@@ -327,14 +328,18 @@ const LookupManager: React.FC = () => {
 
                     {part.category && (
                       <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-700">
-                        <span className="text-xs text-slate-600 dark:text-slate-400 flex items-center gap-1">
+                        <span
+                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium ${
+                            getCategoryColor(part.category).bg
+                          } ${getCategoryColor(part.category).text}`}
+                        >
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
                             viewBox="0 0 24 24"
                             fill="none"
                             stroke="currentColor"
                             strokeWidth="2"
-                            className="w-3.5 h-3.5"
+                            className="w-3 h-3"
                           >
                             <path
                               strokeLinecap="round"
@@ -445,9 +450,18 @@ const LookupManager: React.FC = () => {
                 <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
                   {partDetails.part.name}
                 </h3>
-                <p className="text-sm text-slate-600 dark:text-slate-400">
+                <p className="text-xs text-blue-600 dark:text-blue-400 font-mono">
                   SKU: {partDetails.part.sku}
                 </p>
+                {partDetails.part.category && (
+                  <span
+                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium mt-1 ${
+                      getCategoryColor(partDetails.part.category).bg
+                    } ${getCategoryColor(partDetails.part.category).text}`}
+                  >
+                    {partDetails.part.category}
+                  </span>
+                )}
               </div>
 
               {partDetails.part.description && (

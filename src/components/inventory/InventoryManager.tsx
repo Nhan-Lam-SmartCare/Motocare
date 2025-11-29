@@ -32,6 +32,7 @@ import {
   useDeletePartRepo,
 } from "../../hooks/usePartsRepository";
 import { formatCurrency, formatDate } from "../../utils/format";
+import { getCategoryColor } from "../../utils/categoryColors";
 import {
   exportPartsToExcel,
   exportInventoryTemplate,
@@ -74,12 +75,13 @@ const FILTER_THEME_STYLES: Record<
 > = {
   neutral: {
     buttonActive:
-      "border-blue-500 bg-blue-500/10 shadow-[0_5px_25px_rgba(59,130,246,0.15)] text-primary-text",
+      "border-blue-500 bg-blue-500/10 shadow-[0_5px_25px_rgba(59,130,246,0.15)] text-slate-900 dark:text-slate-100",
     buttonInactive:
-      "border-primary-border bg-primary-bg hover:border-blue-300/70",
+      "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-blue-300/70",
     badgeActive:
       "border-blue-500 text-blue-600 bg-white/60 dark:bg-slate-900/40 dark:text-blue-400",
-    badgeInactive: "border-secondary-border text-secondary-text",
+    badgeInactive:
+      "border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300",
   },
   success: {
     buttonActive:
@@ -1284,8 +1286,21 @@ const GoodsReceiptModal: React.FC<{
                           <div className="font-semibold text-sm text-slate-900 dark:text-slate-100 line-clamp-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                             {part.name}
                           </div>
-                          <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
-                            SKU: <span className="font-mono">{part.sku}</span>
+                          <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                            <span className="text-[10px] text-blue-600 dark:text-blue-400 font-mono bg-blue-50 dark:bg-blue-900/30 px-1.5 py-0.5 rounded">
+                              {part.sku}
+                            </span>
+                            <span
+                              className={`inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-medium ${
+                                part.category
+                                  ? `${getCategoryColor(part.category).bg} ${
+                                      getCategoryColor(part.category).text
+                                    }`
+                                  : "bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400"
+                              }`}
+                            >
+                              {part.category || "Chưa phân loại"}
+                            </span>
                           </div>
                         </div>
                         <svg
@@ -1533,136 +1548,155 @@ const GoodsReceiptModal: React.FC<{
                   </p>
                 </div>
               ) : (
-                <div className="space-y-3">
-                  {receiptItems.map((item, index) => (
-                    <div
-                      key={item.partId}
-                      className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 hover:shadow-md transition-shadow"
-                    >
-                      {/* Compact Header: #, Name, SKU, Delete - All in one line */}
-                      <div className="flex items-center gap-2 mb-2">
-                        <div className="w-6 h-6 bg-blue-600 rounded flex items-center justify-center flex-shrink-0">
-                          <span className="text-xs font-bold text-white">
-                            #{index + 1}
-                          </span>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="font-medium text-xs text-slate-900 dark:text-slate-100 truncate">
-                            {item.partName}
+                <div className="space-y-2">
+                  {receiptItems.map((item, index) => {
+                    // Tìm part gốc để lấy category
+                    const originalPart = parts.find(
+                      (p) => p.id === item.partId
+                    );
+                    return (
+                      <div
+                        key={item.partId}
+                        className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 hover:shadow-md transition-shadow"
+                      >
+                        {/* Header: #, Name, SKU, Category, Delete */}
+                        <div className="flex items-center gap-2 mb-2">
+                          <div className="w-5 h-5 bg-blue-600 rounded flex items-center justify-center flex-shrink-0">
+                            <span className="text-[10px] font-bold text-white">
+                              #{index + 1}
+                            </span>
                           </div>
-                          <div className="text-[9px] text-slate-500 dark:text-slate-400">
-                            SKU: {item.sku}
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium text-xs text-slate-900 dark:text-slate-100 truncate">
+                              {item.partName}
+                            </div>
+                            <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                              <span className="text-[9px] text-blue-600 dark:text-blue-400 font-mono">
+                                {item.sku}
+                              </span>
+                              {originalPart?.category && (
+                                <span
+                                  className={`inline-flex items-center px-1 py-0 rounded text-[8px] font-medium ${
+                                    getCategoryColor(originalPart.category).bg
+                                  } ${
+                                    getCategoryColor(originalPart.category).text
+                                  }`}
+                                >
+                                  {originalPart.category}
+                                </span>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                        <button
-                          onClick={() => removeReceiptItem(item.partId)}
-                          className="w-6 h-6 flex items-center justify-center bg-red-100 dark:bg-red-900/30 rounded text-red-600 dark:text-red-400 hover:bg-red-200 flex-shrink-0"
-                          title="Xóa"
-                        >
-                          ×
-                        </button>
-                      </div>
-
-                      {/* All inputs in ONE row: Quantity | Import Price | Selling Price | Total */}
-                      <div className="flex items-center gap-2">
-                        {/* Quantity controls */}
-                        <div className="flex items-center gap-1">
                           <button
-                            onClick={() =>
-                              updateReceiptItem(
-                                item.partId,
-                                "quantity",
-                                Math.max(1, item.quantity - 1)
-                              )
-                            }
-                            className="w-6 h-6 flex items-center justify-center bg-slate-100 dark:bg-slate-700 rounded text-slate-600 dark:text-slate-300 hover:bg-blue-50 text-sm"
+                            onClick={() => removeReceiptItem(item.partId)}
+                            className="w-5 h-5 flex items-center justify-center bg-red-100 dark:bg-red-900/30 rounded text-red-600 dark:text-red-400 hover:bg-red-200 flex-shrink-0 text-sm"
+                            title="Xóa"
                           >
-                            -
+                            ×
                           </button>
-                          <input
-                            type="number"
-                            value={item.quantity}
-                            onChange={(e) => {
-                              const val = parseInt(e.target.value) || 1;
-                              updateReceiptItem(
-                                item.partId,
-                                "quantity",
-                                Math.max(1, val)
+                        </div>
+
+                        {/* All inputs in ONE row: Quantity | Import Price | Selling Price | Total */}
+                        <div className="flex items-center gap-1.5">
+                          {/* Quantity controls */}
+                          <div className="flex items-center gap-1 flex-shrink-0">
+                            <button
+                              onClick={() =>
+                                updateReceiptItem(
+                                  item.partId,
+                                  "quantity",
+                                  Math.max(1, item.quantity - 1)
+                                )
+                              }
+                              className="w-6 h-6 flex items-center justify-center bg-slate-100 dark:bg-slate-700 rounded text-slate-600 dark:text-slate-300 hover:bg-blue-50 text-sm"
+                            >
+                              -
+                            </button>
+                            <input
+                              type="number"
+                              value={item.quantity}
+                              onChange={(e) => {
+                                const val = parseInt(e.target.value) || 1;
+                                updateReceiptItem(
+                                  item.partId,
+                                  "quantity",
+                                  Math.max(1, val)
+                                );
+                              }}
+                              className="w-10 px-1 py-1 text-center border border-blue-300 dark:border-blue-700 rounded bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 text-xs font-semibold"
+                              min="1"
+                            />
+                            <button
+                              onClick={() =>
+                                updateReceiptItem(
+                                  item.partId,
+                                  "quantity",
+                                  item.quantity + 1
+                                )
+                              }
+                              className="w-6 h-6 flex items-center justify-center bg-slate-100 dark:bg-slate-700 rounded text-slate-600 dark:text-slate-300 hover:bg-blue-50 text-sm"
+                            >
+                              +
+                            </button>
+                          </div>
+
+                          {/* Import price */}
+                          <FormattedNumberInput
+                            value={item.importPrice}
+                            onValue={(val) => {
+                              const { clean } = validatePriceAndQty(
+                                val,
+                                item.quantity
+                              );
+                              const newImport = clean.importPrice;
+                              const autoPrice = Math.round(newImport * 1.5);
+                              setReceiptItems((items) =>
+                                items.map((it) =>
+                                  it.partId === item.partId
+                                    ? {
+                                        ...it,
+                                        importPrice: newImport,
+                                        sellingPrice:
+                                          it.sellingPrice === 0 ||
+                                          it.sellingPrice ===
+                                            Math.round(
+                                              (it.importPrice || 0) * 1.5
+                                            )
+                                            ? autoPrice
+                                            : it.sellingPrice,
+                                      }
+                                    : it
+                                )
                               );
                             }}
-                            className="w-10 px-1 py-1 text-center border border-blue-300 dark:border-blue-700 rounded bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 text-xs font-semibold"
-                            min="1"
+                            className="min-w-[70px] max-w-[110px] flex-1 px-2 py-1 border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 text-right text-xs font-medium focus:border-blue-500"
+                            placeholder="Giá nhập"
                           />
-                          <button
-                            onClick={() =>
+
+                          {/* Selling price */}
+                          <FormattedNumberInput
+                            value={item.sellingPrice}
+                            onValue={(val) =>
                               updateReceiptItem(
                                 item.partId,
-                                "quantity",
-                                item.quantity + 1
+                                "sellingPrice",
+                                Math.max(0, Math.round(val))
                               )
                             }
-                            className="w-6 h-6 flex items-center justify-center bg-slate-100 dark:bg-slate-700 rounded text-slate-600 dark:text-slate-300 hover:bg-blue-50 text-sm"
-                          >
-                            +
-                          </button>
-                        </div>
+                            className="min-w-[70px] max-w-[110px] flex-1 px-2 py-1 border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 text-right text-xs font-medium focus:border-emerald-500"
+                            placeholder="Giá bán"
+                          />
 
-                        {/* Import price */}
-                        <FormattedNumberInput
-                          value={item.importPrice}
-                          onValue={(val) => {
-                            const { clean } = validatePriceAndQty(
-                              val,
-                              item.quantity
-                            );
-                            const newImport = clean.importPrice;
-                            const autoPrice = Math.round(newImport * 1.5);
-                            setReceiptItems((items) =>
-                              items.map((it) =>
-                                it.partId === item.partId
-                                  ? {
-                                      ...it,
-                                      importPrice: newImport,
-                                      sellingPrice:
-                                        it.sellingPrice === 0 ||
-                                        it.sellingPrice ===
-                                          Math.round(
-                                            (it.importPrice || 0) * 1.5
-                                          )
-                                          ? autoPrice
-                                          : it.sellingPrice,
-                                    }
-                                  : it
-                              )
-                            );
-                          }}
-                          className="flex-1 px-2 py-1 border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 text-right text-xs font-medium focus:border-blue-500"
-                          placeholder="Giá nhập"
-                        />
-
-                        {/* Selling price */}
-                        <FormattedNumberInput
-                          value={item.sellingPrice}
-                          onValue={(val) =>
-                            updateReceiptItem(
-                              item.partId,
-                              "sellingPrice",
-                              Math.max(0, Math.round(val))
-                            )
-                          }
-                          className="flex-1 px-2 py-1 border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 text-right text-xs font-medium focus:border-emerald-500"
-                          placeholder="Giá bán"
-                        />
-
-                        {/* Total amount */}
-                        <div className="w-20 text-right">
-                          <div className="text-xs font-bold text-blue-600 dark:text-blue-400">
-                            {formatCurrency(item.importPrice * item.quantity)}
+                          {/* Total amount */}
+                          <div className="min-w-[70px] text-right flex-shrink-0">
+                            <div className="text-xs font-bold text-blue-600 dark:text-blue-400 whitespace-nowrap">
+                              {formatCurrency(item.importPrice * item.quantity)}
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -4033,7 +4067,7 @@ const InventoryManager: React.FC = () => {
   const [openActionRow, setOpenActionRow] = useState<string | null>(null);
 
   // Generate a color from category string for placeholder avatar
-  const getCategoryColor = (name: string) => {
+  const getAvatarColor = (name: string) => {
     if (!name) return "#94a3b8"; // slate-400
     let hash = 0;
     for (let i = 0; i < name.length; i++) {
@@ -4067,7 +4101,7 @@ const InventoryManager: React.FC = () => {
       console.log("🔄 Fetching allPartsForTotals...");
       let query = supabase
         .from("parts")
-        .select("id, name, sku, stock, costPrice, retailPrice")
+        .select("id, name, sku, category, stock, costPrice, retailPrice")
         .order("name");
 
       if (categoryFilter && categoryFilter !== "all") {
@@ -4588,7 +4622,7 @@ const InventoryManager: React.FC = () => {
   return (
     <div className="h-full flex flex-col bg-slate-50 dark:bg-slate-900 sm:bg-[#1e293b]">
       {/* Desktop Header - Compact */}
-      <div className="hidden sm:block bg-primary-bg border-b border-primary-border px-3 py-1.5">
+      <div className="hidden sm:block bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-3 py-1.5">
         <div className="flex items-center justify-between gap-3">
           {/* Tabs - Compact */}
           <div className="flex gap-1">
@@ -4620,7 +4654,7 @@ const InventoryManager: React.FC = () => {
                 className={`px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors ${
                   activeTab === tab.key
                     ? "bg-blue-600 text-white"
-                    : "text-secondary-text hover:bg-tertiary-bg"
+                    : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:bg-slate-700"
                 }`}
               >
                 <span className="inline-flex items-center gap-1">
@@ -4660,33 +4694,33 @@ const InventoryManager: React.FC = () => {
               <Plus className="w-3.5 h-3.5" />
               Tạo phiếu nhập
             </button>
-            <div className="flex items-center gap-0.5 rounded-lg border border-primary-border bg-tertiary-bg px-1 py-0.5">
+            <div className="flex items-center gap-0.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-700 px-1 py-0.5">
               <button
                 onClick={() => {
                   showToast.info("Tính năng chuyển kho đang phát triển");
                 }}
-                className="p-1.5 rounded-md text-secondary-text hover:text-blue-600 hover:bg-primary-bg transition"
+                className="p-1.5 rounded-md text-slate-600 dark:text-slate-300 hover:text-blue-600 hover:bg-white dark:bg-slate-800 transition"
                 title="Chuyển kho"
               >
                 <Repeat className="w-3.5 h-3.5" />
               </button>
               <button
                 onClick={handleExportExcel}
-                className="p-1.5 rounded-md text-secondary-text hover:text-emerald-600 hover:bg-primary-bg transition"
+                className="p-1.5 rounded-md text-slate-600 dark:text-slate-300 hover:text-emerald-600 hover:bg-white dark:bg-slate-800 transition"
                 title="Xuất Excel"
               >
                 <UploadCloud className="w-3.5 h-3.5" />
               </button>
               <button
                 onClick={() => setShowImportModal(true)}
-                className="p-1.5 rounded-md text-secondary-text hover:text-blue-600 hover:bg-primary-bg transition"
+                className="p-1.5 rounded-md text-slate-600 dark:text-slate-300 hover:text-blue-600 hover:bg-white dark:bg-slate-800 transition"
                 title="Nhập CSV"
               >
                 <DownloadCloud className="w-3.5 h-3.5" />
               </button>
               <button
                 onClick={handleDownloadTemplate}
-                className="p-1.5 rounded-md text-secondary-text hover:text-amber-600 hover:bg-primary-bg transition"
+                className="p-1.5 rounded-md text-slate-600 dark:text-slate-300 hover:text-amber-600 hover:bg-white dark:bg-slate-800 transition"
                 title="Tải mẫu import"
               >
                 <FileText className="w-3.5 h-3.5" />
@@ -4748,7 +4782,7 @@ const InventoryManager: React.FC = () => {
 
       {/* Desktop Filters - Compact for small screens */}
       {activeTab === "stock" && (
-        <div className="hidden sm:block bg-primary-bg border-b border-primary-border px-4 py-2">
+        <div className="hidden sm:block bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-4 py-2">
           <div className="space-y-2">
             {/* Row 1: Stats inline + Search */}
             <div className="flex items-center gap-3">
@@ -4757,10 +4791,10 @@ const InventoryManager: React.FC = () => {
                 <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-blue-500/20 bg-blue-500/5">
                   <Boxes className="w-4 h-4 text-blue-600" />
                   <div>
-                    <span className="text-lg font-bold text-primary-text">
+                    <span className="text-lg font-bold text-slate-900 dark:text-slate-100">
                       {totalStockQuantity.toLocaleString()}
                     </span>
-                    <span className="text-[10px] text-secondary-text ml-1">
+                    <span className="text-[10px] text-slate-600 dark:text-slate-300 ml-1">
                       sp
                     </span>
                   </div>
@@ -4768,7 +4802,7 @@ const InventoryManager: React.FC = () => {
                 <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-emerald-500/20 bg-emerald-500/5">
                   <Package className="w-4 h-4 text-emerald-600" />
                   <div>
-                    <span className="text-lg font-bold text-primary-text">
+                    <span className="text-lg font-bold text-slate-900 dark:text-slate-100">
                       {formatCurrency(totalStockValue)}
                     </span>
                   </div>
@@ -4785,9 +4819,9 @@ const InventoryManager: React.FC = () => {
                     setPage(1);
                     setSearch(e.target.value);
                   }}
-                  className="w-full pl-9 pr-16 py-1.5 text-sm border border-primary-border rounded-lg bg-primary-bg text-primary-text focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full pl-9 pr-16 py-1.5 text-sm border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-secondary-text">
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-slate-600 dark:text-slate-300">
                   {filteredParts.length}/{totalParts}
                 </span>
               </div>
@@ -4797,7 +4831,7 @@ const InventoryManager: React.FC = () => {
                 className={`flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg border transition flex-shrink-0 ${
                   showAdvancedFilters
                     ? "border-blue-500 text-blue-600 bg-blue-50 dark:bg-blue-900/20"
-                    : "border-primary-border text-secondary-text hover:text-primary-text"
+                    : "border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:text-slate-100"
                 }`}
               >
                 <Filter className="w-3.5 h-3.5" />
@@ -4812,7 +4846,7 @@ const InventoryManager: React.FC = () => {
                 const colorMap: Record<string, string> = {
                   neutral: isActive
                     ? "bg-slate-600 text-white"
-                    : "bg-slate-100 dark:bg-slate-800 text-secondary-text hover:bg-slate-200 dark:hover:bg-slate-700",
+                    : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700",
                   success: isActive
                     ? "bg-emerald-600 text-white"
                     : "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100",
@@ -4862,15 +4896,15 @@ const InventoryManager: React.FC = () => {
             </div>
 
             {showAdvancedFilters && (
-              <div className="rounded-xl border border-primary-border bg-white/70 dark:bg-slate-900/40 p-3 grid gap-3 md:grid-cols-3">
+              <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white/70 dark:bg-slate-900/40 p-3 grid gap-3 md:grid-cols-3">
                 <div>
-                  <label className="text-xs font-semibold uppercase tracking-wide text-secondary-text">
+                  <label className="text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300">
                     Trạng thái tồn kho
                   </label>
                   <select
                     value={stockFilter}
                     onChange={(e) => handleStockFilterChange(e.target.value)}
-                    className="mt-1 w-full rounded-lg border border-secondary-border bg-primary-bg px-3 py-1.5 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/40"
+                    className="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-1.5 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/40"
                   >
                     <option value="all">Tất cả tồn kho</option>
                     <option value="in-stock">Còn hàng</option>
@@ -4879,13 +4913,13 @@ const InventoryManager: React.FC = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="text-xs font-semibold uppercase tracking-wide text-secondary-text">
+                  <label className="text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300">
                     Danh mục
                   </label>
                   <select
                     value={categoryFilter}
                     onChange={(e) => handleCategoryFilterChange(e.target.value)}
-                    className="mt-1 w-full rounded-lg border border-secondary-border bg-primary-bg px-3 py-1.5 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/40"
+                    className="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-1.5 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/40"
                   >
                     <option value="all">Tất cả danh mục</option>
                     {allCategories.map((cat) => (
@@ -4896,7 +4930,7 @@ const InventoryManager: React.FC = () => {
                   </select>
                 </div>
                 <div className="flex flex-col justify-end">
-                  <label className="text-xs font-semibold uppercase tracking-wide text-secondary-text">
+                  <label className="text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300">
                     Phát hiện trùng mã
                   </label>
                   <button
@@ -4904,7 +4938,7 @@ const InventoryManager: React.FC = () => {
                     className={`mt-1 rounded-lg border px-3 py-1.5 text-sm font-medium transition ${
                       showDuplicatesOnly
                         ? "border-orange-500 text-orange-600 bg-orange-50 dark:bg-orange-900/20"
-                        : "border-secondary-border text-secondary-text hover:text-primary-text"
+                        : "border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:text-slate-100"
                     }`}
                   >
                     {showDuplicatesOnly ? "Đang lọc trùng mã" : "Lọc trùng mã"}
@@ -4943,10 +4977,10 @@ const InventoryManager: React.FC = () => {
             )}
 
             {/* Stock Table + Pagination */}
-            <div className="rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
+            <div className="rounded-lg overflow-hidden bg-white dark:bg-slate-800">
               {/* Bulk Actions Bar */}
               {selectedItems.length > 0 && (
-                <div className="px-4 py-2 bg-blue-100 dark:bg-blue-900/30 border-b border-primary-border flex items-center justify-between">
+                <div className="px-4 py-2 bg-blue-100 dark:bg-blue-900/30 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
                   <div className="text-xs font-medium text-blue-900 dark:text-blue-100">
                     Đã chọn {selectedItems.length} sản phẩm
                   </div>
@@ -4994,9 +5028,19 @@ const InventoryManager: React.FC = () => {
                               <div className="text-[15px] font-medium text-white leading-tight">
                                 {part.name}
                               </div>
-                              <div className="text-[12px] text-slate-400 mt-1 truncate">
+                              <div className="text-[11px] text-blue-400 mt-1 truncate font-mono">
                                 SKU: {part.sku}
                               </div>
+                              {/* Danh mục với màu sắc */}
+                              {part.category && (
+                                <span
+                                  className={`inline-flex items-center px-2 py-0.5 mt-1.5 rounded-full text-[10px] font-medium ${
+                                    getCategoryColor(part.category).bg
+                                  } ${getCategoryColor(part.category).text}`}
+                                >
+                                  {part.category}
+                                </span>
+                              )}
                             </div>
                             <div className="text-right flex-shrink-0">
                               {/* Hiển thị giá bán */}
@@ -5073,8 +5117,8 @@ const InventoryManager: React.FC = () => {
               {/* Desktop / tablet: wide table (hidden on small screens) */}
               <div className="hidden sm:block overflow-x-auto">
                 <table className="w-full">
-                  <thead className="bg-tertiary-bg">
-                    <tr className="border-b border-primary-border text-[10px] font-semibold uppercase tracking-wider text-secondary-text">
+                  <thead className="bg-slate-100 dark:bg-slate-700/50">
+                    <tr className="border-b border-slate-200 dark:border-slate-600 text-[10px] font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
                       <th className="px-3 py-2.5 text-center w-10">
                         <input
                           type="checkbox"
@@ -5083,7 +5127,7 @@ const InventoryManager: React.FC = () => {
                             filteredParts.length > 0
                           }
                           onChange={(e) => handleSelectAll(e.target.checked)}
-                          className="w-3.5 h-3.5 text-blue-600 rounded border-secondary-border focus:ring-blue-500"
+                          className="w-3.5 h-3.5 text-blue-600 rounded border-slate-300 dark:border-slate-600 focus:ring-blue-500"
                         />
                       </th>
                       <th className="px-3 py-2.5 text-left">Sản phẩm</th>
@@ -5097,12 +5141,12 @@ const InventoryManager: React.FC = () => {
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="bg-primary-bg divide-y divide-primary-border">
+                  <tbody className="bg-white dark:bg-slate-800 divide-y divide-slate-100 dark:divide-slate-700">
                     {filteredParts.length === 0 ? (
                       <tr>
                         <td
                           colSpan={8}
-                          className="px-4 py-6 text-center text-tertiary-text"
+                          className="px-4 py-6 text-center text-slate-400 dark:text-slate-500"
                         >
                           <div className="text-4xl mb-2">🗂️</div>
                           <div className="text-sm">Không có sản phẩm nào</div>
@@ -5151,7 +5195,7 @@ const InventoryManager: React.FC = () => {
                         return (
                           <tr
                             key={part.id}
-                            className={`border-b border-primary-border hover:bg-tertiary-bg transition-colors ${rowHighlight}`}
+                            className={`hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors ${rowHighlight}`}
                           >
                             <td className="px-3 py-2 text-center">
                               <input
@@ -5160,7 +5204,7 @@ const InventoryManager: React.FC = () => {
                                 onChange={(e) =>
                                   handleSelectItem(part.id, e.target.checked)
                                 }
-                                className="w-3.5 h-3.5 text-blue-600 rounded border-secondary-border focus:ring-blue-500"
+                                className="w-3.5 h-3.5 text-blue-600 rounded border-slate-300 dark:border-slate-600 focus:ring-blue-500"
                               />
                             </td>
                             <td className="px-3 py-2 min-w-[180px]">
@@ -5171,7 +5215,7 @@ const InventoryManager: React.FC = () => {
                                     part.imageUrl
                                       ? undefined
                                       : {
-                                          backgroundColor: getCategoryColor(
+                                          backgroundColor: getAvatarColor(
                                             part.category
                                           ),
                                         }
@@ -5188,7 +5232,7 @@ const InventoryManager: React.FC = () => {
                                   )}
                                 </div>
                                 <div className="flex flex-col gap-0.5 min-w-0">
-                                  <div className="flex items-center gap-1.5 text-xs font-semibold text-primary-text truncate">
+                                  <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-900 dark:text-slate-100 truncate">
                                     {part.name}
                                     {isDuplicate && (
                                       <span
@@ -5199,18 +5243,28 @@ const InventoryManager: React.FC = () => {
                                       </span>
                                     )}
                                   </div>
-                                  <div className="text-[10px] text-tertiary-text font-mono">
+                                  <div className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">
                                     {part.barcode ? (
                                       <span className="text-blue-600 dark:text-blue-400">
                                         Mã: {part.barcode}
                                       </span>
                                     ) : (
-                                      <span>SKU: {part.sku || "N/A"}</span>
+                                      <span className="text-blue-600 dark:text-blue-400">
+                                        SKU: {part.sku || "N/A"}
+                                      </span>
                                     )}
                                   </div>
-                                  <div className="text-[10px] text-tertiary-text truncate">
-                                    {part.category || "Chưa phân loại"}
-                                  </div>
+                                  {part.category && (
+                                    <span
+                                      className={`inline-flex items-center px-1.5 py-0 rounded-full text-[9px] font-medium ${
+                                        getCategoryColor(part.category).bg
+                                      } ${
+                                        getCategoryColor(part.category).text
+                                      }`}
+                                    >
+                                      {part.category}
+                                    </span>
+                                  )}
                                 </div>
                               </div>
                             </td>
@@ -5237,16 +5291,16 @@ const InventoryManager: React.FC = () => {
                                 </span>
                               </div>
                             </td>
-                            <td className="px-3 py-2 whitespace-nowrap text-right text-xs text-secondary-text">
+                            <td className="px-3 py-2 whitespace-nowrap text-right text-xs text-slate-600 dark:text-slate-300">
                               {formatCurrency(costPrice)}
                             </td>
-                            <td className="px-3 py-2 whitespace-nowrap text-right text-xs font-medium text-primary-text">
+                            <td className="px-3 py-2 whitespace-nowrap text-right text-xs font-medium text-slate-900 dark:text-slate-100">
                               {formatCurrency(retailPrice)}
                             </td>
-                            <td className="px-3 py-2 whitespace-nowrap text-right text-xs text-secondary-text">
+                            <td className="px-3 py-2 whitespace-nowrap text-right text-xs text-slate-600 dark:text-slate-300">
                               {formatCurrency(wholesalePrice)}
                             </td>
-                            <td className="px-3 py-2 whitespace-nowrap text-right text-xs font-semibold text-primary-text">
+                            <td className="px-3 py-2 whitespace-nowrap text-right text-xs font-semibold text-slate-900 dark:text-slate-100">
                               {formatCurrency(value)}
                             </td>
                             <td className="px-3 py-2 whitespace-nowrap text-center">
@@ -5258,7 +5312,7 @@ const InventoryManager: React.FC = () => {
                                       prev === part.id ? null : part.id
                                     );
                                   }}
-                                  className="rounded-full border border-transparent p-2 text-secondary-text hover:border-secondary-border hover:text-primary-text transition"
+                                  className="rounded-full border border-transparent p-2 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:border-slate-600 hover:text-slate-900 dark:text-slate-100 transition"
                                   aria-haspopup="menu"
                                   aria-expanded={openActionRow === part.id}
                                   title="Thao tác nhanh"
@@ -5267,7 +5321,7 @@ const InventoryManager: React.FC = () => {
                                 </button>
                                 {openActionRow === part.id && (
                                   <div
-                                    className="absolute right-0 top-full z-10 mt-2 w-44 overflow-hidden rounded-xl border border-primary-border bg-white shadow-xl dark:bg-slate-800"
+                                    className="absolute right-0 top-full z-10 mt-2 w-44 overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700 bg-white shadow-xl dark:bg-slate-800"
                                     onClick={(event) => event.stopPropagation()}
                                   >
                                     <button
@@ -5304,8 +5358,8 @@ const InventoryManager: React.FC = () => {
                 </table>
               </div>
               {/* Pagination Controls */}
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-3 sm:px-6 py-3 sm:py-4 border-t border-primary-border bg-primary-bg">
-                <div className="text-xs sm:text-sm text-secondary-text text-center sm:text-left">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-3 sm:px-6 py-3 sm:py-4 border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
+                <div className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 text-center sm:text-left">
                   <span className="font-medium">
                     Trang {page}/{totalPages}
                   </span>
@@ -5316,7 +5370,7 @@ const InventoryManager: React.FC = () => {
                   <button
                     disabled={page === 1 || partsLoading}
                     onClick={() => setPage((p) => Math.max(1, p - 1))}
-                    className="px-2.5 sm:px-3 py-1.5 text-xs sm:text-sm border border-secondary-border rounded disabled:opacity-40 hover:bg-slate-700/50 transition-colors"
+                    className="px-2.5 sm:px-3 py-1.5 text-xs sm:text-sm border border-slate-300 dark:border-slate-600 rounded disabled:opacity-40 hover:bg-slate-700/50 transition-colors"
                   >
                     ←
                   </button>
@@ -5326,7 +5380,7 @@ const InventoryManager: React.FC = () => {
                   <button
                     disabled={page >= totalPages || partsLoading}
                     onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                    className="px-2.5 sm:px-3 py-1.5 text-xs sm:text-sm border border-secondary-border rounded disabled:opacity-40 hover:bg-slate-700/50 transition-colors"
+                    className="px-2.5 sm:px-3 py-1.5 text-xs sm:text-sm border border-slate-300 dark:border-slate-600 rounded disabled:opacity-40 hover:bg-slate-700/50 transition-colors"
                   >
                     →
                   </button>
@@ -5337,7 +5391,7 @@ const InventoryManager: React.FC = () => {
                       setPageSize(newSize);
                       setPage(1);
                     }}
-                    className="px-1.5 sm:px-2 py-1.5 text-xs sm:text-sm border border-secondary-border rounded bg-slate-800 text-slate-200"
+                    className="px-1.5 sm:px-2 py-1.5 text-xs sm:text-sm border border-slate-300 dark:border-slate-600 rounded bg-slate-800 text-slate-200"
                   >
                     {[10, 20, 50, 100].map((s) => (
                       <option key={s} value={s}>

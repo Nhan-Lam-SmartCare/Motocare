@@ -257,30 +257,30 @@ const EmployeeManager: React.FC = () => {
         <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-slate-50 dark:bg-slate-900/50">
+              <thead className="bg-slate-100 dark:bg-slate-700/50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-600 dark:text-slate-300 uppercase tracking-wider">
                     Nhân viên
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-600 dark:text-slate-300 uppercase tracking-wider">
                     Chức vụ
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-600 dark:text-slate-300 uppercase tracking-wider">
                     Phòng ban
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-600 dark:text-slate-300 uppercase tracking-wider">
                     Lương CB
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-600 dark:text-slate-300 uppercase tracking-wider">
                     Phụ cấp
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-600 dark:text-slate-300 uppercase tracking-wider">
                     Ngày vào
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-600 dark:text-slate-300 uppercase tracking-wider">
                     Trạng thái
                   </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">
+                  <th className="px-6 py-3 text-right text-xs font-medium text-slate-600 dark:text-slate-300 uppercase tracking-wider">
                     Thao tác
                   </th>
                 </tr>
@@ -339,12 +339,12 @@ const EmployeeManager: React.FC = () => {
                       </td>
                       <td className="px-6 py-4">
                         <span
-                          className={`px-2 py-1 text-xs font-medium rounded-full ${
+                          className={`px-2.5 py-1 text-xs font-medium rounded-full ${
                             emp.status === "active"
-                              ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+                              ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400/80"
                               : emp.status === "inactive"
-                              ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400"
-                              : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
+                              ? "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400/80"
+                              : "bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-400/80"
                           }`}
                         >
                           {emp.status === "active"
@@ -354,16 +354,16 @@ const EmployeeManager: React.FC = () => {
                             : "Nghỉ việc"}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-right space-x-2">
+                      <td className="px-6 py-4 text-right space-x-3">
                         <button
                           onClick={() => handleEdit(emp)}
-                          className="inline-flex items-center gap-1 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium text-sm"
+                          className="inline-flex items-center gap-1 text-blue-600/80 dark:text-blue-400/70 hover:text-blue-700 dark:hover:text-blue-300 font-medium text-sm transition-colors"
                         >
                           <Pencil className="w-4 h-4" /> Sửa
                         </button>
                         <button
                           onClick={() => handleDelete(emp)}
-                          className="inline-flex items-center gap-1 text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 font-medium text-sm"
+                          className="inline-flex items-center gap-1 text-red-600/80 dark:text-red-400/70 hover:text-red-700 dark:hover:text-red-300 font-medium text-sm transition-colors"
                         >
                           <Trash2 className="w-4 h-4" /> Xóa
                         </button>

@@ -23,6 +23,7 @@ import {
   formatDate,
   formatWorkOrderId,
 } from "../../utils/format";
+import { getCategoryColor } from "../../utils/categoryColors";
 import {
   useCreateWorkOrderAtomicRepo,
   useUpdateWorkOrderAtomicRepo,
@@ -5203,6 +5204,7 @@ const WorkOrderModal: React.FC<{
           partId: part.id,
           partName: part.name,
           sku: part.sku || "",
+          category: part.category || "",
           quantity: 1,
           price: part.retailPrice[currentBranchId] || 0,
         },
@@ -5743,17 +5745,28 @@ const WorkOrderModal: React.FC<{
                       <button
                         key={part.id}
                         onClick={() => handleAddPart(part)}
-                        className="w-full px-4 py-2 text-left hover:bg-slate-100 dark:hover:bg-slate-600 flex items-center justify-between"
+                        className="w-full px-4 py-2.5 text-left hover:bg-slate-100 dark:hover:bg-slate-600 flex items-center justify-between border-b border-slate-100 dark:border-slate-600 last:border-b-0"
                       >
-                        <div>
+                        <div className="flex-1 min-w-0">
                           <div className="text-sm font-medium text-slate-900 dark:text-slate-100">
                             {part.name}
                           </div>
-                          <div className="text-xs text-slate-500">
-                            {part.sku}
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <span className="text-[10px] text-blue-600 dark:text-blue-400 font-mono">
+                              {part.sku}
+                            </span>
+                            {part.category && (
+                              <span
+                                className={`inline-flex items-center px-1.5 py-0 rounded-full text-[9px] font-medium ${
+                                  getCategoryColor(part.category).bg
+                                } ${getCategoryColor(part.category).text}`}
+                              >
+                                {part.category}
+                              </span>
+                            )}
                           </div>
                         </div>
-                        <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                        <div className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">
                           {formatCurrency(
                             part.retailPrice[currentBranchId] || 0
                           )}
@@ -5797,8 +5810,26 @@ const WorkOrderModal: React.FC<{
                   ) : (
                     selectedParts.map((part, idx) => (
                       <tr key={idx} className="bg-white dark:bg-slate-800">
-                        <td className="px-4 py-2 text-sm text-slate-900 dark:text-slate-100">
-                          {part.partName}
+                        <td className="px-4 py-2">
+                          <div className="text-sm text-slate-900 dark:text-slate-100 font-medium">
+                            {part.partName}
+                          </div>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            {part.sku && (
+                              <span className="text-[10px] text-blue-600 dark:text-blue-400 font-mono">
+                                {part.sku}
+                              </span>
+                            )}
+                            {part.category && (
+                              <span
+                                className={`inline-flex items-center px-1.5 py-0 rounded-full text-[9px] font-medium ${
+                                  getCategoryColor(part.category).bg
+                                } ${getCategoryColor(part.category).text}`}
+                              >
+                                {part.category}
+                              </span>
+                            )}
+                          </div>
                         </td>
                         <td className="px-4 py-2 text-center">
                           <input

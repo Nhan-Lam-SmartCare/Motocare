@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { formatCurrency } from "../../utils/format";
+import { getCategoryColor } from "../../utils/categoryColors";
 import { SupplierSelectionModal } from "./SupplierSelectionModal";
 import { useSuppliers } from "../../hooks/useSuppliers";
 import { showToast } from "../../utils/toast";
@@ -533,8 +534,19 @@ export const GoodsReceiptMobileModal: React.FC<Props> = ({
                               <div className="font-bold text-slate-900 dark:text-slate-100 text-base leading-tight mb-1">
                                 {part.name}
                               </div>
-                              <div className="text-sm text-slate-500 dark:text-slate-400">
-                                SKU: {part.sku}
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-xs text-blue-600 dark:text-blue-400 font-mono">
+                                  {part.sku}
+                                </span>
+                                {part.category && (
+                                  <span
+                                    className={`inline-flex items-center px-1.5 py-0 rounded-full text-[9px] font-medium ${
+                                      getCategoryColor(part.category).bg
+                                    } ${getCategoryColor(part.category).text}`}
+                                  >
+                                    {part.category}
+                                  </span>
+                                )}
                               </div>
                               <div className="mt-2 flex gap-3 text-xs">
                                 <div>

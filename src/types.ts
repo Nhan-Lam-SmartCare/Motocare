@@ -86,6 +86,7 @@ export interface CartItem {
   partId: string;
   partName: string;
   sku: string;
+  category?: string;
   quantity: number;
   sellingPrice: number; // Final unit price after selecting retail/wholesale
   stockSnapshot: number; // Stock at time added for validation
@@ -112,6 +113,7 @@ export interface WorkOrderPart {
   partId: string;
   partName: string;
   sku: string;
+  category?: string;
   quantity: number;
   price: number; // Selling price snapshot
 }

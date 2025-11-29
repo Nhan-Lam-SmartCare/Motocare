@@ -9,6 +9,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { formatCurrency, formatWorkOrderId } from "../../utils/format";
+import { getCategoryColor } from "../../utils/categoryColors";
 import type { WorkOrder, Part, Customer, Vehicle, Employee } from "../../types";
 import {
   checkVehicleMaintenance,
@@ -180,6 +181,8 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
       partName: string;
       quantity: number;
       sellingPrice: number;
+      sku?: string;
+      category?: string;
     }>
   >(
     workOrder?.partsUsed?.map((p) => ({
@@ -187,6 +190,8 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
       partName: p.partName,
       quantity: p.quantity,
       sellingPrice: p.price || 0,
+      sku: p.sku || "",
+      category: p.category || "",
     })) || []
   );
   const [additionalServices, setAdditionalServices] = useState<
@@ -386,6 +391,8 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
           partName: part.name,
           quantity: 1,
           sellingPrice: part.retailPrice?.[currentBranchId] || 0,
+          sku: part.sku || "",
+          category: part.category || "",
         },
       ]);
     }
@@ -877,12 +884,23 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
                             <div className="text-white text-xs font-medium">
                               {index + 1}. {part.partName}
                             </div>
-                            {part.sku && (
-                              <div className="text-[10px] text-slate-500 font-mono">
-                                SKU: {part.sku}
-                              </div>
-                            )}
-                            <div className="text-xs text-slate-400">
+                            <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                              {part.sku && (
+                                <span className="text-[11px] text-blue-400 font-mono">
+                                  {part.sku}
+                                </span>
+                              )}
+                              {part.category && (
+                                <span
+                                  className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-medium ${
+                                    getCategoryColor(part.category).bg
+                                  } ${getCategoryColor(part.category).text}`}
+                                >
+                                  {part.category}
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-[11px] text-slate-400 mt-0.5">
                               {formatCurrency(part.sellingPrice)} / cái
                             </div>
                           </div>
@@ -1507,15 +1525,24 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
                       className="p-2.5 bg-[#1e1e2d] rounded-lg cursor-pointer hover:bg-[#2b2b40] transition-colors"
                     >
                       <div className="flex items-start justify-between">
-                        <div className="flex-1">
+                        <div className="flex-1 min-w-0">
                           <div className="text-white font-medium text-xs">
                             {part.name}
                           </div>
-                          <div className="text-xs text-slate-400">
+                          <div className="text-[11px] text-blue-400 font-mono mt-0.5">
                             SKU: {part.sku} • Tồn: {stock}
                           </div>
+                          {part.category && (
+                            <span
+                              className={`inline-flex items-center px-1.5 py-0.5 mt-1 rounded-full text-[9px] font-medium ${
+                                getCategoryColor(part.category).bg
+                              } ${getCategoryColor(part.category).text}`}
+                            >
+                              {part.category}
+                            </span>
+                          )}
                         </div>
-                        <div className="text-[#50cd89] font-bold text-xs">
+                        <div className="text-[#50cd89] font-bold text-xs flex-shrink-0">
                           {formatCurrency(price)}
                         </div>
                       </div>

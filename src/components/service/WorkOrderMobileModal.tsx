@@ -17,6 +17,7 @@ import {
   getWarningBadgeColor,
   type MaintenanceWarning,
 } from "../../utils/maintenanceReminder";
+import { WORK_ORDER_STATUS, type WorkOrderStatus } from "../../constants";
 
 interface WorkOrderMobileModalProps {
   isOpen: boolean;
@@ -134,7 +135,7 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
 
   // States
   const [status, setStatus] = useState<WorkOrderStatus>(
-    (workOrder?.status as WorkOrderStatus) || "Tiếp nhận"
+    (workOrder?.status as WorkOrderStatus) || WORK_ORDER_STATUS.RECEIVED
   );
   const [selectedTechnicianId, setSelectedTechnicianId] = useState(
     employees.find((e) => e.name === workOrder?.technicianName)?.id || ""
@@ -548,8 +549,9 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
       total: total,
       depositAmount: totalDeposit,
       paymentMethod,
-      totalPaid: status === "Trả máy" ? totalPaid : undefined,
-      remainingAmount: status === "Trả máy" ? remainingAmount : undefined,
+      totalPaid: status === WORK_ORDER_STATUS.DELIVERED ? totalPaid : undefined,
+      remainingAmount:
+        status === WORK_ORDER_STATUS.DELIVERED ? remainingAmount : undefined,
     };
 
     onSave(workOrderData);
@@ -558,13 +560,13 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
   // Status colors
   const getStatusColor = (s: WorkOrderStatus) => {
     switch (s) {
-      case "Tiếp nhận":
+      case WORK_ORDER_STATUS.RECEIVED:
         return "bg-blue-500";
-      case "Đang sửa":
+      case WORK_ORDER_STATUS.IN_PROGRESS:
         return "bg-yellow-500";
-      case "Đã sửa xong":
+      case WORK_ORDER_STATUS.COMPLETED:
         return "bg-green-500";
-      case "Trả máy":
+      case WORK_ORDER_STATUS.DELIVERED:
         return "bg-green-500";
       default:
         return "bg-gray-500";
@@ -617,10 +619,16 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
                     status
                   )}`}
                 >
-                  <option value="Tiếp nhận">🔧 Tiếp nhận</option>
-                  <option value="Đang sửa">⚙️ Đang sửa</option>
-                  <option value="Đã sửa xong">✅ Đã sửa xong</option>
-                  <option value="Trả máy">🚗 Trả xe</option>
+                  <option value={WORK_ORDER_STATUS.RECEIVED}>
+                    🔧 Tiếp nhận
+                  </option>
+                  <option value={WORK_ORDER_STATUS.IN_PROGRESS}>
+                    ⚙️ Đang sửa
+                  </option>
+                  <option value={WORK_ORDER_STATUS.COMPLETED}>
+                    ✅ Đã sửa xong
+                  </option>
+                  <option value={WORK_ORDER_STATUS.DELIVERED}>🚗 Trả xe</option>
                 </select>
                 <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white pointer-events-none" />
               </div>

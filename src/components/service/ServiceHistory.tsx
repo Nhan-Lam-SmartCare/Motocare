@@ -10,6 +10,7 @@ import { printElementById } from "../../utils/print";
 import { supabase } from "../../supabaseClient";
 import type { WorkOrder } from "../../types";
 import { useNavigate } from "react-router-dom";
+import { WORK_ORDER_STATUS, PAYMENT_STATUS } from "../../constants";
 
 interface StoreSettings {
   store_name?: string;
@@ -279,7 +280,7 @@ export const ServiceHistory: React.FC<ServiceHistoryProps> = ({
     return workOrders
       .filter((order) => {
         // ONLY show "Trả máy" status in history
-        if (order.status !== "Trả máy") return false;
+        if (order.status !== WORK_ORDER_STATUS.DELIVERED) return false;
 
         if (order.branchId !== currentBranchId) return false;
 
@@ -418,15 +419,25 @@ export const ServiceHistory: React.FC<ServiceHistoryProps> = ({
 
   const StatusBadge = ({ status }: { status: string }) => {
     const statusConfig: Record<string, { icon: string; color: string }> = {
-      "Tiếp nhận": { icon: "📋", color: "text-blue-600 dark:text-blue-400" },
-      "Đang sửa": { icon: "🔧", color: "text-orange-600 dark:text-orange-400" },
-      "Đã sửa xong": {
+      [WORK_ORDER_STATUS.RECEIVED]: {
+        icon: "📋",
+        color: "text-blue-600 dark:text-blue-400",
+      },
+      [WORK_ORDER_STATUS.IN_PROGRESS]: {
+        icon: "🔧",
+        color: "text-orange-600 dark:text-orange-400",
+      },
+      [WORK_ORDER_STATUS.COMPLETED]: {
         icon: "✓",
         color: "text-purple-600 dark:text-purple-400",
       },
-      "Trả máy": { icon: "✓", color: "text-green-600 dark:text-green-400" },
+      [WORK_ORDER_STATUS.DELIVERED]: {
+        icon: "✓",
+        color: "text-green-600 dark:text-green-400",
+      },
     };
-    const config = statusConfig[status] || statusConfig["Tiếp nhận"];
+    const config =
+      statusConfig[status] || statusConfig[WORK_ORDER_STATUS.RECEIVED];
     return (
       <span className={`flex items-center gap-1 text-sm ${config.color}`}>
         <span>{config.icon}</span>

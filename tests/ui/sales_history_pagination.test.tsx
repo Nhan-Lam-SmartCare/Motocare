@@ -109,10 +109,11 @@ describe("Sales history modal pagination (offset)", () => {
     const user = userEvent.setup();
 
     // open modal - button text is "Lịch sử" with title="Lịch sử bán hàng"
-    const historyButton = screen.getByRole("button", {
+    // There can be multiple buttons with this name (desktop + mobile), use getAllByRole
+    const historyButtons = screen.getAllByRole("button", {
       name: /^lịch sử$/i,
     });
-    await user.click(historyButton);
+    await user.click(historyButtons[0]);
 
     // page indicator should show 'Hiển thị 1 đơn hàng' from mocked hook data
     // There's no heading in the modal; wait until 'Hiển thị 1 đơn hàng' or similar is visible

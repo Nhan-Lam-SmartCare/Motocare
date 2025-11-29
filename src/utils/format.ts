@@ -1,7 +1,41 @@
+/**
+ * Format Utilities
+ *
+ * Provides consistent formatting functions for currency, dates, and IDs
+ * throughout the application. All functions are locale-aware for Vietnamese.
+ */
+
+/**
+ * Formats a number as Vietnamese Dong (VND) currency
+ *
+ * @param v - The number to format
+ * @returns Formatted currency string (e.g., "1.500.000 ₫")
+ *
+ * @example
+ * ```typescript
+ * formatCurrency(1500000) // "1.500.000 ₫"
+ * formatCurrency(0)       // "0 ₫"
+ * ```
+ */
 export const formatCurrency = (v: number) =>
   new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(
     v
   );
+
+/**
+ * Formats a date/ISO string to Vietnamese date format
+ *
+ * @param iso - ISO date string, Date object, or null/undefined
+ * @param short - If true (default), returns "DD/MM/YYYY". If false, returns "DD/MM/YYYY HH:mm"
+ * @returns Formatted date string or "--" for invalid/null dates
+ *
+ * @example
+ * ```typescript
+ * formatDate('2024-01-15T10:30:00Z')        // "15/01/2024"
+ * formatDate('2024-01-15T10:30:00Z', false) // "15/01/2024 10:30"
+ * formatDate(null)                          // "--"
+ * ```
+ */
 export const formatDate = (
   iso: string | Date | undefined | null,
   short = true
@@ -18,9 +52,22 @@ export const formatDate = (
   return `${dd}/${mm}/${yyyy} ${hh}:${mi}`;
 };
 
-// Format work order ID for display. Uses optional store prefix (e.g., SC). If the ID
-// already starts with the prefix, return as-is. If ID looks like WO-<timestamp>, convert
-// to <PREFIX>-YYYYMMDD-<last6digits> for better readability.
+/**
+ * Formats a work order ID for display
+ *
+ * Converts timestamp-based IDs (e.g., "WO-1705312245678") into
+ * human-readable format (e.g., "SC-20240115-245678")
+ *
+ * @param id - The work order ID to format
+ * @param storePrefix - Store prefix to use (default: "SC")
+ * @returns Formatted work order ID or empty string if null
+ *
+ * @example
+ * ```typescript
+ * formatWorkOrderId('WO-1705312245678', 'MTR') // "MTR-20240115-245678"
+ * formatWorkOrderId('CUSTOM-123')               // "CUSTOM-123" (unchanged)
+ * ```
+ */
 export const formatWorkOrderId = (id?: string | null, storePrefix?: string) => {
   if (!id) return "";
   const prefix = storePrefix || "SC";
@@ -48,8 +95,23 @@ export const formatWorkOrderId = (id?: string | null, storePrefix?: string) => {
   return id;
 };
 
-// Generic formatter that preserves the original prefix (e.g., SALE, INV) while
-// converting any embedded epoch timestamp into a readable YYYYMMDD-suffix form.
+/**
+ * Generic ID formatter that preserves original prefixes
+ *
+ * Converts any timestamp-based ID into a readable format while
+ * preserving the original prefix (SALE, INV, TX, etc.)
+ *
+ * @param id - The ID to format
+ * @param storePrefix - Fallback store prefix for bare timestamps (default: "SC")
+ * @returns Formatted ID or empty string if null
+ *
+ * @example
+ * ```typescript
+ * formatAnyId('SALE-1705312245678')  // "SALE-20240115-245678"
+ * formatAnyId('INV-1705312245678')   // "INV-20240115-245678"
+ * formatAnyId('1705312245678', 'SC') // "SC-20240115-245678"
+ * ```
+ */
 export const formatAnyId = (id?: string | null, storePrefix?: string) => {
   if (!id) return "";
   // Capture format PREFIX-<timestamp> where timestamp is 10+ digits

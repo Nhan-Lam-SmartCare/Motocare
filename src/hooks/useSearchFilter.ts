@@ -1,13 +1,40 @@
 import { useState, useCallback } from "react";
 
+/**
+ * Props for the useSearchFilter hook
+ * @template T - Type of items being filtered
+ */
 interface UseSearchFilterProps<T> {
+  /** Array of items to search/filter */
   items: T[];
+  /** Keys of the item object to search within */
   searchFields: (keyof T)[];
 }
 
 /**
- * useSearchFilter hook - Tìm kiếm và lọc items
- * Cung cấp các utility để search/filter danh sách
+ * useSearchFilter Hook
+ *
+ * Provides client-side search/filter functionality for arrays.
+ * Performs case-insensitive partial matching across specified fields.
+ *
+ * @template T - Type of items being filtered (must extend Record<string, unknown>)
+ * @param props - Configuration options
+ * @returns Search state and filtered results
+ *
+ * @example
+ * ```tsx
+ * const { searchQuery, setSearchQuery, filteredItems } = useSearchFilter({
+ *   items: products,
+ *   searchFields: ['name', 'sku', 'category'],
+ * });
+ *
+ * return (
+ *   <>
+ *     <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
+ *     {filteredItems.map(item => <ProductCard key={item.id} {...item} />)}
+ *   </>
+ * );
+ * ```
  */
 export function useSearchFilter<T extends Record<string, unknown>>({
   items,

@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useTheme } from "../../contexts/ThemeContext";
 import { useAuth } from "../../contexts/AuthContext";
 import NotificationDropdown from "../common/NotificationDropdown";
+import { USER_ROLES, USER_ROLE_LABELS } from "../../constants";
 import { NavLink, MobileDrawerLink } from "./index";
 import {
   LayoutDashboard,
@@ -47,13 +48,15 @@ export function Nav() {
     profile?.email?.charAt(0)?.toUpperCase() ||
     user?.email?.charAt(0)?.toUpperCase() ||
     "N";
+  const isOwnerOrManager =
+    role === USER_ROLES.OWNER || role === USER_ROLES.MANAGER;
   const can = {
-    viewFinance: role === "owner" || role === "manager",
-    viewPayroll: role === "owner" || role === "manager",
-    viewAnalytics: role === "owner" || role === "manager",
-    viewDebt: role === "owner" || role === "manager",
-    viewEmployees: role === "owner" || role === "manager",
-    viewSettings: role === "owner" || role === "manager",
+    viewFinance: isOwnerOrManager,
+    viewPayroll: isOwnerOrManager,
+    viewAnalytics: isOwnerOrManager,
+    viewDebt: isOwnerOrManager,
+    viewEmployees: isOwnerOrManager,
+    viewSettings: isOwnerOrManager,
   } as const;
 
   return (
@@ -127,21 +130,18 @@ export function Nav() {
                             {displayName}
                           </div>
                           <div className="text-xs text-slate-500 dark:text-slate-400 truncate flex items-center gap-1">
-                            {profile.role === "owner" && (
+                            {profile.role === USER_ROLES.OWNER && (
                               <Crown className="w-3.5 h-3.5 text-yellow-500" />
                             )}
-                            {profile.role === "manager" && (
+                            {profile.role === USER_ROLES.MANAGER && (
                               <UserCog className="w-3.5 h-3.5 text-indigo-500" />
                             )}
-                            {profile.role === "staff" && (
+                            {profile.role === USER_ROLES.STAFF && (
                               <User className="w-3.5 h-3.5 text-slate-500" />
                             )}
                             <span>
-                              {profile.role === "owner"
-                                ? "Chủ cửa hàng"
-                                : profile.role === "manager"
-                                ? "Quản lý"
-                                : "Nhân viên"}
+                              {USER_ROLE_LABELS[profile.role] ||
+                                USER_ROLE_LABELS[USER_ROLES.STAFF]}
                             </span>
                           </div>
                         </div>
@@ -328,21 +328,18 @@ export function Nav() {
                         {profile.full_name || profile.email}
                       </div>
                       <div className="text-xs text-white/80 flex items-center gap-1 mt-0.5">
-                        {profile.role === "owner" && (
+                        {profile.role === USER_ROLES.OWNER && (
                           <Crown className="w-3 h-3" />
                         )}
-                        {profile.role === "manager" && (
+                        {profile.role === USER_ROLES.MANAGER && (
                           <UserCog className="w-3 h-3" />
                         )}
-                        {profile.role === "staff" && (
+                        {profile.role === USER_ROLES.STAFF && (
                           <User className="w-3 h-3" />
                         )}
                         <span>
-                          {profile.role === "owner"
-                            ? "Chủ cửa hàng"
-                            : profile.role === "manager"
-                            ? "Quản lý"
-                            : "Nhân viên"}
+                          {USER_ROLE_LABELS[profile.role] ||
+                            USER_ROLE_LABELS[USER_ROLES.STAFF]}
                         </span>
                       </div>
                     </div>

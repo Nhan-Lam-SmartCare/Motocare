@@ -2659,10 +2659,10 @@ const SalesManager: React.FC = () => {
 
     try {
       showToast.info("Đang tạo hình ảnh...");
-      
+
       // Dynamic import html2canvas
       const html2canvas = (await import("html2canvas")).default;
-      
+
       const canvas = await html2canvas(invoicePreviewRef.current, {
         backgroundColor: "#ffffff",
         scale: 2, // Higher quality
@@ -2675,13 +2675,15 @@ const SalesManager: React.FC = () => {
         canvas.toBlob((b) => resolve(b!), "image/png", 1.0);
       });
 
-      const fileName = `hoa-don-${printSale.sale_code || formatAnyId(printSale.id) || printSale.id}.png`;
+      const fileName = `hoa-don-${
+        printSale.sale_code || formatAnyId(printSale.id) || printSale.id
+      }.png`;
 
       // Check if Web Share API is available and supports files
       if (navigator.share && navigator.canShare) {
         const file = new File([blob], fileName, { type: "image/png" });
         const shareData = { files: [file] };
-        
+
         if (navigator.canShare(shareData)) {
           await navigator.share({
             files: [file],

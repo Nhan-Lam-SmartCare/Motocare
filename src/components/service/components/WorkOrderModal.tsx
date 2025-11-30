@@ -1005,7 +1005,7 @@ const WorkOrderModal: React.FC<{
               ...prev,
               {
                 id: depositTxId,
-                type: "deposit",
+                type: "income",
                 category: "service_deposit",
                 amount: depositAmount,
                 date: new Date().toISOString(),
@@ -1094,6 +1094,12 @@ const WorkOrderModal: React.FC<{
 
               // Create expense transaction
               try {
+                console.log("[Outsourcing] Inserting expense transaction:", {
+                  id: outsourcingTxId,
+                  amount: -totalOutsourcingCost,
+                  branchid: currentBranchId,
+                });
+                
                 const { error: expenseError } = await supabase
                   .from("cash_transactions")
                   .insert({
@@ -1102,7 +1108,7 @@ const WorkOrderModal: React.FC<{
                     category: "outsourcing",
                     amount: -totalOutsourcingCost, // Negative for expense
                     date: new Date().toISOString(),
-                    description: `Chi ph� gia c�ng b�n ngo�i - Phi�u #${orderId
+                    description: `Chi phí gia công bên ngoài - Phiếu #${orderId
                       .split("-")
                       .pop()} - ${additionalServices
                       .map((s) => s.description)
@@ -1112,7 +1118,11 @@ const WorkOrderModal: React.FC<{
                     reference: orderId,
                   });
 
-                if (!expenseError) {
+                if (expenseError) {
+                  console.error("[Outsourcing] Insert FAILED:", expenseError);
+                  showToast.error(`Lỗi tạo phiếu chi gia công: ${expenseError.message}`);
+                } else {
+                  console.log("[Outsourcing] Insert SUCCESS");
                   // Update context
                   setCashTransactions((prev: any[]) => [
                     ...prev,
@@ -1358,7 +1368,7 @@ const WorkOrderModal: React.FC<{
               ...prev,
               {
                 id: depositTxId,
-                type: "deposit",
+                type: "income",
                 category: "service_deposit",
                 amount: depositAmount - (order.depositAmount || 0),
                 date: new Date().toISOString(),

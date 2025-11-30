@@ -113,7 +113,7 @@ const NotificationDropdown: React.FC = () => {
       type: "low-stock",
       title: "Hết hàng",
       message: `${outOfStockParts.length} sản phẩm đã hết hàng`,
-      link: "/inventory",
+      link: "/inventory?stock=out-of-stock",
       icon: <Package className="w-5 h-5" />,
       color: "text-red-500 bg-red-50 dark:bg-red-900/20",
     });
@@ -125,7 +125,7 @@ const NotificationDropdown: React.FC = () => {
       type: "low-stock",
       title: "Sắp hết hàng",
       message: `${lowStockParts.length} sản phẩm cần nhập thêm`,
-      link: "/inventory",
+      link: "/inventory?stock=low-stock",
       icon: <Package className="w-5 h-5" />,
       color: "text-orange-500 bg-orange-50 dark:bg-orange-900/20",
     });
@@ -183,7 +183,7 @@ const NotificationDropdown: React.FC = () => {
       type: "work-order",
       title: "Phiếu chờ xử lý",
       message: `${pendingWorkOrders.length} xe đang chờ sửa chữa`,
-      link: "/service",
+      link: "/service?status=pending",
       icon: <Wrench className="w-5 h-5" />,
       color: "text-blue-500 bg-blue-50 dark:bg-blue-900/20",
     });

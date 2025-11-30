@@ -5,6 +5,7 @@ import React, {
   useEffect,
   useRef,
 } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { canDo } from "../../utils/permissions";
 import {
@@ -3072,6 +3073,21 @@ const InventoryHistorySection: React.FC<{
   const [selectedReceipts, setSelectedReceipts] = useState<Set<string>>(
     new Set()
   );
+  const [expandedReceipts, setExpandedReceipts] = useState<Set<string>>(
+    new Set()
+  );
+
+  const toggleExpand = (receiptCode: string) => {
+    setExpandedReceipts((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(receiptCode)) {
+        newSet.delete(receiptCode);
+      } else {
+        newSet.add(receiptCode);
+      }
+      return newSet;
+    });
+  };
 
   return (
     <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
@@ -3145,7 +3161,7 @@ const InventoryHistorySection: React.FC<{
       <div className="px-3 py-3 sm:px-6 sm:py-4 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
         <div className="flex justify-between items-center">
           <div className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
-            Tổng số tiền:{" "}
+            Tổng số phiếu:{" "}
             <span className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100">
               {groupedReceipts.length}
             </span>
@@ -3260,26 +3276,85 @@ const InventoryHistorySection: React.FC<{
                   </div>
 
                   <div className="space-y-2">
-                    {receipt.items.map((item, idx) => (
-                      <div
-                        key={item.id}
-                        className="flex items-start justify-between text-sm text-slate-700 dark:text-slate-200"
-                      >
-                        <div>
-                          <span className="font-semibold">
-                            {item.quantity} x {item.partName}
-                          </span>
-                          <div className="text-xs text-slate-400">
-                            {formatCurrency(item.unitPrice || 0)} / sản phẩm
-                          </div>
-                        </div>
-                        <span className="font-bold text-slate-900 dark:text-white">
-                          {formatCurrency(
-                            item.quantity * (item.unitPrice || 0)
+                    {(() => {
+                      const isExpanded = expandedReceipts.has(
+                        receipt.receiptCode
+                      );
+                      const maxItems = 3;
+                      const displayItems = isExpanded
+                        ? receipt.items
+                        : receipt.items.slice(0, maxItems);
+                      const hasMore = receipt.items.length > maxItems;
+
+                      return (
+                        <>
+                          {displayItems.map((item, idx) => (
+                            <div
+                              key={item.id}
+                              className="flex items-start justify-between text-sm text-slate-700 dark:text-slate-200"
+                            >
+                              <div>
+                                <span className="font-semibold">
+                                  {item.quantity} x {item.partName}
+                                </span>
+                                <div className="text-xs text-slate-400">
+                                  {formatCurrency(item.unitPrice || 0)} / sản
+                                  phẩm
+                                </div>
+                              </div>
+                              <span className="font-bold text-slate-900 dark:text-white">
+                                {formatCurrency(
+                                  item.quantity * (item.unitPrice || 0)
+                                )}
+                              </span>
+                            </div>
+                          ))}
+                          {hasMore && (
+                            <button
+                              onClick={() => toggleExpand(receipt.receiptCode)}
+                              className="w-full text-sm text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 font-medium py-2 flex items-center justify-center gap-1 bg-slate-50 dark:bg-slate-900/50 rounded-lg"
+                            >
+                              {isExpanded ? (
+                                <>
+                                  <svg
+                                    className="w-4 h-4"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M5 15l7-7 7 7"
+                                    />
+                                  </svg>
+                                  Thu gọn
+                                </>
+                              ) : (
+                                <>
+                                  <svg
+                                    className="w-4 h-4"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M19 9l-7 7-7-7"
+                                    />
+                                  </svg>
+                                  Xem thêm ({receipt.items.length - maxItems}{" "}
+                                  sản phẩm)
+                                </>
+                              )}
+                            </button>
                           )}
-                        </span>
-                      </div>
-                    ))}
+                        </>
+                      );
+                    })()}
                   </div>
 
                   <div className="flex flex-wrap gap-2">
@@ -3365,18 +3440,80 @@ const InventoryHistorySection: React.FC<{
                   {/* Cột 3: Chi tiết sản phẩm */}
                   <div className="col-span-4">
                     <div className="space-y-1">
-                      {receipt.items.map((item, idx) => (
-                        <div
-                          key={item.id}
-                          className="text-xs text-slate-700 dark:text-slate-300"
-                        >
-                          <span className="font-medium">{item.quantity} x</span>{" "}
-                          {item.partName}
-                          <span className="text-slate-400 ml-1">
-                            ({formatCurrency(item.unitPrice || 0)})
-                          </span>
-                        </div>
-                      ))}
+                      {(() => {
+                        const isExpanded = expandedReceipts.has(
+                          receipt.receiptCode
+                        );
+                        const maxItems = 3;
+                        const displayItems = isExpanded
+                          ? receipt.items
+                          : receipt.items.slice(0, maxItems);
+                        const hasMore = receipt.items.length > maxItems;
+
+                        return (
+                          <>
+                            {displayItems.map((item, idx) => (
+                              <div
+                                key={item.id}
+                                className="text-xs text-slate-700 dark:text-slate-300"
+                              >
+                                <span className="font-medium">
+                                  {item.quantity} x
+                                </span>{" "}
+                                {item.partName}
+                                <span className="text-slate-400 ml-1">
+                                  ({formatCurrency(item.unitPrice || 0)})
+                                </span>
+                              </div>
+                            ))}
+                            {hasMore && (
+                              <button
+                                onClick={() =>
+                                  toggleExpand(receipt.receiptCode)
+                                }
+                                className="text-xs text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 font-medium mt-1 flex items-center gap-1"
+                              >
+                                {isExpanded ? (
+                                  <>
+                                    <svg
+                                      className="w-3 h-3"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      viewBox="0 0 24 24"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M5 15l7-7 7 7"
+                                      />
+                                    </svg>
+                                    Thu gọn
+                                  </>
+                                ) : (
+                                  <>
+                                    <svg
+                                      className="w-3 h-3"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      viewBox="0 0 24 24"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M19 9l-7 7-7-7"
+                                      />
+                                    </svg>
+                                    Xem thêm ({receipt.items.length - maxItems}{" "}
+                                    sản phẩm)
+                                  </>
+                                )}
+                              </button>
+                            )}
+                          </>
+                        );
+                      })()}
                     </div>
                   </div>
 
@@ -3867,7 +4004,7 @@ const InventoryHistoryModal: React.FC<{
         <div className="px-6 py-4 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
           <div className="flex justify-between items-center">
             <div className="text-sm text-slate-600 dark:text-slate-400">
-              Tổng số tiền:{" "}
+              Tổng số phiếu:{" "}
               <span className="text-lg font-bold text-slate-900 dark:text-slate-100">
                 {filteredTransactions.length}
               </span>
@@ -4042,6 +4179,7 @@ const InventoryHistoryModal: React.FC<{
 // Main Inventory Manager Component (Ảnh 1)
 const InventoryManager: React.FC = () => {
   const { currentBranchId } = useAppContext();
+  const [searchParams, setSearchParams] = useSearchParams();
   // Supabase repository mutation for inventory transactions
   const { mutateAsync: createInventoryTxAsync } = useCreateInventoryTxRepo();
   const createReceiptAtomicMutation = useCreateReceiptAtomicRepo();
@@ -4083,6 +4221,20 @@ const InventoryManager: React.FC = () => {
 
   // Confirm dialog hook
   const { confirm, confirmState, handleConfirm, handleCancel } = useConfirm();
+
+  // Read stock filter from URL query params (e.g., ?stock=low-stock)
+  useEffect(() => {
+    const stockParam = searchParams.get("stock");
+    if (
+      stockParam &&
+      ["all", "in-stock", "low-stock", "out-of-stock"].includes(stockParam)
+    ) {
+      setStockFilter(stockParam);
+      // Clear the query param after applying to avoid re-applying on navigation
+      searchParams.delete("stock");
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
 
   const {
     data: pagedResult,

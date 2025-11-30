@@ -196,7 +196,14 @@ export const supabaseHelpers = {
       .order("date", { ascending: false });
 
     if (error) throw error;
-    return data;
+
+    // Map DB columns to TypeScript interface
+    return (data || []).map((row: any) => ({
+      ...row,
+      paymentSourceId:
+        row.paymentsource || row.paymentSource || row.paymentSourceId || "cash",
+      branchId: row.branchid || row.branchId,
+    }));
   },
 
   async createCashTransaction(transaction: any) {

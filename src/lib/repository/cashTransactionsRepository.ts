@@ -47,7 +47,16 @@ export async function fetchCashTransactions(params?: {
         message: "Không thể tải sổ quỹ",
         cause: error,
       });
-    return success((data || []) as CashTransaction[]);
+
+    // Map DB columns to TypeScript interface
+    const mappedData = (data || []).map((row: any) => ({
+      ...row,
+      paymentSourceId:
+        row.paymentsource || row.paymentSource || row.paymentSourceId || "cash",
+      branchId: row.branchid || row.branchId,
+    })) as CashTransaction[];
+
+    return success(mappedData);
   } catch (e: any) {
     return failure({
       code: "network",

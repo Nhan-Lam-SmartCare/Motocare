@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useSearchParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   FileText,
@@ -72,6 +72,7 @@ type FilterColor = "slate" | "blue" | "orange" | "green" | "purple";
 
 export default function ServiceManager() {
   const queryClient = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const {
     parts: contextParts,
@@ -213,6 +214,18 @@ export default function ServiceManager() {
     top: 0,
     right: 0,
   });
+
+  // Read status filter from URL query params (e.g., ?status=pending)
+  useEffect(() => {
+    const statusParam = searchParams.get("status");
+    if (statusParam === "pending") {
+      // Set to pending tab (Tiếp nhận + Đang sửa)
+      setActiveTab("pending");
+      // Clear the query param after applying
+      searchParams.delete("status");
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
 
   // State for print preview modal
   const [printOrder, setPrintOrder] = useState<WorkOrder | null>(null);
@@ -4970,7 +4983,7 @@ const WorkOrderModal: React.FC<{
               ...prev,
               {
                 id: depositTxId,
-                type: "deposit",
+                type: "income",
                 category: "service_deposit",
                 amount: depositAmount,
                 date: new Date().toISOString(),
@@ -5059,6 +5072,12 @@ const WorkOrderModal: React.FC<{
 
               // Create expense transaction
               try {
+                console.log("[Outsourcing] Inserting expense transaction:", {
+                  id: outsourcingTxId,
+                  amount: -totalOutsourcingCost,
+                  branchid: currentBranchId,
+                });
+
                 const { error: expenseError } = await supabase
                   .from("cash_transactions")
                   .insert({
@@ -5077,7 +5096,13 @@ const WorkOrderModal: React.FC<{
                     reference: orderId,
                   });
 
-                if (!expenseError) {
+                if (expenseError) {
+                  console.error("[Outsourcing] Insert FAILED:", expenseError);
+                  showToast.error(
+                    `Lỗi tạo phiếu chi gia công: ${expenseError.message}`
+                  );
+                } else {
+                  console.log("[Outsourcing] Insert SUCCESS");
                   // Update context
                   setCashTransactions((prev: any[]) => [
                     ...prev,
@@ -5323,7 +5348,7 @@ const WorkOrderModal: React.FC<{
               ...prev,
               {
                 id: depositTxId,
-                type: "deposit",
+                type: "income",
                 category: "service_deposit",
                 amount: depositAmount - (order.depositAmount || 0),
                 date: new Date().toISOString(),

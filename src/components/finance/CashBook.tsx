@@ -77,15 +77,19 @@ const CashBook: React.FC = () => {
     filterDateRange,
   ]);
 
+  // Helper to check if transaction is income type (including "deposit" for backwards compatibility)
+  const isIncomeType = (type: string | undefined) =>
+    type === "income" || type === "deposit";
+
   // Calculate summary
   const summary = useMemo(() => {
     const income = filteredTransactions
-      .filter((tx) => tx.type === "income")
-      .reduce((sum, tx) => sum + tx.amount, 0);
+      .filter((tx) => isIncomeType(tx.type))
+      .reduce((sum, tx) => sum + Math.abs(tx.amount), 0);
 
     const expense = filteredTransactions
       .filter((tx) => tx.type === "expense")
-      .reduce((sum, tx) => sum + tx.amount, 0);
+      .reduce((sum, tx) => sum + Math.abs(tx.amount), 0);
 
     const balance = income - expense;
 
@@ -99,7 +103,7 @@ const CashBook: React.FC = () => {
 
     return {
       income,
-      expense,
+      expense: -expense, // Display as negative for expense
       balance,
       cashBalance,
       bankBalance,
@@ -367,13 +371,13 @@ const CashBook: React.FC = () => {
                   </div>
                   <div
                     className={`font-bold ${
-                      tx.type === "income"
+                      isIncomeType(tx.type)
                         ? "text-green-600 dark:text-green-400"
                         : "text-red-600 dark:text-red-400"
                     }`}
                   >
-                    {tx.type === "income" ? "+" : "-"}
-                    {formatCurrency(tx.amount)}
+                    {isIncomeType(tx.type) ? "+" : "-"}
+                    {formatCurrency(Math.abs(tx.amount))}
                   </div>
                 </div>
                 <div className="flex items-center justify-between text-sm">
@@ -381,7 +385,15 @@ const CashBook: React.FC = () => {
                     {tx.notes || "--"}
                   </span>
                   <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
-                    {tx.paymentSourceId === "cash" ? "Tiền mặt" : "Ngân hàng"}
+                    {(() => {
+                      const source =
+                        tx.paymentSourceId ||
+                        (tx as any).paymentsource ||
+                        (tx as any).paymentSource;
+                      if (source === "cash") return "Tiền mặt";
+                      if (source === "bank") return "Ngân hàng";
+                      return source || "--";
+                    })()}
                   </span>
                 </div>
               </div>
@@ -442,12 +454,12 @@ const CashBook: React.FC = () => {
                     <td className="px-4 py-3">
                       <span
                         className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
-                          tx.type === "income"
+                          isIncomeType(tx.type)
                             ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
                             : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
                         }`}
                       >
-                        {tx.type === "income" ? "↑ Thu" : "↓ Chi"}
+                        {isIncomeType(tx.type) ? "↑ Thu" : "↓ Chi"}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-sm text-slate-600 dark:text-slate-400">
@@ -460,17 +472,25 @@ const CashBook: React.FC = () => {
                       {tx.notes || "--"}
                     </td>
                     <td className="px-4 py-3 text-sm text-slate-600 dark:text-slate-400">
-                      {tx.paymentSourceId === "cash" ? "Tiền mặt" : "Ngân hàng"}
+                      {(() => {
+                        const source =
+                          tx.paymentSourceId ||
+                          (tx as any).paymentsource ||
+                          (tx as any).paymentSource;
+                        if (source === "cash") return "Tiền mặt";
+                        if (source === "bank") return "Ngân hàng";
+                        return source || "--";
+                      })()}
                     </td>
                     <td
                       className={`px-4 py-3 text-right text-sm font-semibold ${
-                        tx.type === "income"
+                        isIncomeType(tx.type)
                           ? "text-green-600 dark:text-green-400"
                           : "text-red-600 dark:text-red-400"
                       }`}
                     >
-                      {tx.type === "income" ? "+" : "-"}
-                      {formatCurrency(tx.amount)}
+                      {isIncomeType(tx.type) ? "+" : "-"}
+                      {formatCurrency(Math.abs(tx.amount))}
                     </td>
                     <td className="px-4 py-3 text-center">
                       <button className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
@@ -575,6 +595,10 @@ const getCategoryLabel = (category?: string) => {
     debt_payment: "Trả nợ nhà cung cấp",
     sale_refund: "Hoàn trả",
     other_expense: "Chi khác",
+    outsourcing: "Gia công ngoài",
+    service_deposit: "Đặt cọc dịch vụ",
+    general_income: "Thu chung",
+    general_expense: "Chi chung",
   };
   return category ? labels[category] || category : "--";
 };

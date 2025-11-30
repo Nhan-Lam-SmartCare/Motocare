@@ -73,17 +73,35 @@ export function ServiceManagerMobile({
     ).length;
     const traMay = workOrders.filter((w) => w.status === "Trả máy").length;
 
-    const completedOrders = workOrders.filter(
-      (w) => w.status === "Đã sửa xong" || w.status === "Trả máy"
+    // Only count orders that are paid today
+    const today = new Date().toDateString();
+    const paidTodayOrders = workOrders.filter(
+      (w) =>
+        w.paymentStatus === "paid" &&
+        new Date(w.creationDate).toDateString() === today
     );
-    const doanhThu = completedOrders.reduce(
+
+    const doanhThu = paidTodayOrders.reduce(
       (sum, w) => sum + (w.total || 0),
       0
     );
 
-    // Simple profit calculation - skip parts cost for now
-    const loiNhuan = completedOrders.reduce((sum, w) => {
-      return sum + (w.total || 0);
+    // Profit = Revenue - Cost (parts cost + additional services cost)
+    const loiNhuan = paidTodayOrders.reduce((sum, w) => {
+      // Calculate parts cost (costPrice * quantity)
+      const partsCost =
+        w.partsUsed?.reduce(
+          (s, p) => s + (p.costPrice || 0) * (p.quantity || 1),
+          0
+        ) || 0;
+      // Calculate additional services cost
+      const servicesCost =
+        w.additionalServices?.reduce(
+          (s, svc) => s + (svc.costPrice || 0) * (svc.quantity || 1),
+          0
+        ) || 0;
+      // Profit = total - costs
+      return sum + ((w.total || 0) - partsCost - servicesCost);
     }, 0);
 
     return { tiepNhan, dangSua, daHoanThanh, traMay, doanhThu, loiNhuan };

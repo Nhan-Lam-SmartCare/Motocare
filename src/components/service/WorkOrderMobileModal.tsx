@@ -403,6 +403,7 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
           partName: part.name,
           quantity: 1,
           sellingPrice: part.retailPrice?.[currentBranchId] || 0,
+          costPrice: part.costPrice?.[currentBranchId] || 0,
           sku: part.sku || "",
           category: part.category || "",
         },
@@ -552,6 +553,7 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
       partName: p.partName,
       quantity: p.quantity,
       price: p.sellingPrice, // Map sellingPrice to price for SQL
+      costPrice: p.costPrice || 0, // Cost price for profit calculation
       sku: p.sku || "",
       category: p.category || "",
     }));

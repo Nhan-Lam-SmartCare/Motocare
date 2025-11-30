@@ -126,6 +126,7 @@ export interface WorkOrderPart {
   category?: string;
   quantity: number;
   price: number; // Selling price snapshot
+  costPrice?: number; // Cost price for profit calculation
 }
 
 export interface WorkOrder {

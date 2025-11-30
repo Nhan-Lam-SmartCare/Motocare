@@ -396,22 +396,32 @@ export default function ServiceManager() {
           new Date(o.creationDate).toDateString() === new Date().toDateString()
       )
       .reduce((sum, o) => sum + o.total, 0);
+
+    // Profit = Revenue - Cost (parts costPrice + services costPrice)
     const todayProfit = displayWorkOrders
       .filter(
         (o) =>
           o.paymentStatus === "paid" &&
           new Date(o.creationDate).toDateString() === new Date().toDateString()
       )
-      .reduce(
-        (sum, o) =>
-          sum +
-          (o.total -
-            (o.partsUsed?.reduce(
-              (s: number, p: WorkOrderPart) => s + p.price * p.quantity,
-              0
-            ) || 0)),
-        0
-      );
+      .reduce((sum, o) => {
+        // Calculate parts cost (costPrice * quantity)
+        const partsCost =
+          o.partsUsed?.reduce(
+            (s: number, p: WorkOrderPart) =>
+              s + (p.costPrice || 0) * (p.quantity || 1),
+            0
+          ) || 0;
+        // Calculate additional services cost
+        const servicesCost =
+          o.additionalServices?.reduce(
+            (s: number, svc: { costPrice?: number; quantity?: number }) =>
+              s + (svc.costPrice || 0) * (svc.quantity || 1),
+            0
+          ) || 0;
+        // Profit = total - costs
+        return sum + (o.total - partsCost - servicesCost);
+      }, 0);
 
     return { pending, inProgress, done, delivered, todayRevenue, todayProfit };
   }, [displayWorkOrders]);
@@ -5536,6 +5546,7 @@ const WorkOrderModal: React.FC<{
           category: part.category || "",
           quantity: 1,
           price: part.retailPrice[currentBranchId] || 0,
+          costPrice: part.costPrice?.[currentBranchId] || 0,
         },
       ]);
     }

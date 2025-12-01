@@ -24,6 +24,7 @@ import {
   Plus,
   Share2,
   Download,
+  Zap,
 } from "lucide-react";
 import { useAppContext } from "../../contexts/AppContext";
 import { usePartsRepo } from "../../hooks/usePartsRepository";
@@ -47,6 +48,8 @@ import {
 } from "../../hooks/useDebtsRepository";
 import { useCustomers, useCreateCustomer } from "../../hooks/useSupabase";
 import BarcodeScannerModal from "../common/BarcodeScannerModal";
+import QuickServiceModal from "./QuickServiceModal";
+import type { QuickService } from "../../hooks/useQuickServices";
 
 interface StoreSettings {
   store_name?: string;
@@ -1955,6 +1958,7 @@ const SalesManager: React.FC = () => {
   const [discountPercent, setDiscountPercent] = useState(0);
   const [showSalesHistory, setShowSalesHistory] = useState(false);
   const [showAddCustomerModal, setShowAddCustomerModal] = useState(false);
+  const [showQuickServiceModal, setShowQuickServiceModal] = useState(false);
   const [newCustomer, setNewCustomer] = useState({
     name: "",
     phone: "",
@@ -3174,6 +3178,101 @@ const SalesManager: React.FC = () => {
     }
   };
 
+  // Quick service handler
+  const handleQuickServiceComplete = async (
+    service: { id: string; name: string; price: number; category?: string },
+    quantity: number,
+    paymentMethod: "cash" | "bank",
+    customer: {
+      id?: string;
+      name: string;
+      phone: string;
+      vehicleModel: string;
+      licensePlate: string;
+    }
+  ) => {
+    try {
+      const servicePrice = service.price * quantity;
+      const saleId = crypto.randomUUID();
+
+      // Create a virtual cart item for the service
+      const serviceItem: CartItem = {
+        partId: `quick_service_${service.id}`,
+        name: service.name,
+        quantity: quantity,
+        price: service.price,
+        category: service.category || "Dịch vụ nhanh",
+        discount: 0,
+      };
+
+      // Call RPC to create sale atomically
+      const rpcRes = await createSaleAtomicAsync({
+        id: saleId,
+        items: [serviceItem],
+        discount: 0,
+        customer: customer,
+        customerId: customer.id, // Truyền customerId để tích điểm
+        paymentMethod: paymentMethod,
+        userId: profile?.id || "local-user",
+        userName: profile?.full_name || profile?.email || "Nhân viên",
+        branchId: currentBranchId,
+      } as any);
+
+      if ((rpcRes as any)?.error) throw (rpcRes as any).error;
+
+      // Nếu có customerId, cập nhật totalspent cho khách hàng
+      if (customer.id) {
+        try {
+          // Lấy totalspent hiện tại
+          const { data: currentCustomer } = await supabase
+            .from("customers")
+            .select("totalspent")
+            .eq("id", customer.id)
+            .single();
+
+          const currentTotal = currentCustomer?.totalspent || 0;
+
+          // Cập nhật totalspent mới
+          await supabase
+            .from("customers")
+            .update({
+              totalspent: currentTotal + servicePrice,
+              lastvisit: new Date().toISOString(),
+            })
+            .eq("id", customer.id);
+
+          console.log(
+            `[QuickService] Updated customer ${customer.name} totalspent: ${currentTotal} + ${servicePrice}`
+          );
+        } catch (err) {
+          console.error(
+            "[QuickService] Error updating customer totalspent:",
+            err
+          );
+        }
+      }
+
+      const customerLabel =
+        customer.name !== "Khách vãng lai"
+          ? customer.name
+          : customer.licensePlate
+          ? `Biển số ${customer.licensePlate}`
+          : "Khách vãng lai";
+
+      showToast.success(
+        `✅ ${service.name} x${quantity} - ${servicePrice.toLocaleString(
+          "vi-VN"
+        )}đ (${customerLabel})`
+      );
+
+      // Close modal
+      setShowQuickServiceModal(false);
+    } catch (error: any) {
+      console.error("Error creating quick service sale:", error);
+      showToast.error(error?.message || "Có lỗi khi tạo đơn dịch vụ nhanh");
+    }
+  };
+
   // Click outside to close dropdown
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -3189,11 +3288,11 @@ const SalesManager: React.FC = () => {
 
   return (
     <div className="min-h-screen max-w-full overflow-x-hidden bg-gradient-to-br from-slate-50 via-blue-50/20 to-indigo-50/30 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800 pb-16 md:pb-0">
-      {/* Mobile Bottom Tabs - Fixed at bottom - 3 tabs: Sản phẩm, Giỏ hàng, Lịch sử */}
+      {/* Mobile Bottom Tabs - Fixed at bottom - 4 tabs: Sản phẩm, Giỏ hàng, DV nhanh, Lịch sử */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 safe-area-bottom">
         {/* Backdrop blur effect for modern look */}
         <div className="absolute inset-0 bg-white/80 dark:bg-slate-800/80 backdrop-blur-lg -z-10"></div>
-        <div className="grid grid-cols-3 gap-1 px-2 py-2">
+        <div className="grid grid-cols-4 gap-1 px-2 py-2">
           <button
             onClick={() => setMobileTab("products")}
             className={`flex flex-col items-center gap-1 px-1 py-1.5 rounded-lg transition-all duration-200 ${
@@ -3242,6 +3341,13 @@ const SalesManager: React.FC = () => {
             >
               Giỏ hàng
             </span>
+          </button>
+          <button
+            onClick={() => setShowQuickServiceModal(true)}
+            className="flex flex-col items-center gap-1 px-1 py-1.5 rounded-lg transition-all duration-200 text-amber-600 dark:text-amber-400 active:scale-95 active:bg-amber-50 dark:active:bg-amber-900/30"
+          >
+            <Zap className="w-6 h-6" />
+            <span className="text-[9px] font-medium">DV nhanh</span>
           </button>
           <button
             onClick={() => {
@@ -3400,6 +3506,14 @@ const SalesManager: React.FC = () => {
               </div>
               {/* History button - only show on desktop since mobile has tab */}
               <div className="hidden md:flex items-center gap-2">
+                <button
+                  onClick={() => setShowQuickServiceModal(true)}
+                  className="px-4 py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white rounded-xl whitespace-nowrap transition-all inline-flex items-center gap-2 text-sm font-bold shadow-lg hover:shadow-xl hover:scale-105 active:scale-95"
+                  title="Dịch vụ nhanh - Rửa xe, vá xe..."
+                >
+                  <Zap className="w-5 h-5" />
+                  <span>Dịch vụ nhanh</span>
+                </button>
                 <button
                   onClick={() => setShowSalesHistory(true)}
                   className="px-4 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl whitespace-nowrap transition-all inline-flex items-center gap-2 text-sm font-bold shadow-lg hover:shadow-xl hover:scale-105 active:scale-95"
@@ -5387,6 +5501,14 @@ const SalesManager: React.FC = () => {
         onClose={() => setShowCameraScanner(false)}
         onScan={handleCameraScan}
         title="Quét mã vạch sản phẩm"
+      />
+
+      {/* Quick Service Modal */}
+      <QuickServiceModal
+        isOpen={showQuickServiceModal}
+        onClose={() => setShowQuickServiceModal(false)}
+        onComplete={handleQuickServiceComplete}
+        branchId={currentBranchId}
       />
     </div>
   );

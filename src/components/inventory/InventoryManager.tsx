@@ -203,7 +203,7 @@ const AddProductModal: React.FC<{
               <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2">
                 📦 Thông tin sản phẩm
               </h3>
-              
+
               {/* Tên sản phẩm */}
               <div className="mb-3">
                 <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">
@@ -217,7 +217,7 @@ const AddProductModal: React.FC<{
                   placeholder="Nhập tên sản phẩm"
                 />
               </div>
-              
+
               {/* Danh mục */}
               <div className="mb-3">
                 <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">
@@ -242,11 +242,13 @@ const AddProductModal: React.FC<{
                     className="w-12 h-12 flex items-center justify-center bg-blue-100 dark:bg-blue-900/30 border border-blue-300 dark:border-blue-700 rounded-xl hover:bg-blue-200 dark:hover:bg-blue-800/40 transition-colors"
                     aria-label="Thêm danh mục mới"
                   >
-                    <span className="text-2xl text-blue-600 dark:text-blue-400">+</span>
+                    <span className="text-2xl text-blue-600 dark:text-blue-400">
+                      +
+                    </span>
                   </button>
                 </div>
               </div>
-              
+
               {/* Barcode */}
               <div>
                 <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">
@@ -342,7 +344,7 @@ const AddProductModal: React.FC<{
               <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2">
                 💰 Thông tin nhập kho
               </h3>
-              
+
               <div className="grid grid-cols-2 gap-3">
                 {/* Số lượng */}
                 <div>
@@ -360,7 +362,7 @@ const AddProductModal: React.FC<{
                     className="w-full px-4 py-3 text-base border border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 text-center font-bold"
                   />
                 </div>
-                
+
                 {/* Giá nhập */}
                 <div>
                   <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">
@@ -382,7 +384,7 @@ const AddProductModal: React.FC<{
                     className="w-full px-4 py-3 text-base border border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 text-right"
                   />
                 </div>
-                
+
                 {/* Giá bán lẻ */}
                 <div>
                   <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">
@@ -397,7 +399,7 @@ const AddProductModal: React.FC<{
                     className="w-full px-4 py-3 text-base border border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 text-right"
                   />
                 </div>
-                
+
                 {/* Bảo hành */}
                 <div>
                   <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">
@@ -516,8 +518,9 @@ const GoodsReceiptMobileWrapper: React.FC<{
     // Chỉ thêm vào danh sách tạm thời, KHÔNG lưu vào DB ngay
     // Sản phẩm sẽ được tạo khi hoàn tất phiếu nhập (bấm "Nhập kho")
     const tempId = `temp-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-    const tempSku = productData.barcode?.trim() || productData.sku || `PT-${Date.now()}`;
-    
+    const tempSku =
+      productData.barcode?.trim() || productData.sku || `PT-${Date.now()}`;
+
     // Add to receipt items with temporary ID (marked as new product)
     setReceiptItems((items) => [
       ...items,
@@ -539,12 +542,16 @@ const GoodsReceiptMobileWrapper: React.FC<{
           description: productData.description || "",
           importPrice: productData.importPrice,
           retailPrice: productData.retailPrice,
-          wholesalePrice: productData.wholesalePrice || Math.round(productData.retailPrice * 0.9),
+          wholesalePrice:
+            productData.wholesalePrice ||
+            Math.round(productData.retailPrice * 0.9),
         },
       },
     ]);
-    
-    showToast.success("Đã thêm sản phẩm mới vào phiếu. Sản phẩm sẽ được lưu khi nhập kho.");
+
+    showToast.success(
+      "Đã thêm sản phẩm mới vào phiếu. Sản phẩm sẽ được lưu khi nhập kho."
+    );
     setShowAddProductModal(false);
   };
 
@@ -3704,7 +3711,9 @@ const InventoryHistorySection: React.FC<{
                       updatedData.items[0].notes
                         ?.split("NV:")[1]
                         ?.split("NCC:")[0]
-                        ?.trim() || profile?.full_name || "Nhân viên"
+                        ?.trim() ||
+                      profile?.full_name ||
+                      "Nhân viên"
                     } NCC:${updatedData.supplier}${
                       updatedData.supplierPhone
                         ? ` Phone:${updatedData.supplierPhone}`
@@ -3819,7 +3828,9 @@ const InventoryHistorySection: React.FC<{
                       updatedData.items[0].notes
                         ?.split("NV:")[1]
                         ?.split("NCC:")[0]
-                        ?.trim() || profile?.full_name || "Nhân viên"
+                        ?.trim() ||
+                      profile?.full_name ||
+                      "Nhân viên"
                     } NCC:${updatedData.supplier}${
                       updatedData.supplierPhone
                         ? ` Phone:${updatedData.supplierPhone}`
@@ -4545,18 +4556,24 @@ const InventoryManager: React.FC = () => {
                 description: item._productData.description || "",
                 stock: { [currentBranchId]: 0 }, // Stock = 0, sẽ cập nhật khi hoàn tất phiếu nhập
                 costPrice: { [currentBranchId]: item._productData.importPrice },
-                retailPrice: { [currentBranchId]: item._productData.retailPrice },
+                retailPrice: {
+                  [currentBranchId]: item._productData.retailPrice,
+                },
                 wholesalePrice: {
-                  [currentBranchId]: item._productData.wholesalePrice || Math.round(item._productData.retailPrice * 0.9),
+                  [currentBranchId]:
+                    item._productData.wholesalePrice ||
+                    Math.round(item._productData.retailPrice * 0.9),
                 },
               });
-              
+
               // Get the real part ID from the created product
               const partData = (createRes as any)?.data || createRes;
               const realPartId = partData?.id || item.partId;
-              
-              console.log(`✅ Created new product: ${item._productData.name} with ID: ${realPartId}`);
-              
+
+              console.log(
+                `✅ Created new product: ${item._productData.name} with ID: ${realPartId}`
+              );
+
               return {
                 partId: realPartId,
                 partName: item.partName,
@@ -4584,7 +4601,9 @@ const InventoryManager: React.FC = () => {
           supplierId,
           branchId: currentBranchId,
           userId: profile?.id || "unknown",
-          notes: `NV:${profile?.full_name || "Nhân viên"} NCC:${supplierName}${note ? " | " + note : ""}`,
+          notes: `NV:${profile?.full_name || "Nhân viên"} NCC:${supplierName}${
+            note ? " | " + note : ""
+          }`,
         });
 
         // Create supplier debt if payment is partial or deferred

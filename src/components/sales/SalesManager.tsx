@@ -325,6 +325,7 @@ const EditSaleModal: React.FC<EditSaleModalProps> = ({
   const [showCustomerForm, setShowCustomerForm] = useState(false);
   const [newCustomerName, setNewCustomerName] = useState("");
   const [newCustomerPhone, setNewCustomerPhone] = useState("");
+  const [newCustomerLicensePlate, setNewCustomerLicensePlate] = useState("");
   const [customerSearchText, setCustomerSearchText] = useState("");
   const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
 
@@ -431,6 +432,9 @@ const EditSaleModal: React.FC<EditSaleModalProps> = ({
         phone: newCustomerPhone || undefined,
         email: "",
         created_at: new Date().toISOString(),
+        vehicles: newCustomerLicensePlate.trim()
+          ? [{ licensePlate: newCustomerLicensePlate.trim().toUpperCase() }]
+          : undefined,
       };
 
       await upsertCustomer(newCustomer);
@@ -444,6 +448,7 @@ const EditSaleModal: React.FC<EditSaleModalProps> = ({
       setShowCustomerForm(false);
       setNewCustomerName("");
       setNewCustomerPhone("");
+      setNewCustomerLicensePlate("");
       showToast.success("Thêm khách hàng thành công");
     } catch (error) {
       console.error("Error adding customer:", error);
@@ -611,6 +616,15 @@ const EditSaleModal: React.FC<EditSaleModalProps> = ({
                   placeholder="Số điện thoại (tùy chọn)"
                   className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
                 />
+                <input
+                  type="text"
+                  value={newCustomerLicensePlate}
+                  onChange={(e) =>
+                    setNewCustomerLicensePlate(e.target.value.toUpperCase())
+                  }
+                  placeholder="Biển số xe (tùy chọn)"
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
+                />
                 <div className="flex gap-2">
                   <button
                     onClick={handleAddNewCustomer}
@@ -623,6 +637,7 @@ const EditSaleModal: React.FC<EditSaleModalProps> = ({
                       setShowCustomerForm(false);
                       setNewCustomerName("");
                       setNewCustomerPhone("");
+                      setNewCustomerLicensePlate("");
                     }}
                     className="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-700 dark:text-slate-300"
                   >
@@ -725,10 +740,7 @@ const EditSaleModal: React.FC<EditSaleModalProps> = ({
                         <NumberInput
                           value={item.sellingPrice}
                           onChange={(val) =>
-                            handleUpdatePrice(
-                              item.partId,
-                              val
-                            )
+                            handleUpdatePrice(item.partId, val)
                           }
                           className="w-full px-2 py-1 border border-slate-300 dark:border-slate-600 rounded text-right text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
                         />
@@ -4238,9 +4250,7 @@ const SalesManager: React.FC = () => {
                   </label>
                   <NumberInput
                     value={partialAmount}
-                    onChange={(val) =>
-                      setPartialAmount(val)
-                    }
+                    onChange={(val) => setPartialAmount(val)}
                     className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
                     placeholder="0"
                   />

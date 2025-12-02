@@ -150,3 +150,92 @@ function formatCurrency(amount: number): string {
     currency: "VND",
   }).format(amount);
 }
+
+/**
+ * Validate password strength
+ * Requirements:
+ * - Minimum 8 characters
+ * - At least 1 uppercase letter
+ * - At least 1 lowercase letter
+ * - At least 1 number
+ */
+export function validatePassword(password: string): ValidationResult {
+  if (!password) {
+    return { ok: false, error: "Mật khẩu không được để trống" };
+  }
+
+  if (password.length < 8) {
+    return {
+      ok: false,
+      error: "Mật khẩu phải có ít nhất 8 ký tự",
+    };
+  }
+
+  if (!/[A-Z]/.test(password)) {
+    return {
+      ok: false,
+      error: "Mật khẩu phải có ít nhất 1 chữ in hoa",
+    };
+  }
+
+  if (!/[a-z]/.test(password)) {
+    return {
+      ok: false,
+      error: "Mật khẩu phải có ít nhất 1 chữ thường",
+    };
+  }
+
+  if (!/[0-9]/.test(password)) {
+    return {
+      ok: false,
+      error: "Mật khẩu phải có ít nhất 1 số",
+    };
+  }
+
+  return { ok: true };
+}
+
+/**
+ * Sanitize user input to prevent XSS attacks
+ * Removes or escapes potentially dangerous HTML/script content
+ */
+export function sanitizeInput(input: string): string {
+  if (!input || typeof input !== "string") {
+    return "";
+  }
+
+  // Remove script tags and their content
+  let sanitized = input.replace(
+    /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
+    ""
+  );
+
+  // Remove event handlers (onclick, onload, etc.)
+  sanitized = sanitized.replace(/\bon\w+\s*=\s*["'][^"']*["']/gi, "");
+
+  // Escape HTML special characters
+  sanitized = sanitized
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#x27;");
+
+  return sanitized;
+}
+
+/**
+ * Validate and sanitize email address
+ */
+export function validateEmail(email: string): ValidationResult {
+  if (!email || !email.trim()) {
+    return { ok: false, error: "Email không được để trống" };
+  }
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email.trim())) {
+    return { ok: false, error: "Email không hợp lệ" };
+  }
+
+  return { ok: true };
+}

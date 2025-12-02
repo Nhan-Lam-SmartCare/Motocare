@@ -16,8 +16,8 @@ export default defineConfig(({ mode }) => {
         input: path.resolve(process.cwd(), "index.html"),
       },
     },
-    define: {
-      "process.env.GEMINI_API_KEY": JSON.stringify(env.VITE_GEMINI_API_KEY),
-    },
+    // Note: API keys should be handled server-side, not exposed in client bundle
+    // If Gemini API is needed, create a backend proxy endpoint
+    define: {},
   };
 });

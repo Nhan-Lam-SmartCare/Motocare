@@ -56,6 +56,7 @@ import { useSuppliers, useCreateSupplier } from "../../hooks/useSuppliers";
 import type { Part, InventoryTransaction } from "../../types";
 import { fetchPartBySku } from "../../lib/repository/partsRepository";
 import { useSupplierDebtsRepo } from "../../hooks/useDebtsRepository";
+import { createCashTransaction } from "../../lib/repository/cashTransactionsRepository";
 import FormattedNumberInput from "../common/FormattedNumberInput";
 import { validatePriceAndQty } from "../../utils/validation";
 import { GoodsReceiptMobileModal } from "./GoodsReceiptMobileModal";
@@ -4614,6 +4615,34 @@ const InventoryManager: React.FC = () => {
             profile?.name || profile?.full_name || "Nhân viên"
           } NCC:${supplierName}${note ? " | " + note : ""}`,
         });
+
+        // 💰 Ghi chi tiền vào sổ quỹ nếu có thanh toán (paidAmount > 0)
+        if (paidAmount > 0 && paymentInfo) {
+          const paymentSourceId =
+            paymentInfo.paymentMethod === "bank" ? "bank" : "cash";
+          const cashTxResult = await createCashTransaction({
+            type: "expense",
+            amount: paidAmount,
+            branchId: currentBranchId,
+            paymentSourceId: paymentSourceId,
+            date: today.toISOString(),
+            notes: `Chi trả NCC ${supplierName} - Phiếu nhập ${receiptCode}`,
+            category: "supplier_payment",
+            supplierId: supplierId,
+            recipient: supplierName,
+          });
+
+          if (cashTxResult.ok) {
+            console.log(
+              `✅ Đã ghi chi tiền ${paidAmount.toLocaleString()} đ vào sổ quỹ (${paymentSourceId})`
+            );
+          } else {
+            console.error("❌ Lỗi ghi sổ quỹ:", cashTxResult.error);
+            showToast.warning(
+              `Nhập kho OK nhưng chưa ghi được sổ quỹ: ${cashTxResult.error?.message}`
+            );
+          }
+        }
 
         // Create supplier debt if payment is partial or deferred
         if (debtAmount > 0 && paymentInfo) {

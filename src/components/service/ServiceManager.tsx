@@ -643,6 +643,48 @@ export default function ServiceManager() {
   const createCustomerDebt = useCreateCustomerDebtRepo();
   const updateCustomerDebt = useUpdateCustomerDebtRepo();
 
+  // 🔔 Helper: Create notification when work order is created
+  const createWorkOrderNotification = async (
+    orderId: string,
+    customerName: string,
+    vehicleModel: string,
+    licensePlate: string,
+    total: number,
+    createdByName: string
+  ) => {
+    try {
+      const { error } = await supabase.from("notifications").insert({
+        id: crypto.randomUUID(),
+        type: "work_order",
+        title: "Phiếu sửa chữa mới",
+        message: `${createdByName} tạo phiếu ${orderId} - ${customerName} (${
+          licensePlate || vehicleModel
+        }) - ${formatCurrency(total)}`,
+        data: {
+          workOrderId: orderId,
+          customerName,
+          vehicleModel,
+          licensePlate,
+          total,
+          createdBy: createdByName,
+        },
+        created_by: profile?.id || null,
+        recipient_role: "owner", // Gửi đến owner
+        branch_id: currentBranchId,
+        is_read: false,
+        created_at: new Date().toISOString(),
+      });
+
+      if (error) {
+        console.error("❌ Error creating notification:", error);
+      } else {
+        console.log("✅ Notification created for work order:", orderId);
+      }
+    } catch (err) {
+      console.error("❌ Error in createWorkOrderNotification:", err);
+    }
+  };
+
   // Helper: Auto-create customer debt if there's remaining amount (defined early for handleMobileSave)
   const createCustomerDebtIfNeeded = async (
     workOrder: WorkOrder,
@@ -969,6 +1011,18 @@ export default function ServiceManager() {
             totalPaid
           );
         }
+
+        // 🔔 Tạo thông báo cho owner khi nhân viên tạo phiếu mới
+        const createdByName =
+          profile?.name || profile?.full_name || profile?.email || "Nhân viên";
+        await createWorkOrderNotification(
+          orderId,
+          customer.name,
+          vehicle?.model || "",
+          vehicle?.licensePlate || "",
+          total,
+          createdByName
+        );
 
         showToast.success("Tạo phiếu sửa chữa thành công!");
       } else {
@@ -5363,6 +5417,18 @@ const WorkOrderModal: React.FC<{
 
           // Call onSave to update the workOrders state
           onSave(finalOrder);
+
+          // 🔹 Send notification to owner/manager when staff creates new work order
+          const createdByName =
+            profile?.name || profile?.full_name || "Nhân viên";
+          await createWorkOrderNotification(
+            orderId,
+            formData.customerName || "",
+            formData.vehicleModel || "",
+            formData.licensePlate || "",
+            total,
+            createdByName
+          );
 
           // 🔹 Auto-create customer debt ONLY when status is "Trả máy" and there's remaining amount
           if (formData.status === "Trả máy" && remainingAmount > 0) {

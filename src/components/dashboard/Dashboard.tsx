@@ -48,10 +48,7 @@ import {
 import { useSalesRepo } from "../../hooks/useSalesRepository";
 import { usePartsRepo } from "../../hooks/usePartsRepository";
 import { useCashTxRepo } from "../../hooks/useCashTransactionsRepository";
-import {
-  useCustomers,
-  useWorkOrders,
-} from "../../hooks/useSupabase";
+import { useCustomers, useWorkOrders } from "../../hooks/useSupabase";
 import { useEmployeesRepo } from "../../hooks/useEmployeesRepository";
 import { useLoansRepo } from "../../hooks/useLoansRepository";
 import { formatCurrency } from "../../utils/format";

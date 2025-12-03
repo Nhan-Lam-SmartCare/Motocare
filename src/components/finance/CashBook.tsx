@@ -1001,26 +1001,26 @@ const AddTransactionModal: React.FC<{
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-start sm:items-center justify-center pt-0 sm:p-4 z-50 overflow-y-auto">
+      <div className="bg-white dark:bg-slate-800 sm:rounded-2xl shadow-2xl w-full sm:max-w-md min-h-screen sm:min-h-0 sm:max-h-[85vh] flex flex-col">
         {/* Header with gradient */}
         <div
-          className={`px-5 py-4 ${
+          className={`px-4 py-3 flex-shrink-0 ${
             type === "income"
               ? "bg-gradient-to-r from-emerald-500 to-green-600"
               : "bg-gradient-to-r from-rose-500 to-red-600"
           }`}
         >
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-bold text-white flex items-center gap-2">
+            <h2 className="text-base font-bold text-white flex items-center gap-2">
               {type === "income" ? "📥 Thu tiền" : "📤 Chi tiền"}
             </h2>
             <button
               onClick={onClose}
-              className="text-white/80 hover:text-white transition-colors"
+              className="text-white/80 hover:text-white transition-colors p-1"
             >
               <svg
-                className="w-6 h-6"
+                className="w-5 h-5"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -1036,19 +1036,22 @@ const AddTransactionModal: React.FC<{
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-5 space-y-4">
+        <form
+          onSubmit={handleSubmit}
+          className="flex-1 overflow-y-auto p-3 space-y-2.5 pb-20 sm:pb-4"
+        >
           {/* Type Toggle */}
-          <div className="flex bg-slate-100 dark:bg-slate-700 rounded-xl p-1">
+          <div className="flex bg-slate-100 dark:bg-slate-700 rounded-lg p-1">
             <button
               type="button"
               onClick={() => {
                 setType("income");
                 setCategory("");
               }}
-              className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all ${
+              className={`flex-1 py-1.5 rounded-md text-xs font-semibold transition-all ${
                 type === "income"
                   ? "bg-emerald-500 text-white shadow-md"
-                  : "text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600"
+                  : "text-slate-600 dark:text-slate-300"
               }`}
             >
               📥 Thu tiền
@@ -1059,19 +1062,19 @@ const AddTransactionModal: React.FC<{
                 setType("expense");
                 setCategory("");
               }}
-              className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all ${
+              className={`flex-1 py-1.5 rounded-md text-xs font-semibold transition-all ${
                 type === "expense"
                   ? "bg-rose-500 text-white shadow-md"
-                  : "text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600"
+                  : "text-slate-600 dark:text-slate-300"
               }`}
             >
               📤 Chi tiền
             </button>
           </div>
 
-          {/* Amount - Big Input */}
+          {/* Amount */}
           <div>
-            <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1 uppercase tracking-wide">
+            <label className="block text-[10px] font-medium text-slate-500 dark:text-slate-400 mb-0.5 uppercase">
               Số tiền
             </label>
             <div className="relative">
@@ -1081,40 +1084,40 @@ const AddTransactionModal: React.FC<{
                 value={amount}
                 onChange={(e) => setAmount(formatNumber(e.target.value))}
                 placeholder="0"
-                className={`w-full px-4 py-3 text-2xl font-bold bg-slate-50 dark:bg-slate-700/50 border-2 rounded-xl text-right pr-12 transition-colors ${
+                className={`w-full px-3 py-2 text-lg font-bold bg-slate-50 dark:bg-slate-700/50 border-2 rounded-lg text-right pr-8 ${
                   type === "income"
                     ? "border-emerald-200 dark:border-emerald-800 focus:border-emerald-500 text-emerald-600 dark:text-emerald-400"
                     : "border-rose-200 dark:border-rose-800 focus:border-rose-500 text-rose-600 dark:text-rose-400"
                 } focus:outline-none`}
                 required
               />
-              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-lg font-medium text-slate-400">
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-medium text-slate-400">
                 đ
               </span>
             </div>
           </div>
 
-          {/* Category Grid */}
+          {/* Category Grid - Compact */}
           <div>
-            <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-2 uppercase tracking-wide">
+            <label className="block text-[10px] font-medium text-slate-500 dark:text-slate-400 mb-1 uppercase">
               Danh mục
             </label>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-3 gap-1">
               {categories.map((cat) => (
                 <button
                   key={cat.value}
                   type="button"
                   onClick={() => setCategory(cat.value)}
-                  className={`p-3 rounded-xl text-center transition-all ${
+                  className={`p-1.5 rounded-lg text-center transition-all ${
                     category === cat.value
                       ? type === "income"
                         ? "bg-emerald-100 dark:bg-emerald-900/30 border-2 border-emerald-500 text-emerald-700 dark:text-emerald-300"
                         : "bg-rose-100 dark:bg-rose-900/30 border-2 border-rose-500 text-rose-700 dark:text-rose-300"
-                      : "bg-slate-50 dark:bg-slate-700/50 border-2 border-transparent hover:border-slate-300 dark:hover:border-slate-600 text-slate-700 dark:text-slate-300"
+                      : "bg-slate-50 dark:bg-slate-700/50 border-2 border-transparent text-slate-700 dark:text-slate-300"
                   }`}
                 >
-                  <div className="text-xl mb-1">{cat.icon}</div>
-                  <div className="text-xs font-medium leading-tight">
+                  <div className="text-base leading-none">{cat.icon}</div>
+                  <div className="text-[8px] font-medium leading-tight mt-0.5">
                     {cat.label.replace(/^\S+\s/, "")}
                   </div>
                 </button>
@@ -1122,16 +1125,16 @@ const AddTransactionModal: React.FC<{
             </div>
           </div>
 
-          {/* Payment Source Toggle */}
+          {/* Payment Source Toggle - Compact */}
           <div>
-            <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-2 uppercase tracking-wide">
+            <label className="block text-[10px] font-medium text-slate-500 dark:text-slate-400 mb-1 uppercase">
               Nguồn tiền
             </label>
-            <div className="flex gap-2">
+            <div className="flex gap-1.5">
               <button
                 type="button"
                 onClick={() => setPaymentSource("cash")}
-                className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-2 ${
+                className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-medium flex items-center justify-center gap-1 ${
                   paymentSource === "cash"
                     ? "bg-amber-100 dark:bg-amber-900/30 border-2 border-amber-500 text-amber-700 dark:text-amber-300"
                     : "bg-slate-50 dark:bg-slate-700/50 border-2 border-transparent text-slate-600 dark:text-slate-400"
@@ -1142,7 +1145,7 @@ const AddTransactionModal: React.FC<{
               <button
                 type="button"
                 onClick={() => setPaymentSource("bank")}
-                className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-2 ${
+                className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-medium flex items-center justify-center gap-1 ${
                   paymentSource === "bank"
                     ? "bg-blue-100 dark:bg-blue-900/30 border-2 border-blue-500 text-blue-700 dark:text-blue-300"
                     : "bg-slate-50 dark:bg-slate-700/50 border-2 border-transparent text-slate-600 dark:text-slate-400"
@@ -1153,10 +1156,10 @@ const AddTransactionModal: React.FC<{
             </div>
           </div>
 
-          {/* Recipient & Date Row */}
-          <div className="grid grid-cols-2 gap-3">
+          {/* Recipient & Date Row - Compact */}
+          <div className="grid grid-cols-2 gap-1.5">
             <div>
-              <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1 uppercase tracking-wide">
+              <label className="block text-[10px] font-medium text-slate-500 dark:text-slate-400 mb-0.5 uppercase">
                 Đối tượng
               </label>
               <input
@@ -1164,49 +1167,53 @@ const AddTransactionModal: React.FC<{
                 value={recipient}
                 onChange={(e) => setRecipient(e.target.value)}
                 placeholder={type === "income" ? "Ai trả?" : "Trả cho ai?"}
-                className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-xl text-sm text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
+                className="w-full px-2 py-1.5 bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-lg text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1 uppercase tracking-wide">
+              <label className="block text-[10px] font-medium text-slate-500 dark:text-slate-400 mb-0.5 uppercase">
                 Ngày
               </label>
               <input
                 type="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
-                className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-xl text-sm text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
+                className="w-full px-2 py-1.5 bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-lg text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
                 required
               />
             </div>
           </div>
 
-          {/* Notes */}
+          {/* Notes - Compact */}
           <div>
-            <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1 uppercase tracking-wide">
+            <label className="block text-[10px] font-medium text-slate-500 dark:text-slate-400 mb-0.5 uppercase">
               Nội dung
             </label>
-            <textarea
+            <input
+              type="text"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              rows={2}
-              className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-xl text-sm text-slate-900 dark:text-white focus:outline-none focus:border-blue-500 resize-none"
+              className="w-full px-2 py-1.5 bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-lg text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
               placeholder="Nội dung giao dịch..."
             />
           </div>
+        </form>
 
-          {/* Submit Button */}
+        {/* Submit Button - Fixed at bottom */}
+        <div className="flex-shrink-0 p-3 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700">
           <button
             type="submit"
-            className={`w-full py-3 rounded-xl font-semibold text-white transition-all shadow-lg hover:shadow-xl active:scale-[0.98] ${
+            form="cashTxForm"
+            onClick={handleSubmit}
+            className={`w-full py-2.5 rounded-lg font-semibold text-white text-sm shadow-lg active:scale-[0.98] ${
               type === "income"
-                ? "bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700"
-                : "bg-gradient-to-r from-rose-500 to-red-600 hover:from-rose-600 hover:to-red-700"
+                ? "bg-gradient-to-r from-emerald-500 to-green-600"
+                : "bg-gradient-to-r from-rose-500 to-red-600"
             }`}
           >
             {type === "income" ? "✓ Xác nhận thu tiền" : "✓ Xác nhận chi tiền"}
           </button>
-        </form>
+        </div>
       </div>
     </div>
   );
@@ -1276,18 +1283,41 @@ const EditTransactionModal: React.FC<{
   ];
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl max-w-lg w-full border border-slate-200 dark:border-slate-700 max-h-[90vh] overflow-y-auto">
-        <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-          <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
-            Chỉnh sửa giao dịch
-          </h2>
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 z-50">
+      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-lg border border-slate-200 dark:border-slate-700 max-h-[95vh] sm:max-h-[90vh] flex flex-col overflow-hidden">
+        <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-200 dark:border-slate-700 flex-shrink-0">
+          <div className="flex items-center justify-between">
+            <h2 className="text-base sm:text-xl font-semibold text-slate-900 dark:text-white">
+              Chỉnh sửa giao dịch
+            </h2>
+            <button
+              onClick={onClose}
+              className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+            >
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+          </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form
+          onSubmit={handleSubmit}
+          className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3 sm:space-y-4"
+        >
           {/* Type Selection */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+            <label className="block text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
               Loại giao dịch
             </label>
             <div className="flex gap-4">
@@ -1299,7 +1329,9 @@ const EditTransactionModal: React.FC<{
                   onChange={(e) => setType(e.target.value as "income")}
                   className="w-4 h-4 text-blue-600"
                 />
-                <span className="text-slate-900 dark:text-white">Thu tiền</span>
+                <span className="text-sm text-slate-900 dark:text-white">
+                  Thu tiền
+                </span>
               </label>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
@@ -1309,34 +1341,36 @@ const EditTransactionModal: React.FC<{
                   onChange={(e) => setType(e.target.value as "expense")}
                   className="w-4 h-4 text-blue-600"
                 />
-                <span className="text-slate-900 dark:text-white">Chi tiền</span>
+                <span className="text-sm text-slate-900 dark:text-white">
+                  Chi tiền
+                </span>
               </label>
             </div>
           </div>
 
           {/* Amount */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+            <label className="block text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
               Số tiền
             </label>
             <input
               type="number"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              className="w-full px-4 py-2.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white"
+              className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-sm sm:text-base text-slate-900 dark:text-white"
               required
             />
           </div>
 
           {/* Category */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+            <label className="block text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
               Danh mục
             </label>
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className="w-full px-4 py-2.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white"
+              className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-sm sm:text-base text-slate-900 dark:text-white"
             >
               <option value="">Chọn danh mục</option>
               {(type === "income" ? incomeCategories : expenseCategories).map(
@@ -1351,7 +1385,7 @@ const EditTransactionModal: React.FC<{
 
           {/* Recipient/Payer */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+            <label className="block text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
               Đối tượng
             </label>
             <input
@@ -1361,13 +1395,13 @@ const EditTransactionModal: React.FC<{
               placeholder={
                 type === "income" ? "Thu tiền từ ai?" : "Chi tiền cho ai?"
               }
-              className="w-full px-4 py-2.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white"
+              className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-sm sm:text-base text-slate-900 dark:text-white"
             />
           </div>
 
           {/* Payment Source */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+            <label className="block text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
               Nguồn tiền
             </label>
             <div className="flex gap-4">
@@ -1379,7 +1413,9 @@ const EditTransactionModal: React.FC<{
                   onChange={(e) => setPaymentSource(e.target.value)}
                   className="w-4 h-4 text-blue-600"
                 />
-                <span className="text-slate-900 dark:text-white">Tiền mặt</span>
+                <span className="text-sm text-slate-900 dark:text-white">
+                  Tiền mặt
+                </span>
               </label>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
@@ -1389,7 +1425,7 @@ const EditTransactionModal: React.FC<{
                   onChange={(e) => setPaymentSource(e.target.value)}
                   className="w-4 h-4 text-blue-600"
                 />
-                <span className="text-slate-900 dark:text-white">
+                <span className="text-sm text-slate-900 dark:text-white">
                   Ngân hàng
                 </span>
               </label>
@@ -1398,44 +1434,44 @@ const EditTransactionModal: React.FC<{
 
           {/* Date */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+            <label className="block text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
               Ngày giao dịch
             </label>
             <input
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="w-full px-4 py-2.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white"
+              className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-sm sm:text-base text-slate-900 dark:text-white"
               required
             />
           </div>
 
           {/* Notes */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+            <label className="block text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
               Nội dung
             </label>
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              rows={3}
-              className="w-full px-4 py-2.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white"
+              rows={2}
+              className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-sm sm:text-base text-slate-900 dark:text-white resize-none"
               placeholder="Ghi chú về giao dịch..."
             />
           </div>
 
           {/* Buttons */}
-          <div className="flex gap-3 pt-2">
+          <div className="flex gap-2 sm:gap-3 pt-2">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2.5 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-900 dark:text-white rounded-lg font-medium transition-colors"
+              className="flex-1 px-3 sm:px-4 py-2 sm:py-2.5 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-900 dark:text-white rounded-lg text-sm sm:text-base font-medium transition-colors"
             >
               Hủy
             </button>
             <button
               type="submit"
-              className="flex-1 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+              className="flex-1 px-3 sm:px-4 py-2 sm:py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm sm:text-base font-medium transition-colors"
             >
               Cập nhật
             </button>

@@ -12,6 +12,7 @@ import {
   useCreateLoanPaymentRepo,
 } from "../../hooks/useLoansRepository";
 import { showToast } from "../../utils/toast";
+import { createCashTransaction } from "../../lib/repository/cashTransactionsRepository";
 
 const LoansManager: React.FC = () => {
   const {
@@ -33,6 +34,7 @@ const LoansManager: React.FC = () => {
   const [showAddLoanModal, setShowAddLoanModal] = useState(false);
   const [showEditLoanModal, setShowEditLoanModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedLoan, setSelectedLoan] = useState<Loan | null>(null);
   const [editingLoan, setEditingLoan] = useState<Loan | null>(null);
 
@@ -175,6 +177,10 @@ const LoansManager: React.FC = () => {
                         setEditingLoan(loan);
                         setShowEditLoanModal(true);
                       }}
+                      onViewDetail={() => {
+                        setSelectedLoan(loan);
+                        setShowDetailModal(true);
+                      }}
                     />
                   ))}
                 </div>
@@ -200,6 +206,10 @@ const LoansManager: React.FC = () => {
                         setEditingLoan(loan);
                         setShowEditLoanModal(true);
                       }}
+                      onViewDetail={() => {
+                        setSelectedLoan(loan);
+                        setShowDetailModal(true);
+                      }}
                       isOverdue
                     />
                   ))}
@@ -215,7 +225,15 @@ const LoansManager: React.FC = () => {
                 </h2>
                 <div className="grid gap-4">
                   {groupedLoans.paid.map((loan) => (
-                    <LoanCard key={loan.id} loan={loan} isPaid />
+                    <LoanCard
+                      key={loan.id}
+                      loan={loan}
+                      isPaid
+                      onViewDetail={() => {
+                        setSelectedLoan(loan);
+                        setShowDetailModal(true);
+                      }}
+                    />
                   ))}
                 </div>
               </div>
@@ -291,25 +309,31 @@ const LoansManager: React.FC = () => {
 
               showToast.success("Đã ghi nhận thanh toán thành công");
 
-              // Tự động tạo giao dịch chi trong Sổ quỹ
-              const cashTxId = `CT-${Date.now()}`;
-              const cashTransaction = {
-                id: cashTxId,
-                type: "expense" as const,
-                date: payment.paymentDate,
+              // 💰 Tạo giao dịch chi trong Sổ quỹ (INSERT vào database)
+              const cashTxResult = await createCashTransaction({
+                type: "expense",
                 amount: payment.totalAmount,
-                recipient: selectedLoan.lenderName,
+                branchId: currentBranchId,
+                paymentSourceId: payment.paymentMethod,
+                date: payment.paymentDate,
                 notes: `Trả nợ vay - ${
                   selectedLoan.lenderName
                 } (Gốc: ${formatCurrency(
                   payment.principalAmount
                 )}, Lãi: ${formatCurrency(payment.interestAmount)})`,
-                paymentSourceId: payment.paymentMethod,
-                branchId: currentBranchId,
-                category: "loan_payment" as const,
-              };
+                category: "loan_payment",
+                recipient: selectedLoan.lenderName,
+                loanPaymentId: payment.id,
+              });
 
-              setCashTransactions([cashTransaction, ...cashTransactions]);
+              if (cashTxResult.ok) {
+                console.log("✅ Đã ghi sổ quỹ trả nợ vay:", cashTxResult.data);
+              } else {
+                console.error("❌ Lỗi ghi sổ quỹ:", cashTxResult.error);
+                showToast.warning(
+                  `Trả nợ OK nhưng chưa ghi được sổ quỹ: ${cashTxResult.error?.message}`
+                );
+              }
 
               // Cập nhật số dư nguồn tiền
               setPaymentSources(
@@ -336,6 +360,18 @@ const LoansManager: React.FC = () => {
           }}
         />
       )}
+
+      {/* Loan Detail Modal */}
+      {showDetailModal && selectedLoan && (
+        <LoanDetailModal
+          loan={selectedLoan}
+          payments={loanPayments.filter((p) => p.loanId === selectedLoan.id)}
+          onClose={() => {
+            setShowDetailModal(false);
+            setSelectedLoan(null);
+          }}
+        />
+      )}
     </div>
   );
 };
@@ -345,9 +381,10 @@ const LoanCard: React.FC<{
   loan: Loan;
   onPayment?: () => void;
   onEdit?: () => void;
+  onViewDetail?: () => void;
   isOverdue?: boolean;
   isPaid?: boolean;
-}> = ({ loan, onPayment, onEdit, isOverdue, isPaid }) => {
+}> = ({ loan, onPayment, onEdit, onViewDetail, isOverdue, isPaid }) => {
   const progressPercent =
     ((loan.principal - loan.remainingAmount) / loan.principal) * 100;
   const daysUntilDue = Math.ceil(
@@ -391,22 +428,32 @@ const LoanCard: React.FC<{
             {loan.purpose}
           </p>
         </div>
-        {!isPaid && (
-          <div className="flex flex-col sm:flex-row gap-2">
+        <div className="flex flex-col sm:flex-row gap-2">
+          {!isPaid && (
+            <>
+              <button
+                onClick={onEdit}
+                className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-sm font-medium transition-colors whitespace-nowrap"
+              >
+                ✏️ Sửa
+              </button>
+              <button
+                onClick={onPayment}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors whitespace-nowrap"
+              >
+                💰 Trả nợ
+              </button>
+            </>
+          )}
+          {onViewDetail && (
             <button
-              onClick={onEdit}
-              className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-sm font-medium transition-colors whitespace-nowrap"
+              onClick={onViewDetail}
+              className="px-4 py-2 bg-slate-500 hover:bg-slate-600 text-white rounded-lg text-sm font-medium transition-colors whitespace-nowrap"
             >
-              ✏️ Sửa
+              📋 Chi tiết
             </button>
-            <button
-              onClick={onPayment}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors whitespace-nowrap"
-            >
-              💰 Trả nợ
-            </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
@@ -1037,6 +1084,260 @@ const LoanPaymentModal: React.FC<{
             </button>
           </div>
         </form>
+      </div>
+    </div>
+  );
+};
+
+// Loan Detail Modal - Hiển thị lịch sử trả nợ
+const LoanDetailModal: React.FC<{
+  loan: Loan;
+  payments: LoanPayment[];
+  onClose: () => void;
+}> = ({ loan, payments, onClose }) => {
+  const progressPercent =
+    ((loan.principal - loan.remainingAmount) / loan.principal) * 100;
+
+  // Sort payments by date descending (newest first)
+  const sortedPayments = [...payments].sort(
+    (a, b) =>
+      new Date(b.paymentDate).getTime() - new Date(a.paymentDate).getTime()
+  );
+
+  const totalPaidPrincipal = payments.reduce(
+    (sum, p) => sum + p.principalAmount,
+    0
+  );
+  const totalPaidInterest = payments.reduce(
+    (sum, p) => sum + p.interestAmount,
+    0
+  );
+  const totalPaid = payments.reduce((sum, p) => sum + p.totalAmount, 0);
+
+  return (
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl max-w-2xl w-full border border-slate-200 dark:border-slate-700 max-h-[90vh] overflow-hidden flex flex-col">
+        {/* Header */}
+        <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
+                Chi tiết khoản vay - {loan.lenderName}
+              </h2>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                {loan.loanType === "bank"
+                  ? "Ngân hàng"
+                  : loan.loanType === "personal"
+                  ? "Cá nhân"
+                  : "Khác"}{" "}
+                • {loan.purpose}
+              </p>
+            </div>
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+            >
+              <svg
+                className="w-5 h-5 text-slate-500"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          {/* Summary Cards */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 border border-blue-200 dark:border-blue-800">
+              <div className="text-xs text-blue-600 dark:text-blue-400 mb-1">
+                Số tiền vay
+              </div>
+              <div className="text-sm font-bold text-blue-900 dark:text-blue-100">
+                {formatCurrency(loan.principal)}
+              </div>
+            </div>
+            <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3 border border-green-200 dark:border-green-800">
+              <div className="text-xs text-green-600 dark:text-green-400 mb-1">
+                Đã trả
+              </div>
+              <div className="text-sm font-bold text-green-900 dark:text-green-100">
+                {formatCurrency(totalPaid)}
+              </div>
+            </div>
+            <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-3 border border-red-200 dark:border-red-800">
+              <div className="text-xs text-red-600 dark:text-red-400 mb-1">
+                Còn nợ
+              </div>
+              <div className="text-sm font-bold text-red-900 dark:text-red-100">
+                {formatCurrency(loan.remainingAmount)}
+              </div>
+            </div>
+            <div className="bg-amber-50 dark:bg-amber-900/20 rounded-lg p-3 border border-amber-200 dark:border-amber-800">
+              <div className="text-xs text-amber-600 dark:text-amber-400 mb-1">
+                Lãi suất
+              </div>
+              <div className="text-sm font-bold text-amber-900 dark:text-amber-100">
+                {loan.interestRate}%/năm
+              </div>
+            </div>
+          </div>
+
+          {/* Progress */}
+          <div>
+            <div className="flex justify-between text-sm mb-2">
+              <span className="text-slate-600 dark:text-slate-400">
+                Tiến độ trả nợ
+              </span>
+              <span className="font-semibold text-slate-900 dark:text-white">
+                {progressPercent.toFixed(1)}%
+              </span>
+            </div>
+            <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+              <div
+                className={`h-full transition-all ${
+                  loan.status === "paid" ? "bg-green-500" : "bg-blue-500"
+                }`}
+                style={{ width: `${progressPercent}%` }}
+              />
+            </div>
+            <div className="flex justify-between text-xs text-slate-500 dark:text-slate-400 mt-2">
+              <span>Ngày vay: {formatDate(new Date(loan.startDate))}</span>
+              <span>Đến hạn: {formatDate(new Date(loan.endDate))}</span>
+            </div>
+          </div>
+
+          {/* Payment Summary */}
+          <div className="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-4">
+            <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-3">
+              Tổng hợp thanh toán
+            </h3>
+            <div className="grid grid-cols-3 gap-4 text-sm">
+              <div>
+                <div className="text-slate-500 dark:text-slate-400">
+                  Gốc đã trả
+                </div>
+                <div className="font-semibold text-slate-900 dark:text-white">
+                  {formatCurrency(totalPaidPrincipal)}
+                </div>
+              </div>
+              <div>
+                <div className="text-slate-500 dark:text-slate-400">
+                  Lãi đã trả
+                </div>
+                <div className="font-semibold text-slate-900 dark:text-white">
+                  {formatCurrency(totalPaidInterest)}
+                </div>
+              </div>
+              <div>
+                <div className="text-slate-500 dark:text-slate-400">
+                  Số lần trả
+                </div>
+                <div className="font-semibold text-slate-900 dark:text-white">
+                  {payments.length} lần
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Payment History */}
+          <div>
+            <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-3">
+              Lịch sử trả nợ ({payments.length} giao dịch)
+            </h3>
+            {sortedPayments.length === 0 ? (
+              <div className="text-center py-8 text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-700/30 rounded-lg">
+                Chưa có lịch sử trả nợ
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {sortedPayments.map((payment, index) => (
+                  <div
+                    key={payment.id}
+                    className="bg-white dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-lg p-4"
+                  >
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-xs font-semibold flex items-center justify-center">
+                          {sortedPayments.length - index}
+                        </span>
+                        <span className="text-sm font-medium text-slate-900 dark:text-white">
+                          {formatDate(new Date(payment.paymentDate))}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            payment.paymentMethod === "cash"
+                              ? "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400"
+                              : "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400"
+                          }`}
+                        >
+                          {payment.paymentMethod === "cash"
+                            ? "💵 Tiền mặt"
+                            : "🏦 Chuyển khoản"}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-3 gap-4 text-sm">
+                      <div>
+                        <div className="text-xs text-slate-500 dark:text-slate-400">
+                          Tiền gốc
+                        </div>
+                        <div className="font-semibold text-slate-900 dark:text-white">
+                          {formatCurrency(payment.principalAmount)}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-slate-500 dark:text-slate-400">
+                          Tiền lãi
+                        </div>
+                        <div className="font-semibold text-slate-900 dark:text-white">
+                          {formatCurrency(payment.interestAmount)}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-slate-500 dark:text-slate-400">
+                          Tổng trả
+                        </div>
+                        <div className="font-semibold text-green-600 dark:text-green-400">
+                          {formatCurrency(payment.totalAmount)}
+                        </div>
+                      </div>
+                    </div>
+                    {payment.notes && (
+                      <div className="mt-2 text-xs text-slate-500 dark:text-slate-400 italic">
+                        📝 {payment.notes}
+                      </div>
+                    )}
+                    <div className="mt-2 text-xs text-slate-400 dark:text-slate-500">
+                      Còn lại sau trả: {formatCurrency(payment.remainingAmount)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-700">
+          <button
+            onClick={onClose}
+            className="w-full px-4 py-2.5 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-900 dark:text-white rounded-lg font-medium transition-colors"
+          >
+            Đóng
+          </button>
+        </div>
       </div>
     </div>
   );

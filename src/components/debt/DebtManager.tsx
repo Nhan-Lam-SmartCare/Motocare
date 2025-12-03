@@ -15,6 +15,7 @@ import {
   useUpdateSupplierDebtRepo,
   useDeleteSupplierDebtRepo,
 } from "../../hooks/useDebtsRepository";
+import { createCashTransaction } from "../../lib/repository/cashTransactionsRepository";
 
 const DebtManager: React.FC = () => {
   const {
@@ -942,38 +943,28 @@ const DebtManager: React.FC = () => {
           customers={customers}
           customerDebts={customerDebts}
           onClose={() => setShowCollectModal(false)}
-          onCollect={(data) => {
-            // Tự động tạo giao dịch thu trong Sổ quỹ
-            const cashTxId = `CT-${Date.now()}`;
-            const cashTransaction = {
-              id: cashTxId,
-              type: "income" as const,
-              date: data.timestamp,
+          onCollect={async (data) => {
+            // 💰 Tạo giao dịch thu trong Sổ quỹ (INSERT vào database)
+            const cashTxResult = await createCashTransaction({
+              type: "income",
               amount: data.amount,
-              recipient: data.customerName,
-              notes: `Thu nợ khách hàng - ${data.customerName}`,
-              paymentSourceId: data.paymentMethod,
               branchId: currentBranchId,
-              category: "debt_collection" as const,
-            };
+              paymentSourceId: data.paymentMethod,
+              date: data.timestamp,
+              notes: `Thu nợ khách hàng - ${data.customerName}`,
+              category: "debt_collection",
+              recipient: data.customerName,
+              customerId: data.customerId,
+            });
 
-            setCashTransactions([cashTransaction, ...cashTransactions]);
-
-            // Cập nhật số dư nguồn tiền
-            setPaymentSources(
-              paymentSources.map((ps) =>
-                ps.id === data.paymentMethod
-                  ? {
-                      ...ps,
-                      balance: {
-                        ...ps.balance,
-                        [currentBranchId]:
-                          (ps.balance[currentBranchId] || 0) + data.amount,
-                      },
-                    }
-                  : ps
-              )
-            );
+            if (cashTxResult.ok) {
+              console.log("✅ Đã ghi sổ quỹ thu nợ KH:", cashTxResult.data);
+            } else {
+              console.error("❌ Lỗi ghi sổ quỹ:", cashTxResult.error);
+              showToast.warning(
+                `Thu nợ OK nhưng chưa ghi được sổ quỹ: ${cashTxResult.error?.message}`
+              );
+            }
 
             setShowCollectModal(false);
           }}
@@ -1003,10 +994,14 @@ const DebtManager: React.FC = () => {
           }
           debtType={activeTab}
           onConfirm={async (paymentMethod, paymentTime) => {
-            // TODO: Implement bulk payment with repository
-            // For now, just update individual debts
             try {
+              const totalAmount =
+                activeTab === "customer"
+                  ? selectedCustomerTotal
+                  : selectedSupplierTotal;
+
               if (activeTab === "customer") {
+                // Thu nợ hàng loạt từ khách hàng
                 for (const customerId of selectedCustomerIds) {
                   const debt = branchCustomerDebts.find(
                     (d) => d.customerId === customerId
@@ -1022,7 +1017,24 @@ const DebtManager: React.FC = () => {
                   }
                 }
                 setSelectedCustomerIds([]);
+
+                // 💰 Ghi sổ quỹ THU nợ khách hàng
+                const cashTxResult = await createCashTransaction({
+                  type: "income",
+                  amount: totalAmount,
+                  branchId: currentBranchId,
+                  paymentSourceId: paymentMethod,
+                  date: paymentTime,
+                  notes: `Thu nợ hàng loạt - ${selectedCustomerIds.length} khách hàng`,
+                  category: "debt_collection",
+                  recipient: `${selectedCustomerIds.length} khách hàng`,
+                });
+
+                if (!cashTxResult.ok) {
+                  console.error("❌ Lỗi ghi sổ quỹ:", cashTxResult.error);
+                }
               } else {
+                // Trả nợ hàng loạt cho nhà cung cấp
                 for (const supplierId of selectedSupplierIds) {
                   const debt = branchSupplierDebts.find(
                     (d) => d.supplierId === supplierId
@@ -1038,17 +1050,29 @@ const DebtManager: React.FC = () => {
                   }
                 }
                 setSelectedSupplierIds([]);
+
+                // 💰 Ghi sổ quỹ CHI trả nợ nhà cung cấp
+                const cashTxResult = await createCashTransaction({
+                  type: "expense",
+                  amount: totalAmount,
+                  branchId: currentBranchId,
+                  paymentSourceId: paymentMethod,
+                  date: paymentTime,
+                  notes: `Trả nợ hàng loạt - ${selectedSupplierIds.length} nhà cung cấp`,
+                  category: "debt_payment",
+                  recipient: `${selectedSupplierIds.length} nhà cung cấp`,
+                });
+
+                if (!cashTxResult.ok) {
+                  console.error("❌ Lỗi ghi sổ quỹ:", cashTxResult.error);
+                }
               }
 
               setShowBulkPaymentModal(false);
 
               // Show success message
               showToast.success(
-                `Đã thanh toán thành công ${formatCurrency(
-                  activeTab === "customer"
-                    ? selectedCustomerTotal
-                    : selectedSupplierTotal
-                )} qua ${
+                `Đã thanh toán thành công ${formatCurrency(totalAmount)} qua ${
                   paymentMethod === "cash" ? "Tiền mặt" : "Chuyển khoản"
                 }`
               );
@@ -1064,38 +1088,28 @@ const DebtManager: React.FC = () => {
           suppliers={suppliers}
           supplierDebts={supplierDebts}
           onClose={() => setShowPaymentModal(false)}
-          onPay={(data) => {
-            // Tự động tạo giao dịch chi trong Sổ quỹ
-            const cashTxId = `CT-${Date.now()}`;
-            const cashTransaction = {
-              id: cashTxId,
-              type: "expense" as const,
-              date: data.timestamp,
+          onPay={async (data) => {
+            // 💰 Tạo giao dịch chi trong Sổ quỹ (INSERT vào database)
+            const cashTxResult = await createCashTransaction({
+              type: "expense",
               amount: data.amount,
-              recipient: data.supplierName,
-              notes: `Trả nợ nhà cung cấp - ${data.supplierName}`,
-              paymentSourceId: data.paymentMethod,
               branchId: currentBranchId,
-              category: "debt_payment" as const,
-            };
+              paymentSourceId: data.paymentMethod,
+              date: data.timestamp,
+              notes: `Trả nợ nhà cung cấp - ${data.supplierName}`,
+              category: "debt_payment",
+              recipient: data.supplierName,
+              supplierId: data.supplierId,
+            });
 
-            setCashTransactions([cashTransaction, ...cashTransactions]);
-
-            // Cập nhật số dư nguồn tiền
-            setPaymentSources(
-              paymentSources.map((ps) =>
-                ps.id === data.paymentMethod
-                  ? {
-                      ...ps,
-                      balance: {
-                        ...ps.balance,
-                        [currentBranchId]:
-                          (ps.balance[currentBranchId] || 0) - data.amount,
-                      },
-                    }
-                  : ps
-              )
-            );
+            if (cashTxResult.ok) {
+              console.log("✅ Đã ghi sổ quỹ trả nợ NCC:", cashTxResult.data);
+            } else {
+              console.error("❌ Lỗi ghi sổ quỹ:", cashTxResult.error);
+              showToast.warning(
+                `Trả nợ OK nhưng chưa ghi được sổ quỹ: ${cashTxResult.error?.message}`
+              );
+            }
 
             setShowPaymentModal(false);
           }}

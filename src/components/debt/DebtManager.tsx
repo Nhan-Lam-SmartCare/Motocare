@@ -99,6 +99,10 @@ const DebtManager: React.FC = () => {
         if (wo.laborcost > 0) {
           description += `\nCông: ${(wo.laborcost || 0).toLocaleString()}đ`;
         }
+        // Add technician info
+        if (wo.technicianname) {
+          description += `\nNV: ${wo.technicianname}`;
+        }
 
         return {
           id: `WO-${wo.id}`, // Prefix to distinguish from regular debts
@@ -114,6 +118,7 @@ const DebtManager: React.FC = () => {
           branchId: wo.branchid || currentBranchId,
           workOrderId: wo.id,
           isFromWorkOrder: true, // Flag to identify source
+          technicianName: wo.technicianname || null, // Store directly too
         };
       });
   }, [unpaidWorkOrders, customerDebts, currentBranchId]);
@@ -557,9 +562,10 @@ const DebtManager: React.FC = () => {
                             </svg>
                             <span>
                               NV:{" "}
-                              {debt.description
-                                .match(/NVKỹ thuật:([^\n]+)/)?.[1]
-                                ?.trim() ||
+                              {(debt as any).technicianName ||
+                                debt.description
+                                  .match(/NVKỹ thuật:([^\n]+)/)?.[1]
+                                  ?.trim() ||
                                 debt.description
                                   .match(/NV:([^\n]+)/)?.[1]
                                   ?.trim() ||

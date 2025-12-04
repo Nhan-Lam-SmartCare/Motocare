@@ -13,6 +13,7 @@ import {
   useCustomers,
   useCreateCustomer,
   useUpdateCustomer,
+  useDeleteCustomer,
   useCreateCustomersBulk,
 } from "../../hooks/useSupabase";
 import { formatDate, formatCurrency, formatAnyId } from "../../utils/format";
@@ -367,6 +368,7 @@ const CustomerManager: React.FC = () => {
   const { data: customers = [], isLoading, refetch } = useCustomers();
   const createCustomer = useCreateCustomer();
   const updateCustomer = useUpdateCustomer();
+  const deleteCustomer = useDeleteCustomer();
 
   // State cho Load More
   const [displayCount, setDisplayCount] = useState(20);
@@ -487,10 +489,21 @@ const CustomerManager: React.FC = () => {
   );
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Xác nhận xoá khách hàng này?")) return;
-    // Xóa khách hàng trên Supabase
-    await updateCustomer.mutateAsync({ id, updates: { status: "inactive" } });
-    refetch();
+    if (
+      !confirm("Xác nhận xoá khách hàng này? Hành động này không thể hoàn tác.")
+    )
+      return;
+    try {
+      // Xóa khách hàng thực sự từ Supabase
+      await deleteCustomer.mutateAsync(id);
+      showToast.success("Đã xóa khách hàng thành công");
+      refetch();
+    } catch (error: any) {
+      console.error("Error deleting customer:", error);
+      showToast.error(
+        "Không thể xóa khách hàng: " + (error.message || "Lỗi không xác định")
+      );
+    }
   };
 
   // Statistics calculations

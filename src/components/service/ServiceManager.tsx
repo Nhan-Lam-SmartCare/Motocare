@@ -1024,6 +1024,35 @@ export default function ServiceManager() {
           createdByName
         );
 
+        // Cập nhật totalSpent và visitCount cho khách hàng
+        if (customer.id && total > 0) {
+          try {
+            const { data: currentCustomer } = await supabase
+              .from("customers")
+              .select("totalSpent, visitCount")
+              .eq("id", customer.id)
+              .single();
+
+            const currentTotal = currentCustomer?.totalSpent || 0;
+            const currentVisits = currentCustomer?.visitCount || 0;
+
+            await supabase
+              .from("customers")
+              .update({
+                totalSpent: currentTotal + total,
+                visitCount: currentVisits + 1,
+                lastVisit: new Date().toISOString(),
+              })
+              .eq("id", customer.id);
+
+            console.log(
+              `[WorkOrder] Updated customer ${customer.name}: totalSpent ${currentTotal} + ${total}, visits ${currentVisits} + 1`
+            );
+          } catch (err) {
+            console.error("[WorkOrder] Error updating customer stats:", err);
+          }
+        }
+
         showToast.success("Tạo phiếu sửa chữa thành công!");
       } else {
         // Update existing work order
@@ -1097,6 +1126,35 @@ export default function ServiceManager() {
             total,
             totalPaid
           );
+        }
+
+        // Cập nhật totalSpent cho khách hàng khi cập nhật phiếu (nếu total thay đổi)
+        if (customer.id && editingOrder && editingOrder.total !== total) {
+          try {
+            const { data: currentCustomer } = await supabase
+              .from("customers")
+              .select("totalSpent")
+              .eq("id", customer.id)
+              .single();
+
+            const currentTotal = currentCustomer?.totalSpent || 0;
+            const oldTotal = editingOrder.total || 0;
+            const newTotalSpent = currentTotal - oldTotal + total;
+
+            await supabase
+              .from("customers")
+              .update({
+                totalSpent: Math.max(0, newTotalSpent),
+                lastVisit: new Date().toISOString(),
+              })
+              .eq("id", customer.id);
+
+            console.log(
+              `[WorkOrder] Updated customer ${customer.name}: totalSpent ${currentTotal} - ${oldTotal} + ${total} = ${newTotalSpent}`
+            );
+          } catch (err) {
+            console.error("[WorkOrder] Error updating customer stats:", err);
+          }
         }
 
         showToast.success("Cập nhật phiếu sửa chữa thành công!");
@@ -4889,26 +4947,14 @@ const WorkOrderModal: React.FC<{
 
     // Note: Không validate total > 0 vì có thể chỉ tiếp nhận thông tin, chưa báo giá
 
-    // Add/update customer
+    // Add/update customer - CHỈ TẠO MỚI NẾU THỰC SỰ KHÔNG TỒN TẠI
     if (formData.customerName && formData.customerPhone) {
       const existingCustomer = customers.find(
         (c) => c.phone === formData.customerPhone
       );
 
       if (!existingCustomer) {
-        const duplicatePhone = customers.find(
-          (c) =>
-            c.phone === formData.customerPhone &&
-            formData.customerName &&
-            c.name.toLowerCase() !== formData.customerName.toLowerCase()
-        );
-
-        if (duplicatePhone) {
-          showToast.warning(
-            `SĐT đã tồn tại cho khách "${duplicatePhone.name}". Có thể trùng lặp?`
-          );
-        }
-
+        // Chỉ tạo khách hàng mới nếu SĐT chưa tồn tại
         const vehicleId = `VEH-${Date.now()}`;
         const vehicles = [];
         if (formData.vehicleModel || formData.licensePlate) {
@@ -4935,6 +4981,25 @@ const WorkOrderModal: React.FC<{
           lastVisit: new Date().toISOString(),
           created_at: new Date().toISOString(),
         });
+
+        console.log(
+          `[WorkOrder] Created new customer: ${formData.customerName} (${formData.customerPhone})`
+        );
+      } else {
+        // Khách hàng đã tồn tại - chỉ cập nhật thông tin xe nếu cần
+        if (
+          formData.vehicleModel &&
+          existingCustomer.vehicleModel !== formData.vehicleModel
+        ) {
+          upsertCustomer({
+            ...existingCustomer,
+            vehicleModel: formData.vehicleModel,
+            licensePlate: formData.licensePlate,
+          });
+          console.log(
+            `[WorkOrder] Updated vehicle info for existing customer: ${existingCustomer.name}`
+          );
+        }
       }
     }
 
@@ -5065,28 +5130,14 @@ const WorkOrderModal: React.FC<{
         return;
       }
 
-      // Add/update customer with duplicate check
+      // Add/update customer - CHỈ TẠO MỚI NẾU THỰC SỰ KHÔNG TỒN TẠI
       if (formData.customerName && formData.customerPhone) {
         const existingCustomer = customers.find(
           (c) => c.phone === formData.customerPhone
         );
 
-        // 🔹 VALIDATE DUPLICATE PHONE
         if (!existingCustomer) {
-          // Check if phone belongs to different customer name
-          const duplicatePhone = customers.find(
-            (c) =>
-              c.phone === formData.customerPhone &&
-              formData.customerName &&
-              c.name.toLowerCase() !== formData.customerName.toLowerCase()
-          );
-
-          if (duplicatePhone) {
-            showToast.warning(
-              `SĐT đã tồn tại cho khách "${duplicatePhone.name}". Có thể trùng lặp?`
-            );
-          }
-
+          // Chỉ tạo khách hàng mới nếu SĐT chưa tồn tại
           const vehicleId = `VEH-${Date.now()}`;
           const vehicles = [];
           if (formData.vehicleModel || formData.licensePlate) {
@@ -5113,6 +5164,25 @@ const WorkOrderModal: React.FC<{
             lastVisit: new Date().toISOString(),
             created_at: new Date().toISOString(),
           });
+
+          console.log(
+            `[WorkOrder] Created new customer: ${formData.customerName} (${formData.customerPhone})`
+          );
+        } else {
+          // Khách hàng đã tồn tại - chỉ cập nhật thông tin xe nếu cần
+          if (
+            formData.vehicleModel &&
+            existingCustomer.vehicleModel !== formData.vehicleModel
+          ) {
+            upsertCustomer({
+              ...existingCustomer,
+              vehicleModel: formData.vehicleModel,
+              licensePlate: formData.licensePlate,
+            });
+            console.log(
+              `[WorkOrder] Updated vehicle info for existing customer: ${existingCustomer.name}`
+            );
+          }
         }
       }
 

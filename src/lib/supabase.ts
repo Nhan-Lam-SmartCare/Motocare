@@ -12,7 +12,18 @@ export const supabaseHelpers = {
       .order("created_at", { ascending: false });
 
     if (error) throw error;
-    return data;
+
+    // Map database column names (lowercase) to TypeScript property names (camelCase)
+    return (data || []).map((customer: any) => ({
+      ...customer,
+      // Ensure camelCase properties are available
+      totalSpent: customer.totalSpent ?? customer.totalspent ?? 0,
+      visitCount: customer.visitCount ?? customer.visitcount ?? 0,
+      lastVisit: customer.lastVisit ?? customer.lastvisit ?? null,
+      vehicleModel: customer.vehicleModel ?? customer.vehiclemodel ?? null,
+      licensePlate: customer.licensePlate ?? customer.licenseplate ?? null,
+      loyaltyPoints: customer.loyaltyPoints ?? customer.loyaltypoints ?? 0,
+    }));
   },
 
   async createCustomer(customer: any) {
@@ -52,6 +63,13 @@ export const supabaseHelpers = {
 
     if (error) throw error;
     return data;
+  },
+
+  async deleteCustomer(id: string) {
+    const { error } = await supabase.from("customers").delete().eq("id", id);
+
+    if (error) throw error;
+    return true;
   },
 
   // Suppliers

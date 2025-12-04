@@ -701,18 +701,8 @@ const WorkOrderModal: React.FC<{
       );
 
       if (!existingCustomer) {
-        const duplicatePhone = customers.find(
-          (c) =>
-            c.phone === formData.customerPhone &&
-            formData.customerName &&
-            c.name.toLowerCase() !== formData.customerName.toLowerCase()
-        );
-
-        if (duplicatePhone) {
-          showToast.warning(
-            `ST �� t�n t�i cho kh�ch "${duplicatePhone.name}". C� th� tr�ng l�p?`
-          );
-        }
+        // Chỉ tạo khách hàng mới nếu SĐT chưa tồn tại
+        console.log(`[WorkOrderModal] Creating new customer: ${formData.customerName} (${formData.customerPhone})`);
 
         const vehicleId = `VEH-${Date.now()}`;
         const vehicles = [];
@@ -740,6 +730,20 @@ const WorkOrderModal: React.FC<{
           lastVisit: new Date().toISOString(),
           created_at: new Date().toISOString(),
         });
+      } else {
+        // Khách hàng đã tồn tại - chỉ cập nhật thông tin xe nếu cần
+        console.log(`[WorkOrderModal] Customer exists: ${existingCustomer.name} (${existingCustomer.phone})`);
+        if (
+          formData.vehicleModel &&
+          existingCustomer.vehicleModel !== formData.vehicleModel
+        ) {
+          upsertCustomer({
+            ...existingCustomer,
+            vehicleModel: formData.vehicleModel,
+            licensePlate: formData.licensePlate,
+          });
+          console.log(`[WorkOrderModal] Updated vehicle info for existing customer`);
+        }
       }
     }
 
@@ -875,19 +879,8 @@ const WorkOrderModal: React.FC<{
 
         // �x� VALIDATE DUPLICATE PHONE
         if (!existingCustomer) {
-          // Check if phone belongs to different customer name
-          const duplicatePhone = customers.find(
-            (c) =>
-              c.phone === formData.customerPhone &&
-              formData.customerName &&
-              c.name.toLowerCase() !== formData.customerName.toLowerCase()
-          );
-
-          if (duplicatePhone) {
-            showToast.warning(
-              `ST �� t�n t�i cho kh�ch "${duplicatePhone.name}". C� th� tr�ng l�p?`
-            );
-          }
+        // Chỉ tạo khách hàng mới nếu SĐT chưa tồn tại
+        console.log(`[WorkOrderModal] Creating new customer: ${formData.customerName} (${formData.customerPhone})`);
 
           const vehicleId = `VEH-${Date.now()}`;
           const vehicles = [];
@@ -901,24 +894,38 @@ const WorkOrderModal: React.FC<{
           }
 
           upsertCustomer({
-            id: `CUST-${Date.now()}`,
-            name: formData.customerName,
-            phone: formData.customerPhone,
-            vehicles: vehicles.length > 0 ? vehicles : undefined,
+          id: `CUST-${Date.now()}`,
+          name: formData.customerName,
+          phone: formData.customerPhone,
+          vehicles: vehicles.length > 0 ? vehicles : undefined,
+          vehicleModel: formData.vehicleModel,
+          licensePlate: formData.licensePlate,
+          status: "active",
+          segment: "New",
+          loyaltyPoints: 0,
+          totalSpent: 0,
+          visitCount: 1,
+          lastVisit: new Date().toISOString(),
+          created_at: new Date().toISOString(),
+        });
+      } else {
+        // Khách hàng đã tồn tại - chỉ cập nhật thông tin xe nếu cần
+        console.log(`[WorkOrderModal] Customer exists: ${existingCustomer.name} (${existingCustomer.phone})`);
+        if (
+          formData.vehicleModel &&
+          existingCustomer.vehicleModel !== formData.vehicleModel
+        ) {
+          upsertCustomer({
+            ...existingCustomer,
             vehicleModel: formData.vehicleModel,
             licensePlate: formData.licensePlate,
-            status: "active",
-            segment: "New",
-            loyaltyPoints: 0,
-            totalSpent: 0,
-            visitCount: 1,
-            lastVisit: new Date().toISOString(),
-            created_at: new Date().toISOString(),
           });
+          console.log(`[WorkOrderModal] Updated vehicle info for existing customer`);
         }
       }
+    }
 
-      // Determine payment status
+    // Determine payment status
       let paymentStatus: "unpaid" | "paid" | "partial" = "unpaid";
       if (totalPaid >= total) {
         paymentStatus = "paid";
@@ -3031,43 +3038,108 @@ const WorkOrderModal: React.FC<{
               <button
                 onClick={() => {
                   if (newCustomer.name && newCustomer.phone) {
-                    const customerId = `CUST-${Date.now()}`;
-                    const vehicleId = `VEH-${Date.now()}`;
-                    const vehicles = [];
-                    if (newCustomer.vehicleModel || newCustomer.licensePlate) {
-                      vehicles.push({
-                        id: vehicleId,
-                        model: newCustomer.vehicleModel || "",
-                        licensePlate: newCustomer.licensePlate || "",
-                        isPrimary: true,
+                    // Check if customer already exists
+                    const existingCustomer = customers.find(
+                      (c) => c.phone === newCustomer.phone
+                    );
+                    
+                    if (!existingCustomer) {
+                      // Customer doesn't exist - create new one
+                      console.log('[WorkOrderModal] Creating new customer from modal:', newCustomer.phone);
+                      
+                      const customerId = `CUST-${Date.now()}`;
+                      const vehicleId = `VEH-${Date.now()}`;
+                      const vehicles = [];
+                      if (newCustomer.vehicleModel || newCustomer.licensePlate) {
+                        vehicles.push({
+                          id: vehicleId,
+                          model: newCustomer.vehicleModel || "",
+                          licensePlate: newCustomer.licensePlate || "",
+                          isPrimary: true,
+                        });
+                      }
+
+                      upsertCustomer({
+                        id: customerId,
+                        name: newCustomer.name,
+                        phone: newCustomer.phone,
+                        vehicles: vehicles.length > 0 ? vehicles : undefined,
+                        vehicleModel: newCustomer.vehicleModel,
+                        licensePlate: newCustomer.licensePlate,
+                        status: "active",
+                        segment: "New",
+                        loyaltyPoints: 0,
+                        totalSpent: 0,
+                        visitCount: 1,
+                        lastVisit: new Date().toISOString(),
+                        created_at: new Date().toISOString(),
+                      });
+
+                      // Set the new customer to the form AND search field
+                      setFormData({
+                        ...formData,
+                        customerName: newCustomer.name,
+                        customerPhone: newCustomer.phone,
+                        vehicleId: vehicles.length > 0 ? vehicleId : undefined,
+                        vehicleModel: newCustomer.vehicleModel,
+                        licensePlate: newCustomer.licensePlate,
+                      });
+                    } else {
+                      // Customer exists - just use existing customer and optionally update vehicle
+                      console.log('[WorkOrderModal] Customer already exists from modal:', existingCustomer.id, existingCustomer.phone);
+                      
+                      const hasVehicleChange = 
+                        (newCustomer.vehicleModel && newCustomer.vehicleModel !== existingCustomer.vehicleModel) ||
+                        (newCustomer.licensePlate && newCustomer.licensePlate !== existingCustomer.licensePlate);
+                      
+                      let vehicleIdToUse = existingCustomer.vehicles?.[0]?.id;
+                      
+                      if (hasVehicleChange) {
+                        console.log('[WorkOrderModal] Updating vehicle info for existing customer from modal');
+                        const vehicleId = `VEH-${Date.now()}`;
+                        const vehicles = [...(existingCustomer.vehicles || [])];
+                        
+                        // Check if vehicle with this license plate already exists
+                        const existingVehicleIndex = vehicles.findIndex(
+                          v => v.licensePlate === newCustomer.licensePlate
+                        );
+                        
+                        if (existingVehicleIndex >= 0 && newCustomer.licensePlate) {
+                          // Update existing vehicle
+                          vehicles[existingVehicleIndex] = {
+                            ...vehicles[existingVehicleIndex],
+                            model: newCustomer.vehicleModel || vehicles[existingVehicleIndex].model,
+                          };
+                          vehicleIdToUse = vehicles[existingVehicleIndex].id;
+                        } else if (newCustomer.vehicleModel || newCustomer.licensePlate) {
+                          // Add new vehicle
+                          vehicles.push({
+                            id: vehicleId,
+                            model: newCustomer.vehicleModel || "",
+                            licensePlate: newCustomer.licensePlate || "",
+                            isPrimary: vehicles.length === 0,
+                          });
+                          vehicleIdToUse = vehicleId;
+                        }
+                        
+                        upsertCustomer({
+                          ...existingCustomer,
+                          vehicles: vehicles.length > 0 ? vehicles : undefined,
+                          vehicleModel: newCustomer.vehicleModel || existingCustomer.vehicleModel,
+                          licensePlate: newCustomer.licensePlate || existingCustomer.licensePlate,
+                        });
+                      }
+                      
+                      // Set the existing customer to the form
+                      setFormData({
+                        ...formData,
+                        customerName: existingCustomer.name,
+                        customerPhone: existingCustomer.phone,
+                        vehicleId: vehicleIdToUse,
+                        vehicleModel: newCustomer.vehicleModel || existingCustomer.vehicleModel,
+                        licensePlate: newCustomer.licensePlate || existingCustomer.licensePlate,
                       });
                     }
-
-                    upsertCustomer({
-                      id: customerId,
-                      name: newCustomer.name,
-                      phone: newCustomer.phone,
-                      vehicles: vehicles.length > 0 ? vehicles : undefined,
-                      vehicleModel: newCustomer.vehicleModel,
-                      licensePlate: newCustomer.licensePlate,
-                      status: "active",
-                      segment: "New",
-                      loyaltyPoints: 0,
-                      totalSpent: 0,
-                      visitCount: 1,
-                      lastVisit: new Date().toISOString(),
-                      created_at: new Date().toISOString(),
-                    });
-
-                    // Set the new customer to the form AND search field
-                    setFormData({
-                      ...formData,
-                      customerName: newCustomer.name,
-                      customerPhone: newCustomer.phone,
-                      vehicleId: vehicles.length > 0 ? vehicleId : undefined,
-                      vehicleModel: newCustomer.vehicleModel,
-                      licensePlate: newCustomer.licensePlate,
-                    });
 
                     // Update customer search to show the name
                     setCustomerSearch(newCustomer.name);

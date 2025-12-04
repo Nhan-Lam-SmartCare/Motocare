@@ -3239,35 +3239,34 @@ const SalesManager: React.FC = () => {
 
       if ((rpcRes as any)?.error) throw (rpcRes as any).error;
 
-      // Nếu có customerId, cập nhật totalspent cho khách hàng
+      // Nếu có customerId, cập nhật totalSpent và visitCount cho khách hàng
       if (customer.id) {
         try {
-          // Lấy totalspent hiện tại
+          // Lấy thông tin hiện tại (dùng camelCase vì Supabase auto-convert)
           const { data: currentCustomer } = await supabase
             .from("customers")
-            .select("totalspent")
+            .select("totalSpent, visitCount")
             .eq("id", customer.id)
             .single();
 
-          const currentTotal = currentCustomer?.totalspent || 0;
+          const currentTotal = currentCustomer?.totalSpent || 0;
+          const currentVisits = currentCustomer?.visitCount || 0;
 
-          // Cập nhật totalspent mới
+          // Cập nhật totalSpent, visitCount, lastVisit
           await supabase
             .from("customers")
             .update({
-              totalspent: currentTotal + servicePrice,
-              lastvisit: new Date().toISOString(),
+              totalSpent: currentTotal + servicePrice,
+              visitCount: currentVisits + 1,
+              lastVisit: new Date().toISOString(),
             })
             .eq("id", customer.id);
 
           console.log(
-            `[QuickService] Updated customer ${customer.name} totalspent: ${currentTotal} + ${servicePrice}`
+            `[QuickService] Updated customer ${customer.name}: totalSpent ${currentTotal} + ${servicePrice}, visits ${currentVisits} + 1`
           );
         } catch (err) {
-          console.error(
-            "[QuickService] Error updating customer totalspent:",
-            err
-          );
+          console.error("[QuickService] Error updating customer stats:", err);
         }
       }
 

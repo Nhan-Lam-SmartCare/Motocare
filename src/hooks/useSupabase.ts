@@ -45,6 +45,16 @@ export const useUpdateCustomer = () => {
   });
 };
 
+export const useDeleteCustomer = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => supabaseHelpers.deleteCustomer(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["customers"] });
+    },
+  });
+};
+
 // Suppliers hooks
 export const useSuppliers = () => {
   return useQuery({

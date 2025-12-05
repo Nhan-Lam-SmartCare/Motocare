@@ -352,11 +352,29 @@ const Dashboard: React.FC = () => {
     "service_deposit", // Đặt cọc dịch vụ
   ];
 
+  // Các category phiếu chi KHÔNG tính vào lợi nhuận (vì đã tính trong giá vốn)
+  const excludedExpenseCategories = [
+    "supplier_payment", // Chi trả NCC (nhập kho) - đã tính trong giá vốn hàng bán
+    "nhập kho",
+    "nhập hàng",
+    "goods_receipt",
+    "import",
+  ];
+
   // Helper function để check exclude với case-insensitive
   const isExcludedIncomeCategory = (category: string | undefined | null) => {
     if (!category) return false;
     const lowerCat = category.toLowerCase().trim();
     return excludedIncomeCategories.some(
+      (exc) => exc.toLowerCase() === lowerCat
+    );
+  };
+
+  // Helper function để check exclude expense categories
+  const isExcludedExpenseCategory = (category: string | undefined | null) => {
+    if (!category) return false;
+    const lowerCat = category.toLowerCase().trim();
+    return excludedExpenseCategories.some(
       (exc) => exc.toLowerCase() === lowerCat
     );
   };
@@ -421,13 +439,19 @@ const Dashboard: React.FC = () => {
           t.date.slice(0, 10) === today
       )
       .reduce((sum, t) => sum + t.amount, 0);
+    // Chi phí: loại trừ chi nhập kho (đã tính trong giá vốn hàng bán)
     const todayExpense = cashTransactions
-      .filter((t) => t.type === "expense" && t.date.slice(0, 10) === today)
+      .filter(
+        (t) =>
+          t.type === "expense" &&
+          !isExcludedExpenseCategory(t.category) &&
+          t.date.slice(0, 10) === today
+      )
       .reduce((sum, t) => sum + t.amount, 0);
 
     // Doanh thu = Sales + Work Orders + Phiếu thu (không tính thu dịch vụ)
     const revenue = salesRevenue + woRevenue + todayIncome;
-    // Lợi nhuận thuần = (Doanh thu bán hàng - Giá vốn) - Phiếu chi
+    // Lợi nhuận thuần = (Doanh thu bán hàng - Giá vốn) - Phiếu chi (trừ chi nhập kho)
     const grossProfit = salesProfit + woProfit; // Lợi nhuận gộp
     const profit = grossProfit - todayExpense; // Lợi nhuận thuần
 
@@ -586,11 +610,13 @@ const Dashboard: React.FC = () => {
         );
       })
       .reduce((sum, t) => sum + t.amount, 0);
+    // Chi phí: loại trừ chi nhập kho (đã tính trong giá vốn hàng bán)
     const filteredExpense = cashTransactions
       .filter((t) => {
         const txDate = toLocalDateStr(t.date);
         return (
           t.type === "expense" &&
+          !isExcludedExpenseCategory(t.category) &&
           txDate &&
           txDate >= startDateStr &&
           txDate <= endDateStr
@@ -600,7 +626,7 @@ const Dashboard: React.FC = () => {
 
     // Doanh thu = Sales + Work Orders + Phiếu thu (không tính thu dịch vụ)
     const revenue = salesRevenue + woRevenue + filteredIncome;
-    // Lợi nhuận thuần = (Doanh thu bán hàng - Giá vốn) - Phiếu chi
+    // Lợi nhuận thuần = (Doanh thu bán hàng - Giá vốn) - Phiếu chi (trừ chi nhập kho)
     const grossProfit = salesProfit + woProfit;
     const profit = grossProfit - filteredExpense;
 

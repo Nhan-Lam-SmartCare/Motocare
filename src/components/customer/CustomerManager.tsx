@@ -1536,6 +1536,110 @@ const CustomerModal: React.FC<{
   onSave: (c: Partial<Customer> & { id?: string }) => void;
   onClose: () => void;
 }> = ({ customer, onSave, onClose }) => {
+  // Danh sách dòng xe phổ biến tại Việt Nam
+  const POPULAR_MOTORCYCLES = [
+    // === HONDA ===
+    "Honda Wave Alpha",
+    "Honda Wave RSX",
+    "Honda Wave RSX FI",
+    "Honda Wave 110",
+    "Honda Super Dream",
+    "Honda Dream",
+    "Honda Dream II",
+    "Honda Dream Thái",
+    "Honda Blade 110",
+    "Honda Future 125",
+    "Honda Future Neo",
+    "Honda Winner X",
+    "Honda Winner 150",
+    "Honda CB150R",
+    "Honda CBR150R",
+    "Honda Vision",
+    "Honda Air Blade 125",
+    "Honda Air Blade 150",
+    "Honda Air Blade 160",
+    "Honda SH Mode 125",
+    "Honda SH 125i",
+    "Honda SH 150i",
+    "Honda SH 160i",
+    "Honda SH 350i",
+    "Honda Lead 125",
+    "Honda PCX 125",
+    "Honda PCX 160",
+    "Honda Vario 125",
+    "Honda Vario 150",
+    "Honda Vario 160",
+    "Honda ADV 150",
+    "Honda ADV 160",
+    "Honda Forza 350",
+    "Honda Giorno",
+    "Honda Stylo 160",
+    "Honda Cub 50",
+    "Honda Cub 81",
+    "Honda Super Cub",
+    // === YAMAHA ===
+    "Yamaha Sirius",
+    "Yamaha Sirius FI",
+    "Yamaha Jupiter",
+    "Yamaha Jupiter FI",
+    "Yamaha Jupiter Finn",
+    "Yamaha Exciter 135",
+    "Yamaha Exciter 150",
+    "Yamaha Exciter 155",
+    "Yamaha MT-15",
+    "Yamaha R15",
+    "Yamaha FZ150i",
+    "Yamaha TFX 150",
+    "Yamaha XSR155",
+    "Yamaha Grande",
+    "Yamaha Grande Hybrid",
+    "Yamaha Janus",
+    "Yamaha FreeGo",
+    "Yamaha Latte",
+    "Yamaha NVX 125",
+    "Yamaha NVX 155",
+    "Yamaha NMAX 155",
+    "Yamaha XMAX 300",
+    "Yamaha Nouvo",
+    "Yamaha Mio",
+    // === SUZUKI ===
+    "Suzuki Raider 150",
+    "Suzuki Satria F150",
+    "Suzuki GSX-R150",
+    "Suzuki GSX-S150",
+    "Suzuki Axelo",
+    "Suzuki Revo",
+    "Suzuki Address",
+    "Suzuki Burgman",
+    // === SYM ===
+    "SYM Elegant",
+    "SYM Attila",
+    "SYM Angela",
+    "SYM Galaxy",
+    "SYM Star SR",
+    "SYM Shark",
+    // === PIAGGIO & VESPA ===
+    "Piaggio Liberty",
+    "Piaggio Medley",
+    "Vespa Sprint",
+    "Vespa Primavera",
+    "Vespa LX",
+    "Vespa GTS",
+    // === KYMCO ===
+    "Kymco Like",
+    "Kymco Many",
+    "Kymco Jockey",
+    // === VINFAST ===
+    "VinFast Klara",
+    "VinFast Ludo",
+    "VinFast Feliz",
+    "VinFast Theon",
+    "VinFast Evo200",
+    // === Khác ===
+    "Xe điện khác",
+    "Khác",
+  ];
+
   const [name, setName] = useState(customer.name || "");
   const [phone, setPhone] = useState(customer.phone || "");
 
@@ -1558,6 +1662,16 @@ const CustomerModal: React.FC<{
 
   const [vehicles, setVehicles] = useState<Vehicle[]>(initVehicles());
   const [newVehicle, setNewVehicle] = useState({ model: "", licensePlate: "" });
+  const [showModelSuggestions, setShowModelSuggestions] = useState(false);
+
+  // Lọc gợi ý dòng xe theo input
+  const filteredModels = useMemo(() => {
+    if (!newVehicle.model.trim()) return POPULAR_MOTORCYCLES.slice(0, 20);
+    const search = newVehicle.model.toLowerCase();
+    return POPULAR_MOTORCYCLES.filter((m) =>
+      m.toLowerCase().includes(search)
+    ).slice(0, 15);
+  }, [newVehicle.model]);
 
   const addVehicle = () => {
     if (!newVehicle.model.trim() && !newVehicle.licensePlate.trim()) return;
@@ -1707,15 +1821,39 @@ const CustomerModal: React.FC<{
               </div>
             )}
             <div className="grid grid-cols-2 gap-2">
-              <input
-                type="text"
-                placeholder="Dòng xe"
-                value={newVehicle.model}
-                onChange={(e) =>
-                  setNewVehicle({ ...newVehicle, model: e.target.value })
-                }
-                className="px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Dòng xe"
+                  value={newVehicle.model}
+                  onChange={(e) => {
+                    setNewVehicle({ ...newVehicle, model: e.target.value });
+                    setShowModelSuggestions(true);
+                  }}
+                  onFocus={() => setShowModelSuggestions(true)}
+                  onBlur={() =>
+                    setTimeout(() => setShowModelSuggestions(false), 200)
+                  }
+                  className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                {showModelSuggestions && filteredModels.length > 0 && (
+                  <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-slate-800 border border-slate-600 rounded-lg shadow-xl max-h-48 overflow-y-auto">
+                    {filteredModels.map((model, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => {
+                          setNewVehicle({ ...newVehicle, model });
+                          setShowModelSuggestions(false);
+                        }}
+                        className="w-full px-3 py-2 text-left text-sm text-slate-200 hover:bg-blue-600 hover:text-white transition-colors"
+                      >
+                        {model}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
               <input
                 type="text"
                 placeholder="Biển số"

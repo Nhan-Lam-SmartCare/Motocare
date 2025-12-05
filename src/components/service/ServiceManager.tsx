@@ -1026,20 +1026,17 @@ export default function ServiceManager() {
 
         // Cập nhật totalSpent và visitCount cho khách hàng
         // Luôn cập nhật visitCount, chỉ cộng totalSpent nếu total > 0
-        if (customer.id || customer.phone) {
+        if (customer.phone) {
           try {
-            // Tìm khách hàng theo ID hoặc phone
-            let query = supabase
+            // Chờ một chút để đảm bảo khách hàng đã được tạo trong DB bởi RPC
+            await new Promise((resolve) => setTimeout(resolve, 500));
+
+            // Tìm khách hàng theo phone (luôn đáng tin cậy hơn ID local)
+            const { data: currentCustomer } = await supabase
               .from("customers")
-              .select("id, totalSpent, visitCount");
-
-            if (customer.id) {
-              query = query.eq("id", customer.id);
-            } else if (customer.phone) {
-              query = query.eq("phone", customer.phone);
-            }
-
-            const { data: currentCustomer } = await query.single();
+              .select("id, totalSpent, visitCount")
+              .eq("phone", customer.phone)
+              .single();
 
             if (currentCustomer) {
               const currentTotal = currentCustomer?.totalSpent || 0;

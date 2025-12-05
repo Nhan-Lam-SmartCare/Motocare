@@ -3103,34 +3103,42 @@ const SalesManager: React.FC = () => {
       } as any);
       if ((rpcRes as any)?.error) throw (rpcRes as any).error;
 
-      // Cập nhật visitCount và totalSpent cho khách hàng nếu có
-      const customerId =
-        selectedCustomer?.id || newCustomerId || customerObj.id;
-      if (customerId) {
+      // Cập nhật visitCount và totalSpent cho khách hàng nếu có phone
+      const customerPhone = selectedCustomer?.phone || customerObj.phone;
+      if (customerPhone) {
         try {
-          // Lấy thông tin hiện tại của khách hàng
+          // Chờ một chút để đảm bảo khách hàng đã được tạo trong DB
+          await new Promise((resolve) => setTimeout(resolve, 500));
+
+          // Lấy thông tin hiện tại của khách hàng theo phone
           const { data: currentCustomer } = await supabase
             .from("customers")
-            .select("totalSpent, visitCount")
-            .eq("id", customerId)
+            .select("id, totalSpent, visitCount")
+            .eq("phone", customerPhone)
             .single();
 
-          const currentTotal = currentCustomer?.totalSpent || 0;
-          const currentVisits = currentCustomer?.visitCount || 0;
+          if (currentCustomer) {
+            const currentTotal = currentCustomer?.totalSpent || 0;
+            const currentVisits = currentCustomer?.visitCount || 0;
 
-          // Cập nhật totalSpent, visitCount, lastVisit
-          await supabase
-            .from("customers")
-            .update({
-              totalSpent: currentTotal + total,
-              visitCount: currentVisits + 1,
-              lastVisit: new Date().toISOString(),
-            })
-            .eq("id", customerId);
+            // Cập nhật totalSpent, visitCount, lastVisit
+            await supabase
+              .from("customers")
+              .update({
+                totalSpent: currentTotal + total,
+                visitCount: currentVisits + 1,
+                lastVisit: new Date().toISOString(),
+              })
+              .eq("id", currentCustomer.id);
 
-          console.log(
-            `[Sale] Updated customer ${customerObj.name}: totalSpent ${currentTotal} + ${total}, visits ${currentVisits} + 1`
-          );
+            console.log(
+              `[Sale] Updated customer ${customerObj.name}: totalSpent ${currentTotal} + ${total}, visits ${currentVisits} + 1`
+            );
+          } else {
+            console.warn(
+              `[Sale] Customer not found for update: ${customerObj.name} (${customerPhone})`
+            );
+          }
         } catch (err) {
           console.error("[Sale] Error updating customer stats:", err);
         }

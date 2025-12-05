@@ -27,13 +27,26 @@ export const supabaseHelpers = {
   },
 
   async createCustomer(customer: any) {
+    // Extract vehicleModel and licensePlate, store them in vehicles array
+    const { vehicleModel, licensePlate, ...customerData } = customer;
+
+    // Build vehicles array if we have vehicle info
+    const vehicles =
+      vehicleModel || licensePlate
+        ? [{ model: vehicleModel || "", licensePlate: licensePlate || "" }]
+        : [];
+
+    const insertData = {
+      ...customerData,
+      vehicles: vehicles.length > 0 ? vehicles : undefined,
+    };
+
     const { data, error } = await supabase
       .from("customers")
-      .insert([customer])
+      .insert([insertData])
       .select()
       .single();
 
-    if (error) throw error;
     if (error) throw error;
     return data;
   },

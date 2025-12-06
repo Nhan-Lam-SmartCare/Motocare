@@ -26,6 +26,7 @@ import {
   useCreateWorkOrderAtomicRepo,
   useUpdateWorkOrderAtomicRepo,
 } from "../../../hooks/useWorkOrdersRepository";
+import { completeWorkOrderPayment } from "../../../lib/repository/workOrdersRepository";
 import { useCreateCustomerDebtRepo } from "../../../hooks/useDebtsRepository";
 import { showToast } from "../../../utils/toast";
 import { printElementById } from "../../../utils/print";
@@ -583,7 +584,9 @@ const WorkOrderModal: React.FC<{
 
   // Calculate payment summary
   const totalDeposit = depositAmount || order.depositAmount || 0;
-  const totalAdditionalPayment = showPartialPayment ? partialPayment : (order.additionalPayment || 0);
+  // 🔹 FIX: Chỉ tính additionalPayment MỚI khi checkbox được check
+  // Không lấy giá trị cũ để tránh thanh toán 2 lần
+  const totalAdditionalPayment = showPartialPayment ? partialPayment : 0;
   const totalPaid = totalDeposit + totalAdditionalPayment;
   const remainingAmount = Math.max(0, total - totalPaid);
 
@@ -1439,6 +1442,24 @@ const WorkOrderModal: React.FC<{
           // Call onSave to update the workOrders state
           onSave(finalOrder);
 
+          // 🔹 FIX: Nếu tạo phiếu mới với paymentStatus = 'paid', gọi complete_payment để trừ kho
+          if (paymentStatus === "paid" && selectedParts.length > 0) {
+            try {
+              console.log("[handleSave] New order is fully paid, calling completeWorkOrderPayment to deduct inventory");
+              const result = await completeWorkOrderPayment(
+                orderId,
+                formData.paymentMethod || "cash",
+                0 // Số tiền = 0 vì đã thanh toán hết rồi, chỉ cần trừ kho
+              );
+              if (!result.success) {
+                showToast.warning("Đã lưu phiếu nhưng có lỗi khi trừ kho: " + (result.error?.message || "Unknown error"));
+              }
+            } catch (error: any) {
+              console.error("[handleSave] Error deducting inventory:", error);
+              showToast.warning("Đã lưu phiếu nhưng có lỗi khi trừ kho: " + error.message);
+            }
+          }
+
           // �x� Auto-create customer debt ONLY when status is "Tr� m�y" and there's remaining amount
           if (formData.status === "Tr� m�y" && remainingAmount > 0) {
             console.log("[handleSave] Creating debt with finalOrder:", {
@@ -1770,6 +1791,25 @@ const WorkOrderModal: React.FC<{
           );
 
           onSave(finalOrder);
+
+          // 🔹 FIX: Nếu cập nhật phiếu thành paymentStatus = 'paid', gọi complete_payment để trừ kho
+          const wasUnpaidOrPartial = order.paymentStatus !== "paid";
+          if (paymentStatus === "paid" && wasUnpaidOrPartial && selectedParts.length > 0) {
+            try {
+              console.log("[handleSave] Order became fully paid, calling completeWorkOrderPayment to deduct inventory");
+              const result = await completeWorkOrderPayment(
+                order.id,
+                formData.paymentMethod || "cash",
+                0 // Số tiền = 0 vì đã thanh toán hết rồi, chỉ cần trừ kho
+              );
+              if (!result.success) {
+                showToast.warning("Đã cập nhật phiếu nhưng có lỗi khi trừ kho: " + (result.error?.message || "Unknown error"));
+              }
+            } catch (error: any) {
+              console.error("[handleSave] Error deducting inventory:", error);
+              showToast.warning("Đã cập nhật phiếu nhưng có lỗi khi trừ kho: " + error.message);
+            }
+          }
 
           // �x� Auto-create customer debt ONLY when status is "Tr� m�y" and there's remaining amount
           if (formData.status === "Tr� m�y" && remainingAmount > 0) {

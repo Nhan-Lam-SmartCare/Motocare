@@ -30,13 +30,15 @@ const CashBook: React.FC = () => {
   const updateCashTxRepo = useUpdateCashTxRepo();
   const deleteCashTxRepo = useDeleteCashTxRepo();
   const updatePaymentSourceBalanceRepo = useUpdatePaymentSourceBalanceRepo();
-  
+
   // Fetch profiles for user names
   const [profilesMap, setProfilesMap] = useState<Record<string, string>>({});
-  
+
   useEffect(() => {
     const fetchProfiles = async () => {
-      const { data, error } = await supabase.from("profiles").select("id, name");
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, name");
       if (!error && data) {
         const map: Record<string, string> = {};
         data.forEach((profile: any) => {
@@ -47,7 +49,7 @@ const CashBook: React.FC = () => {
     };
     fetchProfiles();
   }, []);
-  
+
   const [filterType, setFilterType] = useState<"all" | "income" | "expense">(
     "all"
   );

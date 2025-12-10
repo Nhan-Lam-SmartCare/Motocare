@@ -2639,28 +2639,28 @@ const SalesManager: React.FC = () => {
       return;
     }
 
-    // Create new customer
-    const customer: Customer = {
+    // Create new customer with only valid database fields
+    const customer = {
       id: `CUST-${Date.now()}`,
       name: newCustomer.name,
       phone: newCustomer.phone,
+      created_at: new Date().toISOString(),
+      // vehicleModel and licensePlate will be handled by createCustomer function
       vehicleModel: newCustomer.vehicleModel,
       licensePlate: newCustomer.licensePlate,
-      status: "active" as const,
-      segment: "New" as const,
-      loyaltyPoints: 0,
-      totalSpent: 0,
-      visitCount: 1,
-      lastVisit: new Date().toISOString(),
-      created_at: new Date().toISOString(),
     };
 
     // Save to database using mutation
     createCustomerMutation.mutate(customer, {
-      onSuccess: () => {
+      onSuccess: (savedCustomer) => {
         // Select the new customer
-        setSelectedCustomer(customer);
-        setCustomerSearch(customer.name);
+        setSelectedCustomer({
+          id: savedCustomer.id,
+          name: savedCustomer.name,
+          phone: savedCustomer.phone,
+          created_at: savedCustomer.created_at,
+        });
+        setCustomerSearch(savedCustomer.name);
 
         // Reset form and close modal
         setNewCustomer({

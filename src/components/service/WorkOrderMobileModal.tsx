@@ -7,6 +7,8 @@ import {
   ChevronDown,
   Search,
   AlertTriangle,
+  Printer,
+  Share2,
 } from "lucide-react";
 import { formatCurrency, formatWorkOrderId } from "../../utils/format";
 import { getCategoryColor } from "../../utils/categoryColors";
@@ -1931,29 +1933,80 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
 
         {/* STICKY FOOTER - Action Buttons */}
         <div className="flex-shrink-0 bg-[#1e1e2d] border-t border-slate-700 p-3">
+          {/* Row 1: Print/Share buttons - only show when editing existing order */}
+          {workOrder?.id && (
+            <div className="flex gap-2 mb-2">
+              <button
+                onClick={() => {
+                  // Trigger print functionality
+                  window.print();
+                }}
+                className="flex-1 py-2 bg-[#2b2b40] text-slate-300 rounded-lg font-medium hover:bg-slate-700 transition-colors text-xs flex items-center justify-center gap-1.5"
+              >
+                <Printer className="w-3.5 h-3.5" />
+                In phiếu
+              </button>
+              <button
+                onClick={() => {
+                  // Share functionality
+                  if (navigator.share) {
+                    navigator
+                      .share({
+                        title: `Phiếu sửa chữa #${workOrder.id}`,
+                        text: `Phiếu sửa chữa cho ${
+                          selectedCustomer?.name || workOrder.customerName
+                        } - ${
+                          selectedVehicle?.licensePlate ||
+                          workOrder.licensePlate
+                        }`,
+                      })
+                      .catch(() => {});
+                  } else {
+                    alert(
+                      "Chức năng chia sẻ không khả dụng trên trình duyệt này"
+                    );
+                  }
+                }}
+                className="flex-1 py-2 bg-[#2b2b40] text-slate-300 rounded-lg font-medium hover:bg-slate-700 transition-colors text-xs flex items-center justify-center gap-1.5"
+              >
+                <Share2 className="w-3.5 h-3.5" />
+                Chia sẻ
+              </button>
+            </div>
+          )}
+          {/* Row 2: Main action buttons */}
           <div className="flex gap-2">
             <button
               onClick={onClose}
-              className="px-4 py-2 bg-[#2b2b40] text-slate-300 rounded-lg font-medium hover:bg-slate-700 transition-colors text-xs"
+              className="px-3 py-2.5 bg-[#2b2b40] text-slate-300 rounded-lg font-medium hover:bg-slate-700 transition-colors text-xs"
             >
               Hủy
             </button>
+            {/* Nút Lưu Phiếu - luôn hiển thị */}
             <button
               onClick={handleSave}
-              className={`flex-1 py-2 rounded-lg font-medium text-white transition-colors text-xs ${
-                status === "Trả máy"
-                  ? "bg-green-600 hover:bg-green-700"
-                  : isDeposit
-                  ? "bg-purple-600 hover:bg-purple-700"
-                  : "bg-blue-600 hover:bg-blue-700"
-              }`}
+              className="flex-1 py-2.5 bg-slate-600 hover:bg-slate-500 rounded-lg font-medium text-white transition-colors text-xs"
             >
-              {status === "Trả máy"
-                ? "✅ THANH TOÁN & TRẢ XE"
-                : isDeposit
-                ? "💰 LƯU & ĐẶT CỌC"
-                : "💾 LƯU PHIẾU"}
+              💾 LƯU
             </button>
+            {/* Nút Đặt cọc - chỉ hiển thị khi có đặt cọc và không phải trạng thái Trả máy */}
+            {status !== "Trả máy" && isDeposit && depositAmount > 0 && (
+              <button
+                onClick={handleSave}
+                className="flex-1 py-2.5 bg-purple-600 hover:bg-purple-700 rounded-lg font-medium text-white transition-colors text-xs"
+              >
+                💰 ĐẶT CỌC
+              </button>
+            )}
+            {/* Nút Thanh toán - chỉ hiển thị khi trạng thái Trả máy */}
+            {status === "Trả máy" && (
+              <button
+                onClick={handleSave}
+                className="flex-1 py-2.5 bg-green-600 hover:bg-green-700 rounded-lg font-medium text-white transition-colors text-xs"
+              >
+                ✅ THANH TOÁN
+              </button>
+            )}
           </div>
         </div>
       </div>

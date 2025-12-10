@@ -71,9 +71,9 @@ const EmployeeManager: React.FC = () => {
   const filteredEmployees = useMemo(() => {
     return employees.filter(
       (emp) =>
-        emp.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        emp.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         emp.phone?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        emp.position.toLowerCase().includes(searchTerm.toLowerCase())
+        emp.position?.toLowerCase().includes(searchTerm.toLowerCase())
     );
   }, [employees, searchTerm]);
 

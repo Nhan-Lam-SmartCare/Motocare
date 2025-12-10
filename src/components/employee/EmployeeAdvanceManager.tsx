@@ -12,6 +12,8 @@ import {
 } from "lucide-react";
 import { useAppContext } from "../../contexts/AppContext";
 import { useAuth } from "../../contexts/AuthContext";
+import { supabase } from "../../supabaseClient";
+import { useQueryClient } from "@tanstack/react-query";
 import type { EmployeeAdvance, EmployeeAdvancePayment } from "../../types";
 import { formatCurrency, formatDate } from "../../utils/format";
 import { showToast } from "../../utils/toast";
@@ -62,7 +64,7 @@ export default function EmployeeAdvanceManager() {
     return advances.filter((advance) => {
       const matchesSearch =
         advance.employeeName
-          .toLowerCase()
+          ?.toLowerCase()
           .includes(searchQuery.toLowerCase()) ||
         advance.reason?.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesStatus =
@@ -155,16 +157,59 @@ export default function EmployeeAdvanceManager() {
     }
   };
 
+  const queryClient = useQueryClient();
+
   const handlePay = async (advanceId: string) => {
+    // Find the advance to get amount and payment method
+    const advance = advances.find((a) => a.id === advanceId);
+    if (!advance) {
+      showToast.error("Không tìm thấy đơn ứng lương");
+      return;
+    }
+
     try {
+      // 1. Update advance status to paid
       await updateAdvance({
         id: advanceId,
         updates: {
           status: "paid",
         },
       });
+
+      // 2. Create cash transaction (expense) for the advance payment
+      const transactionId = `ADV-${advanceId}-${Date.now()}`;
+      const { error: txError } = await supabase
+        .from("cash_transactions")
+        .insert({
+          id: transactionId,
+          type: "expense",
+          category: "employee_advance",
+          amount: advance.advanceAmount,
+          date: new Date().toISOString(),
+          description: `Ứng lương - ${advance.employeeName}${
+            advance.reason ? ` (${advance.reason})` : ""
+          }`,
+          branchid: currentBranchId,
+          paymentsource: advance.paymentMethod === "cash" ? "cash" : "bank",
+        });
+
+      if (txError) {
+        console.error("Error creating cash transaction for advance:", txError);
+        showToast.warning(
+          "Đã chi tiền nhưng chưa ghi sổ quỹ. Vui lòng kiểm tra lại."
+        );
+      } else {
+        // Invalidate cash transactions to refresh the data
+        queryClient.invalidateQueries({ queryKey: ["cash_transactions"] });
+        showToast.success(
+          `Đã chi ${advance.advanceAmount.toLocaleString()}đ ứng lương cho ${
+            advance.employeeName
+          }`
+        );
+      }
     } catch (error) {
-      // Error handled by mutation
+      console.error("Error paying advance:", error);
+      showToast.error("Có lỗi khi chi ứng lương");
     }
   };
 
@@ -464,16 +509,14 @@ export default function EmployeeAdvanceManager() {
                               Chi trả
                             </button>
                           )}
-                          {(advance.status === "rejected" ||
-                            advance.status === "pending") && (
-                            <button
-                              onClick={() => handleDelete(advance.id)}
-                              className="p-1 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
-                              title="Xóa"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          )}
+                          {/* Nút xóa - hiển thị cho tất cả trạng thái */}
+                          <button
+                            onClick={() => handleDelete(advance.id)}
+                            className="p-1 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
+                            title="Xóa"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
                         </div>
                       </td>
                     </tr>

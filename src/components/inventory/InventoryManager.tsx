@@ -602,7 +602,7 @@ const GoodsReceiptMobileWrapper: React.FC<{
       <GoodsReceiptMobileModal
         isOpen={isOpen}
         onClose={onClose}
-        parts={parts}
+        parts={parts} // Use parts from props (which is allPartsData)
         receiptItems={receiptItems}
         setReceiptItems={setReceiptItems}
         selectedSupplier={selectedSupplier}
@@ -4767,10 +4767,17 @@ const InventoryManager: React.FC = () => {
 
   // Sau khi chuyển sang server filter, filteredParts = repoParts (có thể thêm client filter tồn kho nếu cần)
   const filteredParts = useMemo(() => {
-    let baseList =
-      showDuplicatesOnly && duplicateSkus.size > 0
-        ? duplicatePartsData || []
-        : repoParts;
+    // ✨ FIX: When searching, use allPartsData instead of repoParts to search ALL items
+    let baseList;
+    if (showDuplicatesOnly && duplicateSkus.size > 0) {
+      baseList = duplicatePartsData || [];
+    } else if (search && search.trim()) {
+      // When searching, use allPartsData to show ALL matching results (not just current page)
+      baseList = allPartsData || [];
+    } else {
+      // Normal pagination mode
+      baseList = repoParts;
+    }
 
     // Client-side multi-keyword search refinement
     // Khi người dùng nhập nhiều từ, filter thêm để chỉ hiện sản phẩm có TẤT CẢ các từ
@@ -4803,6 +4810,7 @@ const InventoryManager: React.FC = () => {
     });
   }, [
     repoParts,
+    allPartsData,
     showDuplicatesOnly,
     duplicateSkus,
     duplicatePartsData,
@@ -5598,7 +5606,7 @@ const InventoryManager: React.FC = () => {
                   >
                     <option value="all">Tất cả danh mục</option>
                     {allCategories.map((cat) => (
-                      <option key={cat.id} value={cat.id}>
+                      <option key={cat.id} value={cat.name}>
                         {cat.name}
                       </option>
                     ))}

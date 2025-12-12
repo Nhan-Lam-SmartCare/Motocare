@@ -36,6 +36,7 @@ import {
   useRefundWorkOrderRepo,
   useDeleteWorkOrderRepo,
   useWorkOrdersRepo,
+  useWorkOrdersFilteredRepo,
 } from "../../hooks/useWorkOrdersRepository";
 import { usePartsRepo } from "../../hooks/usePartsRepository";
 import { useEmployeesRepo } from "../../hooks/useEmployeesRepository";
@@ -164,9 +165,16 @@ export default function ServiceManager() {
   const { data: fetchedEmployees, isLoading: employeesLoading } =
     useEmployeesRepo();
 
-  // Fetch work orders from Supabase
+  // State for date range filter
+  const [dateRangeDays, setDateRangeDays] = useState<number>(7); // Default 7 days
+
+  // Fetch work orders from Supabase with filtering (optimized)
   const { data: fetchedWorkOrders, isLoading: workOrdersLoading } =
-    useWorkOrdersRepo();
+    useWorkOrdersFilteredRepo({
+      limit: 100,
+      daysBack: dateRangeDays,
+      branchId: currentBranchId,
+    });
 
   // Fetch customers from Supabase directly
   const [fetchedCustomers, setFetchedCustomers] = useState<any[]>([]);
@@ -220,7 +228,7 @@ export default function ServiceManager() {
     "all"
   );
   const [activeTab, setActiveTab] = useState<ServiceTabKey>("all");
-  const [dateFilter, setDateFilter] = useState("all");
+  const [dateFilter, setDateFilter] = useState("week"); // Default to 7 days
   const [technicianFilter, setTechnicianFilter] = useState("all");
   const [paymentFilter, setPaymentFilter] = useState("all");
   const [rowActionMenuId, setRowActionMenuId] = useState<string | null>(null);
@@ -228,6 +236,19 @@ export default function ServiceManager() {
     top: 0,
     right: 0,
   });
+
+  // Sync dateFilter with dateRangeDays for API query
+  useEffect(() => {
+    if (dateFilter === "all") {
+      setDateRangeDays(0); // 0 = load all data (no date filter)
+    } else if (dateFilter === "today") {
+      setDateRangeDays(1);
+    } else if (dateFilter === "week") {
+      setDateRangeDays(7);
+    } else if (dateFilter === "month") {
+      setDateRangeDays(30);
+    }
+  }, [dateFilter]);
 
   // Track mobile state for responsive layout
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -2370,10 +2391,10 @@ export default function ServiceManager() {
             onChange={(e) => setDateFilter(e.target.value)}
             className="px-2 py-1.5 text-xs bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg"
           >
-            <option value="all">Tất cả ngày</option>
             <option value="today">Hôm nay</option>
             <option value="week">7 ngày qua</option>
             <option value="month">30 ngày qua</option>
+            <option value="all">Tất cả (chậm hơn)</option>
           </select>
           <select
             value={technicianFilter}

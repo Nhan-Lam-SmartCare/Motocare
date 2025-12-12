@@ -72,6 +72,70 @@ export async function fetchWorkOrders(): Promise<RepoResult<WorkOrder[]>> {
   }
 }
 
+// Optimized fetch with filtering and pagination
+export async function fetchWorkOrdersFiltered(options?: {
+  limit?: number;
+  daysBack?: number;
+  status?: string;
+  branchId?: string;
+}): Promise<RepoResult<WorkOrder[]>> {
+  try {
+    const {
+      limit = 100, // Default load 100 recent orders
+      daysBack = 7, // Default 7 days back
+      status,
+      branchId,
+    } = options || {};
+
+    let query = supabase
+      .from(WORK_ORDERS_TABLE)
+      .select("*")
+      .order("creationdate", { ascending: false })
+      .limit(limit);
+
+    // Filter by date (last N days) - if daysBack is 0, load all
+    if (daysBack > 0) {
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - daysBack);
+      query = query.gte("creationdate", startDate.toISOString());
+    }
+
+    // Filter by status
+    if (status && status !== "all") {
+      query = query.eq("status", status);
+    }
+
+    // Filter by branch
+    if (branchId && branchId !== "all") {
+      query = query.eq("branchid", branchId);
+    }
+
+    const { data, error } = await query;
+
+    console.log(
+      `[fetchWorkOrdersFiltered] Loaded ${
+        data?.length || 0
+      } orders (limit: ${limit}, daysBack: ${
+        daysBack === 0 ? "ALL" : daysBack
+      })`
+    );
+
+    if (error)
+      return failure({
+        code: "supabase",
+        message: "Không thể tải danh sách phiếu sửa chữa",
+        cause: error,
+      });
+    return success((data || []).map(normalizeWorkOrder));
+  } catch (e: any) {
+    return failure({
+      code: "network",
+      message: "Lỗi kết nối tới máy chủ",
+      cause: e,
+    });
+  }
+}
+
 // Atomic variant: delegates to DB RPC to ensure stock decrement, inventory tx, cash tx, and work order insert happen in a single transaction.
 export async function createWorkOrderAtomic(input: Partial<WorkOrder>): Promise<
   RepoResult<

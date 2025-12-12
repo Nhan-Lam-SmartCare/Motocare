@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   fetchWorkOrders,
+  fetchWorkOrdersFiltered,
   createWorkOrderAtomic,
   updateWorkOrderAtomic,
   updateWorkOrder,
@@ -22,6 +23,24 @@ export const useWorkOrdersRepo = () => {
   });
 };
 
+// New hook with pagination and filtering
+export const useWorkOrdersFilteredRepo = (options?: {
+  limit?: number;
+  daysBack?: number;
+  status?: string;
+  branchId?: string;
+}) => {
+  return useQuery({
+    queryKey: ["workOrdersFiltered", options],
+    queryFn: async () => {
+      const res = await fetchWorkOrdersFiltered(options);
+      if (!res.ok) throw res.error;
+      return res.data;
+    },
+    staleTime: 30000, // Cache for 30 seconds
+  });
+};
+
 export const useCreateWorkOrderAtomicRepo = () => {
   const qc = useQueryClient();
   return useMutation({
@@ -32,6 +51,7 @@ export const useCreateWorkOrderAtomicRepo = () => {
     },
     onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: ["workOrdersRepo"] });
+      qc.invalidateQueries({ queryKey: ["workOrdersFiltered"] }); // Invalidate filtered queries
       qc.invalidateQueries({ queryKey: ["partsRepo"] }); // Refresh parts for stock update
       qc.invalidateQueries({ queryKey: ["partsRepoPaged"] }); // Refresh parts for stock update
       qc.invalidateQueries({ queryKey: ["inventoryTxRepo"] }); // Update inventory history
@@ -54,6 +74,7 @@ export const useUpdateWorkOrderAtomicRepo = () => {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["workOrdersRepo"] });
+      qc.invalidateQueries({ queryKey: ["workOrdersFiltered"] }); // Invalidate filtered queries
       qc.invalidateQueries({ queryKey: ["partsRepo"] }); // Refresh parts for stock update
       qc.invalidateQueries({ queryKey: ["partsRepoPaged"] }); // Refresh parts for stock update
       qc.invalidateQueries({ queryKey: ["inventoryTxRepo"] }); // Update inventory history
@@ -75,6 +96,7 @@ export const useUpdateWorkOrderRepo = () => {
     }) => updateWorkOrder(id, updates),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["workOrdersRepo"] });
+      qc.invalidateQueries({ queryKey: ["workOrdersFiltered"] }); // Invalidate filtered queries
       qc.invalidateQueries({ queryKey: ["partsRepo"] }); // Update stock if needed
       qc.invalidateQueries({ queryKey: ["partsRepoPaged"] }); // Update stock if needed
       showToast.success("Đã cập nhật phiếu sửa chữa");
@@ -89,6 +111,7 @@ export const useDeleteWorkOrderRepo = () => {
     mutationFn: ({ id }: { id: string }) => deleteWorkOrder(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["workOrdersRepo"] });
+      qc.invalidateQueries({ queryKey: ["workOrdersFiltered"] }); // Invalidate filtered queries
       qc.invalidateQueries({ queryKey: ["partsRepo"] }); // Update stock if needed
       qc.invalidateQueries({ queryKey: ["partsRepoPaged"] }); // Update stock if needed
       qc.invalidateQueries({ queryKey: ["inventoryTxRepo"] }); // Update inventory history
@@ -110,6 +133,7 @@ export const useRefundWorkOrderRepo = () => {
     }) => refundWorkOrder(orderId, refundReason),
     onSuccess: (result) => {
       qc.invalidateQueries({ queryKey: ["workOrdersRepo"] });
+      qc.invalidateQueries({ queryKey: ["workOrdersFiltered"] }); // Invalidate filtered queries
       qc.invalidateQueries({ queryKey: ["partsRepo"] }); // Refresh for restored stock
       qc.invalidateQueries({ queryKey: ["partsRepoPaged"] }); // Refresh for restored stock
       qc.invalidateQueries({ queryKey: ["inventoryTxRepo"] }); // Update inventory history

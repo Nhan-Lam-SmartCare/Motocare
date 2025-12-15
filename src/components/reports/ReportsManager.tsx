@@ -18,6 +18,11 @@ import { useSalesRepo } from "../../hooks/useSalesRepository";
 import { useCashTxRepo } from "../../hooks/useCashTransactionsRepository";
 import { usePartsRepo } from "../../hooks/usePartsRepository";
 import { useWorkOrders } from "../../hooks/useSupabase";
+import {
+  useCustomerDebtsRepo,
+  useSupplierDebtsRepo,
+} from "../../hooks/useDebtsRepository";
+import { supabase } from "../../supabaseClient";
 import type { Sale, Part, WorkOrder } from "../../types";
 import { showToast } from "../../utils/toast";
 import { formatCurrency, formatDate } from "../../utils/format";
@@ -119,6 +124,34 @@ const ReportsManager: React.FC = () => {
   const { data: partsData = [], isLoading: partsLoading } = usePartsRepo();
   const { data: workOrdersData = [], isLoading: workOrdersLoading } =
     useWorkOrders();
+  const { data: customerDebtsData = [], isLoading: customerDebtsLoading } =
+    useCustomerDebtsRepo();
+  const { data: supplierDebtsData = [], isLoading: supplierDebtsLoading } =
+    useSupplierDebtsRepo();
+
+  // Fetch unpaid work orders for debt calculation (same as DebtManager)
+  const [unpaidWorkOrders, setUnpaidWorkOrders] = React.useState<any[]>([]);
+
+  React.useEffect(() => {
+    const fetchUnpaidWorkOrders = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("work_orders")
+          .select("*")
+          .eq("status", "Trả máy")
+          .eq("branchid", currentBranchId)
+          .gt("remainingamount", 0);
+
+        if (!error && data) {
+          setUnpaidWorkOrders(data);
+        }
+      } catch (err) {
+        console.error("Error fetching unpaid work orders:", err);
+      }
+    };
+
+    fetchUnpaidWorkOrders();
+  }, [currentBranchId]);
 
   // Build parts cost lookup map
   const partsCostMap = useMemo(() => {
@@ -135,6 +168,22 @@ const ReportsManager: React.FC = () => {
   const [dateRange, setDateRange] = useState<DateRange>("month");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [sortColumn, setSortColumn] = useState<string | null>(null);
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+  const [selectedMonth, setSelectedMonth] = useState<number>(
+    new Date().getMonth() + 1
+  ); // 1-12
+  const [selectedYear] = useState<number>(new Date().getFullYear());
+
+  // Function to handle column sorting
+  const handleSort = (column: string) => {
+    if (sortColumn === column) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortColumn(column);
+      setSortDirection("desc"); // Default to descending for numbers
+    }
+  };
 
   // Tính toán khoảng thời gian
   const { start, end } = useMemo(() => {
@@ -155,7 +204,9 @@ const ReportsManager: React.FC = () => {
         start = new Date(now.setDate(now.getDate() - 7));
         break;
       case "month":
-        start = new Date(now.setMonth(now.getMonth() - 1));
+        // Use selectedMonth instead of current month
+        start = new Date(selectedYear, selectedMonth - 1, 1);
+        end = new Date(selectedYear, selectedMonth, 0, 23, 59, 59, 999);
         break;
       case "quarter":
         start = new Date(now.setMonth(now.getMonth() - 3));
@@ -166,7 +217,7 @@ const ReportsManager: React.FC = () => {
     }
 
     return { start, end };
-  }, [dateRange, startDate, endDate]);
+  }, [dateRange, startDate, endDate, selectedMonth, selectedYear]);
 
   // Báo cáo doanh thu (bao gồm cả Sales và Work Orders đã thanh toán)
   const revenueReport = useMemo(() => {
@@ -330,6 +381,47 @@ const ReportsManager: React.FC = () => {
     };
   }, [salesData, workOrdersData, partsCostMap, start, end]);
 
+  // Sorted daily report based on sortColumn and sortDirection
+  const sortedDailyReport = useMemo(() => {
+    if (!sortColumn) return revenueReport.dailyReport;
+
+    return [...revenueReport.dailyReport].sort((a, b) => {
+      let aValue: any;
+      let bValue: any;
+
+      switch (sortColumn) {
+        case "date":
+          aValue = new Date(a.date).getTime();
+          bValue = new Date(b.date).getTime();
+          break;
+        case "totalCost":
+          aValue = a.totalCost;
+          bValue = b.totalCost;
+          break;
+        case "totalRevenue":
+          aValue = a.totalRevenue;
+          bValue = b.totalRevenue;
+          break;
+        case "totalProfit":
+          aValue = a.totalProfit;
+          bValue = b.totalProfit;
+          break;
+        case "orderCount":
+          aValue = a.orderCount;
+          bValue = b.orderCount;
+          break;
+        default:
+          return 0;
+      }
+
+      if (sortDirection === "asc") {
+        return aValue - bValue;
+      } else {
+        return bValue - aValue;
+      }
+    });
+  }, [revenueReport.dailyReport, sortColumn, sortDirection]);
+
   // Báo cáo thu chi
   // Fetch cash transactions via repository with range filters
   const { data: cashTxData = [], isLoading: cashTxLoading } = useCashTxRepo({
@@ -374,6 +466,38 @@ const ReportsManager: React.FC = () => {
     return excludedExpenseCategories.some(
       (exc) => exc.toLowerCase() === lowerCat
     );
+  };
+
+  // Helper function to translate category names to Vietnamese
+  const translateCategory = (category: string): string => {
+    const categoryMap: Record<string, string> = {
+      // Income categories
+      debt_collection: "Thu nợ",
+      service_income: "Thu dịch vụ",
+      sale_income: "Thu bán hàng",
+      service_deposit: "Đặt cọc dịch vụ",
+      other_income: "Thu khác",
+      service: "Dịch vụ",
+
+      // Expense categories
+      supplier_payment: "Trả nhà cung cấp",
+      salary: "Lương",
+      rent: "Tiền thuê",
+      utilities: "Tiền điện nước",
+      marketing: "Marketing",
+      maintenance: "Bảo trì",
+      other_expense: "Chi khác",
+      goods_receipt: "Nhập hàng",
+      import: "Nhập kho",
+
+      // Common Vietnamese
+      "nhập kho": "Nhập kho",
+      "nhập hàng": "Nhập hàng",
+      "bán hàng": "Bán hàng",
+      "dịch vụ": "Dịch vụ",
+    };
+
+    return categoryMap[category.toLowerCase()] || category;
   };
 
   const cashTotals = useMemo(() => {
@@ -505,36 +629,96 @@ const ReportsManager: React.FC = () => {
 
   // Báo cáo công nợ
   const debtReport = useMemo(() => {
-    // Tính nợ khách hàng từ sales chưa thanh toán
-    const customerDebts = customers.map((c) => {
-      const unpaidSales = salesData.filter(
-        (s: Sale) =>
-          (s.customer.name === c.name || s.customer.phone === c.phone) &&
-          (s as any).paymentStatus !== "paid"
-      );
-      const debt = unpaidSales.reduce(
-        (sum: number, s: Sale) => sum + s.total,
-        0
-      );
-      return { name: c.name, debt };
+    // Convert unpaid work orders to debt format
+    const existingWorkOrderIds = new Set(
+      customerDebtsData
+        .filter((d: any) => d.workOrderId)
+        .map((d: any) => d.workOrderId)
+    );
+
+    const workOrderDebts = unpaidWorkOrders
+      .filter((wo) => !existingWorkOrderIds.has(wo.id))
+      .map((wo) => {
+        const totalPaid = (wo.depositamount || 0) + (wo.additionalpayment || 0);
+        const remainingAmount = Math.max(0, (wo.total || 0) - totalPaid);
+
+        return {
+          id: `WO-${wo.id}`,
+          customerId: wo.customerphone || wo.id,
+          customerName: wo.customername || "Khách vãng lai",
+          phone: wo.customerphone || null,
+          totalAmount: wo.total || 0,
+          paidAmount: totalPaid,
+          remainingAmount: remainingAmount,
+          createdDate: wo.creationdate || wo.created_at,
+          branchId: wo.branchid || currentBranchId,
+          workOrderId: wo.id,
+        };
+      });
+
+    // Lọc công nợ theo branch - combine DB debts + work order debts
+    const allCustomerDebts = [...customerDebtsData, ...workOrderDebts];
+
+    const branchCustomerDebts = allCustomerDebts.filter(
+      (debt: any) =>
+        debt.branchId === currentBranchId && debt.remainingAmount > 0
+    );
+    const branchSupplierDebts = supplierDebtsData.filter(
+      (debt) => debt.branchId === currentBranchId && debt.remainingAmount > 0
+    );
+
+    // Tổng hợp theo khách hàng
+    const customerDebtMap = new Map<
+      string,
+      { name: string; phone?: string; debt: number }
+    >();
+    branchCustomerDebts.forEach((debt) => {
+      // Use phone as primary key, fallback to lowercase customerName for consistency
+      const key =
+        debt.phone || debt.customerName?.toLowerCase() || debt.customerName;
+      if (!customerDebtMap.has(key)) {
+        customerDebtMap.set(key, {
+          name: debt.customerName,
+          phone: debt.phone,
+          debt: 0,
+        });
+      }
+      const current = customerDebtMap.get(key)!;
+      current.debt += debt.remainingAmount;
     });
 
-    const supplierDebts = suppliers.map((s) => ({
-      name: s.name,
-      debt: 0, // Placeholder - cần implement purchase module
-    }));
+    // Tổng hợp theo nhà cung cấp
+    const supplierDebtMap = new Map<string, { name: string; debt: number }>();
+    branchSupplierDebts.forEach((debt) => {
+      const key = debt.supplierName;
+      if (!supplierDebtMap.has(key)) {
+        supplierDebtMap.set(key, {
+          name: debt.supplierName,
+          debt: 0,
+        });
+      }
+      const current = supplierDebtMap.get(key)!;
+      current.debt += debt.remainingAmount;
+    });
+
+    const customerDebts = Array.from(customerDebtMap.values()).sort(
+      (a, b) => b.debt - a.debt
+    );
+    const supplierDebts = Array.from(supplierDebtMap.values()).sort(
+      (a, b) => b.debt - a.debt
+    );
 
     const totalCustomerDebt = customerDebts.reduce((sum, c) => sum + c.debt, 0);
     const totalSupplierDebt = supplierDebts.reduce((sum, s) => sum + s.debt, 0);
 
     return {
-      customerDebts: customerDebts.filter((c) => c.debt > 0),
-      supplierDebts: supplierDebts.filter((s) => s.debt > 0),
+      customerDebts,
+      supplierDebts,
       totalCustomerDebt,
       totalSupplierDebt,
       netDebt: totalCustomerDebt - totalSupplierDebt,
     };
-  }, [customers, suppliers]);
+  }, [customerDebtsData, supplierDebtsData, currentBranchId, unpaidWorkOrders]);
 
   const exportToExcel = () => {
     const startStr = start.toISOString().split("T")[0];
@@ -630,8 +814,8 @@ const ReportsManager: React.FC = () => {
           <label className="text-[10px] font-medium text-slate-500 dark:text-slate-400 mb-1.5 block uppercase tracking-wider">
             Thời gian
           </label>
-          <div className="flex gap-2">
-            <div className="relative flex-1">
+          <div className="flex gap-2 flex-wrap">
+            <div className="relative flex-1 min-w-[150px]">
               <select
                 value={dateRange}
                 onChange={(e) => setDateRange(e.target.value as DateRange)}
@@ -639,7 +823,7 @@ const ReportsManager: React.FC = () => {
               >
                 <option value="today">Hôm nay</option>
                 <option value="week">7 ngày qua</option>
-                <option value="month">Tháng này</option>
+                <option value="month">Tháng</option>
                 <option value="quarter">Quý này</option>
                 <option value="year">Năm nay</option>
                 <option value="custom">Tùy chỉnh</option>
@@ -660,14 +844,33 @@ const ReportsManager: React.FC = () => {
                 </svg>
               </div>
             </div>
+
             <button
               onClick={exportToExcel}
-              className="px-4 bg-emerald-600 text-white rounded-lg shadow-sm hover:bg-emerald-700 active:scale-95 transition-all flex items-center justify-center"
+              className="px-4 py-2 bg-emerald-600 text-white rounded-lg shadow-sm hover:bg-emerald-700 active:scale-95 transition-all flex items-center justify-center gap-2 font-medium text-sm whitespace-nowrap"
               aria-label="Xuất Excel"
             >
               <FileSpreadsheet className="w-5 h-5" />
             </button>
           </div>
+
+          {dateRange === "month" && (
+            <div className="grid grid-cols-6 gap-2 mt-3 animate-in fade-in slide-in-from-top-2 duration-200">
+              {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => (
+                <button
+                  key={month}
+                  onClick={() => setSelectedMonth(month)}
+                  className={`p-2 rounded-lg text-sm font-medium transition-all ${
+                    selectedMonth === month
+                      ? "bg-blue-600 text-white shadow-md scale-105"
+                      : "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-blue-100 dark:hover:bg-blue-900/30 hover:scale-105"
+                  }`}
+                >
+                  Tháng {month}
+                </button>
+              ))}
+            </div>
+          )}
 
           {dateRange === "custom" && (
             <div className="grid grid-cols-2 gap-2 mt-3 animate-in fade-in slide-in-from-top-2 duration-200">
@@ -755,6 +958,24 @@ const ReportsManager: React.FC = () => {
                 : "Tùy chỉnh"}
             </button>
           )
+        )}
+
+        {dateRange === "month" && (
+          <div className="flex gap-1.5 flex-wrap">
+            {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => (
+              <button
+                key={month}
+                onClick={() => setSelectedMonth(month)}
+                className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                  selectedMonth === month
+                    ? "bg-blue-600 text-white shadow-md scale-105"
+                    : "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-blue-100 dark:hover:bg-blue-900/30 hover:scale-105"
+                }`}
+              >
+                T{month}
+              </button>
+            ))}
+          </div>
         )}
 
         {dateRange === "custom" && (
@@ -942,18 +1163,52 @@ const ReportsManager: React.FC = () => {
                       <th className="px-2 py-2 text-center text-[10px] font-bold uppercase">
                         #
                       </th>
-                      <th className="px-2 py-2 text-left text-[10px] font-bold uppercase">
-                        Ngày
+                      <th
+                        className="px-2 py-2 text-left text-[10px] font-bold uppercase cursor-pointer hover:bg-blue-700 transition-colors select-none"
+                        onClick={() => handleSort("date")}
+                      >
+                        <div className="flex items-center justify-between gap-1">
+                          <span>Ngày</span>
+                          {sortColumn === "date" && (
+                            <span className="text-yellow-300">
+                              {sortDirection === "asc" ? "↑" : "↓"}
+                            </span>
+                          )}
+                        </div>
                       </th>
-                      <th className="px-2 py-2 text-right text-[10px] font-bold uppercase">
-                        Vốn NK
-                        <br />
-                        (1)
+                      <th
+                        className="px-2 py-2 text-right text-[10px] font-bold uppercase cursor-pointer hover:bg-blue-700 transition-colors select-none"
+                        onClick={() => handleSort("totalCost")}
+                      >
+                        <div className="flex items-center justify-end gap-1">
+                          <span>
+                            Vốn NK
+                            <br />
+                            (1)
+                          </span>
+                          {sortColumn === "totalCost" && (
+                            <span className="text-yellow-300">
+                              {sortDirection === "asc" ? "↑" : "↓"}
+                            </span>
+                          )}
+                        </div>
                       </th>
-                      <th className="px-2 py-2 text-right text-[10px] font-bold uppercase">
-                        Tiền hàng
-                        <br />
-                        (2)
+                      <th
+                        className="px-2 py-2 text-right text-[10px] font-bold uppercase cursor-pointer hover:bg-blue-700 transition-colors select-none"
+                        onClick={() => handleSort("totalRevenue")}
+                      >
+                        <div className="flex items-center justify-end gap-1">
+                          <span>
+                            Tiền hàng
+                            <br />
+                            (2)
+                          </span>
+                          {sortColumn === "totalRevenue" && (
+                            <span className="text-yellow-300">
+                              {sortDirection === "asc" ? "↑" : "↓"}
+                            </span>
+                          )}
+                        </div>
                       </th>
                       <th className="px-2 py-2 text-right text-[10px] font-bold uppercase">
                         Vốn SC
@@ -993,7 +1248,7 @@ const ReportsManager: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
-                    {revenueReport.dailyReport.map((day, index) => {
+                    {sortedDailyReport.map((day, index) => {
                       // Tính toán từ dữ liệu thực
                       const vonNhapKho = day.totalCost; // Giá vốn phụ tùng
                       const tienHang = day.totalRevenue; // Doanh thu từ bán hàng + sửa chữa
@@ -1284,8 +1539,8 @@ const ReportsManager: React.FC = () => {
                       key={category}
                       className="flex items-center justify-between p-4 bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-700 dark:to-slate-800 rounded-lg hover:shadow-md transition-shadow"
                     >
-                      <span className="font-semibold text-slate-900 dark:text-white capitalize">
-                        {category}
+                      <span className="font-semibold text-slate-900 dark:text-white">
+                        {translateCategory(category)}
                       </span>
                       <div className="flex gap-6">
                         <div className="text-right">
@@ -1585,10 +1840,10 @@ const ReportsManager: React.FC = () => {
                   Nợ khách hàng
                 </div>
                 <div className="text-3xl font-bold text-green-600 dark:text-green-400">
-                  {debtReport.customerDebts.length}
+                  {formatCurrency(debtReport.totalCustomerDebt)}
                 </div>
                 <div className="text-xs text-green-600 dark:text-green-400 mt-1">
-                  đ
+                  {debtReport.customerDebts.length} khách hàng
                 </div>
               </div>
 
@@ -1597,10 +1852,10 @@ const ReportsManager: React.FC = () => {
                   Nợ nhà cung cấp
                 </div>
                 <div className="text-3xl font-bold text-red-600 dark:text-red-400">
-                  {debtReport.supplierDebts.length}
+                  {formatCurrency(debtReport.totalSupplierDebt)}
                 </div>
                 <div className="text-xs text-red-600 dark:text-red-400 mt-1">
-                  đ
+                  {debtReport.supplierDebts.length} nhà cung cấp
                 </div>
               </div>
 
@@ -1609,10 +1864,10 @@ const ReportsManager: React.FC = () => {
                   Công nợ ròng
                 </div>
                 <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">
-                  0
+                  {formatCurrency(debtReport.netDebt)}
                 </div>
                 <div className="text-xs text-blue-600 dark:text-blue-400 mt-1">
-                  đ
+                  Khách nợ - Nợ NCC
                 </div>
               </div>
             </div>

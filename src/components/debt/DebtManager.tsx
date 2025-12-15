@@ -46,6 +46,10 @@ const DebtManager: React.FC = () => {
   const [unpaidWorkOrders, setUnpaidWorkOrders] = useState<any[]>([]);
   const [loadingWorkOrders, setLoadingWorkOrders] = useState(true);
 
+  // 🔹 Fetch unpaid sales (remainingamount > 0)
+  const [unpaidSales, setUnpaidSales] = useState<any[]>([]);
+  const [loadingSales, setLoadingSales] = useState(true);
+
   useEffect(() => {
     const fetchUnpaidWorkOrders = async () => {
       setLoadingWorkOrders(true);
@@ -69,7 +73,70 @@ const DebtManager: React.FC = () => {
       }
     };
 
+    const fetchUnpaidSales = async () => {
+      setLoadingSales(true);
+      try {
+        const { data, error } = await supabase
+          .from("sales")
+          .select("*")
+          .eq("branchid", currentBranchId)
+          .gt("remainingamount", 0);
+
+        if (error) {
+          console.error("Error fetching unpaid sales:", error);
+        } else {
+          setUnpaidSales(data || []);
+        }
+      } catch (err) {
+        console.error("Error:", err);
+      } finally {
+        setLoadingSales(false);
+      }
+    };
+
     fetchUnpaidWorkOrders();
+    fetchUnpaidSales();
+
+    // 🔹 Realtime subscription for work_orders changes
+    const workOrdersChannel = supabase
+      .channel("work_orders_debt_changes")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "work_orders",
+          filter: `branchid=eq.${currentBranchId}`,
+        },
+        (payload) => {
+          console.log("Work order changed:", payload);
+          fetchUnpaidWorkOrders(); // Refetch when any change happens
+        }
+      )
+      .subscribe();
+
+    // 🔹 Realtime subscription for sales changes
+    const salesChannel = supabase
+      .channel("sales_debt_changes")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "sales",
+          filter: `branchid=eq.${currentBranchId}`,
+        },
+        (payload) => {
+          console.log("Sale changed:", payload);
+          fetchUnpaidSales(); // Refetch when any change happens
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(workOrdersChannel);
+      supabase.removeChannel(salesChannel);
+    };
   }, [currentBranchId]);
 
   // 🔹 Convert work orders to debt-like format for display
@@ -161,25 +228,75 @@ const DebtManager: React.FC = () => {
     const dbDebts = customerDebts.filter(
       (debt) => debt.branchId === currentBranchId
     );
+
+    // 🔹 Filter out debts linked to fully paid work orders or sales
+    const activeDbDebts = dbDebts.filter((debt: any) => {
+      // If debt has remainingAmount = 0, it's already marked as paid in DB
+      if (debt.remainingAmount === 0) return false;
+
+      // If debt is linked to a work order, check if work order is fully paid
+      if (debt.workOrderId) {
+        // If work order is not in unpaidWorkOrders list, it means it's fully paid
+        const workOrderStillUnpaid = unpaidWorkOrders.some(
+          (wo) => wo.id === debt.workOrderId
+        );
+        if (!workOrderStillUnpaid) return false;
+      }
+
+      // If debt is linked to a sale, check if sale is fully paid
+      if (debt.saleId) {
+        // If sale is not in unpaidSales list, it means it's fully paid
+        const saleStillUnpaid = unpaidSales.some(
+          (sale) => sale.id === debt.saleId
+        );
+        if (!saleStillUnpaid) return false;
+      }
+
+      // Keep this debt in the list
+      return true;
+    });
+
     // Combine with work order debts (auto-merged)
-    return [...dbDebts, ...workOrderDebts] as any[];
-  }, [customerDebts, currentBranchId, workOrderDebts]);
+    return [...activeDbDebts, ...workOrderDebts] as any[];
+  }, [
+    customerDebts,
+    currentBranchId,
+    workOrderDebts,
+    unpaidWorkOrders,
+    unpaidSales,
+  ]);
 
   const branchSupplierDebts = useMemo(() => {
     return supplierDebts.filter((debt) => debt.branchId === currentBranchId);
   }, [supplierDebts, currentBranchId]);
 
-  // Filter debts based on search
+  // Filter debts based on search and sort: unpaid debts first, then by date
   const filteredCustomerDebts = useMemo(() => {
-    if (!searchTerm) return branchCustomerDebts;
-    const term = searchTerm.toLowerCase();
-    return branchCustomerDebts.filter(
-      (debt: any) =>
-        debt.customerName?.toLowerCase().includes(term) ||
-        debt.phone?.includes(term) ||
-        debt.licensePlate?.toLowerCase().includes(term) ||
-        debt.description?.toLowerCase().includes(term)
-    );
+    let filtered = branchCustomerDebts;
+
+    // Apply search filter
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(
+        (debt: any) =>
+          debt.customerName?.toLowerCase().includes(term) ||
+          debt.phone?.includes(term) ||
+          debt.licensePlate?.toLowerCase().includes(term) ||
+          debt.description?.toLowerCase().includes(term)
+      );
+    }
+
+    // Sort: unpaid debts first (remainingAmount > 0), then by creation date (newest first)
+    return filtered.sort((a: any, b: any) => {
+      // First priority: unpaid debts come first
+      if (a.remainingAmount > 0 && b.remainingAmount === 0) return -1;
+      if (a.remainingAmount === 0 && b.remainingAmount > 0) return 1;
+
+      // Second priority: sort by date (newest first)
+      return (
+        new Date(b.createdDate).getTime() - new Date(a.createdDate).getTime()
+      );
+    });
   }, [branchCustomerDebts, searchTerm]);
 
   // Debug: log debts count by branch
@@ -430,61 +547,51 @@ const DebtManager: React.FC = () => {
                   <div className="col-span-1"></div>
                 </div>
 
-                {filteredCustomerDebts.map((debt: any) => (
-                  <div
-                    key={debt.id}
-                    className={`grid grid-cols-1 md:grid-cols-12 gap-4 items-start bg-primary-bg border rounded-lg p-4 hover:border-cyan-500 hover:shadow-md transition-all cursor-pointer group ${
-                      debt.isFromWorkOrder
-                        ? "border-amber-300 dark:border-amber-600 bg-amber-50/50 dark:bg-amber-900/10"
-                        : "border-primary-border"
-                    }`}
-                    onClick={() => {
-                      setSelectedDebt(debt);
-                      setShowDetailModal(true);
-                    }}
-                  >
-                    {/* Badge for work order debts */}
-                    {debt.isFromWorkOrder && (
-                      <div className="col-span-full md:hidden mb-2">
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 text-xs rounded-full">
-                          <svg
-                            className="w-3 h-3"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-                            />
-                          </svg>
-                          Từ phiếu sửa chữa
-                        </span>
-                      </div>
-                    )}
-                    {/* Cột 1: Khách hàng nợ (4 cols) */}
-                    <div className="col-span-1 md:col-span-4 flex items-start gap-3">
-                      <input
-                        type="checkbox"
-                        checked={selectedCustomerIds.includes(debt.customerId)}
-                        onChange={(e) => {
-                          e.stopPropagation(); // Prevent opening modal
-                          handleCustomerCheckbox(
-                            debt.customerId,
-                            e.target.checked
-                          );
-                        }}
-                        onClick={(e) => e.stopPropagation()} // Prevent opening modal
-                        className="mt-1 w-4 h-4 rounded border-secondary-border text-cyan-600 focus:ring-cyan-500"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <h3 className="text-primary-text font-semibold text-base mb-1 truncate">
-                          {debt.customerName}
-                        </h3>
-                        <div className="space-y-0.5 text-xs text-secondary-text">
-                          <div className="flex items-center gap-1">
+                {filteredCustomerDebts.map((debt: any) => {
+                  const isPaid = debt.remainingAmount === 0;
+
+                  return (
+                    <div
+                      key={debt.id}
+                      className={`grid grid-cols-1 md:grid-cols-12 gap-4 items-start bg-primary-bg border rounded-lg p-4 transition-all ${
+                        isPaid
+                          ? "opacity-60 cursor-not-allowed border-gray-300 dark:border-gray-600"
+                          : "hover:border-cyan-500 hover:shadow-md cursor-pointer"
+                      } ${
+                        debt.isFromWorkOrder
+                          ? "border-amber-300 dark:border-amber-600 bg-amber-50/50 dark:bg-amber-900/10"
+                          : "border-primary-border"
+                      }`}
+                      onClick={() => {
+                        if (!isPaid) {
+                          setSelectedDebt(debt);
+                          setShowDetailModal(true);
+                        }
+                      }}
+                    >
+                      {/* Badge for paid status */}
+                      {isPaid && (
+                        <div className="col-span-full mb-2">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-xs rounded-full font-semibold">
+                            <svg
+                              className="w-3 h-3"
+                              fill="currentColor"
+                              viewBox="0 0 20 20"
+                            >
+                              <path
+                                fillRule="evenodd"
+                                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                clipRule="evenodd"
+                              />
+                            </svg>
+                            Đã thanh toán
+                          </span>
+                        </div>
+                      )}
+                      {/* Badge for work order debts */}
+                      {debt.isFromWorkOrder && (
+                        <div className="col-span-full md:hidden mb-2">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 text-xs rounded-full">
                             <svg
                               className="w-3 h-3"
                               fill="none"
@@ -495,304 +602,348 @@ const DebtManager: React.FC = () => {
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
                                 strokeWidth={2}
-                                d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+                                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
                               />
                             </svg>
-                            <span>{debt.phone || "--"}</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <svg
-                              className="w-3 h-3"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z M9 22V12h6v10"
-                              />
-                              <rect
-                                x="7"
-                                y="5"
-                                width="10"
-                                height="4"
-                                rx="1"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                              />
-                            </svg>
-                            <span className="font-mono text-xs font-semibold">
-                              {debt.licensePlate || "--"}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <svg
-                              className="w-3 h-3"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                              />
-                            </svg>
-                            <span>
-                              {formatDate(new Date(debt.createdDate))}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-1 text-cyan-600 dark:text-cyan-400">
-                            <svg
-                              className="w-3 h-3"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                              />
-                            </svg>
-                            <span>
-                              NV:{" "}
-                              {(debt as any).technicianName ||
-                                debt.description
-                                  .match(/NVKỹ thuật:([^\n]+)/)?.[1]
-                                  ?.trim() ||
-                                debt.description
-                                  .match(/NV:([^\n]+)/)?.[1]
-                                  ?.trim() ||
-                                "N/A"}
-                            </span>
+                            Từ phiếu sửa chữa
+                          </span>
+                        </div>
+                      )}
+                      {/* Cột 1: Khách hàng nợ (4 cols) */}
+                      <div className="col-span-1 md:col-span-4 flex items-start gap-3">
+                        <input
+                          type="checkbox"
+                          checked={selectedCustomerIds.includes(
+                            debt.customerId
+                          )}
+                          disabled={isPaid}
+                          onChange={(e) => {
+                            e.stopPropagation(); // Prevent opening modal
+                            handleCustomerCheckbox(
+                              debt.customerId,
+                              e.target.checked
+                            );
+                          }}
+                          onClick={(e) => e.stopPropagation()} // Prevent opening modal
+                          className={`mt-1 w-4 h-4 rounded border-secondary-border text-cyan-600 focus:ring-cyan-500 ${
+                            isPaid ? "cursor-not-allowed opacity-50" : ""
+                          }`}
+                        />
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-primary-text font-semibold text-base mb-1 truncate">
+                            {debt.customerName}
+                          </h3>
+                          <div className="space-y-0.5 text-xs text-secondary-text">
+                            <div className="flex items-center gap-1">
+                              <svg
+                                className="w-3 h-3"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+                                />
+                              </svg>
+                              <span>{debt.phone || "--"}</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <svg
+                                className="w-3 h-3"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z M9 22V12h6v10"
+                                />
+                                <rect
+                                  x="7"
+                                  y="5"
+                                  width="10"
+                                  height="4"
+                                  rx="1"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                />
+                              </svg>
+                              <span className="font-mono text-xs font-semibold">
+                                {debt.licensePlate || "--"}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <svg
+                                className="w-3 h-3"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                                />
+                              </svg>
+                              <span>
+                                {formatDate(new Date(debt.createdDate))}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1 text-cyan-600 dark:text-cyan-400">
+                              <svg
+                                className="w-3 h-3"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                                />
+                              </svg>
+                              <span>
+                                NV:{" "}
+                                {(debt as any).technicianName ||
+                                  debt.description
+                                    .match(/NVKỹ thuật:([^\n]+)/)?.[1]
+                                    ?.trim() ||
+                                  debt.description
+                                    .match(/NV:([^\n]+)/)?.[1]
+                                    ?.trim() ||
+                                  "N/A"}
+                              </span>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
 
-                    {/* Cột 2: Nội dung - Chi tiết sửa chữa/mua hàng (3 cols) */}
-                    <div className="col-span-1 md:col-span-3">
-                      <div className="text-sm text-primary-text space-y-1">
-                        {(() => {
-                          const lines = debt.description.split("\n");
-                          // Lấy dòng đầu tiên (xe + số phiếu)
-                          const firstLine = lines[0];
+                      {/* Cột 2: Nội dung - Chi tiết sửa chữa/mua hàng (3 cols) */}
+                      <div className="col-span-1 md:col-span-3">
+                        <div className="text-sm text-primary-text space-y-1">
+                          {(() => {
+                            const lines = debt.description.split("\n");
+                            // Lấy dòng đầu tiên (xe + số phiếu)
+                            const firstLine = lines[0];
 
-                          // Lấy phụ tùng (nếu có)
-                          const partsSection = lines.find((l) =>
-                            l.includes("Phụ tùng đã thay:")
-                          );
-                          const partsLines = partsSection
-                            ? lines
-                                .slice(
-                                  lines.indexOf(partsSection) + 1,
-                                  lines.findIndex(
-                                    (l, i) =>
-                                      i > lines.indexOf(partsSection) &&
-                                      (l.includes("Dịch vụ:") ||
-                                        l.includes("Công lao động:"))
-                                  ) || lines.length
-                                )
-                                .filter((l) => l.trim().startsWith("•"))
-                            : [];
+                            // Lấy phụ tùng (nếu có)
+                            const partsSection = lines.find((l) =>
+                              l.includes("Phụ tùng đã thay:")
+                            );
+                            const partsLines = partsSection
+                              ? lines
+                                  .slice(
+                                    lines.indexOf(partsSection) + 1,
+                                    lines.findIndex(
+                                      (l, i) =>
+                                        i > lines.indexOf(partsSection) &&
+                                        (l.includes("Dịch vụ:") ||
+                                          l.includes("Công lao động:"))
+                                    ) || lines.length
+                                  )
+                                  .filter((l) => l.trim().startsWith("•"))
+                              : [];
 
-                          // Lấy dịch vụ (nếu có)
-                          const serviceSection = lines.find((l) =>
-                            l.includes("Dịch vụ:")
-                          );
-                          const serviceLines = serviceSection
-                            ? lines
-                                .slice(
-                                  lines.indexOf(serviceSection) + 1,
-                                  lines.findIndex(
-                                    (l, i) =>
-                                      i > lines.indexOf(serviceSection) &&
-                                      l.includes("Công lao động:")
-                                  ) || lines.length
-                                )
-                                .filter((l) => l.trim().startsWith("•"))
-                            : [];
+                            // Lấy dịch vụ (nếu có)
+                            const serviceSection = lines.find((l) =>
+                              l.includes("Dịch vụ:")
+                            );
+                            const serviceLines = serviceSection
+                              ? lines
+                                  .slice(
+                                    lines.indexOf(serviceSection) + 1,
+                                    lines.findIndex(
+                                      (l, i) =>
+                                        i > lines.indexOf(serviceSection) &&
+                                        l.includes("Công lao động:")
+                                    ) || lines.length
+                                  )
+                                  .filter((l) => l.trim().startsWith("•"))
+                              : [];
 
-                          // Lấy công lao động
-                          const laborLine = lines.find((l) =>
-                            l.includes("Công lao động:")
-                          );
+                            // Lấy công lao động
+                            const laborLine = lines.find((l) =>
+                              l.includes("Công lao động:")
+                            );
 
-                          return (
-                            <>
-                              <div className="font-medium">{firstLine}</div>
-                              {partsLines.length > 0 && (
-                                <div className="text-xs text-secondary-text">
-                                  <span className="font-semibold">
-                                    Phụ tùng:
-                                  </span>{" "}
-                                  {partsLines.length} món
-                                </div>
-                              )}
-                              {serviceLines.length > 0 && (
-                                <div className="text-xs text-secondary-text">
-                                  <span className="font-semibold">
-                                    Dịch vụ:
-                                  </span>{" "}
-                                  {serviceLines.length} món
-                                </div>
-                              )}
-                              {laborLine && (
-                                <div className="text-xs text-cyan-600 dark:text-cyan-400">
-                                  {laborLine}
-                                </div>
-                              )}
-                            </>
-                          );
-                        })()}
+                            return (
+                              <>
+                                <div className="font-medium">{firstLine}</div>
+                                {partsLines.length > 0 && (
+                                  <div className="text-xs text-secondary-text">
+                                    <span className="font-semibold">
+                                      Phụ tùng:
+                                    </span>{" "}
+                                    {partsLines.length} món
+                                  </div>
+                                )}
+                                {serviceLines.length > 0 && (
+                                  <div className="text-xs text-secondary-text">
+                                    <span className="font-semibold">
+                                      Dịch vụ:
+                                    </span>{" "}
+                                    {serviceLines.length} món
+                                  </div>
+                                )}
+                                {laborLine && (
+                                  <div className="text-xs text-cyan-600 dark:text-cyan-400">
+                                    {laborLine}
+                                  </div>
+                                )}
+                              </>
+                            );
+                          })()}
+                        </div>
                       </div>
-                    </div>
 
-                    {/* Cột 3: Số tiền (1 col) */}
-                    <div className="col-span-1 text-right md:text-right flex justify-between md:block">
-                      <span className="md:hidden text-sm text-secondary-text">
-                        Số tiền:
-                      </span>
-                      <div className="text-sm font-semibold text-primary-text">
-                        {formatCurrency(debt.totalAmount)}
+                      {/* Cột 3: Số tiền (1 col) */}
+                      <div className="col-span-1 text-right md:text-right flex justify-between md:block">
+                        <span className="md:hidden text-sm text-secondary-text">
+                          Số tiền:
+                        </span>
+                        <div className="text-sm font-semibold text-primary-text">
+                          {formatCurrency(debt.totalAmount)}
+                        </div>
                       </div>
-                    </div>
 
-                    {/* Cột 4: Đã trả (1 col) */}
-                    <div className="col-span-1 text-right md:text-right flex justify-between md:block">
-                      <span className="md:hidden text-sm text-secondary-text">
-                        Đã trả:
-                      </span>
-                      <div className="text-sm font-semibold text-green-600 dark:text-green-400">
-                        {formatCurrency(debt.paidAmount)}
+                      {/* Cột 4: Đã trả (1 col) */}
+                      <div className="col-span-1 text-right md:text-right flex justify-between md:block">
+                        <span className="md:hidden text-sm text-secondary-text">
+                          Đã trả:
+                        </span>
+                        <div className="text-sm font-semibold text-green-600 dark:text-green-400">
+                          {formatCurrency(debt.paidAmount)}
+                        </div>
                       </div>
-                    </div>
 
-                    {/* Cột 5: Còn nợ (2 cols) */}
-                    <div className="col-span-1 md:col-span-2 text-right md:text-right flex justify-between md:block">
-                      <span className="md:hidden text-sm font-bold text-secondary-text">
-                        Còn nợ:
-                      </span>
-                      <div className="text-lg font-bold text-red-600 dark:text-red-400">
-                        {formatCurrency(debt.remainingAmount)}
+                      {/* Cột 5: Còn nợ (2 cols) */}
+                      <div className="col-span-1 md:col-span-2 text-right md:text-right flex justify-between md:block">
+                        <span className="md:hidden text-sm font-bold text-secondary-text">
+                          Còn nợ:
+                        </span>
+                        <div className="text-lg font-bold text-red-600 dark:text-red-400">
+                          {formatCurrency(debt.remainingAmount)}
+                        </div>
                       </div>
-                    </div>
 
-                    {/* Menu dropdown (1 col) */}
-                    <div className="col-span-1 flex justify-end hidden md:flex">
-                      <div className="relative debt-menu-dropdown">
-                        <button
-                          onClick={() =>
-                            setOpenMenuId(
-                              openMenuId === debt.id ? null : debt.id
-                            )
-                          }
-                          className="p-2 text-secondary-text hover:text-primary-text transition-colors"
-                        >
-                          <svg
-                            className="w-5 h-5"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
+                      {/* Menu dropdown (1 col) */}
+                      <div className="col-span-1 flex justify-end hidden md:flex">
+                        <div className="relative debt-menu-dropdown">
+                          <button
+                            onClick={() =>
+                              setOpenMenuId(
+                                openMenuId === debt.id ? null : debt.id
+                              )
+                            }
+                            className="p-2 text-secondary-text hover:text-primary-text transition-colors"
                           >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
-                            />
-                          </svg>
-                        </button>
+                            <svg
+                              className="w-5 h-5"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
+                              />
+                            </svg>
+                          </button>
 
-                        {openMenuId === debt.id && (
-                          <div className="absolute right-0 mt-1 w-48 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 py-1 z-10">
-                            <button
-                              onClick={() => {
-                                setSelectedDebt(debt);
-                                setShowDetailModal(true);
-                                setOpenMenuId(null);
-                              }}
-                              className="w-full px-4 py-2 text-left text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2"
-                            >
-                              <svg
-                                className="w-4 h-4"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
+                          {openMenuId === debt.id && (
+                            <div className="absolute right-0 mt-1 w-48 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 py-1 z-10">
+                              <button
+                                onClick={() => {
+                                  setSelectedDebt(debt);
+                                  setShowDetailModal(true);
+                                  setOpenMenuId(null);
+                                }}
+                                className="w-full px-4 py-2 text-left text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2"
                               >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                                />
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                                />
-                              </svg>
-                              Xem chi tiết
-                            </button>
-                            <button
-                              onClick={() => {
-                                setSelectedDebt(debt);
-                                setShowEditDebtModal(true);
-                                setOpenMenuId(null);
-                              }}
-                              className="w-full px-4 py-2 text-left text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2"
-                            >
-                              <svg
-                                className="w-4 h-4"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
+                                <svg
+                                  className="w-4 h-4"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                                  />
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                                  />
+                                </svg>
+                                Xem chi tiết
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setSelectedDebt(debt);
+                                  setShowEditDebtModal(true);
+                                  setOpenMenuId(null);
+                                }}
+                                className="w-full px-4 py-2 text-left text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2"
                               >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                                />
-                              </svg>
-                              Sửa
-                            </button>
-                            <button
-                              onClick={() => {
-                                setSelectedDebt(debt);
-                                setShowDeleteConfirm(true);
-                                setOpenMenuId(null);
-                              }}
-                              className="w-full px-4 py-2 text-left text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2"
-                            >
-                              <svg
-                                className="w-4 h-4"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
+                                <svg
+                                  className="w-4 h-4"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                                  />
+                                </svg>
+                                Sửa
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setSelectedDebt(debt);
+                                  setShowDeleteConfirm(true);
+                                  setOpenMenuId(null);
+                                }}
+                                className="w-full px-4 py-2 text-left text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2"
                               >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                                />
-                              </svg>
-                              Xóa
-                            </button>
-                          </div>
-                        )}
+                                <svg
+                                  className="w-4 h-4"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                  />
+                                </svg>
+                                Xóa
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
@@ -1131,6 +1282,7 @@ const DebtManager: React.FC = () => {
                     (d) => d.customerId === customerId
                   );
                   if (debt) {
+                    // Update debt record
                     await updateCustomerDebt.mutateAsync({
                       id: debt.id,
                       updates: {
@@ -1138,6 +1290,22 @@ const DebtManager: React.FC = () => {
                         remainingAmount: 0,
                       },
                     });
+
+                    // 🔹 If debt is linked to work order, update work order too
+                    if ((debt as any).workOrderId) {
+                      await supabase
+                        .from("work_orders")
+                        .update({ remainingamount: 0 })
+                        .eq("id", (debt as any).workOrderId);
+                    }
+
+                    // 🔹 If debt is linked to sale, update sale too
+                    if ((debt as any).saleId) {
+                      await supabase
+                        .from("sales")
+                        .update({ remainingamount: 0 })
+                        .eq("id", (debt as any).saleId);
+                    }
                   }
                 }
                 setSelectedCustomerIds([]);
@@ -1157,6 +1325,13 @@ const DebtManager: React.FC = () => {
                 if (!cashTxResult.ok) {
                   console.error("❌ Lỗi ghi sổ quỹ:", cashTxResult.error);
                 }
+
+                // 🔹 Invalidate queries to refresh other pages (Service, Sales)
+                queryClient.invalidateQueries({ queryKey: ["workOrdersRepo"] });
+                queryClient.invalidateQueries({
+                  queryKey: ["workOrdersFiltered"],
+                });
+                queryClient.invalidateQueries({ queryKey: ["salesRepo"] });
               } else {
                 // Trả nợ hàng loạt cho nhà cung cấp
                 for (const supplierId of selectedSupplierIds) {

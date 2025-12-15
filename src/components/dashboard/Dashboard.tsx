@@ -829,6 +829,7 @@ const Dashboard: React.FC = () => {
       { name: string; phone?: string; total: number }
     > = {};
 
+    // Tính từ Sales (bán hàng)
     sales.forEach((sale) => {
       const key = sale.customer.phone || sale.customer.name;
       if (!customerSpending[key]) {
@@ -841,10 +842,37 @@ const Dashboard: React.FC = () => {
       customerSpending[key].total += sale.total;
     });
 
+    // Tính từ Work Orders (phiếu sửa chữa đã thanh toán)
+    workOrders.forEach((wo: any) => {
+      const isPaid =
+        wo.paymentStatus === "paid" ||
+        wo.paymentstatus === "paid" ||
+        wo.paymentStatus === "partial" ||
+        wo.paymentstatus === "partial";
+
+      if (isPaid) {
+        const customerName = wo.customerName || wo.customername || "";
+        const customerPhone = wo.customerPhone || wo.customerphone || "";
+        const key = customerPhone || customerName;
+
+        if (key) {
+          if (!customerSpending[key]) {
+            customerSpending[key] = {
+              name: customerName,
+              phone: customerPhone,
+              total: 0,
+            };
+          }
+          customerSpending[key].total +=
+            wo.totalPaid || wo.totalpaid || wo.total || 0;
+        }
+      }
+    });
+
     return Object.values(customerSpending)
       .sort((a, b) => b.total - a.total)
       .slice(0, 10);
-  }, [sales]);
+  }, [sales, workOrders]);
 
   // Monthly Comparison Data
   const monthlyComparisonData = useMemo(() => {
@@ -853,25 +881,57 @@ const Dashboard: React.FC = () => {
 
     for (let i = 2; i >= 0; i--) {
       const monthDate = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const monthStr = monthDate.toISOString().slice(0, 7);
+      const monthStr = monthDate.toISOString().slice(0, 7); // Format: YYYY-MM
       const monthName = monthDate.toLocaleDateString("vi-VN", {
         month: "short",
         year: "numeric",
       });
 
-      const monthSales = sales.filter((s) => s.date.startsWith(monthStr));
-      const revenue = monthSales.reduce((sum, s) => sum + s.total, 0);
-      const orders = monthSales.length;
+      // Tính doanh thu và đơn hàng từ Sales
+      const monthSales = sales.filter((s) => {
+        if (!s.date) return false;
+        const saleMonth = s.date.slice(0, 7);
+        return saleMonth === monthStr;
+      });
+      const salesRevenue = monthSales.reduce((sum, s) => sum + s.total, 0);
+      const salesOrders = monthSales.length;
+
+      // Tính doanh thu và đơn hàng từ Work Orders (đã thanh toán)
+      const monthWorkOrders = workOrders.filter((wo: any) => {
+        // Ưu tiên dùng paymentDate, nếu không có thì dùng creationDate
+        const dateRaw =
+          wo.paymentDate ||
+          wo.paymentdate ||
+          wo.creationDate ||
+          wo.creationdate;
+        if (!dateRaw) return false;
+
+        const woMonth = dateRaw.slice(0, 7);
+        const isPaid =
+          wo.paymentStatus === "paid" ||
+          wo.paymentstatus === "paid" ||
+          wo.paymentStatus === "partial" ||
+          wo.paymentstatus === "partial";
+        return woMonth === monthStr && isPaid;
+      });
+      const woRevenue = monthWorkOrders.reduce(
+        (sum, wo: any) => sum + (wo.totalPaid || wo.totalpaid || wo.total || 0),
+        0
+      );
+      const woOrders = monthWorkOrders.length;
+
+      const totalRevenue = salesRevenue + woRevenue;
+      const totalOrders = salesOrders + woOrders;
 
       months.push({
         month: monthName,
-        revenue: revenue,
-        orders: orders,
+        revenue: totalRevenue,
+        orders: totalOrders,
       });
     }
 
     return months;
-  }, [sales]);
+  }, [sales, workOrders]);
 
   if (isLoading) {
     return (
@@ -1540,8 +1600,22 @@ const Dashboard: React.FC = () => {
             <BarChart data={monthlyComparisonData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
               <XAxis dataKey="month" stroke="#94a3b8" />
-              <YAxis yAxisId="left" stroke="#3b82f6" />
-              <YAxis yAxisId="right" orientation="right" stroke="#10b981" />
+              <YAxis
+                yAxisId="left"
+                stroke="#3b82f6"
+                tickFormatter={(value) => {
+                  if (value >= 1000000)
+                    return `${(value / 1000000).toFixed(1)}M`;
+                  if (value >= 1000) return `${(value / 1000).toFixed(0)}K`;
+                  return value;
+                }}
+              />
+              <YAxis
+                yAxisId="right"
+                orientation="right"
+                stroke="#10b981"
+                allowDecimals={false}
+              />
               <Tooltip
                 contentStyle={{
                   backgroundColor: "#1e293b",
@@ -1549,7 +1623,7 @@ const Dashboard: React.FC = () => {
                   borderRadius: "8px",
                 }}
                 formatter={(value: any, name: string) =>
-                  name === "revenue" ? formatCurrency(value) : value
+                  name === "Doanh thu" ? formatCurrency(value) : value
                 }
               />
               <Legend />

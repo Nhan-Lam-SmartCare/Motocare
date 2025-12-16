@@ -63,6 +63,20 @@ export function ServiceManagerMobile({
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [showFilterPopup, setShowFilterPopup] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
+
+  // Debounced create work order handler to prevent duplicate creation
+  const handleCreateWorkOrder = () => {
+    if (isCreating) return;
+
+    setIsCreating(true);
+    onCreateWorkOrder();
+
+    // Reset after 2 seconds to allow new creation
+    setTimeout(() => {
+      setIsCreating(false);
+    }, 2000);
+  };
 
   // Calculate KPIs
   const kpis = useMemo(() => {
@@ -331,8 +345,9 @@ export function ServiceManagerMobile({
               Hãy tạo phiếu đầu tiên để quản lý dịch vụ sửa chữa
             </p>
             <button
-              onClick={onCreateWorkOrder}
-              className="px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl font-medium hover:from-blue-600 hover:to-blue-700 transition-all shadow-lg shadow-blue-500/30"
+              onClick={handleCreateWorkOrder}
+              disabled={isCreating}
+              className="px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl font-medium hover:from-blue-600 hover:to-blue-700 transition-all shadow-lg shadow-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               + Tạo phiếu mới
             </button>
@@ -492,8 +507,9 @@ export function ServiceManagerMobile({
 
       {/* FAB (Floating Action Button) */}
       <button
-        onClick={onCreateWorkOrder}
-        className="fixed bottom-20 right-4 w-12 h-12 bg-gradient-to-br from-[#009ef7] to-[#0077b6] rounded-full shadow-xl shadow-[#009ef7]/50 flex items-center justify-center hover:from-[#0077b6] hover:to-[#005a8a] transition-all z-[60] active:scale-95"
+        onClick={handleCreateWorkOrder}
+        disabled={isCreating}
+        className="fixed bottom-20 right-4 w-12 h-12 bg-gradient-to-br from-[#009ef7] to-[#0077b6] rounded-full shadow-xl shadow-[#009ef7]/50 flex items-center justify-center hover:from-[#0077b6] hover:to-[#005a8a] transition-all z-[60] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
         aria-label="Tạo phiếu mới"
       >
         <Plus className="w-5 h-5 text-white" />

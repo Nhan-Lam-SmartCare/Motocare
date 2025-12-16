@@ -430,6 +430,79 @@ export interface EmployeeAdvancePayment {
   created_at: string;
 }
 
+// =====================================================
+// Purchase Orders (Đơn đặt hàng)
+// =====================================================
+export type PurchaseOrderStatus =
+  | "draft"
+  | "ordered"
+  | "received"
+  | "cancelled";
+
+export interface PurchaseOrder {
+  id: string;
+  po_number: string; // PO-25-001
+  supplier_id: string;
+  branch_id: string;
+  status: PurchaseOrderStatus;
+  order_date: string; // ISO timestamp
+  expected_date?: string; // ISO timestamp
+  received_date?: string; // ISO timestamp
+  total_amount: number;
+  discount_amount: number;
+  final_amount: number;
+  notes?: string;
+  cancellation_reason?: string;
+  receipt_id?: string; // Link to inventory_transactions
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+
+  // Joined data (not in DB)
+  supplier?: Supplier;
+  items?: PurchaseOrderItem[];
+  creator?: { email: string; name?: string };
+}
+
+export interface PurchaseOrderItem {
+  id: string;
+  po_id: string;
+  part_id: string;
+  quantity_ordered: number;
+  quantity_received: number;
+  unit_price: number;
+  total_price: number;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+
+  // Joined data (not in DB)
+  part?: Part;
+}
+
+export interface CreatePurchaseOrderInput {
+  supplier_id: string;
+  branch_id: string;
+  expected_date?: string;
+  notes?: string;
+  items: Array<{
+    part_id: string;
+    quantity_ordered: number;
+    unit_price: number;
+    notes?: string;
+  }>;
+}
+
+export interface UpdatePurchaseOrderInput {
+  id: string;
+  status?: PurchaseOrderStatus;
+  expected_date?: string;
+  received_date?: string;
+  discount_amount?: number;
+  notes?: string;
+  cancellation_reason?: string;
+}
+
 // High-level app state snapshot (not strictly used by context but handy)
 export interface AppState {
   user: UserSession | null;
@@ -444,4 +517,5 @@ export interface AppState {
   payrollRecords: PayrollRecord[];
   loans: Loan[];
   loanPayments: LoanPayment[];
+  purchaseOrders: PurchaseOrder[];
 }

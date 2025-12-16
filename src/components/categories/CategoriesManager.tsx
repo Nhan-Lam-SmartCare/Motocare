@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { showToast } from "../../utils/toast";
 import { useConfirm } from "../../hooks/useConfirm";
 import ConfirmModal from "../common/ConfirmModal";
@@ -11,6 +12,8 @@ import {
   useDeleteCategoryRecord,
 } from "../../hooks/useCategories";
 import { mapRepoErrorForUser } from "../../utils/errorMapping";
+import { useAppContext } from "../../contexts/AppContext";
+import { formatCurrency } from "../../utils/format";
 import {
   Boxes,
   Wrench,
@@ -24,9 +27,14 @@ import {
   Battery,
   Lightbulb,
   Palette,
+  AlertCircle,
+  Edit2,
+  Trash2,
 } from "lucide-react";
 
 const CategoriesManager: React.FC = () => {
+  const navigate = useNavigate();
+  const { currentBranchId } = useAppContext();
   // Live parts from Supabase
   const { data: parts = [] } = useParts();
   const {
@@ -47,16 +55,43 @@ const CategoriesManager: React.FC = () => {
   // Confirm dialog hook
   const { confirm, confirmState, handleConfirm, handleCancel } = useConfirm();
 
-  // Extract unique categories from parts
+  // Extract unique categories from parts with enhanced stats
   const categories = useMemo(() => {
-    return categoriesData.map((c) => ({
-      id: c.id,
-      name: c.name,
-      icon: c.icon || "package",
-      color: c.color || "#3b82f6",
-      count: parts.filter((p) => p.category === c.name).length,
-    }));
-  }, [categoriesData, parts]);
+    const branchKey = currentBranchId || "";
+
+    return categoriesData.map((c) => {
+      const categoryParts = parts.filter((p) => p.category === c.name);
+      const totalStock = categoryParts.reduce(
+        (sum, p) => sum + (p.stock?.[branchKey] || 0),
+        0
+      );
+      const totalValue = categoryParts.reduce((sum, p) => {
+        const stock = p.stock?.[branchKey] || 0;
+        const costPrice = p.costPrice?.[branchKey] || 0;
+        return sum + stock * costPrice;
+      }, 0);
+      const lowStockParts = categoryParts.filter((p) => {
+        const stock = p.stock?.[branchKey] || 0;
+        return stock > 0 && stock <= 2;
+      });
+
+      return {
+        id: c.id,
+        name: c.name,
+        icon: c.icon || "package",
+        color: c.color || "#3b82f6",
+        count: categoryParts.length,
+        totalStock,
+        totalValue,
+        lowStockParts: lowStockParts.map((p) => ({
+          name: p.name,
+          sku: p.sku,
+          stock: p.stock?.[branchKey] || 0,
+        })),
+        lowStockCount: lowStockParts.length,
+      };
+    });
+  }, [categoriesData, parts, currentBranchId]);
 
   const handleAddCategory = async () => {
     if (!newCategoryName.trim()) {
@@ -229,160 +264,188 @@ const CategoriesManager: React.FC = () => {
         </div>
       </div>
 
-      {/* Categories Grid */}
-      <div className="flex-1 overflow-auto p-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {categories.map((category) => {
-            // Lấy icon component từ iconMap
-            const IconComponent = iconMap[category.icon] || iconMap["package"];
-            const categoryColor = category.color || "#3b82f6";
+      {/* Categories Table */}
+      <div className="flex-1 overflow-auto">
+        <div className="min-w-full inline-block align-middle">
+          <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+            <thead className="bg-slate-50 dark:bg-slate-800 sticky top-0 z-10">
+              <tr>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider w-[280px]">
+                  Danh mục
+                </th>
+                <th className="px-4 py-3 text-center text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider w-[120px]">
+                  Số SP
+                </th>
+                <th className="px-4 py-3 text-center text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider w-[120px]">
+                  Tồn kho
+                </th>
+                <th className="px-4 py-3 text-right text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider w-[150px]">
+                  Giá trị tồn
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                  Sản phẩm sắp hết (≤2)
+                </th>
+                <th className="px-4 py-3 text-center text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider w-[140px]">
+                  Thao tác
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white dark:bg-[#1e293b] divide-y divide-slate-200 dark:divide-slate-700">
+              {categories.map((category) => {
+                const IconComponent =
+                  iconMap[category.icon] || iconMap["package"];
+                const categoryColor = category.color || "#3b82f6";
 
-            return (
-              <div
-                key={category.name}
-                className="bg-white dark:bg-[#1e293b] rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden hover:shadow-lg transition-all duration-200 group"
-              >
-                {/* Header với màu gradient */}
-                <div
-                  className="h-2"
-                  style={{ backgroundColor: categoryColor }}
-                />
-
-                <div className="p-4">
-                  <div className="flex items-start gap-4">
-                    {/* Icon với màu nền */}
-                    <div
-                      className="w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-110"
-                      style={{
-                        backgroundColor: `${categoryColor}15`,
-                        color: categoryColor,
-                      }}
-                    >
-                      <div className="w-7 h-7">
-                        {React.cloneElement(
-                          IconComponent as React.ReactElement,
-                          {
-                            className: "w-7 h-7",
-                          }
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Tên và số lượng */}
-                    <div className="flex-1 min-w-0">
-                      {editingCategory === category.name ? (
-                        <input
-                          type="text"
-                          defaultValue={category.name}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                              handleRenameCategory(
-                                category.name,
-                                e.currentTarget.value
-                              );
-                            } else if (e.key === "Escape") {
-                              setEditingCategory(null);
-                            }
-                          }}
-                          onBlur={(e) =>
-                            handleRenameCategory(category.name, e.target.value)
-                          }
-                          autoFocus
-                          className="w-full px-2 py-1 border-2 border-blue-500 rounded-lg text-base font-semibold text-slate-900 dark:text-slate-100 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-                        />
-                      ) : (
-                        <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 truncate">
-                          {category.name}
-                        </h3>
-                      )}
-                      <div className="flex items-center gap-2 mt-1">
-                        <span
-                          className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold"
+                return (
+                  <tr
+                    key={category.name}
+                    onClick={() => {
+                      // Navigate to inventory tab with category and low-stock filters
+                      navigate(
+                        `/inventory?category=${encodeURIComponent(
+                          category.name
+                        )}&stock=low-stock`
+                      );
+                    }}
+                    className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer group"
+                  >
+                    {/* Category Name with Icon */}
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-3">
+                        <div
+                          className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
                           style={{
-                            backgroundColor: `${categoryColor}20`,
+                            backgroundColor: `${categoryColor}15`,
                             color: categoryColor,
                           }}
                         >
-                          {category.count} sản phẩm
-                        </span>
+                          {React.cloneElement(
+                            IconComponent as React.ReactElement,
+                            { className: "w-5 h-5" }
+                          )}
+                        </div>
+                        {editingCategory === category.name ? (
+                          <input
+                            type="text"
+                            defaultValue={category.name}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                handleRenameCategory(
+                                  category.name,
+                                  e.currentTarget.value
+                                );
+                              } else if (e.key === "Escape") {
+                                setEditingCategory(null);
+                              }
+                            }}
+                            onBlur={(e) =>
+                              handleRenameCategory(
+                                category.name,
+                                e.target.value
+                              )
+                            }
+                            autoFocus
+                            className="flex-1 px-2 py-1 border-2 border-blue-500 rounded-lg text-sm font-semibold text-slate-900 dark:text-slate-100 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                          />
+                        ) : (
+                          <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                            {category.name}
+                          </span>
+                        )}
                       </div>
-                    </div>
-                  </div>
+                    </td>
 
-                  {/* Actions */}
-                  <div className="flex gap-2 mt-4 pt-3 border-t border-slate-100 dark:border-slate-700">
-                    <button
-                      onClick={() => setEditingCategory(category.name)}
-                      className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
-                    >
-                      <svg
-                        className="w-4 h-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
+                    {/* Product Count */}
+                    <td className="px-4 py-3 text-center">
+                      <span
+                        className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold"
+                        style={{
+                          backgroundColor: `${categoryColor}20`,
+                          color: categoryColor,
+                        }}
                       >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                        />
-                      </svg>
-                      Đổi tên
-                    </button>
-                    <button
-                      onClick={() => handleDeleteCategory(category.name)}
-                      className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                        {category.count}
+                      </span>
+                    </td>
+
+                    {/* Total Stock */}
+                    <td className="px-4 py-3 text-center">
+                      <span className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                        {category.totalStock.toLocaleString()}
+                      </span>
+                    </td>
+
+                    {/* Total Value */}
+                    <td className="px-4 py-3 text-right">
+                      <span className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">
+                        {formatCurrency(category.totalValue)}
+                      </span>
+                    </td>
+
+                    {/* Low Stock Products */}
+                    <td className="px-4 py-3">
+                      {category.lowStockCount > 0 ? (
+                        <div className="space-y-1">
+                          {category.lowStockParts.slice(0, 3).map((p, idx) => (
+                            <div
+                              key={idx}
+                              className="flex items-center gap-2 text-xs"
+                            >
+                              <AlertCircle className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
+                              <span className="text-slate-700 dark:text-slate-300 truncate flex-1">
+                                {p.name}
+                              </span>
+                              <span className="text-amber-600 dark:text-amber-400 font-semibold">
+                                SL: {p.stock}
+                              </span>
+                            </div>
+                          ))}
+                          {category.lowStockCount > 3 && (
+                            <div className="text-xs text-slate-500 dark:text-slate-400 italic">
+                              +{category.lowStockCount - 3} sản phẩm khác
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-xs text-slate-400 dark:text-slate-500 italic">
+                          Không có
+                        </span>
+                      )}
+                    </td>
+
+                    {/* Actions */}
+                    <td
+                      className="px-4 py-3"
+                      onClick={(e) => e.stopPropagation()}
                     >
-                      <svg
-                        className="w-4 h-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                        />
-                      </svg>
-                      Xóa
-                    </button>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+                      <div className="flex items-center justify-center gap-2">
+                        <button
+                          onClick={() => setEditingCategory(category.name)}
+                          className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                          title="Đổi tên"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteCategory(category.name)}
+                          className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                          title="Xóa"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
 
           {/* Empty State */}
           {categories.length === 0 && (
-            <div className="col-span-full flex flex-col items-center justify-center py-16 text-center">
+            <div className="flex flex-col items-center justify-center py-16 text-center bg-white dark:bg-[#1e293b]">
               <div className="mb-4 text-slate-400 dark:text-slate-500">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  className="w-16 h-16"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M3 7.5l9-4.5 9 4.5v9l-9 4.5-9-4.5v-9z"
-                  />
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M3 7.5l9 4.5 9-4.5"
-                  />
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M12 12v9"
-                  />
-                </svg>
+                <Boxes className="w-16 h-16" />
               </div>
               <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mb-2">
                 Chưa có danh mục nào

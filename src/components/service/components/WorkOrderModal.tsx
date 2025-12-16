@@ -2088,48 +2088,16 @@ const WorkOrderModal: React.FC<{
           ) {
             const additionalPaymentAmount =
               totalAdditionalPayment - (order.additionalPayment || 0);
-            // INSERT additional payment to database
-            try {
-              const { error: addPaymentErr } = await supabase
-                .from("cash_transactions")
-                .insert({
-                  id: paymentTxId,
-                  type: "income",
-                  category: "service_income",
-                  amount: additionalPaymentAmount,
-                  date: new Date().toISOString(),
-                  description: `Thu tien bo sung #${(
-                    formatWorkOrderId(
-                      order.id,
-                      storeSettings?.work_order_prefix
-                    ) || ""
-                  )
-                    .split("-")
-                    .pop()} - ${formData.customerName}`,
-                  branchid: currentBranchId,
-                  paymentsource: formData.paymentMethod,
-                  workorderid: order.id,
-                });
-              if (addPaymentErr) {
-                console.error(
-                  "[WorkOrderModal-update] additional payment error:",
-                  addPaymentErr
-                );
-              }
-            } catch (e) {
-              console.error(
-                "[WorkOrderModal-update] additional payment exception:",
-                e
-              );
-            }
 
+            // ✅ No need to INSERT - stored procedure already created the transaction
+            // Just update local state for UI consistency
             setCashTransactions((prev: any[]) => [
               ...prev,
               {
                 id: paymentTxId,
                 type: "income",
                 category: "service_income",
-                amount: totalAdditionalPayment - (order.additionalPayment || 0),
+                amount: additionalPaymentAmount,
                 date: new Date().toISOString(),
                 description: `Thu tiền bổ sung #${(
                   formatWorkOrderId(

@@ -21,6 +21,7 @@ import {
   UploadCloud,
   DownloadCloud,
   MoreHorizontal,
+  ShoppingCart,
 } from "lucide-react";
 import { useAppContext } from "../../contexts/AppContext";
 import { safeAudit } from "../../lib/repository/auditLogsRepository";
@@ -64,6 +65,10 @@ import InventoryHistorySectionMobile from "./InventoryHistorySectionMobile";
 import PrintBarcodeModal from "./PrintBarcodeModal";
 import BatchPrintBarcodeModal from "./BatchPrintBarcodeModal";
 import BarcodeScannerModal from "../common/BarcodeScannerModal";
+import { PurchaseOrdersList } from "../purchase-orders/PurchaseOrdersList";
+import CreatePOModal from "../purchase-orders/CreatePOModal";
+import { PODetailView } from "../purchase-orders/PODetailView";
+import type { PurchaseOrder } from "../../types";
 
 const LOW_STOCK_THRESHOLD = 5;
 const FILTER_THEME_STYLES: Record<
@@ -4554,8 +4559,16 @@ const InventoryManager: React.FC = () => {
   const { data: invTx = [] } = useInventoryTxRepo({
     branchId: currentBranchId,
   });
-  const [activeTab, setActiveTab] = useState("stock"); // stock, categories, lookup, history
+  const [activeTab, setActiveTab] = useState("stock"); // stock, categories, lookup, history, purchase-orders
   const [showGoodsReceipt, setShowGoodsReceipt] = useState(false);
+  const [showCreatePO, setShowCreatePO] = useState(false);
+  const [selectedPO, setSelectedPO] = useState<PurchaseOrder | null>(null);
+
+  // Debug log for showCreatePO state changes
+  useEffect(() => {
+    console.log("InventoryManager: showCreatePO changed to:", showCreatePO);
+  }, [showCreatePO]);
+
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [stockFilter, setStockFilter] = useState("all");
@@ -4592,24 +4605,39 @@ const InventoryManager: React.FC = () => {
   // Confirm dialog hook
   const { confirm, confirmState, handleConfirm, handleCancel } = useConfirm();
 
-  // Read stock filter from URL query params (e.g., ?stock=low-stock)
+  // Read filters from URL query params and switch to stock tab
   useEffect(() => {
     const stockParam = searchParams.get("stock");
-    if (
-      stockParam &&
-      ["all", "in-stock", "low-stock", "out-of-stock"].includes(stockParam)
-    ) {
-      setStockFilter(stockParam);
-      // Clear the query param after applying to avoid re-applying on navigation
-      searchParams.delete("stock");
-      setSearchParams(searchParams, { replace: true });
+    const categoryParam = searchParams.get("category");
+
+    // If coming from category click, switch to stock tab and apply filters
+    if (stockParam || categoryParam) {
+      setActiveTab("stock");
+
+      if (
+        stockParam &&
+        ["all", "in-stock", "low-stock", "out-of-stock"].includes(stockParam)
+      ) {
+        setStockFilter(stockParam);
+      }
+
+      if (categoryParam) {
+        setCategoryFilter(decodeURIComponent(categoryParam));
+      }
+
+      // Clear the query params after applying
+      const newParams = new URLSearchParams(searchParams);
+      newParams.delete("stock");
+      newParams.delete("category");
+      setSearchParams(newParams, { replace: true });
     }
-  }, [searchParams, setSearchParams]);
+  }, [searchParams, setSearchParams]); // Re-run when URL changes
 
   const {
     data: pagedResult,
     isLoading: partsLoading,
     isError: partsError,
+    refetch: refetchInventory,
   } = usePartsRepoPaged({
     page,
     pageSize,
@@ -4799,24 +4827,26 @@ const InventoryManager: React.FC = () => {
     }
 
     // Stock filter
-    if (stockFilter === "all") {
-      return baseList;
+    let filtered = baseList;
+
+    if (stockFilter !== "all") {
+      const branchKey = currentBranchId || "";
+
+      filtered = baseList.filter((part: any) => {
+        const qty = part.stock?.[branchKey] || 0;
+        if (stockFilter === "in-stock") return qty > 0;
+        if (stockFilter === "low-stock")
+          return qty > 0 && qty <= LOW_STOCK_THRESHOLD;
+        if (stockFilter === "out-of-stock") return qty === 0;
+        return true;
+      });
     }
-
-    const branchKey = currentBranchId || "";
-
-    const filtered = baseList.filter((part: any) => {
-      const qty = part.stock?.[branchKey] || 0;
-      if (stockFilter === "in-stock") return qty > 0;
-      if (stockFilter === "low-stock")
-        return qty > 0 && qty <= LOW_STOCK_THRESHOLD;
-      if (stockFilter === "out-of-stock") return qty === 0;
-      return true;
-    });
 
     // Apply sorting if sortField is set
     if (sortField) {
-      filtered.sort((a: any, b: any) => {
+      const branchKey = currentBranchId || "";
+      const sortedFiltered = [...filtered];
+      sortedFiltered.sort((a: any, b: any) => {
         let aVal, bVal;
 
         if (sortField === "name") {
@@ -4859,6 +4889,7 @@ const InventoryManager: React.FC = () => {
           return sortDirection === "asc" ? aVal - bVal : bVal - aVal;
         }
       });
+      return sortedFiltered;
     }
 
     return filtered;
@@ -5378,6 +5409,11 @@ const InventoryManager: React.FC = () => {
                 icon: <Package className="w-3.5 h-3.5" />,
               },
               {
+                key: "purchase-orders",
+                label: "Đơn đặt hàng",
+                icon: <Package className="w-3.5 h-3.5" />,
+              },
+              {
                 key: "lookup",
                 label: "Tra cứu",
                 icon: <Search className="w-3.5 h-3.5" />,
@@ -5734,25 +5770,40 @@ const InventoryManager: React.FC = () => {
                   <div className="text-xs font-medium text-blue-900 dark:text-blue-100">
                     Đã chọn {selectedItems.length} sản phẩm
                   </div>
-                  <button
-                    onClick={handleBulkDelete}
-                    className="flex items-center gap-2 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-medium transition-colors"
-                  >
-                    <svg
-                      className="w-4 h-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => {
+                        console.log(
+                          "Stock tab: Đặt hàng button clicked, selectedItems:",
+                          selectedItems
+                        );
+                        setShowCreatePO(true);
+                      }}
+                      className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
                     >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                      />
-                    </svg>
-                    Xóa đã chọn
-                  </button>
+                      <ShoppingCart className="w-4 h-4" />
+                      Đặt hàng ({selectedItems.length})
+                    </button>
+                    <button
+                      onClick={handleBulkDelete}
+                      className="flex items-center gap-2 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-medium transition-colors"
+                    >
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                        />
+                      </svg>
+                      Xóa đã chọn
+                    </button>
+                  </div>
                 </div>
               )}
 
@@ -6256,6 +6307,29 @@ const InventoryManager: React.FC = () => {
           </div>
         )}
 
+        {activeTab === "purchase-orders" && (
+          <div className="bg-white dark:bg-slate-800 p-4 rounded-lg">
+            {selectedPO ? (
+              <PODetailView
+                poId={selectedPO.id}
+                onClose={() => setSelectedPO(null)}
+                onConverted={() => {
+                  setSelectedPO(null);
+                  refetchInventory();
+                }}
+              />
+            ) : (
+              <PurchaseOrdersList
+                onCreateNew={() => {
+                  console.log("InventoryManager: setShowCreatePO(true) called");
+                  setShowCreatePO(true);
+                }}
+                onViewDetail={(po) => setSelectedPO(po)}
+              />
+            )}
+          </div>
+        )}
+
         {activeTab === "lookup" && (
           <div className="bg-[#0f172a] -m-3 sm:-m-6">
             {/* Desktop Version */}
@@ -6720,6 +6794,26 @@ const InventoryManager: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {/* Create Purchase Order Modal */}
+      {showCreatePO && (
+        <>
+          {console.log(
+            "About to render CreatePOModal, showCreatePO:",
+            showCreatePO,
+            "selectedItems:",
+            selectedItems
+          )}
+          <CreatePOModal
+            isOpen={showCreatePO}
+            onClose={() => {
+              setShowCreatePO(false);
+              setSelectedItems([]);
+            }}
+            prefilledPartIds={selectedItems}
+          />
+        </>
+      )}
     </div>
   );
 };
@@ -7250,8 +7344,5 @@ const EditPartModal: React.FC<EditPartModalProps> = ({
     </div>
   );
 };
-
-// Export BatchPrintBarcodeModal renderer as part of main component
-export { BatchPrintBarcodeModal };
 
 export default InventoryManager;

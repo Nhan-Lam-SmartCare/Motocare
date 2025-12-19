@@ -15,6 +15,7 @@ interface Part {
   retailPrice: { [branchId: string]: number };
   wholesalePrice?: { [branchId: string]: number };
   category?: string;
+  barcode?: string;
 }
 
 interface ReceiptItem {
@@ -52,6 +53,7 @@ interface Props {
   setShowAddProductModal: (show: boolean) => void;
   onAddNewProduct: (productData: any) => void;
   currentBranchId: string;
+  isSubmitting?: boolean;
 }
 
 export const GoodsReceiptMobileModal: React.FC<Props> = ({
@@ -79,6 +81,7 @@ export const GoodsReceiptMobileModal: React.FC<Props> = ({
   setShowAddProductModal,
   onAddNewProduct,
   currentBranchId,
+  isSubmitting = false,
 }) => {
   const [step, setStep] = useState<1 | 2>(1);
   const [showSupplierModal, setShowSupplierModal] = useState(false);
@@ -290,11 +293,10 @@ export const GoodsReceiptMobileModal: React.FC<Props> = ({
               <div className="p-3 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 flex-shrink-0">
                 <div
                   onClick={() => setShowSupplierModal(true)}
-                  className={`p-4 rounded-xl border-2 cursor-pointer active:scale-98 transition-transform ${
-                    selectedSupplier
-                      ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
-                      : "border-dashed border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800"
-                  }`}
+                  className={`p-4 rounded-xl border-2 cursor-pointer active:scale-98 transition-transform ${selectedSupplier
+                    ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
+                    : "border-dashed border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800"
+                    }`}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
@@ -310,14 +312,14 @@ export const GoodsReceiptMobileModal: React.FC<Props> = ({
                           </div>
                           {suppliers.find((s: any) => s.id === selectedSupplier)
                             ?.phone && (
-                            <div className="text-sm text-slate-600 dark:text-slate-400 mt-1">
-                              {
-                                suppliers.find(
-                                  (s: any) => s.id === selectedSupplier
-                                )?.phone
-                              }
-                            </div>
-                          )}
+                              <div className="text-sm text-slate-600 dark:text-slate-400 mt-1">
+                                {
+                                  suppliers.find(
+                                    (s: any) => s.id === selectedSupplier
+                                  )?.phone
+                                }
+                              </div>
+                            )}
                         </>
                       ) : (
                         <div className="flex items-center gap-2">
@@ -540,9 +542,8 @@ export const GoodsReceiptMobileModal: React.FC<Props> = ({
                                 </span>
                                 {part.category && (
                                   <span
-                                    className={`inline-flex items-center px-1.5 py-0 rounded-full text-[9px] font-medium ${
-                                      getCategoryColor(part.category).bg
-                                    } ${getCategoryColor(part.category).text}`}
+                                    className={`inline-flex items-center px-1.5 py-0 rounded-full text-[9px] font-medium ${getCategoryColor(part.category).bg
+                                      } ${getCategoryColor(part.category).text}`}
                                   >
                                     {part.category}
                                   </span>
@@ -771,21 +772,19 @@ export const GoodsReceiptMobileModal: React.FC<Props> = ({
                   <div className="flex gap-2">
                     <button
                       onClick={() => setPaymentMethod("cash")}
-                      className={`flex-1 py-3 rounded-xl font-medium transition-all ${
-                        paymentMethod === "cash"
-                          ? "bg-green-600 text-white shadow-lg"
-                          : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-600"
-                      }`}
+                      className={`flex-1 py-3 rounded-xl font-medium transition-all ${paymentMethod === "cash"
+                        ? "bg-green-600 text-white shadow-lg"
+                        : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-600"
+                        }`}
                     >
                       💵 Tiền mặt
                     </button>
                     <button
                       onClick={() => setPaymentMethod("bank")}
-                      className={`flex-1 py-3 rounded-xl font-medium transition-all ${
-                        paymentMethod === "bank"
-                          ? "bg-blue-600 text-white shadow-lg"
-                          : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-600"
-                      }`}
+                      className={`flex-1 py-3 rounded-xl font-medium transition-all ${paymentMethod === "bank"
+                        ? "bg-blue-600 text-white shadow-lg"
+                        : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-600"
+                        }`}
                     >
                       🏦 Chuyển khoản
                     </button>
@@ -800,21 +799,19 @@ export const GoodsReceiptMobileModal: React.FC<Props> = ({
                         setPaymentType("full");
                         setPartialAmount(0);
                       }}
-                      className={`flex-1 py-2.5 rounded-lg font-medium transition-all ${
-                        paymentType === "full"
-                          ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow"
-                          : "text-slate-600 dark:text-slate-400"
-                      }`}
+                      className={`flex-1 py-2.5 rounded-lg font-medium transition-all ${paymentType === "full"
+                        ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow"
+                        : "text-slate-600 dark:text-slate-400"
+                        }`}
                     >
                       Đủ
                     </button>
                     <button
                       onClick={() => setPaymentType("partial")}
-                      className={`flex-1 py-2.5 rounded-lg font-medium transition-all ${
-                        paymentType === "partial"
-                          ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow"
-                          : "text-slate-600 dark:text-slate-400"
-                      }`}
+                      className={`flex-1 py-2.5 rounded-lg font-medium transition-all ${paymentType === "partial"
+                        ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow"
+                        : "text-slate-600 dark:text-slate-400"
+                        }`}
                     >
                       1 Phần
                     </button>
@@ -823,11 +820,10 @@ export const GoodsReceiptMobileModal: React.FC<Props> = ({
                         setPaymentType("note");
                         setPartialAmount(0);
                       }}
-                      className={`flex-1 py-2.5 rounded-lg font-medium transition-all ${
-                        paymentType === "note"
-                          ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow"
-                          : "text-slate-600 dark:text-slate-400"
-                      }`}
+                      className={`flex-1 py-2.5 rounded-lg font-medium transition-all ${paymentType === "note"
+                        ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow"
+                        : "text-slate-600 dark:text-slate-400"
+                        }`}
                     >
                       Nợ
                     </button>
@@ -889,10 +885,23 @@ export const GoodsReceiptMobileModal: React.FC<Props> = ({
                   </button>
                   <button
                     onClick={onSave}
-                    disabled={!selectedSupplier || receiptItems.length === 0}
-                    className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 dark:disabled:bg-slate-600 text-white rounded-xl font-bold active:scale-98 transition-transform disabled:cursor-not-allowed"
+                    disabled={!selectedSupplier || receiptItems.length === 0 || isSubmitting}
+                    className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 dark:disabled:bg-slate-600 text-white rounded-xl font-bold active:scale-98 transition-transform disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
-                    ✅ NHẬP KHO
+                    {isSubmitting ? (
+                      <>
+                        <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span>ĐANG LƯU...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>✅</span>
+                        <span>NHẬP KHO</span>
+                      </>
+                    )}
                   </button>
                 </div>
               </div>

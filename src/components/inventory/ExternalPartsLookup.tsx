@@ -94,30 +94,51 @@ export default function ExternalPartsLookup() {
     return (
         <div className="h-full flex flex-col bg-gray-50">
             {/* Header */}
-            <div className="bg-white border-b px-6 py-4 flex justify-between items-center">
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Tra cứu phụ tùng ngoài</h1>
-                    <p className="text-sm text-gray-500 mt-1">
-                        Tra cứu giá và thông tin phụ tùng từ nguồn dữ liệu bên ngoài (xemay.net)
-                    </p>
+            <div className="bg-white border-b px-4 sm:px-6 py-3 sm:py-4">
+                {/* Desktop Header */}
+                <div className="hidden sm:flex justify-between items-center">
+                    <div>
+                        <h1 className="text-2xl font-bold text-gray-900">Tra cứu phụ tùng ngoài</h1>
+                        <p className="text-sm text-gray-500 mt-1">
+                            Tra cứu giá và thông tin phụ tùng từ nguồn dữ liệu bên ngoài (xemay.net)
+                        </p>
+                    </div>
+                    <div className="flex gap-3">
+                        <button
+                            onClick={() => {
+                                fetchParts();
+                                fetchCategories();
+                            }}
+                            className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg"
+                            title="Làm mới"
+                        >
+                            <RefreshCw className="w-5 h-5" />
+                        </button>
+                    </div>
                 </div>
-                <div className="flex gap-3">
+
+                {/* Mobile Header */}
+                <div className="sm:hidden flex justify-between items-center">
+                    <div>
+                        <h1 className="text-lg font-bold text-slate-900">Tra cứu ngoài</h1>
+                        <p className="text-xs text-slate-500">xemay.net</p>
+                    </div>
                     <button
                         onClick={() => {
                             fetchParts();
                             fetchCategories();
                         }}
-                        className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg"
-                        title="Làm mới"
+                        className="w-9 h-9 flex items-center justify-center rounded-full bg-slate-100 text-slate-600 active:bg-slate-200"
                     >
-                        <RefreshCw className="w-5 h-5" />
+                        <RefreshCw className="w-4 h-4" />
                     </button>
                 </div>
             </div>
 
             {/* Search & Filter */}
-            <div className="p-6 pb-0">
-                <div className="flex flex-col md:flex-row gap-4">
+            <div className="p-4 sm:p-6 sm:pb-0">
+                {/* Desktop Filter */}
+                <div className="hidden sm:flex flex-col md:flex-row gap-4">
                     <div className="bg-white rounded-lg border p-4 shadow-sm flex-1">
                         <div className="relative">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -152,11 +173,49 @@ export default function ExternalPartsLookup() {
                         </select>
                     </div>
                 </div>
+
+                {/* Mobile Filter */}
+                <div className="sm:hidden space-y-3">
+                    <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4 z-10" />
+                        <input
+                            type="text"
+                            placeholder="Tìm tên hoặc SKU..."
+                            value={searchTerm}
+                            onChange={(e) => {
+                                setSearchTerm(e.target.value);
+                                setPage(1);
+                            }}
+                            className="w-full pl-10 pr-4 py-3 bg-white border-none rounded-xl shadow-md text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                        />
+                    </div>
+                    <select
+                        value={selectedCategory}
+                        onChange={(e) => {
+                            setSelectedCategory(e.target.value);
+                            setPage(1);
+                        }}
+                        className="w-full px-4 py-3 bg-white border-none rounded-xl shadow-md text-sm focus:ring-2 focus:ring-blue-500 outline-none appearance-none bg-no-repeat bg-right pr-10"
+                        style={{
+                            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23cbd5e0'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
+                            backgroundPosition: 'right 0.75rem center',
+                            backgroundSize: '1.25rem'
+                        }}
+                    >
+                        <option value="">-- Tất cả mẫu xe --</option>
+                        {categories.map((cat) => (
+                            <option key={cat} value={cat}>
+                                {cat}
+                            </option>
+                        ))}
+                    </select>
+                </div>
             </div>
 
             {/* Content */}
             <div className="flex-1 p-6 overflow-hidden flex flex-col">
-                <div className="bg-white rounded-lg border shadow-sm flex-1 flex flex-col overflow-hidden">
+                {/* Desktop Table View */}
+                <div className="hidden sm:block bg-white rounded-lg border shadow-sm flex-1 flex flex-col overflow-hidden">
                     <div className="overflow-auto flex-1">
                         <table className="w-full text-left border-collapse">
                             <thead className="bg-gray-50 sticky top-0 z-10">
@@ -236,7 +295,7 @@ export default function ExternalPartsLookup() {
                         </table>
                     </div>
 
-                    {/* Pagination */}
+                    {/* Desktop Pagination */}
                     <div className="border-t px-6 py-4 bg-gray-50 flex items-center justify-between">
                         <div className="text-sm text-gray-500">
                             Trang {page} / {totalPages}
@@ -255,6 +314,88 @@ export default function ExternalPartsLookup() {
                                 className="px-3 py-1 border rounded bg-white disabled:opacity-50 hover:bg-gray-50"
                             >
                                 Sau
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Mobile Card View */}
+                <div className="sm:hidden flex-1 flex flex-col">
+                    <div className="flex-1 overflow-auto space-y-3 pb-20">
+                        {loading ? (
+                            <div className="text-center py-12 text-slate-500">
+                                Đang tải dữ liệu...
+                            </div>
+                        ) : parts.length === 0 ? (
+                            <div className="text-center py-12 text-slate-500">
+                                Không tìm thấy phụ tùng nào.
+                            </div>
+                        ) : (
+                            parts.map((part) => (
+                                <div
+                                    key={part.id}
+                                    className="bg-white rounded-2xl p-4 shadow-lg shadow-slate-200/50 border border-slate-100"
+                                >
+                                    <div className="flex gap-3">
+                                        {/* Image */}
+                                        <div className="flex-shrink-0">
+                                            {part.image_url ? (
+                                                <img
+                                                    src={part.image_url}
+                                                    alt={part.name}
+                                                    className="w-16 h-16 object-cover rounded-xl border-2 border-slate-100"
+                                                />
+                                            ) : (
+                                                <div className="w-16 h-16 bg-slate-100 rounded-xl border-2 border-slate-200 flex items-center justify-center text-slate-400 text-xs">
+                                                    No img
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* Content */}
+                                        <div className="flex-1 min-w-0">
+                                            <div className="font-bold text-slate-900 text-sm leading-tight mb-1">
+                                                {part.name}
+                                            </div>
+                                            <div className="text-xs text-slate-400 mb-2">
+                                                {part.category}
+                                            </div>
+                                            {part.sku && (
+                                                <div className="text-[11px] font-mono text-slate-500 bg-slate-50 px-2 py-0.5 rounded inline-block mb-2">
+                                                    {part.sku}
+                                                </div>
+                                            )}
+                                            <div className="flex items-center justify-between mt-2">
+                                                <div className="text-lg font-black text-blue-600">
+                                                    {formatCurrency(part.price)}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                    </div>
+
+                    {/* Mobile Pagination - Fixed Bottom */}
+                    <div className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-lg border-t border-slate-200 px-4 py-3 flex items-center justify-between z-10">
+                        <div className="text-xs text-slate-600 font-medium">
+                            Trang {page}/{totalPages}
+                        </div>
+                        <div className="flex gap-2">
+                            <button
+                                onClick={() => setPage(p => Math.max(1, p - 1))}
+                                disabled={page === 1}
+                                className="px-4 py-2 bg-slate-100 disabled:opacity-40 rounded-lg text-sm font-medium active:scale-95 transition-transform"
+                            >
+                                ←
+                            </button>
+                            <button
+                                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                                disabled={page === totalPages}
+                                className="px-4 py-2 bg-slate-100 disabled:opacity-40 rounded-lg text-sm font-medium active:scale-95 transition-transform"
+                            >
+                                →
                             </button>
                         </div>
                     </div>

@@ -13,6 +13,7 @@ import LoansManager from "./LoansManager";
 import FixedAssetsManager from "./FixedAssetsManager";
 import CapitalManager from "./CapitalManager";
 import CombinedFinance from "./CombinedFinance";
+import { FinanceManagerMobile } from "./FinanceManagerMobile";
 
 type Tab = "combined" | "cashbook" | "loans" | "assets" | "capital";
 
@@ -76,64 +77,65 @@ const FinanceManager: React.FC = () => {
   const [activeTab, setActiveTab] = useState<Tab>("combined");
 
   return (
-    <div className="space-y-6">
-      {/* Header with Toggle Buttons */}
-      <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-slate-800 dark:to-slate-900 rounded-lg shadow-lg border border-primary-border p-3 md:p-4">
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between">
-          <div>
-            <h1 className="flex items-center gap-2 text-xl font-bold text-primary-text mb-1">
-              <PiggyBank className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-              Quản lý Tài chính
-            </h1>
-            <p className="text-secondary-text">
-              Quản lý sổ quỹ, khoản vay và các giao dịch tài chính
-            </p>
-          </div>
+    <>
+      <FinanceManagerMobile />
+      <div className="hidden md:block space-y-6">
+        {/* Header with Toggle Buttons */}
+        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-slate-800 dark:to-slate-900 rounded-lg shadow-lg border border-primary-border p-3 md:p-4">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between">
+            <div>
+              <h1 className="flex items-center gap-2 text-xl font-bold text-primary-text mb-1">
+                <PiggyBank className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                Quản lý Tài chính
+              </h1>
+              <p className="text-secondary-text">
+                Quản lý sổ quỹ, khoản vay và các giao dịch tài chính
+              </p>
+            </div>
 
-          {/* Toggle Buttons */}
-          <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto mt-4 md:mt-0">
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-3 w-full md:w-auto">
-              {(Object.keys(TAB_CONFIGS) as Tab[]).map((tabKey) => {
-                const config = TAB_CONFIGS[tabKey];
-                const isActive = activeTab === tabKey;
-                const Icon = config.Icon;
-                return (
-                  <button
-                    type="button"
-                    key={tabKey}
-                    aria-pressed={isActive}
-                    onClick={() => setActiveTab(tabKey)}
-                    className={`px-3 md:px-4 py-1.5 md:py-2 rounded-lg font-medium transition-all flex items-center justify-center gap-1.5 border text-sm ${
-                      isActive
-                        ? `${config.activeClass} scale-[1.03]`
-                        : config.inactiveClass
-                    }`}
-                  >
-                    <span
-                      aria-hidden
-                      className={`w-2.5 h-2.5 rounded-full ${
-                        isActive ? "bg-white/90" : config.dotClass
-                      }`}
-                    ></span>
-                    <Icon className="w-4 h-4" />
-                    <span className="whitespace-nowrap">{config.label}</span>
-                  </button>
-                );
-              })}
+            {/* Toggle Buttons */}
+            <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto mt-4 md:mt-0">
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-3 w-full md:w-auto">
+                {(Object.keys(TAB_CONFIGS) as Tab[]).map((tabKey) => {
+                  const config = TAB_CONFIGS[tabKey];
+                  const isActive = activeTab === tabKey;
+                  const Icon = config.Icon;
+                  return (
+                    <button
+                      type="button"
+                      key={tabKey}
+                      aria-pressed={isActive}
+                      onClick={() => setActiveTab(tabKey)}
+                      className={`px-3 md:px-4 py-1.5 md:py-2 rounded-lg font-medium transition-all flex items-center justify-center gap-1.5 border text-sm ${isActive
+                          ? `${config.activeClass} scale-[1.03]`
+                          : config.inactiveClass
+                        }`}
+                    >
+                      <span
+                        aria-hidden
+                        className={`w-2.5 h-2.5 rounded-full ${isActive ? "bg-white/90" : config.dotClass
+                          }`}
+                      ></span>
+                      <Icon className="w-4 h-4" />
+                      <span className="whitespace-nowrap">{config.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Content */}
-      <div>
-        {activeTab === "combined" && <CombinedFinance />}
-        {activeTab === "cashbook" && <CashBook />}
-        {activeTab === "loans" && <LoansManager />}
-        {activeTab === "assets" && <FixedAssetsManager />}
-        {activeTab === "capital" && <CapitalManager />}
+        {/* Content */}
+        <div>
+          {activeTab === "combined" && <CombinedFinance />}
+          {activeTab === "cashbook" && <CashBook />}
+          {activeTab === "loans" && <LoansManager />}
+          {activeTab === "assets" && <FixedAssetsManager />}
+          {activeTab === "capital" && <CapitalManager />}
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 

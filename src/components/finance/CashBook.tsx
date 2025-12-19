@@ -452,8 +452,8 @@ const CashBook: React.FC = () => {
             </div>
             <div
               className={`text-xl font-bold ${summary.balance >= 0
-                  ? "text-blue-900 dark:text-blue-100"
-                  : "text-red-600 dark:text-red-400"
+                ? "text-blue-900 dark:text-blue-100"
+                : "text-red-600 dark:text-red-400"
                 }`}
             >
               {formatCurrency(summary.balance)}
@@ -546,8 +546,8 @@ const CashBook: React.FC = () => {
                     key={option.value}
                     onClick={() => setFilterType(option.value as any)}
                     className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${filterType === option.value
-                        ? "bg-blue-600 text-white"
-                        : "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600"
+                      ? "bg-blue-600 text-white"
+                      : "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600"
                       }`}
                   >
                     {option.label}
@@ -599,8 +599,8 @@ const CashBook: React.FC = () => {
                     key={option.value}
                     onClick={() => setFilterDateRange(option.value as any)}
                     className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${filterDateRange === option.value
-                        ? "bg-blue-600 text-white"
-                        : "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600"
+                      ? "bg-blue-600 text-white"
+                      : "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600"
                       }`}
                   >
                     {option.label}
@@ -640,8 +640,8 @@ const CashBook: React.FC = () => {
                   <div className="flex items-center gap-2">
                     <div
                       className={`font-bold ${isIncomeType(tx.type)
-                          ? "text-green-600 dark:text-green-400"
-                          : "text-red-600 dark:text-red-400"
+                        ? "text-green-600 dark:text-green-400"
+                        : "text-red-600 dark:text-red-400"
                         }`}
                     >
                       {isIncomeType(tx.type) ? "+" : "-"}
@@ -782,8 +782,8 @@ const CashBook: React.FC = () => {
                     <td className="px-4 py-3">
                       <span
                         className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${isIncomeType(tx.type)
-                            ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
-                            : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
+                          ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+                          : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
                           }`}
                       >
                         {isIncomeType(tx.type) ? "↑ Thu" : "↓ Chi"}
@@ -823,8 +823,8 @@ const CashBook: React.FC = () => {
                     </td>
                     <td
                       className={`px-4 py-3 text-right text-sm font-semibold ${isIncomeType(tx.type)
-                          ? "text-green-600 dark:text-green-400"
-                          : "text-red-600 dark:text-red-400"
+                        ? "text-green-600 dark:text-green-400"
+                        : "text-red-600 dark:text-red-400"
                         }`}
                     >
                       {isIncomeType(tx.type) ? "+" : "-"}
@@ -1019,7 +1019,7 @@ const getCategoryLabel = (category?: string) => {
 };
 
 // Add Transaction Modal Component
-const AddTransactionModal: React.FC<{
+export const AddTransactionModal: React.FC<{
   onClose: () => void;
   onSave: (transaction: any) => void;
 }> = ({ onClose, onSave }) => {
@@ -1085,8 +1085,8 @@ const AddTransactionModal: React.FC<{
         {/* Header with gradient */}
         <div
           className={`px-4 py-3 flex-shrink-0 ${type === "income"
-              ? "bg-gradient-to-r from-emerald-500 to-green-600"
-              : "bg-gradient-to-r from-rose-500 to-red-600"
+            ? "bg-gradient-to-r from-emerald-500 to-green-600"
+            : "bg-gradient-to-r from-rose-500 to-red-600"
             }`}
         >
           <div className="flex items-center justify-between">
@@ -1128,8 +1128,8 @@ const AddTransactionModal: React.FC<{
                 setCategory("");
               }}
               className={`flex-1 py-1.5 rounded-md text-xs font-semibold transition-all ${type === "income"
-                  ? "bg-emerald-500 text-white shadow-md"
-                  : "text-slate-600 dark:text-slate-300"
+                ? "bg-emerald-500 text-white shadow-md"
+                : "text-slate-600 dark:text-slate-300"
                 }`}
             >
               📥 Thu tiền
@@ -1141,8 +1141,8 @@ const AddTransactionModal: React.FC<{
                 setCategory("");
               }}
               className={`flex-1 py-1.5 rounded-md text-xs font-semibold transition-all ${type === "expense"
-                  ? "bg-rose-500 text-white shadow-md"
-                  : "text-slate-600 dark:text-slate-300"
+                ? "bg-rose-500 text-white shadow-md"
+                : "text-slate-600 dark:text-slate-300"
                 }`}
             >
               📤 Chi tiền
@@ -1162,8 +1162,8 @@ const AddTransactionModal: React.FC<{
                 onChange={(e) => setAmount(formatNumber(e.target.value))}
                 placeholder="0"
                 className={`w-full px-3 py-2 text-lg font-bold bg-slate-50 dark:bg-slate-700/50 border-2 rounded-lg text-right pr-8 ${type === "income"
-                    ? "border-emerald-200 dark:border-emerald-800 focus:border-emerald-500 text-emerald-600 dark:text-emerald-400"
-                    : "border-rose-200 dark:border-rose-800 focus:border-rose-500 text-rose-600 dark:text-rose-400"
+                  ? "border-emerald-200 dark:border-emerald-800 focus:border-emerald-500 text-emerald-600 dark:text-emerald-400"
+                  : "border-rose-200 dark:border-rose-800 focus:border-rose-500 text-rose-600 dark:text-rose-400"
                   } focus:outline-none`}
                 required
               />
@@ -1185,10 +1185,10 @@ const AddTransactionModal: React.FC<{
                   type="button"
                   onClick={() => setCategory(cat.value)}
                   className={`p-1.5 rounded-lg text-center transition-all ${category === cat.value
-                      ? type === "income"
-                        ? "bg-emerald-100 dark:bg-emerald-900/30 border-2 border-emerald-500 text-emerald-700 dark:text-emerald-300"
-                        : "bg-rose-100 dark:bg-rose-900/30 border-2 border-rose-500 text-rose-700 dark:text-rose-300"
-                      : "bg-slate-50 dark:bg-slate-700/50 border-2 border-transparent text-slate-700 dark:text-slate-300"
+                    ? type === "income"
+                      ? "bg-emerald-100 dark:bg-emerald-900/30 border-2 border-emerald-500 text-emerald-700 dark:text-emerald-300"
+                      : "bg-rose-100 dark:bg-rose-900/30 border-2 border-rose-500 text-rose-700 dark:text-rose-300"
+                    : "bg-slate-50 dark:bg-slate-700/50 border-2 border-transparent text-slate-700 dark:text-slate-300"
                     }`}
                 >
                   <div className="text-base leading-none">{cat.icon}</div>
@@ -1210,8 +1210,8 @@ const AddTransactionModal: React.FC<{
                 type="button"
                 onClick={() => setPaymentSource("cash")}
                 className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-medium flex items-center justify-center gap-1 ${paymentSource === "cash"
-                    ? "bg-amber-100 dark:bg-amber-900/30 border-2 border-amber-500 text-amber-700 dark:text-amber-300"
-                    : "bg-slate-50 dark:bg-slate-700/50 border-2 border-transparent text-slate-600 dark:text-slate-400"
+                  ? "bg-amber-100 dark:bg-amber-900/30 border-2 border-amber-500 text-amber-700 dark:text-amber-300"
+                  : "bg-slate-50 dark:bg-slate-700/50 border-2 border-transparent text-slate-600 dark:text-slate-400"
                   }`}
               >
                 💵 Tiền mặt
@@ -1220,8 +1220,8 @@ const AddTransactionModal: React.FC<{
                 type="button"
                 onClick={() => setPaymentSource("bank")}
                 className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-medium flex items-center justify-center gap-1 ${paymentSource === "bank"
-                    ? "bg-blue-100 dark:bg-blue-900/30 border-2 border-blue-500 text-blue-700 dark:text-blue-300"
-                    : "bg-slate-50 dark:bg-slate-700/50 border-2 border-transparent text-slate-600 dark:text-slate-400"
+                  ? "bg-blue-100 dark:bg-blue-900/30 border-2 border-blue-500 text-blue-700 dark:text-blue-300"
+                  : "bg-slate-50 dark:bg-slate-700/50 border-2 border-transparent text-slate-600 dark:text-slate-400"
                   }`}
               >
                 🏦 Ngân hàng
@@ -1281,8 +1281,8 @@ const AddTransactionModal: React.FC<{
             type="submit"
             form="cashTxForm"
             className={`w-full py-3.5 rounded-xl font-bold text-white text-base shadow-xl active:scale-95 transition-all ${type === "income"
-                ? "bg-gradient-to-r from-emerald-500 to-green-600"
-                : "bg-gradient-to-r from-rose-500 to-red-600"
+              ? "bg-gradient-to-r from-emerald-500 to-green-600"
+              : "bg-gradient-to-r from-rose-500 to-red-600"
               }`}
           >
             {type === "income" ? "✓ Xác nhận thu tiền" : "✓ Xác nhận chi tiền"}
@@ -1294,7 +1294,7 @@ const AddTransactionModal: React.FC<{
 };
 
 // Edit Transaction Modal Component
-const EditTransactionModal: React.FC<{
+export const EditTransactionModal: React.FC<{
   transaction: CashTransaction;
   onClose: () => void;
   onSave: (updatedData: any) => void;
@@ -1565,7 +1565,7 @@ const EditTransactionModal: React.FC<{
 };
 
 // Delete Confirmation Modal Component
-const DeleteConfirmModal: React.FC<{
+export const DeleteConfirmModal: React.FC<{
   transaction: CashTransaction;
   onClose: () => void;
   onConfirm: () => void;

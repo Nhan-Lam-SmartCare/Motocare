@@ -8,6 +8,20 @@ import {
   Droplets,
   Cog,
   Wind,
+  X,
+  Calendar,
+  User,
+  Phone,
+  CreditCard,
+  Package,
+  CheckCircle,
+  Clock,
+  Star,
+  History,
+  ChevronRight,
+  MapPin,
+  Edit2,
+  Trash2,
 } from "lucide-react";
 import {
   useCustomers,
@@ -89,138 +103,214 @@ const CustomerHistoryModal: React.FC<CustomerHistoryModalProps> = ({
   const actualLoyaltyPoints = Math.floor(actualTotalSpent / 10000);
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[70] p-0 backdrop-blur-sm">
-      <div className="bg-white dark:bg-slate-800 rounded-lg w-full max-h-[90vh] overflow-hidden flex flex-col shadow-2xl">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-slate-200 dark:border-slate-700">
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[70] p-0 md:p-4 backdrop-blur-sm">
+      <div className="bg-white dark:bg-slate-800 md:rounded-2xl w-full h-full md:h-auto md:max-h-[90vh] overflow-hidden flex flex-col shadow-2xl border-0 md:border border-slate-200 dark:border-slate-700">
+        {/* Header - Desktop */}
+        <div className="hidden md:flex items-center justify-between p-6 border-b border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50">
           <div>
-            <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">
+            <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+              <History className="w-5 h-5 text-blue-500" />
               Lịch sử: {customer.name}
             </h2>
-            <p className="text-sm text-slate-500 dark:text-slate-400">
-              📞 {customer.phone}
-            </p>
+            <a
+              href={`tel:${customer.phone}`}
+              className="text-sm text-slate-500 dark:text-slate-400 flex items-center gap-1.5 mt-1 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+            >
+              <Phone className="w-3.5 h-3.5" />
+              {customer.phone}
+            </a>
           </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+            className="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition-colors text-slate-500"
           >
-            <XMarkIcon className="w-5 h-5" />
+            <X className="w-6 h-6" />
           </button>
         </div>
 
-        {/* Stats Summary */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 p-4 bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-700">
-          <div className="text-center">
-            <div className="text-xl font-bold text-blue-600 dark:text-blue-400">
+        {/* Header - Mobile */}
+        <div className="flex md:hidden flex-col bg-[#1e1e2d] border-b border-slate-700/50">
+          <div className="flex items-center justify-between p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center border border-blue-500/30">
+                <User className="w-5 h-5 text-blue-400" />
+              </div>
+              <div>
+                <h2 className="text-base font-bold text-white leading-tight">
+                  {customer.name}
+                </h2>
+                <a
+                  href={`tel:${customer.phone}`}
+                  className="text-xs text-slate-400 flex items-center gap-1 mt-0.5 active:text-blue-400 transition-colors"
+                >
+                  <Phone className="w-3 h-3" />
+                  {customer.phone}
+                </a>
+              </div>
+            </div>
+            <button
+              onClick={onClose}
+              className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-800 text-slate-400 active:scale-90 transition-transform"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Stats Summary - Desktop */}
+        <div className="hidden md:grid grid-cols-5 gap-4 p-5 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
+          <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-xl border border-blue-100 dark:border-blue-800/50 text-center">
+            <div className="text-lg font-bold text-blue-600 dark:text-blue-400">
               {customerSales.length}
             </div>
-            <div className="text-xs text-slate-600 dark:text-slate-400">
+            <div className="text-[10px] uppercase tracking-wider font-bold text-blue-500/70 dark:text-blue-400/50">
               Hóa đơn
             </div>
           </div>
-          <div className="text-center">
-            <div className="text-xl font-bold text-green-600 dark:text-green-400">
+          <div className="bg-emerald-50 dark:bg-emerald-900/20 p-3 rounded-xl border border-emerald-100 dark:border-emerald-800/50 text-center">
+            <div className="text-lg font-bold text-emerald-600 dark:text-emerald-400">
               {customerWorkOrders.length}
             </div>
-            <div className="text-xs text-slate-600 dark:text-slate-400">
+            <div className="text-[10px] uppercase tracking-wider font-bold text-emerald-500/70 dark:text-emerald-400/50">
               Phiếu SC
             </div>
           </div>
-          <div className="text-center">
-            <div className="text-xl font-bold text-purple-600 dark:text-purple-400">
+          <div className="bg-purple-50 dark:bg-purple-900/20 p-3 rounded-xl border border-purple-100 dark:border-purple-800/50 text-center">
+            <div className="text-lg font-bold text-purple-600 dark:text-purple-400">
               {formatCurrency(actualTotalSpent)}
             </div>
-            <div className="text-xs text-slate-600 dark:text-slate-400">
+            <div className="text-[10px] uppercase tracking-wider font-bold text-purple-500/70 dark:text-purple-400/50">
               Tổng chi
             </div>
           </div>
-          <div className="text-center">
-            <div className="text-xl font-bold text-orange-600 dark:text-orange-400">
+          <div className="bg-orange-50 dark:bg-orange-900/20 p-3 rounded-xl border border-orange-100 dark:border-orange-800/50 text-center">
+            <div className="text-lg font-bold text-orange-600 dark:text-orange-400">
               {actualVisitCount}
             </div>
-            <div className="text-xs text-slate-600 dark:text-slate-400">
+            <div className="text-[10px] uppercase tracking-wider font-bold text-orange-500/70 dark:text-orange-400/50">
               Lần đến
             </div>
           </div>
-          <div className="text-center">
-            <div className="text-xl font-bold text-yellow-600 dark:text-yellow-400">
+          <div className="bg-amber-50 dark:bg-amber-900/20 p-3 rounded-xl border border-amber-100 dark:border-amber-800/50 text-center">
+            <div className="text-lg font-bold text-amber-600 dark:text-amber-400">
               ⭐ {actualLoyaltyPoints.toLocaleString()}
             </div>
-            <div className="text-xs text-slate-600 dark:text-slate-400">
+            <div className="text-[10px] uppercase tracking-wider font-bold text-amber-500/70 dark:text-amber-400/50">
               Điểm TL
             </div>
           </div>
         </div>
 
+        {/* Stats Summary - Mobile */}
+        <div className="flex md:hidden overflow-x-auto p-4 bg-[#1e1e2d] gap-3 no-scrollbar border-b border-slate-700/30">
+          <div className="flex-shrink-0 bg-slate-800/50 p-3 rounded-2xl border border-slate-700/50 min-w-[100px]">
+            <div className="text-xs text-slate-400 mb-1">Tổng chi</div>
+            <div className="text-sm font-bold text-white">{formatCurrency(actualTotalSpent)}</div>
+          </div>
+          <div className="flex-shrink-0 bg-slate-800/50 p-3 rounded-2xl border border-slate-700/50 min-w-[80px]">
+            <div className="text-xs text-slate-400 mb-1">Lần đến</div>
+            <div className="text-sm font-bold text-white">{actualVisitCount}</div>
+          </div>
+          <div className="flex-shrink-0 bg-slate-800/50 p-3 rounded-2xl border border-slate-700/50 min-w-[80px]">
+            <div className="text-xs text-slate-400 mb-1">Điểm TL</div>
+            <div className="text-sm font-bold text-amber-400">⭐ {actualLoyaltyPoints.toLocaleString()}</div>
+          </div>
+          <div className="flex-shrink-0 bg-slate-800/50 p-3 rounded-2xl border border-slate-700/50 min-w-[80px]">
+            <div className="text-xs text-slate-400 mb-1">Hóa đơn</div>
+            <div className="text-sm font-bold text-blue-400">{customerSales.length}</div>
+          </div>
+          <div className="flex-shrink-0 bg-slate-800/50 p-3 rounded-2xl border border-slate-700/50 min-w-[80px]">
+            <div className="text-xs text-slate-400 mb-1">Phiếu SC</div>
+            <div className="text-sm font-bold text-emerald-400">{customerWorkOrders.length}</div>
+          </div>
+        </div>
+
         {/* Tabs */}
-        <div className="flex gap-3 px-4 pt-3 border-b border-slate-200 dark:border-slate-700 overflow-x-auto no-scrollbar">
+        <div className="flex gap-6 px-6 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 md:pt-0 pt-2">
           <button
             onClick={() => setActiveTab("sales")}
-            className={`px-3 py-1.5 font-medium text-sm transition-colors ${
-              activeTab === "sales"
-                ? "text-blue-600 dark:text-blue-400 border-b-2 border-blue-600"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
-            }`}
+            className={`pb-3 pt-4 font-bold text-sm transition-all relative ${activeTab === "sales"
+              ? "text-blue-600 dark:text-blue-400"
+              : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+              }`}
           >
             🛒 Hóa đơn ({customerSales.length})
+            {activeTab === "sales" && (
+              <div className="absolute bottom-0 left-0 right-0 h-1 bg-blue-600 rounded-t-full"></div>
+            )}
           </button>
           <button
             onClick={() => setActiveTab("workorders")}
-            className={`px-3 py-1.5 font-medium text-sm transition-colors ${
-              activeTab === "workorders"
-                ? "text-blue-600 dark:text-blue-400 border-b-2 border-blue-600"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
-            }`}
+            className={`pb-3 pt-4 font-bold text-sm transition-all relative ${activeTab === "workorders"
+              ? "text-blue-600 dark:text-blue-400"
+              : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+              }`}
           >
             🔧 Phiếu sửa chữa ({customerWorkOrders.length})
+            {activeTab === "workorders" && (
+              <div className="absolute bottom-0 left-0 right-0 h-1 bg-blue-600 rounded-t-full"></div>
+            )}
           </button>
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-auto p-6 custom-scrollbar">
+        <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-slate-50/30 dark:bg-slate-900/10 custom-scrollbar">
           {activeTab === "sales" ? (
-            <div className="space-y-3">
+            <div className="space-y-4">
               {customerSales.length === 0 ? (
-                <div className="text-center py-12 text-slate-500">
-                  Chưa có hóa đơn nào
+                <div className="text-center py-20">
+                  <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Package className="w-8 h-8 text-slate-300" />
+                  </div>
+                  <p className="text-slate-500 dark:text-slate-400 font-medium">Chưa có hóa đơn nào</p>
                 </div>
               ) : (
                 customerSales.map((sale) => (
                   <div
                     key={sale.id}
-                    className="border border-slate-200 dark:border-slate-700 rounded-lg p-4 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
+                    className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-4 md:p-5 shadow-sm hover:shadow-md transition-all group"
                   >
-                    <div className="flex items-start justify-between mb-3">
-                      <div>
-                        <div className="font-bold text-blue-600 dark:text-blue-400">
-                          {sale.sale_code || sale.id}
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center border border-blue-100 dark:border-blue-800/50">
+                          <CreditCard className="w-5 h-5 text-blue-500" />
                         </div>
-                        <div className="text-xs text-slate-500 dark:text-slate-400">
-                          {formatDate(sale.date)}
+                        <div>
+                          <div className="font-bold text-slate-900 dark:text-slate-100 group-hover:text-blue-600 transition-colors">
+                            {sale.sale_code || sale.id.substring(0, 8)}
+                          </div>
+                          <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-0.5">
+                            <Calendar className="w-3 h-3" />
+                            {formatDate(sale.date)}
+                          </div>
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className="text-lg font-bold text-slate-900 dark:text-slate-100">
+                        <div className="text-lg font-black text-slate-900 dark:text-slate-100">
                           {formatCurrency(sale.total)}
                         </div>
-                        <div className="text-xs text-slate-500">
-                          {sale.paymentMethod === "cash"
-                            ? "💵 Tiền mặt"
-                            : "🏦 CK"}
+                        <div className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full inline-block mt-1 ${sale.paymentMethod === "cash"
+                          ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300"
+                          : "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
+                          }`}>
+                          {sale.paymentMethod === "cash" ? "💵 Tiền mặt" : "🏦 Chuyển khoản"}
                         </div>
                       </div>
                     </div>
-                    <div className="space-y-1">
+
+                    <div className="bg-slate-50 dark:bg-slate-900/30 rounded-xl p-3 space-y-2">
                       {sale.items.map((item, idx) => (
                         <div
                           key={idx}
-                          className="text-sm text-slate-700 dark:text-slate-300 flex justify-between"
+                          className="text-sm text-slate-700 dark:text-slate-300 flex justify-between items-center"
                         >
-                          <span>
-                            {item.quantity} x {item.partName}
-                          </span>
-                          <span className="font-medium">
+                          <div className="flex items-center gap-2">
+                            <span className="w-5 h-5 rounded bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-[10px] font-bold">
+                              {item.quantity}
+                            </span>
+                            <span className="font-medium truncate max-w-[150px] md:max-w-xs">{item.partName}</span>
+                          </div>
+                          <span className="font-bold text-slate-900 dark:text-slate-100">
                             {formatCurrency(item.quantity * item.sellingPrice)}
                           </span>
                         </div>
@@ -231,10 +321,13 @@ const CustomerHistoryModal: React.FC<CustomerHistoryModalProps> = ({
               )}
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-4">
               {customerWorkOrders.length === 0 ? (
-                <div className="text-center py-12 text-slate-500">
-                  Chưa có phiếu sửa chữa nào
+                <div className="text-center py-20">
+                  <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Wrench className="w-8 h-8 text-slate-300" />
+                  </div>
+                  <p className="text-slate-500 dark:text-slate-400 font-medium">Chưa có phiếu sửa chữa nào</p>
                 </div>
               ) : (
                 customerWorkOrders.map((wo) => {
@@ -242,59 +335,66 @@ const CustomerHistoryModal: React.FC<CustomerHistoryModalProps> = ({
                     wo.status === "Trả máy" || wo.status === "Đã sửa xong";
                   const isInProgress = wo.status === "Đang sửa";
                   const statusClass = isCompleted
-                    ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300"
+                    ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/50"
                     : isInProgress
-                    ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
-                    : "bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300";
-                  const statusLabel = isCompleted
-                    ? "Hoàn thành"
-                    : isInProgress
-                    ? "Đang SC"
-                    : "Chờ xử lý";
+                      ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border-blue-200 dark:border-blue-800/50"
+                      : "bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-600";
 
                   return (
                     <div
                       key={wo.id}
-                      className="border border-slate-200 dark:border-slate-700 rounded-lg p-4 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
+                      className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-4 md:p-5 shadow-sm hover:shadow-md transition-all group"
                     >
-                      <div className="flex items-start justify-between mb-3">
-                        <div>
-                          <div className="font-bold text-green-600 dark:text-green-400">
-                            {formatAnyId(wo.id)}
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center border border-emerald-100 dark:border-emerald-800/50">
+                            <Wrench className="w-5 h-5 text-emerald-500" />
                           </div>
-                          <div className="text-xs text-slate-500 dark:text-slate-400">
-                            {wo.vehicleModel} - {wo.licensePlate}
+                          <div>
+                            <div className="font-bold text-slate-900 dark:text-slate-100 group-hover:text-emerald-600 transition-colors">
+                              {formatAnyId(wo.id)}
+                            </div>
+                            <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1.5 mt-0.5">
+                              <Bike className="w-3 h-3" />
+                              {wo.vehicleModel} • {wo.licensePlate}
+                            </div>
                           </div>
                         </div>
                         <div className="text-right">
-                          <div className="text-lg font-bold text-slate-900 dark:text-slate-100">
+                          <div className="text-lg font-black text-slate-900 dark:text-slate-100">
                             {formatCurrency(wo.total)}
                           </div>
-                          <div
-                            className={`text-xs px-2 py-1 rounded inline-block ${statusClass}`}
-                          >
-                            {statusLabel}
+                          <div className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full border mt-1 ${statusClass}`}>
+                            {wo.status}
                           </div>
                         </div>
                       </div>
-                      <div className="text-sm text-slate-700 dark:text-slate-300">
-                        <div className="mb-2">
-                          <span className="font-medium">Vấn đề:</span>{" "}
-                          {wo.issueDescription}
+
+                      <div className="space-y-3">
+                        <div className="flex items-start gap-2 text-sm">
+                          <div className="mt-0.5 p-1 rounded bg-slate-100 dark:bg-slate-700">
+                            <Clock className="w-3 h-3 text-slate-500" />
+                          </div>
+                          <div className="flex-1">
+                            <span className="text-slate-500 dark:text-slate-400">Vấn đề:</span>
+                            <p className="font-medium text-slate-800 dark:text-slate-200 mt-0.5">{wo.issueDescription}</p>
+                          </div>
                         </div>
+
                         {wo.partsUsed && wo.partsUsed.length > 0 && (
-                          <div>
-                            <span className="font-medium">Phụ tùng:</span>
-                            <div className="ml-4 space-y-1 mt-1">
+                          <div className="bg-slate-50 dark:bg-slate-900/30 rounded-xl p-3">
+                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Phụ tùng sử dụng</div>
+                            <div className="space-y-2">
                               {wo.partsUsed.map((part: any, idx: number) => (
                                 <div
                                   key={idx}
-                                  className="text-xs flex justify-between"
+                                  className="text-xs flex justify-between items-center"
                                 >
-                                  <span>
-                                    {part.quantity} x {part.name}
-                                  </span>
-                                  <span>
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-slate-500">{part.quantity} x</span>
+                                    <span className="font-medium text-slate-700 dark:text-slate-300">{part.name}</span>
+                                  </div>
+                                  <span className="font-bold text-slate-900 dark:text-slate-100">
                                     {formatCurrency(part.price * part.quantity)}
                                   </span>
                                 </div>
@@ -311,11 +411,21 @@ const CustomerHistoryModal: React.FC<CustomerHistoryModalProps> = ({
           )}
         </div>
 
-        {/* Footer */}
-        <div className="p-4 border-t border-slate-200 dark:border-slate-700 flex justify-end">
+        {/* Footer - Desktop */}
+        <div className="hidden md:flex p-4 border-t border-slate-200 dark:border-slate-700 justify-end bg-slate-50/50 dark:bg-slate-800/50">
           <button
             onClick={onClose}
-            className="px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded-lg transition-colors"
+            className="px-6 py-2.5 bg-slate-800 dark:bg-slate-700 hover:bg-slate-900 dark:hover:bg-slate-600 text-white font-bold rounded-xl transition-all active:scale-95 shadow-lg shadow-slate-200 dark:shadow-none"
+          >
+            Đóng
+          </button>
+        </div>
+
+        {/* Footer - Mobile (Sticky) */}
+        <div className="flex md:hidden p-4 border-t border-slate-700/30 bg-[#1e1e2d] pb-safe">
+          <button
+            onClick={onClose}
+            className="w-full py-4 bg-slate-800 text-white font-bold rounded-2xl active:scale-[0.98] transition-all border border-slate-700/50"
           >
             Đóng
           </button>
@@ -521,8 +631,8 @@ const CustomerManager: React.FC = () => {
     const lastVisit =
       allTransactionDates.length > 0
         ? new Date(
-            Math.max(...allTransactionDates.map((d) => d.getTime()))
-          ).toISOString()
+          Math.max(...allTransactionDates.map((d) => d.getTime()))
+        ).toISOString()
         : null;
 
     // Get latest km from most recent work order
@@ -830,22 +940,20 @@ const CustomerManager: React.FC = () => {
         <div className="flex items-center px-4 overflow-x-auto no-scrollbar">
           <button
             onClick={() => setActiveTab("customers")}
-            className={`flex items-center gap-1.5 px-3 py-2 md:py-3 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${
-              activeTab === "customers"
-                ? "border-blue-500 text-blue-600 dark:text-blue-400"
-                : "border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
-            }`}
+            className={`flex items-center gap-1.5 px-3 py-2 md:py-3 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${activeTab === "customers"
+              ? "border-blue-500 text-blue-600 dark:text-blue-400"
+              : "border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
+              }`}
           >
             <UsersIcon className="w-4 h-4" />
             <span>Khách hàng ({stats.total})</span>
           </button>
           <button
             onClick={() => setActiveTab("suppliers")}
-            className={`flex items-center gap-1.5 px-3 py-2 md:py-3 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${
-              activeTab === "suppliers"
-                ? "border-blue-500 text-blue-600 dark:text-blue-400"
-                : "border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
-            }`}
+            className={`flex items-center gap-1.5 px-3 py-2 md:py-3 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${activeTab === "suppliers"
+              ? "border-blue-500 text-blue-600 dark:text-blue-400"
+              : "border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
+              }`}
           >
             <svg
               className="w-4 h-4"
@@ -975,22 +1083,20 @@ const CustomerManager: React.FC = () => {
                 <div className="hidden sm:inline-flex rounded-xl border border-slate-200 bg-white p-0.5 text-xs font-semibold dark:border-slate-600 dark:bg-slate-900/40">
                   <button
                     onClick={() => setViewMode("grid")}
-                    className={`flex flex-1 items-center justify-center gap-1 rounded-lg px-2 py-1.5 transition-colors sm:flex-none ${
-                      viewMode === "grid"
-                        ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900"
-                        : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
-                    }`}
+                    className={`flex flex-1 items-center justify-center gap-1 rounded-lg px-2 py-1.5 transition-colors sm:flex-none ${viewMode === "grid"
+                      ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900"
+                      : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+                      }`}
                   >
                     <LayoutGrid className="h-3.5 w-3.5" />
                     <span>Thẻ</span>
                   </button>
                   <button
                     onClick={() => setViewMode("list")}
-                    className={`flex flex-1 items-center justify-center gap-1 rounded-lg px-2 py-1.5 transition-colors sm:flex-none ${
-                      viewMode === "list"
-                        ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900"
-                        : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
-                    }`}
+                    className={`flex flex-1 items-center justify-center gap-1 rounded-lg px-2 py-1.5 transition-colors sm:flex-none ${viewMode === "list"
+                      ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900"
+                      : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+                      }`}
                   >
                     <List className="h-3.5 w-3.5" />
                     <span>Danh sách</span>
@@ -1002,11 +1108,10 @@ const CustomerManager: React.FC = () => {
                   <button
                     key={filter.id}
                     onClick={() => setActiveFilter(filter.id)}
-                    className={`min-w-[160px] snap-start rounded-xl border px-3 py-2 text-left transition-all md:min-w-0 ${
-                      activeFilter === filter.id
-                        ? `${filter.activeClasses} dark:bg-slate-800/80 dark:border-slate-600 dark:text-white`
-                        : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-slate-300"
-                    }`}
+                    className={`min-w-[160px] snap-start rounded-xl border px-3 py-2 text-left transition-all md:min-w-0 ${activeFilter === filter.id
+                      ? `${filter.activeClasses} dark:bg-slate-800/80 dark:border-slate-600 dark:text-white`
+                      : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-slate-300"
+                      }`}
                   >
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2">
@@ -1085,111 +1190,114 @@ const CustomerManager: React.FC = () => {
               </div>
               <div className="bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20 rounded-xl border border-orange-200 dark:border-orange-800 p-4">
                 <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory md:grid md:grid-cols-2 lg:grid-cols-3 md:overflow-visible md:snap-none">
-                  {vehiclesNeedingMaintenance.slice(0, 9).map((item, index) => (
-                    <div
-                      key={`${item.customer.id}-${item.vehicle.licensePlate}-${index}`}
-                      className="snap-start min-w-[280px] md:min-w-0 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-4 shadow-sm"
-                    >
-                      <div className="flex items-start justify-between gap-2 mb-3">
-                        <div className="min-w-0 flex-1">
-                          <p className="font-semibold text-slate-900 dark:text-slate-100 truncate">
-                            {item.customer.name || "Khách hàng"}
-                          </p>
-                          <p className="text-sm text-slate-500 dark:text-slate-400">
-                            {item.customer.phone}
-                          </p>
-                        </div>
-                        <div className="flex flex-col items-end gap-1.5">
-                          <div className="flex items-center gap-1.5 px-2 py-1 bg-slate-100 dark:bg-slate-700 rounded-lg">
-                            <Bike className="w-3.5 h-3.5 text-slate-600 dark:text-slate-300" />
-                            <span className="text-xs font-medium text-slate-700 dark:text-slate-200">
-                              {item.vehicle.licensePlate}
-                            </span>
-                          </div>
-                          {/* Vehicle Type Badge */}
-                          {(() => {
-                            const model = (
-                              item.vehicle.model || ""
-                            ).toLowerCase();
-                            const isAutomatic =
-                              model.includes("sh") ||
-                              model.includes("vision") ||
-                              model.includes("air blade") ||
-                              model.includes("lead") ||
-                              model.includes("vario") ||
-                              model.includes("pcx") ||
-                              model.includes("freego") ||
-                              model.includes("janus") ||
-                              model.includes("grande") ||
-                              model.includes("medley") ||
-                              model.includes("liberty");
-                            return (
-                              <span
-                                className={`text-[10px] font-medium px-2 py-0.5 rounded ${
-                                  isAutomatic
-                                    ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
-                                    : "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300"
-                                }`}
-                              >
-                                {isAutomatic ? "🛵 Tay ga" : "🏍️ Xe số"}
-                              </span>
-                            );
-                          })()}
-                        </div>
-                      </div>
-
-                      <div className="text-xs text-slate-500 dark:text-slate-400 mb-2">
-                        Số km hiện tại:{" "}
-                        <span className="font-semibold text-slate-700 dark:text-slate-200">
-                          {(item.vehicle.currentKm || 0).toLocaleString()} km
-                        </span>
-                      </div>
-
-                      <div className="space-y-2">
-                        {item.warnings.map((warning, wIdx) => {
-                          const IconComponent =
-                            warning.type === "oilChange"
-                              ? Droplets
-                              : warning.type === "gearboxOil"
-                              ? Cog
-                              : Wind;
-                          return (
-                            <div
-                              key={wIdx}
-                              className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs ${
-                                warning.isOverdue
-                                  ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300"
-                                  : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300"
-                              }`}
+                  {vehiclesNeedingMaintenance.slice(0, 9).map((item, index) => {
+                    if (!item.customer) return null;
+                    return (
+                      <div
+                        key={`${item.customer.id}-${item.vehicle.licensePlate}-${index}`}
+                        className="snap-start min-w-[280px] md:min-w-0 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-4 shadow-sm"
+                      >
+                        <div className="flex items-start justify-between gap-2 mb-3">
+                          <div className="min-w-0 flex-1">
+                            <p className="font-semibold text-slate-900 dark:text-slate-100 truncate">
+                              {item.customer.name || "Khách hàng"}
+                            </p>
+                            <a
+                              href={`tel:${item.customer.phone}`}
+                              className="text-sm text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                             >
-                              <IconComponent className="w-4 h-4 flex-shrink-0" />
-                              <div className="flex-1 min-w-0">
-                                <span className="font-medium">
-                                  {warning.name}
-                                </span>
-                                <span className="ml-1">
-                                  {warning.isOverdue
-                                    ? `(quá ${Math.abs(
-                                        warning.kmUntilDue
-                                      ).toLocaleString()} km)`
-                                    : `(còn ${warning.kmUntilDue.toLocaleString()} km)`}
-                                </span>
-                              </div>
-                              <span
-                                className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
-                                  warning.isOverdue
-                                    ? "bg-red-200 text-red-800 dark:bg-red-800 dark:text-red-100"
-                                    : "bg-amber-200 text-amber-800 dark:bg-amber-800 dark:text-amber-100"
-                                }`}
-                              >
-                                {warning.isOverdue ? "QUÁ HẠN" : "SẮP ĐẾN"}
+                              {item.customer.phone}
+                            </a>
+                          </div>
+                          <div className="flex flex-col items-end gap-1.5">
+                            <div className="flex items-center gap-1.5 px-2 py-1 bg-slate-100 dark:bg-slate-700 rounded-lg">
+                              <Bike className="w-3.5 h-3.5 text-slate-600 dark:text-slate-300" />
+                              <span className="text-xs font-medium text-slate-700 dark:text-slate-200">
+                                {item.vehicle.licensePlate}
                               </span>
                             </div>
-                          );
-                        })}
+                            {/* Vehicle Type Badge */}
+                            {(() => {
+                              const model = (
+                                item.vehicle.model || ""
+                              ).toLowerCase();
+                              const isAutomatic =
+                                model.includes("sh") ||
+                                model.includes("vision") ||
+                                model.includes("air blade") ||
+                                model.includes("lead") ||
+                                model.includes("vario") ||
+                                model.includes("pcx") ||
+                                model.includes("freego") ||
+                                model.includes("janus") ||
+                                model.includes("grande") ||
+                                model.includes("medley") ||
+                                model.includes("liberty");
+                              return (
+                                <span
+                                  className={`text-[10px] font-medium px-2 py-0.5 rounded ${isAutomatic
+                                    ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
+                                    : "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300"
+                                    }`}
+                                >
+                                  {isAutomatic ? "🛵 Tay ga" : "🏍️ Xe số"}
+                                </span>
+                              );
+                            })()}
+                          </div>
+                        </div>
+
+                        <div className="text-xs text-slate-500 dark:text-slate-400 mb-2">
+                          Số km hiện tại:{" "}
+                          <span className="font-semibold text-slate-700 dark:text-slate-200">
+                            {(item.vehicle.currentKm || 0).toLocaleString()} km
+                          </span>
+                        </div>
+
+                        <div className="space-y-2">
+                          {item.warnings.map((warning, wIdx) => {
+                            const IconComponent =
+                              warning.type === "oilChange"
+                                ? Droplets
+                                : warning.type === "gearboxOil"
+                                  ? Cog
+                                  : Wind;
+                            return (
+                              <div
+                                key={wIdx}
+                                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs ${warning.isOverdue
+                                  ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300"
+                                  : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300"
+                                  }`}
+                              >
+                                <IconComponent className="w-4 h-4 flex-shrink-0" />
+                                <div className="flex-1 min-w-0">
+                                  <span className="font-medium">
+                                    {warning.name}
+                                  </span>
+                                  <span className="ml-1">
+                                    {warning.isOverdue
+                                      ? `(quá ${Math.abs(
+                                        warning.kmUntilDue
+                                      ).toLocaleString()} km)`
+                                      : `(còn ${warning.kmUntilDue.toLocaleString()} km)`}
+                                  </span>
+                                </div>
+                                <span
+                                  className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${warning.isOverdue
+                                    ? "bg-red-200 text-red-800 dark:bg-red-800 dark:text-red-100"
+                                    : "bg-amber-200 text-amber-800 dark:bg-amber-800 dark:text-amber-100"
+                                    }`}
+                                >
+                                  {warning.isOverdue ? "QUÁ HẠN" : "SẮP ĐẾN"}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
                 {vehiclesNeedingMaintenance.length > 9 && (
                   <p className="text-center text-sm text-orange-600 dark:text-orange-400 mt-3 font-medium">
@@ -1255,137 +1363,139 @@ const CustomerManager: React.FC = () => {
                     return (
                       <div
                         key={customer.id}
-                        className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-lg dark:border-slate-700 dark:bg-slate-800"
+                        className="group relative bg-white dark:bg-slate-800 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-xl hover:border-blue-500/30 transition-all duration-300 overflow-hidden flex flex-col"
                       >
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="flex items-center gap-3 min-w-0">
+                        {/* Card Header */}
+                        <div className="p-5 flex items-start justify-between gap-3">
+                          <div className="flex items-center gap-4 min-w-0">
                             <div
-                              className={`flex h-12 w-12 items-center justify-center rounded-2xl text-2xl ${config.avatarClass}`}
+                              className={`flex h-14 w-14 items-center justify-center rounded-2xl text-2xl shadow-inner ${config.avatarClass}`}
                             >
                               {config.icon}
                             </div>
                             <div className="min-w-0">
-                              <p className="text-base font-semibold text-slate-900 dark:text-slate-100 truncate">
+                              <h3 className="text-lg font-black text-slate-900 dark:text-slate-100 truncate group-hover:text-blue-600 transition-colors">
                                 {customer.name || "Chưa đặt tên"}
-                              </p>
-                              <p className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-                                <span>{customer.phone || "Chưa có số"}</span>
+                              </h3>
+                              <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500 dark:text-slate-400">
+                                <a
+                                  href={`tel:${customer.phone}`}
+                                  className="flex items-center gap-1 bg-slate-100 dark:bg-slate-700/50 px-2 py-0.5 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 transition-all"
+                                >
+                                  <Phone className="w-3 h-3" />
+                                  <span className="font-bold">{customer.phone || "N/A"}</span>
+                                </a>
                                 {lastVisit && (
-                                  <span className="text-slate-400">
-                                    • Lần cuối {formatDate(lastVisit)}
+                                  <span className="flex items-center gap-1">
+                                    <Clock className="w-3 h-3" />
+                                    {formatDate(lastVisit)}
                                   </span>
                                 )}
-                              </p>
+                              </div>
                             </div>
                           </div>
                           <span
-                            className={`text-[10px] font-semibold uppercase px-3 py-1 rounded-full ${config.badgeClass}`}
+                            className={`text-[10px] font-black uppercase px-3 py-1 rounded-full border ${config.badgeClass}`}
                           >
                             {config.label}
                           </span>
                         </div>
-                        {vehicles.length > 0 ? (
-                          <div className="mt-4 flex flex-wrap gap-2">
-                            {vehicles.slice(0, 2).map((vehicle) => (
-                              <span
-                                key={vehicle.id}
-                                className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200"
-                              >
-                                {vehicle.isPrimary && (
-                                  <span className="text-amber-500">★</span>
+
+                        {/* Vehicles Section */}
+                        <div className="px-5 pb-4">
+                          <div className="flex flex-wrap gap-2">
+                            {vehicles.length > 0 ? (
+                              <>
+                                {vehicles.slice(0, 2).map((vehicle) => (
+                                  <div
+                                    key={vehicle.id}
+                                    className="inline-flex items-center gap-2 rounded-xl border border-slate-100 bg-slate-50/50 px-3 py-1.5 text-xs font-bold text-slate-700 dark:border-slate-700 dark:bg-slate-900/40 dark:text-slate-200"
+                                  >
+                                    <Bike className={`w-3.5 h-3.5 ${vehicle.isPrimary ? "text-amber-500" : "text-blue-500"}`} />
+                                    <span>{vehicle.model || "Không rõ"}</span>
+                                    {vehicle.licensePlate && (
+                                      <span className="text-[10px] text-slate-400 font-medium">
+                                        • {vehicle.licensePlate}
+                                      </span>
+                                    )}
+                                  </div>
+                                ))}
+                                {hasExtraVehicles && (
+                                  <div className="rounded-xl bg-blue-50 dark:bg-blue-900/20 px-3 py-1.5 text-[10px] font-black text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-800/50">
+                                    +{vehicles.length - 2} XE KHÁC
+                                  </div>
                                 )}
-                                <span>{vehicle.model || "Không rõ"}</span>
-                                {vehicle.licensePlate && (
-                                  <span className="text-[10px] text-slate-400">
-                                    • {vehicle.licensePlate}
-                                  </span>
-                                )}
-                              </span>
-                            ))}
-                            {hasExtraVehicles && (
-                              <span className="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-500 dark:bg-slate-700 dark:text-slate-300">
-                                +{vehicles.length - 2} xe nữa
-                              </span>
+                              </>
+                            ) : customer.vehicleModel ? (
+                              <div className="inline-flex items-center gap-2 rounded-xl border border-slate-100 bg-slate-50/50 px-3 py-1.5 text-xs font-bold text-slate-700 dark:border-slate-700 dark:bg-slate-900/40 dark:text-slate-200">
+                                <Bike className="h-3.5 w-3.5 text-blue-500" />
+                                <span>
+                                  {customer.vehicleModel}
+                                  {customer.licensePlate
+                                    ? ` • ${customer.licensePlate}`
+                                    : ""}
+                                </span>
+                              </div>
+                            ) : (
+                              <div className="text-[10px] font-bold text-slate-400 italic">Chưa cập nhật thông tin xe</div>
                             )}
                           </div>
-                        ) : customer.vehicleModel ? (
-                          <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs text-slate-600 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200">
-                            <Bike className="h-3.5 w-3.5" />
-                            <span>
-                              {customer.vehicleModel}
-                              {customer.licensePlate
-                                ? ` • ${customer.licensePlate}`
-                                : ""}
-                            </span>
+                        </div>
+
+                        {/* Stats Grid */}
+                        <div className="px-5 pb-5 grid grid-cols-2 gap-3">
+                          <div className="bg-slate-50 dark:bg-slate-900/30 rounded-2xl p-3 border border-slate-100 dark:border-slate-700/50">
+                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Tổng chi tiêu</div>
+                            <div className="text-base font-black text-slate-900 dark:text-slate-100">{formatCurrency(totalSpent)}</div>
                           </div>
-                        ) : null}
-                        <div className="mt-4 grid grid-cols-4 gap-3 text-sm">
-                          <div>
-                            <p className="text-[11px] uppercase text-slate-500">
-                              Tổng chi
-                            </p>
-                            <p className="text-base font-semibold text-slate-900 dark:text-slate-100">
-                              {formatCurrency(totalSpent)}
-                            </p>
+                          <div className="bg-slate-50 dark:bg-slate-900/30 rounded-2xl p-3 border border-slate-100 dark:border-slate-700/50">
+                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Số lần đến</div>
+                            <div className="text-base font-black text-slate-900 dark:text-slate-100">{visitCount} lần</div>
                           </div>
-                          <div>
-                            <p className="text-[11px] uppercase text-slate-500">
-                              Lần đến
-                            </p>
-                            <p className="text-base font-semibold text-slate-900 dark:text-slate-100">
-                              {visitCount}
-                            </p>
+                          <div className="bg-slate-50 dark:bg-slate-900/30 rounded-2xl p-3 border border-slate-100 dark:border-slate-700/50">
+                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Km hiện tại</div>
+                            <div className="text-base font-black text-blue-600 dark:text-blue-400">
+                              {latestKm ? `${latestKm.toLocaleString()} km` : "—"}
+                            </div>
                           </div>
-                          <div>
-                            <p className="text-[11px] uppercase text-slate-500">
-                              Km hiện tại
-                            </p>
-                            <p className="text-base font-semibold text-blue-600 dark:text-blue-400">
-                              {latestKm
-                                ? `${latestKm.toLocaleString()} km`
-                                : "—"}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-[11px] uppercase text-slate-500">
-                              Cuối cùng
-                            </p>
-                            <p className="text-base font-semibold text-slate-900 dark:text-slate-100">
-                              {lastVisit ? formatDate(lastVisit) : "—"}
-                            </p>
+                          <div className="bg-slate-50 dark:bg-slate-900/30 rounded-2xl p-3 border border-slate-100 dark:border-slate-700/50">
+                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Điểm tích lũy</div>
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-base font-black text-amber-500">⭐ {points.toLocaleString()}</span>
+                            </div>
                           </div>
                         </div>
-                        <div className="mt-3">
-                          <div className="flex items-center justify-between text-[11px] font-semibold text-amber-700 dark:text-amber-300">
-                            <span>Điểm tích luỹ</span>
-                            <span>{points.toLocaleString()}</span>
-                          </div>
-                          <div className="mt-1 h-1.5 rounded-full bg-amber-100 dark:bg-amber-900/50">
+
+                        {/* Loyalty Progress */}
+                        <div className="px-5 pb-5">
+                          <div className="h-1.5 w-full rounded-full bg-slate-100 dark:bg-slate-700 overflow-hidden">
                             <div
-                              className="h-full rounded-full bg-gradient-to-r from-amber-500 via-yellow-400 to-orange-500"
+                              className="h-full rounded-full bg-gradient-to-r from-amber-500 via-yellow-400 to-orange-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]"
                               style={{ width: `${pointsPercent}%` }}
                             ></div>
                           </div>
                         </div>
-                        Chạm để lọc nhanh
-                        <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-dashed border-slate-200 pt-3 dark:border-slate-700">
+
+                        {/* Actions */}
+                        <div className="mt-auto bg-slate-50/50 dark:bg-slate-900/20 p-4 flex items-center gap-2 border-t border-slate-100 dark:border-slate-700/50">
                           <button
                             onClick={() => setViewHistoryCustomer(customer)}
-                            className="rounded-full bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-600 transition-colors hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-300"
+                            className="flex-1 flex items-center justify-center gap-2 h-10 rounded-xl bg-blue-50 dark:bg-blue-900/30 text-xs font-black text-blue-600 dark:text-blue-400 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 dark:hover:text-white transition-all active:scale-95"
                           >
-                            Xem lịch sử
+                            <History className="w-3.5 h-3.5" />
+                            LỊCH SỬ
                           </button>
                           <button
                             onClick={() => setEditCustomer(customer)}
-                            className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-200"
+                            className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition-all active:scale-95"
                           >
-                            Chỉnh sửa
+                            <Edit2 className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => handleDelete(customer.id)}
-                            className="rounded-full bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-600 transition-colors hover:bg-red-100 dark:bg-red-900/30 dark:text-red-300"
+                            className="w-10 h-10 flex items-center justify-center rounded-xl bg-red-50 dark:bg-red-900/20 text-red-500 hover:bg-red-500 hover:text-white transition-all active:scale-95"
                           >
-                            Xóa
+                            <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
                       </div>
@@ -1393,20 +1503,20 @@ const CustomerManager: React.FC = () => {
                   })}
                 </div>
               ) : (
-                <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800">
+                <div className="overflow-x-auto rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800 custom-scrollbar">
                   <table className="min-w-full text-sm">
-                    <thead className="bg-slate-50 text-left text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:bg-slate-900/40 dark:text-slate-300">
+                    <thead className="bg-slate-50/50 text-left text-[11px] font-black uppercase tracking-widest text-slate-400 dark:bg-slate-900/40 border-b border-slate-100 dark:border-slate-700/50">
                       <tr>
-                        <th className="px-4 py-3">Khách hàng</th>
-                        <th className="px-4 py-3">Liên hệ</th>
-                        <th className="px-4 py-3">Xe</th>
-                        <th className="px-4 py-3">Tổng chi</th>
-                        <th className="px-4 py-3">Lần đến</th>
-                        <th className="px-4 py-3">Lần cuối</th>
-                        <th className="px-4 py-3 text-right">Tác vụ</th>
+                        <th className="px-6 py-4">Khách hàng</th>
+                        <th className="px-6 py-4">Liên hệ</th>
+                        <th className="px-6 py-4">Phương tiện</th>
+                        <th className="px-6 py-4">Tổng chi tiêu</th>
+                        <th className="px-6 py-4">Lần đến</th>
+                        <th className="px-6 py-4">Lần cuối</th>
+                        <th className="px-6 py-4 text-right">Thao tác</th>
                       </tr>
                     </thead>
-                    <tbody>
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
                       {displayedCustomers.map((customer) => {
                         const config =
                           (customer.segment &&
@@ -1417,114 +1527,100 @@ const CustomerManager: React.FC = () => {
                         const primaryVehicle =
                           vehicles.find((v) => v.isPrimary) || vehicles[0];
                         const vehicleLabel = primaryVehicle
-                          ? `${primaryVehicle.model || "Không rõ"}${
-                              primaryVehicle.licensePlate
-                                ? ` • ${primaryVehicle.licensePlate}`
-                                : ""
-                            }`
+                          ? `${primaryVehicle.model || "Không rõ"}${primaryVehicle.licensePlate
+                            ? ` • ${primaryVehicle.licensePlate}`
+                            : ""
+                          }`
                           : customer.vehicleModel
-                          ? `${customer.vehicleModel}${
-                              customer.licensePlate
-                                ? ` • ${customer.licensePlate}`
-                                : ""
+                            ? `${customer.vehicleModel}${customer.licensePlate
+                              ? ` • ${customer.licensePlate}`
+                              : ""
                             }`
-                          : "—";
+                            : "—";
+
+                        const stats = customerStatsMap.get(customer.id);
 
                         return (
                           <tr
                             key={customer.id}
-                            className="border-t border-slate-100 text-slate-600 dark:border-slate-700/60 dark:text-slate-300"
+                            className="group hover:bg-blue-50/30 dark:hover:bg-blue-900/10 transition-colors"
                           >
-                            <td className="px-4 py-3 align-top">
-                              <div className="font-semibold text-slate-900 dark:text-slate-100">
-                                {customer.name || "Chưa đặt tên"}
-                              </div>
-                              <span
-                                className={`mt-1 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${config.badgeClass}`}
-                              >
-                                {config.icon} {config.label}
-                              </span>
-                            </td>
-                            <td className="px-4 py-3 align-top">
-                              <div className="font-medium text-slate-900 dark:text-slate-100">
-                                {customer.phone || "—"}
-                              </div>
-                              <div className="text-xs text-slate-500 dark:text-slate-400">
-                                Điểm:{" "}
-                                {(
-                                  customerStatsMap.get(customer.id)
-                                    ?.loyaltyPoints || 0
-                                ).toLocaleString()}
+                            <td className="px-6 py-4">
+                              <div className="flex items-center gap-3">
+                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg shadow-sm ${config.avatarClass}`}>
+                                  {config.icon}
+                                </div>
+                                <div>
+                                  <div className="font-bold text-slate-900 dark:text-slate-100 group-hover:text-blue-600 transition-colors">
+                                    {customer.name || "Chưa đặt tên"}
+                                  </div>
+                                  <span
+                                    className={`mt-1 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-black uppercase border ${config.badgeClass}`}
+                                  >
+                                    {config.label}
+                                  </span>
+                                </div>
                               </div>
                             </td>
-                            <td className="px-4 py-3 align-top text-slate-900 dark:text-slate-100">
-                              {vehicleLabel}
+                            <td className="px-6 py-4">
+                              <div className="flex flex-col gap-1">
+                                <a
+                                  href={`tel:${customer.phone}`}
+                                  className="flex items-center gap-1.5 font-bold text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                                >
+                                  <Phone className="w-3 h-3 text-slate-400" />
+                                  {customer.phone || "—"}
+                                </a>
+                                <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+                                  <Star className="w-3 h-3 text-amber-500 fill-amber-500" />
+                                  {(stats?.loyaltyPoints || 0).toLocaleString()} điểm
+                                </div>
+                              </div>
                             </td>
-                            <td className="px-4 py-3 align-top font-semibold text-slate-900 dark:text-slate-100">
-                              {formatCurrency(
-                                customerStatsMap.get(customer.id)?.totalSpent ||
-                                  0
-                              )}
+                            <td className="px-6 py-4">
+                              <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300 font-medium">
+                                <Bike className="w-4 h-4 text-blue-500" />
+                                {vehicleLabel}
+                              </div>
                             </td>
-                            <td className="px-4 py-3 align-top text-slate-900 dark:text-slate-100">
-                              {customerStatsMap.get(customer.id)?.visitCount ||
-                                0}
+                            <td className="px-6 py-4">
+                              <div className="font-black text-slate-900 dark:text-slate-100">
+                                {formatCurrency(stats?.totalSpent || 0)}
+                              </div>
                             </td>
-                            <td className="px-4 py-3 align-top text-slate-900 dark:text-slate-100">
-                              {customerStatsMap.get(customer.id)?.lastVisit
-                                ? formatDate(
-                                    customerStatsMap.get(customer.id)?.lastVisit
-                                  )
-                                : "—"}
+                            <td className="px-6 py-4">
+                              <div className="inline-flex items-center justify-center px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-700 text-xs font-bold text-slate-700 dark:text-slate-300">
+                                {stats?.visitCount || 0} lần
+                              </div>
                             </td>
-                            <td className="px-4 py-3 align-top">
-                              <div className="flex items-center justify-end gap-2">
+                            <td className="px-6 py-4">
+                              <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400 font-medium">
+                                <Calendar className="w-3.5 h-3.5" />
+                                {stats?.lastVisit ? formatDate(stats.lastVisit) : "—"}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 text-right">
+                              <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                 <button
-                                  onClick={() =>
-                                    setViewHistoryCustomer(customer)
-                                  }
-                                  className="rounded-lg border border-slate-200 p-2 text-slate-500 transition-colors hover:border-blue-500 hover:text-blue-600 dark:border-slate-600 dark:text-slate-400 dark:hover:border-blue-500"
+                                  onClick={() => setViewHistoryCustomer(customer)}
+                                  className="w-9 h-9 flex items-center justify-center rounded-xl bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 hover:bg-blue-600 hover:text-white transition-all active:scale-90"
                                   title="Xem lịch sử"
                                 >
-                                  <svg
-                                    className="h-4 w-4"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                  >
-                                    <path
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      strokeWidth={2}
-                                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                                    />
-                                  </svg>
+                                  <History className="w-4 h-4" />
                                 </button>
                                 <button
                                   onClick={() => setEditCustomer(customer)}
-                                  className="rounded-lg border border-slate-200 p-2 text-slate-500 transition-colors hover:border-blue-500 hover:text-blue-600 dark:border-slate-600 dark:text-slate-400 dark:hover:border-blue-500"
+                                  className="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 transition-all active:scale-90"
                                   title="Chỉnh sửa"
                                 >
-                                  <svg
-                                    className="h-4 w-4"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                  >
-                                    <path
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      strokeWidth={2}
-                                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                                    />
-                                  </svg>
+                                  <Edit2 className="w-4 h-4" />
                                 </button>
                                 <button
                                   onClick={() => handleDelete(customer.id)}
-                                  className="rounded-lg border border-red-200 p-2 text-red-500 transition-colors hover:bg-red-50 dark:border-red-900/60 dark:text-red-300 dark:hover:bg-red-900/40"
+                                  className="w-9 h-9 flex items-center justify-center rounded-xl bg-red-50 dark:bg-red-900/20 text-red-500 hover:bg-red-500 hover:text-white transition-all active:scale-90"
                                   title="Xóa"
                                 >
-                                  <TrashIcon className="h-4 w-4" />
+                                  <Trash2 className="w-4 h-4" />
                                 </button>
                               </div>
                             </td>
@@ -1885,171 +1981,232 @@ const CustomerModal: React.FC<{
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className="bg-slate-800 rounded-xl shadow-2xl max-w-md w-full p-6 border border-slate-700">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-semibold text-white">
-            {customer.id ? "Sửa khách hàng" : "Thêm khách hàng"}
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[70] p-0 md:p-4 backdrop-blur-sm">
+      <div className="bg-white dark:bg-slate-800 md:rounded-2xl w-full h-full md:h-auto md:max-w-xl overflow-hidden flex flex-col shadow-2xl border-0 md:border border-slate-200 dark:border-slate-700">
+        {/* Header - Desktop */}
+        <div className="hidden md:flex items-center justify-between p-6 border-b border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50">
+          <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+            <User className="w-5 h-5 text-blue-500" />
+            {customer.id ? "Chỉnh sửa khách hàng" : "Thêm khách hàng mới"}
           </h2>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-white transition-colors"
+            className="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition-colors text-slate-500"
           >
-            <XMarkIcon className="w-6 h-6" />
+            <X className="w-6 h-6" />
           </button>
         </div>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">
-              Tên khách
-            </label>
-            <input
-              type="text"
-              placeholder="Nhập tên khách"
-              required
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full px-4 py-3 bg-slate-900 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-            />
+
+        {/* Header - Mobile */}
+        <div className="flex md:hidden flex-col bg-[#1e1e2d] border-b border-slate-700/50">
+          <div className="flex items-center justify-between p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center border border-blue-500/30">
+                <User className="w-5 h-5 text-blue-400" />
+              </div>
+              <h2 className="text-base font-bold text-white">
+                {customer.id ? "Sửa khách hàng" : "Thêm khách hàng"}
+              </h2>
+            </div>
+            <button
+              onClick={onClose}
+              className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-800 text-slate-400 active:scale-90 transition-transform"
+            >
+              <X className="w-5 h-5" />
+            </button>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">
-              Số điện thoại
-            </label>
-            <input
-              type="text"
-              placeholder="VD: 09xxxx"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              className="w-full px-4 py-3 bg-slate-900 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-            />
+        </div>
+
+        {/* Body */}
+        <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 bg-slate-50/30 dark:bg-slate-900/10 custom-scrollbar">
+          {/* Basic Info Section */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-wider">
+              <UsersIcon className="w-3.5 h-3.5" />
+              Thông tin cơ bản
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 ml-1">
+                  Tên khách hàng <span className="text-red-500">*</span>
+                </label>
+                <div className="relative group">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                    <User className="h-4 w-4 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Nhập tên khách hàng..."
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="w-full pl-10 pr-4 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all shadow-sm"
+                  />
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 ml-1">
+                  Số điện thoại
+                </label>
+                <div className="relative group">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                    <Phone className="h-4 w-4 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
+                  </div>
+                  <input
+                    type="tel"
+                    placeholder="VD: 0912345678"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    className="w-full pl-10 pr-4 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all shadow-sm"
+                  />
+                </div>
+              </div>
+            </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">
-              Danh sách xe
-            </label>
-            {vehicles.length > 0 && (
-              <div className="space-y-2 mb-3">
-                {vehicles.map((vehicle) => (
-                  <div
-                    key={vehicle.id}
-                    className="flex items-center gap-2 p-2 bg-slate-700 rounded-lg"
-                  >
+
+          {/* Vehicles Section */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-wider">
+                <Bike className="w-3.5 h-3.5" />
+                Danh sách xe ({vehicles.length})
+              </div>
+            </div>
+
+            {/* Vehicle List */}
+            <div className="space-y-3">
+              {vehicles.map((vehicle) => (
+                <div
+                  key={vehicle.id}
+                  className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-4 flex items-center justify-between group hover:border-blue-500/30 transition-all shadow-sm"
+                >
+                  <div className="flex items-center gap-3">
                     <button
                       type="button"
                       onClick={() => setPrimaryVehicle(vehicle.id)}
-                      className={`flex-shrink-0 ${
-                        vehicle.isPrimary
-                          ? "text-yellow-400"
-                          : "text-slate-500 hover:text-yellow-400"
-                      }`}
-                      title={
-                        vehicle.isPrimary ? "Xe chính" : "Đặt làm xe chính"
-                      }
+                      className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${vehicle.isPrimary
+                        ? "bg-amber-100 dark:bg-amber-900/30 text-amber-500 border border-amber-200 dark:border-amber-800/50"
+                        : "bg-slate-100 dark:bg-slate-700 text-slate-400 hover:text-amber-500 border border-slate-200 dark:border-slate-600"
+                        }`}
+                      title={vehicle.isPrimary ? "Xe chính" : "Đặt làm xe chính"}
                     >
-                      <svg
-                        className="w-5 h-5"
-                        fill="currentColor"
-                        viewBox="0 0 20 20"
-                      >
-                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                      </svg>
+                      <Star className={`w-5 h-5 ${vehicle.isPrimary ? "fill-current" : ""}`} />
                     </button>
-                    <Bike className="w-4 h-4 text-blue-400 flex-shrink-0" />
-                    <div className="flex-1 text-sm text-white">
-                      <span className="font-medium">
-                        {vehicle.model || "—"}
-                      </span>
-                      {vehicle.licensePlate && (
-                        <span className="text-slate-400 ml-2">
-                          • {vehicle.licensePlate}
-                        </span>
-                      )}
+                    <div>
+                      <div className="font-bold text-slate-900 dark:text-slate-100">
+                        {vehicle.model || "Chưa rõ dòng xe"}
+                      </div>
+                      <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1.5 mt-0.5">
+                        <MapPin className="w-3 h-3" />
+                        {vehicle.licensePlate || "Chưa có biển số"}
+                      </div>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => removeVehicle(vehicle.id)}
-                      className="flex-shrink-0 text-red-400 hover:text-red-300"
-                      title="Xóa xe"
-                    >
-                      <TrashIcon className="w-4 h-4" />
-                    </button>
                   </div>
-                ))}
+                  <button
+                    type="button"
+                    onClick={() => removeVehicle(vehicle.id)}
+                    className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all opacity-0 group-hover:opacity-100 md:opacity-100"
+                  >
+                    <TrashIcon className="w-5 h-5" />
+                  </button>
+                </div>
+              ))}
+
+              {vehicles.length === 0 && (
+                <div className="text-center py-8 bg-slate-100/50 dark:bg-slate-900/30 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-700">
+                  <Bike className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                  <p className="text-sm text-slate-500 dark:text-slate-400">Chưa có xe nào được thêm</p>
+                </div>
+              )}
+            </div>
+
+            {/* Add Vehicle Form */}
+            <div className="bg-blue-50/50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-900/30 rounded-2xl p-4 space-y-4">
+              <div className="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider">
+                Thêm xe mới
               </div>
-            )}
-            <div className="grid grid-cols-2 gap-2">
-              <div className="relative">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Dòng xe (VD: SH 150i...)"
+                    value={newVehicle.model}
+                    onChange={(e) => {
+                      setNewVehicle({ ...newVehicle, model: e.target.value });
+                      setShowModelSuggestions(true);
+                    }}
+                    onFocus={() => setShowModelSuggestions(true)}
+                    className="w-full px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                  />
+                  {showModelSuggestions && filteredModels.length > 0 && (
+                    <div className="absolute left-0 right-0 top-full mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl z-10 max-h-48 overflow-y-auto custom-scrollbar">
+                      {filteredModels.map((m) => (
+                        <button
+                          key={m}
+                          type="button"
+                          onClick={() => {
+                            setNewVehicle({ ...newVehicle, model: m });
+                            setShowModelSuggestions(false);
+                          }}
+                          className="w-full text-left px-4 py-2 text-sm hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors border-b border-slate-100 dark:border-slate-700 last:border-0"
+                        >
+                          {m}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
                 <input
                   type="text"
-                  placeholder="Dòng xe"
-                  value={newVehicle.model}
-                  onChange={(e) => {
-                    setNewVehicle({ ...newVehicle, model: e.target.value });
-                    setShowModelSuggestions(true);
-                  }}
-                  onFocus={() => setShowModelSuggestions(true)}
-                  onBlur={() =>
-                    setTimeout(() => setShowModelSuggestions(false), 200)
-                  }
-                  className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Biển số (VD: 29A1-12345)"
+                  value={newVehicle.licensePlate}
+                  onChange={(e) => setNewVehicle({ ...newVehicle, licensePlate: e.target.value.toUpperCase() })}
+                  className="w-full px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                 />
-                {showModelSuggestions && filteredModels.length > 0 && (
-                  <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-slate-800 border border-slate-600 rounded-lg shadow-xl max-h-48 overflow-y-auto">
-                    {filteredModels.map((model, idx) => (
-                      <button
-                        key={idx}
-                        type="button"
-                        onClick={() => {
-                          setNewVehicle({ ...newVehicle, model });
-                          setShowModelSuggestions(false);
-                        }}
-                        className="w-full px-3 py-2 text-left text-sm text-slate-200 hover:bg-blue-600 hover:text-white transition-colors"
-                      >
-                        {model}
-                      </button>
-                    ))}
-                  </div>
-                )}
               </div>
-              <input
-                type="text"
-                placeholder="Biển số"
-                value={newVehicle.licensePlate}
-                onChange={(e) =>
-                  setNewVehicle({
-                    ...newVehicle,
-                    licensePlate: e.target.value,
-                  })
-                }
-                className="px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
+              <button
+                type="button"
+                onClick={addVehicle}
+                disabled={!newVehicle.model.trim() && !newVehicle.licensePlate.trim()}
+                className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 dark:disabled:bg-slate-700 text-white font-bold rounded-xl text-sm transition-all active:scale-95 flex items-center justify-center gap-2"
+              >
+                <PlusIcon className="w-4 h-4" />
+                Thêm vào danh sách
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={addVehicle}
-              className="mt-2 w-full px-3 py-2 bg-green-600 hover:bg-green-700 text-white text-sm rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
-            >
-              <PlusIcon className="w-4 h-4" />
-              Thêm xe
-            </button>
           </div>
-          <div className="flex gap-3 justify-end pt-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-6 py-2.5 bg-slate-700 hover:bg-slate-600 text-white border border-slate-600 rounded-lg font-medium transition-colors"
-            >
-              Hủy
-            </button>
-            <button
-              type="submit"
-              className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
-            >
-              Lưu
-            </button>
-          </div>
-        </form>
+        </div>
+
+        {/* Footer - Desktop */}
+        <div className="hidden md:flex p-4 border-t border-slate-200 dark:border-slate-700 justify-end gap-3 bg-slate-50/50 dark:bg-slate-800/50">
+          <button
+            onClick={onClose}
+            className="px-6 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-bold rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 transition-all"
+          >
+            Hủy
+          </button>
+          <button
+            onClick={handleSubmit}
+            className="px-8 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-all active:scale-95 shadow-lg shadow-blue-200 dark:shadow-none"
+          >
+            Lưu khách hàng
+          </button>
+        </div>
+
+        {/* Footer - Mobile (Sticky) */}
+        <div className="flex md:hidden p-4 border-t border-slate-700/30 bg-[#1e1e2d] pb-safe gap-3">
+          <button
+            onClick={onClose}
+            className="flex-1 py-4 bg-slate-800 text-white font-bold rounded-2xl active:scale-[0.98] transition-all border border-slate-700/50"
+          >
+            Hủy
+          </button>
+          <button
+            onClick={handleSubmit}
+            className="flex-[2] py-4 bg-blue-600 text-white font-bold rounded-2xl active:scale-[0.98] transition-all shadow-lg shadow-blue-500/20"
+          >
+            Lưu thay đổi
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -2215,8 +2372,8 @@ const SuppliersList: React.FC<{
                   <td className="px-4 py-3 text-slate-500 dark:text-slate-400 text-sm">
                     {supplier.created_at
                       ? new Date(supplier.created_at).toLocaleDateString(
-                          "vi-VN"
-                        )
+                        "vi-VN"
+                      )
                       : "-"}
                   </td>
                   <td className="px-4 py-3 text-center">

@@ -12,6 +12,10 @@ import {
   User,
   Building,
   FileText,
+  ChevronDown,
+  ChevronUp,
+  ArrowRight,
+  Info,
 } from "lucide-react";
 import {
   usePurchaseOrder,
@@ -204,10 +208,10 @@ export const PODetailView: React.FC<PODetailViewProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-hidden flex flex-col border border-slate-200 dark:border-slate-700">
-        {/* Header */}
-        <div className="flex items-center justify-between p-5 border-b border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50">
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-0 md:p-4 backdrop-blur-sm">
+      <div className="bg-white dark:bg-slate-800 md:rounded-2xl shadow-2xl max-w-5xl w-full h-full md:h-auto md:max-h-[90vh] overflow-hidden flex flex-col border-0 md:border border-slate-200 dark:border-slate-700">
+        {/* Header - Desktop */}
+        <div className="hidden md:flex items-center justify-between p-5 border-b border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50">
           <div className="flex items-center gap-4">
             <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-xl">
               <Package className="w-6 h-6 text-blue-600 dark:text-blue-400" />
@@ -278,10 +282,42 @@ export const PODetailView: React.FC<PODetailViewProps> = ({
           </button>
         </div>
 
+        {/* Header - Mobile */}
+        <div className="flex md:hidden flex-col bg-[#1e1e2d] border-b border-slate-700/50">
+          <div className="flex items-center justify-between p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center">
+                <Package className="w-5 h-5 text-blue-400" />
+              </div>
+              <div>
+                <div className="text-lg font-black text-white tracking-tight">
+                  {po.po_number}
+                </div>
+                <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                  Chi tiết đơn nhập hàng
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <span
+                className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${statusConfig.bgColor} ${statusConfig.color} border border-current/10`}
+              >
+                {statusConfig.label}
+              </span>
+              <button
+                onClick={onClose}
+                className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-800 text-slate-400"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+
         {/* Body */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-slate-50/30 dark:bg-slate-900/10">
-          {/* Info Grid - 3 Columns */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 md:y-6 bg-slate-50/30 dark:bg-slate-900/10">
+          {/* Info Grid - Desktop */}
+          <div className="hidden md:grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Column 1: Supplier & Branch */}
             <div className="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm space-y-4">
               <div className="flex items-start gap-3">
@@ -385,8 +421,93 @@ export const PODetailView: React.FC<PODetailViewProps> = ({
             </div>
           </div>
 
-          {/* Items Table Section */}
-          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+          {/* Info Cards - Mobile */}
+          <div className="flex md:hidden flex-col gap-3">
+            {/* Supplier Card */}
+            <div className="bg-[#1e1e2d] p-4 rounded-2xl border border-slate-700/50 shadow-lg">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center">
+                  <Building className="w-4 h-4 text-purple-400" />
+                </div>
+                <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                  Nhà cung cấp
+                </div>
+              </div>
+              <div className="text-lg font-bold text-white mb-1">
+                {po.supplier?.name || "—"}
+              </div>
+              <div className="flex items-center gap-2 text-xs text-slate-400">
+                <span className="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700">
+                  CN: {po.branch_id}
+                </span>
+              </div>
+            </div>
+
+            {/* Dates Card */}
+            <div className="bg-[#1e1e2d] p-4 rounded-2xl border border-slate-700/50 shadow-lg">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                  <Calendar className="w-4 h-4 text-blue-400" />
+                </div>
+                <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                  Thời gian đơn hàng
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <div className="text-[10px] text-slate-500 uppercase mb-1">Ngày đặt</div>
+                  <div className="text-sm font-bold text-white">
+                    {po.order_date ? formatDate(po.order_date) : "—"}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-[10px] text-slate-500 uppercase mb-1">Dự kiến giao</div>
+                  <div className="text-sm font-bold text-white">
+                    {po.expected_date ? formatDate(po.expected_date) : "—"}
+                  </div>
+                </div>
+              </div>
+              {po.received_date && (
+                <div className="mt-3 pt-3 border-t border-slate-700/50">
+                  <div className="text-[10px] text-slate-500 uppercase mb-1">Ngày nhận hàng</div>
+                  <div className="text-sm font-bold text-green-400">
+                    {formatDate(po.received_date)}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Creator & Notes Card */}
+            <div className="bg-[#1e1e2d] p-4 rounded-2xl border border-slate-700/50 shadow-lg">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-8 h-8 rounded-lg bg-orange-500/10 flex items-center justify-center">
+                  <User className="w-4 h-4 text-orange-400" />
+                </div>
+                <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                  Người tạo & Ghi chú
+                </div>
+              </div>
+              <div className="text-sm font-bold text-white mb-2">
+                {po.creator?.name || po.creator?.email || "—"}
+              </div>
+              {(po.notes || po.cancellation_reason) && (
+                <div className="p-3 rounded-xl bg-slate-800/50 border border-slate-700/30">
+                  {po.cancellation_reason ? (
+                    <div className="text-xs text-red-400 italic">
+                      "Lý do hủy: {po.cancellation_reason}"
+                    </div>
+                  ) : (
+                    <div className="text-xs text-slate-400 italic">
+                      "{po.notes}"
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Items Table Section - Desktop */}
+          <div className="hidden md:block bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
             <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50">
               <h3 className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
                 <Package className="w-5 h-5 text-slate-400" />
@@ -443,7 +564,7 @@ export const PODetailView: React.FC<PODetailViewProps> = ({
               </table>
             </div>
 
-            {/* Summary Footer */}
+            {/* Summary Footer - Desktop */}
             <div className="bg-slate-50 dark:bg-slate-900/50 px-6 py-4 border-t border-slate-200 dark:border-slate-700">
               <div className="flex flex-col items-end gap-2 max-w-xs ml-auto">
                 {/* Total Amount */}
@@ -528,10 +649,138 @@ export const PODetailView: React.FC<PODetailViewProps> = ({
               </div>
             </div>
           </div>
+
+          {/* Items List - Mobile */}
+          <div className="flex md:hidden flex-col gap-3">
+            <div className="flex items-center justify-between px-1">
+              <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                <Package className="w-3 h-3" />
+                Danh sách sản phẩm ({items.length})
+              </h3>
+            </div>
+            {items.map((item) => (
+              <div key={item.id} className="bg-[#1e1e2d] p-4 rounded-2xl border border-slate-700/50 shadow-lg">
+                <div className="flex items-start justify-between gap-3 mb-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-bold text-white leading-tight mb-1 truncate">
+                      {item.part?.name || "—"}
+                    </div>
+                    <div className="text-[10px] font-mono text-slate-500">
+                      {item.part?.barcode || item.part?.sku}
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-[10px] text-slate-500 uppercase mb-0.5">Đơn giá</div>
+                    <div className="text-sm font-bold text-blue-400">
+                      {formatCurrency(item.unit_price)}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 p-3 rounded-xl bg-slate-800/30 border border-slate-700/30">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] text-slate-500 uppercase">SL đặt:</span>
+                    <span className="text-xs font-bold text-white">{item.quantity_ordered}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] text-slate-500 uppercase">SL nhận:</span>
+                    <span
+                      className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${item.quantity_received === item.quantity_ordered
+                        ? "bg-green-500/10 text-green-400 border border-green-500/20"
+                        : item.quantity_received > 0
+                          ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
+                          : "bg-slate-700/50 text-slate-500 border border-slate-600/30"
+                        }`}
+                    >
+                      {item.quantity_received}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="mt-3 flex items-center justify-between pt-3 border-t border-slate-700/50">
+                  <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Thành tiền</div>
+                  <div className="text-base font-black text-white">
+                    {formatCurrency(item.total_price || 0)}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Summary Section - Mobile */}
+          <div className="flex md:hidden flex-col bg-[#1e1e2d] p-4 rounded-2xl border border-slate-700/50 shadow-xl space-y-3">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-slate-500 font-bold uppercase tracking-wider">Tổng tiền hàng</span>
+              <span className="text-white font-bold">{formatCurrency(totalAmount)}</span>
+            </div>
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-slate-500 font-bold uppercase tracking-wider">Giảm giá</span>
+              <div className="flex items-center gap-2">
+                {isEditingCosts ? (
+                  <input
+                    type="number"
+                    value={editDiscount}
+                    onChange={(e) => setEditDiscount(Number(e.target.value))}
+                    className="w-20 px-2 py-1 text-right text-xs border border-slate-700 rounded bg-slate-800 text-white"
+                  />
+                ) : (
+                  <span className={`font-bold ${discountAmount > 0 ? "text-red-400" : "text-white"}`}>
+                    {discountAmount > 0 ? "-" : ""}{formatCurrency(discountAmount)}
+                  </span>
+                )}
+              </div>
+            </div>
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-slate-500 font-bold uppercase tracking-wider">Phí vận chuyển</span>
+              {isEditingCosts ? (
+                <input
+                  type="number"
+                  value={editShipping}
+                  onChange={(e) => setEditShipping(Number(e.target.value))}
+                  className="w-20 px-2 py-1 text-right text-xs border border-slate-700 rounded bg-slate-800 text-white"
+                />
+              ) : (
+                <span className="text-white font-bold">{formatCurrency(shippingFee)}</span>
+              )}
+            </div>
+            <div className="pt-3 border-t border-slate-700/50 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Thành tiền</span>
+                {!isEditingCosts && (
+                  <button
+                    onClick={() => setIsEditingCosts(true)}
+                    className="w-6 h-6 flex items-center justify-center rounded-full bg-slate-800 text-slate-500"
+                  >
+                    <Edit2 className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
+              {isEditingCosts ? (
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleUpdateCosts}
+                    className="p-1.5 bg-green-500/10 text-green-400 rounded-lg border border-green-500/20"
+                  >
+                    <Save className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => setIsEditingCosts(false)}
+                    className="p-1.5 bg-slate-800 text-slate-400 rounded-lg border border-slate-700"
+                  >
+                    <XCircle className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : (
+                <span className="text-xl font-black text-blue-400">
+                  {formatCurrency(finalAmount)}
+                </span>
+              )}
+            </div>
+          </div>
         </div>
 
-        {/* Footer Actions */}
-        <div className="flex items-center justify-between gap-4 p-5 border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
+        {/* Footer Actions - Desktop */}
+        <div className="hidden md:flex items-center justify-between gap-4 p-5 border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
           <div>
             {po.status === "draft" && (
               <button
@@ -571,6 +820,36 @@ export const PODetailView: React.FC<PODetailViewProps> = ({
               </button>
             )}
           </div>
+        </div>
+
+        {/* Footer Actions - Mobile */}
+        <div className="flex md:hidden items-center gap-3 p-4 bg-[#1e1e2d] border-t border-slate-700/50 pb-safe">
+          <button
+            onClick={onClose}
+            className="flex-1 py-3.5 rounded-xl bg-slate-800 text-slate-300 font-bold text-sm active:scale-95 transition-all"
+          >
+            Đóng
+          </button>
+          {po.status === "draft" && (
+            <button
+              onClick={handleMarkAsOrdered}
+              disabled={updatePOMutation.isPending}
+              className="flex-[2] py-3.5 rounded-xl bg-blue-600 text-white font-bold text-sm shadow-lg shadow-blue-500/20 active:scale-95 transition-all flex items-center justify-center gap-2"
+            >
+              <CheckCircle className="w-4 h-4" />
+              Xác nhận đặt hàng
+            </button>
+          )}
+          {po.status === "ordered" && (
+            <button
+              onClick={handleConvertToReceipt}
+              disabled={convertMutation.isPending}
+              className="flex-[2] py-3.5 rounded-xl bg-green-600 text-white font-bold text-sm shadow-lg shadow-green-500/20 active:scale-95 transition-all flex items-center justify-center gap-2"
+            >
+              <FileCheck className="w-4 h-4" />
+              {convertMutation.isPending ? "Đang xử lý..." : "Nhập kho"}
+            </button>
+          )}
         </div>
       </div>
 

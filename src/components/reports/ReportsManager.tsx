@@ -37,6 +37,7 @@ import {
   exportDetailedInventoryReport,
 } from "../../utils/excelExport";
 import { DailyDetailModal } from "./DailyDetailModal";
+import { ReportsManagerMobile } from "./ReportsManagerMobile";
 
 
 type ReportTab =
@@ -774,142 +775,27 @@ const ReportsManager: React.FC = () => {
 
   return (
     <div className="space-y-3">
-      {/* Mobile Controls */}
-      <div className="md:hidden space-y-2 mb-3">
-        {/* Report Type Selector */}
-        <div className="bg-white dark:bg-slate-800 p-2 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm">
-          <label className="text-[10px] font-medium text-slate-500 dark:text-slate-400 mb-1.5 block uppercase tracking-wider">
-            Loại báo cáo
-          </label>
-          <div className="relative">
-            <select
-              value={activeTab}
-              onChange={(e) => setActiveTab(e.target.value as ReportTab)}
-              className="w-full appearance-none p-2 pl-8 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
-            >
-              <option value="revenue">Doanh thu</option>
-              <option value="cashflow">Thu chi</option>
-              <option value="inventory">Tồn kho</option>
-              <option value="payroll">Lương nhân viên</option>
-              <option value="debt">Công nợ</option>
-            </select>
-            <div className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-500 dark:text-slate-400 pointer-events-none">
-              {activeTab === "revenue" && <DollarSign className="w-4 h-4" />}
-              {activeTab === "cashflow" && <Wallet className="w-4 h-4" />}
-              {activeTab === "inventory" && <Boxes className="w-4 h-4" />}
-              {activeTab === "payroll" && (
-                <BriefcaseBusiness className="w-4 h-4" />
-              )}
-              {activeTab === "debt" && <ClipboardList className="w-4 h-4" />}
-            </div>
-            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 dark:text-slate-400 pointer-events-none">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="m6 9 6 6 6-6" />
-              </svg>
-            </div>
-          </div>
-        </div>
-
-        {/* Date Range Selector */}
-        <div className="bg-white dark:bg-slate-800 p-2 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm">
-          <label className="text-[10px] font-medium text-slate-500 dark:text-slate-400 mb-1.5 block uppercase tracking-wider">
-            Thời gian
-          </label>
-          <div className="flex gap-2 flex-wrap">
-            <div className="relative flex-1 min-w-[150px]">
-              <select
-                value={dateRange}
-                onChange={(e) => setDateRange(e.target.value as DateRange)}
-                className="w-full appearance-none p-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
-              >
-                <option value="today">Hôm nay</option>
-                <option value="week">7 ngày qua</option>
-                <option value="month">Tháng</option>
-                <option value="quarter">Quý này</option>
-                <option value="year">Năm nay</option>
-                <option value="custom">Tùy chỉnh</option>
-              </select>
-              <div className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 dark:text-slate-400 pointer-events-none">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="m6 9 6 6 6-6" />
-                </svg>
-              </div>
-            </div>
-
-            <button
-              onClick={exportToExcel}
-              className="px-4 py-2 bg-emerald-600 text-white rounded-lg shadow-sm hover:bg-emerald-700 active:scale-95 transition-all flex items-center justify-center gap-2 font-medium text-sm whitespace-nowrap"
-              aria-label="Xuất Excel"
-            >
-              <FileSpreadsheet className="w-5 h-5" />
-            </button>
-          </div>
-
-          {dateRange === "month" && (
-            <div className="grid grid-cols-6 gap-2 mt-3 animate-in fade-in slide-in-from-top-2 duration-200">
-              {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => (
-                <button
-                  key={month}
-                  onClick={() => setSelectedMonth(month)}
-                  className={`p-2 rounded-lg text-sm font-medium transition-all ${selectedMonth === month
-                    ? "bg-blue-600 text-white shadow-md scale-105"
-                    : "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-blue-100 dark:hover:bg-blue-900/30 hover:scale-105"
-                    }`}
-                >
-                  Tháng {month}
-                </button>
-              ))}
-            </div>
-          )}
-
-          {dateRange === "custom" && (
-            <div className="grid grid-cols-2 gap-2 mt-3 animate-in fade-in slide-in-from-top-2 duration-200">
-              <div>
-                <label className="text-[10px] text-slate-500 dark:text-slate-400 mb-1 block">
-                  Từ ngày
-                </label>
-                <input
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  className="w-full p-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
-                />
-              </div>
-              <div>
-                <label className="text-[10px] text-slate-500 dark:text-slate-400 mb-1 block">
-                  Đến ngày
-                </label>
-                <input
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  className="w-full p-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
-                />
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
+      {/* Mobile View - New Component */}
+      <ReportsManagerMobile
+        revenueReport={revenueReport}
+        cashflowReport={cashflowReport}
+        inventoryReport={inventoryReport}
+        payrollReport={payrollReport}
+        debtReport={debtReport}
+        dateRange={dateRange}
+        setDateRange={setDateRange}
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        onExportExcel={exportToExcel}
+        selectedMonth={selectedMonth}
+        setSelectedMonth={setSelectedMonth}
+        startDate={startDate}
+        setStartDate={setStartDate}
+        endDate={endDate}
+        setEndDate={setEndDate}
+        onDateClick={setSelectedDate}
+        cashTotals={cashTotals}
+      />
 
       {/* Desktop Controls - Hidden on Mobile */}
       <div className="hidden md:flex items-center gap-2 flex-wrap">
@@ -1080,8 +966,8 @@ const ReportsManager: React.FC = () => {
         </div>
       </div>
 
-      {/* Report Content */}
-      <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-4">
+      {/* Report Content - Desktop Only */}
+      <div className="hidden md:block bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-4">
         {activeTab === "revenue" && (
           <div className="space-y-4">
             {salesLoading && (

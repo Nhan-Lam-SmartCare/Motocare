@@ -1,10 +1,15 @@
 import React, { useState, useMemo, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Plus, Search, Trash2 } from "lucide-react";
 import { useSuppliers } from "../../../hooks/useSuppliers";
+import { supabase } from "../../../supabaseClient";
 import { showToast } from "../../../utils/toast";
 import { formatCurrency } from "../../../utils/format";
 import FormattedNumberInput from "../../common/FormattedNumberInput";
 import type { Part, InventoryTransaction } from "../../../types";
+import SupplierModal from "./SupplierModal";
+import AddProductToReceiptModal from "./AddProductToReceiptModal";
+
 const EditReceiptModal: React.FC<{
   receipt: {
     receiptCode: string;
@@ -29,6 +34,7 @@ const EditReceiptModal: React.FC<{
   );
   const [showAddProductModal, setShowAddProductModal] = useState(false);
   const [editingItemIndex, setEditingItemIndex] = useState<number | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Fetch suppliers from database
   const { data: allSuppliers = [] } = useQuery({
@@ -57,6 +63,7 @@ const EditReceiptModal: React.FC<{
       unitPrice: item.unitPrice || 0,
       totalPrice: item.quantity * (item.unitPrice || 0),
       notes: item.notes || "",
+      sku: (item as any).sku || "", // Assuming sku might be in item or we need to fetch it
     }))
   );
   const [payments, setPayments] = useState([
@@ -172,30 +179,62 @@ const EditReceiptModal: React.FC<{
   };
 
   const handleItemMenu = (index: number) => {
-    if (confirm("B�n c� mu�n x�a s�n ph�m n�y?")) {
+    if (confirm("Bạn có muốn xóa sản phẩm này?")) {
       removeItem(index);
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!supplier) {
-      showToast.error("Vui l�ng ch�n nh� cung c�p");
+      showToast.error("Vui lòng chọn nhà cung cấp");
       return;
     }
     if (items.some((item) => item.quantity <= 0)) {
-      showToast.error("S� l��ng ph�i l�:n h�n 0");
+      showToast.error("Số lượng phải lớn hơn 0");
       return;
     }
-    onSave({ supplier, supplierPhone, items, payments, isPaid });
+
+    setIsSubmitting(true);
+    try {
+      await onSave({ supplier, supplierPhone, items, payments, isPaid });
+    } catch (error) {
+      console.error("Error saving receipt:", error);
+      // onSave usually handles the toast, but we ensure loading state is reset
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white dark:bg-slate-800 rounded-lg w-full max-w-3xl max-h-[90vh] overflow-y-auto">
         <form onSubmit={handleSubmit}>
-          {/* Header */}
-          <div className="sticky top-0 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 p-4 flex justify-between items-center">
+          {/* Mobile Header V2 */}
+          <div className="sm:hidden sticky top-0 bg-slate-50 dark:bg-slate-900 z-20 px-4 py-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-start">
+            <div>
+              <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+                Chỉnh sửa phiếu
+              </h3>
+              <div className="flex items-center gap-2 text-xs text-slate-400 mt-1">
+                <span className="font-mono bg-slate-200 dark:bg-slate-800 px-1.5 py-0.5 rounded text-slate-600 dark:text-slate-300 font-medium">
+                  {receipt.receiptCode}
+                </span>
+                <span>•</span>
+                <span>{new Date(receipt.date).toLocaleDateString("vi-VN")}</span>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="p-2 bg-white dark:bg-slate-800 rounded-full shadow-sm text-slate-400 hover:text-slate-600 border border-slate-100 dark:border-slate-700"
+            >
+              ✕
+            </button>
+          </div>
+
+          {/* Desktop Header */}
+          <div className="hidden sm:flex sticky top-0 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 p-4 justify-between items-center z-10">
             <div>
               <div className="flex items-center gap-2">
                 <svg
@@ -212,7 +251,7 @@ const EditReceiptModal: React.FC<{
                   />
                 </svg>
                 <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-                  [Ch�0nh s�a] Phi�u Nh�p Kho {receipt.receiptCode}
+                  [Chỉnh sửa] Phiếu Nhập Kho {receipt.receiptCode}
                 </h3>
               </div>
               <div className="text-sm text-slate-500 dark:text-slate-400 mt-1">
@@ -232,16 +271,51 @@ const EditReceiptModal: React.FC<{
               onClick={onClose}
               className="text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 text-2xl w-8 h-8 flex items-center justify-center rounded hover:bg-slate-100 dark:hover:bg-slate-700"
             >
-              �
+              ✕
             </button>
           </div>
 
           {/* Body */}
-          <div className="p-6 space-y-6">
-            {/* Supplier Section */}
-            <div>
+          <div className="p-4 sm:p-6 space-y-6 bg-slate-50 dark:bg-slate-900 sm:bg-white sm:dark:bg-slate-800 min-h-[calc(100vh-140px)] sm:min-h-0">
+
+            {/* Mobile Supplier V3 - With Accent */}
+            <div className="sm:hidden">
+              <div className="bg-white dark:bg-slate-800 rounded-xl overflow-hidden shadow-md border-l-4 border-l-blue-500">
+                <div className="p-4 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-11 h-11 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/30">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <div className="text-xs text-slate-400 uppercase tracking-wider font-medium">Nhà cung cấp</div>
+                      <div className="text-base font-bold text-slate-900 dark:text-slate-100 mt-0.5">
+                        {supplier || "Chưa chọn"}
+                      </div>
+                      {supplierPhone && <div className="text-xs text-slate-400 mt-0.5">{supplierPhone}</div>}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSupplierModalMode("edit");
+                      setShowSupplierModal(true);
+                    }}
+                    className="w-9 h-9 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-all"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Desktop Supplier Section */}
+            <div className="hidden sm:block">
               <label className="block text-base font-medium text-teal-600 dark:text-teal-400 mb-2">
-                Nh� cung c�p:
+                Nhà cung cấp:
               </label>
               <div className="flex gap-2">
                 <div className="flex-1 relative supplier-dropdown-container">
@@ -253,7 +327,7 @@ const EditReceiptModal: React.FC<{
                       setShowSupplierDropdown(true);
                     }}
                     onFocus={() => setShowSupplierDropdown(true)}
-                    placeholder="T�m ki�m v� ch�n m�"t nh� cung c�p"
+                    placeholder="Tìm kiếm và chọn một nhà cung cấp"
                     className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
                   />
                   {supplierSearchTerm && (
@@ -266,7 +340,7 @@ const EditReceiptModal: React.FC<{
                       }}
                       className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
                     >
-                      �
+                      ✕
                     </button>
                   )}
                   {/* Supplier Dropdown */}
@@ -315,7 +389,7 @@ const EditReceiptModal: React.FC<{
                       d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
                     />
                   </svg>
-                  Ch�0nh s�a
+                  Chỉnh sửa
                 </button>
                 <button
                   type="button"
@@ -323,16 +397,34 @@ const EditReceiptModal: React.FC<{
                   className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg flex items-center gap-2"
                 >
                   <span className="text-xl">+</span>
-                  Th�m m�:i
+                  Thêm mới
                 </button>
               </div>
             </div>
 
             {/* Products Section */}
             <div>
-              <div className="flex justify-between items-center mb-2">
+              {/* Mobile Header V3 */}
+              <div className="sm:hidden flex justify-between items-center mb-4">
+                <div className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                  Sản phẩm ({items.length})
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowAddProductModal(true)}
+                  className="flex items-center gap-2 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-medium rounded-full shadow-md shadow-emerald-500/30 transition-all active:scale-95"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  Thêm
+                </button>
+              </div>
+
+              {/* Desktop Header */}
+              <div className="hidden sm:flex justify-between items-center mb-2">
                 <label className="block text-base font-medium text-teal-600 dark:text-teal-400">
-                  Chi ti�t s�n ph�m nh�p kho:
+                  Chi tiết sản phẩm nhập kho:
                 </label>
                 <button
                   type="button"
@@ -340,12 +432,12 @@ const EditReceiptModal: React.FC<{
                   className="text-sm text-teal-600 hover:text-teal-700 dark:text-teal-400 flex items-center gap-1"
                 >
                   <span className="text-lg">+</span>
-                  Th�m s�n ph�m
+                  Thêm sản phẩm
                 </button>
               </div>
 
-              {/* Products Table */}
-              <div className="border border-slate-300 dark:border-slate-600 rounded-lg overflow-hidden">
+              {/* Desktop Table View */}
+              <div className="hidden sm:block border border-slate-300 dark:border-slate-600 rounded-lg overflow-hidden">
                 <table className="w-full">
                   <thead className="bg-slate-50 dark:bg-slate-700">
                     <tr>
@@ -353,16 +445,16 @@ const EditReceiptModal: React.FC<{
                         -
                       </th>
                       <th className="px-3 py-2 text-left text-sm font-medium text-slate-700 dark:text-slate-300">
-                        T�n
+                        Tên
                       </th>
                       <th className="px-3 py-2 text-center text-sm font-medium text-slate-700 dark:text-slate-300">
                         SL
                       </th>
                       <th className="px-3 py-2 text-right text-sm font-medium text-slate-700 dark:text-slate-300">
-                        �n gi� nh�p
+                        Đơn giá nhập
                       </th>
                       <th className="px-3 py-2 text-right text-sm font-medium text-slate-700 dark:text-slate-300">
-                        Th�nh ti�n
+                        Thành tiền
                       </th>
                       <th className="px-3 py-2 text-center text-sm font-medium text-slate-700 dark:text-slate-300 w-20"></th>
                     </tr>
@@ -371,11 +463,10 @@ const EditReceiptModal: React.FC<{
                     {items.map((item, index) => (
                       <tr
                         key={item.id}
-                        className={`hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors ${
-                          editingItemIndex === index
-                            ? "bg-blue-50 dark:bg-blue-900/20"
-                            : ""
-                        }`}
+                        className={`hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors ${editingItemIndex === index
+                          ? "bg-blue-50 dark:bg-blue-900/20"
+                          : ""
+                          }`}
                       >
                         <td className="px-3 py-3 text-sm text-slate-900 dark:text-slate-100">
                           {index + 1}
@@ -385,16 +476,7 @@ const EditReceiptModal: React.FC<{
                             {item.partName}
                           </div>
                           <div className="text-xs text-slate-500 dark:text-slate-400">
-                            [Kh�c]
-                          </div>
-                          <div className="text-xs text-slate-500">
-                            - G B�n l�: {formatCurrency(70000)}
-                          </div>
-                          <div className="text-xs text-slate-500">
-                            - G B�n s�0: {formatCurrency(0)}
-                          </div>
-                          <div className="text-xs text-red-500">
-                            (� xu�t kho)
+                            {item.sku ? `SKU: ${item.sku}` : "[Khác]"}
                           </div>
                         </td>
                         <td className="px-3 py-3 text-center">
@@ -426,7 +508,7 @@ const EditReceiptModal: React.FC<{
                               type="button"
                               onClick={() => handleEditItem(index)}
                               className="p-1 text-blue-400 hover:bg-blue-500/20 rounded"
-                              title="Ch�0nh s�a"
+                              title="Chỉnh sửa"
                             >
                               <svg
                                 className="w-4 h-4"
@@ -446,7 +528,7 @@ const EditReceiptModal: React.FC<{
                               type="button"
                               onClick={() => handleItemMenu(index)}
                               className="p-1 text-slate-400 hover:bg-slate-500/20 rounded"
-                              title="X�a s�n ph�m"
+                              title="Xóa sản phẩm"
                             >
                               <svg
                                 className="w-4 h-4"
@@ -473,7 +555,7 @@ const EditReceiptModal: React.FC<{
                         colSpan={4}
                         className="px-3 py-2 text-right font-bold text-slate-900 dark:text-slate-100"
                       >
-                        T�NG:
+                        TỔNG:
                       </td>
                       <td className="px-3 py-2 text-right font-bold text-slate-900 dark:text-slate-100">
                         {formatCurrency(totalAmount)}
@@ -483,18 +565,105 @@ const EditReceiptModal: React.FC<{
                   </tfoot>
                 </table>
               </div>
+
+              {/* Mobile Card View V3 - Floating & Modern */}
+              <div className="sm:hidden space-y-3">
+                {items.map((item, index) => (
+                  <div
+                    key={item.id}
+                    className="bg-white dark:bg-slate-800 rounded-2xl p-4 shadow-lg shadow-slate-200/50 dark:shadow-none"
+                  >
+                    {/* Header: Name & Delete */}
+                    <div className="flex justify-between items-start gap-3 mb-3">
+                      <div className="flex-1">
+                        <div className="text-[15px] font-bold text-slate-800 dark:text-slate-100 leading-snug">
+                          {item.partName}
+                        </div>
+                        <div className="text-[11px] text-slate-400 dark:text-slate-500 mt-1 font-mono bg-slate-50 dark:bg-slate-900/50 px-1.5 py-0.5 rounded inline-block">
+                          {item.sku ? item.sku : "NO-SKU"}
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleItemMenu(index)}
+                        className="w-8 h-8 flex items-center justify-center rounded-full bg-red-50 dark:bg-red-900/20 text-red-400 hover:text-red-600 hover:bg-red-100 transition-all"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    {/* Body: Inputs Grid */}
+                    <div className="grid grid-cols-12 gap-3 items-end">
+                      {/* Quantity */}
+                      <div className="col-span-4">
+                        <label className="text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-1.5 block">
+                          Số lượng
+                        </label>
+                        <input
+                          type="number"
+                          value={item.quantity}
+                          onChange={(e) =>
+                            updateItemQuantity(index, Number(e.target.value))
+                          }
+                          min="1"
+                          className="w-full bg-slate-100 dark:bg-slate-900/50 border-2 border-transparent rounded-xl py-2.5 px-3 text-center font-bold text-slate-800 dark:text-slate-100 focus:border-blue-500 focus:bg-white dark:focus:bg-slate-800 transition-all"
+                        />
+                      </div>
+
+                      {/* Price */}
+                      <div className="col-span-8">
+                        <label className="text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-1.5 block">
+                          Đơn giá
+                        </label>
+                        <FormattedNumberInput
+                          value={item.unitPrice}
+                          onValue={(val) => updateItemPrice(index, val)}
+                          className="w-full bg-slate-100 dark:bg-slate-900/50 border-2 border-transparent rounded-xl py-2.5 px-3 text-right font-bold text-slate-800 dark:text-slate-100 focus:border-blue-500 focus:bg-white dark:focus:bg-slate-800 transition-all"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Footer: Total Badge */}
+                    <div className="mt-4 flex justify-end">
+                      <div className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 px-4 py-2 rounded-full">
+                        <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Thành tiền</span>
+                        <span className="text-base font-black text-blue-600 dark:text-blue-400">
+                          {formatCurrency(item.totalPrice)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+
+                {/* Summary Card V3 - Gradient */}
+                <div className="bg-gradient-to-br from-slate-800 to-slate-900 dark:from-slate-700 dark:to-slate-800 rounded-2xl p-5 shadow-xl">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <div className="text-xs text-slate-400 uppercase tracking-widest font-bold mb-1">
+                        Tổng cộng
+                      </div>
+                      <div className="text-3xl font-black text-white tracking-tight">
+                        {formatCurrency(totalAmount)}
+                      </div>
+                    </div>
+                    <div className={`px-3 py-1.5 rounded-full text-xs font-bold ${isPaid ? 'bg-emerald-500 text-white' : 'bg-amber-500 text-white'}`}>
+                      {isPaid ? "✓ Đã thanh toán" : "Chưa thanh toán"}
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
 
-            {/* Payment Section */}
-            <div className="border border-slate-300 dark:border-slate-600 rounded-lg p-4">
+            {/* Payment Section (Desktop Only or Simplified Mobile) */}
+            <div className="hidden sm:block border border-slate-300 dark:border-slate-600 rounded-lg p-4">
               <label className="block text-base font-medium text-teal-600 dark:text-teal-400 mb-3">
-                C�ng n�:
+                Công nợ:
               </label>
 
               {/* Total Payment */}
               <div className="flex items-center justify-between mb-3 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
                 <span className="text-lg font-bold text-red-600 dark:text-red-400">
-                  T�NG PH�I CHI: {formatCurrency(totalAmount)}
+                  TỔNG PHẢI CHI: {formatCurrency(totalAmount)}
                 </span>
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-green-600 dark:text-green-400 flex items-center gap-1">
@@ -511,14 +680,14 @@ const EditReceiptModal: React.FC<{
                         d="M5 13l4 4L19 7"
                       />
                     </svg>
-                    � thanh to�n ��
+                    Đã thanh toán đủ
                   </span>
                   <button
                     type="button"
                     className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-sm flex items-center gap-1"
                   >
                     <span className="text-lg">+</span>
-                    T�o phi�u chi
+                    Tạo phiếu chi
                   </button>
                 </div>
               </div>
@@ -538,7 +707,7 @@ const EditReceiptModal: React.FC<{
                     d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                   />
                 </svg>
-                T�"ng ph�i chi l� ph� ch�a ph�i tr� cho ��i t�c s�a ch�a
+                Tổng phải chi là phí chưa phải trả cho đối tác sửa chữa
               </div>
 
               {/* Payment History Table */}
@@ -549,13 +718,13 @@ const EditReceiptModal: React.FC<{
                       -
                     </th>
                     <th className="px-2 py-2 text-left text-slate-700 dark:text-slate-300">
-                      Th�i gian
+                      Thời gian
                     </th>
                     <th className="px-2 py-2 text-left text-slate-700 dark:text-slate-300">
-                      Ng��i chi - Ghi ch�
+                      Người chi - Ghi chú
                     </th>
                     <th className="px-2 py-2 text-right text-slate-700 dark:text-slate-300">
-                      S� ti�n
+                      Số tiền
                     </th>
                   </tr>
                 </thead>
@@ -596,7 +765,7 @@ const EditReceiptModal: React.FC<{
                       colSpan={3}
                       className="px-2 py-2 text-right font-bold text-slate-900 dark:text-slate-100"
                     >
-                      T�"ng �� chi
+                      Tổng đã chi
                     </td>
                     <td className="px-2 py-2 text-right font-bold text-slate-900 dark:text-slate-100">
                       {formatCurrency(totalPaid)}
@@ -607,20 +776,48 @@ const EditReceiptModal: React.FC<{
             </div>
           </div>
 
-          {/* Footer */}
-          <div className="sticky bottom-0 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 p-4 flex justify-end gap-3">
+          {/* Mobile Footer V2 */}
+          <div className="sm:hidden sticky bottom-0 bg-white dark:bg-slate-800 border-t border-slate-100 dark:border-slate-800 p-4 pb-20 z-20">
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-blue-500/30 flex items-center justify-center gap-2 disabled:opacity-70 active:scale-[0.98] transition-all"
+            >
+              {isSubmitting ? (
+                <>
+                  <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  <span>ĐANG LƯU...</span>
+                </>
+              ) : (
+                <span>LƯU THAY ĐỔI</span>
+              )}
+            </button>
+          </div>
+
+          {/* Desktop Footer */}
+          <div className="hidden sm:flex sticky bottom-0 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 p-4 justify-end gap-3">
             <button
               type="button"
               onClick={onClose}
               className="px-6 py-2 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
             >
-              �NG
+              ĐÓNG
             </button>
             <button
               type="submit"
-              className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium"
+              className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+              disabled={isSubmitting}
             >
-              L�U
+              {isSubmitting && (
+                <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+              )}
+              LƯU
             </button>
           </div>
         </form>

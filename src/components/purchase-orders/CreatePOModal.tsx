@@ -75,6 +75,7 @@ export const CreatePOModal: React.FC<CreatePOModalProps> = ({
   const [selectedPartIds, setSelectedPartIds] = useState<Set<string>>(
     new Set(prefilledPartIds)
   );
+  const [showMobileCart, setShowMobileCart] = useState(false);
 
   const partsMap = useMemo(() => {
     const map = new Map();
@@ -220,13 +221,13 @@ export const CreatePOModal: React.FC<CreatePOModalProps> = ({
   });
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999] p-4">
-      <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-7xl max-h-[95vh] overflow-hidden flex flex-col">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999] sm:p-4">
+      <div className="bg-white dark:bg-slate-800 rounded-none sm:rounded-lg shadow-xl w-full h-full sm:h-auto sm:max-w-7xl sm:max-h-[95vh] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-2 border-b border-slate-200 dark:border-slate-700 bg-gradient-to-r from-blue-600 to-blue-700">
+        <div className="flex items-center justify-between px-4 py-3 sm:py-2 border-b border-slate-200 dark:border-slate-700 bg-gradient-to-r from-blue-600 to-blue-700">
           <div className="flex items-center gap-2">
             <ShoppingCart className="w-5 h-5 text-white" />
-            <h2 className="text-base font-semibold text-white">
+            <h2 className="text-base sm:text-base font-semibold text-white">
               Tạo đơn đặt hàng mới
             </h2>
           </div>
@@ -234,12 +235,12 @@ export const CreatePOModal: React.FC<CreatePOModalProps> = ({
             onClick={onClose}
             className="p-1.5 hover:bg-white/20 rounded-lg transition-colors"
           >
-            <X className="w-4 h-4 text-white" />
+            <X className="w-5 h-5 sm:w-4 sm:h-4 text-white" />
           </button>
         </div>
 
         {/* Body - Split Layout */}
-        <div className="flex-1 overflow-hidden flex">
+        <div className="flex-1 overflow-hidden flex flex-col sm:flex-row">
           {/* Left: Product Selection */}
           <div className="flex-1 flex flex-col border-r border-slate-200 dark:border-slate-700">
             {/* Filters */}
@@ -285,19 +286,17 @@ export const CreatePOModal: React.FC<CreatePOModalProps> = ({
 
                 <button
                   onClick={() => setShowLowStockOnly(false)}
-                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition ${
-                    !showLowStockOnly
-                      ? "bg-slate-600 text-white"
-                      : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
-                  }`}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition ${!showLowStockOnly
+                    ? "bg-slate-600 text-white"
+                    : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
+                    }`}
                 >
                   <span>Tất cả</span>
                   <span
-                    className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
-                      !showLowStockOnly
-                        ? "bg-white/20 text-white"
-                        : "bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300"
-                    }`}
+                    className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${!showLowStockOnly
+                      ? "bg-white/20 text-white"
+                      : "bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300"
+                      }`}
                   >
                     {allParts.length}
                   </span>
@@ -305,19 +304,17 @@ export const CreatePOModal: React.FC<CreatePOModalProps> = ({
 
                 <button
                   onClick={() => setShowLowStockOnly(true)}
-                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition ${
-                    showLowStockOnly
-                      ? "bg-red-600 text-white"
-                      : "bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 hover:bg-red-100"
-                  }`}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition ${showLowStockOnly
+                    ? "bg-red-600 text-white"
+                    : "bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 hover:bg-red-100"
+                    }`}
                 >
                   <span>Sắp hết</span>
                   <span
-                    className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
-                      showLowStockOnly
-                        ? "bg-white/20 text-white"
-                        : "bg-red-200 dark:bg-red-800 text-red-700 dark:text-red-300"
-                    }`}
+                    className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${showLowStockOnly
+                      ? "bg-white/20 text-white"
+                      : "bg-red-200 dark:bg-red-800 text-red-700 dark:text-red-300"
+                      }`}
                   >
                     {
                       allParts.filter((p) => {
@@ -379,21 +376,12 @@ export const CreatePOModal: React.FC<CreatePOModalProps> = ({
                     <div
                       key={part.id}
                       onClick={() => togglePartSelection(part.id)}
-                      className={`p-3 rounded-lg border cursor-pointer transition-all ${
-                        isSelected
-                          ? "border-blue-500 bg-blue-50 dark:bg-blue-950/20"
-                          : "border-slate-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-600 hover:bg-slate-50 dark:hover:bg-slate-700"
-                      }`}
+                      className={`p-3 rounded-lg border cursor-pointer transition-all ${isSelected
+                        ? "border-blue-500 bg-blue-50 dark:bg-blue-950/20"
+                        : "border-slate-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-600 hover:bg-slate-50 dark:hover:bg-slate-700"
+                        }`}
                     >
                       <div className="flex items-start gap-3">
-                        {/* Checkbox */}
-                        <input
-                          type="checkbox"
-                          checked={isSelected}
-                          onChange={() => {}}
-                          className="mt-1 w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-2 focus:ring-blue-500"
-                        />
-
                         {/* Info */}
                         <div className="flex-1 min-w-0">
                           <div className="flex items-start justify-between gap-2">
@@ -409,13 +397,12 @@ export const CreatePOModal: React.FC<CreatePOModalProps> = ({
 
                             {/* Stock Badge */}
                             <div
-                              className={`px-2 py-0.5 rounded text-xs font-medium whitespace-nowrap ${
-                                stock === 0
-                                  ? "bg-red-100 dark:bg-red-950/50 text-red-700 dark:text-red-300"
-                                  : isLowStock
+                              className={`px-2 py-0.5 rounded text-xs font-medium whitespace-nowrap ${stock === 0
+                                ? "bg-red-100 dark:bg-red-950/50 text-red-700 dark:text-red-300"
+                                : isLowStock
                                   ? "bg-amber-100 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300"
                                   : "bg-green-100 dark:bg-green-950/50 text-green-700 dark:text-green-300"
-                              }`}
+                                }`}
                             >
                               Tồn: {stock}
                             </div>
@@ -450,19 +437,52 @@ export const CreatePOModal: React.FC<CreatePOModalProps> = ({
                 })
               )}
             </div>
+
+            {/* Mobile: Sticky Cart Button */}
+            <div className="sm:hidden fixed bottom-0 left-0 right-0 p-4 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 z-40">
+              <button
+                onClick={() => setShowMobileCart(true)}
+                className="w-full flex items-center justify-between px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium shadow-lg"
+              >
+                <div className="flex items-center gap-2">
+                  <ShoppingCart className="w-5 h-5" />
+                  <span>Xem giỏ hàng</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-sm">{formatCurrency(totalAmount)}</span>
+                  {items.length > 0 && (
+                    <span className="px-2 py-0.5 bg-white/20 rounded-full text-xs font-bold">
+                      {items.length}
+                    </span>
+                  )}
+                </div>
+              </button>
+            </div>
           </div>
 
           {/* Right: Shopping Cart */}
-          <div className="w-[400px] flex flex-col bg-slate-50 dark:bg-slate-900">
+          <div className={`${showMobileCart ? 'fixed inset-0 z-50' : 'hidden'} sm:relative sm:flex sm:inset-auto sm:z-auto w-full sm:w-[400px] flex-col bg-slate-50 dark:bg-slate-900`}>
             {/* Cart Header */}
-            <div className="p-4 border-b border-slate-200 dark:border-slate-700">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="font-semibold text-slate-900 dark:text-slate-100">
-                  Giỏ hàng
-                </h3>
-                <span className="px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded text-xs font-medium">
-                  {items.length} sản phẩm
-                </span>
+            <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between sm:block">
+              {/* Mobile close button */}
+              <h3 className="font-semibold text-slate-900 dark:text-slate-100 sm:hidden">Giỏ hàng</h3>
+              <button
+                onClick={() => setShowMobileCart(false)}
+                className="sm:hidden w-9 h-9 flex items-center justify-center rounded-full bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              {/* Desktop header */}
+              <div className="hidden sm:block">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="font-semibold text-slate-900 dark:text-slate-100">
+                    Giỏ hàng
+                  </h3>
+                  <span className="px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded text-xs font-medium">
+                    {items.length} sản phẩm
+                  </span>
+                </div>
               </div>
 
               {/* Supplier & Date */}

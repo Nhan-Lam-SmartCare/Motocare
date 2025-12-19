@@ -9,6 +9,23 @@ import {
   AlertTriangle,
   Printer,
   Share2,
+  User,
+  Bike,
+  Wrench,
+  FileText,
+  CheckCircle,
+  Clock,
+  Edit2,
+  Trash2,
+  Smartphone,
+  PhoneCall,
+  ChevronRight,
+  TrendingUp,
+  UserPlus,
+  CreditCard,
+  Banknote,
+  MessageSquare,
+  Package,
 } from "lucide-react";
 import { formatCurrency, formatWorkOrderId } from "../../utils/format";
 import { getCategoryColor } from "../../utils/categoryColors";
@@ -35,7 +52,8 @@ interface WorkOrderMobileModalProps {
   onSwitchToEdit?: () => void; // callback khi bấm nút chỉnh sửa từ view mode
 }
 
-type WorkOrderStatus = "Tiếp nhận" | "Đang sửa" | "Đã sửa xong" | "Trả máy";
+// Local type for status options if needed, or just use the one from constants
+type LocalWorkOrderStatus = "Tiếp nhận" | "Đang sửa" | "Đã sửa xong" | "Trả máy";
 
 export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
   isOpen,
@@ -201,12 +219,12 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
         phone: workOrder.customerPhone || "",
         vehicles: workOrder.licensePlate
           ? [
-              {
-                id: `temp-veh-${Date.now()}`,
-                licensePlate: workOrder.licensePlate,
-                model: workOrder.vehicleModel || "",
-              },
-            ]
+            {
+              id: `temp-veh-${Date.now()}`,
+              licensePlate: workOrder.licensePlate,
+              model: workOrder.vehicleModel || "",
+            },
+          ]
           : [],
       } as Customer;
     }
@@ -619,6 +637,10 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
     );
   };
 
+  const handleRemovePart = (partId: string) => {
+    setSelectedParts((prev) => prev.filter((p) => p.partId !== partId));
+  };
+
   const handleAddService = () => {
     if (!newServiceName || newServicePrice <= 0) return;
     setAdditionalServices([
@@ -798,15 +820,15 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
   const getStatusColor = (s: WorkOrderStatus) => {
     switch (s) {
       case WORK_ORDER_STATUS.RECEIVED:
-        return "bg-blue-500";
+        return "bg-blue-500/10 text-blue-400 border-blue-500/30";
       case WORK_ORDER_STATUS.IN_PROGRESS:
-        return "bg-yellow-500";
+        return "bg-orange-500/10 text-orange-400 border-orange-500/30";
       case WORK_ORDER_STATUS.COMPLETED:
-        return "bg-green-500";
+        return "bg-emerald-500/10 text-emerald-400 border-emerald-500/30";
       case WORK_ORDER_STATUS.DELIVERED:
-        return "bg-green-500";
+        return "bg-purple-500/10 text-purple-400 border-purple-500/30";
       default:
-        return "bg-gray-500";
+        return "bg-slate-500/10 text-slate-400 border-slate-500/30";
     }
   };
 
@@ -832,25 +854,32 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
         {/* Mobile Full Screen */}
         <div className="md:hidden w-full h-full bg-[#151521] flex flex-col">
           {/* Header */}
-          <div className="flex-shrink-0 bg-gradient-to-r from-blue-600 to-blue-700 px-3 py-3 flex items-center justify-between">
-            <button
-              onClick={onClose}
-              className="w-8 h-8 flex items-center justify-center rounded-full bg-white/20 text-white"
-            >
-              <X className="w-4 h-4" />
-            </button>
-            <h2 className="text-sm font-bold text-white">
-              📋 Chi tiết phiếu #{formatWorkOrderId(workOrder.id)}
-            </h2>
+          <div className="flex-shrink-0 bg-[#1e1e2d] px-4 py-4 flex items-center justify-between border-b border-slate-700/50">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={onClose}
+                className="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-800 text-slate-400 active:scale-95 transition-all"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              <div>
+                <h2 className="text-sm font-bold text-white">
+                  Chi tiết phiếu
+                </h2>
+                <div className="text-[10px] text-blue-400 font-mono font-medium">
+                  #{formatWorkOrderId(workOrder.id)}
+                </div>
+              </div>
+            </div>
             {onSwitchToEdit && (
               <button
                 onClick={onSwitchToEdit}
-                className="px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded-lg text-white text-xs font-medium flex items-center gap-1"
+                className="h-9 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold flex items-center gap-2 active:scale-95 transition-all shadow-lg shadow-blue-500/20"
               >
-                ✏️ Sửa
+                <Edit2 className="w-3.5 h-3.5" />
+                Sửa phiếu
               </button>
             )}
-            {!onSwitchToEdit && <div className="w-8"></div>}
           </div>
 
           {/* Scrollable Content - View Only */}
@@ -873,11 +902,12 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
                   )}
                 </span>
               </div>
-              {workOrder.assignedTechnician && (
-                <div className="mt-2 text-xs text-slate-300">
-                  👤 KTV:{" "}
+              {workOrder.technicianName && (
+                <div className="mt-2 text-xs text-slate-300 flex items-center gap-1.5">
+                  <User className="w-3.5 h-3.5 text-slate-400" />
+                  KTV:{" "}
                   <span className="font-medium text-white">
-                    {workOrder.assignedTechnician}
+                    {workOrder.technicianName}
                   </span>
                 </div>
               )}
@@ -885,8 +915,9 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
 
             {/* Thông tin khách hàng */}
             <div className="p-3 border-b border-slate-700">
-              <h3 className="text-xs font-semibold text-blue-400 mb-2">
-                👤 KHÁCH HÀNG
+              <h3 className="text-xs font-semibold text-blue-400 mb-2 flex items-center gap-1.5">
+                <User className="w-3.5 h-3.5" />
+                KHÁCH HÀNG
               </h3>
               <div className="bg-[#1e1e2d] rounded-xl p-3 space-y-2">
                 <div className="flex items-center justify-between">
@@ -896,34 +927,38 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
                   {workOrder.customerPhone && (
                     <a
                       href={`tel:${workOrder.customerPhone}`}
-                      className="text-blue-400 text-sm"
+                      className="text-blue-400 text-sm flex items-center gap-1.5"
                     >
-                      📞 {workOrder.customerPhone}
+                      <PhoneCall className="w-3.5 h-3.5" />
+                      {workOrder.customerPhone}
                     </a>
                   )}
                 </div>
-                <div className="text-sm text-slate-300">
-                  🏍️ {workOrder.vehicleModel || "—"} •{" "}
+                <div className="text-sm text-slate-300 flex items-center gap-1.5">
+                  <Bike className="w-3.5 h-3.5 text-slate-400" />
+                  {workOrder.vehicleModel || "—"} •{" "}
                   <span className="text-yellow-400 font-mono">
                     {workOrder.licensePlate || "—"}
                   </span>
                 </div>
                 {workOrder.currentKm && (
-                  <div className="text-xs text-slate-400">
-                    📏 Số km hiện tại: {formatKm(workOrder.currentKm)} km
+                  <div className="text-xs text-slate-400 flex items-center gap-1.5">
+                    <TrendingUp className="w-3.5 h-3.5" />
+                    Số km hiện tại: {formatKm(workOrder.currentKm)} km
                   </div>
                 )}
               </div>
             </div>
 
             {/* Mô tả vấn đề */}
-            {workOrder.description && (
+            {workOrder.issueDescription && (
               <div className="p-3 border-b border-slate-700">
-                <h3 className="text-xs font-semibold text-orange-400 mb-2">
-                  📝 MÔ TẢ VẤN ĐỀ
+                <h3 className="text-xs font-semibold text-orange-400 mb-2 flex items-center gap-1.5">
+                  <FileText className="w-3.5 h-3.5" />
+                  MÔ TẢ VẤN ĐỀ
                 </h3>
                 <div className="bg-[#1e1e2d] rounded-xl p-3 text-sm text-slate-300 whitespace-pre-wrap">
-                  {workOrder.description}
+                  {workOrder.issueDescription}
                 </div>
               </div>
             )}
@@ -931,8 +966,9 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
             {/* Phụ tùng */}
             {workOrder.partsUsed && workOrder.partsUsed.length > 0 && (
               <div className="p-3 border-b border-slate-700">
-                <h3 className="text-xs font-semibold text-emerald-400 mb-2">
-                  🔧 PHỤ TÙNG ({workOrder.partsUsed.length})
+                <h3 className="text-xs font-semibold text-emerald-400 mb-2 flex items-center gap-1.5">
+                  <Package className="w-3.5 h-3.5" />
+                  PHỤ TÙNG ({workOrder.partsUsed.length})
                 </h3>
                 <div className="space-y-2">
                   {workOrder.partsUsed.map((part, idx) => (
@@ -940,7 +976,7 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
                       <div className="flex items-center justify-between">
                         <div className="flex-1 min-w-0 pr-2">
                           <div className="text-sm text-white font-medium truncate">
-                            {part.partName || part.name || "Phụ tùng"}
+                            {part.partName || "Phụ tùng"}
                           </div>
                           <div className="text-xs text-slate-400">
                             SL: {part.quantity} {part.sku && `• ${part.sku}`}
@@ -977,8 +1013,9 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
             {workOrder.additionalServices &&
               workOrder.additionalServices.length > 0 && (
                 <div className="p-3 border-b border-slate-700">
-                  <h3 className="text-xs font-semibold text-purple-400 mb-2">
-                    🛠️ DỊCH VỤ ({workOrder.additionalServices.length})
+                  <h3 className="text-xs font-semibold text-purple-400 mb-2 flex items-center gap-1.5">
+                    <Wrench className="w-3.5 h-3.5" />
+                    DỊCH VỤ ({workOrder.additionalServices.length})
                   </h3>
                   <div className="space-y-2">
                     {workOrder.additionalServices.map((svc, idx) => (
@@ -988,7 +1025,7 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
                       >
                         <div className="flex-1 min-w-0 pr-2">
                           <div className="text-sm text-white font-medium truncate">
-                            {svc.description || svc.name || "Dịch vụ"}
+                            {svc.description || "Dịch vụ"}
                           </div>
                           {svc.quantity > 1 && (
                             <div className="text-xs text-slate-400">
@@ -1006,23 +1043,24 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
               )}
 
             {/* Ghi chú */}
-            {workOrder.note && (
+            {workOrder.notes && (
               <div className="p-3 border-b border-slate-700">
-                <h3 className="text-xs font-semibold text-yellow-400 mb-2">
-                  💬 GHI CHÚ
+                <h3 className="text-xs font-semibold text-yellow-400 mb-2 flex items-center gap-1.5">
+                  <MessageSquare className="w-3.5 h-3.5" />
+                  GHI CHÚ
                 </h3>
                 <div className="bg-[#1e1e2d] rounded-xl p-3 text-sm text-slate-300 whitespace-pre-wrap">
-                  {workOrder.note}
+                  {workOrder.notes}
                 </div>
               </div>
             )}
 
             {/* Tổng tiền */}
             <div className="p-3">
-              <div className="bg-gradient-to-r from-emerald-900/50 to-emerald-800/30 rounded-xl p-4 border border-emerald-700">
+              <div className="bg-[#1e1e2d] rounded-xl p-4 border border-slate-700/50 shadow-sm">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-slate-300">Tổng phụ tùng</span>
-                  <span className="text-white font-medium">
+                  <span className="text-slate-400 text-xs">Tổng phụ tùng</span>
+                  <span className="text-white font-medium text-sm">
                     {formatCurrency(
                       workOrder.partsUsed?.reduce(
                         (s, p) => s + p.price * p.quantity,
@@ -1032,8 +1070,8 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
                   </span>
                 </div>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-slate-300">Tổng dịch vụ</span>
-                  <span className="text-white font-medium">
+                  <span className="text-slate-400 text-xs">Tổng dịch vụ</span>
+                  <span className="text-white font-medium text-sm">
                     {formatCurrency(
                       workOrder.additionalServices?.reduce(
                         (s, svc) => s + svc.price * (svc.quantity || 1),
@@ -1044,32 +1082,39 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
                 </div>
                 {(workOrder.discount || 0) > 0 && (
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-slate-300">Giảm giá</span>
-                    <span className="text-red-400 font-medium">
+                    <span className="text-slate-400 text-xs">Giảm giá</span>
+                    <span className="text-red-400 font-medium text-sm">
                       -{formatCurrency(workOrder.discount || 0)}
                     </span>
                   </div>
                 )}
-                <div className="border-t border-emerald-600 pt-2 mt-2 flex items-center justify-between">
-                  <span className="text-lg font-bold text-white">
+                <div className="border-t border-slate-700 pt-3 mt-2 flex items-center justify-between">
+                  <span className="text-base font-bold text-white uppercase">
                     TỔNG CỘNG
                   </span>
-                  <span className="text-2xl font-black text-emerald-400">
+                  <span className="text-xl font-black text-blue-500">
                     {formatCurrency(workOrder.total)}
                   </span>
                 </div>
-                <div className="mt-2 flex items-center justify-between text-sm">
+                <div className="mt-3 pt-3 border-t border-slate-700/30 flex items-center justify-between text-xs">
                   <span className="text-slate-400">Trạng thái thanh toán</span>
                   <span
-                    className={`font-medium ${
-                      workOrder.paymentStatus === "paid"
-                        ? "text-emerald-400"
-                        : "text-yellow-400"
-                    }`}
+                    className={`font-bold flex items-center gap-1.5 ${workOrder.paymentStatus === "paid"
+                      ? "text-emerald-400"
+                      : "text-amber-400"
+                      }`}
                   >
-                    {workOrder.paymentStatus === "paid"
-                      ? "✅ Đã thanh toán"
-                      : "⏳ Chưa thanh toán"}
+                    {workOrder.paymentStatus === "paid" ? (
+                      <>
+                        <CheckCircle className="w-3.5 h-3.5" />
+                        Đã thanh toán
+                      </>
+                    ) : (
+                      <>
+                        <Clock className="w-3.5 h-3.5" />
+                        Chưa thanh toán
+                      </>
+                    )}
                   </span>
                 </div>
               </div>
@@ -1130,134 +1175,153 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
       {/* Mobile Full Screen */}
       <div className="md:hidden w-full h-full bg-[#151521] flex flex-col">
         {/* Header */}
-        <div className="flex-shrink-0 bg-[#1e1e2d] px-3 py-2.5 flex items-center justify-between border-b border-slate-700">
-          <button onClick={onClose} className="text-slate-400">
-            <X className="w-4 h-4" />
-          </button>
-          <h2 className="text-sm font-semibold text-white">
-            {workOrder
-              ? `✏️ Sửa phiếu #${formatWorkOrderId(workOrder.id)}`
-              : "Tạo phiếu sửa chữa"}
-          </h2>
-          <div className="w-8"></div>
+        <div className="flex-shrink-0 bg-[#1e1e2d] px-4 py-4 flex items-center justify-between border-b border-slate-700/50">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={onClose}
+              className="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-800 text-slate-400 active:scale-95 transition-all"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <h2 className="text-sm font-bold text-white">
+              {workOrder
+                ? `Sửa phiếu #${formatWorkOrderId(workOrder.id)}`
+                : "Tạo phiếu mới"}
+            </h2>
+          </div>
+          <div className="w-9"></div>
         </div>
 
         {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto pb-32">
           {/* KHỐI 1: TRẠNG THÁI & KỸ THUẬT VIÊN */}
-          <div className="p-3 space-y-2">
-            <div className="grid grid-cols-2 gap-2">
-              {/* Status Dropdown */}
-              <div className="relative">
-                <select
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value as WorkOrderStatus)}
-                  className={`w-full px-2.5 py-2 rounded-lg text-white text-xs font-medium appearance-none pr-7 ${getStatusColor(
-                    status
-                  )}`}
-                >
-                  <option value={WORK_ORDER_STATUS.RECEIVED}>
-                    🔧 Tiếp nhận
-                  </option>
-                  <option value={WORK_ORDER_STATUS.IN_PROGRESS}>
-                    ⚙️ Đang sửa
-                  </option>
-                  <option value={WORK_ORDER_STATUS.COMPLETED}>
-                    ✅ Đã sửa xong
-                  </option>
-                  <option value={WORK_ORDER_STATUS.DELIVERED}>🚗 Trả xe</option>
-                </select>
-                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white pointer-events-none" />
+          <div className="p-4 space-y-4">
+            {/* Status Segmented Control */}
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">
+                Trạng thái sửa chữa
+              </label>
+              <div className="grid grid-cols-4 gap-1.5 p-1 bg-[#1e1e2d] rounded-xl border border-slate-700/50">
+                {[
+                  { id: WORK_ORDER_STATUS.RECEIVED, label: "Nhận", icon: FileText },
+                  { id: WORK_ORDER_STATUS.IN_PROGRESS, label: "Sửa", icon: Wrench },
+                  { id: WORK_ORDER_STATUS.COMPLETED, label: "Xong", icon: CheckCircle },
+                  { id: WORK_ORDER_STATUS.DELIVERED, label: "Trả", icon: Bike },
+                ].map((item) => {
+                  const isActive = status === item.id;
+                  const Icon = item.icon;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => setStatus(item.id as WorkOrderStatus)}
+                      className={`flex flex-col items-center justify-center py-2.5 rounded-lg transition-all ${isActive
+                        ? "bg-blue-600 text-white shadow-lg shadow-blue-500/20 scale-[1.02]"
+                        : "text-slate-500 hover:text-slate-300"
+                        }`}
+                    >
+                      <Icon className={`w-4 h-4 mb-1 ${isActive ? "text-white" : "text-slate-500"}`} />
+                      <span className="text-[10px] font-bold">{item.label}</span>
+                    </button>
+                  );
+                })}
               </div>
+            </div>
 
-              {/* Technician Dropdown */}
-              <div className="relative">
-                <select
-                  value={selectedTechnicianId}
-                  onChange={(e) => setSelectedTechnicianId(e.target.value)}
-                  className="w-full px-2.5 py-2 bg-[#2b2b40] rounded-lg text-white text-xs appearance-none pr-7"
-                >
-                  <option value="">👤 Chọn KTV</option>
-                  {employees.map((emp) => (
-                    <option key={emp.id} value={emp.id}>
-                      {emp.name}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
+            {/* Technician Selection - Premium Chips */}
+            <div className="space-y-2.5">
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">
+                Kỹ thuật viên phụ trách
+              </label>
+              <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide -mx-1 px-1">
+                {employees
+                  .filter(emp => !["Nguyễn Xuân Nhạn", "Võ Thanh Lâm"].includes(emp.name))
+                  .map((emp) => {
+                    const isActive = selectedTechnicianId === emp.id;
+                    return (
+                      <button
+                        key={emp.id}
+                        onClick={() => setSelectedTechnicianId(emp.id)}
+                        className={`flex-shrink-0 flex items-center gap-2 px-3 py-2 rounded-xl border transition-all ${isActive
+                          ? "bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-500/20 scale-[1.02]"
+                          : "bg-[#1e1e2d] border-slate-700/50 text-slate-400 hover:border-slate-600"
+                          }`}
+                      >
+                        <div className={`w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-bold ${isActive ? "bg-white/20 text-white" : "bg-slate-800 text-slate-500"
+                          }`}>
+                          {emp.name.split(" ").pop()?.charAt(0) || "T"}
+                        </div>
+                        <span className="text-xs font-bold whitespace-nowrap">{emp.name}</span>
+                        {isActive && <Check className="w-3 h-3" />}
+                      </button>
+                    );
+                  })}
               </div>
             </div>
           </div>
 
           {/* KHỐI 2: KHÁCH HÀNG & XE */}
-          <div className="px-3 pb-3 space-y-2">
-            <h3 className="text-xs font-semibold text-white uppercase tracking-wide">
-              Khách hàng
-            </h3>
+          <div className="px-4 pb-4 space-y-3">
+            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">
+              Thông tin khách hàng
+            </label>
 
             {/* Customer Selection */}
             {showCustomerSearch ? (
-              <div className="space-y-2">
-                <div className="relative">
-                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+              <div className="space-y-3">
+                <div className="relative group">
+                  <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 group-focus-within:text-blue-500 transition-colors" />
                   <input
                     type="text"
                     value={customerSearchTerm}
                     onChange={(e) => setCustomerSearchTerm(e.target.value)}
-                    placeholder="🔍 Tìm tên hoặc SĐT khách..."
-                    className="w-full pl-9 pr-3 py-2 bg-[#2b2b40] rounded-lg text-white text-xs placeholder-slate-500"
+                    placeholder="Tìm tên hoặc số điện thoại..."
+                    className="w-full pl-11 pr-4 py-3.5 bg-[#1e1e2d] border border-slate-700/50 rounded-2xl text-white text-sm placeholder-slate-600 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all shadow-inner"
                     autoFocus
                   />
                 </div>
 
                 {/* Customer List */}
-                <div className="max-h-48 overflow-y-auto space-y-2">
+                <div className="max-h-60 overflow-y-auto space-y-2.5 pr-1 custom-scrollbar">
                   {filteredCustomers.slice(0, 5).map((customer) => {
-                    // Get primary vehicle or first vehicle
                     const primaryVehicle =
                       customer.vehicles?.find((v: any) => v.isPrimary) ||
                       customer.vehicles?.[0];
-                    const vehicleInfo =
-                      primaryVehicle?.licensePlate ||
-                      customer.licensePlate ||
-                      primaryVehicle?.model ||
-                      customer.vehicleModel;
 
                     return (
                       <div
                         key={customer.id}
                         onClick={() => handleSelectCustomer(customer)}
-                        className="p-3 bg-[#1e1e2d] rounded-lg cursor-pointer hover:bg-[#2b2b40] transition-colors"
+                        className="p-4 bg-[#1e1e2d] border border-slate-700/30 rounded-2xl cursor-pointer hover:border-blue-500/50 hover:bg-blue-500/5 transition-all active:scale-[0.98]"
                       >
-                        <div className="text-white font-medium">
-                          {customer.name}
-                        </div>
-                        <div className="text-xs text-slate-400">
-                          🔹 {customer.phone}
-                        </div>
-                        {vehicleInfo && (
-                          <div className="text-xs text-blue-400 mt-0.5 flex items-center gap-1">
-                            <span>🏍️</span>
-                            {primaryVehicle?.model || customer.vehicleModel
-                              ? `${
-                                  primaryVehicle?.model || customer.vehicleModel
-                                }`
-                              : ""}
-                            {primaryVehicle?.licensePlate ||
-                            customer.licensePlate ? (
-                              <span className="font-mono font-semibold text-yellow-400">
-                                {(primaryVehicle?.model ||
-                                  customer.vehicleModel) &&
-                                  " - "}
-                                {primaryVehicle?.licensePlate ||
-                                  customer.licensePlate}
-                              </span>
-                            ) : null}
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-400 font-bold">
+                              {customer.name.charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                              <div className="text-white font-bold text-sm">
+                                {customer.name}
+                              </div>
+                              <div className="text-xs text-slate-500 flex items-center gap-1">
+                                <Smartphone className="w-3 h-3" />
+                                {customer.phone}
+                              </div>
+                            </div>
                           </div>
-                        )}
-                        {customer.vehicles && customer.vehicles.length > 1 && (
-                          <div className="text-[10px] text-slate-500 mt-1">
-                            +{customer.vehicles.length - 1} xe khác
+                          <ChevronRight className="w-4 h-4 text-slate-600" />
+                        </div>
+
+                        {(primaryVehicle?.model || customer.vehicleModel) && (
+                          <div className="flex items-center gap-2 px-3 py-2 bg-slate-800/50 rounded-xl">
+                            <Bike className="w-3.5 h-3.5 text-blue-400" />
+                            <span className="text-xs text-slate-300 font-medium truncate">
+                              {primaryVehicle?.model || customer.vehicleModel}
+                            </span>
+                            {(primaryVehicle?.licensePlate || customer.licensePlate) && (
+                              <span className="text-[10px] font-mono font-bold text-yellow-500 bg-yellow-500/10 px-1.5 py-0.5 rounded border border-yellow-500/20">
+                                {primaryVehicle?.licensePlate || customer.licensePlate}
+                              </span>
+                            )}
                           </div>
                         )}
                       </div>
@@ -1293,31 +1357,31 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
                 </div>
               </div>
             ) : selectedCustomer ? (
-              <div className="p-2.5 bg-[#1e1e2d] rounded-lg">
+              <div className="p-4 bg-[#1e1e2d] border border-blue-500/30 rounded-2xl shadow-lg shadow-blue-500/5">
                 {isEditingCustomer ? (
                   // Edit mode - show input fields
-                  <div className="space-y-2">
-                    <div>
-                      <label className="block text-[10px] font-medium text-slate-400 mb-1">
+                  <div className="space-y-3">
+                    <div className="space-y-1.5">
+                      <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">
                         Tên khách hàng
                       </label>
                       <input
                         type="text"
                         value={editCustomerName}
                         onChange={(e) => setEditCustomerName(e.target.value)}
-                        className="w-full px-2.5 py-1.5 bg-[#2b2b40] rounded-lg text-white text-xs"
+                        className="w-full px-4 py-2.5 bg-slate-800/50 border border-slate-700 rounded-xl text-white text-sm focus:border-blue-500 transition-all"
                         placeholder="Nhập tên khách hàng"
                       />
                     </div>
-                    <div>
-                      <label className="block text-[10px] font-medium text-slate-400 mb-1">
+                    <div className="space-y-1.5">
+                      <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">
                         Số điện thoại
                       </label>
                       <input
                         type="tel"
                         value={editCustomerPhone}
                         onChange={(e) => setEditCustomerPhone(e.target.value)}
-                        className="w-full px-2.5 py-1.5 bg-[#2b2b40] rounded-lg text-white text-xs"
+                        className="w-full px-4 py-2.5 bg-slate-800/50 border border-slate-700 rounded-xl text-white text-sm focus:border-blue-500 transition-all"
                         placeholder="Nhập số điện thoại"
                       />
                     </div>
@@ -1328,57 +1392,45 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
                           setEditCustomerName(selectedCustomer.name);
                           setEditCustomerPhone(selectedCustomer.phone || "");
                         }}
-                        className="flex-1 py-1.5 bg-[#2b2b40] text-slate-300 rounded-lg text-[10px] font-medium"
+                        className="flex-1 py-2.5 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold active:scale-95 transition-all"
                       >
                         Hủy
                       </button>
                       <button
                         onClick={handleSaveEditedCustomer}
-                        className="flex-1 py-1.5 bg-green-600 text-white rounded-lg text-[10px] font-medium"
+                        className="flex-1 py-2.5 bg-emerald-600 text-white rounded-xl text-xs font-bold active:scale-95 transition-all shadow-lg shadow-emerald-500/20"
                       >
-                        💾 Lưu
+                        Lưu thay đổi
                       </button>
                     </div>
                   </div>
                 ) : (
                   // View mode - show customer info with edit button
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-start gap-2.5">
-                      <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400 font-semibold text-xs">
-                        {selectedCustomer.name.charAt(0)}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-2xl bg-blue-500/10 flex items-center justify-center text-blue-400 font-bold text-lg shadow-inner">
+                        {selectedCustomer.name.charAt(0).toUpperCase()}
                       </div>
                       <div>
-                        <div className="text-white font-medium text-xs">
+                        <div className="text-white font-bold text-base">
                           {selectedCustomer.name}
                         </div>
-                        <div className="text-xs text-slate-400">
-                          📞 {selectedCustomer.phone}
+                        <div className="text-xs text-slate-400 flex items-center gap-1.5">
+                          <PhoneCall className="w-3 h-3 text-blue-400" />
+                          {selectedCustomer.phone}
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-2">
                       <button
                         onClick={() => {
                           setEditCustomerName(selectedCustomer.name);
                           setEditCustomerPhone(selectedCustomer.phone || "");
                           setIsEditingCustomer(true);
                         }}
-                        className="p-1 text-blue-400 hover:text-blue-300"
-                        title="Sửa thông tin khách hàng"
+                        className="w-9 h-9 flex items-center justify-center bg-blue-500/10 text-blue-400 rounded-xl active:scale-95 transition-all"
                       >
-                        <svg
-                          className="w-3.5 h-3.5"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-                          />
-                        </svg>
+                        <Edit2 className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => {
@@ -1387,7 +1439,7 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
                           setShowCustomerSearch(true);
                           setIsEditingCustomer(false);
                         }}
-                        className="p-1 text-slate-400 hover:text-white"
+                        className="w-9 h-9 flex items-center justify-center bg-slate-800 text-slate-400 rounded-xl active:scale-95 transition-all"
                       >
                         <X className="w-4 h-4" />
                       </button>
@@ -1399,47 +1451,39 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
 
             {/* Vehicle Selection */}
             {selectedCustomer && (
-              <>
-                <h3 className="text-xs font-semibold text-white mt-3 uppercase tracking-wide">
-                  XE CỦA KHÁCH (Chọn 1):
-                </h3>
+              <div className="space-y-3 pt-2">
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">
+                  Chọn xe sửa chữa
+                </label>
 
-                <div className="space-y-2">
+                <div className="grid grid-cols-1 gap-2.5">
                   {customerVehicles.map((vehicle) => {
                     const isActive = selectedVehicle?.id === vehicle.id;
                     return (
                       <div
                         key={vehicle.id}
                         onClick={() => handleSelectVehicle(vehicle)}
-                        className={`p-3 rounded-lg cursor-pointer transition-all ${
-                          isActive
-                            ? "bg-blue-500/20 border-2 border-blue-500"
-                            : "bg-[#1e1e2d] border-2 border-transparent"
-                        }`}
+                        className={`p-4 rounded-2xl cursor-pointer transition-all border ${isActive
+                          ? "bg-blue-600 border-blue-500 shadow-lg shadow-blue-500/20"
+                          : "bg-[#1e1e2d] border-slate-700/30 hover:border-slate-600"
+                          }`}
                       >
                         <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2.5">
-                            <div className="text-2xl">
-                              {isActive ? (
-                                <Check className="w-4 h-4 text-blue-400" />
-                              ) : (
-                                "🏍️"
-                              )}
+                          <div className="flex items-center gap-3">
+                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isActive ? "bg-white/20 text-white" : "bg-slate-800 text-slate-400"
+                              }`}>
+                              <Bike className="w-5 h-5" />
                             </div>
                             <div>
-                              <div
-                                className={`font-semibold ${
-                                  isActive ? "text-blue-400" : "text-white"
-                                }`}
-                              >
+                              <div className={`font-bold text-sm ${isActive ? "text-white" : "text-slate-200"}`}>
                                 {vehicle.model}
-                                {isActive && " (ĐANG CHỌN)"}
                               </div>
-                              <div className="text-xs text-slate-400">
-                                BKS: {vehicle.licensePlate}
+                              <div className={`text-xs font-mono ${isActive ? "text-blue-100" : "text-slate-500"}`}>
+                                {vehicle.licensePlate}
                               </div>
                             </div>
                           </div>
+                          {isActive && <CheckCircle className="w-5 h-5 text-white" />}
                         </div>
                       </div>
                     );
@@ -1448,126 +1492,126 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
                   {/* Add New Vehicle Button */}
                   <button
                     onClick={() => setShowAddVehicle(true)}
-                    className="w-full py-1.5 border border-dashed border-slate-600 rounded-lg text-slate-400 hover:border-blue-500 hover:text-blue-400 transition-colors flex items-center justify-center gap-1.5 text-xs"
+                    className="w-full py-3.5 border-2 border-dashed border-slate-700 hover:border-blue-500/50 hover:bg-blue-500/5 rounded-2xl text-slate-500 hover:text-blue-400 transition-all flex items-center justify-center gap-2 text-xs font-bold"
                   >
-                    <Plus className="w-3.5 h-3.5" />
+                    <Plus className="w-4 h-4" />
                     Thêm xe mới
                   </button>
                 </div>
-              </>
+              </div>
             )}
 
             {/* Vehicle Info Inputs */}
             {selectedVehicle && (
-              <div className="space-y-2 mt-2.5">
-                <div>
-                  <label className="block text-xs font-medium text-slate-400 mb-1">
+              <div className="space-y-4 mt-4">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">
                     Số KM hiện tại
                   </label>
-                  <input
-                    type="number"
-                    value={currentKm}
-                    onChange={(e) => setCurrentKm(e.target.value)}
-                    placeholder="Nhập số KM"
-                    className="w-full px-2.5 py-1.5 bg-[#2b2b40] rounded-lg text-white text-xs"
-                  />
+                  <div className="relative">
+                    <TrendingUp className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                    <input
+                      type="number"
+                      value={currentKm}
+                      onChange={(e) => setCurrentKm(e.target.value)}
+                      placeholder="Nhập số KM..."
+                      className="w-full pl-11 pr-4 py-3 bg-[#1e1e2d] border border-slate-700/50 rounded-xl text-white text-sm focus:border-blue-500 transition-all"
+                    />
+                  </div>
                 </div>
 
                 {/* Maintenance Warnings */}
                 {maintenanceWarnings.length > 0 && (
-                  <div className="p-2.5 bg-gradient-to-r from-orange-500/10 to-red-500/10 border border-orange-500/30 rounded-lg">
-                    <div className="flex items-center gap-1.5 mb-2">
-                      <AlertTriangle className="w-3.5 h-3.5 text-orange-400" />
-                      <span className="text-xs font-semibold text-orange-400">
-                        Cần bảo dưỡng
+                  <div className="p-4 bg-gradient-to-br from-orange-500/10 to-red-500/10 border border-orange-500/20 rounded-2xl space-y-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-lg bg-orange-500/20 flex items-center justify-center text-orange-400">
+                        <AlertTriangle className="w-4 h-4" />
+                      </div>
+                      <span className="text-xs font-bold text-orange-400 uppercase tracking-tight">
+                        Cần bảo dưỡng định kỳ
                       </span>
                     </div>
-                    <div className="space-y-1.5">
+                    <div className="grid grid-cols-1 gap-2">
                       {maintenanceWarnings.map((warning) => (
                         <div
                           key={warning.type}
-                          className={`flex items-center justify-between px-2 py-1.5 rounded text-xs ${
-                            warning.isOverdue
-                              ? "bg-red-500/20 text-red-300"
-                              : "bg-yellow-500/20 text-yellow-300"
-                          }`}
+                          className={`flex items-center justify-between p-3 rounded-xl border ${warning.isOverdue
+                            ? "bg-red-500/10 border-red-500/20 text-red-300"
+                            : "bg-orange-500/5 border-orange-500/10 text-orange-300"
+                            }`}
                         >
-                          <span>
-                            {warning.icon} {warning.name}
-                          </span>
-                          <span className="font-medium">
+                          <div className="flex items-center gap-2">
+                            <span className="text-base">{warning.icon}</span>
+                            <span className="text-xs font-bold">{warning.name}</span>
+                          </div>
+                          <div className="text-[10px] font-mono font-bold bg-black/20 px-2 py-1 rounded">
                             {warning.isOverdue
-                              ? `Quá ${formatKm(Math.abs(warning.kmUntilDue))}`
-                              : `Còn ${formatKm(warning.kmUntilDue)}`}
-                          </span>
+                              ? `QUÁ ${formatKm(Math.abs(warning.kmUntilDue))}`
+                              : `CÒN ${formatKm(warning.kmUntilDue)}`}
+                          </div>
                         </div>
                       ))}
                     </div>
                   </div>
                 )}
 
-                <div>
-                  <label className="block text-xs font-medium text-slate-400 mb-1">
-                    Mô tả sự cố
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">
+                    Mô tả tình trạng xe
                   </label>
-                  <textarea
-                    value={issueDescription}
-                    onChange={(e) => setIssueDescription(e.target.value)}
-                    placeholder="Thay nhớt, kêu cò..."
-                    rows={3}
-                    className="w-full px-2.5 py-1.5 bg-[#2b2b40] rounded-lg text-white text-xs resize-none"
-                  />
+                  <div className="relative">
+                    <Wrench className="absolute left-3.5 top-3.5 w-4 h-4 text-slate-500" />
+                    <textarea
+                      value={issueDescription}
+                      onChange={(e) => setIssueDescription(e.target.value)}
+                      placeholder="Mô tả các vấn đề cần sửa chữa..."
+                      rows={3}
+                      className="w-full pl-11 pr-4 py-3 bg-[#1e1e2d] border border-slate-700/50 rounded-xl text-white text-sm resize-none focus:border-blue-500 transition-all"
+                    />
+                  </div>
                 </div>
               </div>
             )}
           </div>
 
-          {/* KHỐI 3A: PHỤ TÙNG */}
+          {/* KHỐI 3A: PHỤ TÙNG & 3B: DỊCH VỤ */}
           {selectedCustomer && selectedVehicle && (
             <>
-              <div className="px-3 pb-3 space-y-2.5">
-                <h3 className="text-xs font-semibold text-white uppercase tracking-wide">
-                  PHỤ TÙNG SỬ DỤNG
-                </h3>
+              <div className="px-4 pb-4 space-y-3">
+                <div className="flex items-center justify-between ml-1">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                    Phụ tùng sử dụng
+                  </label>
+                  {selectedParts.length > 0 && (
+                    <span className="text-[10px] font-bold text-blue-400 bg-blue-400/10 px-2 py-0.5 rounded-full">
+                      {selectedParts.length} món
+                    </span>
+                  )}
+                </div>
 
                 {/* Parts List */}
                 {selectedParts.length > 0 && (
-                  <div className="space-y-2">
+                  <div className="space-y-2.5">
                     {selectedParts.map((part, index) => (
                       <div
                         key={part.partId}
-                        className="p-3 bg-[#1e1e2d] rounded-lg"
+                        className="p-4 bg-[#1e1e2d] border border-slate-700/30 rounded-2xl shadow-sm"
                       >
-                        <div className="flex items-start justify-between mb-2">
-                          <div className="flex-1">
-                            <div className="text-white text-xs font-medium">
-                              {index + 1}. {part.partName}
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex-1 min-w-0">
+                            <div className="text-sm font-bold text-white truncate">
+                              {part.partName}
                             </div>
-                            <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                              {part.sku && (
-                                <span className="text-[11px] text-blue-400 font-mono">
-                                  {part.sku}
-                                </span>
-                              )}
-                              {part.category && (
-                                <span
-                                  className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-medium ${
-                                    getCategoryColor(part.category).bg
-                                  } ${getCategoryColor(part.category).text}`}
-                                >
-                                  {part.category}
-                                </span>
-                              )}
+                            <div className="text-[10px] text-slate-500 font-mono mt-0.5">
+                              {part.sku}
                             </div>
-                            <div className="text-[11px] text-slate-400 mt-0.5 flex items-center gap-1">
-                              <span className="text-[10px]">Giá:</span>
+                            <div className="mt-2 flex items-center gap-2">
+                              <span className="text-[10px] text-slate-500">Giá:</span>
                               <input
                                 type="text"
                                 value={formatNumberWithDots(part.sellingPrice)}
                                 onChange={(e) => {
-                                  const newPrice = parseFormattedNumber(
-                                    e.target.value
-                                  );
+                                  const newPrice = parseFormattedNumber(e.target.value);
                                   setSelectedParts(
                                     selectedParts.map((p) =>
                                       p.partId === part.partId
@@ -1576,39 +1620,41 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
                                     )
                                   );
                                 }}
-                                className="w-20 px-1.5 py-0.5 bg-[#2b2b40] border border-slate-600 rounded text-[#ffc700] text-[11px] text-right focus:border-blue-500 focus:outline-none"
+                                className="w-24 px-2 py-1 bg-slate-800 border border-slate-700 rounded-lg text-blue-400 text-xs font-bold focus:border-blue-500 focus:outline-none transition-all"
                               />
-                              <span className="text-[10px]">/ cái</span>
                             </div>
                           </div>
-                          <div className="text-[#50cd89] font-bold">
-                            {formatCurrency(part.quantity * part.sellingPrice)}
+                          <div className="flex flex-col items-end gap-3">
+                            <button
+                              onClick={() => handleRemovePart(part.partId)}
+                              className="w-8 h-8 flex items-center justify-center text-slate-500 hover:text-red-400 active:scale-95 transition-all"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                            <div className="flex items-center bg-slate-800 rounded-xl p-1 border border-slate-700/50">
+                              <button
+                                onClick={() => handleUpdatePartQuantity(part.partId, -1)}
+                                className="w-7 h-7 flex items-center justify-center text-slate-400 active:bg-slate-700 rounded-lg transition-all"
+                              >
+                                <Minus className="w-3.5 h-3.5" />
+                              </button>
+                              <span className="w-8 text-center text-xs font-bold text-white">
+                                {part.quantity}
+                              </span>
+                              <button
+                                onClick={() => handleUpdatePartQuantity(part.partId, 1)}
+                                className="w-7 h-7 flex items-center justify-center text-blue-400 active:bg-slate-700 rounded-lg transition-all"
+                              >
+                                <Plus className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
                           </div>
                         </div>
-
-                        {/* Quantity Controls */}
-                        <div className="flex items-center justify-end">
-                          <div className="flex items-center gap-2">
-                            <button
-                              onClick={() =>
-                                handleUpdatePartQuantity(part.partId, -1)
-                              }
-                              className="w-8 h-8 bg-[#2b2b40] rounded-lg flex items-center justify-center text-white hover:bg-red-500/20 hover:text-red-400"
-                            >
-                              <Minus className="w-4 h-4" />
-                            </button>
-                            <span className="w-8 text-center text-white font-semibold">
-                              {part.quantity}
-                            </span>
-                            <button
-                              onClick={() =>
-                                handleUpdatePartQuantity(part.partId, 1)
-                              }
-                              className="w-8 h-8 bg-[#2b2b40] rounded-lg flex items-center justify-center text-white hover:bg-blue-500/20 hover:text-blue-400"
-                            >
-                              <Plus className="w-4 h-4" />
-                            </button>
-                          </div>
+                        <div className="mt-3 pt-3 border-t border-slate-700/30 flex justify-between items-center">
+                          <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Thành tiền</span>
+                          <span className="text-sm font-bold text-emerald-400">
+                            {formatCurrency(part.quantity * part.sellingPrice)}
+                          </span>
                         </div>
                       </div>
                     ))}
@@ -1618,131 +1664,285 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
                 {/* Add Part Button */}
                 <button
                   onClick={() => setShowPartSearch(true)}
-                  className="w-full py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white font-medium flex items-center justify-center gap-1.5 transition-colors text-xs"
+                  className="w-full py-3.5 bg-blue-600/10 border border-blue-500/30 hover:bg-blue-600/20 rounded-2xl text-blue-400 transition-all flex items-center justify-center gap-2 text-xs font-bold active:scale-[0.98]"
                 >
-                  <Plus className="w-4 h-4" />+ THÊM PHỤ TÙNG
+                  <Plus className="w-4 h-4" />
+                  Thêm phụ tùng
                 </button>
               </div>
 
-              {/* KHỐI 3B: GIA CÔNG */}
-              <div className="px-3 pb-3 space-y-2.5">
-                <h3 className="text-xs font-semibold text-white uppercase tracking-wide">
-                  BÁO GIÁ (GIA CÔNG, ĐẶT NGOÀI)
-                </h3>
+              {/* 3B: DỊCH VỤ (GIA CÔNG) */}
+              <div className="px-4 pb-4 space-y-3">
+                <div className="flex items-center justify-between ml-1">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                    Dịch vụ & Gia công
+                  </label>
+                  {additionalServices.length > 0 && (
+                    <span className="text-[10px] font-bold text-orange-400 bg-orange-400/10 px-2 py-0.5 rounded-full">
+                      {additionalServices.length} mục
+                    </span>
+                  )}
+                </div>
 
-                {/* Services List - Card Design */}
+                {/* Services List */}
                 {additionalServices.length > 0 && (
-                  <div className="space-y-2">
-                    {additionalServices.map((service, index) => (
+                  <div className="space-y-2.5">
+                    {additionalServices.map((service) => (
                       <div
                         key={service.id}
-                        className="p-3 bg-[#1e1e2d] rounded-lg border border-slate-700/50"
+                        className="p-4 bg-[#1e1e2d] border border-slate-700/30 rounded-2xl shadow-sm"
                       >
-                        <div className="flex items-start gap-2 mb-2">
-                          <span className="text-lg">🛠️</span>
-                          <div className="flex-1">
-                            <div className="text-white text-sm font-medium">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex-1 min-w-0">
+                            <div className="text-sm font-bold text-white truncate">
                               {service.name}
                             </div>
-                            <div className="text-xs text-slate-400 mt-0.5">
-                              1 x {formatCurrency(service.sellingPrice)}
+                            <div className="mt-2 flex items-center gap-2">
+                              <span className="text-[10px] text-slate-500">Giá:</span>
+                              <input
+                                type="text"
+                                value={formatNumberWithDots(service.sellingPrice)}
+                                onChange={(e) => {
+                                  const newPrice = parseFormattedNumber(e.target.value);
+                                  setAdditionalServices(
+                                    additionalServices.map((s) =>
+                                      s.id === service.id
+                                        ? { ...s, sellingPrice: newPrice }
+                                        : s
+                                    )
+                                  );
+                                }}
+                                className="w-24 px-2 py-1 bg-slate-800 border border-slate-700 rounded-lg text-orange-400 text-xs font-bold focus:border-blue-500 focus:outline-none transition-all"
+                              />
                             </div>
                           </div>
+                          <button
+                            onClick={() => handleRemoveService(service.id)}
+                            className="w-8 h-8 flex items-center justify-center text-slate-500 hover:text-red-400 active:scale-95 transition-all"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
                         </div>
-                        <div className="border-t border-slate-700 pt-2 mt-2 flex items-center justify-between">
-                          <div>
-                            <div className="text-xs text-slate-500">
-                              Thành tiền:
-                            </div>
-                            <div className="text-[#50cd89] font-bold text-sm">
-                              💵 {formatCurrency(service.sellingPrice)}
-                            </div>
-                            {service.costPrice > 0 && (
-                              <div className="text-[10px] text-slate-600 mt-0.5">
-                                (Vốn: {formatCurrency(service.costPrice)})
-                              </div>
-                            )}
-                          </div>
-                          <div className="flex gap-1">
-                            <button
-                              onClick={() => {
-                                // TODO: Edit service
-                                setShowAddService(true);
-                              }}
-                              className="p-1.5 text-blue-400 hover:bg-blue-500/20 rounded-lg"
-                            >
-                              ✏️
-                            </button>
-                            <button
-                              onClick={() => handleRemoveService(service.id)}
-                              className="p-1.5 text-red-400 hover:bg-red-500/20 rounded-lg"
-                            >
-                              🗑️
-                            </button>
-                          </div>
+                        <div className="mt-3 pt-3 border-t border-slate-700/30 flex justify-between items-center">
+                          <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Thành tiền</span>
+                          <span className="text-sm font-bold text-orange-400">
+                            {formatCurrency(service.sellingPrice)}
+                          </span>
                         </div>
                       </div>
                     ))}
                   </div>
                 )}
 
-                {/* Add Service Button - Dashed Border */}
+                {/* Add Service Button */}
                 <button
                   onClick={() => setShowAddService(true)}
-                  className="w-full py-3 border border-dashed border-[#009ef7] rounded-lg text-[#009ef7] font-medium flex items-center justify-center gap-2 transition-all hover:bg-[#009ef7]/10 text-xs"
+                  className="w-full py-3.5 bg-orange-600/10 border border-orange-500/30 hover:bg-orange-600/20 rounded-2xl text-orange-400 transition-all flex items-center justify-center gap-2 text-xs font-bold active:scale-[0.98]"
                 >
                   <Plus className="w-4 h-4" />
-                  THÊM CÔNG VIỆC KHÁC (GIA CÔNG)
+                  Thêm dịch vụ ngoài
                 </button>
               </div>
+            </>
+          )}
 
-              {/* KHỐI 4: TÀI CHÍNH */}
-              <div className="px-3 pb-3 space-y-2.5">
-                <h3 className="text-xs font-semibold text-white uppercase tracking-wide">
-                  THANH TOÁN
-                </h3>
+          {/* KHỐI 4: TÀI CHÍNH */}
+          <div className="px-3 pb-3 space-y-2.5">
+            <h3 className="text-xs font-semibold text-white uppercase tracking-wide">
+              THANH TOÁN
+            </h3>
 
-                <div className="p-4 bg-[#1e1e2d] rounded-lg space-y-2">
-                  {/* Labor Cost */}
-                  <div>
-                    <label className="block text-xs font-medium text-slate-400 mb-1">
-                      Tiền công
-                    </label>
+            <div className="p-4 bg-[#1e1e2d] rounded-lg space-y-2">
+              {/* Labor Cost */}
+              <div>
+                <label className="block text-xs font-medium text-slate-400 mb-1">
+                  Tiền công
+                </label>
+                <input
+                  type="text"
+                  value={formatNumberWithDots(laborCost)}
+                  onChange={(e) =>
+                    setLaborCost(parseFormattedNumber(e.target.value))
+                  }
+                  placeholder="0"
+                  className="w-full px-2.5 py-1.5 bg-[#2b2b40] rounded-lg text-white text-xs"
+                />
+              </div>
+
+              {/* Deposit Toggle */}
+              <div className="pt-2">
+                <div className="flex items-center justify-between p-3 bg-[#2b2b40] rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center">
+                      <span className="text-lg">💳</span>
+                    </div>
+                    <span className="text-white font-medium text-sm">
+                      Đặt cọc trước
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => setIsDeposit(!isDeposit)}
+                    className={`relative w-12 h-6 rounded-full transition-colors ${isDeposit ? "bg-[#009ef7]" : "bg-slate-600"
+                      }`}
+                  >
+                    <div
+                      className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow-md transition-transform ${isDeposit ? "right-0.5" : "left-0.5"
+                        }`}
+                    >
+                      {isDeposit && (
+                        <span className="absolute inset-0 flex items-center justify-center text-[#009ef7] text-[10px] font-bold">
+                          ON
+                        </span>
+                      )}
+                    </div>
+                  </button>
+                </div>
+
+                {isDeposit && (
+                  <div className="mt-3 p-3 bg-[#151521] border-2 border-[#009ef7] rounded-lg">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-lg">💵</span>
+                      <span className="text-slate-400 text-xs">
+                        Nhập số tiền cọc...
+                      </span>
+                    </div>
                     <input
                       type="text"
-                      value={formatNumberWithDots(laborCost)}
+                      value={formatNumberWithDots(depositAmount)}
                       onChange={(e) =>
-                        setLaborCost(parseFormattedNumber(e.target.value))
+                        setDepositAmount(
+                          parseFormattedNumber(e.target.value)
+                        )
                       }
                       placeholder="0"
-                      className="w-full px-2.5 py-1.5 bg-[#2b2b40] rounded-lg text-white text-xs"
+                      className="w-full px-3 py-2.5 bg-[#2b2b40] border border-slate-600 rounded-lg text-white text-sm focus:border-[#009ef7] focus:outline-none transition-colors"
                     />
                   </div>
+                )}
+              </div>
 
-                  {/* Deposit Toggle */}
-                  <div className="pt-2">
+              {/* Payment Method */}
+              <div className="pt-2">
+                <label className="block text-xs font-medium text-slate-400 mb-2">
+                  Phương thức thanh toán
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => setPaymentMethod("cash")}
+                    className={`relative p-3 rounded-lg transition-all border-2 ${paymentMethod === "cash"
+                      ? "bg-emerald-500/10 border-emerald-500 shadow-lg shadow-emerald-500/20"
+                      : "bg-[#2b2b40] border-transparent hover:border-slate-600"
+                      }`}
+                  >
+                    <div className="flex flex-col items-center gap-1">
+                      <div
+                        className={`text-xl ${paymentMethod === "cash" ? "scale-110" : ""
+                          } transition-transform`}
+                      >
+                        💵
+                      </div>
+                      <span
+                        className={`text-xs font-medium ${paymentMethod === "cash"
+                          ? "text-emerald-400"
+                          : "text-slate-400"
+                          }`}
+                      >
+                        Tiền mặt
+                      </span>
+                    </div>
+                    {paymentMethod === "cash" && (
+                      <div className="absolute top-1 right-1 w-4 h-4 bg-emerald-500 rounded-full flex items-center justify-center">
+                        <svg
+                          className="w-2.5 h-2.5 text-white"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={3}
+                            d="M5 13l4 4L19 7"
+                          />
+                        </svg>
+                      </div>
+                    )}
+                  </button>
+                  <button
+                    onClick={() => setPaymentMethod("bank")}
+                    className={`relative p-3 rounded-lg transition-all border-2 ${paymentMethod === "bank"
+                      ? "bg-blue-500/10 border-blue-500 shadow-lg shadow-blue-500/20"
+                      : "bg-[#2b2b40] border-transparent hover:border-slate-600"
+                      }`}
+                  >
+                    <div className="flex flex-col items-center gap-1">
+                      <div
+                        className={`text-xl ${paymentMethod === "bank" ? "scale-110" : ""
+                          } transition-transform`}
+                      >
+                        🏦
+                      </div>
+                      <span
+                        className={`text-xs font-medium ${paymentMethod === "bank"
+                          ? "text-blue-400"
+                          : "text-slate-400"
+                          }`}
+                      >
+                        Chuyển khoản
+                      </span>
+                    </div>
+                    {paymentMethod === "bank" && (
+                      <div className="absolute top-1 right-1 w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
+                        <svg
+                          className="w-2.5 h-2.5 text-white"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={3}
+                            d="M5 13l4 4L19 7"
+                          />
+                        </svg>
+                      </div>
+                    )}
+                  </button>
+                </div>
+
+                {/* Payment at return - only show when status is "Trả máy" */}
+                {status === "Trả máy" && (
+                  <div className="mt-3">
+                    {/* Checkbox to enable payment */}
                     <div className="flex items-center justify-between p-3 bg-[#2b2b40] rounded-lg">
                       <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center">
-                          <span className="text-lg">💳</span>
+                        <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center">
+                          <span className="text-lg">✅</span>
                         </div>
                         <span className="text-white font-medium text-sm">
-                          Đặt cọc trước
+                          Thanh toán khi trả xe
                         </span>
                       </div>
                       <button
-                        onClick={() => setIsDeposit(!isDeposit)}
-                        className={`relative w-12 h-6 rounded-full transition-colors ${
-                          isDeposit ? "bg-[#009ef7]" : "bg-slate-600"
-                        }`}
+                        onClick={() => {
+                          const newValue = !showPaymentInput;
+                          setShowPaymentInput(newValue);
+                          if (!newValue) {
+                            setPartialAmount(0);
+                          }
+                        }}
+                        className={`relative w-12 h-6 rounded-full transition-colors ${showPaymentInput
+                          ? "bg-emerald-500"
+                          : "bg-slate-600"
+                          }`}
                       >
                         <div
-                          className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow-md transition-transform ${
-                            isDeposit ? "right-0.5" : "left-0.5"
-                          }`}
+                          className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow-md transition-transform ${showPaymentInput ? "right-0.5" : "left-0.5"
+                            }`}
                         >
-                          {isDeposit && (
-                            <span className="absolute inset-0 flex items-center justify-center text-[#009ef7] text-[10px] font-bold">
+                          {showPaymentInput && (
+                            <span className="absolute inset-0 flex items-center justify-center text-emerald-500 text-[10px] font-bold">
                               ON
                             </span>
                           )}
@@ -1750,380 +1950,213 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
                       </button>
                     </div>
 
-                    {isDeposit && (
-                      <div className="mt-3 p-3 bg-[#151521] border-2 border-[#009ef7] rounded-lg">
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="text-lg">💵</span>
-                          <span className="text-slate-400 text-xs">
-                            Nhập số tiền cọc...
-                          </span>
-                        </div>
+                    {/* Payment Input - show when checkbox is enabled */}
+                    {showPaymentInput && (
+                      <div className="mt-3 p-3 bg-[#151521] border-2 border-emerald-500 rounded-lg">
+                        <label className="block text-xs font-medium text-slate-400 mb-2">
+                          Số tiền thanh toán thêm:
+                        </label>
                         <input
                           type="text"
-                          value={formatNumberWithDots(depositAmount)}
+                          value={formatNumberWithDots(partialAmount)}
                           onChange={(e) =>
-                            setDepositAmount(
+                            setPartialAmount(
                               parseFormattedNumber(e.target.value)
                             )
                           }
                           placeholder="0"
-                          className="w-full px-3 py-2.5 bg-[#2b2b40] border border-slate-600 rounded-lg text-white text-sm focus:border-[#009ef7] focus:outline-none transition-colors"
+                          className="w-full px-3 py-2.5 bg-[#2b2b40] border border-slate-600 rounded-lg text-white text-sm focus:border-emerald-500 focus:outline-none transition-colors mb-2"
                         />
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Payment Method */}
-                  <div className="pt-2">
-                    <label className="block text-xs font-medium text-slate-400 mb-2">
-                      Phương thức thanh toán
-                    </label>
-                    <div className="grid grid-cols-2 gap-2">
-                      <button
-                        onClick={() => setPaymentMethod("cash")}
-                        className={`relative p-3 rounded-lg transition-all border-2 ${
-                          paymentMethod === "cash"
-                            ? "bg-emerald-500/10 border-emerald-500 shadow-lg shadow-emerald-500/20"
-                            : "bg-[#2b2b40] border-transparent hover:border-slate-600"
-                        }`}
-                      >
-                        <div className="flex flex-col items-center gap-1">
-                          <div
-                            className={`text-xl ${
-                              paymentMethod === "cash" ? "scale-110" : ""
-                            } transition-transform`}
+                        {/* Quick amount buttons */}
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => setPartialAmount(0)}
+                            className="flex-1 px-3 py-2 bg-slate-600 hover:bg-slate-500 text-white rounded-lg text-xs font-medium transition-colors"
                           >
-                            💵
-                          </div>
-                          <span
-                            className={`text-xs font-medium ${
-                              paymentMethod === "cash"
-                                ? "text-emerald-400"
-                                : "text-slate-400"
-                            }`}
-                          >
-                            Tiền mặt
-                          </span>
-                        </div>
-                        {paymentMethod === "cash" && (
-                          <div className="absolute top-1 right-1 w-4 h-4 bg-emerald-500 rounded-full flex items-center justify-center">
-                            <svg
-                              className="w-2.5 h-2.5 text-white"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={3}
-                                d="M5 13l4 4L19 7"
-                              />
-                            </svg>
-                          </div>
-                        )}
-                      </button>
-                      <button
-                        onClick={() => setPaymentMethod("bank")}
-                        className={`relative p-3 rounded-lg transition-all border-2 ${
-                          paymentMethod === "bank"
-                            ? "bg-blue-500/10 border-blue-500 shadow-lg shadow-blue-500/20"
-                            : "bg-[#2b2b40] border-transparent hover:border-slate-600"
-                        }`}
-                      >
-                        <div className="flex flex-col items-center gap-1">
-                          <div
-                            className={`text-xl ${
-                              paymentMethod === "bank" ? "scale-110" : ""
-                            } transition-transform`}
-                          >
-                            🏦
-                          </div>
-                          <span
-                            className={`text-xs font-medium ${
-                              paymentMethod === "bank"
-                                ? "text-blue-400"
-                                : "text-slate-400"
-                            }`}
-                          >
-                            Chuyển khoản
-                          </span>
-                        </div>
-                        {paymentMethod === "bank" && (
-                          <div className="absolute top-1 right-1 w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
-                            <svg
-                              className="w-2.5 h-2.5 text-white"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={3}
-                                d="M5 13l4 4L19 7"
-                              />
-                            </svg>
-                          </div>
-                        )}
-                      </button>
-                    </div>
-
-                    {/* Payment at return - only show when status is "Trả máy" */}
-                    {status === "Trả máy" && (
-                      <div className="mt-3">
-                        {/* Checkbox to enable payment */}
-                        <div className="flex items-center justify-between p-3 bg-[#2b2b40] rounded-lg">
-                          <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center">
-                              <span className="text-lg">✅</span>
-                            </div>
-                            <span className="text-white font-medium text-sm">
-                              Thanh toán khi trả xe
-                            </span>
-                          </div>
+                            0%
+                          </button>
                           <button
                             onClick={() => {
-                              const newValue = !showPaymentInput;
-                              setShowPaymentInput(newValue);
-                              if (!newValue) {
-                                setPartialAmount(0);
-                              }
+                              const remainingToPay =
+                                total - (isDeposit ? depositAmount : 0);
+                              setPartialAmount(
+                                Math.round(remainingToPay * 0.5)
+                              );
                             }}
-                            className={`relative w-12 h-6 rounded-full transition-colors ${
-                              showPaymentInput
-                                ? "bg-emerald-500"
-                                : "bg-slate-600"
-                            }`}
+                            className="flex-1 px-3 py-2 bg-slate-600 hover:bg-slate-500 text-white rounded-lg text-xs font-medium transition-colors"
                           >
-                            <div
-                              className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow-md transition-transform ${
-                                showPaymentInput ? "right-0.5" : "left-0.5"
-                              }`}
-                            >
-                              {showPaymentInput && (
-                                <span className="absolute inset-0 flex items-center justify-center text-emerald-500 text-[10px] font-bold">
-                                  ON
-                                </span>
-                              )}
-                            </div>
+                            50%
+                          </button>
+                          <button
+                            onClick={() => {
+                              const remainingToPay =
+                                total - (isDeposit ? depositAmount : 0);
+                              setPartialAmount(remainingToPay);
+                            }}
+                            className="flex-1 px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-medium transition-colors"
+                          >
+                            100%
                           </button>
                         </div>
-
-                        {/* Payment Input - show when checkbox is enabled */}
-                        {showPaymentInput && (
-                          <div className="mt-3 p-3 bg-[#151521] border-2 border-emerald-500 rounded-lg">
-                            <label className="block text-xs font-medium text-slate-400 mb-2">
-                              Số tiền thanh toán thêm:
-                            </label>
-                            <input
-                              type="text"
-                              value={formatNumberWithDots(partialAmount)}
-                              onChange={(e) =>
-                                setPartialAmount(
-                                  parseFormattedNumber(e.target.value)
-                                )
-                              }
-                              placeholder="0"
-                              className="w-full px-3 py-2.5 bg-[#2b2b40] border border-slate-600 rounded-lg text-white text-sm focus:border-emerald-500 focus:outline-none transition-colors mb-2"
-                            />
-                            {/* Quick amount buttons */}
-                            <div className="flex items-center gap-2">
-                              <button
-                                onClick={() => setPartialAmount(0)}
-                                className="flex-1 px-3 py-2 bg-slate-600 hover:bg-slate-500 text-white rounded-lg text-xs font-medium transition-colors"
-                              >
-                                0%
-                              </button>
-                              <button
-                                onClick={() => {
-                                  const remainingToPay =
-                                    total - (isDeposit ? depositAmount : 0);
-                                  setPartialAmount(
-                                    Math.round(remainingToPay * 0.5)
-                                  );
-                                }}
-                                className="flex-1 px-3 py-2 bg-slate-600 hover:bg-slate-500 text-white rounded-lg text-xs font-medium transition-colors"
-                              >
-                                50%
-                              </button>
-                              <button
-                                onClick={() => {
-                                  const remainingToPay =
-                                    total - (isDeposit ? depositAmount : 0);
-                                  setPartialAmount(remainingToPay);
-                                }}
-                                className="flex-1 px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-medium transition-colors"
-                              >
-                                100%
-                              </button>
-                            </div>
-                          </div>
-                        )}
                       </div>
                     )}
-
-                    {/* Info Note */}
-                    <div className="mt-3 p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg flex items-start gap-2">
-                      <div className="flex-shrink-0 w-5 h-5 rounded-full bg-blue-500/20 flex items-center justify-center mt-0.5">
-                        <span className="text-blue-400 text-xs">ℹ️</span>
-                      </div>
-                      <p className="text-blue-300 text-xs leading-relaxed">
-                        <span className="font-semibold">Lưu ý:</span> Chỉ thanh
-                        toán khi trả xe, chỉ khả dụng khi trạng thái "Trả máy"
-                      </p>
-                    </div>
                   </div>
+                )}
 
-                  {/* Summary - Moved to end */}
-                  <div className="pt-2 border-t border-slate-700 space-y-2">
-                    <h3 className="text-xs font-semibold text-slate-300 mb-2">
-                      Tổng kết
-                    </h3>
-
-                    <div className="flex justify-between text-xs">
-                      <span className="text-slate-400">Phí dịch vụ:</span>
-                      <span className="text-white font-medium">
-                        {formatCurrency(laborCost)}
-                      </span>
-                    </div>
-                    <div className="flex justify-between text-xs">
-                      <span className="text-slate-400">Tiền phụ tùng:</span>
-                      <span className="text-white font-medium">
-                        {formatCurrency(partsTotal)}
-                      </span>
-                    </div>
-                    <div className="flex justify-between text-xs">
-                      <span className="text-slate-400">Gia công/Đặt hàng:</span>
-                      <span className="text-white font-medium">
-                        {formatCurrency(servicesTotal)}
-                      </span>
-                    </div>
-
-                    {/* Discount */}
-                    <div className="pt-2 border-t border-slate-700">
-                      <div className="flex gap-2 items-center justify-between mb-2">
-                        <label className="text-red-400 text-xs font-medium">
-                          Giảm giá:
-                        </label>
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="text"
-                            value={formatNumberWithDots(discount)}
-                            onChange={(e) =>
-                              setDiscount(parseFormattedNumber(e.target.value))
-                            }
-                            placeholder="0"
-                            className="w-20 px-2 py-1.5 bg-[#2b2b40] border border-slate-600 rounded text-white text-xs text-right focus:border-red-500 focus:outline-none"
-                          />
-                          <select
-                            value={discountType}
-                            onChange={(e) =>
-                              setDiscountType(
-                                e.target.value as "amount" | "percent"
-                              )
-                            }
-                            className="px-2 py-1.5 bg-[#2b2b40] border border-slate-600 rounded text-white text-xs focus:border-red-500 focus:outline-none"
-                          >
-                            <option value="amount">₫</option>
-                            <option value="percent">%</option>
-                          </select>
-                        </div>
-                      </div>
-
-                      {/* Quick percent buttons - only show in percent mode */}
-                      {discountType === "percent" && (
-                        <div className="flex gap-1.5 justify-end">
-                          {[5, 10, 15, 20].map((percent) => (
-                            <button
-                              key={percent}
-                              onClick={() => setDiscount(percent)}
-                              className="px-2.5 py-1 text-xs bg-slate-700 hover:bg-slate-600 text-slate-300 rounded transition-colors"
-                            >
-                              {percent}%
-                            </button>
-                          ))}
-                        </div>
-                      )}
-
-                      {/* Show discount amount if in percent mode */}
-                      {discountType === "percent" && discount > 0 && (
-                        <div className="text-xs text-slate-400 text-right mt-1">
-                          = {formatCurrency(discountAmount)}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Total */}
-                    <div className="pt-2 border-t-2 border-slate-600">
-                      <div className="flex justify-between text-sm font-bold mb-2">
-                        <span className="text-white">Tổng cộng:</span>
-                        <span className="text-blue-400 text-base">
-                          {formatCurrency(total)}
-                        </span>
-                      </div>
-
-                      {/* Payment breakdown - only show if there's deposit or additional payment */}
-                      {((isDeposit && depositAmount > 0) ||
-                        (showPaymentInput && partialAmount > 0)) && (
-                        <div className="space-y-1 pt-2 border-t border-slate-700">
-                          {isDeposit && depositAmount > 0 && (
-                            <div className="flex justify-between text-xs">
-                              <span className="text-purple-400">
-                                💰 Đã đặt cọc:
-                              </span>
-                              <span className="font-medium text-purple-400">
-                                {formatCurrency(depositAmount)}
-                              </span>
-                            </div>
-                          )}
-                          {showPaymentInput && partialAmount > 0 && (
-                            <div className="flex justify-between text-xs">
-                              <span className="text-blue-400">
-                                ➕ Thanh toán thêm:
-                              </span>
-                              <span className="font-medium text-blue-400">
-                                {formatCurrency(partialAmount)}
-                              </span>
-                            </div>
-                          )}
-                          <div className="flex justify-between items-center pt-2 border-t border-slate-700">
-                            <span className="text-sm font-bold text-white">
-                              {total -
-                                (isDeposit ? depositAmount : 0) -
-                                (showPaymentInput ? partialAmount : 0) >
-                              0
-                                ? "⏳ Còn phải thu:"
-                                : "✓ Đã thanh toán đủ"}
-                            </span>
-                            <span
-                              className={`text-base font-bold ${
-                                total -
-                                  (isDeposit ? depositAmount : 0) -
-                                  (showPaymentInput ? partialAmount : 0) >
-                                0
-                                  ? "text-amber-400"
-                                  : "text-green-400"
-                              }`}
-                            >
-                              {formatCurrency(
-                                Math.max(
-                                  0,
-                                  total -
-                                    (isDeposit ? depositAmount : 0) -
-                                    (showPaymentInput ? partialAmount : 0)
-                                )
-                              )}
-                            </span>
-                          </div>
-                        </div>
-                      )}
-                    </div>
+                {/* Info Note */}
+                <div className="mt-3 p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg flex items-start gap-2">
+                  <div className="flex-shrink-0 w-5 h-5 rounded-full bg-blue-500/20 flex items-center justify-center mt-0.5">
+                    <span className="text-blue-400 text-xs">ℹ️</span>
                   </div>
+                  <p className="text-blue-300 text-xs leading-relaxed">
+                    <span className="font-semibold">Lưu ý:</span> Chỉ thanh
+                    toán khi trả xe, chỉ khả dụng khi trạng thái "Trả máy"
+                  </p>
                 </div>
               </div>
-            </>
-          )}
+
+              {/* Summary Section - Premium Redesign */}
+              <div className="mt-6 p-4 bg-[#1e1e2d] rounded-2xl border border-slate-700/30 space-y-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <TrendingUp className="w-4 h-4 text-blue-400" />
+                  <h3 className="text-xs font-bold text-white uppercase tracking-wider">
+                    Tổng kết chi phí
+                  </h3>
+                </div>
+
+                <div className="space-y-2.5">
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs text-slate-400">Phí dịch vụ:</span>
+                    <span className="text-xs font-bold text-white">
+                      {formatCurrency(laborCost)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs text-slate-400">Tiền phụ tùng:</span>
+                    <span className="text-xs font-bold text-white">
+                      {formatCurrency(partsTotal)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs text-slate-400">Gia công/Đặt hàng:</span>
+                    <span className="text-xs font-bold text-white">
+                      {formatCurrency(servicesTotal)}
+                    </span>
+                  </div>
+
+                  {/* Discount Row */}
+                  <div className="pt-2.5 border-t border-slate-700/50 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-red-400 font-bold">Giảm giá:</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 bg-[#2b2b40] p-1 rounded-xl border border-slate-700/50">
+                      <input
+                        type="text"
+                        value={formatNumberWithDots(discount)}
+                        onChange={(e) =>
+                          setDiscount(parseFormattedNumber(e.target.value))
+                        }
+                        placeholder="0"
+                        className="w-16 bg-transparent text-white text-xs font-bold text-right focus:outline-none px-1"
+                      />
+                      <div className="flex bg-slate-800 rounded-lg p-0.5">
+                        <button
+                          onClick={() => setDiscountType("amount")}
+                          className={`px-2 py-1 rounded-md text-[10px] font-bold transition-all ${discountType === "amount"
+                            ? "bg-blue-600 text-white shadow-sm"
+                            : "text-slate-500"
+                            }`}
+                        >
+                          ₫
+                        </button>
+                        <button
+                          onClick={() => setDiscountType("percent")}
+                          className={`px-2 py-1 rounded-md text-[10px] font-bold transition-all ${discountType === "percent"
+                            ? "bg-blue-600 text-white shadow-sm"
+                            : "text-slate-500"
+                            }`}
+                        >
+                          %
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Quick percent buttons - only show in percent mode */}
+                  {discountType === "percent" && (
+                    <div className="flex gap-1.5 justify-end">
+                      {[5, 10, 15, 20].map((percent) => (
+                        <button
+                          key={percent}
+                          onClick={() => setDiscount(percent)}
+                          className="px-2.5 py-1 text-[10px] bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg transition-colors font-bold"
+                        >
+                          {percent}%
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Show discount amount if in percent mode */}
+                  {discountType === "percent" && discount > 0 && (
+                    <div className="text-[10px] text-slate-500 text-right font-mono">
+                      = -{formatCurrency(discountAmount)}
+                    </div>
+                  )}
+                </div>
+
+                {/* Total Section */}
+                <div className="pt-4 border-t-2 border-slate-700/50">
+                  <div className="flex justify-between items-end mb-4">
+                    <div className="flex flex-col">
+                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Tổng thanh toán</span>
+                      <span className="text-2xl font-black text-white tracking-tight">
+                        {formatCurrency(total)}
+                      </span>
+                    </div>
+                    {total - (isDeposit ? depositAmount : 0) - (showPaymentInput ? partialAmount : 0) <= 0 && (
+                      <div className="px-3 py-1 bg-emerald-500/20 border border-emerald-500/30 rounded-full flex items-center gap-1.5 mb-1">
+                        <CheckCircle className="w-3 h-3 text-emerald-400" />
+                        <span className="text-[10px] font-bold text-emerald-400 uppercase">Đã trả đủ</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Payment breakdown */}
+                  {((isDeposit && depositAmount > 0) || (showPaymentInput && partialAmount > 0)) && (
+                    <div className="p-3 bg-[#151521] rounded-xl border border-slate-700/50 space-y-2">
+                      {isDeposit && depositAmount > 0 && (
+                        <div className="flex justify-between items-center">
+                          <span className="text-[10px] font-bold text-purple-400 uppercase">Đã đặt cọc</span>
+                          <span className="text-xs font-bold text-purple-400">
+                            -{formatCurrency(depositAmount)}
+                          </span>
+                        </div>
+                      )}
+                      {showPaymentInput && partialAmount > 0 && (
+                        <div className="flex justify-between items-center">
+                          <span className="text-[10px] font-bold text-blue-400 uppercase">Thanh toán thêm</span>
+                          <span className="text-xs font-bold text-blue-400">
+                            -{formatCurrency(partialAmount)}
+                          </span>
+                        </div>
+                      )}
+
+                      <div className="pt-2 border-t border-slate-700/50 flex justify-between items-center">
+                        <span className="text-xs font-bold text-white">Còn lại:</span>
+                        <span className={`text-lg font-black ${total - (isDeposit ? depositAmount : 0) - (showPaymentInput ? partialAmount : 0) > 0
+                          ? "text-amber-400"
+                          : "text-green-400"
+                          }`}>
+                          {formatCurrency(Math.max(0, total - (isDeposit ? depositAmount : 0) - (showPaymentInput ? partialAmount : 0)))}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* STICKY FOOTER - Action Buttons */}
@@ -2147,15 +2180,13 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
                   if (navigator.share) {
                     navigator
                       .share({
-                        title: `Phiếu sửa chữa #${workOrder.id}`,
-                        text: `Phiếu sửa chữa cho ${
-                          selectedCustomer?.name || workOrder.customerName
-                        } - ${
-                          selectedVehicle?.licensePlate ||
-                          workOrder.licensePlate
-                        }`,
+                        title: `Phiếu sửa chữa #${workOrder!.id}`,
+                        text: `Phiếu sửa chữa cho ${selectedCustomer?.name || workOrder!.customerName
+                          } - ${selectedVehicle?.licensePlate ||
+                          workOrder!.licensePlate
+                          }`,
                       })
-                      .catch(() => {});
+                      .catch(() => { });
                   } else {
                     alert(
                       "Chức năng chia sẻ không khả dụng trên trình duyệt này"
@@ -2204,299 +2235,307 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
             )}
           </div>
         </div>
-      </div>
+      </div >
 
       {/* Desktop - Keep Original (Not Changed) */}
-      <div className="hidden md:block">
+      < div className="hidden md:block" >
         {/* Desktop modal would go here - keeping original unchanged */}
-      </div>
+      </div >
 
       {/* Part Search Top Sheet - Fixed at top for keyboard visibility */}
-      {showPartSearch && (
-        <div className="fixed inset-0 bg-black/70 z-[110] flex flex-col">
-          {/* Top Sheet Container - positioned at TOP so input is always visible above keyboard */}
-          <div
-            className="w-full bg-[#151521] rounded-b-2xl flex flex-col"
-            style={{ maxHeight: "60vh" }}
-          >
-            {/* Header */}
-            <div className="flex-shrink-0 p-3 border-b border-slate-700 flex items-center justify-between">
-              <h3 className="text-white font-semibold text-sm">
-                🔍 Tìm phụ tùng
-              </h3>
-              <button
-                onClick={() => {
-                  setShowPartSearch(false);
-                  setPartSearchTerm("");
-                }}
-                className="p-1.5 text-slate-400 hover:text-white"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Search Input - Always visible at top */}
-            <div className="flex-shrink-0 p-3 bg-[#151521]">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <input
-                  type="text"
-                  value={partSearchTerm}
-                  onChange={(e) => setPartSearchTerm(e.target.value)}
-                  placeholder="Nhập tên hoặc SKU phụ tùng..."
-                  className="w-full pl-10 pr-3 py-3 bg-[#2b2b40] border border-slate-600 rounded-lg text-white text-sm focus:border-blue-500 focus:outline-none"
-                  autoFocus
-                />
-              </div>
-            </div>
-
-            {/* Results Count & List - Scrollable */}
+      {
+        showPartSearch && (
+          <div className="fixed inset-0 bg-black/70 z-[110] flex flex-col">
+            {/* Top Sheet Container - positioned at TOP so input is always visible above keyboard */}
             <div
-              ref={partResultsRef}
-              className="flex-1 overflow-y-auto px-3 pb-3 overscroll-contain"
+              className="w-full bg-[#151521] rounded-b-2xl flex flex-col"
+              style={{ maxHeight: "60vh" }}
             >
-              {/* Show result count when searching */}
-              {partSearchTerm && (
-                <div className="mb-2 px-1 text-xs text-slate-400">
-                  Tìm thấy{" "}
-                  <span className="text-emerald-400 font-semibold">
-                    {filteredParts.length}
-                  </span>{" "}
-                  phụ tùng
-                  {filteredParts.length > 20 && " (hiển thị 20 đầu tiên)"}
+              {/* Header */}
+              <div className="flex-shrink-0 p-3 border-b border-slate-700 flex items-center justify-between">
+                <h3 className="text-white font-semibold text-sm">
+                  🔍 Tìm phụ tùng
+                </h3>
+                <button
+                  onClick={() => {
+                    setShowPartSearch(false);
+                    setPartSearchTerm("");
+                  }}
+                  className="p-1.5 text-slate-400 hover:text-white"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Search Input - Always visible at top */}
+              <div className="flex-shrink-0 p-3 bg-[#151521]">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <input
+                    type="text"
+                    value={partSearchTerm}
+                    onChange={(e) => setPartSearchTerm(e.target.value)}
+                    placeholder="Nhập tên hoặc SKU phụ tùng..."
+                    className="w-full pl-10 pr-3 py-3 bg-[#2b2b40] border border-slate-600 rounded-lg text-white text-sm focus:border-blue-500 focus:outline-none"
+                    autoFocus
+                  />
                 </div>
-              )}
-              <div className="space-y-2">
-                {filteredParts.slice(0, 20).map((part) => {
-                  const stock = part.stock?.[currentBranchId] || 0;
-                  const price = part.retailPrice?.[currentBranchId] || 0;
-                  return (
-                    <div
-                      key={part.id}
-                      onClick={() => handleAddPart(part)}
-                      className="p-2.5 bg-[#1e1e2d] rounded-lg cursor-pointer hover:bg-[#2b2b40] active:bg-blue-600/20 transition-colors"
-                    >
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1 min-w-0">
-                          <div className="text-white font-medium text-xs">
-                            {part.name}
+              </div>
+
+              {/* Results Count & List - Scrollable */}
+              <div
+                ref={partResultsRef}
+                className="flex-1 overflow-y-auto px-3 pb-3 overscroll-contain"
+              >
+                {/* Show result count when searching */}
+                {partSearchTerm && (
+                  <div className="mb-2 px-1 text-xs text-slate-400">
+                    Tìm thấy{" "}
+                    <span className="text-emerald-400 font-semibold">
+                      {filteredParts.length}
+                    </span>{" "}
+                    phụ tùng
+                    {filteredParts.length > 20 && " (hiển thị 20 đầu tiên)"}
+                  </div>
+                )}
+                <div className="space-y-2">
+                  {filteredParts.slice(0, 20).map((part) => {
+                    const stock = part.stock?.[currentBranchId] || 0;
+                    const price = part.retailPrice?.[currentBranchId] || 0;
+                    return (
+                      <div
+                        key={part.id}
+                        onClick={() => handleAddPart(part)}
+                        className="p-2.5 bg-[#1e1e2d] rounded-lg cursor-pointer hover:bg-[#2b2b40] active:bg-blue-600/20 transition-colors"
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1 min-w-0">
+                            <div className="text-white font-medium text-xs">
+                              {part.name}
+                            </div>
+                            <div className="text-[11px] text-blue-400 font-mono mt-0.5">
+                              SKU: {part.sku} • Tồn: {stock}
+                            </div>
+                            {part.category && (
+                              <span
+                                className={`inline-flex items-center px-1.5 py-0.5 mt-1 rounded-full text-[9px] font-medium ${getCategoryColor(part.category).bg
+                                  } ${getCategoryColor(part.category).text}`}
+                              >
+                                {part.category}
+                              </span>
+                            )}
                           </div>
-                          <div className="text-[11px] text-blue-400 font-mono mt-0.5">
-                            SKU: {part.sku} • Tồn: {stock}
+                          <div className="text-[#50cd89] font-bold text-xs flex-shrink-0">
+                            {formatCurrency(price)}
                           </div>
-                          {part.category && (
-                            <span
-                              className={`inline-flex items-center px-1.5 py-0.5 mt-1 rounded-full text-[9px] font-medium ${
-                                getCategoryColor(part.category).bg
-                              } ${getCategoryColor(part.category).text}`}
-                            >
-                              {part.category}
-                            </span>
-                          )}
-                        </div>
-                        <div className="text-[#50cd89] font-bold text-xs flex-shrink-0">
-                          {formatCurrency(price)}
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Tap outside to close */}
-          <div
-            className="flex-1"
-            onClick={() => {
-              setShowPartSearch(false);
-              setPartSearchTerm("");
-            }}
-          />
-        </div>
-      )}
+            {/* Tap outside to close */}
+            <div
+              className="flex-1"
+              onClick={() => {
+                setShowPartSearch(false);
+                setPartSearchTerm("");
+              }}
+            />
+          </div>
+        )
+      }
 
       {/* Add Service Modal - Bottom Sheet Design */}
-      {showAddService && (
-        <div className="fixed inset-0 bg-black/70 z-[110] flex items-end md:items-center md:justify-center">
-          <div className="w-full md:max-w-md bg-[#1e1e2d] rounded-t-2xl md:rounded-xl overflow-hidden">
-            {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b border-slate-700">
-              <h3 className="text-white font-semibold text-base">
-                THÊM DỊCH VỤ GIA CÔNG
-              </h3>
-              <button
-                onClick={() => {
-                  setShowAddService(false);
-                  setNewServiceName("");
-                  setNewServiceCost(0);
-                  setNewServicePrice(0);
-                  setNewServiceQuantity(1);
-                }}
-                className="p-1.5 text-slate-400 hover:text-white"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Form Content */}
-            <div className="p-4 space-y-4 max-h-[70vh] overflow-y-auto">
-              {/* Service Name */}
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
-                  Tên công việc / Mô tả:
-                </label>
-                <input
-                  type="text"
-                  value={newServiceName}
-                  onChange={(e) => setNewServiceName(e.target.value)}
-                  placeholder="Nhập tên (VD: Hàn yếm, Sơn...)"
-                  className="w-full px-4 py-3 bg-[#151521] border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:border-[#009ef7] focus:outline-none transition-colors"
-                  autoFocus
-                />
+      {
+        showAddService && (
+          <div className="fixed inset-0 bg-black/70 z-[110] flex items-end md:items-center md:justify-center">
+            <div className="w-full md:max-w-md bg-[#1e1e2d] rounded-t-2xl md:rounded-xl overflow-hidden">
+              {/* Header */}
+              <div className="flex items-center justify-between p-4 border-b border-slate-700">
+                <h3 className="text-white font-semibold text-base">
+                  THÊM DỊCH VỤ GIA CÔNG
+                </h3>
+                <button
+                  onClick={() => {
+                    setShowAddService(false);
+                    setNewServiceName("");
+                    setNewServiceCost(0);
+                    setNewServicePrice(0);
+                    setNewServiceQuantity(1);
+                  }}
+                  className="p-1.5 text-slate-400 hover:text-white"
+                >
+                  <X className="w-5 h-5" />
+                </button>
               </div>
 
-              {/* Quantity Stepper */}
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
-                  Số lượng:
-                </label>
-                <div className="flex items-center justify-center gap-4">
-                  <button
-                    onClick={() =>
-                      setNewServiceQuantity(Math.max(1, newServiceQuantity - 1))
-                    }
-                    className="w-12 h-12 bg-[#2b2b40] hover:bg-slate-700 rounded-lg flex items-center justify-center text-white text-2xl font-bold transition-colors"
-                  >
-                    −
-                  </button>
-                  <div className="w-20 h-12 bg-[#151521] border border-slate-700 rounded-lg flex items-center justify-center">
-                    <span className="text-white text-xl font-bold">
-                      {newServiceQuantity}
+              {/* Form Content */}
+              <div className="p-4 space-y-4 max-h-[70vh] overflow-y-auto">
+                {/* Service Name */}
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                    Tên công việc / Mô tả:
+                  </label>
+                  <input
+                    type="text"
+                    value={newServiceName}
+                    onChange={(e) => setNewServiceName(e.target.value)}
+                    placeholder="Nhập tên (VD: Hàn yếm, Sơn...)"
+                    className="w-full px-4 py-3 bg-[#151521] border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:border-[#009ef7] focus:outline-none transition-colors"
+                    autoFocus
+                  />
+                </div>
+
+                {/* Quantity Stepper */}
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                    Số lượng:
+                  </label>
+                  <div className="flex items-center justify-center gap-4">
+                    <button
+                      onClick={() =>
+                        setNewServiceQuantity(Math.max(1, newServiceQuantity - 1))
+                      }
+                      className="w-12 h-12 bg-[#2b2b40] hover:bg-slate-700 rounded-lg flex items-center justify-center text-white text-2xl font-bold transition-colors"
+                    >
+                      −
+                    </button>
+                    <div className="w-20 h-12 bg-[#151521] border border-slate-700 rounded-lg flex items-center justify-center">
+                      <span className="text-white text-xl font-bold">
+                        {newServiceQuantity}
+                      </span>
+                    </div>
+                    <button
+                      onClick={() =>
+                        setNewServiceQuantity(newServiceQuantity + 1)
+                      }
+                      className="w-12 h-12 bg-[#2b2b40] hover:bg-slate-700 rounded-lg flex items-center justify-center text-white text-2xl font-bold transition-colors"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+
+                {/* Cost & Price Section */}
+                <div>
+                  <h4 className="text-sm font-semibold text-slate-300 mb-3 uppercase tracking-wide">
+                    CHI PHÍ & GIÁ BÁN
+                  </h4>
+                  <div className="grid grid-cols-2 gap-3">
+                    {/* Cost Price */}
+                    <div>
+                      <label className="block text-xs text-slate-500 mb-1.5">
+                        Giá nhập (Vốn):
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="text"
+                          value={formatNumberWithDots(newServiceCost)}
+                          onChange={(e) =>
+                            setNewServiceCost(
+                              parseFormattedNumber(e.target.value)
+                            )
+                          }
+                          placeholder="0"
+                          className="w-full px-3 py-3 pr-8 bg-[#151521] border border-slate-700 rounded-lg text-slate-400 text-sm focus:border-slate-600 focus:outline-none transition-colors"
+                        />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs">
+                          đ
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Selling Price */}
+                    <div>
+                      <label className="block text-xs text-[#ffc700] mb-1.5 font-medium">
+                        Đơn giá (Báo khách):
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="text"
+                          value={formatNumberWithDots(newServicePrice)}
+                          onChange={(e) =>
+                            setNewServicePrice(
+                              parseFormattedNumber(e.target.value)
+                            )
+                          }
+                          placeholder="0"
+                          className="w-full px-3 py-3 pr-8 bg-gradient-to-br from-[#009ef7]/10 to-purple-600/10 border-2 border-[#009ef7] rounded-lg text-white text-sm font-semibold focus:border-[#0077c7] focus:outline-none transition-colors"
+                        />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[#009ef7] text-xs font-bold">
+                          đ
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Total Amount - Auto Calculate */}
+                <div className="p-4 bg-[#151521] border border-slate-700 rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-400 text-sm">
+                      Thành tiền (Tự tính):
+                    </span>
+                    <span className="text-[#50cd89] text-xl font-bold">
+                      {formatCurrency(newServicePrice * newServiceQuantity)}
                     </span>
                   </div>
-                  <button
-                    onClick={() =>
-                      setNewServiceQuantity(newServiceQuantity + 1)
-                    }
-                    className="w-12 h-12 bg-[#2b2b40] hover:bg-slate-700 rounded-lg flex items-center justify-center text-white text-2xl font-bold transition-colors"
-                  >
-                    +
-                  </button>
                 </div>
               </div>
 
-              {/* Cost & Price Section */}
-              <div>
-                <h4 className="text-sm font-semibold text-slate-300 mb-3 uppercase tracking-wide">
-                  CHI PHÍ & GIÁ BÁN
-                </h4>
-                <div className="grid grid-cols-2 gap-3">
-                  {/* Cost Price */}
-                  <div>
-                    <label className="block text-xs text-slate-500 mb-1.5">
-                      Giá nhập (Vốn):
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="text"
-                        value={formatNumberWithDots(newServiceCost)}
-                        onChange={(e) =>
-                          setNewServiceCost(
-                            parseFormattedNumber(e.target.value)
-                          )
-                        }
-                        placeholder="0"
-                        className="w-full px-3 py-3 pr-8 bg-[#151521] border border-slate-700 rounded-lg text-slate-400 text-sm focus:border-slate-600 focus:outline-none transition-colors"
-                      />
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs">
-                        đ
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Selling Price */}
-                  <div>
-                    <label className="block text-xs text-[#ffc700] mb-1.5 font-medium">
-                      Đơn giá (Báo khách):
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="text"
-                        value={formatNumberWithDots(newServicePrice)}
-                        onChange={(e) =>
-                          setNewServicePrice(
-                            parseFormattedNumber(e.target.value)
-                          )
-                        }
-                        placeholder="0"
-                        className="w-full px-3 py-3 pr-8 bg-gradient-to-br from-[#009ef7]/10 to-purple-600/10 border-2 border-[#009ef7] rounded-lg text-white text-sm font-semibold focus:border-[#0077c7] focus:outline-none transition-colors"
-                      />
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[#009ef7] text-xs font-bold">
-                        đ
-                      </span>
-                    </div>
-                  </div>
-                </div>
+              {/* Footer Button */}
+              <div className="p-4 border-t border-slate-700">
+                <button
+                  onClick={handleAddService}
+                  disabled={!newServiceName.trim() || newServicePrice < 0}
+                  className="w-full py-4 bg-gradient-to-r from-[#009ef7] to-purple-600 hover:from-[#0077c7] hover:to-purple-700 disabled:from-slate-700 disabled:to-slate-700 disabled:cursor-not-allowed text-white font-bold text-sm rounded-lg transition-all shadow-lg"
+                >
+                  LƯU VÀO PHIẾU
+                </button>
               </div>
-
-              {/* Total Amount - Auto Calculate */}
-              <div className="p-4 bg-[#151521] border border-slate-700 rounded-lg">
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-400 text-sm">
-                    Thành tiền (Tự tính):
-                  </span>
-                  <span className="text-[#50cd89] text-xl font-bold">
-                    {formatCurrency(newServicePrice * newServiceQuantity)}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Footer Button */}
-            <div className="p-4 border-t border-slate-700">
-              <button
-                onClick={handleAddService}
-                disabled={!newServiceName.trim() || newServicePrice < 0}
-                className="w-full py-4 bg-gradient-to-r from-[#009ef7] to-purple-600 hover:from-[#0077c7] hover:to-purple-700 disabled:from-slate-700 disabled:to-slate-700 disabled:cursor-not-allowed text-white font-bold text-sm rounded-lg transition-all shadow-lg"
-              >
-                LƯU VÀO PHIẾU
-              </button>
             </div>
           </div>
-        </div>
-      )}
+        )
+      }
 
-      {/* Add Vehicle Modal */}
+      {/* Add Vehicle Modal - Premium Redesign */}
       {showAddVehicle && (
-        <div className="fixed inset-0 bg-black/70 z-[110] flex items-center justify-center p-4">
-          <div className="w-full max-w-md bg-[#1e1e2d] rounded-xl p-3">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-white font-semibold text-sm">Thêm xe mới</h3>
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[110] flex items-center justify-center p-4">
+          <div className="w-full max-w-md bg-[#1e1e2d] rounded-3xl p-5 border border-slate-700/50 shadow-2xl">
+            <div className="flex items-center justify-between mb-5">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center">
+                  <Bike className="w-5 h-5 text-blue-400" />
+                </div>
+                <h3 className="text-white font-bold text-base">Thêm xe mới</h3>
+              </div>
               <button
                 onClick={() => setShowAddVehicle(false)}
-                className="p-1.5 text-slate-400"
+                className="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-800 text-slate-400 active:scale-95 transition-all"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="space-y-2.5">
-              <div>
-                <label className="block text-xs font-medium text-slate-400 mb-1">
+            <div className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">
                   Biển số xe
                 </label>
                 <input
                   type="text"
                   value={newVehiclePlate}
-                  onChange={(e) => setNewVehiclePlate(e.target.value)}
+                  onChange={(e) => setNewVehiclePlate(e.target.value.toUpperCase())}
                   placeholder="59G1-123.45"
-                  className="w-full px-2.5 py-1.5 bg-[#2b2b40] rounded-lg text-white text-xs"
+                  className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-xl text-white text-sm font-bold uppercase focus:border-blue-500 transition-all"
                 />
               </div>
 
-              <div className="relative">
-                <label className="block text-xs font-medium text-slate-400 mb-1">
+              <div className="space-y-1.5 relative">
+                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">
                   Tên xe
                 </label>
                 <input
@@ -2508,11 +2547,11 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
                   }}
                   onFocus={() => setShowVehicleDropdown(true)}
                   placeholder="Chọn hoặc nhập dòng xe"
-                  className="w-full px-2.5 py-1.5 bg-[#2b2b40] rounded-lg text-white text-xs"
+                  className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-xl text-white text-sm focus:border-blue-500 transition-all"
                 />
                 {/* Vehicle Model Dropdown */}
                 {showVehicleDropdown && (
-                  <div className="absolute z-20 w-full mt-1 bg-[#2b2b40] border border-slate-600 rounded-lg shadow-lg max-h-[150px] overflow-y-auto">
+                  <div className="absolute z-20 w-full mt-1 bg-[#1e1e2d] border border-slate-700 rounded-xl shadow-2xl max-h-[200px] overflow-y-auto scrollbar-hide">
                     {POPULAR_MOTORCYCLES.filter((model) =>
                       model.toLowerCase().includes(newVehicleName.toLowerCase())
                     )
@@ -2525,7 +2564,7 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
                             setNewVehicleName(model);
                             setShowVehicleDropdown(false);
                           }}
-                          className="w-full text-left px-2.5 py-2 hover:bg-slate-600 text-xs text-white border-b border-slate-700 last:border-0"
+                          className="w-full text-left px-4 py-3 hover:bg-slate-800 text-xs text-white border-b border-slate-700/50 last:border-0 transition-colors"
                         >
                           {model}
                         </button>
@@ -2533,24 +2572,24 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
                     {POPULAR_MOTORCYCLES.filter((model) =>
                       model.toLowerCase().includes(newVehicleName.toLowerCase())
                     ).length === 0 && (
-                      <div className="px-2.5 py-2 text-xs text-slate-400 text-center">
-                        Không tìm thấy - nhập tên xe mới
-                      </div>
-                    )}
+                        <div className="px-4 py-3 text-xs text-slate-500 text-center italic">
+                          Không tìm thấy - nhập tên xe mới
+                        </div>
+                      )}
                   </div>
                 )}
               </div>
 
-              <div className="flex gap-2 pt-1.5">
+              <div className="flex gap-3 pt-2">
                 <button
                   onClick={() => setShowAddVehicle(false)}
-                  className="flex-1 py-2 bg-[#2b2b40] text-slate-300 rounded-lg font-medium text-xs"
+                  className="flex-1 py-3 bg-slate-800 text-slate-400 rounded-xl font-bold text-xs active:scale-95 transition-all"
                 >
                   Hủy
                 </button>
                 <button
                   onClick={handleAddVehicle}
-                  className="flex-1 py-2 bg-blue-600 text-white rounded-lg font-medium text-xs"
+                  className="flex-1 py-3 bg-blue-600 text-white rounded-xl font-bold text-xs shadow-lg shadow-blue-500/20 active:scale-95 transition-all"
                 >
                   Thêm xe
                 </button>
@@ -2560,12 +2599,17 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
         </div>
       )}
 
-      {/* Add Customer Modal */}
+      {/* Add Customer Modal - Premium Redesign */}
       {showAddCustomer && (
-        <div className="fixed inset-0 bg-black/70 z-[110] flex items-center justify-center p-4">
-          <div className="w-full max-w-md bg-[#1e1e2d] rounded-xl p-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-white font-semibold">Thêm khách hàng mới</h3>
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[110] flex items-center justify-center p-4">
+          <div className="w-full max-w-md bg-[#1e1e2d] rounded-3xl p-6 border border-slate-700/50 shadow-2xl max-h-[90vh] overflow-y-auto scrollbar-hide">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-green-500/10 flex items-center justify-center">
+                  <UserPlus className="w-5 h-5 text-green-400" />
+                </div>
+                <h3 className="text-white font-bold text-base">Thêm khách hàng mới</h3>
+              </div>
               <button
                 onClick={() => {
                   setShowAddCustomer(false);
@@ -2574,20 +2618,24 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
                   setNewCustomerVehicleModel("");
                   setNewCustomerLicensePlate("");
                 }}
-                className="p-1.5 text-slate-400"
+                className="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-800 text-slate-400 active:scale-95 transition-all"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-5">
               {/* Customer Info Section */}
-              <div className="bg-[#2b2b40]/50 rounded-lg p-3 space-y-3">
-                <h4 className="text-xs font-semibold text-blue-400 uppercase tracking-wide">
-                  Thông tin khách hàng
-                </h4>
-                <div>
-                  <label className="block text-xs font-medium text-slate-400 mb-1">
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 ml-1">
+                  <div className="w-1 h-3 bg-blue-500 rounded-full"></div>
+                  <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                    Thông tin khách hàng
+                  </h4>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider ml-1">
                     Tên khách hàng <span className="text-red-400">*</span>
                   </label>
                   <input
@@ -2595,13 +2643,13 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
                     value={newCustomerName}
                     onChange={(e) => setNewCustomerName(e.target.value)}
                     placeholder="Nguyễn Văn A"
-                    className="w-full px-3 py-2.5 bg-[#2b2b40] rounded-lg text-white text-sm"
+                    className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-xl text-white text-sm focus:border-blue-500 transition-all"
                     autoFocus
                   />
                 </div>
 
-                <div>
-                  <label className="block text-xs font-medium text-slate-400 mb-1">
+                <div className="space-y-1.5">
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider ml-1">
                     Số điện thoại <span className="text-red-400">*</span>
                   </label>
                   <input
@@ -2609,18 +2657,22 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
                     value={newCustomerPhone}
                     onChange={(e) => setNewCustomerPhone(e.target.value)}
                     placeholder="0901234567"
-                    className="w-full px-3 py-2.5 bg-[#2b2b40] rounded-lg text-white text-sm"
+                    className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-xl text-white text-sm focus:border-blue-500 transition-all"
                   />
                 </div>
               </div>
 
               {/* Vehicle Info Section */}
-              <div className="bg-[#2b2b40]/50 rounded-lg p-3 space-y-3">
-                <h4 className="text-xs font-semibold text-green-400 uppercase tracking-wide">
-                  🏍️ Thông tin xe
-                </h4>
-                <div className="relative">
-                  <label className="block text-xs font-medium text-slate-400 mb-1">
+              <div className="space-y-4 pt-2">
+                <div className="flex items-center gap-2 ml-1">
+                  <div className="w-1 h-3 bg-green-500 rounded-full"></div>
+                  <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                    Thông tin xe
+                  </h4>
+                </div>
+
+                <div className="space-y-1.5 relative">
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider ml-1">
                     Loại xe
                   </label>
                   <input
@@ -2632,11 +2684,11 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
                     }}
                     onFocus={() => setShowCustomerVehicleDropdown(true)}
                     placeholder="Chọn hoặc nhập dòng xe..."
-                    className="w-full px-3 py-2.5 bg-[#2b2b40] rounded-lg text-white text-sm"
+                    className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-xl text-white text-sm focus:border-blue-500 transition-all"
                   />
                   {/* Vehicle Model Dropdown for New Customer */}
                   {showCustomerVehicleDropdown && (
-                    <div className="absolute z-20 w-full mt-1 bg-[#2b2b40] border border-slate-600 rounded-lg shadow-lg max-h-[150px] overflow-y-auto">
+                    <div className="absolute z-20 w-full mt-1 bg-[#1e1e2d] border border-slate-700 rounded-xl shadow-2xl max-h-[200px] overflow-y-auto scrollbar-hide">
                       {POPULAR_MOTORCYCLES.filter((model) =>
                         model
                           .toLowerCase()
@@ -2651,7 +2703,7 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
                               setNewCustomerVehicleModel(model);
                               setShowCustomerVehicleDropdown(false);
                             }}
-                            className="w-full text-left px-3 py-2 hover:bg-slate-600 text-sm text-white border-b border-slate-700 last:border-0"
+                            className="w-full text-left px-4 py-3 hover:bg-slate-800 text-xs text-white border-b border-slate-700/50 last:border-0 transition-colors"
                           >
                             {model}
                           </button>
@@ -2661,16 +2713,16 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
                           .toLowerCase()
                           .includes(newCustomerVehicleModel.toLowerCase())
                       ).length === 0 && (
-                        <div className="px-3 py-2 text-sm text-slate-400 text-center">
-                          Không tìm thấy - nhập tên xe mới
-                        </div>
-                      )}
+                          <div className="px-4 py-3 text-xs text-slate-500 text-center italic">
+                            Không tìm thấy - nhập tên xe mới
+                          </div>
+                        )}
                     </div>
                   )}
                 </div>
 
-                <div>
-                  <label className="block text-xs font-medium text-slate-400 mb-1">
+                <div className="space-y-1.5">
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider ml-1">
                     Biển số xe
                   </label>
                   <input
@@ -2680,12 +2732,12 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
                       setNewCustomerLicensePlate(e.target.value.toUpperCase())
                     }
                     placeholder="59G1-12345"
-                    className="w-full px-3 py-2.5 bg-[#2b2b40] rounded-lg text-white text-sm uppercase"
+                    className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-xl text-white text-sm font-bold uppercase focus:border-blue-500 transition-all"
                   />
                 </div>
               </div>
 
-              <div className="flex gap-2 pt-2">
+              <div className="flex gap-3 pt-4">
                 <button
                   onClick={() => {
                     setShowAddCustomer(false);
@@ -2694,16 +2746,16 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
                     setNewCustomerVehicleModel("");
                     setNewCustomerLicensePlate("");
                   }}
-                  className="flex-1 py-2.5 bg-[#2b2b40] text-slate-300 rounded-lg font-medium text-sm"
+                  className="flex-1 py-3 bg-slate-800 text-slate-400 rounded-xl font-bold text-xs active:scale-95 transition-all"
                 >
                   Hủy
                 </button>
                 <button
                   onClick={handleAddNewCustomer}
                   disabled={!newCustomerName || !newCustomerPhone}
-                  className="flex-1 py-2.5 bg-green-600 text-white rounded-lg font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 py-3 bg-green-600 text-white rounded-xl font-bold text-xs shadow-lg shadow-green-500/20 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  💾 Lưu khách hàng
+                  Lưu khách hàng
                 </button>
               </div>
             </div>

@@ -481,7 +481,7 @@ export const ServiceHistory: React.FC<ServiceHistoryProps> = ({
   };
 
   return (
-    <div className="space-y-4 md:space-y-6 px-4 md:px-0">
+    <div className="space-y-4 md:space-y-6 px-2 md:px-0">
       {/* Stats Cards - Mobile optimized */}
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
         <div className="bg-white dark:bg-slate-800 rounded-xl p-3 md:p-4 border border-slate-200 dark:border-slate-700">
@@ -598,11 +598,10 @@ export const ServiceHistory: React.FC<ServiceHistoryProps> = ({
                       setDateFilterType("quick");
                       setQuickDateFilter("today");
                     }}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                      dateFilterType === "quick" && quickDateFilter === "today"
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${dateFilterType === "quick" && quickDateFilter === "today"
                         ? "bg-blue-500 text-white"
                         : "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600"
-                    }`}
+                      }`}
                   >
                     Hôm nay
                   </button>
@@ -611,12 +610,11 @@ export const ServiceHistory: React.FC<ServiceHistoryProps> = ({
                       setDateFilterType("quick");
                       setQuickDateFilter("yesterday");
                     }}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                      dateFilterType === "quick" &&
-                      quickDateFilter === "yesterday"
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${dateFilterType === "quick" &&
+                        quickDateFilter === "yesterday"
                         ? "bg-blue-500 text-white"
                         : "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600"
-                    }`}
+                      }`}
                   >
                     Hôm qua
                   </button>
@@ -625,11 +623,10 @@ export const ServiceHistory: React.FC<ServiceHistoryProps> = ({
                       setDateFilterType("quick");
                       setQuickDateFilter("3days");
                     }}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                      dateFilterType === "quick" && quickDateFilter === "3days"
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${dateFilterType === "quick" && quickDateFilter === "3days"
                         ? "bg-blue-500 text-white"
                         : "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600"
-                    }`}
+                      }`}
                   >
                     3 ngày qua
                   </button>
@@ -638,12 +635,11 @@ export const ServiceHistory: React.FC<ServiceHistoryProps> = ({
                       setDateFilterType("quick");
                       setQuickDateFilter("thisWeek");
                     }}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                      dateFilterType === "quick" &&
-                      quickDateFilter === "thisWeek"
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${dateFilterType === "quick" &&
+                        quickDateFilter === "thisWeek"
                         ? "bg-blue-500 text-white"
                         : "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600"
-                    }`}
+                      }`}
                   >
                     Tuần này
                   </button>
@@ -652,12 +648,11 @@ export const ServiceHistory: React.FC<ServiceHistoryProps> = ({
                       setDateFilterType("quick");
                       setQuickDateFilter("lastWeek");
                     }}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                      dateFilterType === "quick" &&
-                      quickDateFilter === "lastWeek"
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${dateFilterType === "quick" &&
+                        quickDateFilter === "lastWeek"
                         ? "bg-blue-500 text-white"
                         : "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600"
-                    }`}
+                      }`}
                   >
                     Tuần trước
                   </button>
@@ -666,11 +661,10 @@ export const ServiceHistory: React.FC<ServiceHistoryProps> = ({
                       setDateFilterType("quick");
                       setQuickDateFilter("7days");
                     }}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                      dateFilterType === "quick" && quickDateFilter === "7days"
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${dateFilterType === "quick" && quickDateFilter === "7days"
                         ? "bg-blue-500 text-white"
                         : "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600"
-                    }`}
+                      }`}
                   >
                     ✓ 7 ngày qua
                   </button>
@@ -698,11 +692,10 @@ export const ServiceHistory: React.FC<ServiceHistoryProps> = ({
                           setDateFilterType("month");
                           setMonthFilter(value);
                         }}
-                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                          dateFilterType === "month" && monthFilter === value
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${dateFilterType === "month" && monthFilter === value
                             ? "bg-slate-600 text-white"
                             : "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600"
-                        }`}
+                          }`}
                       >
                         {display}
                       </button>
@@ -1015,11 +1008,10 @@ export const ServiceHistory: React.FC<ServiceHistoryProps> = ({
                             <div className="flex justify-between text-right text-xs mt-1">
                               <span>Còn phải thu:</span>
                               <span
-                                className={`font-bold ${
-                                  order.remainingAmount > 0
+                                className={`font-bold ${order.remainingAmount > 0
                                     ? "text-red-500"
                                     : "text-green-500"
-                                }`}
+                                  }`}
                               >
                                 {formatCurrency(order.remainingAmount)}
                               </span>

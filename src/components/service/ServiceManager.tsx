@@ -47,6 +47,7 @@ import {
   useWorkOrdersRepo,
   useWorkOrdersFilteredRepo,
 } from "../../hooks/useWorkOrdersRepository";
+import type { RepairTemplate } from "../../hooks/useRepairTemplatesRepository";
 import { usePartsRepo } from "../../hooks/usePartsRepository";
 import { useEmployeesRepo } from "../../hooks/useEmployeesRepository";
 import {
@@ -641,39 +642,39 @@ export default function ServiceManager() {
       color: FilterColor;
       count: number;
     }> => [
-      {
-        key: "all",
-        label: "Tất cả",
-        color: "slate",
-        count: dateFilteredOrders.filter(
-          (o) => o.status !== "Trả máy" && !o.refunded
-        ).length,
-      },
-      {
-        key: "pending",
-        label: "Tiếp nhận",
-        color: "blue",
-        count: stats.pending,
-      },
-      {
-        key: "inProgress",
-        label: "Đang sửa",
-        color: "orange",
-        count: stats.inProgress,
-      },
-      {
-        key: "done",
-        label: "Đã sửa xong",
-        color: "green",
-        count: stats.done,
-      },
-      {
-        key: "delivered",
-        label: "Đã trả máy",
-        color: "purple",
-        count: stats.delivered,
-      },
-    ],
+        {
+          key: "all",
+          label: "Tất cả",
+          color: "slate",
+          count: dateFilteredOrders.filter(
+            (o) => o.status !== "Trả máy" && !o.refunded
+          ).length,
+        },
+        {
+          key: "pending",
+          label: "Tiếp nhận",
+          color: "blue",
+          count: stats.pending,
+        },
+        {
+          key: "inProgress",
+          label: "Đang sửa",
+          color: "orange",
+          count: stats.inProgress,
+        },
+        {
+          key: "done",
+          label: "Đã sửa xong",
+          color: "green",
+          count: stats.done,
+        },
+        {
+          key: "delivered",
+          label: "Đã trả máy",
+          color: "purple",
+          count: stats.delivered,
+        },
+      ],
     [
       dateFilteredOrders,
       stats.delivered,
@@ -691,43 +692,43 @@ export default function ServiceManager() {
     accent: string;
     dot: string;
   }> = [
-    {
-      key: "pending",
-      label: "Tiếp nhận",
-      value: stats.pending,
-      subtitle: "Chờ phân công",
-      accent:
-        "from-sky-50 via-sky-50 to-white dark:from-sky-900/30 dark:via-sky-900/10",
-      dot: "bg-sky-500",
-    },
-    {
-      key: "inProgress",
-      label: "Đang sửa",
-      value: stats.inProgress,
-      subtitle: "Đang thi công",
-      accent:
-        "from-amber-50 via-amber-50 to-white dark:from-amber-900/30 dark:via-amber-900/10",
-      dot: "bg-amber-500",
-    },
-    {
-      key: "done",
-      label: "Đã sửa xong",
-      value: stats.done,
-      subtitle: "Chờ giao khách",
-      accent:
-        "from-emerald-50 via-emerald-50 to-white dark:from-emerald-900/30 dark:via-emerald-900/10",
-      dot: "bg-emerald-500",
-    },
-    {
-      key: "delivered",
-      label: "Trả máy",
-      value: stats.delivered,
-      subtitle: "Hoàn tất",
-      accent:
-        "from-purple-50 via-purple-50 to-white dark:from-purple-900/30 dark:via-purple-900/10",
-      dot: "bg-purple-500",
-    },
-  ];
+      {
+        key: "pending",
+        label: "Tiếp nhận",
+        value: stats.pending,
+        subtitle: "Chờ phân công",
+        accent:
+          "from-sky-50 via-sky-50 to-white dark:from-sky-900/30 dark:via-sky-900/10",
+        dot: "bg-sky-500",
+      },
+      {
+        key: "inProgress",
+        label: "Đang sửa",
+        value: stats.inProgress,
+        subtitle: "Đang thi công",
+        accent:
+          "from-amber-50 via-amber-50 to-white dark:from-amber-900/30 dark:via-amber-900/10",
+        dot: "bg-amber-500",
+      },
+      {
+        key: "done",
+        label: "Đã sửa xong",
+        value: stats.done,
+        subtitle: "Chờ giao khách",
+        accent:
+          "from-emerald-50 via-emerald-50 to-white dark:from-emerald-900/30 dark:via-emerald-900/10",
+        dot: "bg-emerald-500",
+      },
+      {
+        key: "delivered",
+        label: "Trả máy",
+        value: stats.delivered,
+        subtitle: "Hoàn tất",
+        accent:
+          "from-purple-50 via-purple-50 to-white dark:from-purple-900/30 dark:via-purple-900/10",
+        dot: "bg-purple-500",
+      },
+    ];
 
   const handleOpenModal = (order?: WorkOrder) => {
     if (order) {
@@ -837,9 +838,8 @@ export default function ServiceManager() {
         id: crypto.randomUUID(),
         type: "work_order",
         title: "Phiếu sửa chữa mới",
-        message: `${createdByName} tạo phiếu ${orderId} - ${customerName} (${
-          licensePlate || vehicleModel
-        }) - ${formatCurrency(total)}`,
+        message: `${createdByName} tạo phiếu ${orderId} - ${customerName} (${licensePlate || vehicleModel
+          }) - ${formatCurrency(total)}`,
         data: {
           workOrderId: orderId,
           customerName,
@@ -954,9 +954,8 @@ export default function ServiceManager() {
           .split("-")
           .pop() || "";
 
-      let description = `${
-        workOrder.vehicleModel || "Xe"
-      } (Phiếu sửa chữa #${workOrderNumber})`;
+      let description = `${workOrder.vehicleModel || "Xe"
+        } (Phiếu sửa chữa #${workOrderNumber})`;
 
       // Mô tả vấn đề
       if (workOrder.issueDescription) {
@@ -967,9 +966,8 @@ export default function ServiceManager() {
       if (workOrder.partsUsed && workOrder.partsUsed.length > 0) {
         description += "\n\nPhụ tùng đã thay:";
         workOrder.partsUsed.forEach((part) => {
-          description += `\n  • ${part.quantity} x ${
-            part.partName
-          } - ${formatCurrency(part.price * part.quantity)}`;
+          description += `\n  • ${part.quantity} x ${part.partName
+            } - ${formatCurrency(part.price * part.quantity)}`;
         });
       }
 
@@ -980,9 +978,8 @@ export default function ServiceManager() {
       ) {
         description += "\n\nDịch vụ:";
         workOrder.additionalServices.forEach((service) => {
-          description += `\n  • ${service.quantity} x ${
-            service.description
-          } - ${formatCurrency(service.price * service.quantity)}`;
+          description += `\n  • ${service.quantity} x ${service.description
+            } - ${formatCurrency(service.price * service.quantity)}`;
         });
       }
 
@@ -1025,8 +1022,7 @@ export default function ServiceManager() {
       const result = await createCustomerDebt.mutateAsync(payload as any);
       console.log("[ServiceManager] createCustomerDebt result:", result);
       showToast.success(
-        `Đã tạo/cập nhật công nợ ${remainingAmount.toLocaleString()}đ (Mã: ${
-          result?.id || "N/A"
+        `Đã tạo/cập nhật công nợ ${remainingAmount.toLocaleString()}đ (Mã: ${result?.id || "N/A"
         })`
       );
     } catch (error) {
@@ -1171,9 +1167,8 @@ export default function ServiceManager() {
 
       // If this is a NEW work order
       if (!editingOrder?.id) {
-        const orderId = `${
-          storeSettings?.work_order_prefix || "SC"
-        }-${Date.now()}`;
+        const orderId = `${storeSettings?.work_order_prefix || "SC"
+          }-${Date.now()}`;
 
         const responseData = await createWorkOrderAtomicAsync({
           id: orderId,
@@ -1569,6 +1564,42 @@ export default function ServiceManager() {
     }
   };
 
+  // Handle apply template
+  const handleApplyRepairTemplate = (template: RepairTemplate) => {
+    const newOrder: WorkOrder = {
+      id: "", // Empty ID to trigger creation mode
+      customerName: "",
+      customerPhone: "",
+      vehicleModel: "",
+      issueDescription: template.description || template.name,
+      status: "Tiếp nhận",
+      creationDate: new Date().toISOString(),
+      estimatedCompletion: new Date(
+        Date.now() + (template.duration || 30) * 60000
+      ).toISOString(),
+      assignedTechnician: "",
+      laborCost: template.labor_cost || 0,
+      partsUsed: (template.parts || []).map((p: any) => ({
+        partId: p.partId || "",
+        partName: p.name,
+        quantity: p.quantity,
+        price: p.price,
+        sku: p.sku || "",
+      })),
+      notes: "",
+      total: 0,
+      branchId: currentBranchId,
+    };
+    setEditingOrder(newOrder);
+
+    if (isMobile) {
+      setMobileModalViewMode(false);
+      setShowMobileModal(true);
+    } else {
+      setShowModal(true);
+    }
+  };
+
   // Mobile view - Check screen width
   if (isMobile) {
     return (
@@ -1589,7 +1620,11 @@ export default function ServiceManager() {
           onCallCustomer={handleCallCustomer}
           onPrintWorkOrder={handlePrintOrder}
           onOpenTemplates={() => setShowTemplateModal(true)}
+          onApplyTemplate={handleApplyRepairTemplate}
           currentBranchId={currentBranchId}
+          dateFilter={dateFilter}
+          setDateFilter={setDateFilter}
+          setDateRangeDays={setDateRangeDays}
         />
 
         {/* Mobile Modal */}
@@ -2142,7 +2177,7 @@ export default function ServiceManager() {
                             <span>
                               {formatCurrency(
                                 printOrder.remainingAmount ||
-                                  printOrder.total - printOrder.depositAmount
+                                printOrder.total - printOrder.depositAmount
                               )}
                             </span>
                           </div>
@@ -2335,11 +2370,10 @@ export default function ServiceManager() {
                 onClick={() =>
                   setActiveTab(activeTab === card.key ? "all" : card.key)
                 }
-                className={`text-left rounded-lg border p-3 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 ${
-                  activeTab === card.key
-                    ? "border-blue-500 bg-blue-50/60 dark:bg-blue-900/20"
-                    : "border-slate-200 dark:border-slate-700"
-                }`}
+                className={`text-left rounded-lg border p-3 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 ${activeTab === card.key
+                  ? "border-blue-500 bg-blue-50/60 dark:bg-blue-900/20"
+                  : "border-slate-200 dark:border-slate-700"
+                  }`}
               >
                 <div
                   className={`rounded-lg bg-gradient-to-br ${card.accent} p-2`}
@@ -2418,17 +2452,15 @@ export default function ServiceManager() {
               onClick={() =>
                 setActiveTab(activeTab === filter.key ? "all" : filter.key)
               }
-              className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm transition ${
-                activeTab === filter.key
-                  ? "border-blue-500 bg-blue-50 text-blue-600 dark:bg-blue-900/20"
-                  : "border-slate-200 text-slate-600 hover:border-slate-300 dark:border-slate-700 dark:text-slate-300"
-              }`}
+              className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm transition ${activeTab === filter.key
+                ? "border-blue-500 bg-blue-50 text-blue-600 dark:bg-blue-900/20"
+                : "border-slate-200 text-slate-600 hover:border-slate-300 dark:border-slate-700 dark:text-slate-300"
+                }`}
             >
               <span>{filter.label}</span>
               <span
-                className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-                  FILTER_BADGE_CLASSES[filter.color]
-                }`}
+                className={`text-xs font-semibold px-2 py-0.5 rounded-full ${FILTER_BADGE_CLASSES[filter.color]
+                  }`}
               >
                 {filter.count}
               </span>
@@ -2501,9 +2533,8 @@ export default function ServiceManager() {
             title="Làm mới"
           >
             <RefreshCw
-              className={`w-3.5 h-3.5 ${
-                workOrdersFetching ? "animate-spin" : ""
-              }`}
+              className={`w-3.5 h-3.5 ${workOrdersFetching ? "animate-spin" : ""
+                }`}
             />
           </button>
           <button
@@ -2517,11 +2548,10 @@ export default function ServiceManager() {
           {isOwner && (
             <button
               onClick={() => setShowProfit(!showProfit)}
-              className={`px-2.5 py-1.5 border rounded-lg text-xs font-medium flex items-center gap-1 transition-colors ${
-                showProfit
-                  ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/30"
-                  : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700"
-              }`}
+              className={`px-2.5 py-1.5 border rounded-lg text-xs font-medium flex items-center gap-1 transition-colors ${showProfit
+                ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/30"
+                : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700"
+                }`}
               aria-label={showProfit ? "Ẩn lợi nhuận" : "Hiện lợi nhuận"}
               title={showProfit ? "Ẩn lợi nhuận" : "Hiện lợi nhuận"}
             >
@@ -2632,7 +2662,7 @@ export default function ServiceManager() {
                       <div className="mt-1 text-sm text-slate-500 dark:text-slate-400">
                         {String(
                           (workOrdersError as any)?.message ||
-                            "Vui lòng thử lại"
+                          "Vui lòng thử lại"
                         )}
                       </div>
                       <div className="mt-4 flex items-center justify-center gap-2">
@@ -2700,9 +2730,9 @@ export default function ServiceManager() {
                   const paidAmount = totalAmount - (order.remainingAmount || 0);
                   const paymentProgress = totalAmount
                     ? Math.min(
-                        100,
-                        Math.round((paidAmount / totalAmount) * 100)
-                      )
+                      100,
+                      Math.round((paidAmount / totalAmount) * 100)
+                    )
                     : 0;
 
                   // Tính lợi nhuận cho owner
@@ -2731,9 +2761,8 @@ export default function ServiceManager() {
                   const partsSummary = parts
                     .slice(0, 2)
                     .map((p) =>
-                      `${p.partName || ""}${
-                        p.quantity > 1 ? ` x${p.quantity}` : ""
-                      }`.trim()
+                      `${p.partName || ""}${p.quantity > 1 ? ` x${p.quantity}` : ""
+                        }`.trim()
                     )
                     .filter(Boolean)
                     .join(", ")
@@ -2742,9 +2771,8 @@ export default function ServiceManager() {
                     parts.length > 2 ? ` +${parts.length - 2}` : "";
                   const partsTitle = parts
                     .map((p) =>
-                      `${p.partName || ""}${
-                        p.quantity > 1 ? ` x${p.quantity}` : ""
-                      }`.trim()
+                      `${p.partName || ""}${p.quantity > 1 ? ` x${p.quantity}` : ""
+                        }`.trim()
                     )
                     .filter(Boolean)
                     .join(", ");
@@ -2752,9 +2780,8 @@ export default function ServiceManager() {
                   const servicesSummary = services
                     .slice(0, 2)
                     .map((s: any) =>
-                      `${s.description || ""}${
-                        (s.quantity || 1) > 1 ? ` x${s.quantity || 1}` : ""
-                      }`.trim()
+                      `${s.description || ""}${(s.quantity || 1) > 1 ? ` x${s.quantity || 1}` : ""
+                        }`.trim()
                     )
                     .filter(Boolean)
                     .join(", ")
@@ -2763,9 +2790,8 @@ export default function ServiceManager() {
                     services.length > 2 ? ` +${services.length - 2}` : "";
                   const servicesTitle = services
                     .map((s: any) =>
-                      `${s.description || ""}${
-                        (s.quantity || 1) > 1 ? ` x${s.quantity || 1}` : ""
-                      }`.trim()
+                      `${s.description || ""}${(s.quantity || 1) > 1 ? ` x${s.quantity || 1}` : ""
+                        }`.trim()
                     )
                     .filter(Boolean)
                     .join(", ");
@@ -2904,8 +2930,8 @@ export default function ServiceManager() {
                               {order.paymentStatus === "paid"
                                 ? "Đã TT"
                                 : order.paymentStatus === "partial"
-                                ? "TT một phần"
-                                : "Chưa TT"}
+                                  ? "TT một phần"
+                                  : "Chưa TT"}
                             </span>
                           </div>
                         </div>
@@ -2929,11 +2955,10 @@ export default function ServiceManager() {
                               >
                                 <span className="text-slate-500">LN</span>
                                 <span
-                                  className={`font-semibold ${
-                                    orderProfit > 0
-                                      ? "text-emerald-600 dark:text-emerald-400"
-                                      : "text-red-500"
-                                  }`}
+                                  className={`font-semibold ${orderProfit > 0
+                                    ? "text-emerald-600 dark:text-emerald-400"
+                                    : "text-red-500"
+                                    }`}
                                 >
                                   {orderProfit > 0 ? "+" : ""}
                                   {formatCurrency(orderProfit)}
@@ -2958,13 +2983,12 @@ export default function ServiceManager() {
                                 title={`Đã thanh toán ${paymentProgress}%`}
                               >
                                 <div
-                                  className={`h-full rounded-full transition-all duration-300 ${
-                                    paymentProgress >= 100
-                                      ? "bg-gradient-to-r from-emerald-500 to-emerald-600"
-                                      : paymentProgress > 0
+                                  className={`h-full rounded-full transition-all duration-300 ${paymentProgress >= 100
+                                    ? "bg-gradient-to-r from-emerald-500 to-emerald-600"
+                                    : paymentProgress > 0
                                       ? "bg-gradient-to-r from-blue-500 to-blue-600"
                                       : "bg-slate-300"
-                                  }`}
+                                    }`}
                                   style={{
                                     width: `${Math.min(paymentProgress, 100)}%`,
                                   }}
@@ -2995,46 +3019,46 @@ export default function ServiceManager() {
                           {/* Payment details - Show deposit/partial info when applicable */}
                           {((order.depositAmount && order.depositAmount > 0) ||
                             order.paymentStatus === "partial") && (
-                            <div className="space-y-1 pt-1 border-t border-slate-200 dark:border-slate-700">
-                              {order.depositAmount &&
-                                order.depositAmount > 0 && (
-                                  <div className="flex items-center justify-between text-xs">
-                                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-purple-500/20 text-purple-600 dark:text-purple-400 rounded font-medium">
-                                      <HandCoins className="w-3 h-3" /> Đã cọc
-                                    </span>
-                                    <span className="text-purple-600 dark:text-purple-400 font-medium">
-                                      {formatCurrency(order.depositAmount)}
-                                    </span>
-                                  </div>
-                                )}
-                              {totalAmount > 0 &&
-                                (order.remainingAmount ?? 0) > 0 && (
-                                  <div className="flex items-center justify-between text-xs">
-                                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-amber-500/20 text-amber-600 dark:text-amber-400 rounded font-medium">
-                                      <Clock className="w-3 h-3" /> Còn nợ
-                                    </span>
-                                    <span className="text-amber-600 dark:text-amber-400 font-medium">
-                                      {formatCurrency(
-                                        order.remainingAmount ?? 0
-                                      )}
-                                    </span>
-                                  </div>
-                                )}
-                              {order.paymentStatus === "paid" &&
-                                totalAmount > 0 &&
-                                (order.remainingAmount ?? 0) === 0 && (
-                                  <div className="flex items-center justify-between text-xs">
-                                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-green-500/20 text-green-600 dark:text-green-400 rounded font-medium">
-                                      <Check className="w-3 h-3" /> Đã thanh
-                                      toán đủ
-                                    </span>
-                                    <span className="text-green-600 dark:text-green-400 font-medium">
-                                      {formatCurrency(order.totalPaid || 0)}
-                                    </span>
-                                  </div>
-                                )}
-                            </div>
-                          )}
+                              <div className="space-y-1 pt-1 border-t border-slate-200 dark:border-slate-700">
+                                {order.depositAmount &&
+                                  order.depositAmount > 0 && (
+                                    <div className="flex items-center justify-between text-xs">
+                                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-purple-500/20 text-purple-600 dark:text-purple-400 rounded font-medium">
+                                        <HandCoins className="w-3 h-3" /> Đã cọc
+                                      </span>
+                                      <span className="text-purple-600 dark:text-purple-400 font-medium">
+                                        {formatCurrency(order.depositAmount)}
+                                      </span>
+                                    </div>
+                                  )}
+                                {totalAmount > 0 &&
+                                  (order.remainingAmount ?? 0) > 0 && (
+                                    <div className="flex items-center justify-between text-xs">
+                                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-amber-500/20 text-amber-600 dark:text-amber-400 rounded font-medium">
+                                        <Clock className="w-3 h-3" /> Còn nợ
+                                      </span>
+                                      <span className="text-amber-600 dark:text-amber-400 font-medium">
+                                        {formatCurrency(
+                                          order.remainingAmount ?? 0
+                                        )}
+                                      </span>
+                                    </div>
+                                  )}
+                                {order.paymentStatus === "paid" &&
+                                  totalAmount > 0 &&
+                                  (order.remainingAmount ?? 0) === 0 && (
+                                    <div className="flex items-center justify-between text-xs">
+                                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-green-500/20 text-green-600 dark:text-green-400 rounded font-medium">
+                                        <Check className="w-3 h-3" /> Đã thanh
+                                        toán đủ
+                                      </span>
+                                      <span className="text-green-600 dark:text-green-400 font-medium">
+                                        {formatCurrency(order.totalPaid || 0)}
+                                      </span>
+                                    </div>
+                                  )}
+                              </div>
+                            )}
 
                           {/* Status badges */}
                           <div className="flex flex-wrap items-center gap-1.5">
@@ -3047,8 +3071,8 @@ export default function ServiceManager() {
                               {order.paymentStatus === "paid"
                                 ? "Đã TT"
                                 : order.paymentStatus === "partial"
-                                ? "TT một phần"
-                                : "Chưa TT"}
+                                  ? "TT một phần"
+                                  : "Chưa TT"}
                             </span>
                           </div>
                         </div>
@@ -3989,8 +4013,8 @@ export default function ServiceManager() {
                               {printOrder.paymentMethod === "cash"
                                 ? "Tiền mặt"
                                 : printOrder.paymentMethod === "bank"
-                                ? "Chuyển khoản"
-                                : printOrder.paymentMethod}
+                                  ? "Chuyển khoản"
+                                  : printOrder.paymentMethod}
                             </td>
                           </tr>
                         )}
@@ -4771,8 +4795,8 @@ export default function ServiceManager() {
                       {printOrder.paymentMethod === "cash"
                         ? "Tiền mặt"
                         : printOrder.paymentMethod === "bank"
-                        ? "Chuyển khoản"
-                        : printOrder.paymentMethod}
+                          ? "Chuyển khoản"
+                          : printOrder.paymentMethod}
                     </td>
                   </tr>
                 )}

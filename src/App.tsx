@@ -1,4 +1,4 @@
-import React, { useEffect, useState, Suspense, lazy } from "react";
+import React, { useEffect, useState, Suspense } from "react";
 import {
   HashRouter,
   Routes,
@@ -21,53 +21,54 @@ import { useAppContext } from "./contexts/AppContext";
 import { BottomNav, Nav } from "./components/layout";
 import Dashboard from "./components/dashboard/Dashboard";
 import RepoErrorPanel from "./components/common/RepoErrorPanel";
+import { lazyImport } from "./utils/lazyImport";
 
 // Lazy load large components for code splitting
-const SalesManager = lazy(() => import("./components/sales/SalesManager"));
-const InventoryManager = lazy(
+const SalesManager = lazyImport(() => import("./components/sales/SalesManager"));
+const InventoryManager = lazyImport(
   () => import("./components/inventory/InventoryManager")
 );
-const ServiceManager = lazy(
+const ServiceManager = lazyImport(
   () => import("./components/service/ServiceManager")
 );
-const ServiceHistory = lazy(() =>
+const ServiceHistory = lazyImport(() =>
   import("./components/service/ServiceHistory").then((m) => ({
     default: m.ServiceHistory,
   }))
 );
-const CustomerManager = lazy(
+const CustomerManager = lazyImport(
   () => import("./components/customer/CustomerManager")
 );
-const DebtManager = lazy(() => import("./components/debt/DebtManager"));
-const CashBook = lazy(() => import("./components/finance/CashBook"));
-const LoansManager = lazy(() => import("./components/finance/LoansManager"));
-const FinanceManager = lazy(
+const DebtManager = lazyImport(() => import("./components/debt/DebtManager"));
+const CashBook = lazyImport(() => import("./components/finance/CashBook"));
+const LoansManager = lazyImport(() => import("./components/finance/LoansManager"));
+const FinanceManager = lazyImport(
   () => import("./components/finance/FinanceManager")
 );
-const PayrollManager = lazy(
+const PayrollManager = lazyImport(
   () => import("./components/payroll/PayrollManager")
 );
-const ReportsManager = lazy(
+const ReportsManager = lazyImport(
   () => import("./components/reports/ReportsManager")
 );
-const TaxReportExport = lazy(
+const TaxReportExport = lazyImport(
   () => import("./components/reports/TaxReportExport")
 );
-const EmployeeManager = lazy(
+const EmployeeManager = lazyImport(
   () => import("./components/employee/EmployeeManager")
 );
-const CategoriesManager = lazy(
+const CategoriesManager = lazyImport(
   () => import("./components/categories/CategoriesManager")
 );
-const LookupManager = lazy(() => import("./components/lookup/LookupManager"));
-const AnalyticsDashboard = lazy(
+const LookupManager = lazyImport(() => import("./components/lookup/LookupManager"));
+const AnalyticsDashboard = lazyImport(
   () => import("./components/analytics/AnalyticsDashboard")
 );
-const AuditLogsViewer = lazy(
+const AuditLogsViewer = lazyImport(
   () => import("./components/admin/AuditLogsViewer")
 );
-const MigrationTool = lazy(() => import("./components/admin/MigrationTool"));
-const SettingsManager = lazy(() =>
+const MigrationTool = lazyImport(() => import("./components/admin/MigrationTool"));
+const SettingsManager = lazyImport(() =>
   import("./components/settings/SettingsManager").then((m) => ({
     default: m.SettingsManager,
   }))

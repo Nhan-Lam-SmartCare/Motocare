@@ -41,7 +41,20 @@ export class ErrorBoundary extends React.Component<
 
   handleReload = () => {
     this.setState({ hasError: false, error: undefined });
-    window.location.reload();
+
+    // Clear Service Worker cache if exists (Force update)
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.getRegistrations().then((registrations) => {
+        for (const registration of registrations) {
+          registration.unregister();
+        }
+        // Force reload from server, ignoring cache
+        window.location.href = window.location.href.split("?")[0] + "?t=" + Date.now();
+      });
+    } else {
+      // Force reload
+      window.location.href = window.location.href.split("?")[0] + "?t=" + Date.now();
+    }
   };
 
   render() {

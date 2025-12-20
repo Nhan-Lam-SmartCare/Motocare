@@ -5,6 +5,7 @@ import { SupplierSelectionModal } from "./SupplierSelectionModal";
 import { useSuppliers } from "../../hooks/useSuppliers";
 import { showToast } from "../../utils/toast";
 import BarcodeScannerModal from "../common/BarcodeScannerModal";
+import { NumberInput } from "../common/NumberInput";
 
 interface Part {
   id: string;
@@ -269,22 +270,22 @@ export const GoodsReceiptMobileModal: React.FC<Props> = ({
 
   return (
     <>
-      <div className="fixed inset-0 bg-black/50 z-[100] flex items-end justify-center sm:hidden">
-        <div className="bg-white dark:bg-slate-800 w-full h-[95vh] rounded-t-3xl overflow-hidden flex flex-col">
+      <div className="fixed inset-0 bg-white dark:bg-slate-800 z-[100] flex flex-col">
+        <div className="flex flex-col h-full">
           {step === 1 ? (
             /* ===== BƯỚC 1: CHỌN HÀNG ===== */
             <>
               {/* Header */}
-              <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-4 flex items-center justify-between flex-shrink-0">
+              <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-2 flex items-center justify-between flex-shrink-0 shadow-md">
                 <div className="flex items-center gap-3">
                   <button
                     onClick={onClose}
-                    className="text-white text-2xl leading-none"
+                    className="text-white text-xl leading-none p-1"
                   >
                     ×
                   </button>
-                  <h2 className="text-lg font-bold text-white">
-                    Tạo phiếu nhập kho
+                  <h2 className="text-base font-bold text-white">
+                    Tạo phiếu nhập
                   </h2>
                 </div>
               </div>
@@ -630,16 +631,16 @@ export const GoodsReceiptMobileModal: React.FC<Props> = ({
             /* ===== BƯỚC 2: THANH TOÁN ===== */
             <>
               {/* Header */}
-              <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-4 flex items-center justify-between flex-shrink-0">
+              <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-2 flex items-center justify-between flex-shrink-0 shadow-md">
                 <div className="flex items-center gap-3">
                   <button
                     onClick={() => setStep(1)}
-                    className="text-white text-xl leading-none"
+                    className="text-white text-xl leading-none p-1"
                   >
                     ←
                   </button>
-                  <h2 className="text-lg font-bold text-white">
-                    Xác nhận nhập kho
+                  <h2 className="text-base font-bold text-white">
+                    Xác nhận nhập
                   </h2>
                 </div>
               </div>
@@ -669,9 +670,9 @@ export const GoodsReceiptMobileModal: React.FC<Props> = ({
                         </button>
                       </div>
 
-                      {/* Quantity Controls */}
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
+                      {/* Quantity & Price Controls */}
+                      <div className="flex items-center justify-between gap-2 mt-2">
+                        <div className="flex items-center gap-1">
                           <button
                             onClick={() => {
                               if (item.quantity > 1) {
@@ -680,28 +681,45 @@ export const GoodsReceiptMobileModal: React.FC<Props> = ({
                                 setReceiptItems(updated);
                               }
                             }}
-                            className="w-8 h-8 rounded-lg border-2 border-slate-300 dark:border-slate-600 flex items-center justify-center text-slate-600 dark:text-slate-400 font-bold active:scale-95 transition-transform"
+                            className="w-7 h-7 rounded border border-slate-300 dark:border-slate-600 flex items-center justify-center text-slate-600 dark:text-slate-400 font-bold active:scale-95 transition-transform"
                           >
                             −
                           </button>
-                          <div className="w-12 text-center font-bold text-lg text-slate-900 dark:text-slate-100">
-                            {item.quantity}
-                          </div>
+                          <input
+                            type="number"
+                            value={item.quantity}
+                            onChange={(e) => {
+                              const val = parseInt(e.target.value) || 0;
+                              const updated = [...receiptItems];
+                              updated[index].quantity = Math.max(1, val);
+                              setReceiptItems(updated);
+                            }}
+                            className="w-12 h-7 text-center font-bold text-base text-slate-900 dark:text-slate-100 border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-700"
+                          />
                           <button
                             onClick={() => {
                               const updated = [...receiptItems];
                               updated[index].quantity += 1;
                               setReceiptItems(updated);
                             }}
-                            className="w-8 h-8 rounded-lg border-2 border-blue-500 flex items-center justify-center text-blue-600 font-bold active:scale-95 transition-transform"
+                            className="w-7 h-7 rounded border border-blue-500 flex items-center justify-center text-blue-600 font-bold active:scale-95 transition-transform"
                           >
                             +
                           </button>
                         </div>
 
-                        <div className="text-right">
-                          <div className="text-sm text-slate-500 dark:text-slate-400">
-                            {formatCurrency(item.importPrice)} / cái
+                        <div className="flex-1 text-right">
+                          <div className="flex justify-end items-center gap-1 mb-1">
+                            <span className="text-xs text-slate-400">Giá nhập:</span>
+                            <NumberInput
+                              value={item.importPrice}
+                              onChange={(val) => {
+                                const updated = [...receiptItems];
+                                updated[index].importPrice = val;
+                                setReceiptItems(updated);
+                              }}
+                              className="w-20 px-1 py-0.5 text-right text-sm border-b border-dashed border-slate-300 dark:border-slate-600 bg-transparent text-slate-700 dark:text-slate-300 focus:outline-none focus:border-blue-500"
+                            />
                           </div>
                           <div className="font-bold text-orange-600 dark:text-orange-400">
                             {formatCurrency(item.quantity * item.importPrice)}

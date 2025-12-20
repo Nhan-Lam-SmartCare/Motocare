@@ -57,7 +57,7 @@ import {
 import { useCategories, useCreateCategory } from "../../hooks/useCategories";
 import { useSuppliers } from "../../hooks/useSuppliers";
 import type { Part, InventoryTransaction } from "../../types";
-import { fetchPartBySku } from "../../lib/repository/partsRepository";
+import { fetchPartBySku, createPart } from "../../lib/repository/partsRepository";
 import { useSupplierDebtsRepo } from "../../hooks/useDebtsRepository";
 import { createCashTransaction } from "../../lib/repository/cashTransactionsRepository";
 import FormattedNumberInput from "../common/FormattedNumberInput";
@@ -3678,7 +3678,10 @@ const InventoryManager: React.FC = () => {
 
               // Create the new product in DB
               try {
-                const createdPart = await createPartMutation.mutateAsync({
+                // OPTIMIZATION: Use direct createPart instead of mutation hook to avoid
+                // triggering query invalidations for EVERY new product (causing UI freeze)
+                // usage: createPart(input) returns RepoResult<Part>
+                const result = await createPart({
                   name: item._productData.name,
                   sku: item._productData.sku,
                   barcode: item._productData.barcode || "",
@@ -3698,7 +3701,14 @@ const InventoryManager: React.FC = () => {
                   },
                 });
 
-                // mutateAsync now returns Part directly (unwrapped)
+                if (!result.ok || !result.data) {
+                  console.error("❌ Link lỗi khi tạo sản phẩm:", result.error);
+                  throw new Error(
+                    `Không thể tạo sản phẩm ${item._productData.name}: ${result.error?.message}`
+                  );
+                }
+
+                const createdPart = result.data;
                 const realPartId = createdPart?.id;
 
                 if (!realPartId || realPartId.startsWith("temp-")) {
@@ -3758,64 +3768,70 @@ const InventoryManager: React.FC = () => {
             } NCC:${supplierName}${note ? " | " + note : ""}`,
         });
 
-        // 💰 Ghi chi tiền vào sổ quỹ nếu có thanh toán (paidAmount > 0)
-        if (paidAmount > 0 && paymentInfo) {
-          const paymentSourceId =
-            paymentInfo.paymentMethod === "bank" ? "bank" : "cash";
-          const cashTxResult = await createCashTransaction({
-            type: "expense",
-            amount: paidAmount,
-            branchId: currentBranchId,
-            paymentSourceId: paymentSourceId,
-            date: today.toISOString(),
-            notes: `Chi trả NCC ${supplierName} - Phiếu nhập ${receiptCode}`,
-            category: "supplier_payment",
-            supplierId: supplierId,
-            recipient: supplierName,
-          });
+        // OPTIMIZATION: Run Cash Transaction and Debt Creation in parallel
+        await Promise.all([
+          // 1. Ghi chi tiền vào sổ quỹ
+          (async () => {
+            if (paidAmount > 0 && paymentInfo) {
+              const paymentSourceId =
+                paymentInfo.paymentMethod === "bank" ? "bank" : "cash";
+              const cashTxResult = await createCashTransaction({
+                type: "expense",
+                amount: paidAmount,
+                branchId: currentBranchId,
+                paymentSourceId: paymentSourceId,
+                date: today.toISOString(),
+                notes: `Chi trả NCC ${supplierName} - Phiếu nhập ${receiptCode}`,
+                category: "supplier_payment",
+                supplierId: supplierId,
+                recipient: supplierName,
+              });
 
-          if (cashTxResult.ok) {
-            console.log(
-              `✅ Đã ghi chi tiền ${paidAmount.toLocaleString()} đ vào sổ quỹ (${paymentSourceId})`
-            );
-          } else {
-            console.error("❌ Lỗi ghi sổ quỹ:", cashTxResult.error);
-            showToast.warning(
-              `Nhập kho OK nhưng chưa ghi được sổ quỹ: ${cashTxResult.error?.message}`
-            );
-          }
-        }
+              if (cashTxResult.ok) {
+                console.log(
+                  `✅ Đã ghi chi tiền ${paidAmount.toLocaleString()} đ vào sổ quỹ (${paymentSourceId})`
+                );
+              } else {
+                console.error("❌ Lỗi ghi sổ quỹ:", cashTxResult.error);
+                showToast.warning(
+                  `Nhập kho OK nhưng chưa ghi được sổ quỹ: ${cashTxResult.error?.message}`
+                );
+              }
+            }
+          })(),
 
-        // Create supplier debt if payment is partial or deferred
-        if (debtAmount > 0 && paymentInfo) {
-          const debtId = `DEBT-${dateStr}-${Math.random()
-            .toString(36)
-            .substring(2, 5)
-            .toUpperCase()}`;
-          const { error: debtError } = await supabase
-            .from("supplier_debts")
-            .insert({
-              id: debtId,
-              supplier_id: supplierId,
-              supplier_name: supplierName,
-              branch_id: currentBranchId,
-              total_amount: debtAmount,
-              paid_amount: 0,
-              remaining_amount: debtAmount,
-              description: `Nhập kho ${receiptCode} - Thanh toán ${paidAmount.toLocaleString()}/${totalAmount.toLocaleString()} đ`,
-              created_date: today.toISOString().split("T")[0],
-              created_at: today.toISOString(),
-            });
+          // 2. Create supplier debt
+          (async () => {
+            if (debtAmount > 0 && paymentInfo) {
+              const debtId = `DEBT-${dateStr}-${Math.random()
+                .toString(36)
+                .substring(2, 5)
+                .toUpperCase()}`;
+              const { error: debtError } = await supabase
+                .from("supplier_debts")
+                .insert({
+                  id: debtId,
+                  supplier_id: supplierId,
+                  supplier_name: supplierName,
+                  branch_id: currentBranchId,
+                  total_amount: debtAmount,
+                  paid_amount: 0,
+                  remaining_amount: debtAmount,
+                  description: `Nợ tiền nhập hàng (Phiếu ${receiptCode})`,
+                  due_date: null, // hoặc tính theo settings
+                  notes: note || "",
+                  created_at: new Date().toISOString(),
+                });
 
-          if (debtError) {
-            console.error("❌ Error creating debt:", debtError);
-            showToast.error("Lỗi tạo công nợ: " + debtError.message);
-          } else {
-            console.log(
-              `✅ Created supplier debt: ${debtAmount.toLocaleString()} đ`
-            );
-          }
-        }
+              if (debtError) {
+                console.warn("Could not create debt record:", debtError);
+                showToast.warning("Lỗi tạo công nợ: " + debtError.message);
+              } else {
+                console.log("✅ Đã ghi nhận nợ NCC:", debtAmount);
+              }
+            }
+          })(),
+        ]);
 
         setShowGoodsReceipt(false);
         showToast.success(`Nhập kho thành công! Mã phiếu: ${receiptCode}`);

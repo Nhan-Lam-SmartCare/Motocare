@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
+import { Banknote } from "lucide-react";
 import { useAppContext } from "../../contexts/AppContext";
 import { formatCurrency, formatDate } from "../../utils/format";
 import { showToast } from "../../utils/toast";
@@ -17,6 +18,80 @@ import {
 } from "../../hooks/useDebtsRepository";
 import { createCashTransaction } from "../../lib/repository/cashTransactionsRepository";
 import { useQueryClient } from "@tanstack/react-query";
+
+// Success Receipt Modal
+const DebtReceiptModal: React.FC<{
+  isOpen: boolean;
+  data: any;
+  onClose: () => void;
+  onPrint: () => void;
+}> = ({ isOpen, data, onClose, onPrint }) => {
+  if (!isOpen || !data) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-[110]">
+      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl max-w-sm w-full border border-green-500 overflow-hidden relative">
+        <div className="bg-green-600 p-4 text-center">
+          <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-2 shadow-lg">
+            <svg className="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <h2 className="text-white text-xl font-bold">Thanh toán thành công!</h2>
+        </div>
+
+        <div className="p-6 space-y-4">
+          <div className="text-center">
+            <p className="text-slate-500 dark:text-slate-400 text-sm mb-1">
+              {data.isCustomer ? "Người nộp tiền" : "Người thụ hưởng"}
+            </p>
+            <p className="text-slate-900 dark:text-white font-bold text-lg">
+              {data.customerName || data.supplierName}
+            </p>
+          </div>
+
+          <div className="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-4 text-center border border-slate-100 dark:border-slate-700">
+            <p className="text-slate-500 dark:text-slate-400 text-sm mb-1">Số tiền</p>
+            <p className={`text-2xl font-bold ${data.type === 'income' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+              {formatCurrency(data.amount)}
+            </p>
+            <p className="text-xs text-slate-400 mt-1">{data.paymentMethod === 'cash' ? 'Tiền mặt' : 'Chuyển khoản'}</p>
+          </div>
+
+          <p className="text-center text-xs text-slate-400">
+            {data.timestamp}
+          </p>
+
+          <div className="grid grid-cols-2 gap-3 mt-6">
+            <button
+              onClick={onPrint}
+              className="flex items-center justify-center gap-2 px-4 py-3 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg font-medium transition-colors"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
+              In Phiếu
+            </button>
+            <button
+              onClick={() => {
+                onPrint();
+                showToast.info("Hệ thống sẽ mở hộp thoại in. Bạn có thể chọn 'Lưu dưới dạng PDF' hoặc chụp ảnh màn hình để chia sẻ.");
+              }}
+              className="flex items-center justify-center gap-2 px-4 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" /></svg>
+              Chia sẻ
+            </button>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-full py-3 text-slate-500 hover:text-slate-700 font-medium"
+          >
+            Đóng
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const DebtManager: React.FC = () => {
   const {
@@ -223,9 +298,126 @@ const DebtManager: React.FC = () => {
   const [showEditDebtModal, setShowEditDebtModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [receiptData, setReceiptData] = useState<any>(null);
+  const [showReceiptModal, setShowReceiptModal] = useState(false);
   const [selectedDebt, setSelectedDebt] = useState<
     CustomerDebt | SupplierDebt | null
   >(null);
+
+  // 🔹 Print Handler (Iframe based to avoid popup blockers)
+  const handlePrintDebt = (debt: CustomerDebt | SupplierDebt) => {
+    const isCustomerDebt = "customerName" in debt;
+
+    // Create or get print iframe
+    let iframe = document.getElementById('print-receipt-frame') as HTMLIFrameElement;
+    if (!iframe) {
+      iframe = document.createElement('iframe');
+      iframe.id = 'print-receipt-frame';
+      // Hide iframe but keep it part of DOM for printing
+      iframe.style.position = 'fixed';
+      iframe.style.right = '0';
+      iframe.style.bottom = '0';
+      iframe.style.width = '0';
+      iframe.style.height = '0';
+      iframe.style.border = '0';
+      document.body.appendChild(iframe);
+    }
+
+    const html = `
+      <html>
+        <head>
+          <title>Phiếu ${isCustomerDebt ? "Thu" : "Chi"}</title>
+          <style>
+            @page { size: auto; margin: 5mm; }
+            body { 
+              font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+              padding: 20px; 
+              max-width: 800px; 
+              margin: 0 auto; 
+              color: #333; 
+            }
+            .store-header { text-align: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 3px solid #0ea5e9; }
+            .store-header h2 { margin: 0 0 10px 0; font-size: 24px; color: #0ea5e9; text-transform: uppercase; letter-spacing: 1px; }
+            .store-header p { margin: 2px 0; color: #666; font-size: 13px; }
+            h1 { text-align: center; margin-bottom: 20px; font-size: 26px; color: #1e293b; text-transform: uppercase; }
+            .receipt-box { border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; background: #fff; }
+            .info-row { display: flex; justify-content: space-between; margin-bottom: 12px; border-bottom: 1px dashed #cbd5e1; padding-bottom: 8px; }
+            .info-row:last-child { border-bottom: none; }
+            .info-label { font-weight: 600; color: #64748b; font-size: 14px; }
+            .info-value { font-weight: 700; color: #0f172a; font-size: 15px; }
+            .total-row { display: flex; justify-content: space-between; margin-top: 15px; padding-top: 15px; border-top: 2px solid #0ea5e9; }
+            .total-label { font-size: 16px; font-weight: 700; color: #0ea5e9; }
+            .total-value { font-size: 20px; font-weight: 800; color: #0f172a; }
+            .notes { margin-top: 20px; font-size: 13px; color: #64748b; font-style: italic; text-align: center; }
+            .footer { margin-top: 40px; display: flex; justify-content: space-between; text-align: center; }
+            .signature-box { width: 45%; }
+            .signature-line { margin-top: 50px; border-top: 1px solid #94a3b8; width: 80%; margin-left: auto; margin-right: auto; }
+            @media print { 
+               body { -webkit-print-color-adjust: exact; } 
+            }
+          </style>
+        </head>
+        <body>
+           <div class="store-header">
+              <h2>${storeSettings?.store_name || "MOTOCARE"}</h2>
+              ${storeSettings?.address ? `<p>Địa chỉ: ${storeSettings.address}</p>` : ""}
+              ${storeSettings?.phone ? `<p>Hotline: ${storeSettings.phone}</p>` : ""}
+           </div>
+           
+           <h1>PHIẾU ${isCustomerDebt ? "THU TIỀN" : "CHI TIỀN"}</h1>
+           
+           <div class="receipt-box">
+              <div class="info-row">
+                 <span class="info-label">${isCustomerDebt ? "Người nộp tiền" : "Người nhận tiền"}:</span>
+                 <span class="info-value">${isCustomerDebt ? (debt as CustomerDebt).customerName : (debt as SupplierDebt).supplierName}</span>
+              </div>
+              <div class="info-row">
+                 <span class="info-label">Ngày giao dịch:</span>
+                 <span class="info-value">${formatDate(new Date())}</span>
+              </div>
+              <div class="info-row">
+                 <span class="info-label">Nội dung:</span>
+                 <span class="info-value">${debt.description}</span>
+              </div>
+              <div class="total-row">
+                 <span class="total-label">Số tiền:</span>
+                 <span class="total-value">${formatCurrency(debt.totalAmount)}</span>
+              </div>
+           </div>
+
+           <div class="footer">
+             <div class="signature-box">
+               <p style="font-weight: bold; margin-bottom: 5px;">Người lập phiếu</p>
+               <p style="font-size: 11px; font-style: italic;">(Ký, họ tên)</p>
+               <div class="signature-line"></div>
+             </div>
+             <div class="signature-box">
+               <p style="font-weight: bold; margin-bottom: 5px;">${isCustomerDebt ? "Người nộp tiền" : "Người nhận tiền"}</p>
+               <p style="font-size: 11px; font-style: italic;">(Ký, họ tên)</p>
+               <div class="signature-line"></div>
+             </div>
+           </div>
+
+           <div class="notes">
+             Cảm ơn quý khách đã sử dụng dịch vụ!
+           </div>
+        </body>
+      </html>
+    `;
+
+    const doc = iframe.contentWindow?.document;
+    if (doc) {
+      doc.open();
+      doc.write(html);
+      doc.close();
+
+      // Focus and print after a short delay to ensure rendering
+      setTimeout(() => {
+        iframe.contentWindow?.focus();
+        iframe.contentWindow?.print();
+      }, 500);
+    }
+  };
 
   // Filter by branch
   const branchCustomerDebts = useMemo(() => {
@@ -362,7 +554,7 @@ const DebtManager: React.FC = () => {
 
   const selectedSupplierTotal = useMemo(() => {
     return selectedSupplierIds.reduce((sum, id) => {
-      const debt = branchSupplierDebts.find((d) => d.supplierId === id);
+      const debt = branchSupplierDebts.find((d) => d.id === id);
       return sum + (debt?.remainingAmount || 0);
     }, 0);
   }, [selectedSupplierIds, branchSupplierDebts]);
@@ -378,12 +570,12 @@ const DebtManager: React.FC = () => {
     }
   };
 
-  const handleSupplierCheckbox = (supplierId: string, checked: boolean) => {
+  const handleSupplierCheckbox = (debtId: string, checked: boolean) => {
     if (checked) {
-      setSelectedSupplierIds([...selectedSupplierIds, supplierId]);
+      setSelectedSupplierIds([...selectedSupplierIds, debtId]);
     } else {
       setSelectedSupplierIds(
-        selectedSupplierIds.filter((id) => id !== supplierId)
+        selectedSupplierIds.filter((id) => id !== debtId)
       );
     }
   };
@@ -402,8 +594,8 @@ const DebtManager: React.FC = () => {
             <button
               onClick={() => setActiveTab("customer")}
               className={`flex-1 md:flex-none px-4 py-2 font-medium text-sm transition-all text-center ${activeTab === "customer"
-                  ? "text-cyan-600 dark:text-cyan-400 border-b-2 border-cyan-600 dark:border-cyan-400"
-                  : "text-secondary-text hover:text-primary-text"
+                ? "text-cyan-600 dark:text-cyan-400 border-b-2 border-cyan-600 dark:border-cyan-400"
+                : "text-secondary-text hover:text-primary-text"
                 }`}
             >
               Công nợ khách hàng
@@ -411,8 +603,8 @@ const DebtManager: React.FC = () => {
             <button
               onClick={() => setActiveTab("supplier")}
               className={`flex-1 md:flex-none px-4 py-2 font-medium text-sm transition-all text-center ${activeTab === "supplier"
-                  ? "text-cyan-600 dark:text-cyan-400 border-b-2 border-cyan-600 dark:border-cyan-400"
-                  : "text-secondary-text hover:text-primary-text"
+                ? "text-cyan-600 dark:text-cyan-400 border-b-2 border-cyan-600 dark:border-cyan-400"
+                : "text-secondary-text hover:text-primary-text"
                 }`}
             >
               Công nợ nhà cung cấp
@@ -527,7 +719,7 @@ const DebtManager: React.FC = () => {
       {/* Content Area */}
       <div className="flex-1 overflow-auto">
         {activeTab === "customer" ? (
-          <div className="p-6">
+          <div className="p-2 md:p-6">
             {loadingCustomerDebts || loadingWorkOrders ? (
               <div className="flex items-center justify-center py-12">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-600"></div>
@@ -555,9 +747,9 @@ const DebtManager: React.FC = () => {
                   return (
                     <div
                       key={debt.id}
-                      className={`grid grid-cols-1 md:grid-cols-12 gap-4 items-start bg-primary-bg border rounded-lg p-4 transition-all ${isPaid
-                          ? "opacity-60 cursor-not-allowed border-gray-300 dark:border-gray-600"
-                          : "hover:border-cyan-500 hover:shadow-md cursor-pointer"
+                      className={`grid grid-cols-1 md:grid-cols-12 gap-2 md:gap-4 items-start bg-primary-bg border rounded-lg p-3 md:p-4 transition-all ${isPaid
+                        ? "opacity-60 cursor-not-allowed border-gray-300 dark:border-gray-600"
+                        : "hover:border-cyan-500 hover:shadow-md cursor-pointer"
                         } ${debt.isFromWorkOrder
                           ? "border-amber-300 dark:border-amber-600 bg-amber-50/50 dark:bg-amber-900/10"
                           : "border-primary-border"
@@ -625,7 +817,7 @@ const DebtManager: React.FC = () => {
                             );
                           }}
                           onClick={(e) => e.stopPropagation()} // Prevent opening modal
-                          className={`mt-1 w-4 h-4 rounded border-secondary-border text-cyan-600 focus:ring-cyan-500 ${isPaid ? "cursor-not-allowed opacity-50" : ""
+                          className={`hidden md:block mt-1 w-4 h-4 rounded border-secondary-border text-cyan-600 focus:ring-cyan-500 ${isPaid ? "cursor-not-allowed opacity-50" : ""
                             }`}
                         />
                         <div className="flex-1 min-w-0">
@@ -803,35 +995,59 @@ const DebtManager: React.FC = () => {
                         </div>
                       </div>
 
-                      {/* Cột 3: Số tiền (1 col) */}
-                      <div className="col-span-1 text-right md:text-right flex justify-between md:block">
-                        <span className="md:hidden text-sm text-secondary-text">
-                          Số tiền:
-                        </span>
+                      {/* Cột 3: Số tiền (1 col) - Desktop Only */}
+                      <div className="hidden md:block col-span-1 text-right">
                         <div className="text-sm font-semibold text-primary-text">
                           {formatCurrency(debt.totalAmount)}
                         </div>
                       </div>
 
-                      {/* Cột 4: Đã trả (1 col) */}
-                      <div className="col-span-1 text-right md:text-right flex justify-between md:block">
-                        <span className="md:hidden text-sm text-secondary-text">
-                          Đã trả:
-                        </span>
+                      {/* Cột 4: Đã trả (1 col) - Desktop Only */}
+                      <div className="hidden md:block col-span-1 text-right">
                         <div className="text-sm font-semibold text-green-600 dark:text-green-400">
                           {formatCurrency(debt.paidAmount)}
                         </div>
                       </div>
 
-                      {/* Cột 5: Còn nợ (2 cols) */}
-                      <div className="col-span-1 md:col-span-2 text-right md:text-right flex justify-between md:block">
-                        <span className="md:hidden text-sm font-bold text-secondary-text">
-                          Còn nợ:
-                        </span>
+                      {/* Cột 5: Còn nợ (2 cols) - Desktop Only */}
+                      <div className="hidden md:block col-span-1 md:col-span-2 text-right">
                         <div className="text-lg font-bold text-red-600 dark:text-red-400">
                           {formatCurrency(debt.remainingAmount)}
                         </div>
                       </div>
+
+                      {/* Mobile Financial Summary Block */}
+                      <div className="col-span-full md:hidden bg-slate-50 dark:bg-slate-800/50 p-3 rounded-lg mt-1 space-y-1">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-slate-500 dark:text-slate-400">Tổng tiền:</span>
+                          <span className="font-semibold text-slate-900 dark:text-white">{formatCurrency(debt.totalAmount)}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-slate-500 dark:text-slate-400">Đã trả:</span>
+                          <span className="font-semibold text-green-600 dark:text-green-400">{formatCurrency(debt.paidAmount)}</span>
+                        </div>
+                        <div className="border-t border-slate-200 dark:border-slate-700 pt-2 flex justify-between items-center">
+                          <span className="font-bold text-slate-700 dark:text-slate-300">Còn nợ:</span>
+                          <span className="text-xl font-bold text-red-600 dark:text-red-400">{formatCurrency(debt.remainingAmount)}</span>
+                        </div>
+                      </div>
+
+                      {/* Mobile Action Button */}
+                      {!isPaid && (
+                        <div className="col-span-full md:hidden mt-2 border-t pt-2 dark:border-gray-700">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedDebt(debt);
+                              setShowCollectModal(true);
+                            }}
+                            className="w-full py-2.5 bg-cyan-600 text-white rounded-lg font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform shadow-sm"
+                          >
+                            <Banknote className="w-4 h-4" />
+                            Thanh toán công nợ
+                          </button>
+                        </div>
+                      )}
 
                       {/* Menu dropdown (1 col) */}
                       <div className="col-span-1 flex justify-end hidden md:flex">
@@ -947,7 +1163,7 @@ const DebtManager: React.FC = () => {
             )}
           </div>
         ) : (
-          <div className="p-6">
+          <div className="p-2 md:p-6">
             {filteredSupplierDebts.length === 0 ? (
               <div className="text-center py-12 text-tertiary-text">
                 Không có công nợ.
@@ -967,7 +1183,7 @@ const DebtManager: React.FC = () => {
                 {filteredSupplierDebts.map((debt) => (
                   <div
                     key={debt.id}
-                    className="grid grid-cols-1 md:grid-cols-12 gap-4 items-start bg-primary-bg border border-primary-border rounded-lg p-4 hover:border-cyan-500 hover:shadow-md transition-all cursor-pointer group"
+                    className="grid grid-cols-1 md:grid-cols-12 gap-2 p-3 md:gap-4 md:p-4 items-start bg-primary-bg border border-primary-border rounded-lg hover:border-cyan-500 hover:shadow-md transition-all cursor-pointer group"
                     onClick={() => {
                       setSelectedDebt(debt);
                       setShowDetailModal(true);
@@ -977,16 +1193,16 @@ const DebtManager: React.FC = () => {
                     <div className="col-span-1 md:col-span-4 flex items-start gap-3">
                       <input
                         type="checkbox"
-                        checked={selectedSupplierIds.includes(debt.supplierId)}
+                        checked={selectedSupplierIds.includes(debt.id)}
                         onChange={(e) => {
                           e.stopPropagation();
                           handleSupplierCheckbox(
-                            debt.supplierId,
+                            debt.id,
                             e.target.checked
                           );
                         }}
                         onClick={(e) => e.stopPropagation()}
-                        className="mt-1 w-4 h-4 rounded border-secondary-border text-cyan-600 focus:ring-cyan-500"
+                        className="hidden md:block mt-1 w-4 h-4 rounded border-secondary-border text-cyan-600 focus:ring-cyan-500"
                       />
                       <div className="flex-1 min-w-0">
                         <h3 className="text-primary-text font-semibold text-base mb-1 truncate">
@@ -1020,10 +1236,53 @@ const DebtManager: React.FC = () => {
                       <div className="text-sm text-primary-text">
                         {debt.description}
                       </div>
+
+                      {/* Mobile Financial Summary */}
+                      <div className="md:hidden mt-1 space-y-1">
+                        <div className="flex items-center gap-2 text-sm">
+                          <span className="text-secondary-text min-w-[60px]">
+                            Tổng:
+                          </span>
+                          <span className="font-medium text-primary-text">
+                            {formatCurrency(debt.totalAmount)}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm">
+                          <span className="text-secondary-text min-w-[60px]">
+                            Đã trả:
+                          </span>
+                          <span className="font-medium text-green-600 dark:text-green-400">
+                            {formatCurrency(debt.paidAmount)}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm">
+                          <span className="text-secondary-text min-w-[60px]">
+                            Còn nợ:
+                          </span>
+                          <span className="font-bold text-red-600 dark:text-red-400">
+                            {formatCurrency(debt.remainingAmount)}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Mobile Action Buttons - "Chi trả nợ" */}
+                      <div className="md:hidden mt-2 pt-2 border-t border-secondary-border flex justify-end">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedDebt(debt);
+                            setShowPaymentModal(true);
+                          }}
+                          className="px-3 py-1.5 bg-green-600/10 text-green-600 dark:text-green-400 rounded-lg text-sm font-medium hover:bg-green-600/20 flex items-center gap-1.5"
+                        >
+                          <Banknote className="w-4 h-4" />
+                          Chi trả nợ
+                        </button>
+                      </div>
                     </div>
 
                     {/* Cột 3: Số tiền (1 col) */}
-                    <div className="col-span-1 text-right md:text-right flex justify-between md:block">
+                    <div className="col-span-1 text-right md:text-right hidden md:block">
                       <span className="md:hidden text-sm text-secondary-text">
                         Số tiền:
                       </span>
@@ -1033,7 +1292,7 @@ const DebtManager: React.FC = () => {
                     </div>
 
                     {/* Cột 4: Đã trả (1 col) */}
-                    <div className="col-span-1 text-right md:text-right flex justify-between md:block">
+                    <div className="col-span-1 text-right md:text-right hidden md:block">
                       <span className="md:hidden text-sm text-secondary-text">
                         Đã trả:
                       </span>
@@ -1043,7 +1302,7 @@ const DebtManager: React.FC = () => {
                     </div>
 
                     {/* Cột 5: Còn nợ (2 cols) */}
-                    <div className="col-span-1 md:col-span-2 text-right md:text-right flex justify-between md:block">
+                    <div className="col-span-1 md:col-span-2 text-right md:text-right hidden md:block">
                       <span className="md:hidden text-sm font-bold text-secondary-text">
                         Còn nợ:
                       </span>
@@ -1169,6 +1428,8 @@ const DebtManager: React.FC = () => {
         )}
       </div>
 
+
+
       {/* Fixed Bottom Button - Pay All Selected */}
       {((activeTab === "customer" && selectedCustomerIds.length > 0) ||
         (activeTab === "supplier" && selectedSupplierIds.length > 0)) && (
@@ -1216,28 +1477,109 @@ const DebtManager: React.FC = () => {
         <CollectDebtModal
           customers={customers}
           customerDebts={customerDebts}
+          initialDebt={selectedDebt as CustomerDebt}
           onClose={() => setShowCollectModal(false)}
           onCollect={async (data) => {
-            // 💰 Tạo giao dịch thu trong Sổ quỹ (INSERT vào database)
-            const cashTxResult = await createCashTransaction({
-              type: "income",
-              amount: data.amount,
-              branchId: currentBranchId,
-              paymentSourceId: data.paymentMethod,
-              date: data.timestamp,
-              notes: `Thu nợ khách hàng - ${data.customerName}`,
-              category: "debt_collection",
-              recipient: data.customerName,
-              customerId: data.customerId,
-            });
-
-            if (cashTxResult.ok) {
-              console.log("✅ Đã ghi sổ quỹ thu nợ KH:", cashTxResult.data);
-            } else {
-              console.error("❌ Lỗi ghi sổ quỹ:", cashTxResult.error);
-              showToast.warning(
-                `Thu nợ OK nhưng chưa ghi được sổ quỹ: ${cashTxResult.error?.message}`
+            try {
+              // 🔹 Find the debt record to update
+              const debtToUpdate = branchCustomerDebts.find(
+                (d) => d.customerId === data.customerId
               );
+
+              if (debtToUpdate) {
+                // Calculate new amounts
+                const newPaidAmount = (debtToUpdate.paidAmount || 0) + data.amount;
+                const newRemainingAmount = Math.max(0, debtToUpdate.totalAmount - newPaidAmount);
+
+                // Check if debt is from work order or regular debt table
+                if ((debtToUpdate as any).isFromWorkOrder && (debtToUpdate as any).workOrderId) {
+                  // 🔹 Work Order debt - update work_orders table directly
+                  console.log("📦 Updating Work Order debt:", (debtToUpdate as any).workOrderId);
+                  await supabase
+                    .from("work_orders")
+                    .update({
+                      remainingamount: newRemainingAmount,
+                      // Also track payment
+                    })
+                    .eq("id", (debtToUpdate as any).workOrderId);
+                } else {
+                  // 🔹 Regular debt - update customer_debts table
+                  console.log("📋 Updating Customer Debt:", debtToUpdate.id);
+                  await updateCustomerDebt.mutateAsync({
+                    id: debtToUpdate.id,
+                    updates: {
+                      paidAmount: newPaidAmount,
+                      remainingAmount: newRemainingAmount,
+                    },
+                  });
+
+                  // Also update linked work order if exists
+                  if ((debtToUpdate as any).workOrderId) {
+                    await supabase
+                      .from("work_orders")
+                      .update({ remainingamount: newRemainingAmount })
+                      .eq("id", (debtToUpdate as any).workOrderId);
+                  }
+
+                  // Also update linked sale if exists
+                  if ((debtToUpdate as any).saleId) {
+                    await supabase
+                      .from("sales")
+                      .update({ remainingamount: newRemainingAmount })
+                      .eq("id", (debtToUpdate as any).saleId);
+                  }
+                }
+
+                // Invalidate queries to refresh UI
+                queryClient.invalidateQueries({ queryKey: ["workOrdersRepo"] });
+                queryClient.invalidateQueries({ queryKey: ["workOrdersFiltered"] });
+                queryClient.invalidateQueries({ queryKey: ["salesRepo"] });
+              }
+
+              // 💰 Tạo giao dịch thu trong Sổ quỹ (INSERT vào database)
+              const cashTxResult = await createCashTransaction({
+                type: "income",
+                amount: data.amount,
+                branchId: currentBranchId,
+                paymentSourceId: data.paymentMethod,
+                date: data.timestamp,
+                notes: `Thu nợ khách hàng - ${data.customerName}`,
+                category: "debt_collection",
+                recipient: data.customerName,
+                customerId: data.customerId,
+              });
+
+              if (cashTxResult.ok) {
+                console.log("✅ Đã ghi sổ quỹ thu nợ KH:", cashTxResult.data);
+              } else {
+                console.error("❌ Lỗi ghi sổ quỹ:", cashTxResult.error);
+              }
+
+              // Show success modal
+              setReceiptData({
+                ...data,
+                type: "income",
+                isCustomer: true
+              });
+              setShowReceiptModal(true);
+
+              // Auto print if checked
+              if (data.shouldPrint) {
+                const debtForPrint = {
+                  customerName: data.customerName,
+                  totalAmount: data.amount,
+                  remainingAmount: 0,
+                  paidAmount: data.amount,
+                  createdDate: new Date().toISOString(),
+                  description: "Thu nợ (Thanh toán ngay)",
+                };
+                setTimeout(() => handlePrintDebt(debtForPrint as any), 500);
+              }
+
+              showToast.success(`Đã thu thành công ${formatCurrency(data.amount)} từ ${data.customerName}`);
+            } catch (error: any) {
+              console.error("❌ Lỗi thanh toán:", error);
+              showToast.error(error.message || "Không thể thanh toán. Vui lòng thử lại.");
             }
 
             setShowCollectModal(false);
@@ -1258,7 +1600,7 @@ const DebtManager: React.FC = () => {
                 selectedCustomerIds.includes(d.customerId)
               )
               : branchSupplierDebts.filter((d) =>
-                selectedSupplierIds.includes(d.supplierId)
+                selectedSupplierIds.includes(d.id)
               )
           }
           totalAmount={
@@ -1267,7 +1609,7 @@ const DebtManager: React.FC = () => {
               : selectedSupplierTotal
           }
           debtType={activeTab}
-          onConfirm={async (paymentMethod, paymentTime) => {
+          onConfirm={async (paymentMethod, paymentTime, shouldPrint) => {
             try {
               const totalAmount =
                 activeTab === "customer"
@@ -1281,29 +1623,37 @@ const DebtManager: React.FC = () => {
                     (d) => d.customerId === customerId
                   );
                   if (debt) {
-                    // Update debt record
-                    await updateCustomerDebt.mutateAsync({
-                      id: debt.id,
-                      updates: {
-                        paidAmount: debt.totalAmount,
-                        remainingAmount: 0,
-                      },
-                    });
-
-                    // 🔹 If debt is linked to work order, update work order too
-                    if ((debt as any).workOrderId) {
+                    // Check if debt is from work order
+                    if ((debt as any).isFromWorkOrder && (debt as any).workOrderId) {
                       await supabase
                         .from("work_orders")
                         .update({ remainingamount: 0 })
                         .eq("id", (debt as any).workOrderId);
-                    }
+                    } else {
+                      // Update debt record
+                      await updateCustomerDebt.mutateAsync({
+                        id: debt.id,
+                        updates: {
+                          paidAmount: debt.totalAmount,
+                          remainingAmount: 0,
+                        },
+                      });
 
-                    // 🔹 If debt is linked to sale, update sale too
-                    if ((debt as any).saleId) {
-                      await supabase
-                        .from("sales")
-                        .update({ remainingamount: 0 })
-                        .eq("id", (debt as any).saleId);
+                      // If debt is linked to work order, update work order too
+                      if ((debt as any).workOrderId) {
+                        await supabase
+                          .from("work_orders")
+                          .update({ remainingamount: 0 })
+                          .eq("id", (debt as any).workOrderId);
+                      }
+
+                      // If debt is linked to sale, update sale too
+                      if ((debt as any).saleId) {
+                        await supabase
+                          .from("sales")
+                          .update({ remainingamount: 0 })
+                          .eq("id", (debt as any).saleId);
+                      }
                     }
                   }
                 }
@@ -1325,17 +1675,15 @@ const DebtManager: React.FC = () => {
                   console.error("❌ Lỗi ghi sổ quỹ:", cashTxResult.error);
                 }
 
-                // 🔹 Invalidate queries to refresh other pages (Service, Sales)
+                // Invalidate queries to refresh UI
                 queryClient.invalidateQueries({ queryKey: ["workOrdersRepo"] });
-                queryClient.invalidateQueries({
-                  queryKey: ["workOrdersFiltered"],
-                });
+                queryClient.invalidateQueries({ queryKey: ["workOrdersFiltered"] });
                 queryClient.invalidateQueries({ queryKey: ["salesRepo"] });
               } else {
                 // Trả nợ hàng loạt cho nhà cung cấp
-                for (const supplierId of selectedSupplierIds) {
+                for (const debtId of selectedSupplierIds) {
                   const debt = branchSupplierDebts.find(
-                    (d) => d.supplierId === supplierId
+                    (d) => d.id === debtId
                   );
                   if (debt) {
                     await updateSupplierDebt.mutateAsync({
@@ -1356,9 +1704,9 @@ const DebtManager: React.FC = () => {
                   branchId: currentBranchId,
                   paymentSourceId: paymentMethod,
                   date: paymentTime,
-                  notes: `Trả nợ hàng loạt - ${selectedSupplierIds.length} nhà cung cấp`,
+                  notes: `Trả nợ hàng loạt - ${selectedSupplierIds.length} công nợ`,
                   category: "debt_payment",
-                  recipient: `${selectedSupplierIds.length} nhà cung cấp`,
+                  recipient: `${selectedSupplierIds.length} công nợ`,
                 });
 
                 if (!cashTxResult.ok) {
@@ -1373,6 +1721,26 @@ const DebtManager: React.FC = () => {
                 `Đã thanh toán thành công ${formatCurrency(totalAmount)} qua ${paymentMethod === "cash" ? "Tiền mặt" : "Chuyển khoản"
                 }`
               );
+
+              // Trigger print if enabled
+              if (shouldPrint) {
+                const bulkDebtForPrint = {
+                  customerName: activeTab === "customer"
+                    ? `${selectedCustomerIds.length} khách hàng`
+                    : undefined,
+                  supplierName: activeTab === "supplier"
+                    ? `${selectedSupplierIds.length} nhà cung cấp`
+                    : undefined,
+                  totalAmount: totalAmount,
+                  remainingAmount: 0,
+                  paidAmount: totalAmount,
+                  createdDate: new Date().toISOString(),
+                  description: activeTab === "customer"
+                    ? "Thu nợ hàng loạt"
+                    : "Trả nợ hàng loạt",
+                };
+                setTimeout(() => handlePrintDebt(bulkDebtForPrint as any), 500);
+              }
             } catch (error: any) {
               showToast.error(error.message || "Không thể thanh toán");
             }
@@ -1384,31 +1752,98 @@ const DebtManager: React.FC = () => {
         <PaySupplierModal
           suppliers={suppliers}
           supplierDebts={supplierDebts}
+          initialDebt={selectedDebt as SupplierDebt}
           onClose={() => setShowPaymentModal(false)}
           onPay={async (data) => {
-            // 💰 Tạo giao dịch chi trong Sổ quỹ (INSERT vào database)
-            const cashTxResult = await createCashTransaction({
-              type: "expense",
-              amount: data.amount,
-              branchId: currentBranchId,
-              paymentSourceId: data.paymentMethod,
-              date: data.timestamp,
-              notes: `Trả nợ nhà cung cấp - ${data.supplierName}`,
-              category: "debt_payment",
-              recipient: data.supplierName,
-              supplierId: data.supplierId,
-            });
-
-            if (cashTxResult.ok) {
-              console.log("✅ Đã ghi sổ quỹ trả nợ NCC:", cashTxResult.data);
-            } else {
-              console.error("❌ Lỗi ghi sổ quỹ:", cashTxResult.error);
-              showToast.warning(
-                `Trả nợ OK nhưng chưa ghi được sổ quỹ: ${cashTxResult.error?.message}`
+            try {
+              // 🔹 Find the debt record to update
+              const debtToUpdate = branchSupplierDebts.find(
+                (d) => d.supplierId === data.supplierId
               );
+
+              if (debtToUpdate) {
+                // Calculate new amounts
+                const newPaidAmount = (debtToUpdate.paidAmount || 0) + data.amount;
+                const newRemainingAmount = Math.max(0, debtToUpdate.totalAmount - newPaidAmount);
+
+                // 🔹 Update the supplier debt record in database
+                await updateSupplierDebt.mutateAsync({
+                  id: debtToUpdate.id,
+                  updates: {
+                    paidAmount: newPaidAmount,
+                    remainingAmount: newRemainingAmount,
+                  },
+                });
+              }
+
+              // 💰 Tạo giao dịch chi trong Sổ quỹ (INSERT vào database)
+              const cashTxResult = await createCashTransaction({
+                type: "expense",
+                amount: data.amount,
+                branchId: currentBranchId,
+                paymentSourceId: data.paymentMethod,
+                date: data.timestamp,
+                notes: `Trả nợ nhà cung cấp - ${data.supplierName}`,
+                category: "debt_payment",
+                recipient: data.supplierName,
+                supplierId: data.supplierId,
+              });
+
+              if (cashTxResult.ok) {
+                console.log("✅ Đã ghi sổ quỹ trả nợ NCC:", cashTxResult.data);
+              } else {
+                console.error("❌ Lỗi ghi sổ quỹ:", cashTxResult.error);
+              }
+
+              // Show success modal
+              setReceiptData({
+                ...data,
+                type: "expense",
+                isCustomer: false
+              });
+              setShowReceiptModal(true);
+
+              // Auto print if checked
+              if (data.shouldPrint) {
+                const debtForPrint = {
+                  supplierName: data.supplierName,
+                  totalAmount: data.amount,
+                  remainingAmount: 0,
+                  paidAmount: data.amount,
+                  createdDate: new Date().toISOString(),
+                  description: "Chi trả nợ (Thanh toán ngay)",
+                };
+                setTimeout(() => handlePrintDebt(debtForPrint as any), 500);
+              }
+
+              showToast.success(`Đã trả thành công ${formatCurrency(data.amount)} cho ${data.supplierName}`);
+            } catch (error: any) {
+              console.error("❌ Lỗi thanh toán:", error);
+              showToast.error(error.message || "Không thể thanh toán. Vui lòng thử lại.");
             }
 
             setShowPaymentModal(false);
+          }}
+        />
+      )}
+
+      {/* Success Receipt Modal */}
+      {showReceiptModal && receiptData && (
+        <DebtReceiptModal
+          isOpen={showReceiptModal}
+          data={receiptData}
+          onClose={() => setShowReceiptModal(false)}
+          onPrint={() => {
+            const debtForPrint = {
+              customerName: receiptData.customerName,
+              supplierName: receiptData.supplierName,
+              totalAmount: receiptData.amount,
+              remainingAmount: 0,
+              paidAmount: receiptData.amount,
+              createdDate: new Date().toISOString(),
+              description: receiptData.isCustomer ? "Thu nợ (Thanh toán)" : "Chi trả nợ (Thanh toán)",
+            };
+            handlePrintDebt(debtForPrint as any);
           }}
         />
       )}
@@ -1502,16 +1937,19 @@ const DebtManager: React.FC = () => {
 const CollectDebtModal: React.FC<{
   customers: any[];
   customerDebts: CustomerDebt[];
+  initialDebt?: CustomerDebt | null;
   onClose: () => void;
   onCollect?: (data: {
     customerName: string;
+    customerId: string;
     amount: number;
     paymentMethod: "cash" | "bank";
     timestamp: string;
+    shouldPrint?: boolean;
   }) => void;
-}> = ({ customers, customerDebts, onClose, onCollect }) => {
-  const [selectedCustomerId, setSelectedCustomerId] = useState("");
-  const [paymentAmount, setPaymentAmount] = useState("0");
+}> = ({ customers, customerDebts, initialDebt, onClose, onCollect }) => {
+  const [selectedCustomerId, setSelectedCustomerId] = useState(initialDebt?.customerId || "");
+  const [paymentAmount, setPaymentAmount] = useState(initialDebt ? initialDebt.remainingAmount.toString() : "0");
   const [paymentMethod, setPaymentMethod] = useState<"cash" | "bank">("cash");
   const [createTime, setCreateTime] = useState(
     new Date()
@@ -1530,10 +1968,13 @@ const CollectDebtModal: React.FC<{
     return customerDebts.find((d) => d.customerId === selectedCustomerId);
   }, [selectedCustomerId, customerDebts]);
 
-  const remainingAmount = selectedDebt?.remainingAmount || 0;
+  const remainingAmount = selectedDebt?.remainingAmount ?? initialDebt?.remainingAmount ?? 0;
+  const [isPrintChecked, setIsPrintChecked] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
 
     const paymentAmountNum = parseFloat(paymentAmount);
 
@@ -1554,142 +1995,179 @@ const CollectDebtModal: React.FC<{
 
     const customer = customers.find((c) => c.id === selectedCustomerId);
     if (customer && onCollect) {
-      onCollect({
-        customerName: customer.name,
-        amount: paymentAmountNum,
-        paymentMethod,
-        timestamp: createTime,
-      });
+      setIsSubmitting(true);
+      try {
+        await onCollect({
+          customerName: customer.name,
+          customerId: customer.id,
+          amount: paymentAmountNum,
+          paymentMethod,
+          timestamp: createTime,
+          shouldPrint: isPrintChecked,
+        });
+      } catch (error) {
+        console.error(error);
+        setIsSubmitting(false); // Only re-enable if error/not closed
+      }
+    } else {
+      onClose();
     }
-
-    onClose();
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className="bg-secondary-bg rounded-xl shadow-2xl max-w-lg w-full border border-primary-border">
-        <div className="px-6 py-4 border-b border-primary-border">
-          <h2 className="text-xl font-semibold text-primary-text">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end md:items-center justify-center p-0 md:p-4 z-[100]">
+      <div className="bg-secondary-bg rounded-t-xl md:rounded-xl shadow-2xl max-w-lg w-full border-x border-t border-primary-border max-h-[85vh] mb-20 md:mb-0 flex flex-col">
+        <div className="px-4 py-3 border-b border-primary-border flex items-center justify-between flex-none">
+          <h2 className="text-lg font-semibold text-primary-text">
             Thu nợ khách hàng
           </h2>
+          <button onClick={onClose} className="text-secondary-text hover:text-primary-text">
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+          </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          {/* Customer Selection */}
-          <div>
-            <label className="block text-sm font-medium text-secondary-text mb-2">
-              Tìm kiếm và chọn một khách hàng đang nợ
-            </label>
-            <select
-              value={selectedCustomerId}
-              onChange={(e) => setSelectedCustomerId(e.target.value)}
-              className="w-full px-4 py-3 bg-primary-bg border border-secondary-border rounded-lg text-primary-text focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
-            >
-              <option value="">Chọn khách hàng...</option>
-              {customerDebts.map((debt) => (
-                <option key={debt.customerId} value={debt.customerId}>
-                  {debt.customerName} - {formatCurrency(debt.remainingAmount)}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Payment Amount */}
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <label className="block text-sm font-medium text-secondary-text">
-                Nhập số tiền thanh toán
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          <form id="collect-debt-form" onSubmit={handleSubmit} className="space-y-4">
+            {/* Customer Selection */}
+            <div>
+              <label className="block text-sm font-medium text-secondary-text mb-2">
+                Tìm kiếm và chọn một khách hàng đang nợ
               </label>
-              <span className="text-cyan-600 dark:text-cyan-400 text-sm">
-                {formatCurrency(parseFloat(paymentAmount) || 0)}
-              </span>
+              {initialDebt ? (
+                <div className="w-full px-4 py-3 bg-slate-100 dark:bg-slate-700/50 border border-secondary-border rounded-lg text-primary-text font-medium flex items-center justify-between">
+                  <span>{initialDebt.customerName}</span>
+                  <span className="text-sm text-secondary-text font-normal">
+                    (Nợ: {formatCurrency(initialDebt.remainingAmount)})
+                  </span>
+                </div>
+              ) : (
+                <select
+                  value={selectedCustomerId}
+                  onChange={(e) => setSelectedCustomerId(e.target.value)}
+                  className="w-full px-4 py-3 bg-primary-bg border border-secondary-border rounded-lg text-primary-text focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                >
+                  <option value="">Chọn khách hàng...</option>
+                  {customerDebts.map((debt) => (
+                    <option key={debt.customerId} value={debt.customerId}>
+                      {debt.customerName} - {formatCurrency(debt.remainingAmount)}
+                    </option>
+                  ))}
+                </select>
+              )}
             </div>
-            <input
-              type="number"
-              value={paymentAmount}
-              onChange={(e) => setPaymentAmount(e.target.value)}
-              className="w-full px-4 py-3 bg-primary-bg border border-secondary-border rounded-lg text-primary-text focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
-            />
-          </div>
 
-          {/* Remaining Amount */}
-          <div>
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-tertiary-text">Còn nợ:</span>
-              <span className="text-red-600 dark:text-red-400 font-bold text-base">
-                {formatCurrency(remainingAmount)}
-              </span>
+            {/* Payment Amount */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-sm font-medium text-secondary-text">
+                  Nhập số tiền thanh toán
+                </label>
+                <span className="text-cyan-600 dark:text-cyan-400 text-sm">
+                  {formatCurrency(parseFloat(paymentAmount) || 0)}
+                </span>
+              </div>
+              <input
+                type="number"
+                value={paymentAmount}
+                onChange={(e) => setPaymentAmount(e.target.value)}
+                className="w-full px-4 py-3 bg-primary-bg border border-secondary-border rounded-lg text-primary-text focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+              />
             </div>
-            <button
-              type="button"
-              onClick={() => setPaymentAmount(remainingAmount.toString())}
-              className="text-cyan-600 dark:text-cyan-400 hover:text-cyan-700 dark:hover:text-cyan-300 text-sm mt-1"
-            >
-              Điền số còn nợ
-            </button>
-          </div>
 
-          {/* Payment Method */}
-          <div>
-            <label className="block text-sm font-medium text-secondary-text mb-3">
-              Hình thức thanh toán:
-            </label>
-            <div className="flex gap-6">
-              <label className="flex items-center gap-2 cursor-pointer">
+            {/* Remaining Amount */}
+            <div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-tertiary-text">Còn nợ:</span>
+                <span className="text-red-600 dark:text-red-400 font-bold text-base">
+                  {formatCurrency(remainingAmount)}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPaymentAmount(remainingAmount.toString())}
+                className="text-cyan-600 dark:text-cyan-400 hover:text-cyan-700 dark:hover:text-cyan-300 text-sm mt-1"
+              >
+                Điền số còn nợ
+              </button>
+            </div>
+
+            {/* Payment Method */}
+            {/* Payment Method - Card Style */}
+            <div>
+              <label className="block text-sm font-medium text-secondary-text mb-3">
+                Hình thức thanh toán:
+              </label>
+              <div className="grid grid-cols-2 gap-3">
+                <label className={`cursor-pointer border rounded-lg p-3 flex items-center justify-center gap-2 transition-all ${paymentMethod === 'cash' ? 'bg-cyan-50 dark:bg-cyan-900/20 border-cyan-500 text-cyan-700 dark:text-cyan-400' : 'border-secondary-border hover:bg-primary-bg'}`}>
+                  <input
+                    type="radio"
+                    name="paymentMethod"
+                    value="cash"
+                    checked={paymentMethod === "cash"}
+                    onChange={(e) => setPaymentMethod(e.target.value as "cash")}
+                    className="hidden"
+                  />
+                  <span className="font-medium">Tiền mặt</span>
+                </label>
+                <label className={`cursor-pointer border rounded-lg p-3 flex items-center justify-center gap-2 transition-all ${paymentMethod === 'bank' ? 'bg-cyan-50 dark:bg-cyan-900/20 border-cyan-500 text-cyan-700 dark:text-cyan-400' : 'border-secondary-border hover:bg-primary-bg'}`}>
+                  <input
+                    type="radio"
+                    name="paymentMethod"
+                    value="bank"
+                    checked={paymentMethod === "bank"}
+                    onChange={(e) => setPaymentMethod(e.target.value as "bank")}
+                    className="hidden"
+                  />
+                  <span className="font-medium">Chuyển khoản</span>
+                </label>
+              </div>
+            </div>
+
+            {/* Create Time */}
+            <div>
+              <div className="flex items-center gap-2">
                 <input
-                  type="radio"
-                  name="paymentMethod"
-                  value="cash"
-                  checked={paymentMethod === "cash"}
-                  onChange={(e) => setPaymentMethod(e.target.value as "cash")}
-                  className="w-4 h-4 text-cyan-600 bg-primary-bg border-secondary-border focus:ring-cyan-500"
+                  type="checkbox"
+                  id="print-receipt-customer"
+                  checked={isPrintChecked}
+                  onChange={(e) => setIsPrintChecked(e.target.checked)}
+                  className="w-4 h-4 rounded border-secondary-border text-cyan-600 focus:ring-cyan-500"
                 />
-                <span className="text-primary-text">Tiền mặt</span>
+                <label htmlFor="print-receipt-customer" className="text-sm font-medium text-primary-text select-none cursor-pointer">
+                  In phiếu thu ngay sau khi tạo
+                </label>
+              </div>
+
+              <label className="block text-sm font-medium text-secondary-text mb-2">
+                Thời gian tạo phiếu thu
               </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="radio"
-                  name="paymentMethod"
-                  value="bank"
-                  checked={paymentMethod === "bank"}
-                  onChange={(e) => setPaymentMethod(e.target.value as "bank")}
-                  className="w-4 h-4 text-cyan-600 bg-primary-bg border-secondary-border focus:ring-cyan-500"
-                />
-                <span className="text-primary-text">Chuyển khoản</span>
-              </label>
+              <input
+                type="text"
+                value={createTime}
+                onChange={(e) => setCreateTime(e.target.value)}
+                className="w-full px-4 py-3 bg-primary-bg border border-secondary-border rounded-lg text-primary-text focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+              />
             </div>
-          </div>
 
-          {/* Create Time */}
-          <div>
-            <label className="block text-sm font-medium text-secondary-text mb-2">
-              Thời gian tạo phiếu thu
-            </label>
-            <input
-              type="text"
-              value={createTime}
-              onChange={(e) => setCreateTime(e.target.value)}
-              className="w-full px-4 py-3 bg-primary-bg border border-secondary-border rounded-lg text-primary-text focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
-            />
-          </div>
+            {/* Submit Button */}
+          </form>
+        </div>
 
-          {/* Submit Button */}
-          <button
-            type="submit"
-            disabled={!selectedCustomerId || parseFloat(paymentAmount) <= 0}
-            className="w-full py-3 bg-primary-bg hover:bg-tertiary-bg text-primary-text rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Tạo phiếu thu
-          </button>
-        </form>
-
-        {/* Close Button */}
-        <div className="px-6 py-4 border-t border-primary-border flex justify-end">
+        {/* Fixed Footer */}
+        <div className="px-4 py-3 border-t border-primary-border bg-secondary-bg flex items-center gap-3 justify-end flex-none rounded-b-xl">
           <button
             onClick={onClose}
-            className="px-6 py-2 text-secondary-text hover:text-primary-text transition-colors"
+            className="px-4 py-2 text-secondary-text hover:text-primary-text transition-colors font-medium"
           >
             Đóng
+          </button>
+          <button
+            type="submit"
+            form="collect-debt-form"
+            disabled={!selectedCustomerId || parseFloat(paymentAmount) <= 0 || isSubmitting}
+            className="flex-1 md:flex-none px-6 py-2 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white shadow-lg shadow-cyan-500/30 rounded-lg font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
+          >
+            {isSubmitting ? "Đang xử lý..." : "Tạo phiếu thu"}
           </button>
         </div>
       </div>
@@ -1701,16 +2179,19 @@ const CollectDebtModal: React.FC<{
 const PaySupplierModal: React.FC<{
   suppliers: any[];
   supplierDebts: SupplierDebt[];
+  initialDebt?: SupplierDebt | null;
   onClose: () => void;
   onPay?: (data: {
     supplierName: string;
+    supplierId: string;
     amount: number;
     paymentMethod: "cash" | "bank";
     timestamp: string;
+    shouldPrint?: boolean;
   }) => void;
-}> = ({ suppliers, supplierDebts, onClose, onPay }) => {
-  const [selectedSupplierId, setSelectedSupplierId] = useState("");
-  const [paymentAmount, setPaymentAmount] = useState("0");
+}> = ({ suppliers, supplierDebts, initialDebt, onClose, onPay }) => {
+  const [selectedSupplierId, setSelectedSupplierId] = useState(initialDebt?.supplierId || "");
+  const [paymentAmount, setPaymentAmount] = useState(initialDebt ? initialDebt.remainingAmount.toString() : "0");
   const [paymentMethod, setPaymentMethod] = useState<"cash" | "bank">("cash");
   const [createTime, setCreateTime] = useState(
     new Date()
@@ -1729,10 +2210,13 @@ const PaySupplierModal: React.FC<{
     return supplierDebts.find((d) => d.supplierId === selectedSupplierId);
   }, [selectedSupplierId, supplierDebts]);
 
-  const remainingAmount = selectedDebt?.remainingAmount || 0;
+  const remainingAmount = selectedDebt?.remainingAmount ?? initialDebt?.remainingAmount ?? 0;
+  const [isPrintChecked, setIsPrintChecked] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
 
     const paymentAmountNum = parseFloat(paymentAmount);
 
@@ -1753,142 +2237,179 @@ const PaySupplierModal: React.FC<{
 
     const supplier = suppliers.find((s) => s.id === selectedSupplierId);
     if (supplier && onPay) {
-      onPay({
-        supplierName: supplier.name,
-        amount: paymentAmountNum,
-        paymentMethod,
-        timestamp: createTime,
-      });
+      setIsSubmitting(true);
+      try {
+        await onPay({
+          supplierName: supplier.name,
+          supplierId: supplier.id,
+          amount: paymentAmountNum,
+          paymentMethod,
+          timestamp: createTime,
+          shouldPrint: isPrintChecked,
+        });
+      } catch (error) {
+        console.error(error);
+        setIsSubmitting(false);
+      }
+    } else {
+      onClose();
     }
-
-    onClose();
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className="bg-secondary-bg rounded-xl shadow-2xl max-w-lg w-full border border-primary-border">
-        <div className="px-6 py-4 border-b border-primary-border">
-          <h2 className="text-xl font-semibold text-primary-text">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end md:items-center justify-center p-0 md:p-4 z-[100]">
+      <div className="bg-secondary-bg rounded-t-xl md:rounded-xl shadow-2xl max-w-lg w-full border-x border-t border-primary-border max-h-[85vh] mb-20 md:mb-0 flex flex-col">
+        <div className="px-4 py-3 border-b border-primary-border flex items-center justify-between flex-none">
+          <h2 className="text-lg font-semibold text-primary-text">
             Chi trả nợ nhà cung cấp
           </h2>
+          <button onClick={onClose} className="text-secondary-text hover:text-primary-text">
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+          </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          {/* Supplier Selection */}
-          <div>
-            <label className="block text-sm font-medium text-secondary-text mb-2">
-              Tìm kiếm và chọn một nhà cung cấp đang nợ
-            </label>
-            <select
-              value={selectedSupplierId}
-              onChange={(e) => setSelectedSupplierId(e.target.value)}
-              className="w-full px-4 py-3 bg-primary-bg border border-secondary-border rounded-lg text-primary-text focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
-            >
-              <option value="">Chọn nhà cung cấp...</option>
-              {supplierDebts.map((debt) => (
-                <option key={debt.supplierId} value={debt.supplierId}>
-                  {debt.supplierName} - {formatCurrency(debt.remainingAmount)}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Payment Amount */}
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <label className="block text-sm font-medium text-secondary-text">
-                Nhập số tiền thanh toán
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          <form id="pay-supplier-form" onSubmit={handleSubmit} className="space-y-4">
+            {/* Supplier Selection */}
+            <div>
+              <label className="block text-sm font-medium text-secondary-text mb-2">
+                Tìm kiếm và chọn một nhà cung cấp đang nợ
               </label>
-              <span className="text-cyan-600 dark:text-cyan-400 text-sm">
-                {formatCurrency(parseFloat(paymentAmount) || 0)}
-              </span>
+              {initialDebt ? (
+                <div className="w-full px-4 py-3 bg-slate-100 dark:bg-slate-700/50 border border-secondary-border rounded-lg text-primary-text font-medium flex items-center justify-between">
+                  <span>{initialDebt.supplierName}</span>
+                  <span className="text-sm text-secondary-text font-normal">
+                    (Nợ: {formatCurrency(initialDebt.remainingAmount)})
+                  </span>
+                </div>
+              ) : (
+                <select
+                  value={selectedSupplierId}
+                  onChange={(e) => setSelectedSupplierId(e.target.value)}
+                  className="w-full px-4 py-3 bg-primary-bg border border-secondary-border rounded-lg text-primary-text focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                >
+                  <option value="">Chọn nhà cung cấp...</option>
+                  {supplierDebts.map((debt) => (
+                    <option key={debt.supplierId} value={debt.supplierId}>
+                      {debt.supplierName} - {formatCurrency(debt.remainingAmount)}
+                    </option>
+                  ))}
+                </select>
+              )}
             </div>
-            <input
-              type="number"
-              value={paymentAmount}
-              onChange={(e) => setPaymentAmount(e.target.value)}
-              className="w-full px-4 py-3 bg-primary-bg border border-secondary-border rounded-lg text-primary-text focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
-            />
-          </div>
 
-          {/* Remaining Amount */}
-          <div>
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-tertiary-text">Còn nợ:</span>
-              <span className="text-red-600 dark:text-red-400 font-bold text-base">
-                {formatCurrency(remainingAmount)}
-              </span>
+            {/* Payment Amount */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-sm font-medium text-secondary-text">
+                  Nhập số tiền thanh toán
+                </label>
+                <span className="text-cyan-600 dark:text-cyan-400 text-sm">
+                  {formatCurrency(parseFloat(paymentAmount) || 0)}
+                </span>
+              </div>
+              <input
+                type="number"
+                value={paymentAmount}
+                onChange={(e) => setPaymentAmount(e.target.value)}
+                className="w-full px-4 py-3 bg-primary-bg border border-secondary-border rounded-lg text-primary-text focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+              />
             </div>
-            <button
-              type="button"
-              onClick={() => setPaymentAmount(remainingAmount.toString())}
-              className="text-cyan-600 dark:text-cyan-400 hover:text-cyan-700 dark:hover:text-cyan-300 text-sm mt-1"
-            >
-              Điền số còn nợ
-            </button>
-          </div>
 
-          {/* Payment Method */}
-          <div>
-            <label className="block text-sm font-medium text-secondary-text mb-3">
-              Hình thức thanh toán:
-            </label>
-            <div className="flex gap-6">
-              <label className="flex items-center gap-2 cursor-pointer">
+            {/* Remaining Amount */}
+            <div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-tertiary-text">Còn nợ:</span>
+                <span className="text-red-600 dark:text-red-400 font-bold text-base">
+                  {formatCurrency(remainingAmount)}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPaymentAmount(remainingAmount.toString())}
+                className="text-cyan-600 dark:text-cyan-400 hover:text-cyan-700 dark:hover:text-cyan-300 text-sm mt-1"
+              >
+                Điền số còn nợ
+              </button>
+            </div>
+
+            {/* Payment Method */}
+            {/* Payment Method - Card Style */}
+            <div>
+              <label className="block text-sm font-medium text-secondary-text mb-3">
+                Hình thức thanh toán:
+              </label>
+              <div className="grid grid-cols-2 gap-3">
+                <label className={`cursor-pointer border rounded-lg p-3 flex items-center justify-center gap-2 transition-all ${paymentMethod === 'cash' ? 'bg-cyan-50 dark:bg-cyan-900/20 border-cyan-500 text-cyan-700 dark:text-cyan-400' : 'border-secondary-border hover:bg-primary-bg'}`}>
+                  <input
+                    type="radio"
+                    name="paymentMethod"
+                    value="cash"
+                    checked={paymentMethod === "cash"}
+                    onChange={(e) => setPaymentMethod(e.target.value as "cash")}
+                    className="hidden"
+                  />
+                  <span className="font-medium">Tiền mặt</span>
+                </label>
+                <label className={`cursor-pointer border rounded-lg p-3 flex items-center justify-center gap-2 transition-all ${paymentMethod === 'bank' ? 'bg-cyan-50 dark:bg-cyan-900/20 border-cyan-500 text-cyan-700 dark:text-cyan-400' : 'border-secondary-border hover:bg-primary-bg'}`}>
+                  <input
+                    type="radio"
+                    name="paymentMethod"
+                    value="bank"
+                    checked={paymentMethod === "bank"}
+                    onChange={(e) => setPaymentMethod(e.target.value as "bank")}
+                    className="hidden"
+                  />
+                  <span className="font-medium">Chuyển khoản</span>
+                </label>
+              </div>
+            </div>
+
+            {/* Create Time */}
+            <div>
+              <div className="flex items-center gap-2">
                 <input
-                  type="radio"
-                  name="paymentMethod"
-                  value="cash"
-                  checked={paymentMethod === "cash"}
-                  onChange={(e) => setPaymentMethod(e.target.value as "cash")}
-                  className="w-4 h-4 text-cyan-600 bg-primary-bg border-secondary-border focus:ring-cyan-500"
+                  type="checkbox"
+                  id="print-receipt-supplier"
+                  checked={isPrintChecked}
+                  onChange={(e) => setIsPrintChecked(e.target.checked)}
+                  className="w-4 h-4 rounded border-secondary-border text-red-600 focus:ring-red-500"
                 />
-                <span className="text-primary-text">Tiền mặt</span>
+                <label htmlFor="print-receipt-supplier" className="text-sm font-medium text-primary-text select-none cursor-pointer">
+                  In phiếu chi ngay sau khi tạo
+                </label>
+              </div>
+
+              <label className="block text-sm font-medium text-secondary-text mb-2">
+                Thời gian tạo phiếu chi
               </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="radio"
-                  name="paymentMethod"
-                  value="bank"
-                  checked={paymentMethod === "bank"}
-                  onChange={(e) => setPaymentMethod(e.target.value as "bank")}
-                  className="w-4 h-4 text-cyan-600 bg-primary-bg border-secondary-border focus:ring-cyan-500"
-                />
-                <span className="text-primary-text">Chuyển khoản</span>
-              </label>
+              <input
+                type="text"
+                value={createTime}
+                onChange={(e) => setCreateTime(e.target.value)}
+                className="w-full px-4 py-3 bg-primary-bg border border-secondary-border rounded-lg text-primary-text focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+              />
             </div>
-          </div>
 
-          {/* Create Time */}
-          <div>
-            <label className="block text-sm font-medium text-secondary-text mb-2">
-              Thời gian tạo phiếu chi
-            </label>
-            <input
-              type="text"
-              value={createTime}
-              onChange={(e) => setCreateTime(e.target.value)}
-              className="w-full px-4 py-3 bg-primary-bg border border-secondary-border rounded-lg text-primary-text focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
-            />
-          </div>
+            {/* Submit Button */}
+          </form>
+        </div>
 
-          {/* Submit Button */}
-          <button
-            type="submit"
-            disabled={!selectedSupplierId || parseFloat(paymentAmount) <= 0}
-            className="w-full py-3 bg-primary-bg hover:bg-tertiary-bg text-primary-text rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Tạo phiếu chi
-          </button>
-        </form>
-
-        {/* Close Button */}
-        <div className="px-6 py-4 border-t border-primary-border flex justify-end">
+        {/* Fixed Footer */}
+        <div className="px-4 py-3 border-t border-primary-border bg-secondary-bg flex items-center gap-3 justify-end flex-none rounded-b-xl">
           <button
             onClick={onClose}
-            className="px-6 py-2 text-secondary-text hover:text-primary-text transition-colors"
+            className="px-4 py-2 text-secondary-text hover:text-primary-text transition-colors font-medium"
           >
             Đóng
+          </button>
+          <button
+            type="submit"
+            form="pay-supplier-form"
+            disabled={!selectedSupplierId || parseFloat(paymentAmount) <= 0}
+            className="flex-1 md:flex-none px-6 py-2 bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700 text-white shadow-lg shadow-red-500/30 rounded-lg font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
+          >
+            Tạo phiếu chi
           </button>
         </div>
       </div>
@@ -1903,7 +2424,7 @@ interface BulkPaymentModalProps {
   selectedDebts: (CustomerDebt | SupplierDebt)[];
   totalAmount: number;
   debtType: "customer" | "supplier";
-  onConfirm: (paymentMethod: "cash" | "bank", paymentTime: string) => void;
+  onConfirm: (paymentMethod: "cash" | "bank", paymentTime: string, shouldPrint: boolean) => void;
 }
 
 const BulkPaymentModal: React.FC<BulkPaymentModalProps> = ({
@@ -1926,6 +2447,7 @@ const BulkPaymentModal: React.FC<BulkPaymentModalProps> = ({
     const minutes = String(now.getMinutes()).padStart(2, "0");
     return `${day}-${month}-${year} ${hours}:${minutes}`;
   });
+  const [isPrintChecked, setIsPrintChecked] = useState(true);
 
   if (!isOpen) return null;
 
@@ -1948,7 +2470,7 @@ const BulkPaymentModal: React.FC<BulkPaymentModalProps> = ({
       parseInt(minutes)
     ).toISOString();
 
-    onConfirm(paymentMethod, isoTimestamp);
+    onConfirm(paymentMethod, isoTimestamp, isPrintChecked);
   };
 
   return (
@@ -2126,6 +2648,25 @@ const BulkPaymentModal: React.FC<BulkPaymentModalProps> = ({
                   d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
                 />
               </svg>
+            </div>
+          </div>
+
+          {/* Print Checkbox */}
+          <div className="mb-6">
+            <div className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                id="print-receipt-bulk"
+                checked={isPrintChecked}
+                onChange={(e) => setIsPrintChecked(e.target.checked)}
+                className="w-5 h-5 rounded border-secondary-border text-cyan-600 focus:ring-cyan-500"
+              />
+              <label htmlFor="print-receipt-bulk" className="text-sm font-medium text-primary-text select-none cursor-pointer flex items-center gap-2">
+                <svg className="w-5 h-5 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                </svg>
+                In phiếu thu ngay sau khi tạo
+              </label>
             </div>
           </div>
 
@@ -2542,10 +3083,10 @@ const DetailDebtModal: React.FC<{
   const isCustomerDebt = "customerName" in debt;
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl max-w-2xl w-full border border-slate-200 dark:border-slate-700">
-        <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
-          <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end md:items-center justify-center p-0 md:p-4 z-[100]">
+      <div className="bg-white dark:bg-slate-800 rounded-t-xl md:rounded-xl shadow-2xl max-w-2xl w-full border-x border-t border-slate-200 dark:border-slate-700 max-h-[80vh] mb-20 md:mb-0 flex flex-col">
+        <div className="px-4 py-2 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between flex-none">
+          <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
             Chi tiết công nợ
           </h2>
           <button
@@ -2568,24 +3109,24 @@ const DetailDebtModal: React.FC<{
           </button>
         </div>
 
-        <div className="p-6 space-y-6">
+        <div className="p-3 space-y-3 overflow-y-auto flex-1 min-h-0">
           {/* Basic Info */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <p className="text-sm text-slate-500 dark:text-slate-400">
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 {isCustomerDebt ? "Khách hàng" : "Nhà cung cấp"}
               </p>
-              <p className="text-lg font-semibold text-slate-900 dark:text-white">
+              <p className="text-base font-semibold text-slate-900 dark:text-white">
                 {isCustomerDebt
                   ? (debt as CustomerDebt).customerName
                   : (debt as SupplierDebt).supplierName}
               </p>
             </div>
             <div>
-              <p className="text-sm text-slate-500 dark:text-slate-400">
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 Ngày tạo
               </p>
-              <p className="text-lg font-semibold text-slate-900 dark:text-white">
+              <p className="text-base font-semibold text-slate-900 dark:text-white">
                 {formatDate(new Date(debt.createdDate))}
               </p>
             </div>
@@ -2594,30 +3135,31 @@ const DetailDebtModal: React.FC<{
           {isCustomerDebt && (
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-sm text-slate-500 dark:text-slate-400">
+                <p className="text-xs text-slate-500 dark:text-slate-400">
                   Số điện thoại
                 </p>
-                <p className="text-lg font-semibold text-slate-900 dark:text-white">
+                <p className="text-base font-semibold text-slate-900 dark:text-white">
                   {(debt as CustomerDebt).phone || "--"}
                 </p>
               </div>
               <div>
-                <p className="text-sm text-slate-500 dark:text-slate-400">
+                <p className="text-xs text-slate-500 dark:text-slate-400">
                   Biển số xe
                 </p>
-                <p className="text-lg font-semibold text-slate-900 dark:text-white">
+                <p className="text-base font-semibold text-slate-900 dark:text-white">
                   {(debt as CustomerDebt).licensePlate || "--"}
                 </p>
               </div>
             </div>
           )}
 
+
           <div>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mb-2">
+            <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">
               Nội dung
             </p>
             <div className="bg-slate-100 dark:bg-slate-700 rounded-lg p-4">
-              <p className="text-slate-900 dark:text-white">
+              <p className="text-slate-900 dark:text-white whitespace-pre-line leading-relaxed">
                 {debt.description}
               </p>
             </div>
@@ -2625,7 +3167,7 @@ const DetailDebtModal: React.FC<{
 
           {/* Financial Summary */}
           <div className="border-t border-slate-200 dark:border-slate-700 pt-4">
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-3 gap-2 md:gap-4 divide-x divide-slate-100 dark:divide-slate-700">
               <div className="text-center">
                 <p className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                   Tổng tiền
@@ -2646,7 +3188,7 @@ const DetailDebtModal: React.FC<{
                 <p className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                   Còn nợ
                 </p>
-                <p className="text-2xl font-bold text-red-600 dark:text-red-400">
+                <p className="text-lg md:text-2xl font-bold text-red-600 dark:text-red-400">
                   {formatCurrency(debt.remainingAmount)}
                 </p>
               </div>
@@ -2672,7 +3214,7 @@ const DetailDebtModal: React.FC<{
           </div>
         </div>
 
-        <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-700 flex justify-between">
+        <div className="px-4 py-2 border-t border-slate-200 dark:border-slate-700 flex justify-between flex-none bg-white dark:bg-slate-800 rounded-b-xl">
           <button
             onClick={() => {
               const printContent = document.getElementById("debt-print-area");

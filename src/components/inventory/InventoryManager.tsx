@@ -1860,6 +1860,7 @@ const InventoryHistorySection: React.FC<{
   transactions: InventoryTransaction[];
 }> = ({ transactions }) => {
   const { profile } = useAuth();
+  const { currentBranchId: branchId } = useAppContext();
   const queryClient = useQueryClient();
   const { confirm, confirmState, handleConfirm, handleCancel } = useConfirm();
   const { data: supplierDebts = [] } = useSupplierDebtsRepo();
@@ -2033,7 +2034,7 @@ const InventoryHistorySection: React.FC<{
 
     const confirmed = await confirm({
       title: "Xác nhận xóa phiếu nhập kho",
-      message: `Bạn có chắc chắn muốn xóa ${selectedReceipts.size} phiếu nhập kho đã chọn? Hành động này sẽ:\n- Xóa các giao dịch nhập kho\n- KHÔNG hoàn lại tồn kho (cần điều chỉnh thủ công nếu cần)`,
+      message: `Bạn có chắc chắn muốn xóa ${selectedReceipts.size} phiếu nhập kho đã chọn? Hành động này sẽ:\n- Xóa các giao dịch nhập kho\n- Tự động hoàn trả tồn kho`,
       confirmText: "Xóa",
       cancelText: "Hủy",
       confirmColor: "red",
@@ -2042,24 +2043,71 @@ const InventoryHistorySection: React.FC<{
     if (!confirmed) return;
 
     try {
-      // Get all transaction IDs for selected receipts
+      // Get all transactions for selected receipts with item details
       const receiptCodesToDelete = Array.from(selectedReceipts);
-      const transactionIds: string[] = [];
+      const allTransactions: any[] = [];
 
       groupedReceipts.forEach((receipt) => {
         if (receiptCodesToDelete.includes(receipt.receiptCode)) {
           receipt.items.forEach((item: any) => {
-            if (item.id) transactionIds.push(item.id);
+            if (item.id) {
+              allTransactions.push({
+                id: item.id,
+                part_id: item.partId,
+                part_name: item.partName,
+                quantity_change: item.quantity,
+              });
+            }
           });
         }
       });
 
-      if (transactionIds.length === 0) {
+      if (allTransactions.length === 0) {
         showToast.error("Không tìm thấy giao dịch để xóa");
         return;
       }
 
+      // Rollback stock for each part BEFORE deleting transactions
+      for (const tx of allTransactions) {
+        if (tx.part_id && tx.quantity_change > 0) {
+          // Get current part stock
+          const { data: partData, error: partError } = await supabase
+            .from("parts")
+            .select("stock")
+            .eq("id", tx.part_id)
+            .single();
+
+          if (partError || !partData) {
+            console.warn(`Could not find part ${tx.part_id}:`, partError);
+            continue;
+          }
+
+          // Calculate new stock (deduct the import quantity)
+          const currentStock = partData.stock || {};
+          const branchStock = currentStock[branchId] || 0;
+          const newBranchStock = Math.max(0, branchStock - tx.quantity_change);
+
+          // Update stock
+          const { error: updateError } = await supabase
+            .from("parts")
+            .update({
+              stock: {
+                ...currentStock,
+                [branchId]: newBranchStock,
+              },
+            })
+            .eq("id", tx.part_id);
+
+          if (updateError) {
+            console.warn(`Could not update stock for ${tx.part_id}:`, updateError);
+          } else {
+            console.log(`✅ Trừ tồn kho: ${tx.part_name || tx.part_id} - Số lượng: ${tx.quantity_change} (${branchStock} → ${newBranchStock})`);
+          }
+        }
+      }
+
       // Delete transactions
+      const transactionIds = allTransactions.map(t => t.id);
       const { error } = await supabase
         .from("inventory_transactions")
         .delete()
@@ -2067,11 +2115,26 @@ const InventoryHistorySection: React.FC<{
 
       if (error) throw error;
 
-      showToast.success(`Đã xóa ${selectedReceipts.size} phiếu nhập kho`);
+      // Delete supplier debts for each receipt
+      for (const receiptCode of receiptCodesToDelete) {
+        const { error: debtError } = await supabase
+          .from("supplier_debts")
+          .delete()
+          .ilike("description", `%${receiptCode}%`);
+
+        if (debtError) console.warn(`Could not delete debt for ${receiptCode}:`, debtError);
+      }
+
+      showToast.success(`Đã xóa ${selectedReceipts.size} phiếu nhập kho, hoàn trả tồn kho và xóa công nợ liên quan`);
       setSelectedReceipts(new Set());
 
       // Refetch data
       queryClient.invalidateQueries({ queryKey: ["inventory_transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["inventoryTransactions"] });
+      queryClient.invalidateQueries({ queryKey: ["supplierDebts"] });
+      queryClient.invalidateQueries({ queryKey: ["partsRepo"] });
+      queryClient.invalidateQueries({ queryKey: ["partsRepoPaged"] });
+      queryClient.invalidateQueries({ queryKey: ["allPartsForTotals"] });
     } catch (err: any) {
       console.error("❌ Lỗi xóa phiếu nhập kho:", err);
       showToast.error(`Lỗi: ${err.message || "Không thể xóa"}`);
@@ -3817,9 +3880,7 @@ const InventoryManager: React.FC = () => {
                   total_amount: debtAmount,
                   paid_amount: 0,
                   remaining_amount: debtAmount,
-                  description: `Nợ tiền nhập hàng (Phiếu ${receiptCode})`,
-                  due_date: null, // hoặc tính theo settings
-                  notes: note || "",
+                  description: `Nợ tiền nhập hàng (Phiếu ${receiptCode})${note ? ` - ${note}` : ""}`,
                   created_at: new Date().toISOString(),
                 });
 
@@ -3828,10 +3889,15 @@ const InventoryManager: React.FC = () => {
                 showToast.warning("Lỗi tạo công nợ: " + debtError.message);
               } else {
                 console.log("✅ Đã ghi nhận nợ NCC:", debtAmount);
+                // Invalidate supplier debts query to refresh UI
+                queryClient.invalidateQueries({ queryKey: ["supplierDebts"] });
               }
             }
           })(),
         ]);
+
+        // Invalidate inventory transactions to refresh history
+        queryClient.invalidateQueries({ queryKey: ["inventoryTransactions"] });
 
         setShowGoodsReceipt(false);
         showToast.success(`Nhập kho thành công! Mã phiếu: ${receiptCode}`);
@@ -4077,7 +4143,46 @@ const InventoryManager: React.FC = () => {
         return;
       }
 
-      // 2. Delete transactions (trigger will auto-rollback stock)
+      // 2. Rollback stock for each part BEFORE deleting transactions
+      for (const tx of transactions) {
+        if (tx.part_id && tx.quantity_change > 0) {
+          // Get current part stock
+          const { data: partData, error: partError } = await supabase
+            .from("parts")
+            .select("stock")
+            .eq("id", tx.part_id)
+            .single();
+
+          if (partError || !partData) {
+            console.warn(`Could not find part ${tx.part_id}:`, partError);
+            continue;
+          }
+
+          // Calculate new stock (deduct the import quantity)
+          const currentStock = partData.stock || {};
+          const branchStock = currentStock[currentBranchId] || 0;
+          const newBranchStock = Math.max(0, branchStock - tx.quantity_change);
+
+          // Update stock
+          const { error: updateError } = await supabase
+            .from("parts")
+            .update({
+              stock: {
+                ...currentStock,
+                [currentBranchId]: newBranchStock,
+              },
+            })
+            .eq("id", tx.part_id);
+
+          if (updateError) {
+            console.warn(`Could not update stock for ${tx.part_id}:`, updateError);
+          } else {
+            console.log(`✅ Trừ tồn kho: ${tx.part_name || tx.part_id} - Số lượng: ${tx.quantity_change} (${branchStock} → ${newBranchStock})`);
+          }
+        }
+      }
+
+      // 3. Delete transactions
       const { error: deleteError } = await supabase
         .from("inventory_transactions")
         .delete()
@@ -4085,7 +4190,7 @@ const InventoryManager: React.FC = () => {
 
       if (deleteError) throw deleteError;
 
-      // 3. Delete supplier debt if exists
+      // 4. Delete supplier debt if exists
       const { error: debtError } = await supabase
         .from("supplier_debts")
         .delete()
@@ -4093,7 +4198,7 @@ const InventoryManager: React.FC = () => {
 
       if (debtError) console.warn("Could not delete debt:", debtError);
 
-      // 4. Delete cash transaction if exists
+      // 5. Delete cash transaction if exists
       const { error: cashError } = await supabase
         .from("cash_transactions")
         .delete()
@@ -4101,11 +4206,14 @@ const InventoryManager: React.FC = () => {
 
       if (cashError) console.warn("Could not delete cash tx:", cashError);
 
-      showToast.success(`Đã xóa phiếu nhập ${receiptCode}`);
+      showToast.success(`Đã xóa phiếu nhập ${receiptCode} và hoàn trả tồn kho`);
 
       // Refresh data
       queryClient.invalidateQueries({ queryKey: ["inventoryTransactions"] });
       queryClient.invalidateQueries({ queryKey: ["supplierDebts"] });
+      queryClient.invalidateQueries({ queryKey: ["partsRepo"] });
+      queryClient.invalidateQueries({ queryKey: ["partsRepoPaged"] });
+      queryClient.invalidateQueries({ queryKey: ["allPartsForTotals"] });
       refetchAllParts();
 
     } catch (error: any) {
@@ -5173,13 +5281,15 @@ const InventoryManager: React.FC = () => {
       </div>
 
       {/* Mobile Version - New 2-step design */}
-      <GoodsReceiptMobileWrapper
-        isOpen={showGoodsReceipt}
-        onClose={() => setShowGoodsReceipt(false)}
-        parts={allPartsData || []}
-        currentBranchId={currentBranchId}
-        onSave={handleSaveGoodsReceipt}
-      />
+      <div className="sm:hidden">
+        <GoodsReceiptMobileWrapper
+          isOpen={showGoodsReceipt}
+          onClose={() => setShowGoodsReceipt(false)}
+          parts={allPartsData || []}
+          currentBranchId={currentBranchId}
+          onSave={handleSaveGoodsReceipt}
+        />
+      </div>
 
       {/* Batch Print Barcode Modal */}
       {showBatchPrintModal && (

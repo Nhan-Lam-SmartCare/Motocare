@@ -433,6 +433,9 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
   const [editCustomerName, setEditCustomerName] = useState("");
   const [editCustomerPhone, setEditCustomerPhone] = useState("");
 
+  // State for preventing duplicate submissions
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   // Helper functions for number formatting
   const formatNumberWithDots = (value: number | string): string => {
     if (value === 0 || value === "0") return "0";
@@ -762,10 +765,16 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
   };
 
   const handleSave = () => {
+    // Prevent duplicate submissions
+    if (isSubmitting) return;
+
     if (!selectedCustomer || !selectedVehicle) {
       alert("Vui lòng chọn khách hàng và xe");
       return;
     }
+
+    // Set submitting state to disable buttons
+    setIsSubmitting(true);
 
     // Calculate total paid and remaining based on showPaymentInput (similar to desktop logic)
     const totalDeposit = isDeposit ? depositAmount : 0;
@@ -825,8 +834,11 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
     // Execute save callback with offline fallback
     try {
       onSave(workOrderData);
+      // Note: Not resetting isSubmitting here because modal will close on success
+      // Parent component is responsible for closing the modal
     } catch (error) {
       console.error("Error saving work order:", error);
+      setIsSubmitting(false); // Reset on error so user can retry
 
       // Fallback: Save to Local Storage as draft
       const drafts = JSON.parse(localStorage.getItem("offline_drafts") || "[]");
@@ -2243,26 +2255,29 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
             {/* Nút Lưu Phiếu - luôn hiển thị */}
             <button
               onClick={handleSave}
-              className="flex-1 py-2.5 bg-slate-600 hover:bg-slate-500 rounded-lg font-medium text-white transition-colors text-xs"
+              disabled={isSubmitting}
+              className="flex-1 py-2.5 bg-slate-600 hover:bg-slate-500 rounded-lg font-medium text-white transition-colors text-xs disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              💾 LƯU
+              {isSubmitting ? "⏳ Đang lưu..." : "💾 LƯU"}
             </button>
             {/* Nút Đặt cọc - chỉ hiển thị khi có đặt cọc và không phải trạng thái Trả máy */}
             {status !== "Trả máy" && isDeposit && depositAmount > 0 && (
               <button
                 onClick={handleSave}
-                className="flex-1 py-2.5 bg-purple-600 hover:bg-purple-700 rounded-lg font-medium text-white transition-colors text-xs"
+                disabled={isSubmitting}
+                className="flex-1 py-2.5 bg-purple-600 hover:bg-purple-700 rounded-lg font-medium text-white transition-colors text-xs disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                💰 ĐẶT CỌC
+                {isSubmitting ? "⏳ Đang xử lý..." : "💰 ĐẶT CỌC"}
               </button>
             )}
             {/* Nút Thanh toán - chỉ hiển thị khi trạng thái Trả máy */}
             {status === "Trả máy" && (
               <button
                 onClick={handleSave}
-                className="flex-1 py-2.5 bg-green-600 hover:bg-green-700 rounded-lg font-medium text-white transition-colors text-xs"
+                disabled={isSubmitting}
+                className="flex-1 py-2.5 bg-green-600 hover:bg-green-700 rounded-lg font-medium text-white transition-colors text-xs disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                ✅ THANH TOÁN
+                {isSubmitting ? "⏳ Đang xử lý..." : "✅ THANH TOÁN"}
               </button>
             )}
           </div>

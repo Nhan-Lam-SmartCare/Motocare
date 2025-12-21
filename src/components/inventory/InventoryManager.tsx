@@ -3420,10 +3420,13 @@ const InventoryManager: React.FC = () => {
     const branchKey = currentBranchId || "";
 
     allPartsData.forEach((part) => {
-      const qty = part.stock?.[branchKey] || 0;
-      if (qty > 0) summary.inStock += 1;
-      if (qty === 0) summary.outOfStock += 1;
-      if (qty > 0 && qty <= LOW_STOCK_THRESHOLD) summary.lowStock += 1;
+      const stock = part.stock?.[branchKey] || 0;
+      const reserved = part.reserved?.[branchKey] || 0;
+      const available = stock - reserved; // ✅ Calculate available stock
+
+      if (available > 0) summary.inStock += 1;
+      if (available === 0) summary.outOfStock += 1;
+      if (available > 0 && available <= LOW_STOCK_THRESHOLD) summary.lowStock += 1;
     });
 
     return summary;
@@ -3555,11 +3558,14 @@ const InventoryManager: React.FC = () => {
       const branchKey = currentBranchId || "";
 
       filtered = baseList.filter((part: any) => {
-        const qty = part.stock?.[branchKey] || 0;
-        if (stockFilter === "in-stock") return qty > 0;
+        const stock = part.stock?.[branchKey] || 0;
+        const reserved = part.reserved?.[branchKey] || 0;
+        const available = stock - reserved; // ✅ Calculate available stock
+
+        if (stockFilter === "in-stock") return available > 0;
         if (stockFilter === "low-stock")
-          return qty > 0 && qty <= LOW_STOCK_THRESHOLD;
-        if (stockFilter === "out-of-stock") return qty === 0;
+          return available > 0 && available <= LOW_STOCK_THRESHOLD;
+        if (stockFilter === "out-of-stock") return available === 0;
         return true;
       });
     }
@@ -3638,7 +3644,9 @@ const InventoryManager: React.FC = () => {
   const totalStockQuantity = useMemo(() => {
     if (!allPartsData) return 0;
     return allPartsData.reduce((sum, part: any) => {
-      return sum + (part.stock?.[currentBranchId] || 0);
+      const stock = part.stock?.[currentBranchId] || 0;
+      const reserved = part.reserved?.[currentBranchId] || 0;
+      return sum + (stock - reserved); // ✅ Use available stock
     }, 0);
   }, [allPartsData, currentBranchId]);
 
@@ -3646,8 +3654,10 @@ const InventoryManager: React.FC = () => {
     if (!allPartsData) return 0;
     return allPartsData.reduce((sum, part: any) => {
       const stock = part.stock?.[currentBranchId] || 0;
+      const reserved = part.reserved?.[currentBranchId] || 0;
+      const available = stock - reserved; // ✅ Calculate available
       const costPrice = part.costPrice?.[currentBranchId] || 0;
-      return sum + stock * costPrice;
+      return sum + available * costPrice; // ✅ Use available stock
     }, 0);
   }, [allPartsData, currentBranchId]);
 
@@ -4941,29 +4951,31 @@ const InventoryManager: React.FC = () => {
                       filteredParts.map((part) => {
                         const branchKey = currentBranchId || "";
                         const stock = part.stock?.[branchKey] || 0;
+                        const reserved = part.reserved?.[branchKey] || 0;
+                        const available = stock - reserved; // ✅ Calculate available stock
                         const retailPrice = part.retailPrice?.[branchKey] || 0;
                         const wholesalePrice =
                           part.wholesalePrice?.[branchKey] || 0;
                         const costPrice = part.costPrice?.[branchKey] || 0;
-                        const value = stock * retailPrice;
+                        const value = available * retailPrice; // ✅ Use available for value calculation
                         const isSelected = selectedItems.includes(part.id);
                         const isDuplicate = hasDuplicateSku(part.sku || "");
                         const stockStatusClass =
-                          stock === 0
+                          available === 0
                             ? "border-red-300 bg-red-50 text-red-700 dark:border-red-700 dark:bg-red-950/50 dark:text-red-300"
-                            : stock <= LOW_STOCK_THRESHOLD
+                            : available <= LOW_STOCK_THRESHOLD
                               ? "border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-600 dark:bg-amber-950/50 dark:text-amber-300"
                               : "border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-300";
                         const stockStatusLabel =
-                          stock === 0
+                          available === 0
                             ? "Hết hàng"
-                            : stock <= LOW_STOCK_THRESHOLD
+                            : available <= LOW_STOCK_THRESHOLD
                               ? "Sắp hết"
                               : "Ổn định";
                         const stockQtyClass =
-                          stock === 0
+                          available === 0
                             ? "text-red-600 dark:text-red-400"
-                            : stock <= LOW_STOCK_THRESHOLD
+                            : available <= LOW_STOCK_THRESHOLD
                               ? "text-amber-600 dark:text-amber-400"
                               : "text-emerald-700 dark:text-emerald-400";
                         const productInitial =
@@ -5053,15 +5065,20 @@ const InventoryManager: React.FC = () => {
                                 <span
                                   className={`text-sm font-semibold ${stockQtyClass}`}
                                 >
-                                  {stock.toLocaleString()}
+                                  {available.toLocaleString()}
                                 </span>
+                                {reserved > 0 && (
+                                  <span className="text-[10px] text-amber-600 dark:text-amber-400">
+                                    (Đặt trước: {reserved})
+                                  </span>
+                                )}
                                 <span
                                   className={`inline-flex items-center gap-0.5 rounded-full border px-1.5 py-0 text-[9px] font-semibold ${stockStatusClass}`}
                                 >
                                   <span
-                                    className={`h-1 w-1 rounded-full ${stock === 0
+                                    className={`h-1 w-1 rounded-full ${available === 0
                                       ? "bg-red-500"
-                                      : stock <= LOW_STOCK_THRESHOLD
+                                      : available <= LOW_STOCK_THRESHOLD
                                         ? "bg-amber-500"
                                         : "bg-emerald-500"
                                       }`}

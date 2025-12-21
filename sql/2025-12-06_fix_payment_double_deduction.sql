@@ -180,14 +180,11 @@ BEGIN
     inventory_deducted = CASE WHEN v_should_deduct_inventory THEN TRUE ELSE inventory_deducted END
   WHERE id = p_order_id;
 
+  -- Return workOrder object (matching repository expectations)
   RETURN jsonb_build_object(
-    'success', true,
-    'orderId', p_order_id,
-    'paymentStatus', v_new_status,
-    'totalPaid', v_total_paid,
-    'remainingAmount', v_remaining,
-    'inventoryDeducted', v_should_deduct_inventory,
-    'paymentTransactionId', v_payment_tx_id
+    'workOrder', (SELECT row_to_json(work_orders.*) FROM work_orders WHERE id = p_order_id),
+    'paymentTransactionId', v_payment_tx_id,
+    'inventoryDeducted', v_should_deduct_inventory
   );
 
 EXCEPTION

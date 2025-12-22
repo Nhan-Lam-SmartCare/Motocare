@@ -22,6 +22,8 @@ import {
   History,
   ClipboardList,
   Package,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import type { WorkOrder } from "../../types";
 import {
@@ -113,7 +115,7 @@ const WorkOrderCard = React.memo(({
   return (
     <div
       onClick={() => onEdit(workOrder)}
-      className="bg-[#1e1e2d] rounded-lg border border-gray-800 overflow-hidden active:scale-[0.99] transition-transform"
+      className="bg-white dark:bg-[#1e1e2d] rounded-lg border border-slate-200 dark:border-gray-800 overflow-hidden active:scale-[0.99] transition-transform shadow-sm"
     >
       {/* Card Content */}
       <div className="p-2.5">
@@ -123,7 +125,7 @@ const WorkOrderCard = React.memo(({
             <span className="text-[#009ef7] font-mono text-xs font-semibold">
               {formatWorkOrderId(workOrder.id)}
             </span>
-            <span className="text-[10px] text-gray-500">
+            <span className="text-[10px] text-slate-500 dark:text-gray-500">
               {formatDate(workOrder.creationDate)}
             </span>
           </div>
@@ -140,16 +142,16 @@ const WorkOrderCard = React.memo(({
         {/* Customer & Vehicle - Single row */}
         <div className="flex items-center gap-2 mb-1.5 text-sm">
           <span className="text-xs">👤</span>
-          <span className="text-white font-medium flex-1 min-w-0 truncate">
+          <span className="text-slate-900 dark:text-white font-medium flex-1 min-w-0 truncate">
             {workOrder.customerName}
           </span>
-          <span className="text-gray-500 text-xs shrink-0">
+          <span className="text-slate-600 dark:text-gray-500 text-xs shrink-0">
             {workOrder.customerPhone}
           </span>
         </div>
         <div className="flex items-center gap-2 mb-1.5 text-sm">
           <span className="text-xs">🏍️</span>
-          <span className="text-gray-300 flex-1 min-w-0 truncate">
+          <span className="text-slate-700 dark:text-gray-300 flex-1 min-w-0 truncate">
             {workOrder.vehicleModel}
           </span>
           <span className="text-[#009ef7] text-xs font-mono shrink-0">
@@ -167,10 +169,10 @@ const WorkOrderCard = React.memo(({
         )}
 
         {/* Footer - Compact single row */}
-        <div className="pt-1.5 border-t border-gray-800 flex items-center justify-between">
+        <div className="pt-1.5 border-t border-slate-200 dark:border-gray-800 flex items-center justify-between">
           <div className="flex items-center gap-2 text-xs flex-1 min-w-0">
-            <span className="text-gray-500 shrink-0">KTV:</span>
-            <span className="text-gray-300 truncate">
+            <span className="text-slate-600 dark:text-gray-500 shrink-0">KTV:</span>
+            <span className="text-slate-700 dark:text-gray-300 truncate">
               {workOrder.technicianName || "Chưa phân"}
             </span>
             {/* Payment badge */}
@@ -196,20 +198,20 @@ const WorkOrderCard = React.memo(({
                 </span>
               )}
           </div>
-          <div className="text-white font-bold text-sm">
+          <div className="text-slate-900 dark:text-white font-bold text-sm">
             {formatCurrency(workOrder.total || 0)}
           </div>
         </div>
       </div>
 
       {/* Action Buttons Row */}
-      <div className="grid grid-cols-4 border-t border-gray-800">
+      <div className="grid grid-cols-4 border-t border-slate-200 dark:border-gray-800">
         <button
           onClick={(e) => {
             e.stopPropagation();
             onCall(workOrder.customerPhone || "");
           }}
-          className="flex items-center justify-center gap-1 py-3 bg-green-500/10 hover:bg-green-500/20 transition-colors border-r border-gray-800"
+          className="flex items-center justify-center gap-1 py-3 bg-green-500/10 hover:bg-green-500/20 transition-colors border-r border-slate-200 dark:border-gray-800"
         >
           <Phone className="w-4 h-4 text-green-500" />
           <span className="text-[11px] font-semibold text-green-500">
@@ -221,7 +223,7 @@ const WorkOrderCard = React.memo(({
             e.stopPropagation();
             onPrint(workOrder);
           }}
-          className="flex items-center justify-center gap-1 py-3 bg-purple-500/10 hover:bg-purple-500/20 transition-colors border-r border-gray-800"
+          className="flex items-center justify-center gap-1 py-3 bg-purple-500/10 hover:bg-purple-500/20 transition-colors border-r border-slate-200 dark:border-gray-800"
         >
           <Printer className="w-4 h-4 text-purple-500" />
           <span className="text-[11px] font-semibold text-purple-500">
@@ -233,7 +235,7 @@ const WorkOrderCard = React.memo(({
             e.stopPropagation();
             onEdit(workOrder);
           }}
-          className="flex items-center justify-center gap-1 py-3 bg-[#009ef7]/10 hover:bg-[#009ef7]/20 transition-colors border-r border-gray-800"
+          className="flex items-center justify-center gap-1 py-3 bg-[#009ef7]/10 hover:bg-[#009ef7]/20 transition-colors border-r border-slate-200 dark:border-gray-800"
         >
           <Edit2 className="w-4 h-4 text-[#009ef7]" />
           <span className="text-[11px] font-semibold text-[#009ef7]">
@@ -282,6 +284,10 @@ export function ServiceManagerMobile({
   const [showFilterPopup, setShowFilterPopup] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [activeTab, setActiveTab] = useState<"orders" | "history" | "templates">("orders");
+
+  // Financial data visibility state (owner-only feature)
+  const [showFinancials, setShowFinancials] = useState(false);
+  const isOwner = profile?.role === "owner";
 
   // Date filter state
   const [showDateFilter, setShowDateFilter] = useState(false);
@@ -433,13 +439,13 @@ export function ServiceManagerMobile({
   const canDeleteWorkOrder = canDo(profile?.role, "work_order.delete");
 
   return (
-    <div className="md:hidden flex flex-col h-screen bg-[#151521]">
+    <div className="md:hidden flex flex-col h-screen bg-slate-50 dark:bg-[#151521]">
       {/* CONTENT BASED ON TAB */}
       <div className="flex-1 overflow-y-auto pb-24 scrollbar-hide">
         {activeTab === "orders" && (
           <>
             {/* KPI CARDS */}
-            <div className="bg-[#1e1e2d] border-b border-gray-800 p-2">
+            <div className="bg-white dark:bg-[#1e1e2d] border-b border-slate-200 dark:border-gray-800 p-2">
               <div className="grid grid-cols-4 gap-1.5">
                 {/* Tiếp nhận */}
                 <button
@@ -450,12 +456,12 @@ export function ServiceManagerMobile({
                   }
                   className={`p-2 rounded-lg text-center transition-all ${statusFilter === "Tiếp nhận"
                     ? "bg-gradient-to-br from-[#009ef7]/20 to-[#009ef7]/10 border-2 border-[#009ef7]"
-                    : "bg-[#2b2b40] border border-gray-700"
+                    : "bg-slate-100 dark:bg-[#2b2b40] border border-slate-300 dark:border-gray-700"
                     }`}
                 >
                   <FileText className="w-4 h-4 text-[#009ef7] mx-auto mb-0.5" />
-                  <div className="text-lg font-bold text-white">{kpis.tiepNhan}</div>
-                  <span className="text-[8px] text-gray-400">Tiếp nhận</span>
+                  <div className="text-lg font-bold text-slate-900 dark:text-white">{kpis.tiepNhan}</div>
+                  <span className="text-[8px] text-slate-600 dark:text-gray-400">Tiếp nhận</span>
                 </button>
 
                 {/* Đang sửa */}
@@ -465,12 +471,12 @@ export function ServiceManagerMobile({
                   }
                   className={`p-2 rounded-lg text-center transition-all ${statusFilter === "Đang sửa"
                     ? "bg-gradient-to-br from-[#f1416c]/20 to-[#f1416c]/10 border-2 border-[#f1416c]"
-                    : "bg-[#2b2b40] border border-gray-700"
+                    : "bg-slate-100 dark:bg-[#2b2b40] border border-slate-300 dark:border-gray-700"
                     }`}
                 >
                   <Wrench className="w-4 h-4 text-[#f1416c] mx-auto mb-0.5" />
-                  <div className="text-lg font-bold text-white">{kpis.dangSua}</div>
-                  <span className="text-[8px] text-gray-400">Đang sửa</span>
+                  <div className="text-lg font-bold text-slate-900 dark:text-white">{kpis.dangSua}</div>
+                  <span className="text-[8px] text-slate-600 dark:text-gray-400">Đang sửa</span>
                 </button>
 
                 {/* Đã sửa xong */}
@@ -482,14 +488,14 @@ export function ServiceManagerMobile({
                   }
                   className={`p-2 rounded-lg text-center transition-all ${statusFilter === "Đã sửa xong"
                     ? "bg-gradient-to-br from-[#50cd89]/20 to-[#50cd89]/10 border-2 border-[#50cd89]"
-                    : "bg-[#2b2b40] border border-gray-700"
+                    : "bg-slate-100 dark:bg-[#2b2b40] border border-slate-300 dark:border-gray-700"
                     }`}
                 >
                   <Check className="w-4 h-4 text-[#50cd89] mx-auto mb-0.5" />
-                  <div className="text-lg font-bold text-white">
+                  <div className="text-lg font-bold text-slate-900 dark:text-white">
                     {kpis.daHoanThanh}
                   </div>
-                  <span className="text-[8px] text-gray-400">Đã sửa</span>
+                  <span className="text-[8px] text-slate-600 dark:text-gray-400">Đã sửa</span>
                 </button>
 
                 {/* Trả máy */}
@@ -499,12 +505,12 @@ export function ServiceManagerMobile({
                   }
                   className={`p-2 rounded-lg text-center transition-all ${statusFilter === "Trả máy"
                     ? "bg-gradient-to-br from-purple-500/20 to-purple-500/10 border-2 border-purple-500"
-                    : "bg-[#2b2b40] border border-gray-700"
+                    : "bg-slate-100 dark:bg-[#2b2b40] border border-slate-300 dark:border-gray-700"
                     }`}
                 >
                   <Key className="w-4 h-4 text-purple-500 mx-auto mb-0.5" />
-                  <div className="text-lg font-bold text-white">{kpis.traMay}</div>
-                  <span className="text-[8px] text-gray-400">Trả máy</span>
+                  <div className="text-lg font-bold text-slate-900 dark:text-white">{kpis.traMay}</div>
+                  <span className="text-[8px] text-slate-600 dark:text-gray-400">Trả máy</span>
                 </button>
               </div>
 
@@ -515,10 +521,25 @@ export function ServiceManagerMobile({
                     <span className="text-[10px] text-emerald-400 font-medium">
                       Doanh thu {getDateLabel()}
                     </span>
-                    <DollarSign className="w-4 h-4 text-emerald-400" />
+                    <div className="flex items-center gap-1">
+                      {isOwner && (
+                        <button
+                          onClick={() => setShowFinancials(!showFinancials)}
+                          className="p-1 hover:bg-emerald-700/30 rounded transition-colors"
+                          aria-label="Toggle revenue visibility"
+                        >
+                          {showFinancials ? (
+                            <Eye className="w-3.5 h-3.5 text-emerald-400" />
+                          ) : (
+                            <EyeOff className="w-3.5 h-3.5 text-emerald-400" />
+                          )}
+                        </button>
+                      )}
+                      <DollarSign className="w-4 h-4 text-emerald-400" />
+                    </div>
                   </div>
                   <div className="text-base font-black text-emerald-300">
-                    {formatCurrency(kpis.doanhThu)}
+                    {showFinancials ? formatCurrency(kpis.doanhThu) : "•••••••"}
                   </div>
                 </div>
                 <div className="p-3 rounded-xl bg-gradient-to-br from-blue-900/30 to-blue-800/20 border border-blue-700">
@@ -526,25 +547,40 @@ export function ServiceManagerMobile({
                     <span className="text-[10px] text-blue-400 font-medium">
                       Lợi nhuận {getDateLabel()}
                     </span>
-                    <TrendingUp className="w-4 h-4 text-blue-400" />
+                    <div className="flex items-center gap-1">
+                      {isOwner && (
+                        <button
+                          onClick={() => setShowFinancials(!showFinancials)}
+                          className="p-1 hover:bg-blue-700/30 rounded transition-colors"
+                          aria-label="Toggle profit visibility"
+                        >
+                          {showFinancials ? (
+                            <Eye className="w-3.5 h-3.5 text-blue-400" />
+                          ) : (
+                            <EyeOff className="w-3.5 h-3.5 text-blue-400" />
+                          )}
+                        </button>
+                      )}
+                      <TrendingUp className="w-4 h-4 text-blue-400" />
+                    </div>
                   </div>
                   <div className="text-base font-black text-blue-300">
-                    {formatCurrency(kpis.loiNhuan)}
+                    {showFinancials ? formatCurrency(kpis.loiNhuan) : "•••••••"}
                   </div>
                 </div>
               </div>
             </div>
 
             {/* SEARCH BAR & DATE FILTER */}
-            <div className="bg-[#1e1e2d] border-b border-gray-800 px-2 py-2 space-y-2">
+            <div className="bg-white dark:bg-[#1e1e2d] border-b border-slate-200 dark:border-gray-800 px-2 py-2 space-y-2">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 dark:text-gray-500" />
                 <input
                   type="text"
                   placeholder="Tìm tên, SĐT, biển số..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-3 py-2.5 bg-[#2b2b40] border border-gray-700 rounded-xl text-white placeholder-gray-500 text-sm focus:outline-none focus:border-[#009ef7]"
+                  className="w-full pl-10 pr-3 py-2.5 bg-slate-100 dark:bg-[#2b2b40] border border-slate-300 dark:border-gray-700 rounded-xl text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-gray-500 text-sm focus:outline-none focus:border-[#009ef7]"
                 />
               </div>
 
@@ -561,7 +597,7 @@ export function ServiceManagerMobile({
                     onClick={() => setDateFilter(option.value)}
                     className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors ${dateFilter === option.value
                       ? "bg-[#009ef7]/20 text-[#009ef7] border border-[#009ef7]/50"
-                      : "bg-[#2b2b40] text-gray-400 border border-gray-700"
+                      : "bg-slate-100 dark:bg-[#2b2b40] text-slate-700 dark:text-gray-400 border border-slate-300 dark:border-gray-700"
                       }`}
                   >
                     {option.label}
@@ -576,7 +612,7 @@ export function ServiceManagerMobile({
                 {isLoading ? (
                   // Loading Skeletons using shared Skeleton component
                   Array.from({ length: 4 }).map((_, i) => (
-                    <div key={i} className="bg-[#1e1e2d] rounded-lg border border-gray-800 p-4 space-y-3">
+                    <div key={i} className="bg-white dark:bg-[#1e1e2d] rounded-lg border border-slate-200 dark:border-gray-800 p-4 space-y-3">
                       <div className="flex justify-between items-start mb-2">
                         <div className="flex gap-2">
                           <Skeleton width={60} height={20} className="bg-slate-700/50" />
@@ -587,14 +623,14 @@ export function ServiceManagerMobile({
                       <div className="space-y-2 mb-3">
                         <div className="flex items-center gap-2">
                           <Skeleton variant="circle" width={16} height={16} className="bg-slate-700/50" />
-                          <Skeleton width="60%" height={16} className="bg-slate-700/50" />
+                          <Skeleton width="60%" height={16} className="bg-slate-300 dark:bg-slate-700/50" />
                         </div>
                         <div className="flex items-center gap-2">
                           <Skeleton variant="circle" width={16} height={16} className="bg-slate-700/50" />
                           <Skeleton width="40%" height={16} className="bg-slate-700/50" />
                         </div>
                       </div>
-                      <div className="flex justify-between pt-3 border-t border-gray-800 items-end">
+                      <div className="flex justify-between pt-3 border-t border-slate-200 dark:border-gray-800 items-end">
                         <div className="flex gap-2">
                           <Skeleton width={24} height={24} className="rounded-md bg-slate-700/50" />
                           <Skeleton width={24} height={24} className="rounded-md bg-slate-700/50" />
@@ -621,10 +657,10 @@ export function ServiceManagerMobile({
                         />
                       </svg>
                     </div>
-                    <h3 className="text-xl font-semibold text-gray-300 mb-2">
+                    <h3 className="text-xl font-semibold text-slate-700 dark:text-gray-300 mb-2">
                       Chưa có phiếu sửa chữa nào!
                     </h3>
-                    <p className="text-gray-500 mb-6">
+                    <p className="text-slate-600 dark:text-gray-500 mb-6">
                       Hãy tạo phiếu đầu tiên để quản lý dịch vụ sửa chữa
                     </p>
                     <button
@@ -679,13 +715,13 @@ export function ServiceManagerMobile({
               {templates?.map((template) => (
                 <div
                   key={template.id}
-                  className="bg-[#1e1e2d] rounded-xl p-4 border border-gray-800 active:bg-[#2b2b40] transition-colors cursor-pointer"
+                  className="bg-white dark:bg-[#1e1e2d] rounded-xl p-4 border border-slate-200 dark:border-gray-800 active:bg-slate-50 dark:active:bg-[#2b2b40] transition-colors cursor-pointer"
                   onClick={() => onApplyTemplate(template)}
                 >
                   <div className="flex justify-between items-start mb-2">
                     <div>
-                      <h3 className="font-bold text-white">{template.name}</h3>
-                      <p className="text-xs text-gray-500 mt-1">
+                      <h3 className="font-bold text-slate-900 dark:text-white">{template.name}</h3>
+                      <p className="text-xs text-slate-600 dark:text-gray-500 mt-1">
                         {template.description}
                       </p>
                     </div>
@@ -699,7 +735,7 @@ export function ServiceManagerMobile({
                       )}
                     </span>
                   </div>
-                  <div className="flex items-center gap-4 text-xs text-gray-400 mt-3 pt-3 border-t border-gray-800">
+                  <div className="flex items-center gap-4 text-xs text-slate-600 dark:text-gray-400 mt-3 pt-3 border-t border-slate-200 dark:border-gray-800">
                     <div className="flex items-center gap-1">
                       <Wrench className="w-3.5 h-3.5" />
                       {template.duration} phút
@@ -713,7 +749,7 @@ export function ServiceManagerMobile({
               ))}
 
               {(!templates || templates.length === 0) && (
-                <div className="text-center py-10 text-gray-500">
+                <div className="text-center py-10 text-slate-600 dark:text-gray-500">
                   Chưa có mẫu sửa chữa nào
                 </div>
               )}
@@ -738,20 +774,20 @@ export function ServiceManagerMobile({
         {/* Filter Popup (Optional) */}
         {showFilterPopup && (
           <div className="fixed inset-0 bg-black/50 z-50 flex items-end md:items-center md:justify-center">
-            <div className="bg-[#1e1e2d] rounded-t-3xl md:rounded-2xl w-full md:max-w-md p-6 space-y-4 animate-slide-up">
+            <div className="bg-white dark:bg-[#1e1e2d] rounded-t-3xl md:rounded-2xl w-full md:max-w-md p-6 space-y-4 animate-slide-up">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-white">
+                <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
                   Bộ lọc nâng cao
                 </h3>
                 <button
                   onClick={() => setShowFilterPopup(false)}
-                  className="text-gray-500 hover:text-gray-300"
+                  className="text-slate-600 dark:text-gray-500 hover:text-slate-900 dark:hover:text-gray-300"
                 >
                   ✕
                 </button>
               </div>
               {/* Add more filter options here */}
-              <div className="text-gray-400 text-sm text-center py-8">
+              <div className="text-slate-600 dark:text-gray-400 text-sm text-center py-8">
                 Các tùy chọn lọc sẽ được bổ sung...
               </div>
             </div>
@@ -781,10 +817,10 @@ export function ServiceManagerMobile({
       </div>
 
       {/* BOTTOM NAVIGATION BAR */}
-      <div className="fixed bottom-0 left-0 right-0 bg-[#1e1e2d] border-t border-gray-800 px-6 py-2 z-[100] flex justify-between items-center pb-safe">
+      <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-[#1e1e2d] border-t border-slate-200 dark:border-gray-800 px-6 py-2 z-[100] flex justify-between items-center pb-safe">
         <button
           onClick={() => setActiveTab("orders")}
-          className={`flex flex-col items-center gap-1 transition-colors ${activeTab === "orders" ? "text-[#009ef7]" : "text-gray-500 hover:text-gray-300"
+          className={`flex flex-col items-center gap-1 transition-colors ${activeTab === "orders" ? "text-[#009ef7]" : "text-slate-600 dark:text-gray-500 hover:text-slate-900 dark:hover:text-gray-300"
             }`}
         >
           <ClipboardList className={`w-6 h-6 ${activeTab === "orders" ? "fill-current/20" : ""}`} />
@@ -793,7 +829,7 @@ export function ServiceManagerMobile({
 
         <button
           onClick={() => setActiveTab("history")}
-          className={`flex flex-col items-center gap-1 transition-colors ${activeTab === "history" ? "text-[#009ef7]" : "text-gray-500 hover:text-gray-300"
+          className={`flex flex-col items-center gap-1 transition-colors ${activeTab === "history" ? "text-[#009ef7]" : "text-slate-600 dark:text-gray-500 hover:text-slate-900 dark:hover:text-gray-300"
             }`}
         >
           <History className={`w-6 h-6 ${activeTab === "history" ? "fill-current/20" : ""}`} />

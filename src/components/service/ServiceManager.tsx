@@ -57,6 +57,7 @@ import {
 import { showToast } from "../../utils/toast";
 import { printElementById } from "../../utils/print";
 import { supabase } from "../../supabaseClient";
+import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 import { WorkOrderMobileModal } from "./WorkOrderMobileModal";
 import WorkOrderModal from "./components/WorkOrderModal";
 import { ServiceManagerMobile } from "./ServiceManagerMobile";
@@ -202,7 +203,8 @@ export default function ServiceManager() {
       const { data, error } = await supabase
         .from("customers")
         .select("*")
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+        .limit(100); // Limit to 100 most recent customers for better mobile performance
 
       if (!error && data) {
         setFetchedCustomers(data);
@@ -243,6 +245,7 @@ export default function ServiceManager() {
     undefined
   );
   const [searchQuery, setSearchQuery] = useState("");
+  const debouncedSearchQuery = useDebouncedValue(searchQuery, 300); // Debounce search for better performance
   const [statusFilter, setStatusFilter] = useState<"all" | WorkOrderStatus>(
     "all"
   );
@@ -420,13 +423,13 @@ export default function ServiceManager() {
         filtered = filtered.filter((o) => o.status === "Đã sửa xong");
     }
 
-    // Search filter
-    if (searchQuery) {
+    // Search filter (using debounced value)
+    if (debouncedSearchQuery) {
       filtered = filtered.filter(
         (o) =>
-          o.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          o.vehicleModel?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          o.licensePlate?.toLowerCase().includes(searchQuery.toLowerCase())
+          o.customerName.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+          o.vehicleModel?.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+          o.licensePlate?.toLowerCase().includes(debouncedSearchQuery.toLowerCase())
       );
     }
 
@@ -478,7 +481,7 @@ export default function ServiceManager() {
   }, [
     displayWorkOrders,
     activeTab,
-    searchQuery,
+    debouncedSearchQuery, // Use debounced value to reduce re-renders
     dateFilter,
     technicianFilter,
     paymentFilter,

@@ -611,7 +611,7 @@ const WorkOrderModal: React.FC<{
 
       try {
         const updatedVehicles =
-          currentCustomer.vehicles?.map((v) =>
+          currentCustomer.vehicles?.map((v: any) =>
             v.id === editingVehicleId
               ? {
                 ...v,
@@ -1003,7 +1003,7 @@ const WorkOrderModal: React.FC<{
             });
           }
 
-          upsertCustomer({
+          await upsertCustomer({
             id: `CUST-${Date.now()}`,
             name: formData.customerName,
             phone: formData.customerPhone,
@@ -1021,7 +1021,7 @@ const WorkOrderModal: React.FC<{
             formData.vehicleModel &&
             existingCustomer.vehicleModel !== formData.vehicleModel
           ) {
-            upsertCustomer({
+            await upsertCustomer({
               ...existingCustomer,
               vehicleModel: formData.vehicleModel,
               licensePlate: formData.licensePlate,
@@ -1328,7 +1328,7 @@ const WorkOrderModal: React.FC<{
               });
             }
 
-            upsertCustomer({
+            await upsertCustomer({
               id: `CUST-${Date.now()}`,
               name: formData.customerName,
               phone: formData.customerPhone,
@@ -1346,7 +1346,7 @@ const WorkOrderModal: React.FC<{
               formData.vehicleModel &&
               existingCustomer.vehicleModel !== formData.vehicleModel
             ) {
-              upsertCustomer({
+              await upsertCustomer({
                 ...existingCustomer,
                 vehicleModel: formData.vehicleModel,
                 licensePlate: formData.licensePlate,
@@ -1366,13 +1366,8 @@ const WorkOrderModal: React.FC<{
           paymentStatus = "partial";
         }
 
-        // If this is a NEW work order (with parts OR additionalServices OR deposit), use atomic RPC
-        if (
-          !order?.id &&
-          (selectedParts.length > 0 ||
-            additionalServices.length > 0 ||
-            depositAmount > 0)
-        ) {
+        // If this is a NEW work order, ALWAYS use atomic RPC
+        if (!order?.id) {
           try {
             const orderId = `${storeSettings?.work_order_prefix || "SC"
               }-${Date.now()}`;
@@ -2217,93 +2212,7 @@ const WorkOrderModal: React.FC<{
           return;
         }
 
-        // If we get here, it means this is a NEW order without parts/services/deposit
-        // but user clicked "Thanh toán" - we need to create the order first
-        if (!order?.id) {
-          console.log(
-            "[handleSave] Creating new order without parts/services via basic save..."
-          );
-          try {
-            const orderId = `${storeSettings?.work_order_prefix || "SC"
-              }-${Date.now()}`;
 
-            const responseData = await createWorkOrderAtomicAsync({
-              id: orderId,
-              customerName: formData.customerName || "",
-              customerPhone: formData.customerPhone || "",
-              vehicleModel: formData.vehicleModel || "",
-              licensePlate: formData.licensePlate || "",
-              currentKm: formData.currentKm,
-              issueDescription: formData.issueDescription || "",
-              technicianName: formData.technicianName || "",
-              status: formData.status || "Tiếp nhận",
-              laborCost: formData.laborCost || 0,
-              discount: discount,
-              partsUsed: [],
-              additionalServices:
-                additionalServices.length > 0 ? additionalServices : undefined,
-              total: total,
-              branchId: currentBranchId,
-              paymentStatus: paymentStatus,
-              paymentMethod: formData.paymentMethod,
-              depositAmount: depositAmount > 0 ? depositAmount : undefined,
-              additionalPayment:
-                totalAdditionalPayment > 0 ? totalAdditionalPayment : undefined,
-              totalPaid: totalPaid > 0 ? totalPaid : undefined,
-              remainingAmount: remainingAmount,
-              creationDate: new Date().toISOString(),
-            } as any);
-
-            console.log(
-              "[handleSave] Created new order via fallback:",
-              responseData
-            );
-
-            const finalOrder: WorkOrder = {
-              id: orderId,
-              customerName: formData.customerName || "",
-              customerPhone: formData.customerPhone || "",
-              vehicleModel: formData.vehicleModel || "",
-              licensePlate: formData.licensePlate || "",
-              currentKm: formData.currentKm,
-              issueDescription: formData.issueDescription || "",
-              technicianName: formData.technicianName || "",
-              status: formData.status || "Tiếp nhận",
-              laborCost: formData.laborCost || 0,
-              discount: discount,
-              partsUsed: [],
-              additionalServices:
-                additionalServices.length > 0 ? additionalServices : undefined,
-              total: total,
-              branchId: currentBranchId,
-              paymentStatus: paymentStatus,
-              paymentMethod: formData.paymentMethod,
-              depositAmount: depositAmount > 0 ? depositAmount : undefined,
-              additionalPayment:
-                totalAdditionalPayment > 0 ? totalAdditionalPayment : undefined,
-              totalPaid: totalPaid > 0 ? totalPaid : undefined,
-              remainingAmount: remainingAmount,
-              creationDate: new Date().toISOString(),
-            };
-
-            if (invalidateWorkOrders) {
-              invalidateWorkOrders();
-            }
-            onSave(finalOrder);
-            onClose();
-          } catch (error: any) {
-            console.error("[handleSave] Error creating order (fallback):", error);
-            showToast.error(
-              "Lỗi khi tạo phiếu: " + (error.message || "Không xác định")
-            );
-          }
-          return;
-        }
-
-        // This should never be reached now
-        console.warn(
-          "[handleSave] Unexpected code path - no atomic create/update was called"
-        );
       } finally {
         setIsSubmitting(false);
         submittingRef.current = false; // Reset synchronous guard

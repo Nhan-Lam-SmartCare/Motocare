@@ -394,7 +394,14 @@ export const CreatePOModal: React.FC<CreatePOModalProps> = ({
                           <td className="py-3 px-3 text-sm text-slate-500">{index + 1}</td>
                           <td className="py-3 px-3">
                             <div className="text-sm font-medium text-slate-900">{part?.name}</div>
-                            <div className="text-xs text-slate-500 font-mono">{part?.sku || part?.barcode}</div>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <span className="text-xs text-slate-500 font-mono">{part?.sku || part?.barcode}</span>
+                              {part?.category && (
+                                <span className="px-1.5 py-0.5 text-[10px] font-medium bg-slate-100 text-slate-600 rounded">
+                                  {part.category}
+                                </span>
+                              )}
+                            </div>
                           </td>
                           <td className="py-3 px-3 text-right text-sm font-medium">{item.quantity_ordered}</td>
                           <td className="py-3 px-3 text-right text-sm text-slate-600">{formatCurrency(item.unit_price)}</td>
@@ -735,8 +742,15 @@ export const CreatePOModal: React.FC<CreatePOModalProps> = ({
                               <div className="font-semibold text-slate-800 dark:text-slate-100 text-sm truncate" title={part.name}>
                                 {part.name}
                               </div>
-                              <div className="text-[11px] text-slate-500 dark:text-slate-500 font-mono mt-0.5">
-                                {part.sku || part.barcode}
+                              <div className="flex items-center gap-2 mt-0.5">
+                                <span className="text-[11px] text-slate-500 dark:text-slate-500 font-mono">
+                                  {part.sku || part.barcode}
+                                </span>
+                                {part.category && (
+                                  <span className="px-1.5 py-0.5 text-[10px] font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded">
+                                    {part.category}
+                                  </span>
+                                )}
                               </div>
                             </div>
                             <button

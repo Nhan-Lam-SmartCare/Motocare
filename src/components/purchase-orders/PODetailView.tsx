@@ -536,6 +536,11 @@ export const PODetailView: React.FC<PODetailViewProps> = ({
                         <div className="text-xs text-slate-500 dark:text-slate-400 font-mono mt-1">
                           {item.part?.barcode || item.part?.sku}
                         </div>
+                        {item.part?.category && (
+                          <span className="inline-block mt-1 px-2 py-0.5 text-[10px] font-medium bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 rounded-full">
+                            {item.part.category}
+                          </span>
+                        )}
                       </td>
                       <td className="px-4 py-4 text-center font-medium text-slate-700 dark:text-slate-300">
                         {item.quantity_ordered}
@@ -668,6 +673,11 @@ export const PODetailView: React.FC<PODetailViewProps> = ({
                     <div className="text-[10px] font-mono text-slate-500">
                       {item.part?.barcode || item.part?.sku}
                     </div>
+                    {item.part?.category && (
+                      <span className="inline-block mt-1 px-2 py-0.5 text-[10px] font-medium bg-slate-800 text-slate-400 rounded-full border border-slate-700">
+                        {item.part.category}
+                      </span>
+                    )}
                   </div>
                   <div className="text-right">
                     <div className="text-[10px] text-slate-500 uppercase mb-0.5">Đơn giá</div>

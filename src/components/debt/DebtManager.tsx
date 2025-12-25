@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { Banknote } from "lucide-react";
+import { Banknote, CreditCard } from "lucide-react";
 import { useAppContext } from "../../contexts/AppContext";
 import { formatCurrency, formatDate } from "../../utils/format";
 import { showToast } from "../../utils/toast";
@@ -16,8 +16,10 @@ import {
   useUpdateSupplierDebtRepo,
   useDeleteSupplierDebtRepo,
 } from "../../hooks/useDebtsRepository";
+import { useInstallments, useRecordInstallmentPayment, type SalesInstallment } from "../../hooks/useInstallments";
 import { createCashTransaction } from "../../lib/repository/cashTransactionsRepository";
 import { useQueryClient } from "@tanstack/react-query";
+import InstallmentList from "./components/InstallmentList";
 
 // Success Receipt Modal
 const DebtReceiptModal: React.FC<{
@@ -116,6 +118,9 @@ const DebtManager: React.FC = () => {
   const updateSupplierDebt = useUpdateSupplierDebtRepo();
   const deleteSupplierDebt = useDeleteSupplierDebtRepo();
   const queryClient = useQueryClient();
+
+  // Fetch installments for stats
+  const { data: installments = [] } = useInstallments();
 
   // 🔹 Fetch unpaid work orders (status="Trả máy" and remainingamount > 0)
   const [unpaidWorkOrders, setUnpaidWorkOrders] = useState<any[]>([]);
@@ -282,7 +287,7 @@ const DebtManager: React.FC = () => {
     fetchStoreSettings();
   }, []);
 
-  const [activeTab, setActiveTab] = useState<"customer" | "supplier">(
+  const [activeTab, setActiveTab] = useState<"customer" | "supplier" | "installment">(
     "customer"
   );
   const [searchTerm, setSearchTerm] = useState("");
@@ -587,29 +592,90 @@ const DebtManager: React.FC = () => {
 
   return (
     <div className="h-full flex flex-col bg-secondary-bg">
-      {/* Header with Tabs */}
-      <div className="bg-primary-bg border-b border-primary-border">
-        <div className="flex items-center justify-between px-4">
-          <div className="flex items-center w-full md:w-auto">
-            <button
-              onClick={() => setActiveTab("customer")}
-              className={`flex-1 md:flex-none px-4 py-2 font-medium text-sm transition-all text-center ${activeTab === "customer"
-                ? "text-cyan-600 dark:text-cyan-400 border-b-2 border-cyan-600 dark:border-cyan-400"
-                : "text-secondary-text hover:text-primary-text"
-                }`}
-            >
-              Công nợ khách hàng
-            </button>
-            <button
-              onClick={() => setActiveTab("supplier")}
-              className={`flex-1 md:flex-none px-4 py-2 font-medium text-sm transition-all text-center ${activeTab === "supplier"
-                ? "text-cyan-600 dark:text-cyan-400 border-b-2 border-cyan-600 dark:border-cyan-400"
-                : "text-secondary-text hover:text-primary-text"
-                }`}
-            >
-              Công nợ nhà cung cấp
-            </button>
+      {/* Page Header with Title and Stats */}
+      <div className="bg-primary-bg px-4 py-4 border-b border-primary-border">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          {/* Title Section */}
+          <div>
+            <h1 className="text-xl font-bold text-primary-text">Quản lý Công Nợ</h1>
+            <p className="text-sm text-secondary-text">Theo dõi công nợ khách hàng và nhà cung cấp</p>
           </div>
+
+          {/* Stats Boxes */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
+            {/* Total Debt */}
+            <div className="bg-gradient-to-br from-cyan-500 to-cyan-600 rounded-lg p-3 text-white">
+              <div className="text-xs opacity-80 font-medium">Tổng công nợ</div>
+              <div className="text-lg font-bold">{formatCurrency(customerTotal + supplierTotal)}</div>
+              <div className="text-[10px] opacity-70">~{branchCustomerDebts.length + branchSupplierDebts.length} khoản</div>
+            </div>
+
+            {/* Customer Debt */}
+            <div className="bg-gradient-to-br from-amber-500 to-orange-500 rounded-lg p-3 text-white">
+              <div className="text-xs opacity-80 font-medium">Công nợ KH</div>
+              <div className="text-lg font-bold">{formatCurrency(customerTotal)}</div>
+              <div className="text-[10px] opacity-70">~{branchCustomerDebts.length} khoản</div>
+            </div>
+
+            {/* Supplier Debt */}
+            <div className="bg-gradient-to-br from-red-500 to-red-600 rounded-lg p-3 text-white">
+              <div className="text-xs opacity-80 font-medium">Công nợ NCC</div>
+              <div className="text-lg font-bold">{formatCurrency(supplierTotal)}</div>
+              <div className="text-[10px] opacity-70">~{branchSupplierDebts.length} khoản</div>
+            </div>
+
+            {/* Installment */}
+            <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg p-3 text-white">
+              <div className="text-xs opacity-80 font-medium">Trả góp</div>
+              <div className="text-lg font-bold">{formatCurrency(installments.filter((i: any) => i.status === 'active').reduce((sum: number, item: any) => sum + (item.remaining_amount || 0), 0))}</div>
+              <div className="text-[10px] opacity-70">~{installments.filter((i: any) => i.status === 'active').length} khoản</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Tabs with Badges */}
+      <div className="bg-primary-bg border-b border-primary-border">
+        <div className="flex items-center px-4 gap-1">
+          <button
+            onClick={() => setActiveTab("customer")}
+            className={`flex items-center gap-2 px-4 py-2.5 font-medium text-sm transition-all rounded-t-lg ${activeTab === "customer"
+              ? "bg-cyan-50 dark:bg-cyan-900/20 text-cyan-600 dark:text-cyan-400 border-b-2 border-cyan-600 dark:border-cyan-400"
+              : "text-secondary-text hover:text-primary-text hover:bg-slate-50 dark:hover:bg-slate-800"
+              }`}
+          >
+            <span>👤 Công nợKH</span>
+            <span className="px-1.5 py-0.5 text-xs font-bold bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded-full">
+              {branchCustomerDebts.length}
+            </span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab("supplier")}
+            className={`flex items-center gap-2 px-4 py-2.5 font-medium text-sm transition-all rounded-t-lg ${activeTab === "supplier"
+              ? "bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border-b-2 border-red-600 dark:border-red-400"
+              : "text-secondary-text hover:text-primary-text hover:bg-slate-50 dark:hover:bg-slate-800"
+              }`}
+          >
+            <span>🏭 Công nợNCC</span>
+            <span className="px-1.5 py-0.5 text-xs font-bold bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-full">
+              {branchSupplierDebts.length}
+            </span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab("installment")}
+            className={`flex items-center gap-2 px-4 py-2.5 font-medium text-sm transition-all rounded-t-lg ${activeTab === "installment"
+              ? "bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 border-b-2 border-purple-600 dark:border-purple-400"
+              : "text-secondary-text hover:text-primary-text hover:bg-slate-50 dark:hover:bg-slate-800"
+              }`}
+          >
+            <CreditCard className="w-4 h-4" />
+            <span>Trả góp</span>
+            <span className="px-1.5 py-0.5 text-xs font-bold bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 rounded-full">
+              {installments.filter((i: any) => i.status === 'active').length}
+            </span>
+          </button>
         </div>
       </div>
 
@@ -643,7 +709,9 @@ const DebtManager: React.FC = () => {
                 placeholder={
                   activeTab === "customer"
                     ? "Tìm SĐT / Tên KH / Tên sản phẩm / IMEI"
-                    : "Tìm tên / SĐT nhà cung cấp"
+                    : activeTab === "supplier"
+                      ? "Tìm tên / SĐT nhà cung cấp"
+                      : "Tìm tên khách hàng / mã đơn"
                 }
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -651,34 +719,55 @@ const DebtManager: React.FC = () => {
               />
             </div>
 
-            <div className="flex flex-col md:flex-row items-center gap-4 w-full md:w-auto">
-              <div className="text-secondary-text text-sm whitespace-nowrap">
-                Tổng công nợ:{" "}
-                <span className="font-bold text-red-600 dark:text-red-400">
-                  {formatCurrency(
-                    activeTab === "customer" ? customerTotal : supplierTotal
-                  )}
-                </span>
-              </div>
+            {activeTab !== "installment" && (
+              <>
+                <div className="text-secondary-text text-sm whitespace-nowrap">
+                  Tổng công nợ:{" "}
+                  <span className="font-bold text-red-600 dark:text-red-400">
+                    {formatCurrency(
+                      activeTab === "customer" ? customerTotal : supplierTotal
+                    )}
+                  </span>
+                </div>
 
-              <div className="flex items-center gap-3 w-full md:w-auto flex-wrap">
-                <button
-                  onClick={() => setShowAddDebtModal(true)}
-                  className="flex items-center justify-center gap-2 px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors whitespace-nowrap"
-                >
-                  <PlusIcon className="w-5 h-5" />
-                  <span>Thêm công nợ</span>
-                </button>
-                <button
-                  onClick={() =>
-                    activeTab === "customer"
-                      ? setShowCollectModal(true)
-                      : setShowPaymentModal(true)
-                  }
-                  className="flex items-center justify-center gap-2 px-4 py-2.5 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg font-medium transition-colors whitespace-nowrap"
-                >
+                <div className="flex items-center gap-3 w-full md:w-auto flex-wrap">
+                  <button
+                    onClick={() => setShowAddDebtModal(true)}
+                    className="flex items-center justify-center gap-2 px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors whitespace-nowrap"
+                  >
+                    <PlusIcon className="w-5 h-5" />
+                    <span>Thêm công nợ</span>
+                  </button>
+                  <button
+                    onClick={() =>
+                      activeTab === "customer"
+                        ? setShowCollectModal(true)
+                        : setShowPaymentModal(true)
+                    }
+                    className="flex items-center justify-center gap-2 px-4 py-2.5 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg font-medium transition-colors whitespace-nowrap"
+                  >
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                    <span>
+                      {activeTab === "customer" ? "Thu nợ" : "Chi trả nợ"}
+                    </span>
+                  </button>
+                </div>
+
+                <button className="hidden md:block p-2.5 text-secondary-text hover:text-primary-text transition-colors">
                   <svg
-                    className="w-5 h-5"
+                    className="w-6 h-6"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -687,31 +776,12 @@ const DebtManager: React.FC = () => {
                       strokeLinecap="round"
                       strokeLinejoin="round"
                       strokeWidth={2}
-                      d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                      d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
                     />
                   </svg>
-                  <span>
-                    {activeTab === "customer" ? "Thu nợ" : "Chi trả nợ"}
-                  </span>
                 </button>
-              </div>
-
-              <button className="hidden md:block p-2.5 text-secondary-text hover:text-primary-text transition-colors">
-                <svg
-                  className="w-6 h-6"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
-                  />
-                </svg>
-              </button>
-            </div>
+              </>
+            )}
           </div>
         )}
       </div>
@@ -1162,7 +1232,7 @@ const DebtManager: React.FC = () => {
               </div>
             )}
           </div>
-        ) : (
+        ) : activeTab === "supplier" ? (
           <div className="p-2 md:p-6">
             {filteredSupplierDebts.length === 0 ? (
               <div className="text-center py-12 text-tertiary-text">
@@ -1425,7 +1495,9 @@ const DebtManager: React.FC = () => {
               </div>
             )}
           </div>
-        )}
+        ) : activeTab === "installment" ? (
+          <InstallmentList />
+        ) : null}
       </div>
 
 

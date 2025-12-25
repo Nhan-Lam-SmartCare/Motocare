@@ -96,7 +96,7 @@ const SupplierModal: React.FC<SupplierModalProps> = ({
     const isSubmitting = createSupplierMutation.isPending || updateSupplierMutation.isPending;
 
     return (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[10000] p-4">
             <div className="bg-white dark:bg-slate-800 rounded-lg w-full max-w-md shadow-xl">
                 <form onSubmit={handleSubmit}>
                     {/* Header */}

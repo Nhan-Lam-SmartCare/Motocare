@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
+import { supabase } from "../../supabaseClient";
+import { InstallmentSetupModal } from "./modals/InstallmentSetupModal";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../../contexts/AuthContext";
 import { canDo } from "../../utils/permissions";
@@ -95,6 +97,7 @@ const SalesManager: React.FC = () => {
     );
     const [showQuickServiceModal, setShowQuickServiceModal] = useState(false);
     const [showDeliveryModal, setShowDeliveryModal] = useState(false);
+    const [showInstallmentModal, setShowInstallmentModal] = useState(false);
 
     // Custom hooks
     const cart = useSalesCart(cartItems, setCartItems, clearCart);
@@ -326,7 +329,17 @@ const SalesManager: React.FC = () => {
                     ? cart.total
                     : finalization.paymentType === "partial"
                         ? finalization.partialAmount
-                        : 0;
+                        : finalization.paymentType === "installment"
+                            ? finalization.installmentDetails.prepaidAmount
+                            : 0;
+
+            // Construct installment note
+            let finalNote = finalization.orderNote || "";
+            if (finalization.paymentType === "installment") {
+                const { financeCompany, term, interestRate, monthlyPayment, prepaidAmount } = finalization.installmentDetails;
+                const installmentText = `[TRẢ GÓP] ${financeCompany === 'Store' ? 'Cửa hàng' : financeCompany} - Trả trước: ${finalization.installmentDetails.prepaidAmount.toLocaleString()}đ - Kỳ hạn: ${term} tháng - Lãi: ${interestRate}%/tháng - Gốc+Lãi: ${finalization.installmentDetails.totalDetail.toLocaleString()}đ`;
+                finalNote = finalNote ? `${finalNote}\n${installmentText}` : installmentText;
+            }
 
             const saleData = {
                 items: cart.cartItems,
@@ -343,7 +356,7 @@ const SalesManager: React.FC = () => {
                 createdBy: user?.id || "",
                 saleTime,
                 paidAmount,
-                note: finalization.orderNote || undefined,
+                note: finalNote, // Use the constructed note
                 delivery: finalization.deliveryMethod === "cod"
                     ? {
                         method: "cod" as const,
@@ -354,12 +367,19 @@ const SalesManager: React.FC = () => {
                         codAmount: finalization.codAmount || cart.total,
                         shippingFee: finalization.shippingFee || 0,
                         trackingNumber: finalization.trackingNumber || undefined,
+                        shippingCarrier: finalization.shippingCarrier || undefined,
                         estimatedDeliveryDate: finalization.estimatedDeliveryDate || undefined,
                     }
                     : undefined,
             };
 
             const newSale = await createSaleAtomicAsync(saleData as any);
+            const saleId = (newSale as any).data?.id || (newSale as any).id;
+
+            // Force update note if it wasn't saved by RPC (backup)
+            if (finalization.paymentType === "installment" && saleId) {
+                await supabase.from("sales").update({ note: finalNote }).eq("id", saleId);
+            }
 
             // Create customer debt if needed
             if (finalization.paymentType === "partial" || finalization.paymentType === "note") {
@@ -371,11 +391,35 @@ const SalesManager: React.FC = () => {
                         totalAmount: remainingAmount,
                         paidAmount: 0,
                         remainingAmount: remainingAmount,
-                        description: `Nợ từ đơn hàng ${(newSale as any).data?.id || (newSale as any).id}`,
+                        description: `Nợ từ đơn hàng ${saleId}`,
                         branchId: currentBranchId,
                         createdDate: new Date().toISOString(),
                     });
                 }
+            } else if (finalization.paymentType === "installment" && customer.selectedCustomer) {
+                const remaining = cart.total - paidAmount;
+                // We track the PRINCIPAL debt here. Interest is usually tracked separately or added later? 
+                // User requirement: "ghi nhận vào trang công nợ". Usually debt record is the principal remaining.
+
+                const { financeCompany, term } = finalization.installmentDetails;
+                let description = "";
+
+                if (financeCompany === "Store") {
+                    description = `Trả góp cửa hàng - Đơn ${saleId} (${term} tháng)`;
+                } else {
+                    description = `Chờ giải ngân - ${financeCompany} (${term} tháng) - Đơn ${saleId}`;
+                }
+
+                await createCustomerDebt.mutateAsync({
+                    customerId: customer.selectedCustomer.id!,
+                    customerName: customer.selectedCustomer.name,
+                    totalAmount: remaining,
+                    paidAmount: 0, // Haven't paid the debt yet
+                    remainingAmount: remaining,
+                    description: description,
+                    branchId: currentBranchId,
+                    createdDate: new Date().toISOString(),
+                });
             }
 
             showToast.success("Tạo đơn hàng thành công!");
@@ -711,17 +755,35 @@ const SalesManager: React.FC = () => {
 
                                     {/* Payment Selection */}
                                     <div className="mt-4">
-                                        <PaymentMethodSelector
-                                            paymentMethod={finalization.paymentMethod}
-                                            paymentType={finalization.paymentType}
-                                            partialAmount={finalization.partialAmount}
-                                            total={cart.total}
-                                            onPaymentMethodChange={finalization.setPaymentMethod}
-                                            onPaymentTypeChange={finalization.setPaymentType}
-                                            onPartialAmountChange={finalization.setPartialAmount}
-                                        />
+                                        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4">
+                                            <PaymentMethodSelector
+                                                paymentMethod={finalization.paymentMethod}
+                                                paymentType={finalization.paymentType}
+                                                partialAmount={finalization.partialAmount}
+                                                total={cart.total}
+                                                onPaymentMethodChange={finalization.setPaymentMethod}
+                                                onPaymentTypeChange={(type) => {
+                                                    finalization.setPaymentType(type);
+                                                    if (type === "installment") {
+                                                        setShowInstallmentModal(true);
+                                                    }
+                                                }}
+                                                onPartialAmountChange={finalization.setPartialAmount}
+                                                onOpenInstallmentSetup={() => setShowInstallmentModal(true)}
+                                                installmentDetails={finalization.installmentDetails}
+                                            />
+                                        </div>
                                     </div>
 
+                                    {/* ... Note and Time ... */}
+
+                                    <InstallmentSetupModal
+                                        isOpen={showInstallmentModal}
+                                        onClose={() => setShowInstallmentModal(false)}
+                                        totalAmount={cart.total}
+                                        onSave={finalization.setInstallmentDetails}
+                                        initialDetails={finalization.installmentDetails}
+                                    />
                                     {/* Delivery Form Section */}
                                     {finalization.paymentMethod && (
                                         <div className="mt-4 border-t border-slate-200 dark:border-slate-700 pt-4">
@@ -786,6 +848,46 @@ const SalesManager: React.FC = () => {
                                                             placeholder="Nhập mã vận đơn (nếu có)"
                                                             className="w-full px-3 py-2 text-sm border rounded-lg bg-white dark:bg-slate-700 font-mono"
                                                         />
+                                                    </div>
+                                                    <div>
+                                                        <label className="block text-xs font-medium mb-1">Đơn vị vận chuyển</label>
+                                                        <select
+                                                            value={["GHTK", "GHN", "ViettelPost", "VNPost", "J&T", "NinjaVan", "BestExpress", "ShopeeXpress", "SuperShip", "Nasco", "EMS", "Ahamove", "GrabExpress"].includes(finalization.shippingCarrier || '') ? finalization.shippingCarrier : (finalization.shippingCarrier ? "Other" : "")}
+                                                            onChange={(e) => {
+                                                                if (e.target.value === "Other") {
+                                                                    finalization.setShippingCarrier(" ");
+                                                                } else {
+                                                                    finalization.setShippingCarrier(e.target.value);
+                                                                }
+                                                            }}
+                                                            className="w-full px-3 py-2 text-sm border rounded-lg bg-white dark:bg-slate-700"
+                                                        >
+                                                            <option value="">-- Chọn đơn vị --</option>
+                                                            <option value="GHTK">Giao Hàng Tiết Kiệm (GHTK)</option>
+                                                            <option value="GHN">Giao Hàng Nhanh (GHN)</option>
+                                                            <option value="ViettelPost">Viettel Post</option>
+                                                            <option value="VNPost">VNPost</option>
+                                                            <option value="J&T">J&T Express</option>
+                                                            <option value="NinjaVan">Ninja Van</option>
+                                                            <option value="BestExpress">Best Express</option>
+                                                            <option value="ShopeeXpress">Shopee Xpress (SPX)</option>
+                                                            <option value="SuperShip">SuperShip</option>
+                                                            <option value="Nasco">Nasco Express</option>
+                                                            <option value="EMS">EMS (Bưu điện)</option>
+                                                            <option value="Ahamove">Ahamove</option>
+                                                            <option value="GrabExpress">Grab Express</option>
+                                                            <option value="Other">Khác (Nhập tay)</option>
+                                                        </select>
+                                                        {finalization.shippingCarrier && !["GHTK", "GHN", "ViettelPost", "VNPost", "J&T", "NinjaVan", "BestExpress", "ShopeeXpress", "SuperShip", "Nasco", "EMS", "Ahamove", "GrabExpress"].includes(finalization.shippingCarrier) && (
+                                                            <input
+                                                                type="text"
+                                                                autoFocus
+                                                                value={finalization.shippingCarrier.trim()}
+                                                                onChange={(e) => finalization.setShippingCarrier(e.target.value)}
+                                                                placeholder="Nhập tên đơn vị vận chuyển..."
+                                                                className="mt-2 w-full px-3 py-2 text-sm border rounded-lg bg-white dark:bg-slate-700 border-blue-500 ring-1 ring-blue-500"
+                                                            />
+                                                        )}
                                                     </div>
                                                     <div>
                                                         <label className="block text-xs font-medium mb-1">Phí ship</label>

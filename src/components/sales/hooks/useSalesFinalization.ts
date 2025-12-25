@@ -3,7 +3,7 @@
  * 
  * This hook handles:
  * - Payment method selection
- * - Payment type (full/partial/note)
+ * - Payment type (full/partial/note/installment)
  * - Custom sale time
  * - Order notes
  * - Delivery information (COD)
@@ -12,16 +12,28 @@
 
 import { useState } from "react";
 
+export interface InstallmentDetails {
+    financeCompany: string;
+    prepaidAmount: number;
+    term: number; // months
+    monthlyPayment: number;
+    interestRate: number; // % per month
+    totalDetail: number; // Total amount to be paid (prepaid + monthly * term)
+}
+
 export interface UseSalesFinalizationReturn {
     // Payment state
-    paymentMethod: "cash" | "bank" | null;
-    paymentType: "full" | "partial" | "note" | null;
+    paymentMethod: "cash" | "bank" | "card" | null;
+    paymentType: "full" | "partial" | "note" | "installment" | null;
     partialAmount: number;
     autoPrintReceipt: boolean;
     useCurrentTime: boolean;
     customSaleTime: string;
     showOrderNote: boolean;
     orderNote: string;
+
+    // Installment state
+    installmentDetails: InstallmentDetails;
 
     // Delivery state (COD)
     deliveryMethod: "store_pickup" | "cod" | null;
@@ -32,17 +44,19 @@ export interface UseSalesFinalizationReturn {
     codAmount: number;
     shippingFee: number;
     trackingNumber: string;
+    shippingCarrier: string;
     estimatedDeliveryDate: string;
 
     // Actions
-    setPaymentMethod: (method: "cash" | "bank" | null) => void;
-    setPaymentType: (type: "full" | "partial" | "note" | null) => void;
+    setPaymentMethod: (method: "cash" | "bank" | "card" | null) => void;
+    setPaymentType: (type: "full" | "partial" | "note" | "installment" | null) => void;
     setPartialAmount: (amount: number) => void;
     setAutoPrintReceipt: (auto: boolean) => void;
     setUseCurrentTime: (use: boolean) => void;
     setCustomSaleTime: (time: string) => void;
     setShowOrderNote: (show: boolean) => void;
     setOrderNote: (note: string) => void;
+    setInstallmentDetails: (details: InstallmentDetails) => void;
 
     // Delivery actions
     setDeliveryMethod: (method: "store_pickup" | "cod" | null) => void;
@@ -53,6 +67,7 @@ export interface UseSalesFinalizationReturn {
     setCodAmount: (amount: number) => void;
     setShippingFee: (fee: number) => void;
     setTrackingNumber: (number: string) => void;
+    setShippingCarrier: (carrier: string) => void;
     setEstimatedDeliveryDate: (date: string) => void;
 
     // Reset
@@ -64,14 +79,24 @@ export interface UseSalesFinalizationReturn {
  */
 export function useSalesFinalization(): UseSalesFinalizationReturn {
     // Payment state
-    const [paymentMethod, setPaymentMethod] = useState<"cash" | "bank" | null>(null);
-    const [paymentType, setPaymentType] = useState<"full" | "partial" | "note" | null>(null);
+    const [paymentMethod, setPaymentMethod] = useState<"cash" | "bank" | "card" | null>(null);
+    const [paymentType, setPaymentType] = useState<"full" | "partial" | "note" | "installment" | null>(null);
     const [partialAmount, setPartialAmount] = useState(0);
     const [autoPrintReceipt, setAutoPrintReceipt] = useState(false);
     const [useCurrentTime, setUseCurrentTime] = useState(true);
     const [customSaleTime, setCustomSaleTime] = useState("");
     const [showOrderNote, setShowOrderNote] = useState(false);
     const [orderNote, setOrderNote] = useState("");
+
+    // Installment state
+    const [installmentDetails, setInstallmentDetails] = useState<InstallmentDetails>({
+        financeCompany: "",
+        prepaidAmount: 0,
+        term: 6,
+        monthlyPayment: 0,
+        interestRate: 0,
+        totalDetail: 0,
+    });
 
     // Delivery state (COD)
     const [deliveryMethod, setDeliveryMethod] = useState<"store_pickup" | "cod" | null>(null);
@@ -82,6 +107,7 @@ export function useSalesFinalization(): UseSalesFinalizationReturn {
     const [codAmount, setCodAmount] = useState(0);
     const [shippingFee, setShippingFee] = useState(0);
     const [trackingNumber, setTrackingNumber] = useState("");
+    const [shippingCarrier, setShippingCarrier] = useState("");
     const [estimatedDeliveryDate, setEstimatedDeliveryDate] = useState("");
 
     // Reset all finalization state
@@ -92,6 +118,14 @@ export function useSalesFinalization(): UseSalesFinalizationReturn {
         setCustomSaleTime("");
         setOrderNote("");
         setShowOrderNote(false);
+        setInstallmentDetails({
+            financeCompany: "",
+            prepaidAmount: 0,
+            term: 6,
+            monthlyPayment: 0,
+            interestRate: 0,
+            totalDetail: 0,
+        });
 
         setDeliveryMethod(null);
         setDeliveryAddress("");
@@ -101,6 +135,7 @@ export function useSalesFinalization(): UseSalesFinalizationReturn {
         setCodAmount(0);
         setShippingFee(0);
         setTrackingNumber("");
+        setShippingCarrier("");
         setEstimatedDeliveryDate("");
     };
 
@@ -115,6 +150,9 @@ export function useSalesFinalization(): UseSalesFinalizationReturn {
         showOrderNote,
         orderNote,
 
+        // Installment state
+        installmentDetails,
+
         // Delivery state
         deliveryMethod,
         deliveryAddress,
@@ -124,6 +162,7 @@ export function useSalesFinalization(): UseSalesFinalizationReturn {
         codAmount,
         shippingFee,
         trackingNumber,
+        shippingCarrier,
         estimatedDeliveryDate,
 
         // Actions
@@ -135,6 +174,7 @@ export function useSalesFinalization(): UseSalesFinalizationReturn {
         setCustomSaleTime,
         setShowOrderNote,
         setOrderNote,
+        setInstallmentDetails,
 
         // Delivery actions
         setDeliveryMethod,
@@ -145,6 +185,7 @@ export function useSalesFinalization(): UseSalesFinalizationReturn {
         setCodAmount,
         setShippingFee,
         setTrackingNumber,
+        setShippingCarrier,
         setEstimatedDeliveryDate,
 
         // Reset

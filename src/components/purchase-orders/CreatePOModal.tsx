@@ -351,7 +351,7 @@ export const CreatePOModal: React.FC<CreatePOModalProps> = ({
                       )}
                       <div className="text-right">
                         <div className="font-bold text-lg text-slate-900 leading-tight">{storeSettings?.store_name || "MotoCare Store"}</div>
-                        <div className="text-xs text-blue-600 font-medium uppercase tracking-wider print:text-black">{storeSettings?.slogan || "Phụ tùng chính hãng"}</div>
+                        <div className="text-xs text-blue-600 font-medium italic print:text-black">{storeSettings?.slogan || "Phụ tùng chính hãng"}</div>
                       </div>
                     </div>
                     <div className="text-sm text-slate-500">{storeSettings?.address || "---"}</div>

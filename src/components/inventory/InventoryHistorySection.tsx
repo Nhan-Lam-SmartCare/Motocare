@@ -181,25 +181,37 @@ const InventoryHistorySection: React.FC<{
   );
   const [showPrintBarcodeModal, setShowPrintBarcodeModal] = useState(false);
 
-  // Memoized list of parts to be printed from selected receipts
-  const partsForBarcodePrint = useMemo(() => {
-    if (selectedReceipts.size === 0) return [];
+  // Memoized list of parts and quantities to be printed from selected receipts
+  const { parts: partsForBarcodePrint, quantities: barcodeQuantities } = useMemo(() => {
+    if (selectedReceipts.size === 0) return { parts: [], quantities: {} };
+
     const selectedPartIds = new Set<string>();
-    const partsWithQuantity: Part[] = [];
+    const partsList: Part[] = [];
+    const quantities: Record<string, number> = {};
+
     groupedReceipts.forEach((receipt) => {
       if (selectedReceipts.has(receipt.receiptCode)) {
         receipt.items.forEach((item) => {
-          if (item.partId && !selectedPartIds.has(item.partId)) {
-            selectedPartIds.add(item.partId);
-            const part = parts.find((p) => p.id === item.partId);
-            if (part) {
-              partsWithQuantity.push(part);
+          if (item.partId) {
+            // Aggregate quantities
+            if (!quantities[item.partId]) {
+              quantities[item.partId] = 0;
+            }
+            quantities[item.partId] += item.quantity;
+
+            // Add to parts list if not already added
+            if (!selectedPartIds.has(item.partId)) {
+              selectedPartIds.add(item.partId);
+              const part = parts.find((p) => p.id === item.partId);
+              if (part) {
+                partsList.push(part);
+              }
             }
           }
         });
       }
     });
-    return partsWithQuantity;
+    return { parts: partsList, quantities };
   }, [selectedReceipts, groupedReceipts, parts]);
 
   const toggleExpand = (receiptCode: string) => {
@@ -1142,6 +1154,7 @@ const InventoryHistorySection: React.FC<{
           parts={partsForBarcodePrint}
           currentBranchId={currentBranchId || ''}
           onClose={() => setShowPrintBarcodeModal(false)}
+          initialQuantities={barcodeQuantities}
         />
       )}
     </div>

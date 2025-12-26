@@ -19,6 +19,7 @@ interface BatchPrintBarcodeModalProps {
   parts: Part[];
   currentBranchId: string;
   onClose: () => void;
+  initialQuantities?: Record<string, number>;
 }
 
 type BarcodeFormat = "CODE128" | "CODE39";
@@ -126,6 +127,7 @@ const BatchPrintBarcodeModal: React.FC<BatchPrintBarcodeModalProps> = ({
   parts,
   currentBranchId,
   onClose,
+  initialQuantities,
 }) => {
   // View mode
   const [viewMode, setViewMode] = useState<ViewMode>("select");
@@ -134,6 +136,24 @@ const BatchPrintBarcodeModal: React.FC<BatchPrintBarcodeModalProps> = ({
   const [selectedParts, setSelectedParts] = useState<Map<string, SelectedPart>>(
     new Map()
   );
+
+  // Initialize from initialQuantities if provided
+  useEffect(() => {
+    if (initialQuantities && Object.keys(initialQuantities).length > 0) {
+      const newSelected = new Map<string, SelectedPart>();
+      parts.forEach((part) => {
+        const qty = initialQuantities[part.id];
+        if (qty !== undefined && qty > 0) {
+          newSelected.set(part.id, { part, quantity: qty });
+        }
+      });
+      if (newSelected.size > 0) {
+        setSelectedParts(newSelected);
+        setQuantityMode("custom");
+      }
+    }
+  }, [parts, initialQuantities]);
+
   const [searchTerm, setSearchTerm] = useState("");
   const [filterCategory, setFilterCategory] = useState<string>("all");
 
@@ -142,7 +162,9 @@ const BatchPrintBarcodeModal: React.FC<BatchPrintBarcodeModalProps> = ({
   const [barcodeFormat, setBarcodeFormat] = useState<BarcodeFormat>("CODE128");
   const [showPrice, setShowPrice] = useState(true);
   const [showName, setShowName] = useState(true);
-  const [quantityMode, setQuantityMode] = useState<QuantityMode>("stock");
+  const [quantityMode, setQuantityMode] = useState<QuantityMode>(
+    initialQuantities ? "custom" : "stock"
+  );
   const [fixedQuantity, setFixedQuantity] = useState(1);
   const [rotateLabel, setRotateLabel] = useState(false); // Xoay 90° cho cuộn giấy nằm ngang
 

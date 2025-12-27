@@ -74,7 +74,11 @@ const Dashboard: React.FC = () => {
     alerts,
     cashBalance,
     bankBalance,
+    // @ts-ignore
+    debugData,
   } = useDashboardData(reportFilter);
+
+  // ... (existing code)
 
   useEffect(() => {
     // Simulate loading

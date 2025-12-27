@@ -96,23 +96,71 @@ const SalesAnalytics: React.FC<SalesAnalyticsProps> = ({
       { quantity: number; revenue: number; partName: string }
     >();
 
+    // 1. Process Sales
     filteredSales.forEach((sale) => {
       sale.items.forEach((item) => {
-        const existing = productSales.get(item.partId);
-        const part = parts.find((p) => p.id === item.partId);
-        const partName = part?.name || "Sản phẩm không xác định";
+        // Normalize ID access
+        const pId = item.partId || (item as any).id;
+        if (!pId) return;
+
+        const existing = productSales.get(pId);
+        // Try to get name from item first, then from parts list
+        const partName = item.partName || parts.find((p) => p.id === pId)?.name || "Sản phẩm không xác định";
 
         if (existing) {
           existing.quantity += item.quantity;
           existing.revenue += item.sellingPrice * item.quantity;
         } else {
-          productSales.set(item.partId, {
+          productSales.set(pId, {
             quantity: item.quantity,
             revenue: item.sellingPrice * item.quantity,
             partName,
           });
         }
       });
+    });
+
+    // 2. Process Work Orders
+    const cutoffDate = new Date();
+    if (timeRange !== "all") {
+      const days = timeRange === "7days" ? 7 : timeRange === "30days" ? 30 : 90;
+      cutoffDate.setDate(cutoffDate.getDate() - days);
+    }
+
+    workOrders.forEach((wo) => {
+      // Filter by date
+      const woDate = new Date(wo.creationDate || wo.creationdate);
+      if (timeRange !== "all" && woDate < cutoffDate) return;
+
+      // Filter valid status (exclude cancelled)
+      const status = (wo.status || "").toLowerCase();
+      if (status === "đã hủy" || status === "cancelled") return;
+
+      // Process parts
+      const partsList = wo.partsUsed || wo.partsused || wo.parts || wo.items || [];
+      if (Array.isArray(partsList)) {
+        partsList.forEach((part: any) => {
+          const partId = part.partId || part.partid || part.id;
+          const qty = part.quantity || part.qty || 0;
+          const price = part.unitPrice || part.unitprice || part.price || 0;
+
+          if (!partId) return;
+
+          const existing = productSales.get(partId);
+          const partName = part.partName || part.partname || part.name || parts.find((p) => p.id === partId)?.name || "Sản phẩm không xác định";
+
+          if (existing) {
+            existing.quantity += qty;
+            existing.revenue += price * qty;
+          } else {
+            productSales.set(partId, {
+              quantity: qty,
+              revenue: price * qty,
+              partName,
+            });
+          }
+        });
+      }
     });
 
     return Array.from(productSales.entries())
@@ -122,9 +170,9 @@ const SalesAnalytics: React.FC<SalesAnalyticsProps> = ({
         quantity: data.quantity,
         revenue: Math.round(data.revenue),
       }))
-      .sort((a, b) => b.revenue - a.revenue)
+      .sort((a, b) => b.quantity - a.quantity) // Sort by quantity to match Dashboard logic (was revenue)
       .slice(0, 10);
-  }, [filteredSales, parts]);
+  }, [filteredSales, workOrders, timeRange, parts]);
 
   // Sales by payment method
   const paymentMethodData = useMemo(() => {

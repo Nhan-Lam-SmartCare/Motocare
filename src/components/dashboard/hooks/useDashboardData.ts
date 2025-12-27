@@ -405,9 +405,7 @@ export const useDashboardData = (
             customerCount,
             orderCount: filteredSales.length + filteredWorkOrders.length,
         };
-    }, [sales, workOrders, cashTransactions, reportFilter, getPartCost]);
-
-    // Dữ liệu doanh thu 7 ngày gần nhất (bao gồm cả Sales và Work Orders)
+    }, [sales, workOrders, cashTransactions, reportFilter, getPartCost]); // Added getPartCost to dependencyoanh thu 7 ngày gần nhất (bao gồm cả Sales và Work Orders)
     const last7DaysRevenue = useMemo(() => {
         const data = [];
         for (let i = 6; i >= 0; i--) {
@@ -610,37 +608,66 @@ export const useDashboardData = (
         const startDateStr = formatLocalDate(startDate);
         const endDateStr = formatLocalDate(endDate);
 
+        console.log(`[TopProducts] Filter range: ${startDateStr} to ${endDateStr}`);
+
         const productSales: Record<string, { name: string; quantity: number }> = {};
 
         // From sales (filtered)
-        sales
-            .filter((s) => {
-                const saleDate = toLocalDateStr(s.date);
-                return saleDate && saleDate >= startDateStr && saleDate <= endDateStr;
-            })
-            .forEach((sale) => {
-                sale.items.forEach((item) => {
-                    if (!productSales[item.partId]) {
-                        productSales[item.partId] = {
-                            name: item.partName,
-                            quantity: 0,
-                        };
-                    }
-                    productSales[item.partId].quantity += item.quantity;
-                });
+        const filteredSales = sales.filter((s) => {
+            const saleDate = toLocalDateStr(s.date);
+            return saleDate && saleDate >= startDateStr && saleDate <= endDateStr;
+        });
+
+        filteredSales.forEach((sale) => {
+            sale.items.forEach((item) => {
+                // Ensure partId exists
+                const pId = item.partId || (item as any).id;
+                const pName = item.partName || "Unknown Product";
+
+                // DEBUG: Trace specific product
+                if (pName.toLowerCase().includes("elf")) {
+                    console.log(`[TopProducts-DEBUG] Found ELF in Sale: ${sale.id} | Date: ${sale.date} | Item: ${pName} | Qty: ${item.quantity} | ID: ${pId}`);
+                }
+
+                if (!pId) return;
+
+                if (!productSales[pId]) {
+                    productSales[pId] = {
+                        name: pName,
+                        quantity: 0,
+                    };
+                }
+                productSales[pId].quantity += item.quantity || 0;
             });
+        });
+
+        console.log(`[TopProducts] Processed ${filteredSales.length} sales`);
 
         // From work orders (filtered)
-        workOrders
-            .filter((wo: any) => {
-                const woDate = toLocalDateStr(wo.creationDate || wo.creationdate);
-                return woDate && woDate >= startDateStr && woDate <= endDateStr;
-            })
-            .forEach((wo: any) => {
-                const parts = wo.partsUsed || wo.partsused || [];
+        const filteredWOs = workOrders.filter((wo: any) => {
+            const woDate = toLocalDateStr(wo.creationDate || wo.creationdate);
+            // EXCLUDE CANCELLED ORDERS
+            const status = (wo.status || "").toLowerCase();
+            const isCancelled = status === "đã hủy" || status === "cancelled";
+
+            return woDate && woDate >= startDateStr && woDate <= endDateStr && !isCancelled;
+        });
+
+        filteredWOs.forEach((wo: any) => {
+            const parts = wo.partsUsed || wo.partsused || wo.parts || wo.items || [];
+
+            if (Array.isArray(parts)) {
                 parts.forEach((part: any) => {
-                    const partId = part.partId || part.partid;
-                    const partName = part.partName || part.partname;
+                    // Normalize part ID access
+                    const partId = part.partId || part.partid || part.id;
+                    const partName = part.partName || part.partname || part.name;
+                    const qty = part.quantity || part.qty || 0;
+
+                    // DEBUG: Trace specific product
+                    if (partName && partName.toLowerCase().includes("elf")) {
+                        console.log(`[TopProducts-DEBUG] Found ELF in WO: ${wo.id} | Date: ${wo.creationDate || wo.creationdate} | Item: ${partName} | Qty: ${qty} | ID: ${partId}`);
+                    }
+
                     if (partId && partName) {
                         if (!productSales[partId]) {
                             productSales[partId] = {
@@ -648,14 +675,21 @@ export const useDashboardData = (
                                 quantity: 0,
                             };
                         }
-                        productSales[partId].quantity += part.quantity || 0;
+                        productSales[partId].quantity += qty;
                     }
                 });
-            });
+            }
+        });
 
-        return Object.values(productSales)
+        console.log(`[TopProducts] Processed ${filteredWOs.length} work orders`);
+
+        const result = Object.values(productSales)
             .sort((a, b) => b.quantity - a.quantity)
-            .slice(0, 5);
+            .slice(0, 10); // Show top 10
+
+        console.log("[TopProducts] Result:", result);
+        return result;
+
     }, [sales, workOrders, reportFilter]);
 
     // Thống kê work orders (phiếu sửa chữa - lọc theo filter)
@@ -750,6 +784,97 @@ export const useDashboardData = (
 
         return { newOrders, inProgress, completed, delivered, cancelled };
     }, [workOrders, reportFilter]);
+
+    // DEBUG DATA: Specific audit for "Elf 10W40"
+    const debugData = useMemo(() => {
+        const now = new Date();
+        let startDate: Date;
+        let endDate: Date = now;
+
+        if (reportFilter.startsWith("month") && reportFilter.length > 5) {
+            const monthNum = parseInt(reportFilter.slice(5), 10);
+            if (monthNum >= 1 && monthNum <= 12) {
+                startDate = new Date(now.getFullYear(), monthNum - 1, 1);
+                endDate = new Date(now.getFullYear(), monthNum, 0);
+            } else {
+                startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+            }
+        } else {
+            // Default to "month" logic for the user's specific question "from start of month"
+            // regardless of filter, but let's stick to the filter if it's set to month
+            startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        }
+
+        const formatLocalDate = (d: Date) => {
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, "0");
+            const day = String(d.getDate()).padStart(2, "0");
+            return `${year}-${month}-${day}`;
+        };
+        const toLocalDateStr = (dateStr: string | undefined | null): string | null => {
+            if (!dateStr) return null;
+            try {
+                const d = new Date(dateStr);
+                if (isNaN(d.getTime())) return null;
+                return formatLocalDate(d);
+            } catch {
+                return null;
+            }
+        };
+
+        const startDateStr = formatLocalDate(startDate);
+        const endDateStr = formatLocalDate(endDate);
+
+        const transactions: any[] = [];
+
+        // Scan Sales
+        sales.forEach(s => {
+            const d = toLocalDateStr(s.date);
+            if (d && d >= startDateStr && d <= endDateStr) {
+                s.items.forEach(item => {
+                    const name = item.partName || "";
+                    if (name.toLowerCase().includes("elf")) {
+                        transactions.push({
+                            source: "Bán hàng",
+                            id: s.id,
+                            code: (s as any).sale_code || "N/A",
+                            date: d,
+                            product: name,
+                            quantity: item.quantity
+                        });
+                    }
+                });
+            }
+        });
+
+        // Scan Work Orders
+        workOrders.forEach(wo => {
+            const d = toLocalDateStr(wo.creationDate || wo.creationdate);
+            const status = (wo.status || "").toLowerCase();
+            const isCancelled = status === "đã hủy" || status === "cancelled";
+
+            if (!isCancelled && d && d >= startDateStr && d <= endDateStr) {
+                const parts = wo.partsUsed || wo.partsused || wo.parts || wo.items || [];
+                if (Array.isArray(parts)) {
+                    parts.forEach((part: any) => {
+                        const name = part.partName || part.partname || part.name || "";
+                        if (name.toLowerCase().includes("elf")) {
+                            transactions.push({
+                                source: "Sửa chữa",
+                                id: wo.id,
+                                code: wo.id.slice(0, 8) + "...", // Short ID
+                                date: d,
+                                product: name,
+                                quantity: part.quantity || part.qty || 0
+                            });
+                        }
+                    });
+                }
+            }
+        });
+
+        return transactions;
+    }, [sales, workOrders, reportFilter]); // Re-calculate when data changes
 
     // Cảnh báo
     const alerts = useMemo(() => {
@@ -909,14 +1034,13 @@ export const useDashboardData = (
     return {
         todayStats,
         filteredStats,
-        last7DaysRevenue,
-        incomeExpenseData,
         topProducts,
+        incomeExpenseData,
+        last7DaysRevenue,
         workOrderStats,
         alerts,
-        topCustomersData,
-        monthlyComparisonData,
         cashBalance,
         bankBalance,
+        debugData, // EXPORT DEBUG DATA HERE
     };
 };

@@ -25,6 +25,7 @@ interface InventoryAnalyticsProps {
   parts: any[];
   inventoryTransactions: any[];
   currentBranchId: string;
+  dateFilter?: string;
 }
 
 const InventoryAnalytics: React.FC<InventoryAnalyticsProps> = ({
@@ -32,7 +33,8 @@ const InventoryAnalytics: React.FC<InventoryAnalyticsProps> = ({
   workOrders,
   parts,
   inventoryTransactions,
-  currentBranchId
+  currentBranchId,
+  dateFilter
 }) => {
   const isLoading = false; // Data comes from parent
 
@@ -156,6 +158,138 @@ const InventoryAnalytics: React.FC<InventoryAnalyticsProps> = ({
       .slice(-14); // Last 14 days
   }, [inventoryTransactions]);
 
+  // === ADVANCED INVENTORY ANALYSIS ===
+
+  // Slow-moving items (not sold in 60+ days)
+  const slowMovingItems = useMemo(() => {
+    const now = new Date();
+    const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
+
+    // Build map of last sale date per partId
+    const lastSaleMap = new Map<string, Date>();
+
+    // Check sales
+    sales.forEach((sale: any) => {
+      (sale.items || []).forEach((item: any) => {
+        const saleDate = new Date(sale.date);
+        const existing = lastSaleMap.get(item.partId);
+        if (!existing || saleDate > existing) {
+          lastSaleMap.set(item.partId, saleDate);
+        }
+      });
+    });
+
+    // Check work orders
+    workOrders.forEach((wo: any) => {
+      if (wo.status === "Đã hủy") return;
+      (wo.partsUsed || []).forEach((part: any) => {
+        const woDate = new Date(wo.creationDate);
+        const existing = lastSaleMap.get(part.partId);
+        if (!existing || woDate > existing) {
+          lastSaleMap.set(part.partId, woDate);
+        }
+      });
+    });
+
+    return parts
+      .filter((p) => {
+        const stock = p.stock[currentBranchId] || 0;
+        if (stock <= 0) return false;
+
+        const lastSale = lastSaleMap.get(p.id);
+        // Never sold or sold before 60 days
+        return !lastSale || lastSale < sixtyDaysAgo;
+      })
+      .map((p) => {
+        const stock = p.stock[currentBranchId] || 0;
+        const costPrice = p.costPrice?.[currentBranchId] || p.wholesalePrice?.[currentBranchId] || 0;
+        const lastSale = lastSaleMap.get(p.id);
+        const daysSinceLastSale = lastSale
+          ? Math.floor((now.getTime() - lastSale.getTime()) / (1000 * 60 * 60 * 24))
+          : 999;
+
+        return {
+          id: p.id,
+          name: p.name,
+          category: p.category || "Không phân loại",
+          stock,
+          value: stock * costPrice,
+          daysSinceLastSale,
+          lastSaleDate: lastSale,
+        };
+      })
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 15);
+  }, [parts, sales, workOrders, currentBranchId]);
+
+  // Cost of goods sold (last 365 days for turnover calculation)
+  const annualCOGS = useMemo(() => {
+    const oneYearAgo = new Date();
+    oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+
+    // Build cost map
+    const costMap = new Map<string, number>();
+    parts.forEach((p) => {
+      costMap.set(p.id, p.costPrice?.[currentBranchId] || p.wholesalePrice?.[currentBranchId] || 0);
+    });
+
+    // Sales COGS
+    const salesCOGS = sales
+      .filter((s) => new Date(s.date) >= oneYearAgo)
+      .reduce((sum, s: any) => {
+        return sum + (s.items || []).reduce((itemSum: number, item: any) => {
+          if (item.isService) return itemSum;
+          const cost = costMap.get(item.partId) || 0;
+          return itemSum + (cost * (item.quantity || 0));
+        }, 0);
+      }, 0);
+
+    // Work order COGS
+    const woCOGS = workOrders
+      .filter((wo) => {
+        const d = new Date(wo.creationDate);
+        return d >= oneYearAgo && wo.status !== "Đã hủy" && !wo.refunded;
+      })
+      .reduce((sum, wo: any) => {
+        return sum + (wo.partsUsed || []).reduce((partSum: number, p: any) => {
+          const cost = p.costPrice || costMap.get(p.partId) || 0;
+          return partSum + (cost * (p.quantity || 0));
+        }, 0);
+      }, 0);
+
+    return salesCOGS + woCOGS;
+  }, [sales, workOrders, parts, currentBranchId]);
+
+  // Inventory turnover and days to sell
+  const inventoryMetrics = useMemo(() => {
+    // Average inventory value (at cost)
+    const avgInventoryAtCost = parts.reduce((sum, p) => {
+      const stock = p.stock[currentBranchId] || 0;
+      const cost = p.costPrice?.[currentBranchId] || p.wholesalePrice?.[currentBranchId] || 0;
+      return sum + (stock * cost);
+    }, 0);
+
+    const turnover = avgInventoryAtCost > 0 ? annualCOGS / avgInventoryAtCost : 0;
+    const daysToSell = turnover > 0 ? Math.round(365 / turnover) : 999;
+
+    return { turnover, daysToSell, avgInventoryAtCost };
+  }, [parts, annualCOGS, currentBranchId]);
+
+  // Capital analysis
+  const capitalAnalysis = useMemo(() => {
+    const slowMovingValue = slowMovingItems.reduce((sum, item) => sum + item.value, 0);
+    const totalCapital = inventoryMetrics.avgInventoryAtCost;
+    const fastMovingValue = totalCapital - slowMovingValue;
+
+    return {
+      totalCapital,
+      slowMovingValue,
+      slowMovingPercent: totalCapital > 0 ? (slowMovingValue / totalCapital * 100) : 0,
+      fastMovingValue,
+      fastMovingPercent: totalCapital > 0 ? (fastMovingValue / totalCapital * 100) : 0,
+    };
+  }, [slowMovingItems, inventoryMetrics]);
+
   const COLORS = [
     "#3b82f6",
     "#10b981",
@@ -217,6 +351,141 @@ const InventoryAnalytics: React.FC<InventoryAnalyticsProps> = ({
             {outOfStockCount}
           </div>
         </div>
+      </div>
+
+      {/* === ADVANCED INVENTORY ANALYSIS === */}
+      <div className="bg-white dark:bg-[#1e293b] p-4 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
+        <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mb-4">
+          Phân tích tồn kho nâng cao
+        </h3>
+
+        {/* Metrics Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+          {/* Turnover */}
+          <div className="bg-gradient-to-br from-violet-50 to-violet-100 dark:from-violet-900/20 dark:to-violet-800/20 p-3 rounded-lg border border-violet-200 dark:border-violet-700">
+            <div className="text-xs font-medium text-violet-600 dark:text-violet-400 mb-1">
+              Vòng quay tồn kho
+            </div>
+            <div className="text-xl font-bold text-violet-900 dark:text-violet-100">
+              {inventoryMetrics.turnover.toFixed(1)}x/năm
+            </div>
+            <div className="text-[10px] text-violet-700 dark:text-violet-300 mt-0.5">
+              {inventoryMetrics.daysToSell < 999 ? `TB ${inventoryMetrics.daysToSell} ngày bán hết` : 'Chưa đủ dữ liệu'}
+            </div>
+          </div>
+
+          {/* Capital at Cost */}
+          <div className="bg-gradient-to-br from-indigo-50 to-indigo-100 dark:from-indigo-900/20 dark:to-indigo-800/20 p-3 rounded-lg border border-indigo-200 dark:border-indigo-700">
+            <div className="text-xs font-medium text-indigo-600 dark:text-indigo-400 mb-1">
+              Vốn kẹt tồn kho
+            </div>
+            <div className="text-xl font-bold text-indigo-900 dark:text-indigo-100">
+              {formatCurrency(capitalAnalysis.totalCapital)}
+            </div>
+            <div className="text-[10px] text-indigo-700 dark:text-indigo-300 mt-0.5">
+              Theo giá vốn
+            </div>
+          </div>
+
+          {/* Slow Moving Value */}
+          <div className="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20 p-3 rounded-lg border border-orange-200 dark:border-orange-700">
+            <div className="text-xs font-medium text-orange-600 dark:text-orange-400 mb-1">
+              Hàng bán chậm (60+ ngày)
+            </div>
+            <div className="text-xl font-bold text-orange-900 dark:text-orange-100">
+              {formatCurrency(capitalAnalysis.slowMovingValue)}
+            </div>
+            <div className="text-[10px] text-orange-700 dark:text-orange-300 mt-0.5">
+              {capitalAnalysis.slowMovingPercent.toFixed(1)}% tổng vốn
+            </div>
+          </div>
+
+          {/* Fast Moving Value */}
+          <div className="bg-gradient-to-br from-teal-50 to-teal-100 dark:from-teal-900/20 dark:to-teal-800/20 p-3 rounded-lg border border-teal-200 dark:border-teal-700">
+            <div className="text-xs font-medium text-teal-600 dark:text-teal-400 mb-1">
+              Hàng bán nhanh
+            </div>
+            <div className="text-xl font-bold text-teal-900 dark:text-teal-100">
+              {formatCurrency(capitalAnalysis.fastMovingValue)}
+            </div>
+            <div className="text-[10px] text-teal-700 dark:text-teal-300 mt-0.5">
+              {capitalAnalysis.fastMovingPercent.toFixed(1)}% tổng vốn
+            </div>
+          </div>
+        </div>
+
+        {/* Capital Distribution Bar */}
+        <div className="mb-4">
+          <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">Phân bổ vốn tồn kho</div>
+          <div className="h-4 rounded-full overflow-hidden flex bg-slate-200 dark:bg-slate-700">
+            <div
+              className="bg-teal-500 transition-all"
+              style={{ width: `${capitalAnalysis.fastMovingPercent}%` }}
+              title={`Bán nhanh: ${formatCurrency(capitalAnalysis.fastMovingValue)}`}
+            />
+            <div
+              className="bg-orange-500 transition-all"
+              style={{ width: `${capitalAnalysis.slowMovingPercent}%` }}
+              title={`Bán chậm: ${formatCurrency(capitalAnalysis.slowMovingValue)}`}
+            />
+          </div>
+          <div className="flex justify-between mt-1 text-[10px] text-slate-500">
+            <span className="flex items-center gap-1">
+              <span className="w-2 h-2 bg-teal-500 rounded-full"></span>
+              Bán nhanh ({capitalAnalysis.fastMovingPercent.toFixed(0)}%)
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="w-2 h-2 bg-orange-500 rounded-full"></span>
+              Bán chậm ({capitalAnalysis.slowMovingPercent.toFixed(0)}%)
+            </span>
+          </div>
+        </div>
+
+        {/* Slow Moving Items Table */}
+        {slowMovingItems.length > 0 && (
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                Top hàng bán chậm (chưa bán 60+ ngày)
+              </div>
+              <span className="text-xs text-orange-600 dark:text-orange-400 bg-orange-100 dark:bg-orange-900/30 px-2 py-0.5 rounded-full">
+                {slowMovingItems.length} sản phẩm
+              </span>
+            </div>
+            <div className="overflow-auto max-h-[250px]">
+              <table className="w-full text-sm">
+                <thead className="bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 sticky top-0">
+                  <tr>
+                    <th className="px-3 py-2 text-left font-medium">Sản phẩm</th>
+                    <th className="px-3 py-2 text-center font-medium">Tồn</th>
+                    <th className="px-3 py-2 text-right font-medium">Giá trị</th>
+                    <th className="px-3 py-2 text-right font-medium">Ngày chưa bán</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                  {slowMovingItems.map((item) => (
+                    <tr key={item.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                      <td className="px-3 py-2">
+                        <div className="font-medium text-slate-900 dark:text-slate-100 truncate max-w-[200px]">{item.name}</div>
+                        <div className="text-[10px] text-slate-500">{item.category}</div>
+                      </td>
+                      <td className="px-3 py-2 text-center text-slate-600 dark:text-slate-400">{item.stock}</td>
+                      <td className="px-3 py-2 text-right font-semibold text-orange-600 dark:text-orange-400">{formatCurrency(item.value)}</td>
+                      <td className="px-3 py-2 text-right">
+                        <span className={`text-xs font-medium px-1.5 py-0.5 rounded ${item.daysSinceLastSale > 90
+                            ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                            : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
+                          }`}>
+                          {item.daysSinceLastSale >= 999 ? 'Chưa bán' : `${item.daysSinceLastSale} ngày`}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Charts Row 1 */}

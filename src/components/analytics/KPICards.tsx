@@ -1,15 +1,28 @@
 import React, { useState, useEffect } from "react";
-import { Target, TrendingUp, Settings, ChevronRight } from "lucide-react";
+import { Target, TrendingUp, TrendingDown, Settings } from "lucide-react";
 import { formatCurrency } from "../../utils/format";
-import { DateRange } from "../common/DateRangePicker";
+
+interface DateRange {
+    label: string;
+    from: Date;
+    to: Date;
+}
 
 interface KPICardsProps {
     currentRevenue: number;
     currentProfit: number;
+    previousRevenue?: number;
+    previousProfit?: number;
     dateRange: DateRange;
 }
 
-const KPICards: React.FC<KPICardsProps> = ({ currentRevenue, currentProfit, dateRange }) => {
+const KPICards: React.FC<KPICardsProps> = ({
+    currentRevenue,
+    currentProfit,
+    previousRevenue = 0,
+    previousProfit = 0,
+    dateRange
+}) => {
     // Default goals if not set
     const DEFAULT_REVENUE_GOAL = 150000000;
     const DEFAULT_PROFIT_GOAL = 50000000; // Default profit goal
@@ -39,6 +52,14 @@ const KPICards: React.FC<KPICardsProps> = ({ currentRevenue, currentProfit, date
 
     // Calculations
     const currentMargin = currentRevenue > 0 ? (currentProfit / currentRevenue) * 100 : 0;
+
+    // Comparison calculations
+    const revenueChange = previousRevenue > 0
+        ? ((currentRevenue - previousRevenue) / previousRevenue) * 100
+        : currentRevenue > 0 ? 100 : 0;
+    const profitChange = previousProfit > 0
+        ? ((currentProfit - previousProfit) / previousProfit) * 100
+        : currentProfit > 0 ? 100 : 0;
 
     let revenueProgress = 0;
     let profitProgress = 0;
@@ -73,6 +94,25 @@ const KPICards: React.FC<KPICardsProps> = ({ currentRevenue, currentProfit, date
         dailyProfitNeeded = daysLeft > 0 ? remainingProfit / daysLeft : 0;
     }
 
+    // Comparison indicator component
+    const ComparisonBadge = ({ change, label = "vs kỳ trước" }: { change: number; label?: string }) => {
+        if (change === 0) return null;
+        const isPositive = change > 0;
+        return (
+            <div className={`flex items-center gap-1 text-xs px-1.5 py-0.5 rounded ${isPositive
+                ? 'bg-green-500/20 text-green-200'
+                : 'bg-red-500/20 text-red-200'
+                }`}>
+                {isPositive ? (
+                    <TrendingUp className="w-3 h-3" />
+                ) : (
+                    <TrendingDown className="w-3 h-3" />
+                )}
+                <span>{isPositive ? '+' : ''}{change.toFixed(1)}%</span>
+            </div>
+        );
+    };
+
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
 
@@ -89,10 +129,14 @@ const KPICards: React.FC<KPICardsProps> = ({ currentRevenue, currentProfit, date
                         </div>
                         <div className="text-2xl font-bold">{formatCurrency(currentRevenue)}</div>
 
-                        {showGoals && (
+                        {showGoals ? (
                             <div className="text-xs text-blue-200 mt-1">
                                 /{formatCurrency(revenueGoal)}
                                 <span className="ml-1 opacity-75">({revenueProgress.toFixed(1)}%)</span>
+                            </div>
+                        ) : (
+                            <div className="mt-2">
+                                <ComparisonBadge change={revenueChange} />
                             </div>
                         )}
                     </div>
@@ -193,10 +237,14 @@ const KPICards: React.FC<KPICardsProps> = ({ currentRevenue, currentProfit, date
                                     {showGoals ? "Mục tiêu Lợi nhuận Tháng" : `Lợi nhuận (${dateRange.label})`}
                                 </div>
                                 <div className="text-2xl font-bold">{formatCurrency(currentProfit)}</div>
-                                {showGoals && (
+                                {showGoals ? (
                                     <div className="text-xs text-emerald-200 mt-1">
                                         /{formatCurrency(profitGoal)}
                                         <span className="ml-1 opacity-75">({profitProgress.toFixed(1)}%)</span>
+                                    </div>
+                                ) : (
+                                    <div className="mt-2">
+                                        <ComparisonBadge change={profitChange} />
                                     </div>
                                 )}
                             </div>
@@ -243,3 +291,4 @@ const KPICards: React.FC<KPICardsProps> = ({ currentRevenue, currentProfit, date
 };
 
 export default KPICards;
+

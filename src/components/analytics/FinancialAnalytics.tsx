@@ -31,6 +31,7 @@ interface FinancialAnalyticsProps {
   customerDebts: any[];
   supplierDebts: any[];
   currentBranchId: string;
+  dateFilter?: string;
 }
 
 const FinancialAnalytics: React.FC<FinancialAnalyticsProps> = ({
@@ -39,7 +40,8 @@ const FinancialAnalytics: React.FC<FinancialAnalyticsProps> = ({
   parts,
   customerDebts,
   supplierDebts,
-  currentBranchId
+  currentBranchId,
+  dateFilter
 }) => {
   const isLoading = false; // Data comes from parent
   const [timeRange, setTimeRange] = useState<TimeRange>("30days");
@@ -241,6 +243,187 @@ const FinancialAnalytics: React.FC<FinancialAnalyticsProps> = ({
       return sum + stock * price;
     }, 0);
   }, [parts, currentBranchId]);
+
+  // === PROFIT ANALYSIS ===
+
+  // Product profitability analysis
+  const productProfitability = useMemo(() => {
+    const cutoffDate = getCutoffDate();
+    const productMap = new Map<string, {
+      name: string;
+      category: string;
+      revenue: number;
+      cost: number;
+      quantity: number;
+    }>();
+
+    // Build cost map
+    const costMap = new Map<string, number>();
+    parts.forEach((p) => {
+      costMap.set(p.id, p.costPrice?.[currentBranchId] || p.wholesalePrice?.[currentBranchId] || 0);
+    });
+
+    // Build name/category map
+    const nameMap = new Map<string, { name: string; category: string }>();
+    parts.forEach((p) => {
+      nameMap.set(p.id, { name: p.name, category: p.category || 'Không phân loại' });
+    });
+
+    // Process sales
+    sales
+      .filter((s) => new Date(s.date) >= cutoffDate)
+      .forEach((sale: any) => {
+        (sale.items || []).forEach((item: any) => {
+          if (item.isService) return;
+
+          const partInfo = nameMap.get(item.partId) || { name: item.name || 'Unknown', category: 'Không phân loại' };
+          const cost = costMap.get(item.partId) || 0;
+          const revenue = (item.sellingPrice || item.price || 0) * (item.quantity || 0);
+          const itemCost = cost * (item.quantity || 0);
+
+          const existing = productMap.get(item.partId);
+          if (existing) {
+            existing.revenue += revenue;
+            existing.cost += itemCost;
+            existing.quantity += item.quantity || 0;
+          } else {
+            productMap.set(item.partId, {
+              name: partInfo.name,
+              category: partInfo.category,
+              revenue,
+              cost: itemCost,
+              quantity: item.quantity || 0,
+            });
+          }
+        });
+      });
+
+    // Process work orders
+    workOrders
+      .filter((wo) => {
+        const d = new Date(wo.creationDate);
+        return d >= cutoffDate && wo.status !== "Đã hủy" && !wo.refunded;
+      })
+      .forEach((wo: any) => {
+        (wo.partsUsed || []).forEach((part: any) => {
+          const partInfo = nameMap.get(part.partId) || { name: part.name || 'Unknown', category: 'Không phân loại' };
+          const cost = part.costPrice || costMap.get(part.partId) || 0;
+          const revenue = (part.sellingPrice || part.price || 0) * (part.quantity || 0);
+          const itemCost = cost * (part.quantity || 0);
+
+          const existing = productMap.get(part.partId);
+          if (existing) {
+            existing.revenue += revenue;
+            existing.cost += itemCost;
+            existing.quantity += part.quantity || 0;
+          } else {
+            productMap.set(part.partId, {
+              name: partInfo.name,
+              category: partInfo.category,
+              revenue,
+              cost: itemCost,
+              quantity: part.quantity || 0,
+            });
+          }
+        });
+      });
+
+    // Calculate profit and margin
+    const allProducts = Array.from(productMap.entries())
+      .map(([id, data]) => ({
+        id,
+        ...data,
+        profit: data.revenue - data.cost,
+        margin: data.revenue > 0 ? ((data.revenue - data.cost) / data.revenue * 100) : 0,
+      }))
+      .filter((p) => p.revenue > 0);
+
+    // Top 10 most profitable
+    const topProfit = [...allProducts]
+      .sort((a, b) => b.profit - a.profit)
+      .slice(0, 10);
+
+    // Top 10 least profitable (but still has sales)
+    const leastProfit = [...allProducts]
+      .sort((a, b) => a.margin - b.margin)
+      .slice(0, 10);
+
+    return { topProfit, leastProfit };
+  }, [sales, workOrders, parts, currentBranchId, timeRange]);
+
+  // Category margin analysis
+  const categoryMargin = useMemo(() => {
+    const cutoffDate = getCutoffDate();
+    const categoryMap = new Map<string, { revenue: number; cost: number }>();
+
+    // Build cost map
+    const costMap = new Map<string, number>();
+    parts.forEach((p) => {
+      costMap.set(p.id, p.costPrice?.[currentBranchId] || p.wholesalePrice?.[currentBranchId] || 0);
+    });
+
+    // Build category map
+    const partCategoryMap = new Map<string, string>();
+    parts.forEach((p) => {
+      partCategoryMap.set(p.id, p.category || 'Không phân loại');
+    });
+
+    // Process sales
+    sales
+      .filter((s) => new Date(s.date) >= cutoffDate)
+      .forEach((sale: any) => {
+        (sale.items || []).forEach((item: any) => {
+          if (item.isService) return;
+
+          const category = partCategoryMap.get(item.partId) || 'Không phân loại';
+          const cost = costMap.get(item.partId) || 0;
+          const revenue = (item.sellingPrice || item.price || 0) * (item.quantity || 0);
+          const itemCost = cost * (item.quantity || 0);
+
+          const existing = categoryMap.get(category);
+          if (existing) {
+            existing.revenue += revenue;
+            existing.cost += itemCost;
+          } else {
+            categoryMap.set(category, { revenue, cost: itemCost });
+          }
+        });
+      });
+
+    // Process work orders
+    workOrders
+      .filter((wo) => {
+        const d = new Date(wo.creationDate);
+        return d >= cutoffDate && wo.status !== "Đã hủy" && !wo.refunded;
+      })
+      .forEach((wo: any) => {
+        (wo.partsUsed || []).forEach((part: any) => {
+          const category = partCategoryMap.get(part.partId) || 'Không phân loại';
+          const cost = part.costPrice || costMap.get(part.partId) || 0;
+          const revenue = (part.sellingPrice || part.price || 0) * (part.quantity || 0);
+          const itemCost = cost * (part.quantity || 0);
+
+          const existing = categoryMap.get(category);
+          if (existing) {
+            existing.revenue += revenue;
+            existing.cost += itemCost;
+          } else {
+            categoryMap.set(category, { revenue, cost: itemCost });
+          }
+        });
+      });
+
+    return Array.from(categoryMap.entries())
+      .map(([category, data]) => ({
+        category,
+        revenue: data.revenue,
+        cost: data.cost,
+        profit: data.revenue - data.cost,
+        margin: data.revenue > 0 ? ((data.revenue - data.cost) / data.revenue * 100) : 0,
+      }))
+      .filter((c) => c.revenue > 0)
+      .sort((a, b) => b.margin - a.margin);
+  }, [sales, workOrders, parts, currentBranchId, timeRange]);
 
   if (isLoading) {
     return (
@@ -520,6 +703,136 @@ const FinancialAnalytics: React.FC<FinancialAnalyticsProps> = ({
           </div>
         </div>
       </div>
+
+      {/* === PROFIT ANALYSIS === */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Top Profit Products */}
+        <div className="bg-white dark:bg-[#1e293b] p-4 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
+          <h3 className="text-base font-semibold text-emerald-900 dark:text-emerald-100 mb-3 flex items-center gap-2">
+            <span className="w-2 h-2 bg-emerald-500 rounded-full"></span>
+            Top 10 sản phẩm lãi nhiều nhất
+          </h3>
+          <div className="overflow-auto max-h-[300px]">
+            <table className="w-full text-sm">
+              <thead className="bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 sticky top-0">
+                <tr>
+                  <th className="px-2 py-2 text-left font-medium">Sản phẩm</th>
+                  <th className="px-2 py-2 text-right font-medium">Lợi nhuận</th>
+                  <th className="px-2 py-2 text-right font-medium">Biên LN</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                {productProfitability.topProfit.map((item, idx) => (
+                  <tr key={item.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                    <td className="px-2 py-2">
+                      <div className="flex items-center gap-2">
+                        <span className="w-5 h-5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-[10px] font-bold">
+                          {idx + 1}
+                        </span>
+                        <div className="truncate max-w-[150px]">
+                          <div className="font-medium text-slate-900 dark:text-slate-100 text-xs">{item.name}</div>
+                          <div className="text-[10px] text-slate-500">SL: {item.quantity}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-2 py-2 text-right font-semibold text-emerald-600 dark:text-emerald-400 text-xs">
+                      {formatCurrency(item.profit)}
+                    </td>
+                    <td className="px-2 py-2 text-right">
+                      <span className="text-xs font-medium px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
+                        {item.margin.toFixed(1)}%
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+                {productProfitability.topProfit.length === 0 && (
+                  <tr><td colSpan={3} className="text-center py-4 text-slate-500">Chưa có dữ liệu</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Least Profit Products */}
+        <div className="bg-white dark:bg-[#1e293b] p-4 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
+          <h3 className="text-base font-semibold text-amber-900 dark:text-amber-100 mb-3 flex items-center gap-2">
+            <span className="w-2 h-2 bg-amber-500 rounded-full"></span>
+            Top 10 sản phẩm biên lợi nhuận thấp
+          </h3>
+          <div className="overflow-auto max-h-[300px]">
+            <table className="w-full text-sm">
+              <thead className="bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 sticky top-0">
+                <tr>
+                  <th className="px-2 py-2 text-left font-medium">Sản phẩm</th>
+                  <th className="px-2 py-2 text-right font-medium">Lợi nhuận</th>
+                  <th className="px-2 py-2 text-right font-medium">Biên LN</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                {productProfitability.leastProfit.map((item, idx) => (
+                  <tr key={item.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                    <td className="px-2 py-2">
+                      <div className="flex items-center gap-2">
+                        <span className="w-5 h-5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 flex items-center justify-center text-[10px] font-bold">
+                          {idx + 1}
+                        </span>
+                        <div className="truncate max-w-[150px]">
+                          <div className="font-medium text-slate-900 dark:text-slate-100 text-xs">{item.name}</div>
+                          <div className="text-[10px] text-slate-500">SL: {item.quantity}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-2 py-2 text-right font-semibold text-amber-600 dark:text-amber-400 text-xs">
+                      {formatCurrency(item.profit)}
+                    </td>
+                    <td className="px-2 py-2 text-right">
+                      <span className={`text-xs font-medium px-1.5 py-0.5 rounded ${item.margin < 10
+                          ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                          : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
+                        }`}>
+                        {item.margin.toFixed(1)}%
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+                {productProfitability.leastProfit.length === 0 && (
+                  <tr><td colSpan={3} className="text-center py-4 text-slate-500">Chưa có dữ liệu</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      {/* Category Margin */}
+      {categoryMargin.length > 0 && (
+        <div className="bg-white dark:bg-[#1e293b] p-4 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
+          <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mb-4">
+            Biên lợi nhuận theo danh mục
+          </h3>
+          <div className="space-y-3">
+            {categoryMargin.slice(0, 8).map((cat, idx) => (
+              <div key={cat.category} className="flex items-center gap-3">
+                <div className="w-28 text-sm text-slate-700 dark:text-slate-300 truncate">{cat.category}</div>
+                <div className="flex-1 h-5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden relative">
+                  <div
+                    className={`h-full rounded-full transition-all ${cat.margin >= 30 ? 'bg-emerald-500' : cat.margin >= 20 ? 'bg-blue-500' : cat.margin >= 10 ? 'bg-amber-500' : 'bg-red-500'
+                      }`}
+                    style={{ width: `${Math.min(cat.margin, 100)}%` }}
+                  />
+                  <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white mix-blend-difference">
+                    {cat.margin.toFixed(1)}%
+                  </span>
+                </div>
+                <div className="w-24 text-right">
+                  <div className="text-xs font-semibold text-slate-900 dark:text-slate-100">{formatCurrency(cat.profit)}</div>
+                  <div className="text-[9px] text-slate-500">DT: {formatCurrency(cat.revenue)}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

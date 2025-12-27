@@ -23,13 +23,15 @@ interface SalesAnalyticsProps {
   workOrders: any[];
   parts: any[];
   currentBranchId: string;
+  dateFilter?: string;
 }
 
 const SalesAnalytics: React.FC<SalesAnalyticsProps> = ({
   sales,
   workOrders,
   parts,
-  currentBranchId
+  currentBranchId,
+  dateFilter
 }) => {
   const [timeRange, setTimeRange] = useState<TimeRange>("30days");
   const isLoading = false; // Data comes from parent
@@ -128,10 +130,24 @@ const SalesAnalytics: React.FC<SalesAnalyticsProps> = ({
   const paymentMethodData = useMemo(() => {
     const methodMap = new Map<string, number>();
 
+    // Translate payment method to Vietnamese
+    const translateMethod = (method: string) => {
+      const translations: Record<string, string> = {
+        'cash': 'Tiền mặt',
+        'bank': 'Chuyển khoản',
+        'card': 'Thẻ',
+        'momo': 'MoMo',
+        'vnpay': 'VNPay',
+        'zalopay': 'ZaloPay',
+      };
+      return translations[method.toLowerCase()] || method;
+    };
+
     filteredSales.forEach((sale) => {
+      const methodKey = translateMethod(sale.paymentMethod);
       methodMap.set(
-        sale.paymentMethod,
-        (methodMap.get(sale.paymentMethod) || 0) + sale.total
+        methodKey,
+        (methodMap.get(methodKey) || 0) + sale.total
       );
     });
 
@@ -249,7 +265,7 @@ const SalesAnalytics: React.FC<SalesAnalyticsProps> = ({
               <XAxis dataKey="date" stroke="#94a3b8" />
               <YAxis stroke="#94a3b8" />
               <Tooltip
-                formatter={(value: number) => formatCurrency(value)}
+                formatter={(value: number, name: string) => [formatCurrency(value), name === 'revenue' ? 'Doanh thu' : name]}
                 contentStyle={{
                   backgroundColor: "rgba(15, 23, 42, 0.95)",
                   border: "none",
@@ -263,6 +279,7 @@ const SalesAnalytics: React.FC<SalesAnalyticsProps> = ({
                 stroke="#3b82f6"
                 fillOpacity={1}
                 fill="url(#colorRevenue)"
+                name="Doanh thu"
               />
             </AreaChart>
           </ResponsiveContainer>
@@ -279,7 +296,7 @@ const SalesAnalytics: React.FC<SalesAnalyticsProps> = ({
               <XAxis dataKey="method" stroke="#94a3b8" />
               <YAxis stroke="#94a3b8" />
               <Tooltip
-                formatter={(value: number) => formatCurrency(value)}
+                formatter={(value: number, name: string) => [formatCurrency(value), 'Doanh thu']}
                 contentStyle={{
                   backgroundColor: "rgba(15, 23, 42, 0.95)",
                   border: "none",
@@ -287,7 +304,7 @@ const SalesAnalytics: React.FC<SalesAnalyticsProps> = ({
                   color: "#fff",
                 }}
               />
-              <Bar dataKey="revenue" fill="#10b981" radius={[8, 8, 0, 0]} />
+              <Bar dataKey="revenue" fill="#10b981" radius={[8, 8, 0, 0]} name="Doanh thu" />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -306,6 +323,7 @@ const SalesAnalytics: React.FC<SalesAnalyticsProps> = ({
               <XAxis dataKey="hour" stroke="#94a3b8" />
               <YAxis stroke="#94a3b8" />
               <Tooltip
+                formatter={(value: number, name: string) => [value, 'Số đơn']}
                 contentStyle={{
                   backgroundColor: "rgba(15, 23, 42, 0.95)",
                   border: "none",
@@ -318,6 +336,7 @@ const SalesAnalytics: React.FC<SalesAnalyticsProps> = ({
                 dataKey="orders"
                 stroke="#f59e0b"
                 strokeWidth={2}
+                name="Số đơn"
               />
             </LineChart>
           </ResponsiveContainer>

@@ -24,6 +24,7 @@ interface CustomerAnalyticsProps {
     workOrders: any[];
     parts: any[];
     currentBranchId: string;
+    dateFilter?: string;
 }
 
 const CustomerAnalytics: React.FC<CustomerAnalyticsProps> = ({
@@ -31,7 +32,8 @@ const CustomerAnalytics: React.FC<CustomerAnalyticsProps> = ({
     sales,
     workOrders,
     parts,
-    currentBranchId
+    currentBranchId,
+    dateFilter
 }) => {
     const [timeRange, setTimeRange] = useState<TimeRange>("30days");
     const isLoading = false;
@@ -267,8 +269,8 @@ const CustomerAnalytics: React.FC<CustomerAnalyticsProps> = ({
                         key={range}
                         onClick={() => setTimeRange(range)}
                         className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${timeRange === range
-                                ? "bg-indigo-600 text-white"
-                                : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700"
+                            ? "bg-indigo-600 text-white"
+                            : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700"
                             }`}
                     >
                         {range === "7days" && "7 ngày"}

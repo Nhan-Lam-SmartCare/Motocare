@@ -19,11 +19,13 @@ type TimeRange = "7days" | "30days" | "90days" | "all";
 interface ServiceAnalyticsProps {
     workOrders: any[];
     currentBranchId: string;
+    dateFilter?: string;
 }
 
 const ServiceAnalytics: React.FC<ServiceAnalyticsProps> = ({
     workOrders,
-    currentBranchId
+    currentBranchId,
+    dateFilter
 }) => {
     const [timeRange, setTimeRange] = useState<TimeRange>("30days");
     const isLoading = false;
@@ -130,8 +132,8 @@ const ServiceAnalytics: React.FC<ServiceAnalyticsProps> = ({
                         key={range}
                         onClick={() => setTimeRange(range)}
                         className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${timeRange === range
-                                ? "bg-indigo-600 text-white"
-                                : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700"
+                            ? "bg-indigo-600 text-white"
+                            : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700"
                             }`}
                     >
                         {range === "7days" && "7 ngày"}

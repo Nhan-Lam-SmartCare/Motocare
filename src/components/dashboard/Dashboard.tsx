@@ -460,16 +460,16 @@ const Dashboard: React.FC = () => {
       <div className="hidden md:grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="Doanh thu"
-          value={formatCurrency(todayStats.revenue)}
-          subtitle={`${todayStats.salesCount} đơn bán, ${todayStats.workOrdersCount} phiếu DV`}
+          value={formatCurrency(filteredStats.revenue)}
+          subtitle={`${filteredStats.orderCount} đơn bán, ${todayStats.workOrdersCount} phiếu DV`}
           colorKey="blue"
           icon={DollarSign}
         />
         <StatCard
           title="Lợi nhuận"
-          value={formatCurrency(todayStats.profit)}
-          subtitle={`Biên LN: ${todayStats.revenue > 0
-            ? Math.round((todayStats.profit / todayStats.revenue) * 100)
+          value={formatCurrency(filteredStats.profit)}
+          subtitle={`Biên LN: ${filteredStats.revenue > 0
+            ? Math.round((filteredStats.profit / filteredStats.revenue) * 100)
             : 0
             }%`}
           colorKey="emerald"

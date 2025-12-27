@@ -454,83 +454,302 @@ export const useDashboardData = (
         return data;
     }, [sales, workOrders, cashTransactions]);
 
-    // Dữ liệu thu chi
+    // Dữ liệu thu chi (lọc theo filter)
     const incomeExpenseData = useMemo(() => {
+        const now = new Date();
+        let startDate: Date;
+        let endDate: Date = now;
+
+        // Tính toán date range theo filter (giống filteredStats)
+        if (reportFilter.startsWith("month") && reportFilter.length > 5) {
+            const monthNum = parseInt(reportFilter.slice(5), 10);
+            if (monthNum >= 1 && monthNum <= 12) {
+                startDate = new Date(now.getFullYear(), monthNum - 1, 1);
+                endDate = new Date(now.getFullYear(), monthNum, 0);
+            } else {
+                startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+            }
+        } else if (reportFilter.startsWith("q") && reportFilter.length === 2) {
+            const quarterNum = parseInt(reportFilter.slice(1), 10);
+            if (quarterNum >= 1 && quarterNum <= 4) {
+                const startMonth = (quarterNum - 1) * 3;
+                startDate = new Date(now.getFullYear(), startMonth, 1);
+                endDate = new Date(now.getFullYear(), startMonth + 3, 0);
+            } else {
+                startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+            }
+        } else {
+            switch (reportFilter) {
+                case "today":
+                    startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                    endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                    break;
+                case "7days":
+                    startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                    break;
+                case "week":
+                    const dayOfWeek = now.getDay();
+                    const diff = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+                    startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - diff);
+                    break;
+                case "month":
+                    startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+                    break;
+                case "year":
+                    startDate = new Date(now.getFullYear(), 0, 1);
+                    break;
+                default:
+                    startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+            }
+        }
+
+        const formatLocalDate = (d: Date) => {
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, "0");
+            const day = String(d.getDate()).padStart(2, "0");
+            return `${year}-${month}-${day}`;
+        };
+        const toLocalDateStr = (dateStr: string | undefined | null): string | null => {
+            if (!dateStr) return null;
+            try {
+                const d = new Date(dateStr);
+                if (isNaN(d.getTime())) return null;
+                return formatLocalDate(d);
+            } catch {
+                return null;
+            }
+        };
+
+        const startDateStr = formatLocalDate(startDate);
+        const endDateStr = formatLocalDate(endDate);
+
         const income = cashTransactions
-            .filter((t) => t.type === "income")
+            .filter((t) => {
+                const txDate = toLocalDateStr(t.date);
+                return t.type === "income" && txDate && txDate >= startDateStr && txDate <= endDateStr;
+            })
             .reduce((sum, t) => sum + t.amount, 0);
         const expense = cashTransactions
-            .filter((t) => t.type === "expense")
+            .filter((t) => {
+                const txDate = toLocalDateStr(t.date);
+                return t.type === "expense" && txDate && txDate >= startDateStr && txDate <= endDateStr;
+            })
             .reduce((sum, t) => sum + t.amount, 0);
 
         return [
             { name: "Thu", value: income, color: "#10b981" },
             { name: "Chi", value: expense, color: "#ef4444" },
         ];
-    }, [cashTransactions]);
+    }, [cashTransactions, reportFilter]);
 
-    // Top sản phẩm bán chạy (từ cả Sales và Work Orders)
+    // Top sản phẩm bán chạy (từ cả Sales và Work Orders - lọc theo filter)
     const topProducts = useMemo(() => {
+        const now = new Date();
+        let startDate: Date;
+        let endDate: Date = now;
+
+        if (reportFilter.startsWith("month") && reportFilter.length > 5) {
+            const monthNum = parseInt(reportFilter.slice(5), 10);
+            if (monthNum >= 1 && monthNum <= 12) {
+                startDate = new Date(now.getFullYear(), monthNum - 1, 1);
+                endDate = new Date(now.getFullYear(), monthNum, 0);
+            } else {
+                startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+            }
+        } else if (reportFilter.startsWith("q") && reportFilter.length === 2) {
+            const quarterNum = parseInt(reportFilter.slice(1), 10);
+            if (quarterNum >= 1 && quarterNum <= 4) {
+                const startMonth = (quarterNum - 1) * 3;
+                startDate = new Date(now.getFullYear(), startMonth, 1);
+                endDate = new Date(now.getFullYear(), startMonth + 3, 0);
+            } else {
+                startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+            }
+        } else {
+            switch (reportFilter) {
+                case "today":
+                    startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                    endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                    break;
+                case "7days":
+                    startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                    break;
+                case "week":
+                    const dayOfWeek = now.getDay();
+                    const diff = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+                    startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - diff);
+                    break;
+                case "month":
+                    startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+                    break;
+                case "year":
+                    startDate = new Date(now.getFullYear(), 0, 1);
+                    break;
+                default:
+                    startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+            }
+        }
+
+        const formatLocalDate = (d: Date) => {
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, "0");
+            const day = String(d.getDate()).padStart(2, "0");
+            return `${year}-${month}-${day}`;
+        };
+        const toLocalDateStr = (dateStr: string | undefined | null): string | null => {
+            if (!dateStr) return null;
+            try {
+                const d = new Date(dateStr);
+                if (isNaN(d.getTime())) return null;
+                return formatLocalDate(d);
+            } catch {
+                return null;
+            }
+        };
+
+        const startDateStr = formatLocalDate(startDate);
+        const endDateStr = formatLocalDate(endDate);
+
         const productSales: Record<string, { name: string; quantity: number }> = {};
 
-        // From sales
-        sales.forEach((sale) => {
-            sale.items.forEach((item) => {
-                if (!productSales[item.partId]) {
-                    productSales[item.partId] = {
-                        name: item.partName,
-                        quantity: 0,
-                    };
-                }
-                productSales[item.partId].quantity += item.quantity;
-            });
-        });
-
-        // From work orders
-        workOrders.forEach((wo: any) => {
-            const parts = wo.partsUsed || wo.partsused || [];
-            parts.forEach((part: any) => {
-                const partId = part.partId || part.partid;
-                const partName = part.partName || part.partname;
-                if (partId && partName) {
-                    if (!productSales[partId]) {
-                        productSales[partId] = {
-                            name: partName,
+        // From sales (filtered)
+        sales
+            .filter((s) => {
+                const saleDate = toLocalDateStr(s.date);
+                return saleDate && saleDate >= startDateStr && saleDate <= endDateStr;
+            })
+            .forEach((sale) => {
+                sale.items.forEach((item) => {
+                    if (!productSales[item.partId]) {
+                        productSales[item.partId] = {
+                            name: item.partName,
                             quantity: 0,
                         };
                     }
-                    productSales[partId].quantity += part.quantity || 0;
-                }
+                    productSales[item.partId].quantity += item.quantity;
+                });
             });
-        });
+
+        // From work orders (filtered)
+        workOrders
+            .filter((wo: any) => {
+                const woDate = toLocalDateStr(wo.creationDate || wo.creationdate);
+                return woDate && woDate >= startDateStr && woDate <= endDateStr;
+            })
+            .forEach((wo: any) => {
+                const parts = wo.partsUsed || wo.partsused || [];
+                parts.forEach((part: any) => {
+                    const partId = part.partId || part.partid;
+                    const partName = part.partName || part.partname;
+                    if (partId && partName) {
+                        if (!productSales[partId]) {
+                            productSales[partId] = {
+                                name: partName,
+                                quantity: 0,
+                            };
+                        }
+                        productSales[partId].quantity += part.quantity || 0;
+                    }
+                });
+            });
 
         return Object.values(productSales)
             .sort((a, b) => b.quantity - a.quantity)
             .slice(0, 5);
-    }, [sales, workOrders]);
+    }, [sales, workOrders, reportFilter]);
 
-    // Thống kê work orders (phiếu sửa chữa)
+    // Thống kê work orders (phiếu sửa chữa - lọc theo filter)
     const workOrderStats = useMemo(() => {
-        const newOrders = (workOrders || []).filter(
+        const now = new Date();
+        let startDate: Date;
+        let endDate: Date = now;
+
+        if (reportFilter.startsWith("month") && reportFilter.length > 5) {
+            const monthNum = parseInt(reportFilter.slice(5), 10);
+            if (monthNum >= 1 && monthNum <= 12) {
+                startDate = new Date(now.getFullYear(), monthNum - 1, 1);
+                endDate = new Date(now.getFullYear(), monthNum, 0);
+            } else {
+                startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+            }
+        } else if (reportFilter.startsWith("q") && reportFilter.length === 2) {
+            const quarterNum = parseInt(reportFilter.slice(1), 10);
+            if (quarterNum >= 1 && quarterNum <= 4) {
+                const startMonth = (quarterNum - 1) * 3;
+                startDate = new Date(now.getFullYear(), startMonth, 1);
+                endDate = new Date(now.getFullYear(), startMonth + 3, 0);
+            } else {
+                startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+            }
+        } else {
+            switch (reportFilter) {
+                case "today":
+                    startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                    endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                    break;
+                case "7days":
+                    startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                    break;
+                case "week":
+                    const dayOfWeek = now.getDay();
+                    const diff = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+                    startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - diff);
+                    break;
+                case "month":
+                    startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+                    break;
+                case "year":
+                    startDate = new Date(now.getFullYear(), 0, 1);
+                    break;
+                default:
+                    startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+            }
+        }
+
+        const formatLocalDate = (d: Date) => {
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, "0");
+            const day = String(d.getDate()).padStart(2, "0");
+            return `${year}-${month}-${day}`;
+        };
+        const toLocalDateStr = (dateStr: string | undefined | null): string | null => {
+            if (!dateStr) return null;
+            try {
+                const d = new Date(dateStr);
+                if (isNaN(d.getTime())) return null;
+                return formatLocalDate(d);
+            } catch {
+                return null;
+            }
+        };
+
+        const startDateStr = formatLocalDate(startDate);
+        const endDateStr = formatLocalDate(endDate);
+
+        // Filter work orders by date range
+        const filteredWOs = (workOrders || []).filter((wo: any) => {
+            const woDate = toLocalDateStr(wo.creationDate || wo.creationdate);
+            return woDate && woDate >= startDateStr && woDate <= endDateStr;
+        });
+
+        const newOrders = filteredWOs.filter(
             (wo) => wo.status === "Tiếp nhận"
         ).length;
-        const inProgress = (workOrders || []).filter(
+        const inProgress = filteredWOs.filter(
             (wo) => wo.status === "Đang sửa"
         ).length;
-        const completed = (workOrders || []).filter(
+        const completed = filteredWOs.filter(
             (wo) => wo.status === "Đã sửa xong"
         ).length;
-        // Đã trả/giao xe = status "Trả máy" hoặc "Đã giao"
-        const delivered = (workOrders || []).filter(
+        const delivered = filteredWOs.filter(
             (wo) => wo.status === "Trả máy" || (wo.status as string) === "Đã giao"
         ).length;
-        // Đã hủy
-        const cancelled = (workOrders || []).filter(
+        const cancelled = filteredWOs.filter(
             (wo) => (wo.status as string) === "Đã hủy"
         ).length;
 
         return { newOrders, inProgress, completed, delivered, cancelled };
-    }, [workOrders]);
+    }, [workOrders, reportFilter]);
 
     // Cảnh báo
     const alerts = useMemo(() => {

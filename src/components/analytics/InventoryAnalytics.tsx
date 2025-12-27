@@ -226,38 +226,78 @@ const InventoryAnalytics: React.FC<InventoryAnalyticsProps> = ({
           <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mb-3">
             Giá trị theo danh mục
           </h3>
-          <ResponsiveContainer width="100%" height={250}>
-            <PieChart>
-              <Pie
-                data={categoryData}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                label={(props: any) =>
-                  `${props.name}: ${(props.percent * 100).toFixed(0)}%`
-                }
-                outerRadius={100}
-                fill="#8884d8"
-                dataKey="value"
-              >
-                {categoryData.map((entry, index) => (
-                  <Cell
-                    key={`cell-${index}`}
-                    fill={COLORS[index % COLORS.length]}
-                  />
-                ))}
-              </Pie>
-              <Tooltip
-                formatter={(value: number) => formatCurrency(value)}
-                contentStyle={{
-                  backgroundColor: "rgba(15, 23, 42, 0.95)",
-                  border: "none",
-                  borderRadius: "8px",
-                  color: "#fff",
-                }}
-              />
-            </PieChart>
-          </ResponsiveContainer>
+          {(() => {
+            // Group categories: top 5 + "Khác"
+            const topCategories = categoryData.slice(0, 5);
+            const otherCategories = categoryData.slice(5);
+            const otherValue = otherCategories.reduce((sum, c) => sum + c.value, 0);
+            const chartData = otherValue > 0
+              ? [...topCategories, { name: "Khác", value: otherValue, count: otherCategories.length, stock: 0 }]
+              : topCategories;
+
+            const totalValue = chartData.reduce((sum, c) => sum + c.value, 0);
+
+            return (
+              <div className="flex flex-col lg:flex-row gap-4">
+                {/* Pie Chart */}
+                <div className="flex-1">
+                  <ResponsiveContainer width="100%" height={200}>
+                    <PieChart>
+                      <Pie
+                        data={chartData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={50}
+                        outerRadius={80}
+                        fill="#8884d8"
+                        dataKey="value"
+                        paddingAngle={2}
+                      >
+                        {chartData.map((entry, index) => (
+                          <Cell
+                            key={`cell-${index}`}
+                            fill={COLORS[index % COLORS.length]}
+                          />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        formatter={(value: number) => formatCurrency(value)}
+                        contentStyle={{
+                          backgroundColor: "rgba(15, 23, 42, 0.95)",
+                          border: "none",
+                          borderRadius: "8px",
+                          color: "#fff",
+                        }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                {/* Legend */}
+                <div className="flex-1 space-y-2">
+                  {chartData.map((item, index) => {
+                    const percent = totalValue > 0 ? ((item.value / totalValue) * 100).toFixed(1) : 0;
+                    return (
+                      <div key={item.name} className="flex items-center justify-between gap-2 text-sm">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <div
+                            className="w-3 h-3 rounded-full flex-shrink-0"
+                            style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                          />
+                          <span className="text-slate-700 dark:text-slate-300 truncate">{item.name}</span>
+                        </div>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <span className="text-slate-500 dark:text-slate-400 text-xs">{percent}%</span>
+                          <span className="text-slate-900 dark:text-slate-100 font-medium text-xs">
+                            {formatCurrency(item.value)}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
         </div>
 
         {/* Inventory Transactions */}

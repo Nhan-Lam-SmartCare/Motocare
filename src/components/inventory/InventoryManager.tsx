@@ -22,6 +22,7 @@ import {
   DownloadCloud,
   MoreHorizontal,
   ShoppingCart,
+  ScanLine,
 } from "lucide-react";
 import { useAppContext } from "../../contexts/AppContext";
 import { safeAudit } from "../../lib/repository/auditLogsRepository";
@@ -157,6 +158,7 @@ const InventoryManagerNew: React.FC = () => {
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [stockFilter, setStockFilter] = useState("all");
   const [showDuplicatesOnly, setShowDuplicatesOnly] = useState(false);
+  const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
 
   // Debounce search input by 500ms
   useEffect(() => {
@@ -1317,9 +1319,24 @@ const InventoryManagerNew: React.FC = () => {
                 setPage(1);
                 setSearchInput(e.target.value);
               }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && searchInput.trim()) {
+                  // Search on Enter
+                  setSearch(searchInput);
+                }
+              }}
               className="w-full pl-10 pr-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
+
+          {/* Barcode Scan Button */}
+          <button
+            onClick={() => setShowBarcodeScanner(true)}
+            className="p-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
+            title="Quét mã vạch"
+          >
+            <ScanLine className="w-5 h-5" />
+          </button>
 
           {/* Create Button */}
           {canDo(profile?.role, "inventory.import") && (
@@ -2628,6 +2645,19 @@ const InventoryManagerNew: React.FC = () => {
           }}
         />
       )}
+
+      {/* Barcode Scanner Modal */}
+      <BarcodeScannerModal
+        isOpen={showBarcodeScanner}
+        onClose={() => setShowBarcodeScanner(false)}
+        onScan={(barcode: string) => {
+          // Set the search term to the scanned barcode
+          setSearchInput(barcode);
+          setSearch(barcode);
+          setPage(1);
+        }}
+        title="Quét mã sản phẩm"
+      />
     </div>
   );
 };

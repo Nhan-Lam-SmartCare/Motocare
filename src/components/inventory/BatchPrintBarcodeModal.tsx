@@ -41,43 +41,43 @@ const LABEL_PRESETS: Record<
     width: 30,
     height: 20,
     name: "30×20mm",
-    barcodeHeight: 25,
-    fontSize: 7,
+    barcodeHeight: 22,
+    fontSize: 10, // Increased from 7
   },
   "40x30": {
     width: 40,
     height: 30,
     name: "40×30mm",
-    barcodeHeight: 35,
-    fontSize: 8,
+    barcodeHeight: 32,
+    fontSize: 12, // Increased from 8
   },
   "50x30": {
     width: 50,
     height: 30,
     name: "50×30mm",
-    barcodeHeight: 40,
-    fontSize: 9,
+    barcodeHeight: 35,
+    fontSize: 13, // Increased from 9
   },
   "60x40": {
     width: 60,
     height: 40,
     name: "60×40mm",
-    barcodeHeight: 45,
-    fontSize: 10,
+    barcodeHeight: 40,
+    fontSize: 14, // Increased from 10
   },
   "80x50": {
     width: 80,
     height: 50,
     name: "80×50mm",
-    barcodeHeight: 55,
-    fontSize: 12,
+    barcodeHeight: 50,
+    fontSize: 16, // Increased from 12
   },
   "100x80": {
     width: 100,
     height: 80,
     name: "100×80mm",
-    barcodeHeight: 70,
-    fontSize: 14,
+    barcodeHeight: 65,
+    fontSize: 18, // Increased from 14
   },
 };
 

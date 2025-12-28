@@ -526,13 +526,6 @@ const SalesManager: React.FC = () => {
                         </div>
 
                         <div className="flex items-center gap-3">
-                            <button
-                                onClick={() => barcode.setShowBarcodeInput(!barcode.showBarcodeInput)}
-                                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:shadow-lg transition-all"
-                            >
-                                <ScanLine className="w-5 h-5" />
-                                <span className="font-medium">Quét mã</span>
-                            </button>
 
                             <button
                                 onClick={() => setShowQuickServiceModal(true)}
@@ -584,15 +577,22 @@ const SalesManager: React.FC = () => {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* Left: Products (Desktop) / Mobile Tab Content */}
                     <div className={`lg:col-span-2 ${mobileTab !== "products" ? "hidden md:block" : ""}`}>
-                        {/* Search Bar */}
-                        <div className="mb-3">
+                        {/* Search Bar with Scan Button */}
+                        <div className="mb-3 flex items-center gap-2">
                             <input
                                 type="text"
                                 placeholder="Tìm sản phẩm..."
                                 value={inventory.partSearch}
                                 onChange={(e) => inventory.setPartSearch(e.target.value)}
-                                className="w-full px-4 py-3 bg-white dark:bg-slate-800 border-2 border-slate-300 dark:border-slate-600 rounded-lg"
+                                className="flex-1 px-4 py-3 bg-white dark:bg-slate-800 border-2 border-slate-300 dark:border-slate-600 rounded-lg"
                             />
+                            <button
+                                onClick={() => barcode.setShowBarcodeInput(!barcode.showBarcodeInput)}
+                                className="flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:shadow-lg transition-all shrink-0"
+                            >
+                                <ScanLine className="w-5 h-5" />
+                                <span className="font-medium hidden md:inline">Quét mã</span>
+                            </button>
                         </div>
 
                         {/* Filter Pills with Counts */}

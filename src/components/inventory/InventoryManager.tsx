@@ -152,15 +152,19 @@ const InventoryManagerNew: React.FC = () => {
   const [selectedPO, setSelectedPO] = useState<PurchaseOrder | null>(null);
   const [editingPO, setEditingPO] = useState<PurchaseOrder | null>(null); // ✅ New state for editing PO
 
-  // Debug log for showCreatePO state changes
-  useEffect(() => {
-    console.log("InventoryManager: showCreatePO changed to:", showCreatePO);
-  }, [showCreatePO]);
-
-  const [search, setSearch] = useState("");
+  const [searchInput, setSearchInput] = useState(""); // Immediate UI input
+  const [search, setSearch] = useState(""); // Debounced value for queries
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [stockFilter, setStockFilter] = useState("all");
   const [showDuplicatesOnly, setShowDuplicatesOnly] = useState(false);
+
+  // Debounce search input by 500ms
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearch(searchInput);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const [sortField, setSortField] = useState<string | null>(null);
@@ -239,10 +243,10 @@ const InventoryManagerNew: React.FC = () => {
   const totalPages = Math.max(1, Math.ceil(totalParts / pageSize));
 
   // Fetch ALL parts for accurate totals calculation (stock, costPrice, retailPrice)
+  // NOTE: This query does NOT depend on search - only category filter
   const { data: allPartsData, refetch: refetchAllParts } = useQuery({
-    queryKey: ["allPartsForTotals", currentBranchId, search, categoryFilter],
+    queryKey: ["allPartsForTotals", currentBranchId, categoryFilter],
     queryFn: async () => {
-      console.log("🔄 Fetching allPartsForTotals...");
       let query = supabase
         .from("parts")
         .select("id, name, sku, category, stock, costPrice, retailPrice")
@@ -251,20 +255,13 @@ const InventoryManagerNew: React.FC = () => {
       if (categoryFilter && categoryFilter !== "all") {
         query = query.eq("category", categoryFilter);
       }
-      if (search && search.trim()) {
-        const term = search.trim();
-        // Tìm kiếm theo tên, SKU và danh mục
-        query = query.or(
-          `name.ilike.%${term}%,sku.ilike.%${term}%,category.ilike.%${term}%`
-        );
-      }
+      // NOTE: Removed search filter from this query - it's only for stock counts
 
       const { data, error } = await query;
       if (error) throw error;
-      console.log(`✅ Fetched ${data?.length || 0} parts`);
       return data || [];
     },
-    staleTime: 5_000, // Reduced from 30s to 5s for faster updates
+    staleTime: 30_000, // Cache for 30s to reduce refetches
   });
 
   const stockHealth = useMemo(() => {
@@ -346,12 +343,6 @@ const InventoryManagerNew: React.FC = () => {
         .filter(([_, count]) => count > 1)
         .map(([sku, _]) => sku)
     );
-    console.log(
-      `🔍 Detected ${duplicates.size} duplicate product SKUs from ${allPartsData.length} parts`
-    );
-    if (duplicates.size > 0) {
-      console.log("Duplicate SKUs:", Array.from(duplicates).slice(0, 5));
-    }
     return duplicates;
   }, [allPartsData]);
 
@@ -369,10 +360,6 @@ const InventoryManagerNew: React.FC = () => {
     queryFn: async () => {
       if (duplicateSkus.size === 0) return [];
 
-      console.log(
-        `🔍 Fetching all duplicate parts for ${duplicateSkus.size} SKUs...`
-      );
-
       // Fetch all parts with duplicate SKUs
       const { data, error } = await supabase
         .from("parts")
@@ -381,27 +368,22 @@ const InventoryManagerNew: React.FC = () => {
         .order("sku");
 
       if (error) throw error;
-      console.log(`✅ Found ${data?.length || 0} parts with duplicate SKUs`);
       return data || [];
     },
     enabled: showDuplicatesOnly && duplicateSkus.size > 0,
-    staleTime: 5_000,
+    staleTime: 30_000, // Cache for 30s
   });
 
   // Sau khi chuyển sang server filter, filteredParts = repoParts (có thể thêm client filter tồn kho nếu cần)
   const filteredParts = useMemo(() => {
-    // ✨ FIX: When searching or filtering by stock, use allPartsData instead of repoParts to show ALL items
     let baseList;
     if (showDuplicatesOnly && duplicateSkus.size > 0) {
       baseList = duplicatePartsData || [];
-    } else if (search && search.trim()) {
-      // When searching, use allPartsData to show ALL matching results (not just current page)
-      baseList = allPartsData || [];
     } else if (stockFilter !== "all") {
-      // When filtering by stock status, use allPartsData to show all matching items across all pages
+      // When filtering by stock status, use allPartsData (stock filter is client-side)
       baseList = allPartsData || [];
     } else {
-      // Normal pagination mode
+      // Normal mode: use paginated repoParts (search is done server-side)
       baseList = repoParts;
     }
 
@@ -1330,10 +1312,10 @@ const InventoryManagerNew: React.FC = () => {
             <input
               type="text"
               placeholder="Tìm theo tên, SKU, danh mục..."
-              value={search}
+              value={searchInput}
               onChange={(e) => {
                 setPage(1);
-                setSearch(e.target.value);
+                setSearchInput(e.target.value);
               }}
               className="w-full pl-10 pr-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
@@ -1407,10 +1389,10 @@ const InventoryManagerNew: React.FC = () => {
                 <input
                   type="text"
                   placeholder="Tìm theo tên, SKU hoặc danh mục..."
-                  value={search}
+                  value={searchInput}
                   onChange={(e) => {
                     setPage(1);
-                    setSearch(e.target.value);
+                    setSearchInput(e.target.value);
                   }}
                   className="w-full pl-9 pr-16 py-1.5 text-sm border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />

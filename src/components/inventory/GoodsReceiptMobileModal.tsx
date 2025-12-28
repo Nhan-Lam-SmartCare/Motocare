@@ -175,17 +175,35 @@ export const GoodsReceiptMobileModal: React.FC<Props> = ({
   const handleCameraScan = (barcode: string) => {
     console.log("📷 Camera scanned:", barcode);
 
-    // Normalize barcode để so sánh
+    // Normalize barcode để so sánh - loại bỏ dấu gạch, khoảng trắng
     const normalizeCode = (code: string): string =>
       code.toLowerCase().replace(/[-\s./\\]/g, "");
     const normalizedBarcode = normalizeCode(barcode);
 
+    // Lấy phần suffix (loại bỏ 5 ký tự đầu) để match với Honda barcodes
+    // Ví dụ: "61600KRS971" -> suffix = "krs971", có thể match với SKU "31600-KRS-971"
+    const barcodeSuffix = normalizedBarcode.length > 5 ? normalizedBarcode.slice(5) : normalizedBarcode;
+
     const foundPart = parts.find(
-      (p) =>
-        normalizeCode(p.barcode || "") === normalizedBarcode ||
-        p.barcode?.toLowerCase() === barcode.toLowerCase() ||
-        normalizeCode(p.sku || "") === normalizedBarcode ||
-        p.sku?.toLowerCase() === barcode.toLowerCase()
+      (p) => {
+        const normalizedSku = normalizeCode(p.sku || "");
+        const normalizedPartBarcode = normalizeCode(p.barcode || "");
+        const skuSuffix = normalizedSku.length > 5 ? normalizedSku.slice(5) : normalizedSku;
+
+        return (
+          // Exact match (after removing dashes)
+          normalizedPartBarcode === normalizedBarcode ||
+          p.barcode?.toLowerCase() === barcode.toLowerCase() ||
+          normalizedSku === normalizedBarcode ||
+          p.sku?.toLowerCase() === barcode.toLowerCase() ||
+          // Suffix match (for Honda-style barcodes where prefix differs: 61600 vs 31600)
+          (barcodeSuffix.length >= 4 && normalizedSku.includes(barcodeSuffix)) ||
+          (barcodeSuffix.length >= 4 && skuSuffix === barcodeSuffix) ||
+          // Contains match (barcode contains SKU or vice versa)
+          (normalizedBarcode.length >= 6 && normalizedSku.includes(normalizedBarcode)) ||
+          (normalizedSku.length >= 6 && normalizedBarcode.includes(normalizedSku))
+        );
+      }
     );
 
     // KHÔNG cần đóng scanner - BarcodeScannerModal tự đóng

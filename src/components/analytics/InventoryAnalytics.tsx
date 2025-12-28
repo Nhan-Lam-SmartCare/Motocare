@@ -466,15 +466,15 @@ const InventoryAnalytics: React.FC<InventoryAnalyticsProps> = ({
                   {slowMovingItems.map((item) => (
                     <tr key={item.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
                       <td className="px-3 py-2">
-                        <div className="font-medium text-slate-900 dark:text-slate-100 truncate max-w-[200px]">{item.name}</div>
+                        <div className="font-medium text-slate-900 dark:text-slate-100">{item.name}</div>
                         <div className="text-[10px] text-slate-500">{item.category}</div>
                       </td>
                       <td className="px-3 py-2 text-center text-slate-600 dark:text-slate-400">{item.stock}</td>
                       <td className="px-3 py-2 text-right font-semibold text-orange-600 dark:text-orange-400">{formatCurrency(item.value)}</td>
                       <td className="px-3 py-2 text-right">
                         <span className={`text-xs font-medium px-1.5 py-0.5 rounded ${item.daysSinceLastSale > 90
-                            ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
-                            : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
+                          ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                          : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
                           }`}>
                           {item.daysSinceLastSale >= 999 ? 'Chưa bán' : `${item.daysSinceLastSale} ngày`}
                         </span>

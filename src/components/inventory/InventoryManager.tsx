@@ -709,6 +709,10 @@ const InventoryManagerNew: React.FC = () => {
         });
 
         // OPTIMIZATION: Run Cash Transaction and Debt Creation in parallel
+        // Track failures for consolidated notification
+        let paymentFailed = false;
+        let debtFailed = false;
+
         await Promise.all([
           // 1. Ghi chi tiền vào sổ quỹ
           (async () => {
@@ -733,9 +737,7 @@ const InventoryManagerNew: React.FC = () => {
                 );
               } else {
                 console.error("❌ Lỗi ghi sổ quỹ:", cashTxResult.error);
-                showToast.warning(
-                  `Nhập kho OK nhưng chưa ghi được sổ quỹ: ${cashTxResult.error?.message}`
-                );
+                paymentFailed = true;
               }
             }
           })(),
@@ -762,8 +764,8 @@ const InventoryManagerNew: React.FC = () => {
                 });
 
               if (debtError) {
-                console.warn("Could not create debt record:", debtError);
-                showToast.warning("Lỗi tạo công nợ: " + debtError.message);
+                console.error("❌ Lỗi tạo công nợ:", debtError);
+                debtFailed = true;
               } else {
                 console.log("✅ Đã ghi nhận nợ NCC:", debtAmount);
                 // Invalidate supplier debts query to refresh UI
@@ -772,6 +774,17 @@ const InventoryManagerNew: React.FC = () => {
             }
           })(),
         ]);
+
+        // Show consolidated error message if any payment/debt failed
+        if (paymentFailed || debtFailed) {
+          const failedParts = [];
+          if (paymentFailed) failedParts.push("sổ quỹ");
+          if (debtFailed) failedParts.push("công nợ");
+          showToast.error(
+            `⚠️ Nhập kho OK nhưng chưa ghi được ${failedParts.join(" và ")}! Mã phiếu: ${receiptCode}. Vui lòng vào Lịch sử nhập kho → Chỉnh sửa → Tạo phiếu chi để bổ sung.`,
+            { autoClose: 10000 } // Keep visible longer
+          );
+        }
 
         // Invalidate inventory transactions to refresh history
         queryClient.invalidateQueries({ queryKey: ["inventoryTransactions"] });

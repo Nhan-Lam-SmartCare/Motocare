@@ -32,13 +32,21 @@ export const getCategoryLabel = (category?: string) => {
 export const AddTransactionModal: React.FC<{
     onClose: () => void;
     onSave: (transaction: any) => void;
-}> = ({ onClose, onSave }) => {
-    const [type, setType] = useState<"income" | "expense">("income");
-    const [amount, setAmount] = useState("");
-    const [category, setCategory] = useState("");
-    const [paymentSource, setPaymentSource] = useState("cash");
-    const [recipient, setRecipient] = useState("");
-    const [notes, setNotes] = useState("");
+    initialData?: {
+        type?: "income" | "expense";
+        amount?: number;
+        category?: string;
+        paymentSource?: string;
+        recipient?: string;
+        notes?: string;
+    };
+}> = ({ onClose, onSave, initialData }) => {
+    const [type, setType] = useState<"income" | "expense">(initialData?.type || "income");
+    const [amount, setAmount] = useState(initialData?.amount ? initialData.amount.toLocaleString("vi-VN").replace(/,/g, ".") : "");
+    const [category, setCategory] = useState(initialData?.category || "");
+    const [paymentSource, setPaymentSource] = useState(initialData?.paymentSource || "cash");
+    const [recipient, setRecipient] = useState(initialData?.recipient || "");
+    const [notes, setNotes] = useState(initialData?.notes || "");
     const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
 
     // Hide bottom navigation when modal is open

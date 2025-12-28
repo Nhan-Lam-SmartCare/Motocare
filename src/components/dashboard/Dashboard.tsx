@@ -565,7 +565,7 @@ const Dashboard: React.FC = () => {
                   >
                     {idx + 1}
                   </div>
-                  <span className="text-sm font-medium text-slate-800 dark:text-slate-200 line-clamp-1 max-w-[140px]">
+                  <span className="text-sm font-medium text-slate-800 dark:text-slate-200">
                     {product.name}
                   </span>
                 </div>

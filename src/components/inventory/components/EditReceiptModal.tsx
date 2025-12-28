@@ -1,6 +1,10 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Plus, Search, Trash2 } from "lucide-react";
+import {
+  useCreateCashTxRepo,
+} from "../../../hooks/useCashTransactionsRepository";
+import { AddTransactionModal } from "../../finance/CashBookModals";
 import { useSuppliers } from "../../../hooks/useSuppliers";
 import { supabase } from "../../../supabaseClient";
 import { showToast } from "../../../utils/toast";
@@ -87,14 +91,95 @@ const EditReceiptModal: React.FC<{
         time: timeStr,
         date: receipt.date,
         payer: payerName,
-        cashier: "(Tiền mặt)",
+        cashier: "(Tiền mặt)", // Default, will update if bank
         amount: receipt.total,
       },
     ];
   });
   const [isPaid, setIsPaid] = useState(true);
 
-  // Extract phone from notes if available
+  // Fetch true payment method from cash_transactions
+  useEffect(() => {
+    const fetchPaymentInfo = async () => {
+      try {
+        // Find the transaction related to this receipt
+        const { data } = await supabase
+          .from("cash_transactions")
+          .select("paymentsource") // Note: lowercase in DB
+          .ilike("description", `%${receipt.receiptCode}%`)
+          .maybeSingle();
+
+        if (data && (data.paymentsource === "bank" || data.paymentsource === "transfer")) {
+          setPayments(prev => prev.map(p => ({ ...p, cashier: "(Chuyển khoản)" })));
+        } else if (!data) {
+          // No transaction found -> Unpaid
+          // Clear the "fake" payment that was initialized
+          setPayments([]);
+          setIsPaid(false);
+        } else {
+          // Transaction exists but is cash (or other)
+          // Ensure it says Cash
+          setPayments(prev => prev.map(p => ({ ...p, cashier: "(Tiền mặt)" })));
+        }
+      } catch (err) {
+        console.error("Error fetching payment info:", err);
+      }
+    };
+
+    fetchPaymentInfo();
+  }, [receipt.receiptCode]);
+
+  const [showAddTransactionModal, setShowAddTransactionModal] = useState(false);
+  const createCashTxRepo = useCreateCashTxRepo();
+
+  const handleCreateTransaction = async (data: any) => {
+    try {
+      // Explicitly map fields to match CreateCashTxInput interface
+      await createCashTxRepo.mutateAsync({
+        type: data.type,
+        amount: data.amount,
+        branchId: currentBranchId,
+        paymentSourceId: data.paymentSourceId || "cash",
+        date: data.date,
+        notes: `${data.notes || ""} - ${receipt.receiptCode}`,
+        category: data.category,
+        recipient: data.recipient,
+      });
+      setShowAddTransactionModal(false);
+
+      // Re-fetch payment info
+      const { data: txData } = await supabase
+        .from("cash_transactions")
+        .select("paymentsource")
+        .ilike("description", `%${receipt.receiptCode}%`)
+        .maybeSingle();
+
+      if (txData) {
+        const newCashier = (txData.paymentsource === "bank" || txData.paymentsource === "transfer")
+          ? "(Chuyển khoản)"
+          : "(Tiền mặt)";
+
+        // If payments array exists, update it. If empty (unpaid), create new entry.
+        setPayments(prev => {
+          if (prev.length > 0) {
+            return prev.map(p => ({ ...p, cashier: newCashier }));
+          } else {
+            return [{
+              time: new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }),
+              date: new Date(),
+              payer: "Nhân viên", // Using a default as 'profile' is not available in this scope
+              cashier: newCashier,
+              amount: receipt.total,
+            }];
+          }
+        });
+        setIsPaid(true);
+      }
+    } catch (error) {
+      console.error("Failed to create transaction", error);
+    }
+  };
+
   React.useEffect(() => {
     const firstItem = receipt.items[0];
     if (firstItem?.notes?.includes("Phone:")) {
@@ -703,7 +788,9 @@ const EditReceiptModal: React.FC<{
                   </span>
                   <button
                     type="button"
+                    onClick={() => setShowAddTransactionModal(true)}
                     className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-sm flex items-center gap-1"
+                    title="Tạo phiếu chi"
                   >
                     <span className="text-lg">+</span>
                     Tạo phiếu chi
@@ -793,10 +880,10 @@ const EditReceiptModal: React.FC<{
                 </tfoot>
               </table>
             </div>
-          </div>
+          </div >
 
           {/* Mobile Footer V2 */}
-          <div className="sm:hidden sticky bottom-0 bg-white dark:bg-slate-800 border-t border-slate-100 dark:border-slate-800 p-4 pb-20 z-20">
+          < div className="sm:hidden sticky bottom-0 bg-white dark:bg-slate-800 border-t border-slate-100 dark:border-slate-800 p-4 pb-20 z-20" >
             <button
               type="submit"
               disabled={isSubmitting}
@@ -814,10 +901,10 @@ const EditReceiptModal: React.FC<{
                 <span>LƯU THAY ĐỔI</span>
               )}
             </button>
-          </div>
+          </div >
 
           {/* Desktop Footer */}
-          <div className="hidden sm:flex sticky bottom-0 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 p-4 justify-end gap-3">
+          < div className="hidden sm:flex sticky bottom-0 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 p-4 justify-end gap-3" >
             <button
               type="button"
               onClick={onClose}
@@ -838,11 +925,11 @@ const EditReceiptModal: React.FC<{
               )}
               LƯU
             </button>
-          </div>
-        </form>
+          </div >
+        </form >
 
         {/* Supplier Modal */}
-        <SupplierModal
+        < SupplierModal
           isOpen={showSupplierModal}
           onClose={() => setShowSupplierModal(false)}
           onSave={handleSaveSupplier}
@@ -855,14 +942,27 @@ const EditReceiptModal: React.FC<{
         />
 
         {/* Add Product Modal */}
-        <AddProductToReceiptModal
+        < AddProductToReceiptModal
           isOpen={showAddProductModal}
           onClose={() => setShowAddProductModal(false)}
           onAdd={handleAddProduct}
           currentBranchId={currentBranchId}
         />
-      </div>
-    </div>
+      </div >
+      {showAddTransactionModal && (
+        <AddTransactionModal
+          onClose={() => setShowAddTransactionModal(false)}
+          onSave={handleCreateTransaction}
+          initialData={{
+            type: "expense",
+            amount: receipt.total,
+            category: "supplier_payment",
+            recipient: supplier,
+            notes: `Chi trả NCC ${supplier} - Phiếu nhập ${receipt.receiptCode}`,
+          }}
+        />
+      )}
+    </div >
   );
 };
 

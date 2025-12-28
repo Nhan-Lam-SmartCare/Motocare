@@ -102,20 +102,30 @@ const BarcodeScannerModal: React.FC<BarcodeScannerModalProps> = ({
       const scanner = new Html5Qrcode("barcode-scanner-container");
       scannerRef.current = scanner;
 
-      // iOS-optimized config with focusMode: continuous for better autofocus
+      // iOS-optimized config with specific formats to improve performance
       const config: any = {
-        fps: 20, // Higher fps for faster detection
+        fps: 20,
         qrbox: { width: 300, height: 180 },
         aspectRatio: 1.5,
         disableFlip: false,
         experimentalFeatures: {
           useBarCodeDetectorIfSupported: true,
         },
-        // iOS Safari needs focusMode: continuous for autofocus
+        // Limit formats to speed up detection on iOS JS-scanner
+        formatsToSupport: [
+          0, // QR_CODE
+          3, // CODE_39
+          5, // CODE_128 (Common for logistic/parts)
+          9, // EAN_13 (Common products)
+          10, // EAN_8
+          14, // UPC_A
+          15, // UPC_E
+          2, // CODABAR
+        ],
         videoConstraints: {
           facingMode: facingMode,
-          focusMode: "continuous", // Critical for iOS - enables continuous autofocus
-          width: { ideal: 1280 },
+          focusMode: "continuous",
+          width: { ideal: 1280 }, // 720p is good balance
           height: { ideal: 720 },
         },
       };
@@ -129,20 +139,7 @@ const BarcodeScannerModal: React.FC<BarcodeScannerModalProps> = ({
         }
       );
 
-      // Apply zoom after camera starts (iOS fix for iPhone 11+)
-      try {
-        const capabilities = (scanner as any).getRunningTrackCameraCapabilities?.();
-        if (capabilities?.zoomFeature?.isSupported()) {
-          const zoomRange = capabilities.zoomFeature.value();
-          // Apply slight zoom for better barcode detection
-          const optimalZoom = Math.min(zoomRange.max, Math.max(zoomRange.min, 1.5));
-          await capabilities.zoomFeature.apply(optimalZoom);
-        }
-      } catch (e) {
-        // Zoom not supported, continue without
-        console.log("Zoom not supported on this device");
-      }
-
+      // Note: Do NOT apply zoom on iOS - it triggers macro mode and causes blur
       setIsScanning(true);
     } catch (err: any) {
       console.error("Scanner error:", err);
@@ -260,10 +257,15 @@ const BarcodeScannerModal: React.FC<BarcodeScannerModalProps> = ({
               </div>
             )}
 
-            {/* Instructions */}
-            <p className="text-white/70 text-sm mt-4 text-center px-4">
-              Đưa mã vạch vào khung hình để quét
-            </p>
+            {/* Instructions - with iOS distance guidance */}
+            <div className="mt-4 text-center px-4">
+              <p className="text-white/70 text-sm">
+                Đưa mã vạch vào khung hình để quét
+              </p>
+              <p className="text-amber-400/80 text-xs mt-1">
+                📱 iPhone: Giữ cách 15-25cm để tránh bị mờ
+              </p>
+            </div>
           </>
         )}
       </div>

@@ -2568,8 +2568,12 @@ export default function ServiceManager() {
                   const orderProfit =
                     totalAmount - partsCostPrice - servicesCostPrice;
 
+                  const isEffectivelyPaid =
+                    order.paymentStatus === "paid" &&
+                    (totalAmount > 0 || order.status === "Trả máy");
+
                   const paymentPillClass =
-                    order.paymentStatus === "paid"
+                    isEffectivelyPaid
                       ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-300"
                       : "bg-amber-50 text-amber-600 dark:bg-amber-900/30 dark:text-amber-300";
 
@@ -2742,7 +2746,7 @@ export default function ServiceManager() {
                             <span
                               className={`text-xs px-2 py-0.5 rounded-full ${paymentPillClass}`}
                             >
-                              {order.paymentStatus === "paid"
+                              {isEffectivelyPaid
                                 ? "Đã TT"
                                 : order.paymentStatus === "partial"
                                   ? "TT một phần"
@@ -2883,7 +2887,7 @@ export default function ServiceManager() {
                             <span
                               className={`text-xs px-2 py-0.5 rounded-full ${paymentPillClass}`}
                             >
-                              {order.paymentStatus === "paid"
+                              {isEffectivelyPaid
                                 ? "Đã TT"
                                 : order.paymentStatus === "partial"
                                   ? "TT một phần"

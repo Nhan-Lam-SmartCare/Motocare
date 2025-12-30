@@ -406,7 +406,9 @@ const WorkOrderModal: React.FC<{
     // 🔹 Check if order is paid (lock sensitive fields)
     const isOrderPaid = order?.paymentStatus === "paid";
     const isOrderRefunded = order?.refunded === true;
-    const canEditPriceAndParts = !isOrderPaid && !isOrderRefunded;
+    // Allow editing if order is not refunded AND (not paid OR status is not "Trả máy")
+    // This allows adding parts to a "paid" order if it's still being repaired
+    const canEditPriceAndParts = (!isOrderPaid || formData.status !== "Trả máy") && !isOrderRefunded;
 
     // Get customer's vehicles
     const currentCustomer = customers.find(
@@ -1386,9 +1388,9 @@ const WorkOrderModal: React.FC<{
           return;
         }
 
-        // 3. Validate total > 0
-        if (total <= 0) {
-          showToast.error("Tổng tiền phải lớn hơn 0");
+        // 3. Validate total > 0 ONLY if status is "Trả máy"
+        if (total <= 0 && formData.status === "Trả máy") {
+          showToast.error("Tổng tiền phải lớn hơn 0 khi trả máy");
           return;
         }
 

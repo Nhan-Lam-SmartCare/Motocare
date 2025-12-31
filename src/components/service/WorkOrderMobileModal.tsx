@@ -47,7 +47,7 @@ import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 interface WorkOrderMobileModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (workOrderData: any) => void;
+  onSave: (workOrderData: any) => Promise<void> | void;
   workOrder?: WorkOrder | null;
   customers: Customer[];
   parts: Part[];
@@ -836,7 +836,7 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
     setCustomerSearchTerm("");
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     // Prevent duplicate submissions
     if (isSubmitting) return;
 
@@ -905,7 +905,7 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
 
     // Execute save callback with offline fallback
     try {
-      onSave(workOrderData);
+      await onSave(workOrderData);
       // Note: Not resetting isSubmitting here because modal will close on success
       // Parent component is responsible for closing the modal
     } catch (error) {
@@ -921,8 +921,9 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
       });
       localStorage.setItem("offline_drafts", JSON.stringify(drafts));
 
-      alert("Mất kết nối! Phiếu đã được lưu nháp trên thiết bị. Vui lòng đồng bộ khi có mạng.");
-      onClose();
+      // Show alert but dont close to allow retry or copy
+      alert("Có lỗi khi lưu (Timeout/Mạng). Vui lòng thử lại hoặc chụp màn hình.");
+      // onClose(); // Don't close so user can retry
     }
   };
   const getStatusColor = (s: WorkOrderStatus) => {

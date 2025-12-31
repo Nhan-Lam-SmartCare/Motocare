@@ -1181,6 +1181,7 @@ export default function ServiceManager() {
       showToast.error(
         `Lỗi: ${error.message || "Không thể lưu phiếu sửa chữa"}`
       );
+      throw error; // Re-throw so WorkOrderMobileModal can handle state
     }
   };
 

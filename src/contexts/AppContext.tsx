@@ -366,12 +366,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
                   return prev.map((c) =>
                     c.id === existingId
                       ? ({
-                          ...c,
-                          name: customer.name || c.name,
-                          vehicleModel: customer.vehicleModel || c.vehicleModel,
-                          licensePlate: customer.licensePlate || c.licensePlate,
-                          vehicles: updatedVehicles,
-                        } as Customer)
+                        ...c,
+                        name: customer.name || c.name,
+                        vehicleModel: customer.vehicleModel || c.vehicleModel,
+                        licensePlate: customer.licensePlate || c.licensePlate,
+                        vehicles: updatedVehicles,
+                      } as Customer)
                       : c
                   );
                 }
@@ -552,12 +552,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         prev.map((ps) =>
           ps.id === data.paymentMethod
             ? {
-                ...ps,
-                balance: {
-                  ...ps.balance,
-                  [currentBranchId]: (ps.balance[currentBranchId] || 0) + total,
-                },
-              }
+              ...ps,
+              balance: {
+                ...ps.balance,
+                [currentBranchId]: (ps.balance[currentBranchId] || 0) + total,
+              },
+            }
             : ps
         )
       );
@@ -601,13 +601,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         prev.map((ps) =>
           ps.id === sale.paymentMethod
             ? {
-                ...ps,
-                balance: {
-                  ...ps.balance,
-                  [currentBranchId]:
-                    (ps.balance[currentBranchId] || 0) - sale.total,
-                },
-              }
+              ...ps,
+              balance: {
+                ...ps.balance,
+                [currentBranchId]:
+                  (ps.balance[currentBranchId] || 0) - sale.total,
+              },
+            }
             : ps
         )
       );
@@ -649,7 +649,42 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     []
   );
 
-  const upsertPayrollRecord = useCallback((record: PayrollRecord) => {
+  const upsertPayrollRecord = useCallback(async (record: PayrollRecord) => {
+    // 1. Prepare DB data
+    const dbData = {
+      id: record.id,
+      employee_id: record.employeeId,
+      employee_name: record.employeeName,
+      month: record.month,
+      base_salary: record.baseSalary,
+      allowances: record.allowances,
+      bonus: record.bonus,
+      deduction: record.deduction,
+      work_days: record.workDays,
+      standard_work_days: record.standardWorkDays,
+      social_insurance: record.socialInsurance,
+      health_insurance: record.healthInsurance,
+      unemployment_insurance: record.unemploymentInsurance,
+      personal_income_tax: record.personalIncomeTax,
+      net_salary: record.netSalary,
+      payment_status: record.paymentStatus,
+      payment_date: record.paymentDate,
+      payment_method: record.paymentMethod,
+      notes: record.notes,
+      branch_id: record.branchId,
+      created_at: record.created_at || new Date().toISOString(),
+    };
+
+    // 2. Call Supabase
+    const { error } = await supabase.from("payroll_records").upsert(dbData);
+
+    if (error) {
+      console.error("Error upserting payroll record:", error);
+      showToast.error("Lỗi lưu bảng lương");
+      return;
+    }
+
+    // 3. Update local state
     setPayrollRecords((prev) => {
       const existing = prev.find((p) => p.id === record.id);
       if (existing) {

@@ -1,5 +1,4 @@
 import React from "react";
-import { motion } from "framer-motion";
 
 interface TetBannerProps {
     compact?: boolean;
@@ -8,10 +7,8 @@ interface TetBannerProps {
 const TetBanner: React.FC<TetBannerProps> = ({ compact }) => {
     if (compact) {
         return (
-            <motion.div
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="bg-gradient-to-r from-red-600 to-yellow-500 rounded-xl p-3 text-white shadow-md flex items-center justify-between overflow-hidden relative mb-4"
+            <div
+                className="bg-gradient-to-r from-red-600 to-yellow-500 rounded-xl p-3 text-white shadow-md flex items-center justify-between overflow-hidden relative mb-4 animate-fade-in"
             >
                 <div className="absolute top-0 right-0 opacity-10 text-4xl transform translate-x-1/4 -translate-y-1/4">
                     🌸
@@ -31,15 +28,13 @@ const TetBanner: React.FC<TetBannerProps> = ({ compact }) => {
                     <span>🧧</span>
                     <span>💰</span>
                 </div>
-            </motion.div>
+            </div>
         );
     }
 
     return (
-        <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-red-700 via-red-600 to-yellow-500 p-6 text-white shadow-xl mb-6"
+        <div
+            className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-red-700 via-red-600 to-yellow-500 p-6 text-white shadow-xl mb-6 animate-fade-in"
         >
             {/* Decorative Background Elements */}
             <div className="absolute top-0 right-0 -mr-4 -mt-4 text-9xl opacity-10">
@@ -75,7 +70,7 @@ const TetBanner: React.FC<TetBannerProps> = ({ compact }) => {
                     <span>🧧</span>
                 </div>
             </div>
-        </motion.div>
+        </div>
     );
 };
 

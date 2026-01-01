@@ -50,6 +50,7 @@ import { loadDemoData, clearDemoData } from "../../utils/demoData";
 import StatCard from "./components/StatCard";
 import StatusItem from "./components/StatusItem";
 import QuickActionCard from "./components/QuickActionCard";
+import TetBanner from "./components/TetBanner";
 
 // Hooks
 import { useDashboardData } from "./hooks/useDashboardData";
@@ -116,8 +117,9 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="space-y-3 md:space-y-4">
+      <TetBanner />
       {/* Header - Lời chào người dùng - Chỉ hiện trên mobile */}
-      <div className="md:hidden bg-gradient-to-r from-blue-600 to-violet-600 dark:from-blue-700 dark:to-violet-800 rounded-2xl p-4 md:p-6 text-white shadow-lg">
+      <div className="md:hidden bg-gradient-to-r from-red-600 to-yellow-500 rounded-2xl p-4 md:p-6 text-white shadow-lg">
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <h1 className="text-lg md:text-xl font-semibold mb-1">

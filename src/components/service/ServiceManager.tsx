@@ -62,6 +62,7 @@ import WorkOrderModal from "../service/components/WorkOrderModal";
 import { ServiceManagerMobile } from "../service/ServiceManagerMobile";
 import PrintOrderPreviewModal from "../service/modals/PrintOrderPreviewModal";
 import StatusBadge from "../service/components/StatusBadge";
+import TetBanner from "../dashboard/components/TetBanner";
 import { getQuickStatusFilters } from "../service/components/QuickStatusFilters";
 import { getStatusSnapshotCards } from "../service/components/StatusSnapshotCards";
 import {
@@ -101,6 +102,34 @@ import {
 } from "../service/utils/service.utils";
 
 // Local types removed - now imported from ./types/service.types
+
+const serviceTemplates = [
+  {
+    name: "Thay nhớt & Bảo dưỡng",
+    description: "Thay nhớt máy, kiểm tra thắng, tăng sên, bơm lốp",
+    laborCost: 50000,
+    duration: 30,
+    parts: [
+      { name: "Nhớt Castrol Power 1", quantity: 1, price: 120000 },
+    ],
+  },
+  {
+    name: "Vệ sinh nồi tay ga",
+    description: "Vệ sinh nồi trước/sau, kiểm tra bi nồi, dây curoa",
+    laborCost: 150000,
+    duration: 60,
+    parts: [
+      { name: "Chai xịt vệ sinh", quantity: 1, price: 50000 },
+    ],
+  },
+  {
+    name: "Thay nhông sên dĩa",
+    description: "Thay bộ nhông sên dĩa, canh chỉnh",
+    laborCost: 100000,
+    duration: 45,
+    parts: [],
+  },
+];
 
 export default function ServiceManager() {
   const queryClient = useQueryClient();
@@ -2128,7 +2157,8 @@ export default function ServiceManager() {
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 container mx-auto">
+      <TetBanner compact />
       {/* Desktop insight cards */}
       <div className="grid gap-3 lg:grid-cols-[2fr,1fr]">
         <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
@@ -2284,7 +2314,7 @@ export default function ServiceManager() {
           </div>
 
           {/* Filters - inline */}
-          <select
+          < select
             value={dateFilter}
             onChange={(e) => setDateFilter(e.target.value)}
             className="px-2 py-1.5 text-xs bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg"
@@ -3069,34 +3099,36 @@ export default function ServiceManager() {
       />
 
       {/* Work Order Modal */}
-      {showModal && editingOrder && (
-        <WorkOrderModal
-          order={editingOrder}
-          onClose={() => {
-            setShowModal(false);
-            setEditingOrder(undefined);
-          }}
-          onSave={() => {
-            // React Query hooks already invalidate queries on success
-            // Just close modal - data will auto-refresh via invalidateQueries
-            setShowModal(false);
-            setEditingOrder(undefined);
-          }}
-          parts={parts}
-          partsLoading={partsLoading}
-          customers={displayCustomers}
-          employees={displayEmployees}
-          upsertCustomer={upsertCustomer}
-          setCashTransactions={setCashTransactions}
-          setPaymentSources={setPaymentSources}
-          paymentSources={paymentSources}
-          currentBranchId={currentBranchId}
-          storeSettings={storeSettings}
-          invalidateWorkOrders={() =>
-            queryClient.invalidateQueries({ queryKey: ["workOrdersRepo"] })
-          }
-        />
-      )}
+      {
+        showModal && editingOrder && (
+          <WorkOrderModal
+            order={editingOrder}
+            onClose={() => {
+              setShowModal(false);
+              setEditingOrder(undefined);
+            }}
+            onSave={() => {
+              // React Query hooks already invalidate queries on success
+              // Just close modal - data will auto-refresh via invalidateQueries
+              setShowModal(false);
+              setEditingOrder(undefined);
+            }}
+            parts={parts}
+            partsLoading={partsLoading}
+            customers={displayCustomers}
+            employees={displayEmployees}
+            upsertCustomer={upsertCustomer}
+            setCashTransactions={setCashTransactions}
+            setPaymentSources={setPaymentSources}
+            paymentSources={paymentSources}
+            currentBranchId={currentBranchId}
+            storeSettings={storeSettings}
+            invalidateWorkOrders={() =>
+              queryClient.invalidateQueries({ queryKey: ["workOrdersRepo"] })
+            }
+          />
+        )
+      }
 
       {/* Mobile Work Order Modal - DISABLED */}
       {/*
@@ -3116,149 +3148,104 @@ export default function ServiceManager() {
       */}
 
       {/* Print Preview Modal */}
-      {showPrintPreview && printOrder && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-slate-800 rounded-xl w-full max-w-4xl max-h-[90vh] flex flex-col">
-            {/* Modal Header */}
-            <div className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-6 py-4 flex items-center justify-between rounded-t-xl flex-shrink-0">
-              <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">
-                Xem trước phiếu in
-              </h2>
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={handleShareInvoice}
-                  disabled={isSharing}
-                  className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white rounded-lg flex items-center gap-2 transition"
-                >
-                  <Share2 className="w-4 h-4" />
-                  {isSharing ? "Đang xử lý..." : "Chia sẻ"}
-                </button>
-                <button
-                  onClick={handleDoPrint}
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center gap-2 transition"
-                >
-                  <Printer className="w-4 h-4" />
-                  In phiếu
-                </button>
-                <button
-                  onClick={() => {
-                    setShowPrintPreview(false);
-                    setPrintOrder(null);
-                  }}
-                  className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
-                  aria-label="Đóng"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    className="w-5 h-5"
+      {
+        showPrintPreview && printOrder && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white dark:bg-slate-800 rounded-xl w-full max-w-4xl max-h-[90vh] flex flex-col">
+              {/* Modal Header */}
+              <div className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-6 py-4 flex items-center justify-between rounded-t-xl flex-shrink-0">
+                <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">
+                  Xem trước phiếu in
+                </h2>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={handleShareInvoice}
+                    disabled={isSharing}
+                    className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white rounded-lg flex items-center gap-2 transition"
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M6 18L18 6M6 6l12 12"
-                    />
-                  </svg>
-                </button>
-              </div>
-            </div>
-
-            {/* Print Preview Content */}
-            <div className="flex-1 overflow-y-auto p-6 bg-slate-100 dark:bg-slate-900">
-              <div
-                ref={invoicePreviewRef}
-                className="bg-white shadow-lg mx-auto"
-                style={{ width: "148mm", minHeight: "210mm", color: "#000" }}
-              >
-                <div style={{ padding: "10mm" }}>
-                  {/* Store Info Header - Compact Layout */}
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "flex-start",
-                      gap: "4mm",
-                      marginBottom: "4mm",
-                      borderBottom: "2px solid #3b82f6",
-                      paddingBottom: "3mm",
+                    <Share2 className="w-4 h-4" />
+                    {isSharing ? "Đang xử lý..." : "Chia sẻ"}
+                  </button>
+                  <button
+                    onClick={handleDoPrint}
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center gap-2 transition"
+                  >
+                    <Printer className="w-4 h-4" />
+                    In phiếu
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowPrintPreview(false);
+                      setPrintOrder(null);
                     }}
+                    className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+                    aria-label="Đóng"
                   >
-                    {/* Left: Logo */}
-                    {storeSettings?.logo_url && (
-                      <img
-                        src={storeSettings.logo_url}
-                        alt="Logo"
-                        style={{
-                          height: "18mm",
-                          width: "18mm",
-                          objectFit: "contain",
-                          flexShrink: 0,
-                        }}
-                      />
-                    )}
-
-                    {/* Center: Store Info */}
-                    <div
-                      style={{ fontSize: "8.5pt", lineHeight: "1.4", flex: 1 }}
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      className="w-5 h-5"
                     >
-                      <div
-                        style={{
-                          fontWeight: "bold",
-                          fontSize: "11pt",
-                          marginBottom: "1mm",
-                          color: "#1e40af",
-                        }}
-                      >
-                        {storeSettings?.store_name || "Nhạn Lâm SmartCare"}
-                      </div>
-                      <div
-                        style={{
-                          color: "#000",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "1mm",
-                        }}
-                      >
-                        <svg
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              {/* Print Preview Content */}
+              <div className="flex-1 overflow-y-auto p-6 bg-slate-100 dark:bg-slate-900">
+                <div
+                  ref={invoicePreviewRef}
+                  className="bg-white shadow-lg mx-auto"
+                  style={{ width: "148mm", minHeight: "210mm", color: "#000" }}
+                >
+                  <div style={{ padding: "10mm" }}>
+                    {/* Store Info Header - Compact Layout */}
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "flex-start",
+                        gap: "4mm",
+                        marginBottom: "4mm",
+                        borderBottom: "2px solid #3b82f6",
+                        paddingBottom: "3mm",
+                      }}
+                    >
+                      {/* Left: Logo */}
+                      {storeSettings?.logo_url && (
+                        <img
+                          src={storeSettings.logo_url}
+                          alt="Logo"
                           style={{
-                            width: "10px",
-                            height: "10px",
+                            height: "18mm",
+                            width: "18mm",
+                            objectFit: "contain",
                             flexShrink: 0,
                           }}
-                          viewBox="0 0 24 24"
-                          fill="#ef4444"
-                        >
-                          <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
-                        </svg>
-                        <span>
-                          {storeSettings?.address ||
-                            "Ấp Phú Lợi B, Xã Long Phú Thuận, Đông Tháp"}
-                        </span>
-                      </div>
+                        />
+                      )}
+
+                      {/* Center: Store Info */}
                       <div
-                        style={{
-                          color: "#000",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "1mm",
-                        }}
+                        style={{ fontSize: "8.5pt", lineHeight: "1.4", flex: 1 }}
                       >
-                        <svg
+                        <div
                           style={{
-                            width: "10px",
-                            height: "10px",
-                            flexShrink: 0,
+                            fontWeight: "bold",
+                            fontSize: "11pt",
+                            marginBottom: "1mm",
+                            color: "#1e40af",
                           }}
-                          viewBox="0 0 24 24"
-                          fill="#16a34a"
                         >
-                          <path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z" />
-                        </svg>
-                        <span>{storeSettings?.phone || "0947.747.907"}</span>
-                      </div>
-                      {storeSettings?.email && (
+                          {storeSettings?.store_name || "Nhạn Lâm SmartCare"}
+                        </div>
                         <div
                           style={{
                             color: "#000",
@@ -3272,337 +3259,263 @@ export default function ServiceManager() {
                               width: "10px",
                               height: "10px",
                               flexShrink: 0,
-                              fill: "#1877F2"
                             }}
                             viewBox="0 0 24 24"
+                            fill="#ef4444"
                           >
-                            <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.791-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+                            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
                           </svg>
-                          <span>{storeSettings.email}</span>
+                          <span>
+                            {storeSettings?.address ||
+                              "Ấp Phú Lợi B, Xã Long Phú Thuận, Đông Tháp"}
+                          </span>
                         </div>
-                      )}
-                    </div>
-
-                    {/* Right: Bank Info & QR */}
-                    <div
-                      style={{
-                        fontSize: "8pt",
-                        lineHeight: "1.4",
-                        textAlign: "right",
-                        flexShrink: 0,
-                      }}
-                    >
-                      {storeSettings?.bank_name && (
                         <div
                           style={{
+                            color: "#000",
                             display: "flex",
                             alignItems: "center",
-                            justifyContent: "flex-end",
-                            gap: "3mm",
-                            border: "1px solid #3b82f6",
-                            borderRadius: "2mm",
-                            padding: "2mm",
-                            backgroundColor: "#eff6ff",
+                            gap: "1mm",
                           }}
                         >
-                          {/* Bank Info */}
-                          <div style={{ textAlign: "right", flex: 1 }}>
-                            <div
-                              style={{
-                                fontWeight: "bold",
-                                marginBottom: "1mm",
-                                color: "#000",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "flex-end",
-                                gap: "1mm",
-                              }}
-                            >
-                              <svg
-                                style={{
-                                  width: "10px",
-                                  height: "10px",
-                                  flexShrink: 0,
-                                }}
-                                viewBox="0 0 24 24"
-                                fill="#0891b2"
-                              >
-                                <path d="M4 10h3v7H4zm6.5 0h3v7h-3zM2 19h20v3H2zm15-9h3v7h-3zm-5-9L2 6v2h20V6z" />
-                              </svg>
-                              <span>{storeSettings.bank_name}</span>
-                            </div>
-                            {storeSettings.bank_account_number && (
-                              <div style={{ color: "#000" }}>
-                                STK: {storeSettings.bank_account_number}
-                              </div>
-                            )}
-                            {storeSettings.bank_account_holder && (
-                              <div style={{ color: "#000", fontSize: "7.5pt" }}>
-                                {storeSettings.bank_account_holder}
-                              </div>
-                            )}
-                          </div>
-                          {/* QR Code - Larger */}
-                          {storeSettings.bank_qr_url && (
-                            <div style={{ flexShrink: 0 }}>
-                              <img
-                                src={storeSettings.bank_qr_url}
-                                alt="QR Banking"
-                                style={{
-                                  height: "25mm",
-                                  width: "25mm",
-                                  objectFit: "contain",
-                                }}
-                              />
-                            </div>
-                          )}
+                          <svg
+                            style={{
+                              width: "10px",
+                              height: "10px",
+                              flexShrink: 0,
+                            }}
+                            viewBox="0 0 24 24"
+                            fill="#16a34a"
+                          >
+                            <path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z" />
+                          </svg>
+                          <span>{storeSettings?.phone || "0947.747.907"}</span>
                         </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Title & Meta */}
-                  <div style={{ marginBottom: "4mm" }}>
-                    <div style={{ textAlign: "center", marginBottom: "2mm" }}>
-                      <h1
-                        style={{
-                          fontSize: "16pt",
-                          fontWeight: "bold",
-                          margin: "0",
-                          textTransform: "uppercase",
-                          color: "#1e40af",
-                        }}
-                      >
-                        PHIẾU DỊCH VỤ SỬA CHỮA
-                      </h1>
-                    </div>
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        fontSize: "9pt",
-                        color: "#666",
-                      }}
-                    >
-                      <div>
-                        {new Date(printOrder.creationDate).toLocaleString(
-                          "vi-VN",
-                          {
-                            year: "numeric",
-                            month: "2-digit",
-                            day: "2-digit",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          }
+                        {storeSettings?.email && (
+                          <div
+                            style={{
+                              color: "#000",
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "1mm",
+                            }}
+                          >
+                            <svg
+                              style={{
+                                width: "10px",
+                                height: "10px",
+                                flexShrink: 0,
+                                fill: "#1877F2"
+                              }}
+                              viewBox="0 0 24 24"
+                            >
+                              <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.791-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+                            </svg>
+                            <span>{storeSettings.email}</span>
+                          </div>
                         )}
                       </div>
-                      <div style={{ fontWeight: "bold" }}>
-                        Mã:{" "}
-                        {formatWorkOrderId(
-                          printOrder.id,
-                          storeSettings?.work_order_prefix
-                        )}
-                      </div>
-                    </div>
-                  </div>
 
-                  {/* Customer Info - Compact */}
-                  <div
-                    style={{
-                      border: "1px solid #ddd",
-                      padding: "3mm",
-                      marginBottom: "3mm",
-                      borderRadius: "2mm",
-                      backgroundColor: "#f8fafc",
-                      color: "#000",
-                      fontSize: "9pt",
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: "flex",
-                        gap: "4mm",
-                        marginBottom: "1.5mm",
-                      }}
-                    >
-                      <div style={{ flex: 1 }}>
-                        <span style={{ fontWeight: "bold" }}>Khách hàng:</span>{" "}
-                        {printOrder.customerName}
-                      </div>
-                      <div style={{ flex: "0 0 auto" }}>
-                        <span style={{ fontWeight: "bold" }}>SĐT:</span>{" "}
-                        {printOrder.customerPhone}
-                      </div>
-                    </div>
-                    <div style={{ display: "flex", gap: "4mm" }}>
-                      <div style={{ flex: 1 }}>
-                        <span style={{ fontWeight: "bold" }}>Loại xe:</span>{" "}
-                        {printOrder.vehicleModel}
-                      </div>
-                      <div style={{ flex: "0 0 auto" }}>
-                        <span style={{ fontWeight: "bold" }}>Biển số:</span>{" "}
-                        {printOrder.licensePlate}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Issue Description */}
-                  <div
-                    style={{
-                      border: "1px solid #ddd",
-                      padding: "4mm",
-                      marginBottom: "4mm",
-                      borderRadius: "2mm",
-                      color: "#000",
-                    }}
-                  >
-                    <div style={{ display: "flex", gap: "3mm" }}>
+                      {/* Right: Bank Info & QR */}
                       <div
                         style={{
-                          fontWeight: "bold",
-                          minWidth: "20%",
+                          fontSize: "8pt",
+                          lineHeight: "1.4",
+                          textAlign: "right",
                           flexShrink: 0,
                         }}
                       >
-                        Mô tả sự cố:
-                      </div>
-                      <div style={{ flex: 1, whiteSpace: "pre-wrap" }}>
-                        {printOrder.issueDescription || "Không có mô tả"}
+                        {storeSettings?.bank_name && (
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "flex-end",
+                              gap: "3mm",
+                              border: "1px solid #3b82f6",
+                              borderRadius: "2mm",
+                              padding: "2mm",
+                              backgroundColor: "#eff6ff",
+                            }}
+                          >
+                            {/* Bank Info */}
+                            <div style={{ textAlign: "right", flex: 1 }}>
+                              <div
+                                style={{
+                                  fontWeight: "bold",
+                                  marginBottom: "1mm",
+                                  color: "#000",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "flex-end",
+                                  gap: "1mm",
+                                }}
+                              >
+                                <svg
+                                  style={{
+                                    width: "10px",
+                                    height: "10px",
+                                    flexShrink: 0,
+                                  }}
+                                  viewBox="0 0 24 24"
+                                  fill="#0891b2"
+                                >
+                                  <path d="M4 10h3v7H4zm6.5 0h3v7h-3zM2 19h20v3H2zm15-9h3v7h-3zm-5-9L2 6v2h20V6z" />
+                                </svg>
+                                <span>{storeSettings.bank_name}</span>
+                              </div>
+                              {storeSettings.bank_account_number && (
+                                <div style={{ color: "#000" }}>
+                                  STK: {storeSettings.bank_account_number}
+                                </div>
+                              )}
+                              {storeSettings.bank_account_holder && (
+                                <div style={{ color: "#000", fontSize: "7.5pt" }}>
+                                  {storeSettings.bank_account_holder}
+                                </div>
+                              )}
+                            </div>
+                            {/* QR Code - Larger */}
+                            {storeSettings.bank_qr_url && (
+                              <div style={{ flexShrink: 0 }}>
+                                <img
+                                  src={storeSettings.bank_qr_url}
+                                  alt="QR Banking"
+                                  style={{
+                                    height: "25mm",
+                                    width: "25mm",
+                                    objectFit: "contain",
+                                  }}
+                                />
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
-                  </div>
 
-                  {/* Parts Table */}
-                  {printOrder.partsUsed && printOrder.partsUsed.length > 0 && (
-                    <div style={{ marginBottom: "4mm", color: "#000" }}>
-                      <p
+                    {/* Title & Meta */}
+                    <div style={{ marginBottom: "4mm" }}>
+                      <div style={{ textAlign: "center", marginBottom: "2mm" }}>
+                        <h1
+                          style={{
+                            fontSize: "16pt",
+                            fontWeight: "bold",
+                            margin: "0",
+                            textTransform: "uppercase",
+                            color: "#1e40af",
+                          }}
+                        >
+                          PHIẾU DỊCH VỤ SỬA CHỮA
+                        </h1>
+                      </div>
+                      <div
                         style={{
-                          fontWeight: "bold",
-                          margin: "0 0 2mm 0",
-                          fontSize: "11pt",
+                          display: "flex",
+                          justifyContent: "space-between",
+                          fontSize: "9pt",
+                          color: "#666",
                         }}
                       >
-                        Phụ tùng sử dụng:
-                      </p>
-                      <table
-                        style={{
-                          width: "100%",
-                          borderCollapse: "collapse",
-                          border: "1px solid #ddd",
-                        }}
-                      >
-                        <thead>
-                          <tr style={{ backgroundColor: "#f5f5f5" }}>
-                            <th
-                              style={{
-                                border: "1px solid #ddd",
-                                padding: "2mm",
-                                textAlign: "left",
-                                fontSize: "10pt",
-                              }}
-                            >
-                              Tên phụ tùng
-                            </th>
-                            <th
-                              style={{
-                                border: "1px solid #ddd",
-                                padding: "2mm",
-                                textAlign: "center",
-                                fontSize: "10pt",
-                                width: "15%",
-                              }}
-                            >
-                              SL
-                            </th>
-                            <th
-                              style={{
-                                border: "1px solid #ddd",
-                                padding: "2mm",
-                                textAlign: "right",
-                                fontSize: "10pt",
-                                width: "25%",
-                              }}
-                            >
-                              Đơn giá
-                            </th>
-                            <th
-                              style={{
-                                border: "1px solid #ddd",
-                                padding: "2mm",
-                                textAlign: "right",
-                                fontSize: "10pt",
-                                width: "25%",
-                              }}
-                            >
-                              Thành tiền
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {printOrder.partsUsed.map(
-                            (part: WorkOrderPart, idx: number) => (
-                              <tr key={idx}>
-                                <td
-                                  style={{
-                                    border: "1px solid #ddd",
-                                    padding: "2mm",
-                                    fontSize: "10pt",
-                                  }}
-                                >
-                                  {part.partName}
-                                </td>
-                                <td
-                                  style={{
-                                    border: "1px solid #ddd",
-                                    padding: "2mm",
-                                    textAlign: "center",
-                                    fontSize: "10pt",
-                                  }}
-                                >
-                                  {part.quantity}
-                                </td>
-                                <td
-                                  style={{
-                                    border: "1px solid #ddd",
-                                    padding: "2mm",
-                                    textAlign: "right",
-                                    fontSize: "10pt",
-                                  }}
-                                >
-                                  {formatCurrency(part.price)}
-                                </td>
-                                <td
-                                  style={{
-                                    border: "1px solid #ddd",
-                                    padding: "2mm",
-                                    textAlign: "right",
-                                    fontSize: "10pt",
-                                    fontWeight: "bold",
-                                  }}
-                                >
-                                  {formatCurrency(part.price * part.quantity)}
-                                </td>
-                              </tr>
-                            )
+                        <div>
+                          {new Date(printOrder.creationDate).toLocaleString(
+                            "vi-VN",
+                            {
+                              year: "numeric",
+                              month: "2-digit",
+                              day: "2-digit",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            }
                           )}
-                        </tbody>
-                      </table>
+                        </div>
+                        <div style={{ fontWeight: "bold" }}>
+                          Mã:{" "}
+                          {formatWorkOrderId(
+                            printOrder.id,
+                            storeSettings?.work_order_prefix
+                          )}
+                        </div>
+                      </div>
                     </div>
-                  )}
 
-                  {/* Additional Services */}
-                  {printOrder.additionalServices &&
-                    printOrder.additionalServices.length > 0 && (
+                    {/* Customer Info - Compact */}
+                    <div
+                      style={{
+                        border: "1px solid #ddd",
+                        padding: "3mm",
+                        marginBottom: "3mm",
+                        borderRadius: "2mm",
+                        backgroundColor: "#f8fafc",
+                        color: "#000",
+                        fontSize: "9pt",
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: "flex",
+                          gap: "4mm",
+                          marginBottom: "1.5mm",
+                        }}
+                      >
+                        <div style={{ flex: 1 }}>
+                          <span style={{ fontWeight: "bold" }}>Khách hàng:</span>{" "}
+                          {printOrder.customerName}
+                        </div>
+                        <div style={{ flex: "0 0 auto" }}>
+                          <span style={{ fontWeight: "bold" }}>SĐT:</span>{" "}
+                          {printOrder.customerPhone}
+                        </div>
+                      </div>
+                      <div style={{ display: "flex", gap: "4mm" }}>
+                        <div style={{ flex: 1 }}>
+                          <span style={{ fontWeight: "bold" }}>Loại xe:</span>{" "}
+                          {printOrder.vehicleModel}
+                        </div>
+                        <div style={{ flex: "0 0 auto" }}>
+                          <span style={{ fontWeight: "bold" }}>Biển số:</span>{" "}
+                          {printOrder.licensePlate}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Issue Description */}
+                    <div
+                      style={{
+                        border: "1px solid #ddd",
+                        padding: "4mm",
+                        marginBottom: "4mm",
+                        borderRadius: "2mm",
+                        color: "#000",
+                      }}
+                    >
+                      <div style={{ display: "flex", gap: "3mm" }}>
+                        <div
+                          style={{
+                            fontWeight: "bold",
+                            minWidth: "20%",
+                            flexShrink: 0,
+                          }}
+                        >
+                          Mô tả sự cố:
+                        </div>
+                        <div style={{ flex: 1, whiteSpace: "pre-wrap" }}>
+                          {printOrder.issueDescription || "Không có mô tả"}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Parts Table */}
+                    {printOrder.partsUsed && printOrder.partsUsed.length > 0 && (
                       <div style={{ marginBottom: "4mm", color: "#000" }}>
                         <p
                           style={{
                             fontWeight: "bold",
                             margin: "0 0 2mm 0",
                             fontSize: "11pt",
-                            color: "#000",
                           }}
                         >
-                          Dịch vụ bổ sung:
+                          Phụ tùng sử dụng:
                         </p>
                         <table
                           style={{
@@ -3621,7 +3534,7 @@ export default function ServiceManager() {
                                   fontSize: "10pt",
                                 }}
                               >
-                                Tên dịch vụ
+                                Tên phụ tùng
                               </th>
                               <th
                                 style={{
@@ -3659,472 +3572,556 @@ export default function ServiceManager() {
                             </tr>
                           </thead>
                           <tbody>
-                            {printOrder.additionalServices.map((service, idx) => (
-                              <tr key={idx}>
-                                <td
-                                  style={{
-                                    border: "1px solid #ddd",
-                                    padding: "2mm",
-                                    fontSize: "10pt",
-                                  }}
-                                >
-                                  {service.description}
-                                </td>
-                                <td
-                                  style={{
-                                    border: "1px solid #ddd",
-                                    padding: "2mm",
-                                    textAlign: "center",
-                                    fontSize: "10pt",
-                                  }}
-                                >
-                                  {service.quantity || 1}
-                                </td>
-                                <td
-                                  style={{
-                                    border: "1px solid #ddd",
-                                    padding: "2mm",
-                                    textAlign: "right",
-                                    fontSize: "10pt",
-                                  }}
-                                >
-                                  {formatCurrency(service.price || 0)}
-                                </td>
-                                <td
-                                  style={{
-                                    border: "1px solid #ddd",
-                                    padding: "2mm",
-                                    textAlign: "right",
-                                    fontSize: "10pt",
-                                    fontWeight: "bold",
-                                  }}
-                                >
-                                  {formatCurrency((service.price || 0) * (service.quantity || 1))}
-                                </td>
-                              </tr>
-                            ))}
+                            {printOrder.partsUsed.map(
+                              (part: WorkOrderPart, idx: number) => (
+                                <tr key={idx}>
+                                  <td
+                                    style={{
+                                      border: "1px solid #ddd",
+                                      padding: "2mm",
+                                      fontSize: "10pt",
+                                    }}
+                                  >
+                                    {part.partName}
+                                  </td>
+                                  <td
+                                    style={{
+                                      border: "1px solid #ddd",
+                                      padding: "2mm",
+                                      textAlign: "center",
+                                      fontSize: "10pt",
+                                    }}
+                                  >
+                                    {part.quantity}
+                                  </td>
+                                  <td
+                                    style={{
+                                      border: "1px solid #ddd",
+                                      padding: "2mm",
+                                      textAlign: "right",
+                                      fontSize: "10pt",
+                                    }}
+                                  >
+                                    {formatCurrency(part.price)}
+                                  </td>
+                                  <td
+                                    style={{
+                                      border: "1px solid #ddd",
+                                      padding: "2mm",
+                                      textAlign: "right",
+                                      fontSize: "10pt",
+                                      fontWeight: "bold",
+                                    }}
+                                  >
+                                    {formatCurrency(part.price * part.quantity)}
+                                  </td>
+                                </tr>
+                              )
+                            )}
                           </tbody>
                         </table>
                       </div>
                     )}
 
-                  {/* Cost Summary */}
-                  <div
-                    style={{
-                      border: "1px solid #ddd",
-                      padding: "4mm",
-                      marginBottom: "4mm",
-                      borderRadius: "2mm",
-                      backgroundColor: "#f9f9f9",
-                      color: "#000",
-                    }}
-                  >
-                    <table
+                    {/* Additional Services */}
+                    {printOrder.additionalServices &&
+                      printOrder.additionalServices.length > 0 && (
+                        <div style={{ marginBottom: "4mm", color: "#000" }}>
+                          <p
+                            style={{
+                              fontWeight: "bold",
+                              margin: "0 0 2mm 0",
+                              fontSize: "11pt",
+                              color: "#000",
+                            }}
+                          >
+                            Dịch vụ bổ sung:
+                          </p>
+                          <table
+                            style={{
+                              width: "100%",
+                              borderCollapse: "collapse",
+                              border: "1px solid #ddd",
+                            }}
+                          >
+                            <thead>
+                              <tr style={{ backgroundColor: "#f5f5f5" }}>
+                                <th
+                                  style={{
+                                    border: "1px solid #ddd",
+                                    padding: "2mm",
+                                    textAlign: "left",
+                                    fontSize: "10pt",
+                                  }}
+                                >
+                                  Tên dịch vụ
+                                </th>
+                                <th
+                                  style={{
+                                    border: "1px solid #ddd",
+                                    padding: "2mm",
+                                    textAlign: "center",
+                                    fontSize: "10pt",
+                                    width: "15%",
+                                  }}
+                                >
+                                  SL
+                                </th>
+                                <th
+                                  style={{
+                                    border: "1px solid #ddd",
+                                    padding: "2mm",
+                                    textAlign: "right",
+                                    fontSize: "10pt",
+                                    width: "25%",
+                                  }}
+                                >
+                                  Đơn giá
+                                </th>
+                                <th
+                                  style={{
+                                    border: "1px solid #ddd",
+                                    padding: "2mm",
+                                    textAlign: "right",
+                                    fontSize: "10pt",
+                                    width: "25%",
+                                  }}
+                                >
+                                  Thành tiền
+                                </th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {printOrder.additionalServices.map((service, idx) => (
+                                <tr key={idx}>
+                                  <td
+                                    style={{
+                                      border: "1px solid #ddd",
+                                      padding: "2mm",
+                                      fontSize: "10pt",
+                                    }}
+                                  >
+                                    {service.description}
+                                  </td>
+                                  <td
+                                    style={{
+                                      border: "1px solid #ddd",
+                                      padding: "2mm",
+                                      textAlign: "center",
+                                      fontSize: "10pt",
+                                    }}
+                                  >
+                                    {service.quantity || 1}
+                                  </td>
+                                  <td
+                                    style={{
+                                      border: "1px solid #ddd",
+                                      padding: "2mm",
+                                      textAlign: "right",
+                                      fontSize: "10pt",
+                                    }}
+                                  >
+                                    {formatCurrency(service.price || 0)}
+                                  </td>
+                                  <td
+                                    style={{
+                                      border: "1px solid #ddd",
+                                      padding: "2mm",
+                                      textAlign: "right",
+                                      fontSize: "10pt",
+                                      fontWeight: "bold",
+                                    }}
+                                  >
+                                    {formatCurrency((service.price || 0) * (service.quantity || 1))}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+
+                    {/* Cost Summary */}
+                    <div
                       style={{
-                        width: "100%",
-                        borderSpacing: "0",
+                        border: "1px solid #ddd",
+                        padding: "4mm",
+                        marginBottom: "4mm",
+                        borderRadius: "2mm",
+                        backgroundColor: "#f9f9f9",
                         color: "#000",
                       }}
                     >
-                      <tbody>
-                        {/* Tiền phụ tùng - chỉ hiển thị khi != 0 */}
-                        {(() => {
-                          const partsTotal = printOrder.partsUsed?.reduce(
-                            (sum: number, p: WorkOrderPart) => sum + p.price * p.quantity,
-                            0
-                          ) || 0;
-                          return partsTotal !== 0 && (
+                      <table
+                        style={{
+                          width: "100%",
+                          borderSpacing: "0",
+                          color: "#000",
+                        }}
+                      >
+                        <tbody>
+                          {/* Tiền phụ tùng - chỉ hiển thị khi != 0 */}
+                          {(() => {
+                            const partsTotal = printOrder.partsUsed?.reduce(
+                              (sum: number, p: WorkOrderPart) => sum + p.price * p.quantity,
+                              0
+                            ) || 0;
+                            return partsTotal !== 0 && (
+                              <tr>
+                                <td style={{ fontWeight: "bold", paddingBottom: "2mm", fontSize: "10pt" }}>
+                                  Tiền phụ tùng:
+                                </td>
+                                <td style={{ textAlign: "right", paddingBottom: "2mm", fontSize: "10pt" }}>
+                                  {formatCurrency(partsTotal)}
+                                </td>
+                              </tr>
+                            );
+                          })()}
+
+                          {/* Phí dịch vụ (laborCost) - chỉ hiển thị khi != 0 */}
+                          {(printOrder.laborCost ?? 0) !== 0 && (
                             <tr>
                               <td style={{ fontWeight: "bold", paddingBottom: "2mm", fontSize: "10pt" }}>
-                                Tiền phụ tùng:
+                                Phí dịch vụ:
                               </td>
                               <td style={{ textAlign: "right", paddingBottom: "2mm", fontSize: "10pt" }}>
-                                {formatCurrency(partsTotal)}
+                                {formatCurrency(printOrder.laborCost || 0)}
                               </td>
                             </tr>
-                          );
-                        })()}
+                          )}
 
-                        {/* Phí dịch vụ (laborCost) - chỉ hiển thị khi != 0 */}
-                        {(printOrder.laborCost ?? 0) !== 0 && (
-                          <tr>
-                            <td style={{ fontWeight: "bold", paddingBottom: "2mm", fontSize: "10pt" }}>
-                              Phí dịch vụ:
-                            </td>
-                            <td style={{ textAlign: "right", paddingBottom: "2mm", fontSize: "10pt" }}>
-                              {formatCurrency(printOrder.laborCost || 0)}
-                            </td>
-                          </tr>
-                        )}
-
-                        {/* Giá công/Đặt hàng - chỉ hiển thị khi != 0 */}
-                        {(() => {
-                          const additionalTotal = printOrder.additionalServices?.reduce(
-                            (sum: number, s: any) => sum + (s.price || 0) * (s.quantity || 1),
-                            0
-                          ) || 0;
-                          return additionalTotal !== 0 && (
-                            <tr>
-                              <td style={{ fontWeight: "bold", paddingBottom: "2mm", fontSize: "10pt" }}>
-                                Giá công/Đặt hàng:
-                              </td>
-                              <td style={{ textAlign: "right", paddingBottom: "2mm", fontSize: "10pt" }}>
-                                {formatCurrency(additionalTotal)}
-                              </td>
-                            </tr>
-                          );
-                        })()}
-                        {printOrder.discount != null &&
-                          printOrder.discount > 0 && (
-                            <tr>
-                              <td
-                                style={{
-                                  fontWeight: "bold",
-                                  paddingBottom: "2mm",
-                                  fontSize: "10pt",
-                                  color: "#e74c3c",
-                                }}
-                              >
-                                Giảm giá:
-                              </td>
-                              <td
-                                style={{
-                                  textAlign: "right",
-                                  paddingBottom: "2mm",
-                                  fontSize: "10pt",
-                                  color: "#e74c3c",
-                                }}
-                              >
-                                -{formatCurrency(printOrder.discount)}
-                              </td>
-                            </tr>
-                          )}
-                        <tr style={{ borderTop: "2px solid #333" }}>
-                          <td
-                            style={{
-                              fontWeight: "bold",
-                              paddingTop: "2mm",
-                              fontSize: "12pt",
-                            }}
-                          >
-                            TỔNG CỘNG:
-                          </td>
-                          <td
-                            style={{
-                              textAlign: "right",
-                              paddingTop: "2mm",
-                              fontSize: "12pt",
-                              fontWeight: "bold",
-                              color: "#2563eb",
-                            }}
-                          >
-                            {formatCurrency(printOrder.total)} ₫
-                          </td>
-                        </tr>
-                        {printOrder.totalPaid != null &&
-                          printOrder.totalPaid > 0 && (
-                            <tr>
-                              <td
-                                style={{
-                                  fontWeight: "bold",
-                                  paddingTop: "2mm",
-                                  fontSize: "10pt",
-                                  color: "#16a34a",
-                                }}
-                              >
-                                Đã thanh toán:
-                              </td>
-                              <td
-                                style={{
-                                  textAlign: "right",
-                                  paddingTop: "2mm",
-                                  fontSize: "10pt",
-                                  color: "#16a34a",
-                                }}
-                              >
-                                {formatCurrency(printOrder.totalPaid)}
-                              </td>
-                            </tr>
-                          )}
-                        {printOrder.remainingAmount != null &&
-                          printOrder.remainingAmount > 0 && (
-                            <tr>
-                              <td
-                                style={{
-                                  fontWeight: "bold",
-                                  fontSize: "11pt",
-                                  color: "#dc2626",
-                                }}
-                              >
-                                Còn lại:
-                              </td>
-                              <td
-                                style={{
-                                  textAlign: "right",
-                                  fontSize: "11pt",
-                                  fontWeight: "bold",
-                                  color: "#dc2626",
-                                }}
-                              >
-                                {formatCurrency(printOrder.remainingAmount)}
-                              </td>
-                            </tr>
-                          )}
-                        {printOrder.paymentMethod && (
-                          <tr>
+                          {/* Giá công/Đặt hàng - chỉ hiển thị khi != 0 */}
+                          {(() => {
+                            const additionalTotal = printOrder.additionalServices?.reduce(
+                              (sum: number, s: any) => sum + (s.price || 0) * (s.quantity || 1),
+                              0
+                            ) || 0;
+                            return additionalTotal !== 0 && (
+                              <tr>
+                                <td style={{ fontWeight: "bold", paddingBottom: "2mm", fontSize: "10pt" }}>
+                                  Giá công/Đặt hàng:
+                                </td>
+                                <td style={{ textAlign: "right", paddingBottom: "2mm", fontSize: "10pt" }}>
+                                  {formatCurrency(additionalTotal)}
+                                </td>
+                              </tr>
+                            );
+                          })()}
+                          {printOrder.discount != null &&
+                            printOrder.discount > 0 && (
+                              <tr>
+                                <td
+                                  style={{
+                                    fontWeight: "bold",
+                                    paddingBottom: "2mm",
+                                    fontSize: "10pt",
+                                    color: "#e74c3c",
+                                  }}
+                                >
+                                  Giảm giá:
+                                </td>
+                                <td
+                                  style={{
+                                    textAlign: "right",
+                                    paddingBottom: "2mm",
+                                    fontSize: "10pt",
+                                    color: "#e74c3c",
+                                  }}
+                                >
+                                  -{formatCurrency(printOrder.discount)}
+                                </td>
+                              </tr>
+                            )}
+                          <tr style={{ borderTop: "2px solid #333" }}>
                             <td
                               style={{
+                                fontWeight: "bold",
                                 paddingTop: "2mm",
-                                fontSize: "9pt",
-                                color: "#666",
+                                fontSize: "12pt",
                               }}
                             >
-                              Hình thức thanh toán:
+                              TỔNG CỘNG:
                             </td>
                             <td
                               style={{
                                 textAlign: "right",
                                 paddingTop: "2mm",
-                                fontSize: "9pt",
-                                color: "#666",
+                                fontSize: "12pt",
+                                fontWeight: "bold",
+                                color: "#2563eb",
                               }}
                             >
-                              {printOrder.paymentMethod === "cash"
-                                ? "Tiền mặt"
-                                : printOrder.paymentMethod === "bank"
-                                  ? "Chuyển khoản"
-                                  : printOrder.paymentMethod}
+                              {formatCurrency(printOrder.total)} ₫
                             </td>
                           </tr>
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
+                          {printOrder.totalPaid != null &&
+                            printOrder.totalPaid > 0 && (
+                              <tr>
+                                <td
+                                  style={{
+                                    fontWeight: "bold",
+                                    paddingTop: "2mm",
+                                    fontSize: "10pt",
+                                    color: "#16a34a",
+                                  }}
+                                >
+                                  Đã thanh toán:
+                                </td>
+                                <td
+                                  style={{
+                                    textAlign: "right",
+                                    paddingTop: "2mm",
+                                    fontSize: "10pt",
+                                    color: "#16a34a",
+                                  }}
+                                >
+                                  {formatCurrency(printOrder.totalPaid)}
+                                </td>
+                              </tr>
+                            )}
+                          {printOrder.remainingAmount != null &&
+                            printOrder.remainingAmount > 0 && (
+                              <tr>
+                                <td
+                                  style={{
+                                    fontWeight: "bold",
+                                    fontSize: "11pt",
+                                    color: "#dc2626",
+                                  }}
+                                >
+                                  Còn lại:
+                                </td>
+                                <td
+                                  style={{
+                                    textAlign: "right",
+                                    fontSize: "11pt",
+                                    fontWeight: "bold",
+                                    color: "#dc2626",
+                                  }}
+                                >
+                                  {formatCurrency(printOrder.remainingAmount)}
+                                </td>
+                              </tr>
+                            )}
+                          {printOrder.paymentMethod && (
+                            <tr>
+                              <td
+                                style={{
+                                  paddingTop: "2mm",
+                                  fontSize: "9pt",
+                                  color: "#666",
+                                }}
+                              >
+                                Hình thức thanh toán:
+                              </td>
+                              <td
+                                style={{
+                                  textAlign: "right",
+                                  paddingTop: "2mm",
+                                  fontSize: "9pt",
+                                  color: "#666",
+                                }}
+                              >
+                                {printOrder.paymentMethod === "cash"
+                                  ? "Tiền mặt"
+                                  : printOrder.paymentMethod === "bank"
+                                    ? "Chuyển khoản"
+                                    : printOrder.paymentMethod}
+                              </td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
 
-                  {/* Footer - Signatures & Bank Info */}
-                  <div
-                    style={{
-                      marginTop: "8mm",
-                      paddingTop: "4mm",
-                      borderTop: "1px dashed #999",
-                      color: "#000",
-                    }}
-                  >
+                    {/* Footer - Signatures & Bank Info */}
                     <div
                       style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        fontSize: "10pt",
+                        marginTop: "8mm",
+                        paddingTop: "4mm",
+                        borderTop: "1px dashed #999",
+                        color: "#000",
                       }}
                     >
-                      <div style={{ textAlign: "center", width: "45%" }}>
-                        <p
-                          style={{
-                            fontWeight: "bold",
-                            margin: "0 0 10mm 0",
-                            color: "#000",
-                          }}
-                        >
-                          Khách hàng
-                        </p>
-                        <p
-                          style={{
-                            margin: "0",
-                            fontSize: "9pt",
-                            color: "#666",
-                          }}
-                        >
-                          (Ký và ghi rõ họ tên)
-                        </p>
-                      </div>
-                      <div style={{ textAlign: "center", width: "45%" }}>
-                        <p
-                          style={{
-                            fontWeight: "bold",
-                            margin: "0 0 10mm 0",
-                            color: "#000",
-                          }}
-                        >
-                          Nhân viên
-                        </p>
-                        <p
-                          style={{
-                            margin: "0",
-                            fontSize: "9pt",
-                            color: "#666",
-                          }}
-                        >
-                          {printOrder.technicianName || "(Ký và ghi rõ họ tên)"}
-                        </p>
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          fontSize: "10pt",
+                        }}
+                      >
+                        <div style={{ textAlign: "center", width: "45%" }}>
+                          <p
+                            style={{
+                              fontWeight: "bold",
+                              margin: "0 0 10mm 0",
+                              color: "#000",
+                            }}
+                          >
+                            Khách hàng
+                          </p>
+                          <p
+                            style={{
+                              margin: "0",
+                              fontSize: "9pt",
+                              color: "#666",
+                            }}
+                          >
+                            (Ký và ghi rõ họ tên)
+                          </p>
+                        </div>
+                        <div style={{ textAlign: "center", width: "45%" }}>
+                          <p
+                            style={{
+                              fontWeight: "bold",
+                              margin: "0 0 10mm 0",
+                              color: "#000",
+                            }}
+                          >
+                            Nhân viên
+                          </p>
+                          <p
+                            style={{
+                              margin: "0",
+                              fontSize: "9pt",
+                              color: "#666",
+                            }}
+                          >
+                            {printOrder.technicianName || "(Ký và ghi rõ họ tên)"}
+                          </p>
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  {/* Note */}
-                  <div
-                    style={{
-                      marginTop: "4mm",
-                      padding: "3mm",
-                      backgroundColor: "#fff9e6",
-                      border: "1px solid #ffd700",
-                      borderRadius: "2mm",
-                      fontSize: "9pt",
-                      textAlign: "center",
-                      color: "#000",
-                    }}
-                  >
-                    <p
+                    {/* Note */}
+                    <div
                       style={{
-                        margin: "0",
-                        fontStyle: "italic",
+                        marginTop: "4mm",
+                        padding: "3mm",
+                        backgroundColor: "#fff9e6",
+                        border: "1px solid #ffd700",
+                        borderRadius: "2mm",
+                        fontSize: "9pt",
+                        textAlign: "center",
                         color: "#000",
                       }}
                     >
-                      Cảm ơn quý khách đã sử dụng dịch vụ!
-                    </p>
-                    <p
-                      style={{
-                        margin: "1mm 0 0 0",
-                        fontStyle: "italic",
-                        color: "#000",
-                      }}
-                    >
-                      Vui lòng giữ phiếu này để đối chiếu khi nhận xe
-                    </p>
-                  </div>
+                      <p
+                        style={{
+                          margin: "0",
+                          fontStyle: "italic",
+                          color: "#000",
+                        }}
+                      >
+                        Cảm ơn quý khách đã sử dụng dịch vụ!
+                      </p>
+                      <p
+                        style={{
+                          margin: "1mm 0 0 0",
+                          fontStyle: "italic",
+                          color: "#000",
+                        }}
+                      >
+                        Vui lòng giữ phiếu này để đối chiếu khi nhận xe
+                      </p>
+                    </div>
 
-                  {/* Warranty Policy Disclaimer */}
-                  <div
-                    style={{
-                      marginTop: "3mm",
-                      padding: "2mm",
-                      fontSize: "8pt",
-                      color: "#666",
-                      borderTop: "1px solid #e5e7eb",
-                      lineHeight: "1.4",
-                    }}
-                  >
-                    <p style={{ margin: "0 0 1mm 0", fontWeight: "bold" }}>
-                      Chính sách bảo hành:
-                    </p>
-                    <ul
+                    {/* Warranty Policy Disclaimer */}
+                    <div
                       style={{
-                        margin: "0",
-                        paddingLeft: "5mm",
-                        listStyleType: "disc",
+                        marginTop: "3mm",
+                        padding: "2mm",
+                        fontSize: "8pt",
+                        color: "#666",
+                        borderTop: "1px solid #e5e7eb",
+                        lineHeight: "1.4",
                       }}
                     >
-                      <li>
-                        Bảo hành áp dụng cho phụ tùng chính hãng và lỗi kỹ thuật
-                        do thợ
-                      </li>
-                      <li>
-                        Không bảo hành đối với va chạm, ngã xe, ngập nước sau
-                        khi nhận xe
-                      </li>
-                      <li>
-                        Mang theo phiếu này khi đến bảo hành. Liên hệ hotline
-                        nếu có thắc mắc
-                      </li>
-                    </ul>
+                      <p style={{ margin: "0 0 1mm 0", fontWeight: "bold" }}>
+                        Chính sách bảo hành:
+                      </p>
+                      <ul
+                        style={{
+                          margin: "0",
+                          paddingLeft: "5mm",
+                          listStyleType: "disc",
+                        }}
+                      >
+                        <li>
+                          Bảo hành áp dụng cho phụ tùng chính hãng và lỗi kỹ thuật
+                          do thợ
+                        </li>
+                        <li>
+                          Không bảo hành đối với va chạm, ngã xe, ngập nước sau
+                          khi nhận xe
+                        </li>
+                        <li>
+                          Mang theo phiếu này khi đến bảo hành. Liên hệ hotline
+                          nếu có thắc mắc
+                        </li>
+                      </ul>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )
+      }
 
       {/* Print Template (Hidden - only for actual printing) */}
-      {printOrder && (
-        <div
-          id="work-order-receipt"
-          className="hidden print:block"
-          style={{
-            width: "148mm",
-            margin: "0 auto",
-            padding: "10mm",
-            fontFamily: "Arial, sans-serif",
-            fontSize: "11pt",
-            color: "#000",
-            backgroundColor: "#fff",
-          }}
-        >
-          {/* Header with Logo, Store Info and Bank Info */}
+      {
+        printOrder && (
           <div
+            id="work-order-receipt"
+            className="hidden print:block"
             style={{
-              display: "flex",
-              alignItems: "flex-start",
-              gap: "4mm",
-              borderBottom: "2px solid #3b82f6",
-              paddingBottom: "3mm",
-              marginBottom: "4mm",
+              width: "148mm",
+              margin: "0 auto",
+              padding: "10mm",
+              fontFamily: "Arial, sans-serif",
+              fontSize: "11pt",
+              color: "#000",
+              backgroundColor: "#fff",
             }}
           >
-            {/* Left: Logo (if available) */}
-            {storeSettings?.logo_url && (
-              <img
-                src={storeSettings.logo_url}
-                alt="Logo"
-                style={{
-                  height: "18mm",
-                  width: "18mm",
-                  objectFit: "contain",
-                  flexShrink: 0,
-                }}
-              />
-            )}
+            {/* Header with Logo, Store Info and Bank Info */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "flex-start",
+                gap: "4mm",
+                borderBottom: "2px solid #3b82f6",
+                paddingBottom: "3mm",
+                marginBottom: "4mm",
+              }}
+            >
+              {/* Left: Logo (if available) */}
+              {storeSettings?.logo_url && (
+                <img
+                  src={storeSettings.logo_url}
+                  alt="Logo"
+                  style={{
+                    height: "18mm",
+                    width: "18mm",
+                    objectFit: "contain",
+                    flexShrink: 0,
+                  }}
+                />
+              )}
 
-            {/* Center: Store Info */}
-            <div style={{ fontSize: "8.5pt", lineHeight: "1.4", flex: 1 }}>
-              <div
-                style={{
-                  fontWeight: "bold",
-                  fontSize: "11pt",
-                  marginBottom: "1mm",
-                  color: "#1e40af",
-                }}
-              >
-                {storeSettings?.store_name || "Nhạn Lâm SmartCare"}
-              </div>
-              <div
-                style={{
-                  color: "#000",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "1mm",
-                }}
-              >
-                <svg
-                  style={{ width: "10px", height: "10px", flexShrink: 0 }}
-                  viewBox="0 0 24 24"
-                  fill="#ef4444"
+              {/* Center: Store Info */}
+              <div style={{ fontSize: "8.5pt", lineHeight: "1.4", flex: 1 }}>
+                <div
+                  style={{
+                    fontWeight: "bold",
+                    fontSize: "11pt",
+                    marginBottom: "1mm",
+                    color: "#1e40af",
+                  }}
                 >
-                  <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
-                </svg>
-                <span>
-                  {storeSettings?.address ||
-                    "Ấp Phú Lợi B, Xã Long Phú Thuận, Đông Tháp"}
-                </span>
-              </div>
-              <div
-                style={{
-                  color: "#000",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "1mm",
-                }}
-              >
-                <svg
-                  style={{ width: "10px", height: "10px", flexShrink: 0 }}
-                  viewBox="0 0 24 24"
-                  fill="#16a34a"
-                >
-                  <path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z" />
-                </svg>
-                <span>{storeSettings?.phone || "0947.747.907"}</span>
-              </div>
-              {storeSettings?.email && (
+                  {storeSettings?.store_name || "Nhạn Lâm SmartCare"}
+                </div>
                 <div
                   style={{
                     color: "#000",
@@ -4134,346 +4131,265 @@ export default function ServiceManager() {
                   }}
                 >
                   <svg
-                    style={{
-                      width: "10px",
-                      height: "10px",
-                      flexShrink: 0,
-                      fill: "#1877F2"
-                    }}
+                    style={{ width: "10px", height: "10px", flexShrink: 0 }}
                     viewBox="0 0 24 24"
+                    fill="#ef4444"
                   >
-                    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.791-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+                    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
                   </svg>
-                  <span>{storeSettings.email}</span>
+                  <span>
+                    {storeSettings?.address ||
+                      "Ấp Phú Lợi B, Xã Long Phú Thuận, Đông Tháp"}
+                  </span>
                 </div>
-              )}
-            </div>
-
-            {/* Right: Bank Info & QR */}
-            <div
-              style={{
-                fontSize: "8pt",
-                lineHeight: "1.4",
-                textAlign: "right",
-                flexShrink: 0,
-              }}
-            >
-              {storeSettings?.bank_name && (
                 <div
                   style={{
+                    color: "#000",
                     display: "flex",
                     alignItems: "center",
-                    justifyContent: "flex-end",
-                    gap: "3mm",
-                    border: "1px solid #3b82f6",
-                    borderRadius: "2mm",
-                    padding: "2mm",
-                    backgroundColor: "#eff6ff",
+                    gap: "1mm",
                   }}
                 >
-                  {/* Bank Info */}
-                  <div style={{ textAlign: "right", flex: 1 }}>
-                    <div
+                  <svg
+                    style={{ width: "10px", height: "10px", flexShrink: 0 }}
+                    viewBox="0 0 24 24"
+                    fill="#16a34a"
+                  >
+                    <path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z" />
+                  </svg>
+                  <span>{storeSettings?.phone || "0947.747.907"}</span>
+                </div>
+                {storeSettings?.email && (
+                  <div
+                    style={{
+                      color: "#000",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "1mm",
+                    }}
+                  >
+                    <svg
                       style={{
-                        fontWeight: "bold",
-                        marginBottom: "1mm",
-                        color: "#000",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "flex-end",
-                        gap: "1mm",
+                        width: "10px",
+                        height: "10px",
+                        flexShrink: 0,
+                        fill: "#1877F2"
                       }}
+                      viewBox="0 0 24 24"
                     >
-                      <svg
-                        style={{ width: "10px", height: "10px", flexShrink: 0 }}
-                        viewBox="0 0 24 24"
-                        fill="#0891b2"
+                      <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.791-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+                    </svg>
+                    <span>{storeSettings.email}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Right: Bank Info & QR */}
+              <div
+                style={{
+                  fontSize: "8pt",
+                  lineHeight: "1.4",
+                  textAlign: "right",
+                  flexShrink: 0,
+                }}
+              >
+                {storeSettings?.bank_name && (
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "flex-end",
+                      gap: "3mm",
+                      border: "1px solid #3b82f6",
+                      borderRadius: "2mm",
+                      padding: "2mm",
+                      backgroundColor: "#eff6ff",
+                    }}
+                  >
+                    {/* Bank Info */}
+                    <div style={{ textAlign: "right", flex: 1 }}>
+                      <div
+                        style={{
+                          fontWeight: "bold",
+                          marginBottom: "1mm",
+                          color: "#000",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "flex-end",
+                          gap: "1mm",
+                        }}
                       >
-                        <path d="M4 10h3v7H4zm6.5 0h3v7h-3zM2 19h20v3H2zm15-9h3v7h-3zm-5-9L2 6v2h20V6z" />
-                      </svg>
-                      <span>{storeSettings.bank_name}</span>
-                    </div>
-                    {storeSettings.bank_account_number && (
-                      <div style={{ color: "#000" }}>
-                        STK: {storeSettings.bank_account_number}
+                        <svg
+                          style={{ width: "10px", height: "10px", flexShrink: 0 }}
+                          viewBox="0 0 24 24"
+                          fill="#0891b2"
+                        >
+                          <path d="M4 10h3v7H4zm6.5 0h3v7h-3zM2 19h20v3H2zm15-9h3v7h-3zm-5-9L2 6v2h20V6z" />
+                        </svg>
+                        <span>{storeSettings.bank_name}</span>
                       </div>
-                    )}
-                    {storeSettings.bank_account_holder && (
-                      <div style={{ color: "#000", fontSize: "7.5pt" }}>
-                        {storeSettings.bank_account_holder}
+                      {storeSettings.bank_account_number && (
+                        <div style={{ color: "#000" }}>
+                          STK: {storeSettings.bank_account_number}
+                        </div>
+                      )}
+                      {storeSettings.bank_account_holder && (
+                        <div style={{ color: "#000", fontSize: "7.5pt" }}>
+                          {storeSettings.bank_account_holder}
+                        </div>
+                      )}
+                    </div>
+                    {/* QR Code - Larger */}
+                    {storeSettings.bank_qr_url && (
+                      <div style={{ flexShrink: 0 }}>
+                        <img
+                          src={storeSettings.bank_qr_url}
+                          alt="QR Banking"
+                          style={{
+                            height: "25mm",
+                            width: "25mm",
+                            objectFit: "contain",
+                          }}
+                        />
                       </div>
                     )}
                   </div>
-                  {/* QR Code - Larger */}
-                  {storeSettings.bank_qr_url && (
-                    <div style={{ flexShrink: 0 }}>
-                      <img
-                        src={storeSettings.bank_qr_url}
-                        alt="QR Banking"
-                        style={{
-                          height: "25mm",
-                          width: "25mm",
-                          objectFit: "contain",
-                        }}
-                      />
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Title & Meta */}
-          <div style={{ marginBottom: "4mm" }}>
-            <div style={{ textAlign: "center", marginBottom: "2mm" }}>
-              <h1
-                style={{
-                  fontSize: "16pt",
-                  fontWeight: "bold",
-                  margin: "0",
-                  textTransform: "uppercase",
-                  color: "#1e40af",
-                }}
-              >
-                PHIẾU DỊCH VỤ SỬA CHỮA
-              </h1>
-            </div>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                fontSize: "9pt",
-                color: "#666",
-              }}
-            >
-              <div>
-                {new Date(printOrder.creationDate).toLocaleString("vi-VN", {
-                  year: "numeric",
-                  month: "2-digit",
-                  day: "2-digit",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-              </div>
-              <div style={{ fontWeight: "bold" }}>
-                Mã:{" "}
-                {formatWorkOrderId(
-                  printOrder.id,
-                  storeSettings?.work_order_prefix
                 )}
               </div>
             </div>
-          </div>
 
-          {/* Customer Info */}
-          <div
-            style={{
-              border: "1px solid #ddd",
-              padding: "4mm",
-              marginBottom: "4mm",
-              borderRadius: "2mm",
-            }}
-          >
-            <table style={{ width: "100%", borderSpacing: "0" }}>
-              <tbody>
-                <tr>
-                  <td
-                    style={{
-                      fontWeight: "bold",
-                      width: "20%",
-                      paddingBottom: "2mm",
-                    }}
-                  >
-                    Khách hàng:
-                  </td>
-                  <td style={{ paddingBottom: "2mm", width: "30%" }}>
-                    {printOrder.customerName}
-                  </td>
-                  <td
-                    style={{
-                      fontWeight: "bold",
-                      width: "15%",
-                      paddingBottom: "2mm",
-                      paddingLeft: "3mm",
-                    }}
-                  >
-                    SĐT:
-                  </td>
-                  <td style={{ paddingBottom: "2mm" }}>
-                    {printOrder.customerPhone}
-                  </td>
-                </tr>
-                <tr>
-                  <td
-                    style={{
-                      fontWeight: "bold",
-                      paddingBottom: "2mm",
-                    }}
-                  >
-                    Loại xe:
-                  </td>
-                  <td style={{ paddingBottom: "2mm" }}>
-                    {printOrder.vehicleModel}
-                  </td>
-                  <td
-                    style={{
-                      fontWeight: "bold",
-                      paddingBottom: "2mm",
-                      paddingLeft: "3mm",
-                    }}
-                  >
-                    Biển số:
-                  </td>
-                  <td style={{ paddingBottom: "2mm" }}>
-                    {printOrder.licensePlate}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          {/* Issue Description */}
-          <div
-            style={{
-              border: "1px solid #ddd",
-              padding: "4mm",
-              marginBottom: "4mm",
-              borderRadius: "2mm",
-            }}
-          >
-            <div style={{ display: "flex", gap: "3mm" }}>
-              <div
-                style={{ fontWeight: "bold", minWidth: "20%", flexShrink: 0 }}
-              >
-                Mô tả sự cố:
+            {/* Title & Meta */}
+            <div style={{ marginBottom: "4mm" }}>
+              <div style={{ textAlign: "center", marginBottom: "2mm" }}>
+                <h1
+                  style={{
+                    fontSize: "16pt",
+                    fontWeight: "bold",
+                    margin: "0",
+                    textTransform: "uppercase",
+                    color: "#1e40af",
+                  }}
+                >
+                  PHIẾU DỊCH VỤ SỬA CHỮA
+                </h1>
               </div>
-              <div style={{ flex: 1, whiteSpace: "pre-wrap" }}>
-                {printOrder.issueDescription || "Không có mô tả"}
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  fontSize: "9pt",
+                  color: "#666",
+                }}
+              >
+                <div>
+                  {new Date(printOrder.creationDate).toLocaleString("vi-VN", {
+                    year: "numeric",
+                    month: "2-digit",
+                    day: "2-digit",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </div>
+                <div style={{ fontWeight: "bold" }}>
+                  Mã:{" "}
+                  {formatWorkOrderId(
+                    printOrder.id,
+                    storeSettings?.work_order_prefix
+                  )}
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Parts Table */}
-          {printOrder.partsUsed && printOrder.partsUsed.length > 0 && (
-            <div style={{ marginBottom: "4mm" }}>
-              <p
-                style={{
-                  fontWeight: "bold",
-                  margin: "0 0 2mm 0",
-                  fontSize: "11pt",
-                }}
-              >
-                Phụ tùng sử dụng:
-              </p>
-              <table
-                style={{
-                  width: "100%",
-                  borderCollapse: "collapse",
-                  border: "1px solid #ddd",
-                }}
-              >
-                <thead>
-                  <tr style={{ backgroundColor: "#f5f5f5" }}>
-                    <th
-                      style={{
-                        border: "1px solid #ddd",
-                        padding: "2mm",
-                        textAlign: "left",
-                        fontSize: "10pt",
-                      }}
-                    >
-                      Tên phụ tùng
-                    </th>
-                    <th
-                      style={{
-                        border: "1px solid #ddd",
-                        padding: "2mm",
-                        textAlign: "center",
-                        fontSize: "10pt",
-                        width: "15%",
-                      }}
-                    >
-                      SL
-                    </th>
-                    <th
-                      style={{
-                        border: "1px solid #ddd",
-                        padding: "2mm",
-                        textAlign: "right",
-                        fontSize: "10pt",
-                        width: "25%",
-                      }}
-                    >
-                      Đơn giá
-                    </th>
-                    <th
-                      style={{
-                        border: "1px solid #ddd",
-                        padding: "2mm",
-                        textAlign: "right",
-                        fontSize: "10pt",
-                        width: "25%",
-                      }}
-                    >
-                      Thành tiền
-                    </th>
-                  </tr>
-                </thead>
+            {/* Customer Info */}
+            <div
+              style={{
+                border: "1px solid #ddd",
+                padding: "4mm",
+                marginBottom: "4mm",
+                borderRadius: "2mm",
+              }}
+            >
+              <table style={{ width: "100%", borderSpacing: "0" }}>
                 <tbody>
-                  {printOrder.partsUsed.map(
-                    (part: WorkOrderPart, idx: number) => (
-                      <tr key={idx}>
-                        <td
-                          style={{
-                            border: "1px solid #ddd",
-                            padding: "2mm",
-                            fontSize: "10pt",
-                          }}
-                        >
-                          {part.partName}
-                        </td>
-                        <td
-                          style={{
-                            border: "1px solid #ddd",
-                            padding: "2mm",
-                            textAlign: "center",
-                            fontSize: "10pt",
-                          }}
-                        >
-                          {part.quantity}
-                        </td>
-                        <td
-                          style={{
-                            border: "1px solid #ddd",
-                            padding: "2mm",
-                            textAlign: "right",
-                            fontSize: "10pt",
-                          }}
-                        >
-                          {formatCurrency(part.price)}
-                        </td>
-                        <td
-                          style={{
-                            border: "1px solid #ddd",
-                            padding: "2mm",
-                            textAlign: "right",
-                            fontSize: "10pt",
-                            fontWeight: "bold",
-                          }}
-                        >
-                          {formatCurrency(part.price * part.quantity)}
-                        </td>
-                      </tr>
-                    )
-                  )}
+                  <tr>
+                    <td
+                      style={{
+                        fontWeight: "bold",
+                        width: "20%",
+                        paddingBottom: "2mm",
+                      }}
+                    >
+                      Khách hàng:
+                    </td>
+                    <td style={{ paddingBottom: "2mm", width: "30%" }}>
+                      {printOrder.customerName}
+                    </td>
+                    <td
+                      style={{
+                        fontWeight: "bold",
+                        width: "15%",
+                        paddingBottom: "2mm",
+                        paddingLeft: "3mm",
+                      }}
+                    >
+                      SĐT:
+                    </td>
+                    <td style={{ paddingBottom: "2mm" }}>
+                      {printOrder.customerPhone}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td
+                      style={{
+                        fontWeight: "bold",
+                        paddingBottom: "2mm",
+                      }}
+                    >
+                      Loại xe:
+                    </td>
+                    <td style={{ paddingBottom: "2mm" }}>
+                      {printOrder.vehicleModel}
+                    </td>
+                    <td
+                      style={{
+                        fontWeight: "bold",
+                        paddingBottom: "2mm",
+                        paddingLeft: "3mm",
+                      }}
+                    >
+                      Biển số:
+                    </td>
+                    <td style={{ paddingBottom: "2mm" }}>
+                      {printOrder.licensePlate}
+                    </td>
+                  </tr>
                 </tbody>
               </table>
             </div>
-          )}
 
-          {/* Additional Services */}
-          {printOrder.additionalServices &&
-            printOrder.additionalServices.length > 0 && (
+            {/* Issue Description */}
+            <div
+              style={{
+                border: "1px solid #ddd",
+                padding: "4mm",
+                marginBottom: "4mm",
+                borderRadius: "2mm",
+              }}
+            >
+              <div style={{ display: "flex", gap: "3mm" }}>
+                <div
+                  style={{ fontWeight: "bold", minWidth: "20%", flexShrink: 0 }}
+                >
+                  Mô tả sự cố:
+                </div>
+                <div style={{ flex: 1, whiteSpace: "pre-wrap" }}>
+                  {printOrder.issueDescription || "Không có mô tả"}
+                </div>
+              </div>
+            </div>
+
+            {/* Parts Table */}
+            {printOrder.partsUsed && printOrder.partsUsed.length > 0 && (
               <div style={{ marginBottom: "4mm" }}>
                 <p
                   style={{
@@ -4482,7 +4398,7 @@ export default function ServiceManager() {
                     fontSize: "11pt",
                   }}
                 >
-                  Dịch vụ bổ sung:
+                  Phụ tùng sử dụng:
                 </p>
                 <table
                   style={{
@@ -4501,7 +4417,7 @@ export default function ServiceManager() {
                           fontSize: "10pt",
                         }}
                       >
-                        Tên dịch vụ
+                        Tên phụ tùng
                       </th>
                       <th
                         style={{
@@ -4523,440 +4439,562 @@ export default function ServiceManager() {
                           width: "25%",
                         }}
                       >
+                        Đơn giá
+                      </th>
+                      <th
+                        style={{
+                          border: "1px solid #ddd",
+                          padding: "2mm",
+                          textAlign: "right",
+                          fontSize: "10pt",
+                          width: "25%",
+                        }}
+                      >
                         Thành tiền
                       </th>
                     </tr>
                   </thead>
                   <tbody>
-                    {printOrder.additionalServices.map((service, idx) => (
-                      <tr key={idx}>
-                        <td
-                          style={{
-                            border: "1px solid #ddd",
-                            padding: "2mm",
-                            fontSize: "10pt",
-                          }}
-                        >
-                          {service.description}
-                        </td>
-                        <td
-                          style={{
-                            border: "1px solid #ddd",
-                            padding: "2mm",
-                            textAlign: "center",
-                            fontSize: "10pt",
-                          }}
-                        >
-                          {service.quantity || 1}
-                        </td>
-                        <td
-                          style={{
-                            border: "1px solid #ddd",
-                            padding: "2mm",
-                            textAlign: "right",
-                            fontSize: "10pt",
-                            fontWeight: "bold",
-                          }}
-                        >
-                          {formatCurrency((service.price || 0) * (service.quantity || 1))}
-                        </td>
-                      </tr>
-                    ))}
+                    {printOrder.partsUsed.map(
+                      (part: WorkOrderPart, idx: number) => (
+                        <tr key={idx}>
+                          <td
+                            style={{
+                              border: "1px solid #ddd",
+                              padding: "2mm",
+                              fontSize: "10pt",
+                            }}
+                          >
+                            {part.partName}
+                          </td>
+                          <td
+                            style={{
+                              border: "1px solid #ddd",
+                              padding: "2mm",
+                              textAlign: "center",
+                              fontSize: "10pt",
+                            }}
+                          >
+                            {part.quantity}
+                          </td>
+                          <td
+                            style={{
+                              border: "1px solid #ddd",
+                              padding: "2mm",
+                              textAlign: "right",
+                              fontSize: "10pt",
+                            }}
+                          >
+                            {formatCurrency(part.price)}
+                          </td>
+                          <td
+                            style={{
+                              border: "1px solid #ddd",
+                              padding: "2mm",
+                              textAlign: "right",
+                              fontSize: "10pt",
+                              fontWeight: "bold",
+                            }}
+                          >
+                            {formatCurrency(part.price * part.quantity)}
+                          </td>
+                        </tr>
+                      )
+                    )}
                   </tbody>
                 </table>
               </div>
             )}
 
-          {/* Cost Summary - Only show items > 0 */}
-          <div
-            style={{
-              border: "1px solid #ddd",
-              padding: "4mm",
-              marginBottom: "4mm",
-              borderRadius: "2mm",
-              backgroundColor: "#f9f9f9",
-            }}
-          >
-            <table style={{ width: "100%", borderSpacing: "0" }}>
-              <tbody>
-                {/* Tiền phụ tùng - chỉ hiển thị khi > 0 */}
-                {(() => {
-                  const partsTotal = printOrder.partsUsed?.reduce(
-                    (sum: number, p: WorkOrderPart) => sum + p.price * p.quantity,
-                    0
-                  ) || 0;
-                  return partsTotal > 0 && (
-                    <tr>
-                      <td style={{ fontWeight: "bold", paddingBottom: "2mm", fontSize: "10pt" }}>
-                        Tiền phụ tùng:
-                      </td>
-                      <td style={{ textAlign: "right", paddingBottom: "2mm", fontSize: "10pt" }}>
-                        {formatCurrency(partsTotal)}
-                      </td>
-                    </tr>
-                  );
-                })()}
-
-                {/* Phí dịch vụ (laborCost) - chỉ hiển thị khi > 0 */}
-                {(printOrder.laborCost ?? 0) > 0 && (
-                  <tr>
-                    <td style={{ fontWeight: "bold", paddingBottom: "2mm", fontSize: "10pt" }}>
-                      Phí dịch vụ:
-                    </td>
-                    <td style={{ textAlign: "right", paddingBottom: "2mm", fontSize: "10pt" }}>
-                      {formatCurrency(printOrder.laborCost || 0)}
-                    </td>
-                  </tr>
-                )}
-
-                {/* Giá công/Đặt hàng - chỉ hiển thị khi > 0 */}
-                {(() => {
-                  const additionalTotal = printOrder.additionalServices?.reduce(
-                    (sum: number, s: any) => sum + (s.price || 0) * (s.quantity || 1),
-                    0
-                  ) || 0;
-                  return additionalTotal > 0 && (
-                    <tr>
-                      <td style={{ fontWeight: "bold", paddingBottom: "2mm", fontSize: "10pt" }}>
-                        Giá công/Đặt hàng:
-                      </td>
-                      <td style={{ textAlign: "right", paddingBottom: "2mm", fontSize: "10pt" }}>
-                        {formatCurrency(additionalTotal)}
-                      </td>
-                    </tr>
-                  );
-                })()}
-
-                {/* Dịch vụ bổ sung aggregated above as Giá công/Đặt hàng */}
-                {printOrder.discount != null && printOrder.discount > 0 && (
-                  <tr>
-                    <td
-                      style={{
-                        fontWeight: "bold",
-                        paddingBottom: "2mm",
-                        fontSize: "10pt",
-                        color: "#e74c3c",
-                      }}
-                    >
-                      Giảm giá:
-                    </td>
-                    <td
-                      style={{
-                        textAlign: "right",
-                        paddingBottom: "2mm",
-                        fontSize: "10pt",
-                        color: "#e74c3c",
-                      }}
-                    >
-                      -{formatCurrency(printOrder.discount)}
-                    </td>
-                  </tr>
-                )}
-                <tr style={{ borderTop: "2px solid #333" }}>
-                  <td
+            {/* Additional Services */}
+            {printOrder.additionalServices &&
+              printOrder.additionalServices.length > 0 && (
+                <div style={{ marginBottom: "4mm" }}>
+                  <p
                     style={{
                       fontWeight: "bold",
-                      paddingTop: "2mm",
-                      fontSize: "12pt",
+                      margin: "0 0 2mm 0",
+                      fontSize: "11pt",
                     }}
                   >
-                    TỔNG CỘNG:
-                  </td>
-                  <td
+                    Dịch vụ bổ sung:
+                  </p>
+                  <table
                     style={{
-                      textAlign: "right",
-                      paddingTop: "2mm",
-                      fontSize: "12pt",
-                      fontWeight: "bold",
-                      color: "#2563eb",
+                      width: "100%",
+                      borderCollapse: "collapse",
+                      border: "1px solid #ddd",
                     }}
                   >
-                    {formatCurrency(printOrder.total)} ₫
-                  </td>
-                </tr>
-                {printOrder.totalPaid != null && printOrder.totalPaid > 0 && (
-                  <tr>
-                    <td
-                      style={{
-                        fontWeight: "bold",
-                        paddingTop: "2mm",
-                        fontSize: "10pt",
-                        color: "#16a34a",
-                      }}
-                    >
-                      Đã thanh toán:
-                    </td>
-                    <td
-                      style={{
-                        textAlign: "right",
-                        paddingTop: "2mm",
-                        fontSize: "10pt",
-                        color: "#16a34a",
-                      }}
-                    >
-                      {formatCurrency(printOrder.totalPaid)}
-                    </td>
-                  </tr>
-                )}
-                {printOrder.remainingAmount != null &&
-                  printOrder.remainingAmount > 0 && (
+                    <thead>
+                      <tr style={{ backgroundColor: "#f5f5f5" }}>
+                        <th
+                          style={{
+                            border: "1px solid #ddd",
+                            padding: "2mm",
+                            textAlign: "left",
+                            fontSize: "10pt",
+                          }}
+                        >
+                          Tên dịch vụ
+                        </th>
+                        <th
+                          style={{
+                            border: "1px solid #ddd",
+                            padding: "2mm",
+                            textAlign: "center",
+                            fontSize: "10pt",
+                            width: "15%",
+                          }}
+                        >
+                          SL
+                        </th>
+                        <th
+                          style={{
+                            border: "1px solid #ddd",
+                            padding: "2mm",
+                            textAlign: "right",
+                            fontSize: "10pt",
+                            width: "25%",
+                          }}
+                        >
+                          Thành tiền
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {printOrder.additionalServices.map((service, idx) => (
+                        <tr key={idx}>
+                          <td
+                            style={{
+                              border: "1px solid #ddd",
+                              padding: "2mm",
+                              fontSize: "10pt",
+                            }}
+                          >
+                            {service.description}
+                          </td>
+                          <td
+                            style={{
+                              border: "1px solid #ddd",
+                              padding: "2mm",
+                              textAlign: "center",
+                              fontSize: "10pt",
+                            }}
+                          >
+                            {service.quantity || 1}
+                          </td>
+                          <td
+                            style={{
+                              border: "1px solid #ddd",
+                              padding: "2mm",
+                              textAlign: "right",
+                              fontSize: "10pt",
+                              fontWeight: "bold",
+                            }}
+                          >
+                            {formatCurrency((service.price || 0) * (service.quantity || 1))}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+            {/* Cost Summary - Only show items > 0 */}
+            <div
+              style={{
+                border: "1px solid #ddd",
+                padding: "4mm",
+                marginBottom: "4mm",
+                borderRadius: "2mm",
+                backgroundColor: "#f9f9f9",
+              }}
+            >
+              <table style={{ width: "100%", borderSpacing: "0" }}>
+                <tbody>
+                  {/* Tiền phụ tùng - chỉ hiển thị khi > 0 */}
+                  {(() => {
+                    const partsTotal = printOrder.partsUsed?.reduce(
+                      (sum: number, p: WorkOrderPart) => sum + p.price * p.quantity,
+                      0
+                    ) || 0;
+                    return partsTotal > 0 && (
+                      <tr>
+                        <td style={{ fontWeight: "bold", paddingBottom: "2mm", fontSize: "10pt" }}>
+                          Tiền phụ tùng:
+                        </td>
+                        <td style={{ textAlign: "right", paddingBottom: "2mm", fontSize: "10pt" }}>
+                          {formatCurrency(partsTotal)}
+                        </td>
+                      </tr>
+                    );
+                  })()}
+
+                  {/* Phí dịch vụ (laborCost) - chỉ hiển thị khi > 0 */}
+                  {(printOrder.laborCost ?? 0) > 0 && (
+                    <tr>
+                      <td style={{ fontWeight: "bold", paddingBottom: "2mm", fontSize: "10pt" }}>
+                        Phí dịch vụ:
+                      </td>
+                      <td style={{ textAlign: "right", paddingBottom: "2mm", fontSize: "10pt" }}>
+                        {formatCurrency(printOrder.laborCost || 0)}
+                      </td>
+                    </tr>
+                  )}
+
+                  {/* Giá công/Đặt hàng - chỉ hiển thị khi > 0 */}
+                  {(() => {
+                    const additionalTotal = printOrder.additionalServices?.reduce(
+                      (sum: number, s: any) => sum + (s.price || 0) * (s.quantity || 1),
+                      0
+                    ) || 0;
+                    return additionalTotal > 0 && (
+                      <tr>
+                        <td style={{ fontWeight: "bold", paddingBottom: "2mm", fontSize: "10pt" }}>
+                          Giá công/Đặt hàng:
+                        </td>
+                        <td style={{ textAlign: "right", paddingBottom: "2mm", fontSize: "10pt" }}>
+                          {formatCurrency(additionalTotal)}
+                        </td>
+                      </tr>
+                    );
+                  })()}
+
+                  {/* Dịch vụ bổ sung aggregated above as Giá công/Đặt hàng */}
+                  {printOrder.discount != null && printOrder.discount > 0 && (
                     <tr>
                       <td
                         style={{
                           fontWeight: "bold",
-                          fontSize: "11pt",
-                          color: "#dc2626",
+                          paddingBottom: "2mm",
+                          fontSize: "10pt",
+                          color: "#e74c3c",
                         }}
                       >
-                        Còn lại:
+                        Giảm giá:
                       </td>
                       <td
                         style={{
                           textAlign: "right",
-                          fontSize: "11pt",
-                          fontWeight: "bold",
-                          color: "#dc2626",
+                          paddingBottom: "2mm",
+                          fontSize: "10pt",
+                          color: "#e74c3c",
                         }}
                       >
-                        {formatCurrency(printOrder.remainingAmount)}
+                        -{formatCurrency(printOrder.discount)}
                       </td>
                     </tr>
                   )}
-                {printOrder.paymentMethod && (
-                  <tr>
+                  <tr style={{ borderTop: "2px solid #333" }}>
                     <td
                       style={{
+                        fontWeight: "bold",
                         paddingTop: "2mm",
-                        fontSize: "9pt",
-                        color: "#666",
+                        fontSize: "12pt",
                       }}
                     >
-                      Hình thức thanh toán:
+                      TỔNG CỘNG:
                     </td>
                     <td
                       style={{
                         textAlign: "right",
                         paddingTop: "2mm",
-                        fontSize: "9pt",
-                        color: "#666",
+                        fontSize: "12pt",
+                        fontWeight: "bold",
+                        color: "#2563eb",
                       }}
                     >
-                      {printOrder.paymentMethod === "cash"
-                        ? "Tiền mặt"
-                        : printOrder.paymentMethod === "bank"
-                          ? "Chuyển khoản"
-                          : printOrder.paymentMethod}
+                      {formatCurrency(printOrder.total)} ₫
                     </td>
                   </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+                  {printOrder.totalPaid != null && printOrder.totalPaid > 0 && (
+                    <tr>
+                      <td
+                        style={{
+                          fontWeight: "bold",
+                          paddingTop: "2mm",
+                          fontSize: "10pt",
+                          color: "#16a34a",
+                        }}
+                      >
+                        Đã thanh toán:
+                      </td>
+                      <td
+                        style={{
+                          textAlign: "right",
+                          paddingTop: "2mm",
+                          fontSize: "10pt",
+                          color: "#16a34a",
+                        }}
+                      >
+                        {formatCurrency(printOrder.totalPaid)}
+                      </td>
+                    </tr>
+                  )}
+                  {printOrder.remainingAmount != null &&
+                    printOrder.remainingAmount > 0 && (
+                      <tr>
+                        <td
+                          style={{
+                            fontWeight: "bold",
+                            fontSize: "11pt",
+                            color: "#dc2626",
+                          }}
+                        >
+                          Còn lại:
+                        </td>
+                        <td
+                          style={{
+                            textAlign: "right",
+                            fontSize: "11pt",
+                            fontWeight: "bold",
+                            color: "#dc2626",
+                          }}
+                        >
+                          {formatCurrency(printOrder.remainingAmount)}
+                        </td>
+                      </tr>
+                    )}
+                  {printOrder.paymentMethod && (
+                    <tr>
+                      <td
+                        style={{
+                          paddingTop: "2mm",
+                          fontSize: "9pt",
+                          color: "#666",
+                        }}
+                      >
+                        Hình thức thanh toán:
+                      </td>
+                      <td
+                        style={{
+                          textAlign: "right",
+                          paddingTop: "2mm",
+                          fontSize: "9pt",
+                          color: "#666",
+                        }}
+                      >
+                        {printOrder.paymentMethod === "cash"
+                          ? "Tiền mặt"
+                          : printOrder.paymentMethod === "bank"
+                            ? "Chuyển khoản"
+                            : printOrder.paymentMethod}
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
 
-          {/* Footer */}
-          <div
-            style={{
-              marginTop: "8mm",
-              paddingTop: "4mm",
-              borderTop: "1px dashed #999",
-            }}
-          >
+            {/* Footer */}
             <div
               style={{
-                display: "flex",
-                justifyContent: "space-between",
-                fontSize: "10pt",
+                marginTop: "8mm",
+                paddingTop: "4mm",
+                borderTop: "1px dashed #999",
               }}
             >
-              <div style={{ textAlign: "center", width: "45%" }}>
-                <p style={{ fontWeight: "bold", margin: "0 0 10mm 0" }}>
-                  Khách hàng
-                </p>
-                <p style={{ margin: "0", fontSize: "9pt", color: "#666" }}>
-                  (Ký và ghi rõ họ tên)
-                </p>
-              </div>
-              <div style={{ textAlign: "center", width: "45%" }}>
-                <p style={{ fontWeight: "bold", margin: "0 0 10mm 0" }}>
-                  Nhân viên
-                </p>
-                <p style={{ margin: "0", fontSize: "9pt", color: "#666" }}>
-                  {printOrder.technicianName || "(Ký và ghi rõ họ tên)"}
-                </p>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  fontSize: "10pt",
+                }}
+              >
+                <div style={{ textAlign: "center", width: "45%" }}>
+                  <p style={{ fontWeight: "bold", margin: "0 0 10mm 0" }}>
+                    Khách hàng
+                  </p>
+                  <p style={{ margin: "0", fontSize: "9pt", color: "#666" }}>
+                    (Ký và ghi rõ họ tên)
+                  </p>
+                </div>
+                <div style={{ textAlign: "center", width: "45%" }}>
+                  <p style={{ fontWeight: "bold", margin: "0 0 10mm 0" }}>
+                    Nhân viên
+                  </p>
+                  <p style={{ margin: "0", fontSize: "9pt", color: "#666" }}>
+                    {printOrder.technicianName || "(Ký và ghi rõ họ tên)"}
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Note */}
-          <div
-            style={{
-              marginTop: "4mm",
-              padding: "3mm",
-              backgroundColor: "#fff9e6",
-              border: "1px solid #ffd700",
-              borderRadius: "2mm",
-              fontSize: "9pt",
-              textAlign: "center",
-            }}
-          >
-            <p style={{ margin: "0", fontStyle: "italic" }}>
-              Cảm ơn quý khách đã sử dụng dịch vụ!
-            </p>
-            <p style={{ margin: "1mm 0 0 0", fontStyle: "italic" }}>
-              Vui lòng giữ phiếu này để đối chiếu khi nhận xe
-            </p>
-          </div>
-
-          {/* Warranty Policy Disclaimer */}
-          <div
-            style={{
-              marginTop: "3mm",
-              padding: "2mm",
-              fontSize: "8pt",
-              color: "#666",
-              borderTop: "1px solid #e5e7eb",
-              lineHeight: "1.4",
-            }}
-          >
-            <p style={{ margin: "0 0 1mm 0", fontWeight: "bold" }}>
-              Chính sách bảo hành:
-            </p>
-            <ul
+            {/* Note */}
+            <div
               style={{
-                margin: "0",
-                paddingLeft: "5mm",
-                listStyleType: "disc",
+                marginTop: "4mm",
+                padding: "3mm",
+                backgroundColor: "#fff9e6",
+                border: "1px solid #ffd700",
+                borderRadius: "2mm",
+                fontSize: "9pt",
+                textAlign: "center",
               }}
             >
-              <li>
-                Bảo hành áp dụng cho phụ tùng chính hãng và lỗi kỹ thuật do thợ
-              </li>
-              <li>
-                Không bảo hành đối với va chạm, ngã xe, ngập nước sau khi nhận
-                xe
-              </li>
-              <li>
-                Mang theo phiếu này khi đến bảo hành. Liên hệ hotline nếu có
-                thắc mắc
-              </li>
-            </ul>
+              <p style={{ margin: "0", fontStyle: "italic" }}>
+                Cảm ơn quý khách đã sử dụng dịch vụ!
+              </p>
+              <p style={{ margin: "1mm 0 0 0", fontStyle: "italic" }}>
+                Vui lòng giữ phiếu này để đối chiếu khi nhận xe
+              </p>
+            </div>
+
+            {/* Warranty Policy Disclaimer */}
+            <div
+              style={{
+                marginTop: "3mm",
+                padding: "2mm",
+                fontSize: "8pt",
+                color: "#666",
+                borderTop: "1px solid #e5e7eb",
+                lineHeight: "1.4",
+              }}
+            >
+              <p style={{ margin: "0 0 1mm 0", fontWeight: "bold" }}>
+                Chính sách bảo hành:
+              </p>
+              <ul
+                style={{
+                  margin: "0",
+                  paddingLeft: "5mm",
+                  listStyleType: "disc",
+                }}
+              >
+                <li>
+                  Bảo hành áp dụng cho phụ tùng chính hãng và lỗi kỹ thuật do thợ
+                </li>
+                <li>
+                  Không bảo hành đối với va chạm, ngã xe, ngập nước sau khi nhận
+                  xe
+                </li>
+                <li>
+                  Mang theo phiếu này khi đến bảo hành. Liên hệ hotline nếu có
+                  thắc mắc
+                </li>
+              </ul>
+            </div>
           </div>
-        </div>
-      )}
+        )
+      }
 
       {/* Refund Modal */}
-      {showRefundModal && refundingOrder && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-slate-800 rounded-xl w-full max-w-md">
-            <div className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-6 py-4 flex items-center justify-between rounded-t-xl">
-              <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">
-                Xác nhận hủy phiếu
-              </h2>
-              <button
-                onClick={() => {
-                  setShowRefundModal(false);
-                  setRefundingOrder(null);
-                }}
-                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
-                aria-label="Đóng"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="p-6 space-y-4">
-              <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
-                <p className="text-sm text-yellow-800 dark:text-yellow-200">
-                  <AlertTriangle className="w-4 h-4 inline-block mr-1 align-[-2px]" />
-                  <strong>Cảnh báo:</strong> Hành động này sẽ:
-                </p>
-                <ul className="mt-2 text-sm text-yellow-700 dark:text-yellow-300 list-disc list-inside space-y-1">
-                  <li>Hoàn trả tồn kho các phụ tùng đã sử dụng</li>
-                  <li>
-                    Hoàn tiền {formatCurrency(refundingOrder.totalPaid || 0)}{" "}
-                    cho khách
-                  </li>
-                  <li>Đánh dấu phiếu là "Đã hủy"</li>
-                </ul>
+      {
+        showRefundModal && refundingOrder && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white dark:bg-slate-800 rounded-xl w-full max-w-md">
+              <div className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-6 py-4 flex items-center justify-between rounded-t-xl">
+                <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">
+                  Xác nhận hủy phiếu
+                </h2>
+                <button
+                  onClick={() => {
+                    setShowRefundModal(false);
+                    setRefundingOrder(null);
+                  }}
+                  className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+                  aria-label="Đóng"
+                >
+                  ✕
+                </button>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                  Lý do hủy phiếu <span className="text-red-500">*</span>
-                </label>
-                <textarea
-                  value={refundReason}
-                  onChange={(e) => setRefundReason(e.target.value)}
-                  placeholder="Vd: Khách hàng không đồng ý chi phí, sửa nhầm xe..."
-                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 resize-none"
-                  rows={3}
-                />
+              <div className="p-6 space-y-4">
+                <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+                  <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                    <AlertTriangle className="w-4 h-4 inline-block mr-1 align-[-2px]" />
+                    <strong>Cảnh báo:</strong> Hành động này sẽ:
+                  </p>
+                  <ul className="mt-2 text-sm text-yellow-700 dark:text-yellow-300 list-disc list-inside space-y-1">
+                    <li>Hoàn trả tồn kho các phụ tùng đã sử dụng</li>
+                    <li>
+                      Hoàn tiền {formatCurrency(refundingOrder.totalPaid || 0)}{" "}
+                      cho khách
+                    </li>
+                    <li>Đánh dấu phiếu là "Đã hủy"</li>
+                  </ul>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                    Lý do hủy phiếu <span className="text-red-500">*</span>
+                  </label>
+                  <textarea
+                    value={refundReason}
+                    onChange={(e) => setRefundReason(e.target.value)}
+                    placeholder="Vd: Khách hàng không đồng ý chi phí, sửa nhầm xe..."
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 resize-none"
+                    rows={3}
+                  />
+                </div>
+
+                <div className="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-3 space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-slate-600 dark:text-slate-400">
+                      Phiếu:
+                    </span>
+                    <span className="font-medium text-slate-900 dark:text-slate-100">
+                      #
+                      {formatWorkOrderId(
+                        refundingOrder.id,
+                        storeSettings?.work_order_prefix
+                      )
+                        .split("-")
+                        .pop()}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-600 dark:text-slate-400">
+                      Khách hàng:
+                    </span>
+                    <span className="font-medium text-slate-900 dark:text-slate-100">
+                      {refundingOrder.customerName}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-600 dark:text-slate-400">
+                      Phụ tùng:
+                    </span>
+                    <span className="font-medium text-slate-900 dark:text-slate-100">
+                      {refundingOrder.partsUsed?.length || 0} món
+                    </span>
+                  </div>
+                  <div className="flex justify-between border-t border-slate-200 dark:border-slate-600 pt-2">
+                    <span className="text-slate-600 dark:text-slate-400">
+                      Số tiền hoàn:
+                    </span>
+                    <span className="font-bold text-red-600 dark:text-red-400">
+                      {formatCurrency(refundingOrder.totalPaid || 0)}
+                    </span>
+                  </div>
+                </div>
               </div>
 
-              <div className="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-3 space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-slate-600 dark:text-slate-400">
-                    Phiếu:
-                  </span>
-                  <span className="font-medium text-slate-900 dark:text-slate-100">
-                    #
-                    {formatWorkOrderId(
-                      refundingOrder.id,
-                      storeSettings?.work_order_prefix
-                    )
-                      .split("-")
-                      .pop()}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-600 dark:text-slate-400">
-                    Khách hàng:
-                  </span>
-                  <span className="font-medium text-slate-900 dark:text-slate-100">
-                    {refundingOrder.customerName}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-600 dark:text-slate-400">
-                    Phụ tùng:
-                  </span>
-                  <span className="font-medium text-slate-900 dark:text-slate-100">
-                    {refundingOrder.partsUsed?.length || 0} món
-                  </span>
-                </div>
-                <div className="flex justify-between border-t border-slate-200 dark:border-slate-600 pt-2">
-                  <span className="text-slate-600 dark:text-slate-400">
-                    Số tiền hoàn:
-                  </span>
-                  <span className="font-bold text-red-600 dark:text-red-400">
-                    {formatCurrency(refundingOrder.totalPaid || 0)}
-                  </span>
-                </div>
+              <div className="bg-slate-50 dark:bg-slate-700/50 px-6 py-4 flex justify-end gap-3 rounded-b-xl">
+                <button
+                  onClick={() => {
+                    setShowRefundModal(false);
+                    setRefundingOrder(null);
+                  }}
+                  className="px-4 py-2 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-lg font-medium"
+                >
+                  Hủy bỏ
+                </button>
+                <button
+                  onClick={handleConfirmRefund}
+                  disabled={!refundReason.trim()}
+                  className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-300 dark:disabled:bg-red-900 text-white rounded-lg font-medium disabled:cursor-not-allowed"
+                >
+                  Xác nhận hủy phiếu
+                </button>
               </div>
-            </div>
-
-            <div className="bg-slate-50 dark:bg-slate-700/50 px-6 py-4 flex justify-end gap-3 rounded-b-xl">
-              <button
-                onClick={() => {
-                  setShowRefundModal(false);
-                  setRefundingOrder(null);
-                }}
-                className="px-4 py-2 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-lg font-medium"
-              >
-                Hủy bỏ
-              </button>
-              <button
-                onClick={handleConfirmRefund}
-                disabled={!refundReason.trim()}
-                className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-300 dark:disabled:bg-red-900 text-white rounded-lg font-medium disabled:cursor-not-allowed"
-              >
-                Xác nhận hủy phiếu
-              </button>
             </div>
           </div>
-        </div>
-      )}
-    </div>
+        )
+      }
+    </div >
   );
 }
 

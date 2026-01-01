@@ -22,6 +22,7 @@ import { useAppContext } from "./contexts/AppContext";
 import { BottomNav, Nav } from "./components/layout";
 import Dashboard from "./components/dashboard/Dashboard";
 import RepoErrorPanel from "./components/common/RepoErrorPanel";
+import TetTheme from "./components/common/TetTheme";
 import { lazyImport } from "./utils/lazyImport";
 
 // Lazy load large components for code splitting
@@ -218,6 +219,7 @@ const MainLayout: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 transition-colors pb-20 md:pb-0">
+      <TetTheme />
       <Nav />
       <main
         className={`max-w-[1600px] mx-auto ${isSalesPage ? "p-0" : "p-0 md:p-6"

@@ -101,11 +101,10 @@ export const MobileDrawerLink: React.FC<{
     <Link
       to={to}
       onClick={onClick}
-      className={`flex items-center gap-3 px-4 py-3 rounded-xl transition ${
-        isActive
+      className={`flex items-center gap-3 px-4 py-3 rounded-xl transition ${isActive
           ? `${colorConfig.bg} ${colorConfig.text} shadow-sm`
           : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/50"
-      }`}
+        }`}
     >
       <div className={`${isActive ? colorConfig.text : ""}`}>{icon}</div>
       <span className="font-medium text-sm">{label}</span>
@@ -127,11 +126,10 @@ export const MobileNavLink: React.FC<{
     <Link
       to={to}
       onClick={onClick}
-      className={`flex items-center gap-3 px-4 py-3 rounded-lg transition ${
-        isActive
+      className={`flex items-center gap-3 px-4 py-3 rounded-lg transition ${isActive
           ? "bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
           : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
-      }`}
+        }`}
     >
       {icon}
       <span className="font-medium">{label}</span>
@@ -152,11 +150,10 @@ export const NavLink: React.FC<{
   return (
     <Link
       to={to}
-      className={`flex flex-col items-center gap-0.5 px-2.5 py-1 rounded-md transition ${
-        isActive
-          ? `${NAV_COLORS[colorKey].bg} ${NAV_COLORS[colorKey].text}`
-          : `text-slate-600 dark:text-slate-300 ${NAV_COLORS[colorKey].hoverBg}`
-      }`}
+      className={`flex flex-col items-center gap-0.5 px-2.5 py-1 rounded-md transition ${isActive
+          ? "bg-white/20 text-white font-bold"
+          : "text-white/80 hover:bg-white/10 hover:text-white"
+        }`}
     >
       <span className="flex items-center justify-center">{icon}</span>
       <span className="text-[10px] font-medium whitespace-nowrap">{label}</span>
@@ -223,13 +220,12 @@ export const BottomNav: React.FC = () => {
       <div className="absolute inset-0 bg-white/80 dark:bg-slate-800/80 backdrop-blur-lg -z-10"></div>
 
       <div
-        className={`grid gap-1 px-2 py-2 ${
-          navItems.length === 3
+        className={`grid gap-1 px-2 py-2 ${navItems.length === 3
             ? "grid-cols-3"
             : navItems.length === 4
-            ? "grid-cols-4"
-            : "grid-cols-5"
-        }`}
+              ? "grid-cols-4"
+              : "grid-cols-5"
+          }`}
       >
         {navItems.map((item) => {
           const isActive = location.pathname === item.to;
@@ -239,16 +235,14 @@ export const BottomNav: React.FC = () => {
             <Link
               key={item.to}
               to={item.to}
-              className={`flex flex-col items-center gap-1 px-1 py-1.5 rounded-lg transition-all duration-200 ${
-                isActive
+              className={`flex flex-col items-center gap-1 px-1 py-1.5 rounded-lg transition-all duration-200 ${isActive
                   ? `${NAV_COLORS[colorKey].bg} ${NAV_COLORS[colorKey].text}`
                   : "text-slate-600 dark:text-slate-400 active:scale-95"
-              }`}
+                }`}
             >
               <div
-                className={`transition-transform ${
-                  isActive ? "scale-105" : ""
-                }`}
+                className={`transition-transform ${isActive ? "scale-105" : ""
+                  }`}
               >
                 {React.cloneElement(
                   item.icon as React.ReactElement<{ className?: string }>,
@@ -258,9 +252,8 @@ export const BottomNav: React.FC = () => {
                 )}
               </div>
               <span
-                className={`text-[9px] font-medium truncate w-full text-center ${
-                  isActive ? "font-semibold" : ""
-                }`}
+                className={`text-[9px] font-medium truncate w-full text-center ${isActive ? "font-semibold" : ""
+                  }`}
               >
                 {item.label}
               </span>

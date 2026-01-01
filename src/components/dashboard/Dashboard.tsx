@@ -51,6 +51,7 @@ import StatCard from "./components/StatCard";
 import StatusItem from "./components/StatusItem";
 import QuickActionCard from "./components/QuickActionCard";
 import TetBanner from "./components/TetBanner";
+import TetConfetti from "../common/TetConfetti";
 
 // Hooks
 import { useDashboardData } from "./hooks/useDashboardData";
@@ -117,6 +118,7 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="space-y-3 md:space-y-4">
+      <TetConfetti duration={6000} count={40} />
       <TetBanner />
       {/* Header - Lời chào người dùng - Chỉ hiện trên mobile */}
       <div className="md:hidden bg-gradient-to-r from-red-600 to-yellow-500 rounded-2xl p-4 md:p-6 text-white shadow-lg">

@@ -66,7 +66,7 @@ export function Nav() {
   } as const;
 
   return (
-    <nav className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-50">
+    <nav className="bg-gradient-to-r from-red-600 via-red-500 to-yellow-500 border-b border-red-800/20 sticky top-0 z-50">
       <div className="max-w-[1600px] mx-auto px-2 md:px-4 py-1 md:py-1.5">
         <div className="flex items-center justify-between">
           {/* Left: Brand and Branch Selector */}
@@ -77,7 +77,7 @@ export function Nav() {
               className="md:hidden p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition"
               aria-label="Menu"
             >
-              <Menu className="w-5 h-5 text-slate-600 dark:text-slate-300" />
+              <Menu className="w-5 h-5 text-white" />
             </button>
 
             {/* Brand Logo acts as settings toggle */}
@@ -93,13 +93,13 @@ export function Nav() {
                   className="w-8 h-8 md:w-10 md:h-10 rounded-lg shadow-sm ring-1 ring-slate-200 dark:ring-slate-700 group-hover:shadow-md group-hover:ring-emerald-400/60 dark:group-hover:ring-emerald-500/60 transition"
                 />
                 {/* Mobile: Shorter name */}
-                <span className="font-bold text-xs tracking-tight bg-gradient-to-r from-emerald-600 to-blue-600 text-transparent bg-clip-text dark:from-emerald-400 dark:to-blue-400 lg:hidden">
+                <span className="font-bold text-xs tracking-tight text-white lg:hidden">
                   Nhạn Lâm
                   <br />
                   SmartCare
                 </span>
                 {/* Desktop: Full name */}
-                <span className="font-bold text-sm tracking-tight bg-gradient-to-r from-emerald-600 to-blue-600 text-transparent bg-clip-text dark:from-emerald-400 dark:to-blue-400 hidden lg:inline whitespace-nowrap">
+                <span className="font-bold text-sm tracking-tight text-white hidden lg:inline whitespace-nowrap">
                   Nhạn Lâm SmartCare
                 </span>
               </button>
@@ -322,7 +322,7 @@ export function Nav() {
             {/* Menu Drawer - Redesigned with modern style */}
             <div className="fixed inset-y-0 left-0 w-80 bg-gradient-to-br from-white to-slate-50 dark:from-slate-800 dark:to-slate-900 z-50 shadow-2xl md:hidden overflow-y-auto animate-slide-in-left">
               {/* Header with Profile */}
-              <div className="relative p-6 pb-8 bg-gradient-to-br from-blue-600 to-violet-600 dark:from-blue-700 dark:to-violet-800">
+              <div className="relative p-6 pb-8 bg-gradient-to-br from-red-600 to-yellow-500">
                 <button
                   onClick={() => setShowMobileMenu(false)}
                   className="absolute top-4 right-4 p-2 hover:bg-white/10 rounded-lg transition text-white"

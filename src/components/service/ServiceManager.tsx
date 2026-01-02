@@ -3203,8 +3203,13 @@ export default function ServiceManager() {
               <div className="flex-1 overflow-y-auto p-6 bg-slate-100 dark:bg-slate-900">
                 <div
                   ref={invoicePreviewRef}
-                  className="bg-white shadow-lg mx-auto relative"
-                  style={{ width: "148mm", minHeight: "210mm", color: "#000" }}
+                  className="bg-white shadow-lg mx-auto relative !bg-white !text-black"
+                  style={{
+                    width: "148mm",
+                    minHeight: "210mm",
+                    color: "#000000",
+                    backgroundColor: "#ffffff"
+                  }}
                 >
                   {/* Watermark Logo for Print - DESKTOP VERSION */}
                   <div

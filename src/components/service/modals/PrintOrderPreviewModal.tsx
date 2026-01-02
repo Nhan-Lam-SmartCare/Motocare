@@ -139,11 +139,19 @@ const PrintOrderPreviewModal: React.FC<PrintOrderPreviewModalProps> = ({
                     </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-6 bg-slate-100 dark:bg-slate-900">
+                <div className="flex-1 overflow-y-auto p-4 bg-slate-100 dark:bg-slate-900 flex justify-center">
                     <div
                         id="mobile-print-preview-content"
-                        className="bg-white shadow-lg mx-auto relative"
-                        style={{ width: "148mm", minHeight: "210mm", color: "#000" }}
+                        className="bg-white shadow-lg relative !bg-white !text-black flex-shrink-0"
+                        style={{
+                            width: "148mm", // Keep original A5 width
+                            minHeight: "210mm",
+                            color: "#000000",
+                            backgroundColor: "#ffffff",
+                            transform: "scale(0.63)", // Scale down to fit mobile
+                            transformOrigin: "top center",
+                            marginBottom: "-75mm" // Compensate for scale white space
+                        }}
                     >
                         {/* Watermark Logo for Print */}
                         <div
@@ -172,8 +180,10 @@ const PrintOrderPreviewModal: React.FC<PrintOrderPreviewModalProps> = ({
                                 }}
                             />
                         </div>
-                        <div style={{ padding: "10mm" }}>
+                        <div style={{ padding: "16px" }}>
                             {/* Store Info Header - Compact Layout */}
+                            {/* Store Info Header - Mobile Optimized (Stacked) */}
+                            {/* Store Info Header - Compact Layout (Side-by-Side) */}
                             <div
                                 style={{
                                     display: "flex",

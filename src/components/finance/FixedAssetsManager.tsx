@@ -439,7 +439,7 @@ const AssetModal: React.FC<{
       location,
       serialNumber,
       supplier,
-      warranty,
+      warranty: warranty ? new Date(warranty).toISOString() : "",
       notes,
       branchId,
     };

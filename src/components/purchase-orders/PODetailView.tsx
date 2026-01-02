@@ -88,6 +88,7 @@ export const PODetailView: React.FC<PODetailViewProps> = ({
   const [editShipping, setEditShipping] = useState(0);
   const [editingStatus, setEditingStatus] = useState(false);
   const [newStatus, setNewStatus] = useState("");
+  const [paymentSource, setPaymentSource] = useState("cash");
 
   // Initialize edit values when PO loads
   React.useEffect(() => {
@@ -180,8 +181,26 @@ export const PODetailView: React.FC<PODetailViewProps> = ({
 
     if (confirmed) {
       try {
-        await convertMutation.mutateAsync(po.id);
-        showToast.success("Đã tạo phiếu nhập kho");
+        const res = await convertMutation.mutateAsync({
+          poId: po.id,
+          paymentSource,
+        });
+
+        if (res?.cashTxCreated) {
+          showToast.success("Đã tạo phiếu nhập kho và phiếu chi");
+        } else {
+          showToast.success("Đã tạo phiếu nhập kho");
+          const errCode = (res as any)?.cashTxError?.code;
+          const errMsg = (res as any)?.cashTxError?.message;
+          showToast.warning(
+            errMsg
+              ? `Không tạo được phiếu chi (${errCode || ""}): ${errMsg}`.trim()
+              : "Không tạo được phiếu chi trong sổ quỹ. Vui lòng kiểm tra quyền/RLS hoặc tạo phiếu chi thủ công."
+          );
+          if (res?.cashTxError) {
+            console.error("Cash transaction create error:", res.cashTxError);
+          }
+        }
         onConverted?.();
         onClose();
       } catch (error) {
@@ -820,14 +839,25 @@ export const PODetailView: React.FC<PODetailViewProps> = ({
               </button>
             )}
             {po.status === "ordered" && (
-              <button
-                onClick={handleConvertToReceipt}
-                disabled={convertMutation.isPending}
-                className="flex items-center gap-2 px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl transition-all shadow-lg shadow-green-500/20 active:scale-95 font-bold disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <FileCheck className="w-5 h-5" />
-                {convertMutation.isPending ? "Đang xử lý..." : "Nhập kho"}
-              </button>
+              <div className="flex items-center gap-2">
+                <select
+                  value={paymentSource}
+                  onChange={(e) => setPaymentSource(e.target.value)}
+                  className="px-3 py-2.5 text-sm border border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-green-500"
+                  title="Phương thức thanh toán"
+                >
+                  <option value="cash">Tiền mặt</option>
+                  <option value="bank">Chuyển khoản</option>
+                </select>
+                <button
+                  onClick={handleConvertToReceipt}
+                  disabled={convertMutation.isPending}
+                  className="flex items-center gap-2 px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl transition-all shadow-lg shadow-green-500/20 active:scale-95 font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <FileCheck className="w-5 h-5" />
+                  {convertMutation.isPending ? "Đang xử lý..." : "Nhập kho"}
+                </button>
+              </div>
             )}
           </div>
         </div>
@@ -851,14 +881,25 @@ export const PODetailView: React.FC<PODetailViewProps> = ({
             </button>
           )}
           {po.status === "ordered" && (
-            <button
-              onClick={handleConvertToReceipt}
-              disabled={convertMutation.isPending}
-              className="flex-[2] py-3.5 rounded-xl bg-green-600 text-white font-bold text-sm shadow-lg shadow-green-500/20 active:scale-95 transition-all flex items-center justify-center gap-2"
-            >
-              <FileCheck className="w-4 h-4" />
-              {convertMutation.isPending ? "Đang xử lý..." : "Nhập kho"}
-            </button>
+            <div className="flex-[2] flex items-center gap-2">
+              <select
+                value={paymentSource}
+                onChange={(e) => setPaymentSource(e.target.value)}
+                className="py-3.5 px-3 rounded-xl bg-slate-800 text-slate-200 font-bold text-sm border border-slate-700"
+                title="Phương thức thanh toán"
+              >
+                <option value="cash">Tiền mặt</option>
+                <option value="bank">Chuyển khoản</option>
+              </select>
+              <button
+                onClick={handleConvertToReceipt}
+                disabled={convertMutation.isPending}
+                className="flex-1 py-3.5 rounded-xl bg-green-600 text-white font-bold text-sm shadow-lg shadow-green-500/20 active:scale-95 transition-all flex items-center justify-center gap-2"
+              >
+                <FileCheck className="w-4 h-4" />
+                {convertMutation.isPending ? "Đang xử lý..." : "Nhập kho"}
+              </button>
+            </div>
           )}
         </div>
       </div>
@@ -873,6 +914,7 @@ export const PODetailView: React.FC<PODetailViewProps> = ({
         onConfirm={handleConfirm}
         onCancel={handleCancel}
       />
+
     </div>
   );
 };

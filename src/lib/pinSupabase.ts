@@ -47,13 +47,33 @@ export async function fetchPinBalanceSummary(): Promise<{
   cash: number;
   bank: number;
 }> {
-  const { data, error } = await pinSupabase
-    .from("cashtransactions")
-    .select("type, amount, payment_method");
+  const isMissingColumn = (err: any, col: string) =>
+    typeof err?.message === "string" && err.message.toLowerCase().includes(col.toLowerCase());
 
-  if (error) {
-    console.error("[PinSupabase] Error fetching balance:", error);
-    return { totalIncome: 0, totalExpense: 0, balance: 0, cash: 0, bank: 0 };
+  let data: any[] | null = null;
+
+  // Attempt 1: include payment_method if it exists
+  {
+    const res = await pinSupabase
+      .from("cashtransactions")
+      .select("type, amount, payment_method");
+
+    if (!res.error) {
+      data = res.data || [];
+    } else if (isMissingColumn(res.error, "payment_method")) {
+      // Attempt 2: fall back to minimal fields
+      const res2 = await pinSupabase
+        .from("cashtransactions")
+        .select("type, amount");
+      if (res2.error) {
+        console.error("[PinSupabase] Error fetching balance:", res2.error);
+        return { totalIncome: 0, totalExpense: 0, balance: 0, cash: 0, bank: 0 };
+      }
+      data = res2.data || [];
+    } else {
+      console.error("[PinSupabase] Error fetching balance:", res.error);
+      return { totalIncome: 0, totalExpense: 0, balance: 0, cash: 0, bank: 0 };
+    }
   }
 
   const totalIncome = (data || [])

@@ -363,8 +363,11 @@ export function useDeletePurchaseOrder() {
 // Convert PO to Receipt (Inventory Transaction)
 // This creates an inventory_transactions entry and updates PO status
 // =====================================================
-export async function convertPOToReceipt(poId: string) {
-  // 1. Fetch PO with items
+export async function convertPOToReceipt(
+  poId: string,
+  paymentSource: string = "cash"
+): Promise<{ receipt: any; cashTxCreated: boolean; cashTxError?: any }> {
+  // 1. Fetch PO with items and supplier info
   const { data: po, error: poError } = await supabase
     .from("purchase_orders")
     .select(
@@ -372,8 +375,9 @@ export async function convertPOToReceipt(poId: string) {
       *,
       items:purchase_order_items(
         *,
-        part:parts(*)
-      )
+        part:parts(id, name, sku, stock, retailPrice, wholesalePrice, category)
+      ),
+      supplier:suppliers(id, name)
     `
     )
     .eq("id", poId)
@@ -386,47 +390,156 @@ export async function convertPOToReceipt(poId: string) {
     throw new Error("Đơn đặt hàng này đã được nhập kho rồi");
   }
 
-  // 2. Create inventory transaction
-  const { data: receipt, error: receiptError } = await supabase
-    .from("inventory_transactions")
-    .insert({
-      type: "in",
-      supplier_id: po.supplier_id,
-      branch_id: po.branch_id,
-      notes: `Nhập kho từ đơn đặt hàng ${po.po_number}`,
-    })
-    .select()
-    .single();
+  const isMissingColumn = (err: any, columnName: string) => {
+    return (
+      err?.code === "PGRST204" &&
+      typeof err?.message === "string" &&
+      err.message.includes(`'${columnName}'`)
+    );
+  };
+
+  // 2. Create inventory transactions (one per item in old schema)
+  const currentDate = new Date().toISOString();
+  const supplierName = po.supplier?.name || "Không xác định";
+  const baseNotes = `Nhập kho từ đơn đặt hàng ${po.po_number} | NCC: ${supplierName}`;
+
+  const txRecords = po.items.map((item: any) => ({
+    id: `GR-${Date.now()}-${Math.random().toString(36).substring(7)}`,
+    type: "Nhập kho",
+    partId: item.part_id,
+    partName: item.part?.name || "Unknown",
+    quantity: item.quantity_ordered,
+    date: currentDate,
+    unitPrice: item.unit_price,
+    totalPrice: item.quantity_ordered * item.unit_price,
+    branchId: po.branch_id,
+    supplierId: po.supplier_id,
+    notes: baseNotes,
+  }));
+
+  // Try insert with supplierId; if column missing, retry without it
+  let receipts: any[] | null = null;
+  let receiptError: any = null;
+  {
+    const attempt1 = await supabase
+      .from("inventory_transactions")
+      .insert(txRecords)
+      .select();
+    receipts = attempt1.data as any;
+    receiptError = attempt1.error;
+  }
+
+  if (receiptError && isMissingColumn(receiptError, "supplierId")) {
+    const txRecordsWithoutSupplier = txRecords.map(({ supplierId, ...rest }: any) => rest);
+    const attempt2 = await supabase
+      .from("inventory_transactions")
+      .insert(txRecordsWithoutSupplier)
+      .select();
+    receipts = attempt2.data as any;
+    receiptError = attempt2.error;
+  }
 
   if (receiptError) throw receiptError;
 
-  // 3. Create transaction items from PO items
-  const txItems = po.items.map((item: any) => ({
-    transaction_id: receipt.id,
-    part_id: item.part_id,
-    quantity: item.quantity_ordered, // Or use quantity_received if partial receipt
-    unit_price: item.unit_price,
-  }));
+  // 3. Create cash transaction for supplier payment (expense)
+  const totalAmount = po.final_amount || po.total_amount || 0;
+  const cashTxId = `CT-${Date.now()}-${Math.random().toString(36).substring(7)}`;
+  // Note: many DB columns were created unquoted (camelCase becomes lowercase in Postgres)
+  // so we prefer branchid/paymentsource to match the physical columns.
+  const cashTxBaseLower: any = {
+    id: cashTxId,
+    category: "supplier_payment",
+    amount: totalAmount,
+    date: currentDate,
+    description: `Chi trả NCC ${supplierName} - Đơn ${po.po_number}`,
+    branchid: po.branch_id,
+    paymentsource: paymentSource,
+    reference: po.po_number,
+  };
 
-  const { error: txItemsError } = await supabase
-    .from("inventory_transaction_items")
-    .insert(txItems);
+  const cashTxBaseCamel: any = {
+    id: cashTxId,
+    category: "supplier_payment",
+    amount: totalAmount,
+    date: currentDate,
+    description: `Chi trả NCC ${supplierName} - Đơn ${po.po_number}`,
+    branchId: po.branch_id,
+    paymentSource: paymentSource,
+    reference: po.po_number,
+  };
 
-  if (txItemsError) throw txItemsError;
+  // Try richer schema first; if columns don't exist, fall back to base
+  let cashTxError: any = null;
+  let cashTxCreated = false;
+  {
+    // Attempt 1: lower-case physical columns + new columns
+    const a1 = await supabase.from("cash_transactions").insert({
+      ...cashTxBaseLower,
+      type: "expense",
+      supplierId: po.supplier_id,
+    });
+    cashTxError = a1.error;
+    cashTxCreated = !a1.error;
+  }
 
-  // 4. Update PO status and link to receipt
+  if (
+    cashTxError &&
+    (isMissingColumn(cashTxError, "type") ||
+      isMissingColumn(cashTxError, "supplierId"))
+  ) {
+    // Attempt 2: lower-case physical columns only
+    const a2 = await supabase.from("cash_transactions").insert(cashTxBaseLower);
+    cashTxError = a2.error;
+    cashTxCreated = !a2.error;
+  }
+
+  if (
+    cashTxError &&
+    (isMissingColumn(cashTxError, "branchId") ||
+      isMissingColumn(cashTxError, "paymentSource"))
+  ) {
+    // Attempt 3: camelCase columns only
+    const a3 = await supabase.from("cash_transactions").insert(cashTxBaseCamel);
+    cashTxError = a3.error;
+    cashTxCreated = !a3.error;
+  }
+
+  if (
+    cashTxError &&
+    (isMissingColumn(cashTxError, "branchId") || isMissingColumn(cashTxError, "paymentSource"))
+  ) {
+    // Attempt 4: camelCase columns + new columns
+    const a4 = await supabase.from("cash_transactions").insert({
+      ...cashTxBaseCamel,
+      type: "expense",
+      supplierId: po.supplier_id,
+    });
+    cashTxError = a4.error;
+    cashTxCreated = !a4.error;
+  }
+
+  if (cashTxError) {
+    console.error("Error creating cash transaction:", cashTxError);
+    // Don't throw - inventory is already created
+  }
+
+  // 4. Update PO status and link to first receipt
   const { error: updateError } = await supabase
     .from("purchase_orders")
     .update({
       status: "received",
-      received_date: new Date().toISOString(),
-      receipt_id: receipt.id,
+      received_date: currentDate,
+      receipt_id: receipts?.[0]?.id || null,
     })
     .eq("id", poId);
 
   if (updateError) throw updateError;
 
-  return receipt;
+  return {
+    receipt: receipts?.[0],
+    cashTxCreated,
+    cashTxError: cashTxError || undefined,
+  };
 }
 
 // =====================================================
@@ -437,11 +550,13 @@ export function useConvertPOToReceipt() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: convertPOToReceipt,
+    mutationFn: ({ poId, paymentSource }: { poId: string; paymentSource: string }) =>
+      convertPOToReceipt(poId, paymentSource),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [PURCHASE_ORDERS_QUERY_KEY] });
       queryClient.invalidateQueries({ queryKey: ["parts"] });
       queryClient.invalidateQueries({ queryKey: ["inventory_transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["cash_transactions"] });
     },
   });
 }

@@ -6,6 +6,7 @@ import { useConfirm } from '../../hooks/useConfirm';
 import { useSupplierDebtsRepo } from '../../hooks/useDebtsRepository';
 import { usePartsRepo } from '../../hooks/usePartsRepository';
 import { useInventoryTxRepo } from '../../hooks/useInventoryTransactionsRepository';
+import { useSuppliers } from '../../hooks/useSuppliers';
 import { formatCurrency, formatDate } from '../../utils/format';
 import { showToast } from '../../utils/toast';
 import { supabase } from '../../supabaseClient';
@@ -32,6 +33,7 @@ const InventoryHistorySection: React.FC<{
   const { confirm, confirmState, handleConfirm, handleCancel } = useConfirm();
   const { data: supplierDebts = [] } = useSupplierDebtsRepo();
   const { data: parts = [] } = usePartsRepo();
+  const { data: suppliers = [] } = useSuppliers();
   const [activeTimeFilter, setActiveTimeFilter] = useState("7days");
   const [customStartDate, setCustomStartDate] = useState(
     formatDate(new Date(), true)
@@ -123,9 +125,12 @@ const InventoryHistorySection: React.FC<{
       const dateKey = `${date.getFullYear()}-${String(
         date.getMonth() + 1
       ).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-      const supplier = transaction.notes?.includes("NCC:")
-        ? transaction.notes.split("NCC:")[1]?.trim()
-        : "Không xác định";
+      // Get supplier from supplierId or fallback to notes
+      const supplier = transaction.supplierId 
+        ? (suppliers.find((s: any) => s.id === transaction.supplierId)?.name || "Không xác định")
+        : (transaction.notes?.includes("NCC:")
+          ? transaction.notes.split("NCC:")[1]?.trim()
+          : "Không xác định");
       const groupKey = `${dateKey}_${supplier}_${date.getHours()}_${date.getMinutes()}`;
 
       if (!groups.has(groupKey)) {
@@ -163,9 +168,11 @@ const InventoryHistorySection: React.FC<{
         return {
           receiptCode,
           date: firstItem.date,
-          supplier: firstItem.notes?.includes("NCC:")
-            ? firstItem.notes.split("NCC:")[1]?.split("|")[0]?.trim()
-            : "Không xác định",
+          supplier: firstItem.supplierId
+            ? (suppliers.find((s: any) => s.id === firstItem.supplierId)?.name || "Không xác định")
+            : (firstItem.notes?.includes("NCC:")
+              ? firstItem.notes.split("NCC:")[1]?.split("|")[0]?.trim()
+              : "Không xác định"),
           items,
           total: items.reduce((sum, item) => sum + item.totalPrice, 0),
         };

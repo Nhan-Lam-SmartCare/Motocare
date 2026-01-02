@@ -55,6 +55,8 @@ export async function createFixedAsset(
   asset: Omit<FixedAsset, "id" | "created_at">
 ): Promise<RepoResult<FixedAsset>> {
   try {
+    const cleanText = (v: any) => (typeof v === "string" && v.trim() === "" ? null : v);
+
     const { data, error } = await supabase
       .from("fixed_assets")
       .insert({
@@ -67,11 +69,11 @@ export async function createFixedAsset(
         depreciation_method: asset.depreciationMethod,
         useful_life: asset.usefulLife,
         status: asset.status,
-        serial_number: asset.serialNumber,
-        location: asset.location,
-        supplier: asset.supplier,
-        warranty: asset.warranty,
-        notes: asset.notes,
+        serial_number: cleanText(asset.serialNumber),
+        location: cleanText(asset.location),
+        supplier: cleanText(asset.supplier),
+        warranty: cleanText(asset.warranty),
+        notes: cleanText(asset.notes),
         branch_id: asset.branchId,
       })
       .select()
@@ -119,6 +121,8 @@ export async function updateFixedAsset(
   updates: Partial<FixedAsset>
 ): Promise<RepoResult<FixedAsset>> {
   try {
+    const cleanText = (v: any) => (typeof v === "string" && v.trim() === "" ? null : v);
+
     const updateData: any = {};
     if (updates.name !== undefined) updateData.name = updates.name;
     if (updates.assetType !== undefined)
@@ -140,8 +144,9 @@ export async function updateFixedAsset(
       updateData.serial_number = updates.serialNumber;
     if (updates.location !== undefined) updateData.location = updates.location;
     if (updates.supplier !== undefined) updateData.supplier = updates.supplier;
-    if (updates.warranty !== undefined) updateData.warranty = updates.warranty;
-    if (updates.notes !== undefined) updateData.notes = updates.notes;
+    if (updates.warranty !== undefined)
+      updateData.warranty = cleanText(updates.warranty);
+    if (updates.notes !== undefined) updateData.notes = cleanText(updates.notes);
 
     const { data, error } = await supabase
       .from("fixed_assets")

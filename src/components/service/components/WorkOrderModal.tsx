@@ -1903,10 +1903,16 @@ const WorkOrderModal: React.FC<{
             onSave(finalOrder);
 
             // 🔹 FIX: Nếu tạo phiếu mới với paymentStatus = 'paid', gọi complete_payment để trừ kho
-            if (paymentStatus === "paid" && selectedParts.length > 0) {
+            // FIXME: Đã cập nhật để kiểm tra flag inventoryDeducted từ response của atomic create
+            // Nếu atomic create đã trừ kho rồi (inventoryDeducted = true) thì KHÔNG gọi complete_payment nữa
+            if (
+              paymentStatus === "paid" &&
+              selectedParts.length > 0 &&
+              !responseData?.inventoryDeducted
+            ) {
               try {
                 console.log(
-                  "[handleSave] New order is fully paid, calling completeWorkOrderPayment to deduct inventory"
+                  "[handleSave] New order is fully paid AND atomic create didn't deduct inventory. Calling completeWorkOrderPayment..."
                 );
                 const result = await completeWorkOrderPayment(
                   orderId,

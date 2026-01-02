@@ -38,6 +38,7 @@ import {
   formatDate,
   formatWorkOrderId,
 } from "../../utils/format";
+import { completeWorkOrderPayment } from "../../lib/repository/workOrdersRepository";
 import { getCategoryColor } from "../../utils/categoryColors";
 import {
   useCreateWorkOrderAtomicRepo,
@@ -982,7 +983,7 @@ export default function ServiceManager() {
           }-${Date.now()}`;
         finalOrderId = orderId;
 
-        await createWorkOrderAtomicAsync({
+        const responseData = await createWorkOrderAtomicAsync({
           id: orderId,
           customerName: customer.name,
           customerPhone: customer.phone,
@@ -1009,6 +1010,26 @@ export default function ServiceManager() {
           remainingAmount: remainingAmount,
           creationDate: new Date().toISOString(),
         } as any);
+
+        // 🔹 FIX Mobile: Fallback inventory deduction if atomic didn't do it
+        if (
+          paymentStatus === "paid" &&
+          parts.length > 0 &&
+          !responseData?.inventoryDeducted
+        ) {
+          try {
+            console.log(
+              "[handleMobileSave] New order is fully paid AND atomic create didn't deduct inventory. Calling completeWorkOrderPayment..."
+            );
+            await completeWorkOrderPayment(
+              orderId,
+              paymentMethod || "cash",
+              0 // Zero amount as it's already considered paid
+            );
+          } catch (err) {
+            console.error("[handleMobileSave] Error in fallback deduction:", err);
+          }
+        }
 
         finalOrderData = {
           id: orderId,

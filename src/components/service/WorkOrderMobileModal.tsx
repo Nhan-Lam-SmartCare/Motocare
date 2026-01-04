@@ -889,9 +889,10 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
       total: total,
       depositAmount: totalDeposit,
       paymentMethod,
-      totalPaid: status === WORK_ORDER_STATUS.DELIVERED ? totalPaid : undefined,
-      remainingAmount:
-        status === WORK_ORDER_STATUS.DELIVERED ? remainingAmount : undefined,
+      // ⚠️ FIX: Không gửi totalPaid/remainingAmount khi tạo mới
+      // Thanh toán khi trả xe phải dùng function riêng work_order_complete_payment
+      totalPaid: undefined,
+      remainingAmount: undefined,
     };
 
     console.log(
@@ -2085,8 +2086,8 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
                   </button>
                 </div>
 
-                {/* Payment at return - only show when status is "Trả máy" */}
-                {status === "Trả máy" && (
+                {/* Payment at return - only show when EDITING existing order with status "Trả máy" */}
+                {status === "Trả máy" && workOrder && (
                   <div className="mt-3">
                     {/* Checkbox to enable payment */}
                     <div className="flex items-center justify-between p-3 bg-slate-100 dark:bg-[#2b2b40] rounded-lg">
@@ -2179,15 +2180,17 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
                 )}
 
                 {/* Info Note */}
-                <div className="mt-3 p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg flex items-start gap-2">
-                  <div className="flex-shrink-0 w-5 h-5 rounded-full bg-blue-500/20 flex items-center justify-center mt-0.5">
-                    <span className="text-blue-400 text-xs">ℹ️</span>
+                {!workOrder && (
+                  <div className="mt-3 p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg flex items-start gap-2">
+                    <div className="flex-shrink-0 w-5 h-5 rounded-full bg-blue-500/20 flex items-center justify-center mt-0.5">
+                      <span className="text-blue-400 text-xs">ℹ️</span>
+                    </div>
+                    <p className="text-blue-300 text-xs leading-relaxed">
+                      <span className="font-semibold">Lưu ý:</span> Khi tạo phiếu mới, chọn trạng thái "Tiếp nhận" hoặc "Đang sửa". 
+                      Thanh toán khi trả xe chỉ khả dụng khi chỉnh sửa phiếu đã có sẵn.
+                    </p>
                   </div>
-                  <p className="text-blue-300 text-xs leading-relaxed">
-                    <span className="font-semibold">Lưu ý:</span> Chỉ thanh
-                    toán khi trả xe, chỉ khả dụng khi trạng thái "Trả máy"
-                  </p>
-                </div>
+                )}
               </div>
 
               {/* Summary Section - Premium Redesign */}

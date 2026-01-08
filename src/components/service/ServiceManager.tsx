@@ -454,11 +454,19 @@ export default function ServiceManager() {
     }
 
     // Date filter
+    // 🔹 QUAN TRỌNG: Chỉ áp dụng date filter cho phiếu "Trả máy" (đã hoàn thành)
+    // Phiếu đang sửa chữa (Tiếp nhận, Đang sửa, Đã sửa xong) LUÔN hiển thị bất kể ngày tạo
     if (dateFilter !== "all" && !debouncedSearchQuery) {
       const now = new Date();
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
       filtered = filtered.filter((o) => {
+        // Phiếu chưa hoàn thành → luôn hiển thị
+        if (o.status !== "Trả máy") {
+          return true;
+        }
+
+        // Phiếu đã trả máy → áp dụng date filter
         const orderDate = new Date(o.creationDate || (o as any).creationdate);
 
         if (dateFilter === "today") {

@@ -393,7 +393,7 @@ export async function updateWorkOrderAtomic(input: Partial<WorkOrder>): Promise<
       p_labor_cost: input.laborCost || 0,
       p_discount: input.discount || 0,
       p_parts_used: input.partsUsed || [],
-      p_additional_services: input.additionalServices || null,
+      p_additional_services: input.additionalServices && Array.isArray(input.additionalServices) && input.additionalServices.length > 0 ? input.additionalServices : null,
       p_total: input.total || 0,
       p_payment_status: input.paymentStatus || "unpaid",
       p_payment_method: input.paymentMethod || null,

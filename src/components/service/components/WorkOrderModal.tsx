@@ -403,8 +403,9 @@ const WorkOrderModal: React.FC<{
     const [editVehicleModel, setEditVehicleModel] = useState("");
     const [editVehicleLicensePlate, setEditVehicleLicensePlate] = useState("");
 
-    // 🔹 Check if order is paid (lock sensitive fields)
-    const isOrderPaid = order?.paymentStatus === "paid";
+    // 🔹 Check if order is paid AND completed (lock sensitive fields)
+    // Chỉ khóa khi đã thanh toán ĐẦY ĐỦ VÀ đã trả máy
+    const isOrderPaid = order?.paymentStatus === "paid" && (order?.status === "Trả máy" || formData.status === "Trả máy");
     const isOrderRefunded = order?.refunded === true;
     // Allow editing if order is not refunded AND (not paid OR status is not "Trả máy")
     // This allows adding parts to a "paid" order if it's still being repaired
@@ -459,9 +460,11 @@ const WorkOrderModal: React.FC<{
       }
 
       // Sync additional services (Báo giá)
-      if (order?.additionalServices) {
+      console.log('[WorkOrderModal] Syncing additionalServices from order:', order?.additionalServices);
+      if (order?.additionalServices && Array.isArray(order.additionalServices) && order.additionalServices.length > 0) {
         setAdditionalServices(order.additionalServices);
       } else {
+        console.log('[WorkOrderModal] Setting additionalServices to empty array');
         setAdditionalServices([]);
       }
 
@@ -1476,7 +1479,7 @@ const WorkOrderModal: React.FC<{
               discount: discount,
               partsUsed: selectedParts,
               additionalServices:
-                additionalServices.length > 0 ? additionalServices : undefined,
+                additionalServices.length > 0 ? additionalServices : null,
               total: total,
               branchId: currentBranchId,
               paymentStatus: paymentStatus,
@@ -1982,7 +1985,7 @@ const WorkOrderModal: React.FC<{
               discount: discount,
               partsUsed: selectedParts,
               additionalServices:
-                additionalServices.length > 0 ? additionalServices : undefined,
+                additionalServices.length > 0 ? additionalServices : null,
               total: total,
               branchId: currentBranchId,
               paymentStatus: paymentStatus,
@@ -2042,9 +2045,7 @@ const WorkOrderModal: React.FC<{
                   order.partsUsed ||
                   [],
                 additionalServices:
-                  (workOrderRow as any).additionalservices ||
-                  (workOrderRow as any).additionalServices ||
-                  order.additionalServices,
+                  additionalServices.length > 0 ? additionalServices : null,
                 total: (workOrderRow as any).total || order.total,
                 branchId:
                   (workOrderRow as any).branchid ||
@@ -2104,9 +2105,7 @@ const WorkOrderModal: React.FC<{
                 discount: discount,
                 partsUsed: selectedParts,
                 additionalServices:
-                  additionalServices.length > 0
-                    ? additionalServices
-                    : order.additionalServices,
+                  additionalServices.length > 0 ? additionalServices : null,
                 total: total,
                 depositAmount: depositAmount,
                 depositTransactionId: depositTxId || order.depositTransactionId,
@@ -2254,6 +2253,11 @@ const WorkOrderModal: React.FC<{
               "[handleSave] updateWorkOrderAtomicAsync SUCCESS - Response:",
               responseData
             );
+
+            // 🔹 Force invalidate queries để refresh data mới từ DB
+            if (invalidateWorkOrders) {
+              invalidateWorkOrders();
+            }
 
             onSave(finalOrder);
 
@@ -3458,13 +3462,26 @@ const WorkOrderModal: React.FC<{
                         </td>
                         <td className="px-4 py-2 text-center">
                           <button
-                            onClick={() =>
-                              setAdditionalServices(
-                                additionalServices.filter(
-                                  (s) => s.id !== service.id
-                                )
-                              )
-                            }
+                            onClick={async () => {
+                              const newServices = additionalServices.filter(
+                                (s) => s.id !== service.id
+                              );
+                              setAdditionalServices(newServices);
+                              
+                              // 🔹 FIX: Nếu xóa hết services VÀ đang edit order có sẵn → Update DB ngay
+                              if (newServices.length === 0 && order?.id) {
+                                try {
+                                  console.log('[WorkOrderModal] Xóa hết additionalServices, update DB ngay');
+                                  await supabase
+                                    .from('work_orders')
+                                    .update({ additionalservices: null })
+                                    .eq('id', order.id);
+                                  showToast.success('Đã xóa phần gia công/đặt hàng');
+                                } catch (error) {
+                                  console.error('[WorkOrderModal] Error clearing additionalServices:', error);
+                                }
+                              }
+                            }}
                             className="text-red-500 hover:text-red-700 text-sm"
                             aria-label="Xóa dịch vụ"
                           >

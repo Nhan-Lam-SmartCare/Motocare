@@ -1,19 +1,5 @@
-import React, { useState, useRef } from "react";
-import { UploadCloud, X } from "lucide-react";
+import React, { useState } from "react";
 import { showToast } from "../../../utils/toast";
-import {
-  exportInventoryTemplate,
-  importPartsFromExcelDetailed,
-} from "../../../utils/excel";
-import type { Part } from "../../../types";
-
-export interface ImportInventoryModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onImportComplete: () => void;
-  currentBranchId: string;
-  existingParts: Part[];
-}
 interface ImportInventoryModalProps {
   onClose: () => void;
   onDownloadTemplate: () => void;
@@ -36,7 +22,7 @@ const ImportInventoryModal: React.FC<ImportInventoryModalProps> = ({
         setSelectedFile(file);
       } else {
         showToast.warning(
-          "Vui l�ng ch�n file Excel (.xlsx, .xls) ho�c CSV (.csv)"
+          "Vui lòng chọn tệp Excel (.xlsx, .xls) hoặc CSV (.csv)"
         );
       }
     }
@@ -44,7 +30,7 @@ const ImportInventoryModal: React.FC<ImportInventoryModalProps> = ({
 
   const handleImport = async () => {
     if (!selectedFile) {
-      showToast.warning("Vui l�ng ch�n file �� import");
+      showToast.warning("Vui lòng chọn tệp để nhập");
       return;
     }
 
@@ -62,7 +48,7 @@ const ImportInventoryModal: React.FC<ImportInventoryModalProps> = ({
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-slate-200 dark:border-slate-700">
           <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">
-            Nh�p t�n kho t� Excel/CSV
+            Nhập tồn kho từ Excel/CSV
           </h2>
           <button
             onClick={onClose}
@@ -105,18 +91,18 @@ const ImportInventoryModal: React.FC<ImportInventoryModalProps> = ({
               </svg>
               <div className="flex-1">
                 <h3 className="font-medium text-blue-900 dark:text-blue-100 mb-2">
-                  H��:ng d�n s� d�ng
+                  Hướng dẫn sử dụng
                 </h3>
                 <ol className="text-sm text-blue-800 dark:text-blue-200 space-y-1 list-decimal list-inside">
-                  <li>T�i file template m�u</li>
-                  <li>i�n th�ng tin s�n ph�m v�o file</li>
-                  <li>L�u file v� ch�n �� import</li>
+                  <li>Tải tệp mẫu</li>
+                  <li>Điền thông tin sản phẩm vào tệp</li>
+                  <li>Lưu tệp và chọn để nhập</li>
                 </ol>
                 <button
                   onClick={onDownloadTemplate}
                   className="mt-3 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
                 >
-                  �x� T�i Template Excel
+                  Tải mẫu Excel
                 </button>
               </div>
             </div>
@@ -125,7 +111,7 @@ const ImportInventoryModal: React.FC<ImportInventoryModalProps> = ({
           {/* File Upload */}
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-              Ch�n file �� import
+              Chọn tệp để nhập
             </label>
             <div className="border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-lg p-6 text-center">
               <input
@@ -154,11 +140,11 @@ const ImportInventoryModal: React.FC<ImportInventoryModalProps> = ({
                   />
                 </svg>
                 <span className="text-sm text-slate-600 dark:text-slate-400">
-                  Click �� ch�n file Excel ho�c CSV
+                  Nhấn để chọn tệp Excel hoặc CSV
                 </span>
                 {selectedFile && (
                   <span className="mt-2 text-sm font-medium text-blue-600 dark:text-blue-400">
-                    �S {selectedFile.name}
+                    📄 {selectedFile.name}
                   </span>
                 )}
               </label>
@@ -173,14 +159,14 @@ const ImportInventoryModal: React.FC<ImportInventoryModalProps> = ({
               disabled={isProcessing}
               className="px-4 py-2 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors disabled:opacity-50"
             >
-              H�y
+              Hủy
             </button>
             <button
               onClick={handleImport}
               disabled={!selectedFile || isProcessing}
               className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isProcessing ? "ang x� l�..." : "Import"}
+              {isProcessing ? "Đang xử lý..." : "Nhập"}
             </button>
           </div>
         </div>

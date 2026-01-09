@@ -137,7 +137,7 @@ const InstallmentPaymentModal: React.FC<{
                                     }`}
                             >
                                 <div className="font-bold">💵 Tiền mặt</div>
-                                <div className="text-xs opacity-60">Cash</div>
+                                <div className="text-xs opacity-60">Tiền mặt</div>
                             </button>
                             <button
                                 type="button"
@@ -148,7 +148,7 @@ const InstallmentPaymentModal: React.FC<{
                                     }`}
                             >
                                 <div className="font-bold">🏦 Chuyển khoản</div>
-                                <div className="text-xs opacity-60">Bank Transfer</div>
+                                <div className="text-xs opacity-60">Chuyển khoản</div>
                             </button>
                         </div>
                     </div>

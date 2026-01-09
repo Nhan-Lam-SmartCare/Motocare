@@ -1038,7 +1038,7 @@ const CustomerManager: React.FC = () => {
                       d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
                     />
                   </svg>
-                  <span>Upload DS</span>
+                  <span>Tải lên DS</span>
                 </button>
                 <button
                   className="flex items-center gap-1.5 px-3 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-medium transition-colors whitespace-nowrap shadow-sm text-sm"
@@ -2277,7 +2277,7 @@ const SuppliersList: React.FC<{
               d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
             />
           </svg>
-          <span>Upload CSV</span>
+          <span>Tải lên CSV</span>
         </button>
         <button
           onClick={onAdd}

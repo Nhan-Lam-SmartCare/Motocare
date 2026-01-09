@@ -1287,7 +1287,7 @@ export default function ServiceManager() {
             console.error("[handleMobileSave] Error deducting inventory:", err);
             showToast.warning(
               "Đã cập nhật phiếu nhưng có lỗi khi trừ kho: " +
-              (err.message || "Unknown error")
+              (err.message || "Lỗi không xác định")
             );
           }
         }

@@ -8,7 +8,7 @@ import { generateSKU, isValidSKU } from "./sku";
 export const exportPartsToExcel = (
   parts: Part[],
   currentBranchId: string,
-  filename: string = "inventory-export.xlsx"
+  filename: string = "BaoCao_TonKho.xlsx"
 ) => {
   // Prepare data for export
   const data = parts.map((part, index) => ({
@@ -53,7 +53,7 @@ export const exportPartsToExcel = (
  * Export inventory template for import
  */
 export const exportInventoryTemplate = (
-  filename: string = "inventory-template.xlsx"
+  filename: string = "MauNhapTonKho.xlsx"
 ) => {
   const templateData = [
     {
@@ -81,7 +81,7 @@ export const exportInventoryTemplate = (
   ];
 
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Template");
+  XLSX.utils.book_append_sheet(wb, ws, "Mẫu");
 
   XLSX.writeFile(wb, filename);
 };

@@ -1176,7 +1176,7 @@ export const SettingsManager = () => {
                   className="w-full px-3 py-2 md:px-4 md:py-2.5 text-sm md:text-base border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white disabled:opacity-50"
                 >
                   <option value="VND">VND - Việt Nam Đồng</option>
-                  <option value="USD">USD - US Dollar</option>
+                  <option value="USD">USD - Đô la Mỹ</option>
                 </select>
               </div>
 

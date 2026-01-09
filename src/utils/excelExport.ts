@@ -8,6 +8,10 @@ import {
   Supplier,
 } from "../types";
 import { formatCurrency, formatDate, formatAnyId } from "./format";
+import {
+  formatCashTxCategory,
+  getCashTxCategoryKey,
+} from "../lib/finance/cashTxCategories";
 
 // ==================== REVENUE REPORT ====================
 export const exportRevenueReport = (
@@ -128,7 +132,8 @@ export const exportCashflowReport = (
     [
       "Ngày",
       "Loại",
-      "Danh mục",
+      "Danh mục (nhãn)",
+      "Mã danh mục",
       "Số tiền",
       "Đối tượng",
       "Nguồn thanh toán",
@@ -140,7 +145,8 @@ export const exportCashflowReport = (
     transData.push([
       formatDate(t.date),
       t.type === "income" ? "Thu" : "Chi",
-      t.category || "",
+      formatCashTxCategory(t.category),
+      getCashTxCategoryKey(t.category),
       t.amount,
       t.recipient || "",
       t.paymentSourceId,
@@ -152,26 +158,37 @@ export const exportCashflowReport = (
   XLSX.utils.book_append_sheet(wb, wsDetails, "Chi tiết giao dịch");
 
   // 3. Category breakdown
-  const categoryMap: Record<string, { income: number; expense: number }> = {};
+  const categoryMap: Record<
+    string,
+    { label: string; income: number; expense: number }
+  > = {};
 
   transactions.forEach((t) => {
-    const cat = t.category || "Khác";
-    if (!categoryMap[cat]) {
-      categoryMap[cat] = { income: 0, expense: 0 };
+    const categoryKey = getCashTxCategoryKey(t.category) || "";
+    const categoryLabel = formatCashTxCategory(t.category) || "";
+    const groupKey = categoryKey || categoryLabel || "other";
+
+    if (!categoryMap[groupKey]) {
+      categoryMap[groupKey] = {
+        label: categoryLabel || categoryKey || "",
+        income: 0,
+        expense: 0,
+      };
     }
     if (t.type === "income") {
-      categoryMap[cat].income += t.amount;
+      categoryMap[groupKey].income += t.amount;
     } else {
-      categoryMap[cat].expense += t.amount;
+      categoryMap[groupKey].expense += t.amount;
     }
   });
 
   const categoryData: (string | number)[][] = [
-    ["Danh mục", "Thu", "Chi", "Chênh lệch"],
+    ["Danh mục (nhãn)", "Mã danh mục", "Thu", "Chi", "Chênh lệch"],
   ];
-  Object.entries(categoryMap).forEach(([cat, amounts]) => {
+  Object.entries(categoryMap).forEach(([key, amounts]) => {
     categoryData.push([
-      cat,
+      amounts.label || key,
+      key,
       amounts.income,
       amounts.expense,
       amounts.income - amounts.expense,

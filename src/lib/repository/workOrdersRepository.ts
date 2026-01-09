@@ -661,7 +661,7 @@ export async function refundWorkOrder(
         });
       return failure({
         code: "supabase",
-        message: `Hoàn tiền thất bại: ${error?.message || "Unknown error"}`,
+        message: `Hoàn tiền thất bại: ${error?.message || "Lỗi không xác định"}`,
         cause: error,
       });
     }
@@ -790,7 +790,7 @@ export async function completeWorkOrderPayment(
         });
       return failure({
         code: "supabase",
-        message: `Thanh toán thất bại: ${error?.message || "Unknown error"}`,
+        message: `Thanh toán thất bại: ${error?.message || "Lỗi không xác định"}`,
         cause: error,
       });
     }

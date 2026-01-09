@@ -7,6 +7,7 @@ import {
   PinCashTransaction,
 } from "../../lib/pinSupabase";
 import { syncBidirectional } from "../../lib/syncCashTransactions";
+import { formatCashTxCategory } from "../../lib/finance/cashTxCategories";
 import { formatCurrency, formatDate } from "../../utils/format";
 import { Loader2, RefreshCw, Building2, Wrench, Filter, ArrowLeftRight } from "lucide-react";
 
@@ -32,10 +33,18 @@ const CombinedFinance: React.FC = () => {
 
   // Pin data
   const [pinTx, setPinTx] = useState<PinCashTransaction[]>([]);
-  const [pinBalance, setPinBalance] = useState({
+  const [pinBalance, setPinBalance] = useState<{
+    totalIncome: number;
+    totalExpense: number;
+    balance: number;
+    cash?: number;
+    bank?: number;
+  }>({
     totalIncome: 0,
     totalExpense: 0,
     balance: 0,
+    cash: 0,
+    bank: 0,
   });
   const [pinLoading, setPinLoading] = useState(true);
   const [sourceFilter, setSourceFilter] = useState<SourceFilter>("all");
@@ -266,8 +275,12 @@ const CombinedFinance: React.FC = () => {
             <Building2 className="w-4 h-4 text-amber-600 dark:text-amber-400" />
             <span className="font-semibold text-sm text-slate-900 dark:text-white">Pin Factory</span>
           </div>
+
           {pinLoading ? (
-            <Loader2 className="w-4 h-4 animate-spin text-slate-500" />
+            <div className="mt-2 flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              <span>Đang tải...</span>
+            </div>
           ) : (
             <>
               <p className="text-xl font-bold text-amber-600 dark:text-amber-400">
@@ -380,7 +393,7 @@ const CombinedFinance: React.FC = () => {
                         {isIncomeType(tx.type) ? "Thu" : "Chi"}
                       </span>
                       <span className="text-xs text-slate-500 dark:text-slate-400">
-                        {tx.category || "--"}
+                        {formatCashTxCategory(tx.category) || tx.category || "--"}
                       </span>
                     </div>
                     <p className="text-sm text-slate-600 dark:text-slate-400 truncate mt-0.5">

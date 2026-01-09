@@ -10,5 +10,14 @@
     "noEmit": true,
     "types": ["node", "@types/react", "@types/react-dom"]
   },
-  "include": ["src", "vite-env.d.ts"]
+  "include": ["src", "vite-env.d.ts"],
+  "exclude": [
+    "src/components/__DEPRECATED_backups/**",
+    "**/*.backup.ts",
+    "**/*.backup.tsx",
+    "**/*.old.ts",
+    "**/*.old.tsx",
+    "**/*.legacy.ts",
+    "**/*.legacy.tsx"
+  ]
 }

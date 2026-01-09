@@ -1,31 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { formatCurrency, formatDate } from "../../utils/format";
 import type { CashTransaction } from "../../types";
+import { formatCashTxCategory } from "../../lib/finance/cashTxCategories";
 
 // Helper function for category labels
 export const getCategoryLabel = (category?: string) => {
-    const labels: Record<string, string> = {
-        sale_income: "Bán hàng",
-        service_income: "Dịch vụ",
-        other_income: "Thu khác",
-        inventory_purchase: "Mua hàng",
-        salary: "Lương nhân viên",
-        employee_advance: "Ứng lương",
-        loan_payment: "Trả nợ vay",
-        debt_collection: "Thu nợ khách hàng",
-        debt_payment: "Trả nợ nhà cung cấp",
-        sale_refund: "Hoàn trả",
-        other_expense: "Chi khác",
-        outsourcing: "Gia công ngoài",
-        service_deposit: "Đặt cọc dịch vụ",
-        general_income: "Thu chung",
-        general_expense: "Chi chung",
-        supplier_payment: "Chi trả NCC",
-        utilities: "Điện nước",
-        rent: "Tiền thuê mặt bằng",
-        service_cost: "Giá vốn dịch vụ",
-    };
-    return category ? labels[category] || category : "--";
+    if (!category) return "--";
+    return formatCashTxCategory(category) || category;
 };
 
 // Add Transaction Modal Component

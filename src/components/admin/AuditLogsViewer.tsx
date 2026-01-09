@@ -146,7 +146,7 @@ export const AuditLogsViewer: React.FC = () => {
                 <th className="text-left px-4 py-2 font-medium">Bảng</th>
                 <th className="text-left px-4 py-2 font-medium">ID bản ghi</th>
                 <th className="text-left px-4 py-2 font-medium">Dữ liệu</th>
-                <th className="text-left px-4 py-2 font-medium">User</th>
+                <th className="text-left px-4 py-2 font-medium">Người dùng</th>
               </tr>
             </thead>
             <tbody>

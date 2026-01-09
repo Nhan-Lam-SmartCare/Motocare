@@ -4,6 +4,7 @@
 import { supabase } from "../supabaseClient";
 import { pinSupabase, PinCashTransaction } from "./pinSupabase";
 import type { CashTransaction } from "../types";
+import { canonicalizeMotocareCashTxCategory } from "./finance/cashTxCategories";
 
 // ========================================
 // ĐỒNG BỘ TỪ MOTOCARE → PIN FACTORY
@@ -17,9 +18,7 @@ export async function syncMotocareToPin(
     // ⚠️ Chỉ dùng các cột cơ bản: id, type, amount, date
     const pinTx: any = {
       id: `MOTO-${transaction.id}`, // Prefix để tránh trùng ID
-      type: transaction.type === "income" || transaction.type === "deposit" 
-        ? "income" 
-        : "expense",
+      type: transaction.type === "income" ? "income" : "expense",
       amount: Math.abs(transaction.amount),
       date: transaction.date,
     };
@@ -51,11 +50,15 @@ export async function syncPinToMotocare(
   branchId: string = "CN1"
 ): Promise<{ success: boolean; error?: any }> {
   try {
+    const rawCategory = transaction.category || "other_income";
+    const canonicalCategory =
+      canonicalizeMotocareCashTxCategory(rawCategory) || rawCategory;
+
     // Chuyển đổi format từ Pin Factory sang Motocare
     const motocareTx = {
       id: `PIN-${transaction.id}`, // Prefix để tránh trùng ID
       type: transaction.type,
-      category: transaction.category || "other_income",
+      category: canonicalCategory,
       amount: Math.abs(transaction.amount),
       date: transaction.date,
       description: transaction.description || "Đồng bộ từ Pin Factory",

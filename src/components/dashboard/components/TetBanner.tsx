@@ -51,7 +51,7 @@ const TetBanner: React.FC<TetBannerProps> = ({ compact }) => {
                         <span className="bg-yellow-400 text-red-800 text-xs font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
                             Tết 2026
                         </span>
-                        <span className="text-yellow-200 text-xs">Year of the Horse</span>
+                        <span className="text-yellow-200 text-xs">Năm Bính Ngọ</span>
                     </div>
                     <h1 className="text-2xl md:text-4xl font-bold mb-1 drop-shadow-md">
                         Chúc Mừng Năm Mới

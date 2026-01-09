@@ -2,8 +2,10 @@ import { supabase } from "../../supabaseClient";
 import type { CashTransaction } from "../../types";
 import { RepoResult, success, failure } from "./types";
 import { safeAudit } from "./auditLogsRepository";
+import { canonicalizeMotocareCashTxCategory } from "../finance/cashTxCategories";
 
 const TABLE = "cash_transactions";
+const READ_TABLE = "cash_transactions_ledger";
 
 export interface CreateCashTxInput {
   type: CashTransaction["type"]; // "income" | "expense"
@@ -31,21 +33,28 @@ export async function fetchCashTransactions(params?: {
   type?: "income" | "expense";
 }): Promise<RepoResult<CashTransaction[]>> {
   try {
-    let query = supabase
-      .from(TABLE)
-      .select("*")
-      .order("date", { ascending: false });
+    const runQuery = async (table: string) => {
+      let query = supabase.from(table).select("*").order("date", { ascending: false });
 
-    // Filter by branchId - PostgreSQL stores column as lowercase "branchid"
-    if (params?.branchId) {
-      query = query.eq("branchid", params.branchId);
+      // Filter by branchId - PostgreSQL stores column as lowercase "branchid"
+      if (params?.branchId) {
+        query = query.eq("branchid", params.branchId);
+      }
+      if (params?.startDate) query = query.gte("date", params.startDate);
+      if (params?.endDate) query = query.lte("date", params.endDate);
+      if (params?.limit) query = query.limit(params.limit);
+      // Don't filter by type at DB level - some old records may not have it
+
+      return await query;
+    };
+
+    // Prefer normalized ledger view for consistent reads.
+    // Safe fallback to base table when the view hasn't been deployed yet.
+    let { data, error } = await runQuery(READ_TABLE);
+    if (error && (error as any)?.message?.toLowerCase?.().includes("does not exist")) {
+      ({ data, error } = await runQuery(TABLE));
     }
-    if (params?.startDate) query = query.gte("date", params.startDate);
-    if (params?.endDate) query = query.lte("date", params.endDate);
-    if (params?.limit) query = query.limit(params.limit);
-    // Don't filter by type at DB level - some old records may not have it
 
-    const { data, error } = await query;
     if (error)
       return failure({
         code: "supabase",
@@ -110,7 +119,7 @@ export async function createCashTransaction(
       branchid: input.branchId,
       paymentsource: input.paymentSourceId,
       category:
-        input.category ||
+        canonicalizeMotocareCashTxCategory(input.category) ||
         (input.type === "income" ? "general_income" : "general_expense"),
       date: input.date || new Date().toISOString(),
       description: input.notes || "",
@@ -215,7 +224,9 @@ export async function updateCashTransaction(
       payload.paymentsource = input.paymentSourceId;
     if (input.date !== undefined) payload.date = input.date;
     if (input.notes !== undefined) payload.description = input.notes;
-    if (input.category !== undefined) payload.category = input.category;
+    if (input.category !== undefined)
+      payload.category =
+        canonicalizeMotocareCashTxCategory(input.category) ?? input.category;
     if (input.recipient !== undefined) payload.recipient = input.recipient;
 
     // Get old data for audit

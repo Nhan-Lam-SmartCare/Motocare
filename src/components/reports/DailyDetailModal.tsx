@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, FileText, Wallet, ArrowUpRight, ArrowDownLeft, User, Clock } from 'lucide-react';
 import { Sale, WorkOrder, CashTransaction } from '../../types';
 import { formatCurrency, formatDate } from '../../utils/format';
+import { formatCashTxCategory } from '../../lib/finance/cashTxCategories';
 
 interface DailyDetailModalProps {
     isOpen: boolean;
@@ -48,40 +49,8 @@ export const DailyDetailModal: React.FC<DailyDetailModalProps> = ({
         }))
     ].sort((a, b) => b.time.localeCompare(a.time));
 
-    // Helper function to translate category names to Vietnamese
     const translateCategory = (category: string): string => {
-        const categoryMap: Record<string, string> = {
-            // Income categories
-            sale_income: "Bán hàng",
-            service_income: "Dịch vụ",
-            other_income: "Thu khác",
-            debt_collection: "Thu nợ khách hàng",
-            service_deposit: "Đặt cọc dịch vụ",
-            general_income: "Thu chung",
-
-            // Expense categories
-            inventory_purchase: "Mua hàng",
-            salary: "Lương nhân viên",
-            employee_advance: "Ứng lương",
-            loan_payment: "Trả nợ vay",
-            debt_payment: "Trả nợ nhà cung cấp",
-            sale_refund: "Hoàn trả",
-            other_expense: "Chi khác",
-            outsourcing: "Gia công ngoài",
-            general_expense: "Chi chung",
-            supplier_payment: "Chi trả NCC",
-            utilities: "Điện nước",
-            rent: "Tiền thuê mặt bằng",
-            service_cost: "Giá vốn dịch vụ",
-
-            // Common Vietnamese
-            "nhập kho": "Nhập kho",
-            "nhập hàng": "Nhập hàng",
-            "bán hàng": "Bán hàng",
-            "dịch vụ": "Dịch vụ",
-        };
-
-        return categoryMap[category.toLowerCase()] || category;
+        return formatCashTxCategory(category);
     };
 
     return (

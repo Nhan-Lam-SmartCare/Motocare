@@ -33,39 +33,12 @@ import {
 import { formatCurrency, formatDate } from "../../utils/format";
 import type { Sale } from "../../types";
 
-// Helper functions for cash flow filtering
-const excludedIncomeCategories = [
-    "service",
-    "dịch vụ",
-    "sale_income", // Thu từ bán hàng
-    "bán hàng",
-    "service_income", // Thu từ phiếu sửa chữa
-    "service_deposit", // Đặt cọc dịch vụ
-];
-
-// Các category phiếu chi KHÔNG tính vào lợi nhuận (vì đã tính trong giá vốn)
-const excludedExpenseCategories = [
-    "supplier_payment", // Chi trả NCC (nhập kho) - đã tính trong giá vốn hàng bán
-    "nhập kho",
-    "nhập hàng",
-    "goods_receipt",
-    "import",
-    "outsourcing",      // Chi gia công bên ngoài - đã tính trong lợi nhuận phiếu SC
-    "service_cost",     // Chi phí dịch vụ - đã tính trong lợi nhuận phiếu SC
-    "refund",           // Hoàn trả - không phải chi phí thực tế
-];
-
-const isExcludedIncomeCategory = (category: string | undefined | null) => {
-    if (!category) return false;
-    const lowerCat = category.toLowerCase().trim();
-    return excludedIncomeCategories.some((exc) => exc.toLowerCase() === lowerCat);
-};
-
-const isExcludedExpenseCategory = (category: string | undefined | null) => {
-    if (!category) return false;
-    const lowerCat = category.toLowerCase().trim();
-    return excludedExpenseCategories.some((exc) => exc.toLowerCase() === lowerCat);
-};
+import {
+    isExcludedExpenseCategory,
+    isExcludedIncomeCategory,
+} from "../../lib/reports/financialSummary";
+import { formatCashTxCategory } from "../../lib/finance/cashTxCategories";
+// Exclusion logic is shared with Reports/Dashboard/Analytics.
 
 interface ReportsManagerMobileProps {
     revenueReport: {
@@ -438,7 +411,7 @@ export const ReportsManagerMobile: React.FC<ReportsManagerMobileProps> = ({
                 {Object.entries(cashflowReport.byCategory).map(([cat, val], idx) => (
                     <div key={idx} className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/50 p-4 rounded-xl shadow-sm dark:shadow-none">
                         <div className="flex items-center justify-between mb-3">
-                            <span className="text-sm font-bold text-slate-800 dark:text-white capitalize">{cat}</span>
+                            <span className="text-sm font-bold text-slate-800 dark:text-white capitalize">{formatCashTxCategory(cat)}</span>
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                             <div>

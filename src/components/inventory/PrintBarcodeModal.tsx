@@ -294,11 +294,11 @@ const PrintBarcodeModal: React.FC<PrintBarcodeModalProps> = ({
           <div class="instructions">
             <h3>⚙️ Hướng dẫn in nhãn:</h3>
             <ol>
-              <li>Bấm <code>More settings</code> trong hộp thoại in</li>
-              <li>Chọn <code>Paper size</code> → <strong>${currentSize.width}×${currentSize.height}mm</strong></li>
-              <li>Đặt <code>Margins</code> → <strong>None</strong></li>
-              <li>Tắt <code>Headers and footers</code></li>
-              <li>Bấm <strong>Print</strong></li>
+              <li>Bấm <code>More settings</code> (Cài đặt khác) trong hộp thoại in</li>
+              <li>Chọn <code>Paper size</code> (Khổ giấy) → <strong>${currentSize.width}×${currentSize.height}mm</strong></li>
+              <li>Đặt <code>Margins</code> (Lề) → <strong>None</strong> (Không)</li>
+              <li>Tắt <code>Headers and footers</code> (Đầu trang &amp; chân trang)</li>
+              <li>Bấm <strong>Print</strong> (In)</li>
             </ol>
             <p style="margin-top: 12px; color: #666; font-size: 11px;">
               💡 Nếu không có size ${currentSize.width}×${currentSize.height}mm, vào Control Panel → Devices and Printers → Xprinter → Printing Preferences để thêm khổ giấy tùy chỉnh.

@@ -39,6 +39,19 @@ import {
 import { DailyDetailModal } from "../reports/DailyDetailModal";
 import { ReportsManagerMobile } from "../reports/ReportsManagerMobile";
 
+import {
+  calculateFinancialSummary,
+  REPORTS_EXCLUDED_EXPENSE_CATEGORIES,
+  REPORTS_EXCLUDED_INCOME_CATEGORIES,
+  isExcludedExpenseCategory,
+  isExcludedIncomeCategory,
+} from "../../lib/reports/financialSummary";
+
+import {
+  formatCashTxCategory,
+  getCashTxCategoryKey,
+} from "../../lib/finance/cashTxCategories";
+
 
 type ReportTab =
   | "revenue"
@@ -226,22 +239,18 @@ const ReportsManager: React.FC = () => {
 
   // Báo cáo doanh thu (bao gồm cả Sales và Work Orders đã thanh toán)
   const revenueReport = useMemo(() => {
-    // Filter sales
-    const filteredSales: Sale[] = salesData.filter((s: Sale) => {
-      const saleDate = new Date(s.date);
-      return saleDate >= start && saleDate <= end;
+    const summary = calculateFinancialSummary({
+      sales: salesData,
+      workOrders: workOrdersData,
+      parts: partsData,
+      cashTransactions: [],
+      branchId: currentBranchId,
+      start,
+      end,
     });
 
-    // Filter work orders (chỉ lấy những đơn đã thanh toán)
-    const filteredWorkOrders = workOrdersData.filter((wo: any) => {
-      const woDate = new Date(wo.creationDate || wo.creationdate);
-      const isPaid =
-        wo.paymentStatus === "paid" ||
-        wo.paymentstatus === "paid" ||
-        wo.paymentStatus === "partial" ||
-        wo.paymentstatus === "partial";
-      return woDate >= start && woDate <= end && isPaid;
-    });
+    const filteredSales = summary.filteredSales as Sale[];
+    const filteredWorkOrders = summary.filteredWorkOrders;
 
 
 
@@ -254,60 +263,14 @@ const ReportsManager: React.FC = () => {
       );
     };
 
-    // Sales totals
-    const salesRevenue = filteredSales.reduce(
-      (sum: number, s: Sale) => sum + s.total,
-      0
-    );
-    const salesCost = filteredSales.reduce((sum: number, s: Sale) => {
-      const cost = s.items.reduce((c: number, it: any) => {
-        // Try to get cost from partsData first, then fallback to item's costPrice
-        const partCost = getPartCost(
-          it.partId,
-          it.sku,
-          (it as any).costPrice || 0
-        );
-        return c + partCost * it.quantity;
-      }, 0);
-      return sum + cost;
-    }, 0);
+    const salesRevenue = summary.salesRevenue;
+    const salesCost = summary.salesCost;
+    const woRevenue = summary.woRevenue;
+    const woCost = summary.woCost;
 
-    // Work orders totals
-    const woRevenue = filteredWorkOrders.reduce(
-      (sum: number, wo: any) =>
-        sum + (wo.totalPaid || wo.totalpaid || wo.total || 0),
-      0
-    );
-    const woCost = filteredWorkOrders.reduce((sum: number, wo: any) => {
-      const parts = wo.partsUsed || wo.partsused || [];
-      const partsCost = parts.reduce((c: number, p: any) => {
-        const partId = p.partId || p.partid;
-        const sku = p.sku;
-        // Get cost from partsData, fallback to stored costPrice
-        const cost = getPartCost(partId, sku, p.costPrice || p.costprice || 0);
-        return c + cost * (p.quantity || 0);
-      }, 0);
-      // ✅ FIX: Ưu tiên field có dữ liệu thực (length > 0), không chỉ truthy
-      // Vì empty array [] vẫn là truthy trong JS nên phải check length
-      const servicesFromCamelCase = wo.additionalServices;
-      const servicesFromLowercase = wo.additionalservices;
-      const servicesFromSnakeCase = wo.additional_services;
-      const services =
-        (Array.isArray(servicesFromCamelCase) && servicesFromCamelCase.length > 0) ? servicesFromCamelCase :
-          (Array.isArray(servicesFromLowercase) && servicesFromLowercase.length > 0) ? servicesFromLowercase :
-            (Array.isArray(servicesFromSnakeCase) && servicesFromSnakeCase.length > 0) ? servicesFromSnakeCase :
-              [];
-      const servicesCost = (Array.isArray(services) ? services : []).reduce((c: number, s: any) => {
-        // Hỗ trợ nhiều biến thể tên field từ database
-        const rawCost = s.costPrice ?? s.costprice ?? s.cost_price ?? s.giaNhap ?? s.gia_nhap ?? 0;
-        return c + (Number(rawCost) || 0) * (Number(s.quantity) || 0);
-      }, 0);
-      return sum + partsCost + servicesCost;
-    }, 0);
-
-    const totalRevenue = salesRevenue + woRevenue;
-    const totalCost = salesCost + woCost;
-    const totalProfit = totalRevenue - totalCost;
+    const totalRevenue = summary.totalRevenue;
+    const totalCost = summary.totalCost;
+    const totalProfit = summary.totalProfit;
 
     // Group by date for daily report (combine sales and work orders)
     const dataByDate = new Map<
@@ -358,11 +321,16 @@ const ReportsManager: React.FC = () => {
       dayData.orderCount += 1;
     });
 
-    // Add work orders to daily data
+    // Add work orders to daily data - ✅ FIX: Dùng paymentDate thay vì creationDate
     filteredWorkOrders.forEach((wo: any) => {
-      const dateKey = new Date(wo.creationDate || wo.creationdate)
-        .toISOString()
-        .split("T")[0];
+      // Ưu tiên paymentDate để group theo ngày thanh toán thực tế
+      const paymentDateRaw = wo.paymentDate || wo.paymentdate;
+      const creationDateRaw = wo.creationDate || wo.creationdate;
+      const woDateObj = paymentDateRaw 
+        ? new Date(paymentDateRaw) 
+        : new Date(creationDateRaw);
+      const dateKey = woDateObj.toISOString().split("T")[0];
+
       if (!dataByDate.has(dateKey)) {
         dataByDate.set(dateKey, {
           date: dateKey,
@@ -384,24 +352,11 @@ const ReportsManager: React.FC = () => {
         const cost = getPartCost(partId, sku, p.costPrice || p.costprice || 0);
         return c + cost * (p.quantity || 0);
       }, 0);
-      // ✅ FIX: Ưu tiên field có dữ liệu thực (length > 0), không chỉ truthy
-      const servicesFromCamelCase = wo.additionalServices;
-      const servicesFromLowercase = wo.additionalservices;
-      const servicesFromSnakeCase = wo.additional_services;
-      const services =
-        (Array.isArray(servicesFromCamelCase) && servicesFromCamelCase.length > 0) ? servicesFromCamelCase :
-          (Array.isArray(servicesFromLowercase) && servicesFromLowercase.length > 0) ? servicesFromLowercase :
-            (Array.isArray(servicesFromSnakeCase) && servicesFromSnakeCase.length > 0) ? servicesFromSnakeCase :
-              [];
-      const servicesCost = (Array.isArray(services) ? services : []).reduce((c: number, s: any) => {
-        // Hỗ trợ nhiều biến thể tên field từ database
-        const rawCost = s.costPrice ?? s.costprice ?? s.cost_price ?? s.giaNhap ?? s.gia_nhap ?? 0;
-        return c + (Number(rawCost) || 0) * (Number(s.quantity) || 0);
-      }, 0);
 
-
-
-      const woCost = partsCost + servicesCost;
+      // IMPORTANT: Giá vốn dịch vụ gia công/đặt ngoài phải ghi nhận bằng phiếu chi
+      // để tránh đếm 2 lần (không trừ ở WorkOrder nữa).
+      const servicesCost = 0;
+      const woCost = partsCost;
       const woTotal = wo.totalPaid || wo.totalpaid || wo.total || 0;
       dayData.workOrders.push(wo);
       dayData.totalRevenue += woTotal;
@@ -430,7 +385,7 @@ const ReportsManager: React.FC = () => {
       salesCount: filteredSales.length,
       workOrdersCount: filteredWorkOrders.length,
     };
-  }, [salesData, workOrdersData, partsCostMap, start, end]);
+  }, [salesData, workOrdersData, partsData, currentBranchId, partsCostMap, start, end]);
 
   // Sorted daily report based on sortColumn and sortDirection
   const sortedDailyReport = useMemo(() => {
@@ -481,79 +436,10 @@ const ReportsManager: React.FC = () => {
     endDate: end.toISOString(),
   });
 
-  // Tính tổng thu/chi từ phiếu thu chi (loại trừ phiếu thu "Dịch vụ" vì đã tính trong doanh thu sửa chữa)
-  // Các category phiếu thu đã được tính trong doanh thu (Sales/Work Orders)
-  const excludedIncomeCategories = [
-    "service",
-    "dịch vụ",
-    "sale_income", // Thu từ bán hàng
-    "bán hàng",
-    "service_income", // Thu từ phiếu sửa chữa
-    "service_deposit", // Đặt cọc dịch vụ
-  ];
+  // Exclusion logic is shared (Dashboard/Analytics/Reports) to keep numbers consistent.
 
-  // Các category phiếu chi KHÔNG tính vào lợi nhuận (vì đã tính trong giá vốn)
-  const excludedExpenseCategories = [
-    "supplier_payment", // Chi trả NCC (nhập kho) - đã tính trong giá vốn hàng bán
-    "nhập kho",
-    "nhập hàng",
-    "goods_receipt",
-    "import",
-    "outsourcing",      // Chi gia công bên ngoài - đã tính trong lợi nhuận phiếu SC
-    "service_cost",     // Chi phí dịch vụ - đã tính trong lợi nhuận phiếu SC
-    "refund",           // Hoàn trả - không phải chi phí thực tế
-    "loan_payment",     // Trả nợ vay (gốc) - không phải chi phí thực tế
-    "debt_payment",     // Trả nợ - không phải chi phí thực tế
-  ];
-
-  // Helper function để check exclude với case-insensitive
-  const isExcludedIncomeCategory = (category: string | undefined | null) => {
-    if (!category) return false;
-    const lowerCat = category.toLowerCase().trim();
-    return excludedIncomeCategories.some(
-      (exc) => exc.toLowerCase() === lowerCat
-    );
-  };
-
-  // Helper function để check exclude expense categories
-  const isExcludedExpenseCategory = (category: string | undefined | null) => {
-    if (!category) return false;
-    const lowerCat = category.toLowerCase().trim();
-    return excludedExpenseCategories.some(
-      (exc) => exc.toLowerCase() === lowerCat
-    );
-  };
-
-  // Helper function to translate category names to Vietnamese
   const translateCategory = (category: string): string => {
-    const categoryMap: Record<string, string> = {
-      // Income categories
-      debt_collection: "Thu nợ",
-      service_income: "Thu dịch vụ",
-      sale_income: "Thu bán hàng",
-      service_deposit: "Đặt cọc dịch vụ",
-      other_income: "Thu khác",
-      service: "Dịch vụ",
-
-      // Expense categories
-      supplier_payment: "Trả nhà cung cấp",
-      salary: "Lương",
-      rent: "Tiền thuê",
-      utilities: "Tiền điện nước",
-      marketing: "Marketing",
-      maintenance: "Bảo trì",
-      other_expense: "Chi khác",
-      goods_receipt: "Nhập hàng",
-      import: "Nhập kho",
-
-      // Common Vietnamese
-      "nhập kho": "Nhập kho",
-      "nhập hàng": "Nhập hàng",
-      "bán hàng": "Bán hàng",
-      "dịch vụ": "Dịch vụ",
-    };
-
-    return categoryMap[category.toLowerCase()] || category;
+    return formatCashTxCategory(category);
   };
 
   const cashTotals = useMemo(() => {
@@ -583,8 +469,8 @@ const ReportsManager: React.FC = () => {
       totalTransactions: filteredTransactions.length,
       incomeAfterFilter: totalIncome,
       expense: totalExpense,
-      excludedIncomeCategories: excludedIncomeCategories,
-      excludedExpenseCategories: excludedExpenseCategories,
+      excludedIncomeCategories: REPORTS_EXCLUDED_INCOME_CATEGORIES,
+      excludedExpenseCategories: REPORTS_EXCLUDED_EXPENSE_CATEGORIES,
       expenseByCategory: filteredTransactions
         .filter((t) => t.type === "expense")
         .reduce((acc, t) => {
@@ -597,10 +483,22 @@ const ReportsManager: React.FC = () => {
     return { totalIncome, totalExpense };
   }, [cashTxData, start, end]);
 
+  const financialSummary = useMemo(() => {
+    return calculateFinancialSummary({
+      sales: salesData,
+      workOrders: workOrdersData,
+      parts: partsData,
+      cashTransactions: cashTxData,
+      branchId: currentBranchId,
+      start,
+      end,
+    });
+  }, [salesData, workOrdersData, partsData, cashTxData, currentBranchId, start, end]);
+
   // Doanh thu tổng hợp = Doanh thu bán hàng + Phiếu thu
-  const combinedRevenue = revenueReport.totalRevenue + cashTotals.totalIncome;
+  const combinedRevenue = financialSummary.combinedRevenue;
   // Lợi nhuận ròng = Lợi nhuận + Thu khác - Chi khác
-  const netProfit = revenueReport.totalProfit + cashTotals.totalIncome - cashTotals.totalExpense;
+  const netProfit = financialSummary.netProfit;
 
   const cashflowReport = useMemo(() => {
     const filteredTransactions = cashTxData.filter((t) => {
@@ -618,14 +516,15 @@ const ReportsManager: React.FC = () => {
 
     const byCategory: Record<string, { income: number; expense: number }> = {};
     filteredTransactions.forEach((t) => {
-      const category = t.category || "other";
-      if (!byCategory[category]) {
-        byCategory[category] = { income: 0, expense: 0 };
+      const categoryKey = getCashTxCategoryKey(t.category);
+      const groupKey = categoryKey || t.category || "other";
+      if (!byCategory[groupKey]) {
+        byCategory[groupKey] = { income: 0, expense: 0 };
       }
       if (t.type === "income") {
-        byCategory[category].income += t.amount;
+        byCategory[groupKey].income += t.amount;
       } else {
-        byCategory[category].expense += t.amount;
+        byCategory[groupKey].expense += t.amount;
       }
     });
 

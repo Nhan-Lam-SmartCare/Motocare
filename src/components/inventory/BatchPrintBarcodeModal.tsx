@@ -509,9 +509,9 @@ const BatchPrintBarcodeModal: React.FC<BatchPrintBarcodeModalProps> = ({
         <body>
           <div class="print-info">
             <h3>⚠️ Trước khi in, kiểm tra cài đặt:</h3>
-            <p><strong>Paper size:</strong> <code>${currentSize.width}×${currentSize.height}mm</code></p>
-            <p><strong>Margins:</strong> None</p>
-            <p><strong>Scale:</strong> 100%</p>
+            <p><strong>Khổ giấy:</strong> <code>${currentSize.width}×${currentSize.height}mm</code></p>
+            <p><strong>Lề:</strong> Không</p>
+            <p><strong>Tỷ lệ:</strong> 100%</p>
             <p style="margin-top:8px">Phần này sẽ không được in ra.</p>
           </div>
           ${labelsHTML}

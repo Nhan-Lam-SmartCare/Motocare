@@ -20,7 +20,7 @@ const addHeader = (doc: jsPDF, title: string, subtitle?: string) => {
   doc.setFontSize(9);
   doc.setTextColor(100);
   doc.text(
-    `Generated: ${new Date().toLocaleString("vi-VN")}`,
+    `Xuất lúc: ${new Date().toLocaleString("vi-VN")}`,
     14,
     subtitle ? 35 : 28
   );
@@ -37,7 +37,7 @@ const addFooter = (doc: jsPDF) => {
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i);
     doc.text(
-      `Page ${i} of ${pageCount}`,
+      `Trang ${i}/${pageCount}`,
       doc.internal.pageSize.width / 2,
       doc.internal.pageSize.height - 10,
       { align: "center" }
@@ -52,8 +52,8 @@ export const exportInventoryReport = (
   const doc = new jsPDF();
   const startY = addHeader(
     doc,
-    "INVENTORY REPORT",
-    `Total Products: ${parts.length}`
+    "BÁO CÁO TỒN KHO",
+    `Tổng sản phẩm: ${parts.length}`
   );
 
   // Summary stats
@@ -81,13 +81,13 @@ export const exportInventoryReport = (
   // Summary table
   autoTable(doc, {
     startY,
-    head: [["Metric", "Value"]],
+    head: [["Chỉ tiêu", "Giá trị"]],
     body: [
-      ["Total Inventory Value", formatCurrency(totalValue)],
-      ["Total Products", parts.length.toString()],
-      ["Total Stock Units", totalStock.toString()],
-      ["Low Stock Items", lowStock.toString()],
-      ["Out of Stock", outOfStock.toString()],
+      ["Tổng giá trị tồn kho", formatCurrency(totalValue)],
+      ["Tổng sản phẩm", parts.length.toString()],
+      ["Tổng số lượng tồn", totalStock.toString()],
+      ["Sắp hết hàng", lowStock.toString()],
+      ["Hết hàng", outOfStock.toString()],
     ],
     theme: "grid",
     headStyles: { fillColor: [59, 130, 246] },
@@ -102,7 +102,7 @@ export const exportInventoryReport = (
     return [
       part.sku || "N/A",
       part.name,
-      part.category || "Uncategorized",
+      part.category || "Chưa phân loại",
       stock.toString(),
       formatCurrency(price),
       formatCurrency(value),
@@ -111,7 +111,7 @@ export const exportInventoryReport = (
 
   autoTable(doc, {
     startY: (doc as any).lastAutoTable.finalY + 10,
-    head: [["SKU", "Name", "Category", "Stock", "Price", "Value"]],
+    head: [["Mã", "Tên", "Danh mục", "Tồn", "Giá bán", "Giá trị"]],
     body: tableData,
     theme: "striped",
     headStyles: { fillColor: [59, 130, 246] },
@@ -125,7 +125,7 @@ export const exportInventoryReport = (
   });
 
   addFooter(doc);
-  doc.save(`Inventory_Report_${new Date().toISOString().slice(0, 10)}.pdf`);
+  doc.save(`BaoCao_TonKho_${new Date().toISOString().slice(0, 10)}.pdf`);
 };
 
 export const exportSalesReport = (
@@ -146,12 +146,12 @@ export const exportSalesReport = (
   }
 
   const subtitle = dateRange.start
-    ? `Period: ${dateRange.start.toLocaleDateString("vi-VN")} - ${
-        dateRange.end?.toLocaleDateString("vi-VN") || "Now"
+    ? `Kỳ: ${dateRange.start.toLocaleDateString("vi-VN")} - ${
+        dateRange.end?.toLocaleDateString("vi-VN") || "Hiện tại"
       }`
-    : `Total Orders: ${filteredSales.length}`;
+    : `Tổng đơn: ${filteredSales.length}`;
 
-  const startY = addHeader(doc, "SALES REPORT", subtitle);
+  const startY = addHeader(doc, "BÁO CÁO BÁN HÀNG", subtitle);
 
   // Summary stats
   const totalRevenue = filteredSales.reduce((sum, s) => sum + s.total, 0);
@@ -165,12 +165,12 @@ export const exportSalesReport = (
   // Summary table
   autoTable(doc, {
     startY,
-    head: [["Metric", "Value"]],
+    head: [["Chỉ tiêu", "Giá trị"]],
     body: [
-      ["Total Revenue", formatCurrency(totalRevenue)],
-      ["Total Orders", totalOrders.toString()],
-      ["Total Items Sold", totalItems.toString()],
-      ["Average Order Value", formatCurrency(avgOrderValue)],
+      ["Tổng doanh thu", formatCurrency(totalRevenue)],
+      ["Tổng đơn", totalOrders.toString()],
+      ["Tổng số lượng bán", totalItems.toString()],
+      ["Giá trị đơn trung bình", formatCurrency(avgOrderValue)],
     ],
     theme: "grid",
     headStyles: { fillColor: [16, 185, 129] },
@@ -186,7 +186,7 @@ export const exportSalesReport = (
     sale.items.forEach((item) => {
       const existing = productSales.get(item.partId);
       const part = parts.find((p) => p.id === item.partId);
-      const name = part?.name || "Unknown Product";
+      const name = part?.name || "Sản phẩm không xác định";
 
       if (existing) {
         existing.quantity += item.quantity;
@@ -212,7 +212,7 @@ export const exportSalesReport = (
 
   autoTable(doc, {
     startY: (doc as any).lastAutoTable.finalY + 10,
-    head: [["Product", "Quantity Sold", "Revenue"]],
+    head: [["Sản phẩm", "Số lượng", "Doanh thu"]],
     body: topProducts.map((p) => [
       p.name,
       p.quantity.toString(),
@@ -229,7 +229,7 @@ export const exportSalesReport = (
   });
 
   addFooter(doc);
-  doc.save(`Sales_Report_${new Date().toISOString().slice(0, 10)}.pdf`);
+  doc.save(`BaoCao_BanHang_${new Date().toISOString().slice(0, 10)}.pdf`);
 };
 
 export const exportFinancialReport = (
@@ -264,12 +264,12 @@ export const exportFinancialReport = (
   }
 
   const subtitle = dateRange.start
-    ? `Period: ${dateRange.start.toLocaleDateString("vi-VN")} - ${
-        dateRange.end?.toLocaleDateString("vi-VN") || "Now"
+    ? `Kỳ: ${dateRange.start.toLocaleDateString("vi-VN")} - ${
+        dateRange.end?.toLocaleDateString("vi-VN") || "Hiện tại"
       }`
-    : "All Time";
+    : "Toàn thời gian";
 
-  const startY = addHeader(doc, "FINANCIAL REPORT", subtitle);
+  const startY = addHeader(doc, "BÁO CÁO TÀI CHÍNH", subtitle);
 
   // Calculate financials
   const income = filteredSales.reduce((sum, s) => sum + s.total, 0);
@@ -303,17 +303,17 @@ export const exportFinancialReport = (
   // Financial summary
   autoTable(doc, {
     startY,
-    head: [["Metric", "Amount"]],
+    head: [["Chỉ tiêu", "Số tiền"]],
     body: [
-      ["Total Income", formatCurrency(income)],
-      ["Total Expenses", formatCurrency(expenses)],
-      ["Net Profit", formatCurrency(profit)],
-      ["Profit Margin", `${profitMargin.toFixed(2)}%`],
-      ["Inventory Value", formatCurrency(inventoryValue)],
-      ["Customer Debts", formatCurrency(totalCustomerDebts)],
-      ["Supplier Debts", formatCurrency(totalSupplierDebts)],
+      ["Tổng thu", formatCurrency(income)],
+      ["Tổng chi", formatCurrency(expenses)],
+      ["Lợi nhuận ròng", formatCurrency(profit)],
+      ["Biên lợi nhuận", `${profitMargin.toFixed(2)}%`],
+      ["Giá trị tồn kho", formatCurrency(inventoryValue)],
+      ["Công nợ khách hàng", formatCurrency(totalCustomerDebts)],
+      ["Công nợ nhà cung cấp", formatCurrency(totalSupplierDebts)],
       [
-        "Net Position",
+        "Vị thế ròng",
         formatCurrency(
           profit + inventoryValue + totalCustomerDebts - totalSupplierDebts
         ),
@@ -337,15 +337,15 @@ export const exportFinancialReport = (
   const finalY = (doc as any).lastAutoTable.finalY + 10;
   doc.setFontSize(10);
   doc.setFont("helvetica", "bold");
-  doc.text("Notes:", 14, finalY);
+  doc.text("Ghi chú:", 14, finalY);
 
   doc.setFontSize(9);
   doc.setFont("helvetica", "normal");
   const notes = [
-    "• Income includes all sales revenue",
-    "• Expenses include inventory purchase costs",
-    "• Profit margin = (Net Profit / Income) × 100%",
-    "• Net Position = Profit + Inventory + Customer Debts - Supplier Debts",
+    "• Thu: bao gồm toàn bộ doanh thu bán hàng",
+    "• Chi: bao gồm chi phí nhập kho (tính theo giá vốn)",
+    "• Biên lợi nhuận = (Lợi nhuận ròng / Tổng thu) × 100%",
+    "• Vị thế ròng = Lợi nhuận + Tồn kho + Công nợ KH - Công nợ NCC",
   ];
 
   notes.forEach((note, index) => {
@@ -353,7 +353,7 @@ export const exportFinancialReport = (
   });
 
   addFooter(doc);
-  doc.save(`Financial_Report_${new Date().toISOString().slice(0, 10)}.pdf`);
+  doc.save(`BaoCao_TaiChinh_${new Date().toISOString().slice(0, 10)}.pdf`);
 };
 
 export const exportLowStockReport = (
@@ -373,15 +373,15 @@ export const exportLowStockReport = (
 
   const startY = addHeader(
     doc,
-    "LOW STOCK ALERT",
-    `Low Stock: ${lowStockItems.length} | Out of Stock: ${outOfStockItems.length}`
+    "CẢNH BÁO TỒN KHO",
+    `Sắp hết hàng: ${lowStockItems.length} | Hết hàng: ${outOfStockItems.length}`
   );
 
   // Low stock table
   if (lowStockItems.length > 0) {
     doc.setFontSize(12);
     doc.setFont("helvetica", "bold");
-    doc.text("Low Stock Items (≤ 10 units)", 14, startY);
+    doc.text("Sản phẩm sắp hết (≤ 10)", 14, startY);
 
     const lowStockData = lowStockItems
       .sort(
@@ -390,12 +390,12 @@ export const exportLowStockReport = (
       )
       .map((part) => {
         const stock = part.stock[currentBranchId] || 0;
-        const status = stock <= 3 ? "Critical" : stock <= 5 ? "Warning" : "Low";
+        const status = stock <= 3 ? "Nguy cấp" : stock <= 5 ? "Cảnh báo" : "Thấp";
 
         return [
           part.sku || "N/A",
           part.name,
-          part.category || "Uncategorized",
+          part.category || "Chưa phân loại",
           stock.toString(),
           status,
         ];
@@ -403,7 +403,7 @@ export const exportLowStockReport = (
 
     autoTable(doc, {
       startY: startY + 5,
-      head: [["SKU", "Name", "Category", "Stock", "Status"]],
+      head: [["Mã", "Tên", "Danh mục", "Tồn", "Trạng thái"]],
       body: lowStockData,
       theme: "striped",
       headStyles: { fillColor: [245, 158, 11] },
@@ -416,10 +416,10 @@ export const exportLowStockReport = (
       didParseCell: (data) => {
         if (data.column.index === 4 && data.row.section === "body") {
           const status = data.cell.raw;
-          if (status === "Critical") {
+          if (status === "Nguy cấp") {
             data.cell.styles.fillColor = [254, 226, 226];
             data.cell.styles.textColor = [127, 29, 29];
-          } else if (status === "Warning") {
+          } else if (status === "Cảnh báo") {
             data.cell.styles.fillColor = [254, 243, 199];
             data.cell.styles.textColor = [146, 64, 14];
           }
@@ -437,17 +437,17 @@ export const exportLowStockReport = (
 
     doc.setFontSize(12);
     doc.setFont("helvetica", "bold");
-    doc.text("Out of Stock Items", 14, currentY);
+    doc.text("Sản phẩm hết hàng", 14, currentY);
 
     const outOfStockData = outOfStockItems.map((part) => [
       part.sku || "N/A",
       part.name,
-      part.category || "Uncategorized",
+      part.category || "Chưa phân loại",
     ]);
 
     autoTable(doc, {
       startY: currentY + 5,
-      head: [["SKU", "Name", "Category"]],
+      head: [["Mã", "Tên", "Danh mục"]],
       body: outOfStockData,
       theme: "striped",
       headStyles: { fillColor: [239, 68, 68] },
@@ -460,9 +460,9 @@ export const exportLowStockReport = (
 
   if (lowStockItems.length === 0 && outOfStockItems.length === 0) {
     doc.setFontSize(12);
-    doc.text("All products are in stock!", 14, startY);
+    doc.text("Tất cả sản phẩm đều còn hàng!", 14, startY);
   }
 
   addFooter(doc);
-  doc.save(`Low_Stock_Alert_${new Date().toISOString().slice(0, 10)}.pdf`);
+  doc.save(`CanhBao_TonKho_${new Date().toISOString().slice(0, 10)}.pdf`);
 };

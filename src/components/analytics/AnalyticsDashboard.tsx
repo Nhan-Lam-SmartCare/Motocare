@@ -46,6 +46,8 @@ type TabType = "inventory" | "sales" | "financial" | "services" | "customers";
 
 import { getDateRange } from "../../utils/dateUtils";
 
+import { calculateFinancialSummary } from "../../lib/reports/financialSummary";
+
 // Helper to get date range from filter (MOVED TO UTILS)
 // const getDateRange = ... (removed)
 
@@ -128,105 +130,29 @@ const AnalyticsDashboard: React.FC = () => {
   const currentDateRange = useMemo(() => getDateRange(dateFilter), [dateFilter]);
   const previousDateRange = useMemo(() => getPreviousPeriodRange(dateFilter), [dateFilter]);
 
-  // === EXCLUDED CATEGORIES CONFIG (Mirrored from ReportsManager) ===
-  const excludedIncomeCategories = useMemo(() => [
-    "service",
-    "dịch vụ",
-    "sale_income",
-    "bán hàng",
-    "service_income",
-    "service_deposit",
-  ], []);
-
-  const excludedExpenseCategories = useMemo(() => [
-    "supplier_payment",
-    "nhập kho",
-    "nhập hàng",
-    "goods_receipt",
-    "import",
-    "outsourcing",
-    "service_cost",
-    "refund",
-  ], []);
-
-  const isExcludedIncomeCategory = (category: string | undefined | null) => {
-    if (!category) return false;
-    const lowerCat = category.toLowerCase().trim();
-    return excludedIncomeCategories.some(
-      (exc) => exc.toLowerCase() === lowerCat
-    );
-  };
-
-  const isExcludedExpenseCategory = (category: string | undefined | null) => {
-    if (!category) return false;
-    const lowerCat = category.toLowerCase().trim();
-    return excludedExpenseCategories.some(
-      (exc) => exc.toLowerCase() === lowerCat
-    );
+  const normalizeRange = (startDate: Date, endDate: Date) => {
+    const start = new Date(startDate);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(endDate);
+    end.setHours(23, 59, 59, 999);
+    return { start, end };
   };
 
   // === STATS CALCULATION (filtered by date range) ===
   const { currentStats, previousStats } = useMemo(() => {
-    // Create costPrice lookup map from parts (partId -> costPrice)
-    const costPriceMap = new Map<string, number>();
-    parts.forEach((p: any) => {
-      const cost = p.costPrice?.[currentBranchId] || 0;
-      costPriceMap.set(p.id, cost);
-    });
-
     const calculateStats = (startDate: Date, endDate: Date) => {
-      // 1. SALES REVENUE (Bán hàng)
-      const periodSales = sales.filter((s) => {
-        const d = new Date(s.date);
-        return d >= startDate && d <= endDate;
-      });
-      const salesRevenue = periodSales.reduce((sum, s) => sum + (s.total || 0), 0);
-      const salesCost = periodSales.reduce((sum, s: any) => {
-        return sum + (s.items || []).reduce((c: number, item: any) => {
-          const unitCost = item.isService ? 0 : (costPriceMap.get(item.partId) || 0);
-          return c + (unitCost * (item.quantity || 0));
-        }, 0);
-      }, 0);
-      const salesGrossProfit = salesRevenue - salesCost;
-
-      // 2. WORKORDERS/SERVICES REVENUE (Dịch vụ sửa chữa)
-      const periodWO = workOrders.filter((wo) => {
-        const d = new Date(wo.creationDate);
-        return d >= startDate && d <= endDate &&
-          (wo.status === "Trả máy" || wo.paymentStatus === "paid" || wo.paymentStatus === "partial" || (wo.totalPaid && wo.totalPaid > 0)) &&
-          !wo.refunded;
-      });
-      const woRevenue = periodWO.reduce((sum, wo: any) => sum + (wo.totalPaid || wo.total || 0), 0);
-
-      const woCost = periodWO.reduce((sum, wo: any) => {
-        const partsCost = (wo.partsUsed || []).reduce((c: number, p: any) =>
-          c + ((p.costPrice || costPriceMap.get(p.partId) || 0) * (p.quantity || 0)), 0);
-        const svcCost = (wo.additionalServices || []).reduce((c: number, svc: any) =>
-          c + ((svc.costPrice || 0) * (svc.quantity || 0)), 0);
-        return sum + partsCost + svcCost;
-      }, 0);
-      const woGrossProfit = woRevenue - woCost;
-
-      // 3. CASH TRANSACTIONS (Revenue & Expenses)
-      const periodCashTx = cashTransactions.filter((tx: any) => {
-        const d = new Date(tx.date);
-        return d >= startDate && d <= endDate;
+      const { start, end } = normalizeRange(startDate, endDate);
+      const summary = calculateFinancialSummary({
+        sales,
+        workOrders,
+        parts,
+        cashTransactions,
+        branchId: currentBranchId,
+        start,
+        end,
       });
 
-      // Extra Income (Thu khác, Thu nợ...) excluding Service/Sale income
-      const cashIncome = periodCashTx
-        .filter((tx: any) => tx.type === "income" && !isExcludedIncomeCategory(tx.category))
-        .reduce((sum: number, tx: any) => sum + (tx.amount || 0), 0);
-
-      // Expenses (Chi phí vận hành...) excluding COGS/Import
-      const cashExpense = periodCashTx
-        .filter((tx: any) => tx.type === "expense" && (tx.amount || 0) > 0 && !isExcludedExpenseCategory(tx.category))
-        .reduce((sum: number, tx: any) => sum + (tx.amount || 0), 0);
-
-      return {
-        revenue: salesRevenue + woRevenue + cashIncome,
-        profit: (salesGrossProfit + woGrossProfit + cashIncome) - cashExpense, // Net Profit
-      };
+      return { revenue: summary.combinedRevenue, profit: summary.netProfit };
     };
 
     return {
@@ -240,66 +166,25 @@ const AnalyticsDashboard: React.FC = () => {
     const now = new Date();
     const result: { month: string; revenue: number; profit: number }[] = [];
 
-    // Create costPrice lookup
-    const costPriceMap = new Map<string, number>();
-    parts.forEach((p: any) => {
-      costPriceMap.set(p.id, p.costPrice?.[currentBranchId] || 0);
-    });
-
     for (let i = 5; i >= 0; i--) {
       const targetMonth = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const monthEnd = new Date(targetMonth.getFullYear(), targetMonth.getMonth() + 1, 0, 23, 59, 59);
+      const monthEnd = new Date(targetMonth.getFullYear(), targetMonth.getMonth() + 1, 0, 23, 59, 59, 999);
+      const { start, end } = normalizeRange(targetMonth, monthEnd);
 
-      // Sales
-      const monthSales = sales.filter((s) => {
-        const d = new Date(s.date);
-        return d >= targetMonth && d <= monthEnd;
+      const summary = calculateFinancialSummary({
+        sales,
+        workOrders,
+        parts,
+        cashTransactions,
+        branchId: currentBranchId,
+        start,
+        end,
       });
-      const salesRevenue = monthSales.reduce((sum, s) => sum + (s.total || 0), 0);
-      const salesCost = monthSales.reduce((sum, s: any) => {
-        return sum + (s.items || []).reduce((c: number, item: any) => {
-          const unitCost = item.isService ? 0 : (costPriceMap.get(item.partId) || 0);
-          return c + (unitCost * (item.quantity || 0));
-        }, 0);
-      }, 0);
-
-      // Work orders
-      const monthWO = workOrders.filter((wo) => {
-        const d = new Date(wo.creationDate);
-        return d >= targetMonth && d <= monthEnd &&
-          (wo.status === "Trả máy" || wo.paymentStatus === "paid" || wo.paymentStatus === "partial" || (wo.totalPaid && wo.totalPaid > 0)) &&
-          !wo.refunded;
-      });
-      const woRevenue = monthWO.reduce((sum, wo: any) => sum + (wo.totalPaid || wo.total || 0), 0);
-      const woCost = monthWO.reduce((sum, wo: any) => {
-        const partsCost = (wo.partsUsed || []).reduce((c: number, p: any) =>
-          c + ((p.costPrice || costPriceMap.get(p.partId) || 0) * (p.quantity || 0)), 0);
-        const svcCost = (wo.additionalServices || []).reduce((c: number, svc: any) =>
-          c + ((svc.costPrice || 0) * (svc.quantity || 0)), 0);
-        return sum + partsCost + svcCost;
-      }, 0);
-
-      // Cash Transactions
-      const monthCashTx = cashTransactions.filter((tx: any) => {
-        const d = new Date(tx.date);
-        return d >= targetMonth && d <= monthEnd;
-      });
-
-      const cashIncome = monthCashTx
-        .filter((tx: any) => tx.type === "income" && !isExcludedIncomeCategory(tx.category))
-        .reduce((sum: number, tx: any) => sum + (tx.amount || 0), 0);
-
-      const cashExpense = monthCashTx
-        .filter((tx: any) => tx.type === "expense" && (tx.amount || 0) > 0 && !isExcludedExpenseCategory(tx.category))
-        .reduce((sum: number, tx: any) => sum + (tx.amount || 0), 0);
-
-      const totalRevenue = salesRevenue + woRevenue + cashIncome;
-      const totalProfit = (salesRevenue - salesCost) + (woRevenue - woCost) + cashIncome - cashExpense;
 
       result.push({
         month: targetMonth.toLocaleDateString('vi-VN', { month: 'short' }),
-        revenue: Math.round(totalRevenue / 1000000), // In millions
-        profit: Math.round(totalProfit / 1000000),
+        revenue: Math.round(summary.combinedRevenue / 1000000), // In millions
+        profit: Math.round(summary.netProfit / 1000000),
       });
     }
     return result;
@@ -316,27 +201,16 @@ const AnalyticsDashboard: React.FC = () => {
     const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
 
     const calculateRevenue = (startDate: Date, endDate: Date) => {
-      const salesRev = sales
-        .filter((s) => { const d = new Date(s.date); return d >= startDate && d <= endDate; })
-        .reduce((sum, s) => sum + (s.total || 0), 0);
-
-      const woRev = workOrders
-        .filter((wo) => {
-          const d = new Date(wo.creationDate);
-          return d >= startDate && d <= endDate &&
-            (wo.status === "Trả máy" || wo.paymentStatus === "paid" || wo.paymentStatus === "partial" || (wo.totalPaid && wo.totalPaid > 0)) &&
-            !wo.refunded;
-        })
-        .reduce((sum, wo) => sum + (wo.totalPaid || wo.total || 0), 0);
-
-      const cashRev = cashTransactions
-        .filter((tx: any) => {
-          const d = new Date(tx.date);
-          return d >= startDate && d <= endDate && tx.type === "income" && !isExcludedIncomeCategory(tx.category);
-        })
-        .reduce((sum: number, tx: any) => sum + (tx.amount || 0), 0);
-
-      return salesRev + woRev + cashRev;
+      const { start, end } = normalizeRange(startDate, endDate);
+      return calculateFinancialSummary({
+        sales,
+        workOrders,
+        parts,
+        cashTransactions,
+        branchId: currentBranchId,
+        start,
+        end,
+      }).combinedRevenue;
     };
 
     const thisMonth = calculateRevenue(thisMonthStart, thisMonthEnd);
@@ -344,7 +218,7 @@ const AnalyticsDashboard: React.FC = () => {
     const change = lastMonth > 0 ? ((thisMonth - lastMonth) / lastMonth * 100) : 0;
 
     return { thisMonth, lastMonth, change };
-  }, [sales, workOrders, cashTransactions]);
+  }, [sales, workOrders, parts, cashTransactions, currentBranchId]);
 
   // Year over Year comparison
   const yearOverYear = useMemo(() => {
@@ -355,27 +229,16 @@ const AnalyticsDashboard: React.FC = () => {
     const lastYearEnd = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate(), 23, 59, 59);
 
     const calculateRevenue = (startDate: Date, endDate: Date) => {
-      const salesRev = sales
-        .filter((s) => { const d = new Date(s.date); return d >= startDate && d <= endDate; })
-        .reduce((sum, s) => sum + (s.total || 0), 0);
-
-      const woRev = workOrders
-        .filter((wo) => {
-          const d = new Date(wo.creationDate);
-          return d >= startDate && d <= endDate &&
-            (wo.status === "Trả máy" || wo.paymentStatus === "paid" || wo.paymentStatus === "partial" || (wo.totalPaid && wo.totalPaid > 0)) &&
-            !wo.refunded;
-        })
-        .reduce((sum, wo) => sum + (wo.totalPaid || wo.total || 0), 0);
-
-      const cashRev = cashTransactions
-        .filter((tx: any) => {
-          const d = new Date(tx.date);
-          return d >= startDate && d <= endDate && tx.type === "income" && !isExcludedIncomeCategory(tx.category);
-        })
-        .reduce((sum: number, tx: any) => sum + (tx.amount || 0), 0);
-
-      return salesRev + woRev + cashRev;
+      const { start, end } = normalizeRange(startDate, endDate);
+      return calculateFinancialSummary({
+        sales,
+        workOrders,
+        parts,
+        cashTransactions,
+        branchId: currentBranchId,
+        start,
+        end,
+      }).combinedRevenue;
     };
 
     const thisYear = calculateRevenue(thisYearStart, thisYearEnd);
@@ -383,7 +246,7 @@ const AnalyticsDashboard: React.FC = () => {
     const change = lastYear > 0 ? ((thisYear - lastYear) / lastYear * 100) : 0;
 
     return { thisYear, lastYear, change };
-  }, [sales, workOrders, cashTransactions]);
+  }, [sales, workOrders, parts, cashTransactions, currentBranchId]);
 
   // === FORECAST CHART DATA ===
   const forecastChartData = useMemo(() => {
@@ -396,7 +259,7 @@ const AnalyticsDashboard: React.FC = () => {
     if (monthlyTrendData.length < 2) return emptyResult;
 
     // 1. Format Historical Data
-    const data = monthlyTrendData.map(d => ({
+    const data: { month: string; actual: number | null; projected: number | null }[] = monthlyTrendData.map(d => ({
       month: d.month,
       actual: d.revenue,
       projected: null as number | null,
@@ -764,7 +627,7 @@ const AnalyticsDashboard: React.FC = () => {
                 <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">
                   {currentStats.revenue > 0 ? ((currentStats.profit / currentStats.revenue) * 100).toFixed(1) : 0}%
                 </div>
-                <span className="text-sm text-slate-500 dark:text-slate-400">Net Margin</span>
+                <span className="text-sm text-slate-500 dark:text-slate-400">Biên lợi nhuận ròng</span>
               </div>
 
               <div className="mt-3">

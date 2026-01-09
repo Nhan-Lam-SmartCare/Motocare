@@ -132,7 +132,7 @@ export const ExternalDataImport: React.FC<ExternalDataImportProps> = ({
                                 <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-slate-300 dark:border-slate-600 border-dashed rounded-xl cursor-pointer bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
                                     <div className="flex flex-col items-center justify-center pt-5 pb-6">
                                         <p className="mb-2 text-sm text-slate-500 dark:text-slate-400">
-                                            <span className="font-semibold">Click để chọn file</span>
+                                            <span className="font-semibold">Nhấn để chọn tệp</span>
                                         </p>
                                         <p className="text-xs text-slate-500 dark:text-slate-400">
                                             JSON, CSV
@@ -145,7 +145,7 @@ export const ExternalDataImport: React.FC<ExternalDataImportProps> = ({
                             {file && (
                                 <div className="flex items-center gap-3 bg-blue-50 dark:bg-blue-900/20 px-4 py-3 rounded-lg border border-blue-100 dark:border-blue-800">
                                     <div className="p-2 bg-white dark:bg-slate-800 rounded-md shadow-sm">
-                                        <span className="text-xs font-bold text-blue-600">FILE</span>
+                                        <span className="text-xs font-bold text-blue-600">TẬP TIN</span>
                                     </div>
                                     <div className="text-sm font-medium text-slate-700 dark:text-slate-200">
                                         {file.name}

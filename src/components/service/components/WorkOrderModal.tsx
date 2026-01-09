@@ -1925,7 +1925,7 @@ const WorkOrderModal: React.FC<{
                 if (!result.ok) {
                   showToast.warning(
                     "Đã lưu phiếu nhưng có lỗi khi trừ kho: " +
-                    (result.error.message || "Unknown error")
+                    (result.error.message || "Lỗi không xác định")
                   );
                 }
               } catch (error: any) {
@@ -2280,7 +2280,7 @@ const WorkOrderModal: React.FC<{
                 if (!result.ok) {
                   showToast.warning(
                     "Đã cập nhật phiếu nhưng có lỗi khi trừ kho: " +
-                    (result.error.message || "Unknown error")
+                    (result.error.message || "Lỗi không xác định")
                   );
                 }
               } catch (error: any) {
@@ -2941,7 +2941,7 @@ const WorkOrderModal: React.FC<{
                       ) : (
                         <div className="text-center py-4 px-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg border border-dashed border-slate-300 dark:border-slate-600">
                           <p className="text-sm text-slate-500 dark:text-slate-400">
-                            Chưa có xe nào. Click "+ Thêm xe" để thêm.
+                            Chưa có xe nào. Nhấn "+ Thêm xe" để thêm.
                           </p>
                         </div>
                       )}

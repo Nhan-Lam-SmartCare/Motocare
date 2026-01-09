@@ -444,7 +444,7 @@ const NotificationDropdown: React.FC = () => {
             <p className="text-[10px] text-slate-400 dark:text-slate-500 text-center">
               {activeTab === "notifications"
                 ? `${notifications.length} thông báo gần nhất`
-                : "Click vào cảnh báo để xem chi tiết"}
+                : "Nhấn vào cảnh báo để xem chi tiết"}
             </p>
           </div>
         </div>

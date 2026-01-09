@@ -1,6 +1,7 @@
 // Deprecated local client: use the unified client defined in supabaseClient.ts
 // to prevent multiple GoTrue instances (warning in console).
 import { supabase } from "../supabaseClient";
+import { canonicalizeMotocareCashTxCategory } from "./finance/cashTxCategories";
 
 // Helper functions for common operations
 export const supabaseHelpers = {
@@ -266,9 +267,17 @@ export const supabaseHelpers = {
   },
 
   async createCashTransaction(transaction: any) {
+    const rawCategory = transaction?.category;
+    const canonicalCategory = canonicalizeMotocareCashTxCategory(rawCategory);
+
+    const payload =
+      canonicalCategory && typeof canonicalCategory === "string"
+        ? { ...transaction, category: canonicalCategory }
+        : transaction;
+
     const { data, error } = await supabase
       .from("cash_transactions")
-      .insert([transaction])
+      .insert([payload])
       .select()
       .single();
 

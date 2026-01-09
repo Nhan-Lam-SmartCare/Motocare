@@ -277,7 +277,7 @@ const EditReceiptModal: React.FC<{
 
   const handleEditItem = (index: number) => {
     setEditingItemIndex(index);
-    showToast.info("Click vào ô số lượng hoặc đơn giá để chỉnh sửa");
+    showToast.info("Nhấn vào ô số lượng hoặc đơn giá để chỉnh sửa");
   };
 
   const handleItemMenu = (index: number) => {

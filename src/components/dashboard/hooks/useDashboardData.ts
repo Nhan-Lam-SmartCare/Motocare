@@ -6,46 +6,8 @@ import { useCashTxRepo } from "../../../hooks/useCashTransactionsRepository";
 import { useCashBalance } from "../../../hooks/useCashBalance";
 import { useLoansRepo } from "../../../hooks/useLoansRepository";
 import { useAppContext } from "../../../contexts/AppContext";
-import type { Part } from "../../../types";
 
-// Các category phiếu thu KHÔNG tính vào doanh thu (vì đã tính trong Sales/WO)
-const excludedIncomeCategories = [
-    "doanh thu bán hàng",
-    "sales",
-    "dịch vụ sửa chữa",
-    "bán hàng",
-    "service_income", // Thu từ phiếu sửa chữa
-    "service_deposit", // Đặt cọc dịch vụ
-    "service", // Dịch vụ chung
-];
-
-// Các category phiếu chi KHÔNG tính vào lợi nhuận (vì đã tính trong giá vốn)
-const excludedExpenseCategories = [
-    "supplier_payment", // Chi trả NCC (nhập kho) - đã tính trong giá vốn hàng bán
-    "nhập kho",
-    "nhập hàng",
-    "goods_receipt",
-    "import",
-    "outsourcing",      // Chi gia công bên ngoài - đã tính trong lợi nhuận phiếu SC
-    "service_cost",     // Chi phí dịch vụ - đã tính trong lợi nhuận phiếu SC
-    "refund",           // Hoàn trả - không phải chi phí thực tế
-];
-
-// Helper function để check exclude với case-insensitive
-const isExcludedIncomeCategory = (category: string | undefined | null) => {
-    if (!category) return false;
-    const lowerCat = category.toLowerCase().trim();
-    return excludedIncomeCategories.some((exc) => exc.toLowerCase() === lowerCat);
-};
-
-// Helper function để check exclude expense categories
-const isExcludedExpenseCategory = (category: string | undefined | null) => {
-    if (!category) return false;
-    const lowerCat = category.toLowerCase().trim();
-    return excludedExpenseCategories.some(
-        (exc) => exc.toLowerCase() === lowerCat
-    );
-};
+import { calculateFinancialSummary } from "../../../lib/reports/financialSummary";
 
 export const useDashboardData = (
     reportFilter: string,
@@ -62,140 +24,53 @@ export const useDashboardData = (
 
     const today = new Date().toISOString().slice(0, 10);
 
-    // Build parts cost lookup map
-    const { getPartCost } = useMemo(() => {
-        const map = new Map<string, number>();
-        parts.forEach((part: Part) => {
-            const costPrice = part.costPrice?.[currentBranchId] || 0;
-            map.set(part.id, costPrice);
-            map.set(part.sku, costPrice); // Also lookup by SKU
-        });
-
-        const getPartCost = (
-            partId: string,
-            sku: string,
-            fallbackCost: number
-        ) => {
-            // Priority: Historical value (fallbackCost) > Current master value > 0
-            if (fallbackCost && fallbackCost > 0) return fallbackCost;
-            return map.get(partId) || map.get(sku) || 0;
-        };
-
-        return { getPartCost };
-    }, [parts, currentBranchId]);
-
     // Thống kê hôm nay (bao gồm cả Sales và Work Orders đã thanh toán)
     const todayStats = useMemo(() => {
-        // Sales revenue
-        const todaySales = sales.filter((s) => s.date.slice(0, 10) === today);
-        const salesRevenue = todaySales.reduce((sum, s) => sum + s.total, 0);
-        const salesProfit = todaySales.reduce((sum, s) => {
-            const cost = s.items.reduce((c, it) => {
-                const partCost = getPartCost(
-                    it.partId,
-                    it.sku,
-                    (it as any).costPrice || 0
-                );
-                return c + partCost * it.quantity;
-            }, 0);
-            return sum + (s.total - cost);
-        }, 0);
+        const start = new Date();
+        start.setHours(0, 0, 0, 0);
+        const end = new Date();
+        end.setHours(23, 59, 59, 999);
 
-        // Work Orders revenue (chỉ tính những đơn đã thanh toán - paid hoặc partial)
-        const todayWorkOrders = workOrders.filter((wo: any) => {
-            // Dùng creationDate để xác định đơn trong ngày
-            const woDate =
-                wo.creationDate?.slice(0, 10) || wo.creationdate?.slice(0, 10);
-            const isPaid =
-                wo.paymentStatus === "paid" ||
-                wo.paymentstatus === "paid" ||
-                wo.paymentStatus === "partial" ||
-                wo.paymentstatus === "partial";
-            return woDate === today && isPaid;
+        const summary = calculateFinancialSummary({
+            sales,
+            workOrders,
+            parts,
+            cashTransactions,
+            branchId: currentBranchId,
+            start,
+            end,
         });
-        const woRevenue = todayWorkOrders.reduce(
-            (sum, wo: any) => sum + (wo.totalPaid || wo.totalpaid || wo.total || 0),
-            0
+
+        const revenue = summary.combinedRevenue;
+        const grossProfit = summary.totalProfit;
+        const profit = summary.netProfit;
+        const income = summary.cashIncome;
+        const expense = summary.cashExpense;
+
+        const salesCustomers = summary.filteredSales.map(
+            (s: any) => s?.customer?.phone || s?.customer?.name
         );
-        const woProfit = todayWorkOrders.reduce((sum, wo: any) => {
-            const partsCost = (wo.partsUsed || wo.partsused || []).reduce(
-                (c: number, p: any) => {
-                    const partId = p.partId || p.partid;
-                    const sku = p.sku;
-                    const cost = getPartCost(
-                        partId,
-                        sku,
-                        p.costPrice || p.costprice || 0
-                    );
-                    return c + cost * (p.quantity || 0);
-                },
-                0
-            );
-            // Thêm giá vốn dịch vụ gia công bên ngoài
-            const servicesCost = (
-                wo.additionalServices ||
-                wo.additionalservices ||
-                []
-            ).reduce((c: number, s: any) => {
-                return c + (s.costPrice || s.costprice || 0) * (s.quantity || 0);
-            }, 0);
-            const totalCost = partsCost + servicesCost;
-            return (
-                sum + ((wo.totalPaid || wo.totalpaid || wo.total || 0) - totalCost)
-            );
-        }, 0);
-
-        // Cash transactions: thu/chi trong ngày (loại trừ thu dịch vụ/bán hàng đã tính trong Sales/WO)
-        const todayIncome = cashTransactions
-            .filter(
-                (t) =>
-                    t.type === "income" &&
-                    !isExcludedIncomeCategory(t.category) &&
-                    t.date.slice(0, 10) === today
-            )
-            .reduce((sum, t) => sum + t.amount, 0);
-        // Chi phí: loại trừ chi nhập kho (đã tính trong giá vốn hàng bán)
-        const todayExpense = cashTransactions
-            .filter(
-                (t) =>
-                    t.type === "expense" &&
-                    t.amount > 0 &&
-                    !isExcludedExpenseCategory(t.category) &&
-                    t.date.slice(0, 10) === today
-            )
-            .reduce((sum, t) => sum + t.amount, 0);
-
-        // Doanh thu = Sales + Work Orders + Phiếu thu (không tính thu dịch vụ)
-        const revenue = salesRevenue + woRevenue + todayIncome;
-        // Lợi nhuận thuần = (Lợi nhuận gộp từ Sales/WO) + Thu khác - Chi khác
-        const grossProfit = salesProfit + woProfit;
-        const profit = grossProfit + todayIncome - todayExpense;
-
-        // Count unique customers
-        const salesCustomers = todaySales.map(
-            (s) => s.customer.phone || s.customer.name
-        );
-        const woCustomers = todayWorkOrders.map(
+        const woCustomers = summary.filteredWorkOrders.map(
             (wo: any) =>
-                wo.customerPhone ||
-                wo.customerphone ||
-                wo.customerName ||
-                wo.customername
+                wo?.customerPhone ||
+                wo?.customerphone ||
+                wo?.customerName ||
+                wo?.customername
         );
-        const customerCount = new Set([...salesCustomers, ...woCustomers]).size;
+        const customerCount = new Set([...salesCustomers, ...woCustomers].filter(Boolean)).size;
 
         return {
             revenue,
             profit,
             grossProfit,
-            income: todayIncome,
-            expense: todayExpense,
+            income,
+            expense,
             customerCount,
-            orderCount: todaySales.length + todayWorkOrders.length,
-            salesCount: todaySales.length,
-            workOrdersCount: todayWorkOrders.length,
+            orderCount: summary.orderCount,
+            salesCount: summary.salesCount,
+            workOrdersCount: summary.workOrdersCount,
         };
-    }, [sales, workOrders, cashTransactions, today, getPartCost]);
+    }, [sales, workOrders, parts, cashTransactions, currentBranchId]);
 
     // Thống kê theo filter (bao gồm cả Sales và Work Orders)
     const filteredStats = useMemo(() => {
@@ -282,130 +157,47 @@ export const useDashboardData = (
             }
         };
 
-        const startDateStr = formatLocalDate(startDate);
-        const endDateStr = formatLocalDate(endDate);
+        startDate.setHours(0, 0, 0, 0);
+        endDate.setHours(23, 59, 59, 999);
 
-        // Sales - lọc theo ngày giao dịch trong khoảng thời gian
-        const filteredSales = sales.filter((s) => {
-            const saleDate = toLocalDateStr(s.date);
-            return saleDate && saleDate >= startDateStr && saleDate <= endDateStr;
+        const summary = calculateFinancialSummary({
+            sales,
+            workOrders,
+            parts,
+            cashTransactions,
+            branchId: currentBranchId,
+            start: startDate,
+            end: endDate,
         });
-        const salesRevenue = filteredSales.reduce((sum, s) => sum + s.total, 0);
-        const salesProfit = filteredSales.reduce((sum, s) => {
-            const cost = s.items.reduce((c, it) => {
-                const partCost = getPartCost(
-                    it.partId,
-                    it.sku,
-                    (it as any).costPrice || 0
-                );
-                return c + partCost * it.quantity;
-            }, 0);
-            return sum + (s.total - cost);
-        }, 0);
 
-        // Work Orders (đã thanh toán) - dùng paymentDate nếu có, fallback về creationDate
-        const filteredWorkOrders = workOrders.filter((wo: any) => {
-            // Ưu tiên dùng ngày thanh toán, nếu không có thì dùng ngày tạo
-            const paymentDateRaw = wo.paymentDate || wo.paymentdate;
-            const creationDateRaw = wo.creationDate || wo.creationdate;
-            const woDate =
-                toLocalDateStr(paymentDateRaw) || toLocalDateStr(creationDateRaw);
+        const revenue = summary.combinedRevenue;
+        const grossProfit = summary.totalProfit;
+        const profit = summary.netProfit;
+        const income = summary.cashIncome;
+        const expense = summary.cashExpense;
 
-            const isPaid =
-                wo.paymentStatus === "paid" ||
-                wo.paymentstatus === "paid" ||
-                wo.paymentStatus === "partial" ||
-                wo.paymentstatus === "partial";
-            return woDate && woDate >= startDateStr && woDate <= endDateStr && isPaid;
-        });
-        const woRevenue = filteredWorkOrders.reduce(
-            (sum, wo: any) => sum + (wo.totalPaid || wo.totalpaid || wo.total || 0),
-            0
+        const salesCustomers = summary.filteredSales.map(
+            (s: any) => s?.customer?.phone || s?.customer?.name
         );
-        const woProfit = filteredWorkOrders.reduce((sum, wo: any) => {
-            const partsCost = (wo.partsUsed || wo.partsused || []).reduce(
-                (c: number, p: any) => {
-                    const partId = p.partId || p.partid;
-                    const sku = p.sku;
-                    const cost = getPartCost(
-                        partId,
-                        sku,
-                        p.costPrice || p.costprice || 0
-                    );
-                    return c + cost * (p.quantity || 0);
-                },
-                0
-            );
-            // Thêm giá vốn dịch vụ gia công bên ngoài
-            const servicesCost = (
-                wo.additionalServices ||
-                wo.additionalservices ||
-                []
-            ).reduce((c: number, s: any) => {
-                return c + (s.costPrice || s.costprice || 0) * (s.quantity || 0);
-            }, 0);
-            const totalCost = partsCost + servicesCost;
-            return (
-                sum + ((wo.totalPaid || wo.totalpaid || wo.total || 0) - totalCost)
-            );
-        }, 0);
-
-        // Cash transactions: thu/chi trong khoảng thời gian (loại trừ thu dịch vụ/bán hàng)
-        const filteredIncome = cashTransactions
-            .filter((t) => {
-                const txDate = toLocalDateStr(t.date);
-                return (
-                    t.type === "income" &&
-                    !isExcludedIncomeCategory(t.category) &&
-                    txDate &&
-                    txDate >= startDateStr &&
-                    txDate <= endDateStr
-                );
-            })
-            .reduce((sum, t) => sum + t.amount, 0);
-        // Chi phí: loại trừ chi nhập kho (đã tính trong giá vốn hàng bán)
-        const filteredExpense = cashTransactions
-            .filter((t) => {
-                const txDate = toLocalDateStr(t.date);
-                return (
-                    t.type === "expense" &&
-                    t.amount > 0 &&
-                    !isExcludedExpenseCategory(t.category) &&
-                    txDate &&
-                    txDate >= startDateStr &&
-                    txDate <= endDateStr
-                );
-            })
-            .reduce((sum, t) => sum + t.amount, 0);
-
-        // Doanh thu = Sales + Work Orders + Phiếu thu (không tính thu dịch vụ)
-        const revenue = salesRevenue + woRevenue + filteredIncome;
-        // Lợi nhuận thuần = (Lợi nhuận gộp từ Sales/WO) + Thu khác - Chi khác
-        const grossProfit = salesProfit + woProfit;
-        const profit = grossProfit + filteredIncome - filteredExpense;
-
-        const salesCustomers = filteredSales.map(
-            (s) => s.customer.phone || s.customer.name
-        );
-        const woCustomers = filteredWorkOrders.map(
+        const woCustomers = summary.filteredWorkOrders.map(
             (wo: any) =>
-                wo.customerPhone ||
-                wo.customerphone ||
-                wo.customerName ||
-                wo.customername
+                wo?.customerPhone ||
+                wo?.customerphone ||
+                wo?.customerName ||
+                wo?.customername
         );
-        const customerCount = new Set([...salesCustomers, ...woCustomers]).size;
+        const customerCount = new Set([...salesCustomers, ...woCustomers].filter(Boolean)).size;
 
         return {
             revenue,
             profit,
             grossProfit,
-            income: filteredIncome,
-            expense: filteredExpense,
+            income,
+            expense,
             customerCount,
-            orderCount: filteredSales.length + filteredWorkOrders.length,
+            orderCount: summary.orderCount,
         };
-    }, [sales, workOrders, cashTransactions, reportFilter, getPartCost]); // Added getPartCost to dependencyoanh thu 7 ngày gần nhất (bao gồm cả Sales và Work Orders)
+    }, [sales, workOrders, parts, cashTransactions, reportFilter, currentBranchId]); // Added getPartCost to dependencyoanh thu 7 ngày gần nhất (bao gồm cả Sales và Work Orders)
     const last7DaysRevenue = useMemo(() => {
         const data = [];
         for (let i = 6; i >= 0; i--) {
@@ -622,7 +414,7 @@ export const useDashboardData = (
             sale.items.forEach((item) => {
                 // Ensure partId exists
                 const pId = item.partId || (item as any).id;
-                const pName = item.partName || "Unknown Product";
+                const pName = item.partName || "Sản phẩm không xác định";
 
                 // DEBUG: Trace specific product
                 if (pName.toLowerCase().includes("elf")) {
@@ -849,20 +641,21 @@ export const useDashboardData = (
 
         // Scan Work Orders
         workOrders.forEach(wo => {
-            const d = toLocalDateStr(wo.creationDate || wo.creationdate);
-            const status = (wo.status || "").toLowerCase();
+            const woAny = wo as any;
+            const d = toLocalDateStr(woAny.creationDate || woAny.creationdate);
+            const status = ((woAny.status || "") as string).toLowerCase();
             const isCancelled = status === "đã hủy" || status === "cancelled";
 
             if (!isCancelled && d && d >= startDateStr && d <= endDateStr) {
-                const parts = wo.partsUsed || wo.partsused || wo.parts || wo.items || [];
+                const parts = woAny.partsUsed || woAny.partsused || woAny.parts || woAny.items || [];
                 if (Array.isArray(parts)) {
                     parts.forEach((part: any) => {
                         const name = part.partName || part.partname || part.name || "";
                         if (name.toLowerCase().includes("elf")) {
                             transactions.push({
                                 source: "Sửa chữa",
-                                id: wo.id,
-                                code: wo.id.slice(0, 8) + "...", // Short ID
+                                id: woAny.id,
+                                code: String(woAny.id || "").slice(0, 8) + "...", // Short ID
                                 date: d,
                                 product: name,
                                 quantity: part.quantity || part.qty || 0

@@ -1,7 +1,7 @@
 import React from "react";
 // (Optional jest-dom matchers removed to simplify environment)
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import SalesManager from "../../src/components/sales/SalesManager";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -61,6 +61,7 @@ vi.mock("../../src/hooks/useSalesRepository", async () => {
   return {
     useSalesRepo: () => ({ data: [], isLoading: false, error: null }),
     useCreateSaleAtomicRepo: () => ({ mutateAsync: vi.fn() }),
+    useDeleteSaleRepo: () => ({ mutateAsync: vi.fn() }),
     useSalesPagedRepo: (params: any) => {
       lastParams = params;
       const page = params?.page ?? 1;
@@ -141,16 +142,17 @@ describe("Sales history date presets", () => {
     });
     await user.click(historyButtons[0]);
 
-    // click preset '7 ngày qua'
-    // Modal contains buttons like '7 ngày qua', 'Tuần', 'Tháng' — wait for a known button and click it
-    await screen.findByRole("button", { name: /7 ngày qua/i });
-    await user.click(screen.getByRole("button", { name: /7 ngày qua/i }));
+    // click preset 'Hôm nay' (exists in both desktop + mobile headers)
+    const todayButtons = await screen.findAllByRole("button", { name: /hôm nay/i });
+    await user.click(todayButtons[0]);
 
     // The effect should have triggered onDateRangeChange; hook receives new params with from/to
     // Note: fromDate and toDate are ISO strings
-    expect(lastParams).toBeTruthy();
-    expect(typeof lastParams.fromDate === "string").toBe(true);
-    expect(typeof lastParams.toDate === "string").toBe(true);
+    await waitFor(() => {
+      expect(lastParams).toBeTruthy();
+      expect(typeof lastParams.fromDate === "string").toBe(true);
+      expect(typeof lastParams.toDate === "string").toBe(true);
+    });
 
     // Sanity: fromDate <= toDate
     const from = new Date(lastParams.fromDate).getTime();

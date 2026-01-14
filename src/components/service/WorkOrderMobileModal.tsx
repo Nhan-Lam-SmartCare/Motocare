@@ -415,6 +415,7 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
   const CUSTOMER_PAGE_SIZE = 20;
   const [showPartSearch, setShowPartSearch] = useState(false);
   const [partSearchTerm, setPartSearchTerm] = useState("");
+  const [partCategoryFilter, setPartCategoryFilter] = useState<string>("");
   const [isScanning, setIsScanning] = useState(false);
 
   // Ref for part search results scrolling
@@ -551,14 +552,28 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
 
   // Filtered parts
   const filteredParts = useMemo(() => {
-    if (!partSearchTerm) return parts;
-    const term = partSearchTerm.toLowerCase();
-    return parts.filter(
-      (p) =>
+    const term = partSearchTerm.trim().toLowerCase();
+
+    return parts.filter((p) => {
+      if (partCategoryFilter && (p.category || "") !== partCategoryFilter) {
+        return false;
+      }
+      if (!term) return true;
+      return (
         p.name.toLowerCase().includes(term) ||
         p.sku?.toLowerCase().includes(term)
-    );
-  }, [parts, partSearchTerm]);
+      );
+    });
+  }, [parts, partSearchTerm, partCategoryFilter]);
+
+  const availablePartCategories = useMemo(() => {
+    const unique = new Set<string>();
+    for (const part of parts) {
+      const c = part.category?.trim();
+      if (c) unique.add(c);
+    }
+    return Array.from(unique).sort((a, b) => a.localeCompare(b, "vi"));
+  }, [parts]);
 
   // Auto-scroll to top of part results when search term changes and has results
   useEffect(() => {
@@ -848,7 +863,7 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
     // Set submitting state to disable buttons
     setIsSubmitting(true);
 
-    // Calculate total paid and remaining based on showPaymentInput (similar to desktop logic)
+    // Calculate total paid and remaining based on deposit + additional payment
     const totalDeposit = isDeposit ? depositAmount : 0;
     const additionalPayment = showPaymentInput ? partialAmount : 0;
     const totalPaid = totalDeposit + additionalPayment;
@@ -889,10 +904,9 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
       total: total,
       depositAmount: totalDeposit,
       paymentMethod,
-      // ⚠️ FIX: Không gửi totalPaid/remainingAmount khi tạo mới
-      // Thanh toán khi trả xe phải dùng function riêng work_order_complete_payment
-      totalPaid: undefined,
-      remainingAmount: undefined,
+      // Pass payment totals to ServiceManager.handleMobileSave so it can persist payment fields
+      totalPaid,
+      remainingAmount,
     };
 
     console.log(
@@ -2086,8 +2100,8 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
                   </button>
                 </div>
 
-                {/* Payment at return - only show when EDITING existing order with status "Trả máy" */}
-                {status === "Trả máy" && workOrder && (
+                {/* Payment at return - available when status is "Trả máy" (new or existing order) */}
+                {status === "Trả máy" && (
                   <div className="mt-3">
                     {/* Checkbox to enable payment */}
                     <div className="flex items-center justify-between p-3 bg-slate-100 dark:bg-[#2b2b40] rounded-lg">
@@ -2176,19 +2190,6 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
                         </div>
                       </div>
                     )}
-                  </div>
-                )}
-
-                {/* Info Note */}
-                {!workOrder && (
-                  <div className="mt-3 p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg flex items-start gap-2">
-                    <div className="flex-shrink-0 w-5 h-5 rounded-full bg-blue-500/20 flex items-center justify-center mt-0.5">
-                      <span className="text-blue-400 text-xs">ℹ️</span>
-                    </div>
-                    <p className="text-blue-300 text-xs leading-relaxed">
-                      <span className="font-semibold">Lưu ý:</span> Khi tạo phiếu mới, chọn trạng thái "Tiếp nhận" hoặc "Đang sửa". 
-                      Thanh toán khi trả xe chỉ khả dụng khi chỉnh sửa phiếu đã có sẵn.
-                    </p>
                   </div>
                 )}
               </div>
@@ -2497,7 +2498,7 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
                   onScan={(barcode: string) => {
                     setPartSearchTerm(barcode);
                     // Auto-add first matching part if exact SKU found
-                    const exactMatch = filteredParts.find(
+                    const exactMatch = parts.find(
                       (p) => p.sku?.toLowerCase() === barcode.toLowerCase() ||
                         p.barcode?.toLowerCase() === barcode.toLowerCase()
                     );
@@ -2512,6 +2513,22 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
                   }}
                   title="Quét mã phụ tùng"
                 />
+
+                <div className="mt-2">
+                  <select
+                    value={partCategoryFilter}
+                    onChange={(e) => setPartCategoryFilter(e.target.value)}
+                    className="w-full px-4 py-3 bg-white dark:bg-[#2b2b40] border border-slate-200 dark:border-slate-700/50 rounded-xl text-slate-900 dark:text-white text-sm focus:border-blue-500 transition-all"
+                    aria-label="Danh mục phụ tùng"
+                  >
+                    <option value="">Tất cả danh mục</option>
+                    {availablePartCategories.map((c) => (
+                      <option key={c} value={c}>
+                        {c}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
               {/* Results Count & List - Scrollable */}

@@ -1114,15 +1114,32 @@ const SalesManager: React.FC = () => {
                         onPageSizeChange={history.changePageSize}
                         search={history.salesSearchInput}
                         onSearchChange={history.setSalesSearchInput}
-                        fromDate={undefined}
-                        toDate={undefined}
-                        onDateRangeChange={() => { }}
-                        status="all"
-                        onStatusChange={() => { }}
-                        paymentMethodFilter="all"
-                        onPaymentMethodFilterChange={() => { }}
-                        keysetMode={false}
-                        onToggleKeyset={() => { }}
+                        fromDate={history.salesFromDate}
+                        toDate={history.salesToDate}
+                        onDateRangeChange={(from, to) => {
+                            history.setSalesFromDate(from);
+                            history.setSalesToDate(to);
+                            history.setSalesPage(1);
+                            history.setKeysetCursor(null);
+                        }}
+                        status={history.salesStatus}
+                        onStatusChange={(s) => {
+                            history.setSalesStatus(s);
+                            history.setSalesPage(1);
+                            history.setKeysetCursor(null);
+                        }}
+                        paymentMethodFilter={history.salesPaymentMethod}
+                        onPaymentMethodFilterChange={(m) => {
+                            history.setSalesPaymentMethod(m);
+                            history.setSalesPage(1);
+                            history.setKeysetCursor(null);
+                        }}
+                        keysetMode={history.useKeysetMode}
+                        onToggleKeyset={(checked) => {
+                            history.setUseKeysetMode(checked);
+                            history.setSalesPage(1);
+                            history.setKeysetCursor(null);
+                        }}
                         customerDebts={customerDebts}
                         onViewDetail={(sale) => setSelectedSale(sale)}
                         canDelete={true}

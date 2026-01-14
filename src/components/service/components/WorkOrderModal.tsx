@@ -360,6 +360,7 @@ const WorkOrderModal: React.FC<{
     });
 
     const [searchPart, setSearchPart] = useState("");
+    const [searchPartCategory, setSearchPartCategory] = useState<string>("");
     const [selectedParts, setSelectedParts] = useState<WorkOrderPart[]>([]);
     const [showPartSearch, setShowPartSearch] = useState(false);
     const [partialPayment, setPartialPayment] = useState(0);
@@ -2353,16 +2354,30 @@ const WorkOrderModal: React.FC<{
       });
     }, [parts, currentBranchId]);
 
+    const availablePartCategories = useMemo(() => {
+      const unique = new Set<string>();
+      for (const part of availableParts) {
+        const c = part.category?.trim();
+        if (c) unique.add(c);
+      }
+      return Array.from(unique).sort((a, b) => a.localeCompare(b, "vi"));
+    }, [availableParts]);
+
     // Filter parts based on search - show all available parts if search is empty
     const filteredParts = useMemo(() => {
-      if (!searchPart.trim()) return availableParts;
+      const term = searchPart.trim().toLowerCase();
 
-      return availableParts.filter(
-        (p) =>
-          p.name.toLowerCase().includes(searchPart.toLowerCase()) ||
-          p.sku?.toLowerCase().includes(searchPart.toLowerCase())
-      );
-    }, [availableParts, searchPart]);
+      return availableParts.filter((p) => {
+        if (searchPartCategory && (p.category || "") !== searchPartCategory) {
+          return false;
+        }
+        if (!term) return true;
+        return (
+          p.name.toLowerCase().includes(term) ||
+          p.sku?.toLowerCase().includes(term)
+        );
+      });
+    }, [availableParts, searchPart, searchPartCategory]);
 
     return (
       <div className="fixed inset-0 bg-black/50 z-50 flex items-end md:items-center justify-center p-0 md:p-4">
@@ -3134,14 +3149,29 @@ const WorkOrderModal: React.FC<{
 
               {showPartSearch && (
                 <div className="relative">
-                  <input
-                    type="text"
-                    placeholder="Tìm kiếm phụ tùng theo tên hoặc SKU..."
-                    value={searchPart}
-                    onChange={(e) => setSearchPart(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
-                    autoFocus
-                  />
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="Tìm kiếm phụ tùng theo tên hoặc SKU..."
+                      value={searchPart}
+                      onChange={(e) => setSearchPart(e.target.value)}
+                      className="flex-1 px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
+                      autoFocus
+                    />
+                    <select
+                      value={searchPartCategory}
+                      onChange={(e) => setSearchPartCategory(e.target.value)}
+                      className="w-48 px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
+                      aria-label="Danh mục phụ tùng"
+                    >
+                      <option value="">Tất cả danh mục</option>
+                      {availablePartCategories.map((c) => (
+                        <option key={c} value={c}>
+                          {c}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                   <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg shadow-lg max-h-60 overflow-y-auto z-10">
                     {partsLoading ? (
                       <div className="px-4 py-3 text-sm text-slate-500">

@@ -294,7 +294,7 @@ export const SettingsManager = () => {
           // Fallback: Just show instructions
           showToast.info(
             `Để thêm nhân viên mới:\n1. Nhân viên đăng ký tài khoản với email: ${newStaffEmail}\n2. Quay lại đây để cập nhật quyền`,
-            { duration: 8000 }
+            { duration: 8000 } as any
           );
           setShowAddStaff(false);
           resetNewStaffForm();

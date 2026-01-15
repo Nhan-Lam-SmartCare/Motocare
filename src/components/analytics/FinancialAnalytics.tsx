@@ -86,7 +86,7 @@ const FinancialAnalytics: React.FC<FinancialAnalyticsProps> = ({
         return d >= startDate && d <= endDate;
       })
       .reduce((sum, sale) => {
-        const saleCost = sale.items.reduce((itemSum, item) => {
+        const saleCost = sale.items.reduce((itemSum: number, item: any) => {
           const part = parts.find((p) => p.id === item.partId);
           const costPrice = part?.wholesalePrice?.[currentBranchId] || 0;
           return itemSum + costPrice * item.quantity;
@@ -108,14 +108,14 @@ const FinancialAnalytics: React.FC<FinancialAnalyticsProps> = ({
       })
       .reduce((sum, wo) => {
         // Giá vốn phụ tùng trong work order
-        const partsCost = (wo.partsUsed || []).reduce((partSum, woPart) => {
+        const partsCost = (wo.partsUsed || []).reduce((partSum: number, woPart: any) => {
           const part = parts.find((p) => p.id === woPart.partId);
           const costPrice = part?.wholesalePrice?.[currentBranchId] || 0;
           return partSum + costPrice * woPart.quantity;
         }, 0);
         // Giá vốn dịch vụ bên ngoài (gia công)
         const servicesCost = (wo.additionalServices || []).reduce(
-          (svcSum, svc) => svcSum + (svc.costPrice || 0) * svc.quantity,
+          (svcSum: number, svc: any) => svcSum + (svc.costPrice || 0) * svc.quantity,
           0
         );
         return sum + partsCost + servicesCost;
@@ -145,7 +145,7 @@ const FinancialAnalytics: React.FC<FinancialAnalyticsProps> = ({
         existing.income += sale.total;
 
         // Calculate cost of goods sold for this sale
-        const saleCost = sale.items.reduce((itemSum, item) => {
+        const saleCost = sale.items.reduce((itemSum: number, item: any) => {
           const part = parts.find((p) => p.id === item.partId);
           const costPrice = part?.wholesalePrice?.[currentBranchId] || 0;
           return itemSum + costPrice * item.quantity;
@@ -171,13 +171,13 @@ const FinancialAnalytics: React.FC<FinancialAnalyticsProps> = ({
         existing.income += wo.totalPaid || wo.total || 0;
 
         // Calculate COGS for work order
-        const partsCost = (wo.partsUsed || []).reduce((partSum, woPart) => {
+        const partsCost = (wo.partsUsed || []).reduce((partSum: number, woPart: any) => {
           const part = parts.find((p) => p.id === woPart.partId);
           const costPrice = part?.wholesalePrice?.[currentBranchId] || 0;
           return partSum + costPrice * woPart.quantity;
         }, 0);
         const servicesCost = (wo.additionalServices || []).reduce(
-          (svcSum, svc) => svcSum + (svc.costPrice || 0) * svc.quantity,
+          (svcSum: number, svc: any) => svcSum + (svc.costPrice || 0) * svc.quantity,
           0
         );
         existing.expense += partsCost + servicesCost;

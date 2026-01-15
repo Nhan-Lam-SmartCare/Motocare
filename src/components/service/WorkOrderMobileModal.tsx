@@ -74,6 +74,9 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
   viewMode = false,
   onSwitchToEdit,
 }) => {
+  const WORK_ORDER_DRAFT_VERSION = 1 as const;
+  const WORK_ORDER_DRAFT_TTL_MS = 24 * 60 * 60 * 1000; // 24h
+
   // Popular motorcycle models in Vietnam - same as desktop
   const POPULAR_MOTORCYCLES = [
     // === HONDA ===
@@ -346,6 +349,55 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
     }
   }, [workOrder, initialCustomer, initialVehicle]);
 
+  const draftKey = useMemo(() => {
+    const orderKey = workOrder?.id || "new";
+    return `workorder_draft_v${WORK_ORDER_DRAFT_VERSION}:${currentBranchId}:${orderKey}:mobile`;
+  }, [WORK_ORDER_DRAFT_VERSION, currentBranchId, workOrder?.id]);
+
+  const draftCheckedRef = useRef(false);
+  useEffect(() => {
+    draftCheckedRef.current = false;
+  }, [draftKey]);
+
+  const loadDraft = () => {
+    try {
+      const raw = localStorage.getItem(draftKey);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw) as {
+        v: number;
+        updatedAt: number;
+        data: any;
+      };
+      if (parsed?.v !== WORK_ORDER_DRAFT_VERSION) return null;
+      if (!parsed?.updatedAt || Date.now() - parsed.updatedAt > WORK_ORDER_DRAFT_TTL_MS) {
+        localStorage.removeItem(draftKey);
+        return null;
+      }
+      return parsed.data;
+    } catch {
+      return null;
+    }
+  };
+
+  const saveDraft = (data: any) => {
+    try {
+      localStorage.setItem(
+        draftKey,
+        JSON.stringify({ v: WORK_ORDER_DRAFT_VERSION, updatedAt: Date.now(), data })
+      );
+    } catch {
+      // ignore quota / storage errors
+    }
+  };
+
+  const clearDraft = () => {
+    try {
+      localStorage.removeItem(draftKey);
+    } catch {
+      // ignore
+    }
+  };
+
   const [currentKm, setCurrentKm] = useState(
     workOrder?.currentKm?.toString() || ""
   );
@@ -400,6 +452,142 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
   const [paymentMethod, setPaymentMethod] = useState<"cash" | "bank">("cash");
   const [showPaymentInput, setShowPaymentInput] = useState(false);
   const [partialAmount, setPartialAmount] = useState(0);
+
+  // Auto-restore draft (new/edit) when modal opens
+  useEffect(() => {
+    if (!isOpen) return;
+    if (draftCheckedRef.current) return;
+    draftCheckedRef.current = true;
+
+    const draft = loadDraft();
+    if (!draft) return;
+
+    // Restore primitives
+    if (draft.status) setStatus(draft.status);
+    if (typeof draft.selectedTechnicianId === "string") {
+      setSelectedTechnicianId(draft.selectedTechnicianId);
+    }
+    if (typeof draft.currentKm === "string") setCurrentKm(draft.currentKm);
+    if (typeof draft.issueDescription === "string") setIssueDescription(draft.issueDescription);
+    if (Array.isArray(draft.selectedParts)) setSelectedParts(draft.selectedParts);
+    if (Array.isArray(draft.additionalServices)) setAdditionalServices(draft.additionalServices);
+    if (typeof draft.laborCost === "number") setLaborCost(draft.laborCost);
+    if (typeof draft.discount === "number") setDiscount(draft.discount);
+    if (draft.discountType === "amount" || draft.discountType === "percent") {
+      setDiscountType(draft.discountType);
+    }
+    if (typeof draft.isDeposit === "boolean") setIsDeposit(draft.isDeposit);
+    if (typeof draft.depositAmount === "number") setDepositAmount(draft.depositAmount);
+    if (draft.paymentMethod === "cash" || draft.paymentMethod === "bank") {
+      setPaymentMethod(draft.paymentMethod);
+    }
+    if (typeof draft.showPaymentInput === "boolean") setShowPaymentInput(draft.showPaymentInput);
+    if (typeof draft.partialAmount === "number") setPartialAmount(draft.partialAmount);
+
+    // Restore customer/vehicle (best-effort)
+    if (draft.customer) {
+      const foundCustomer = customers.find(
+        (c) => c.id === draft.customer.id || c.phone === draft.customer.phone
+      );
+      setSelectedCustomer(foundCustomer || draft.customer);
+      setShowCustomerSearch(false);
+    }
+    if (draft.vehicle) {
+      const current = draft.customer
+        ? customers.find((c) => c.id === draft.customer.id || c.phone === draft.customer.phone)
+        : null;
+      const vehicles = current?.vehicles || [];
+      const foundVehicle = vehicles.find(
+        (v: any) => v.id === draft.vehicle.id || v.licensePlate === draft.vehicle.licensePlate
+      );
+      setSelectedVehicle(foundVehicle || draft.vehicle);
+    }
+  }, [isOpen, customers, draftKey]);
+
+  // Auto-save draft while editing (debounced)
+  useEffect(() => {
+    if (!isOpen) return;
+    if (!draftCheckedRef.current) return; // avoid overwriting before restore check
+    if (viewMode) return;
+
+    const hasMeaningfulData =
+      !!selectedCustomer ||
+      !!selectedVehicle ||
+      !!currentKm.trim() ||
+      !!issueDescription.trim() ||
+      selectedParts.length > 0 ||
+      additionalServices.length > 0 ||
+      laborCost > 0 ||
+      discount > 0 ||
+      (isDeposit && depositAmount > 0) ||
+      (showPaymentInput && partialAmount > 0);
+
+    const timer = setTimeout(() => {
+      if (!hasMeaningfulData) {
+        try {
+          localStorage.removeItem(draftKey);
+        } catch {
+          // ignore
+        }
+        return;
+      }
+
+      saveDraft({
+        status,
+        selectedTechnicianId,
+        customer: selectedCustomer
+          ? {
+            id: (selectedCustomer as any).id,
+            name: (selectedCustomer as any).name,
+            phone: (selectedCustomer as any).phone,
+          }
+          : null,
+        vehicle: selectedVehicle
+          ? {
+            id: (selectedVehicle as any).id,
+            licensePlate: (selectedVehicle as any).licensePlate,
+            model: (selectedVehicle as any).model,
+            currentKm: (selectedVehicle as any).currentKm,
+            customerId: (selectedVehicle as any).customerId,
+          }
+          : null,
+        currentKm,
+        issueDescription,
+        selectedParts,
+        additionalServices,
+        laborCost,
+        discount,
+        discountType,
+        isDeposit,
+        depositAmount,
+        paymentMethod,
+        showPaymentInput,
+        partialAmount,
+      });
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [
+    isOpen,
+    viewMode,
+    draftKey,
+    status,
+    selectedTechnicianId,
+    selectedCustomer,
+    selectedVehicle,
+    currentKm,
+    issueDescription,
+    selectedParts,
+    additionalServices,
+    laborCost,
+    discount,
+    discountType,
+    isDeposit,
+    depositAmount,
+    paymentMethod,
+    showPaymentInput,
+    partialAmount,
+  ]);
 
   // UI States - khởi tạo showCustomerSearch dựa trên initialCustomer để đảm bảo đúng khi edit
   const [showCustomerSearch, setShowCustomerSearch] = useState(
@@ -921,6 +1109,7 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
     // Execute save callback with offline fallback
     try {
       await onSave(workOrderData);
+      clearDraft();
       // Note: Not resetting isSubmitting here because modal will close on success
       // Parent component is responsible for closing the modal
     } catch (error: any) {

@@ -248,7 +248,8 @@ const QuickServiceModal: React.FC<QuickServiceModalProps> = ({
           vehicleModel: matchedVehicle?.model || "",
           licensePlate:
             matchedVehicle?.licensePlate ||
-            matchedCustomer.license_plate ||
+              (matchedCustomer as any).licenseplate ||
+              (matchedCustomer as any).license_plate ||
             licensePlate,
           loyaltyPoints: loyaltyPoints,
         } as CustomerInfo & { loyaltyPoints: number });

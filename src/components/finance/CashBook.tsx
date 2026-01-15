@@ -147,14 +147,14 @@ const CashBook: React.FC = () => {
 
     return filtered.sort(
       (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-    );lectedMonth,
-    se
+    );
   }, [
     cashTransactions,
     currentBranchId,
     filterType,
     filterPaymentSource,
     filterDateRange,
+    selectedMonth,
     searchQuery,
   ]);
 

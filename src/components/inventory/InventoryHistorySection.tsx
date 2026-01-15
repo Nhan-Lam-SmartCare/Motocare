@@ -42,6 +42,9 @@ const InventoryHistorySection: React.FC<{
     formatDate(new Date(), true)
   );
   const [searchTerm, setSearchTerm] = useState("");
+  const [historyView, setHistoryView] = useState<"import" | "export" | "all">(
+    "import"
+  );
   const [editingReceipt, setEditingReceipt] = useState<{
     receiptCode: string;
     date: Date;
@@ -51,17 +54,8 @@ const InventoryHistorySection: React.FC<{
   } | null>(null);
   const { currentBranchId } = useAppContext();
 
-  const filteredTransactions = useMemo(() => {
-    // CHỈ LẤY GIAO DỊCH NHẬP KHO
-    console.log(
-      "📦 [InventoryHistorySection] Tổng số giao dịch:",
-      transactions.length
-    );
-    let filtered = transactions.filter((t) => t.type === "Nhập kho");
-    console.log(
-      "📦 [InventoryHistorySection] Giao dịch 'Nhập kho':",
-      filtered.length
-    );
+  const filteredAllTransactions = useMemo(() => {
+    let filtered = transactions.slice();
     const now = new Date();
 
     // Apply time filter
@@ -111,15 +105,80 @@ const InventoryHistorySection: React.FC<{
     searchTerm,
   ]);
 
+  const filteredImportTransactions = useMemo(
+    () => filteredAllTransactions.filter((t) => t.type === "Nhập kho"),
+    [filteredAllTransactions]
+  );
+
+  const filteredExportTransactions = useMemo(
+    () => filteredAllTransactions.filter((t) => t.type === "Xuất kho"),
+    [filteredAllTransactions]
+  );
+
+  const groupedExportReceipts = useMemo(() => {
+    const groups = new Map<
+      string,
+      {
+        groupKey: string;
+        refLabel: string;
+        date: string;
+        items: InventoryTransaction[];
+      }
+    >();
+
+    filteredExportTransactions.forEach((transaction) => {
+      const d = new Date(transaction.date);
+      const dateKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(
+        2,
+        "0"
+      )}-${String(d.getDate()).padStart(2, "0")}`;
+
+      const refLabel = transaction.saleId
+        ? `Sale: ${transaction.saleId}`
+        : transaction.workOrderId
+          ? `WO: ${transaction.workOrderId}`
+          : transaction.notes
+            ? `Ghi chú: ${transaction.notes}`
+            : "Không rõ tham chiếu";
+
+      const refKey = transaction.saleId
+        ? `sale:${transaction.saleId}`
+        : transaction.workOrderId
+          ? `wo:${transaction.workOrderId}`
+          : transaction.notes
+            ? `note:${transaction.notes}`
+            : "unknown";
+
+      const groupKey = `${dateKey}_${refKey}`;
+
+      if (!groups.has(groupKey)) {
+        groups.set(groupKey, {
+          groupKey,
+          refLabel,
+          date: transaction.date,
+          items: [],
+        });
+      }
+      groups.get(groupKey)!.items.push(transaction);
+    });
+
+    return Array.from(groups.values()).sort(
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+    );
+  }, [filteredExportTransactions]);
+
+  const showImports = historyView === "import" || historyView === "all";
+  const showExports = historyView === "export" || historyView === "all";
+
   const totalAmount = useMemo(() => {
-    return filteredTransactions.reduce((sum, t) => sum + t.totalPrice, 0);
-  }, [filteredTransactions]);
+    return filteredImportTransactions.reduce((sum, t) => sum + t.totalPrice, 0);
+  }, [filteredImportTransactions]);
 
   // Group transactions by receipt (same date, same supplier/notes)
   const groupedReceipts = useMemo(() => {
     const groups = new Map<string, InventoryTransaction[]>();
 
-    filteredTransactions.forEach((transaction) => {
+    filteredImportTransactions.forEach((transaction) => {
       // Create a group key based on date and supplier
       const date = new Date(transaction.date);
       const dateKey = `${date.getFullYear()}-${String(
@@ -178,12 +237,15 @@ const InventoryHistorySection: React.FC<{
         };
       })
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-  }, [filteredTransactions]);
+  }, [filteredImportTransactions, suppliers]);
 
   const [selectedReceipts, setSelectedReceipts] = useState<Set<string>>(
     new Set()
   );
   const [expandedReceipts, setExpandedReceipts] = useState<Set<string>>(
+    new Set()
+  );
+  const [expandedExportReceipts, setExpandedExportReceipts] = useState<Set<string>>(
     new Set()
   );
   const [showPrintBarcodeModal, setShowPrintBarcodeModal] = useState(false);
@@ -228,6 +290,18 @@ const InventoryHistorySection: React.FC<{
         newSet.delete(receiptCode);
       } else {
         newSet.add(receiptCode);
+      }
+      return newSet;
+    });
+  };
+
+  const toggleExportExpand = (groupKey: string) => {
+    setExpandedExportReceipts((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(groupKey)) {
+        newSet.delete(groupKey);
+      } else {
+        newSet.add(groupKey);
       }
       return newSet;
     });
@@ -367,7 +441,7 @@ const InventoryHistorySection: React.FC<{
       {/* Header */}
       <div className="p-3 sm:p-6 border-b border-slate-200 dark:border-slate-700">
         <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-slate-100 mb-3 sm:mb-4">
-          Lịch sử nhập kho
+          Lịch sử kho
         </h2>
 
         {/* Time Filter Buttons */}
@@ -387,6 +461,26 @@ const InventoryHistorySection: React.FC<{
                 }`}
             >
               {filter.label}
+            </button>
+          ))}
+        </div>
+
+        {/* View Filter */}
+        <div className="flex flex-wrap gap-2 mb-3 sm:mb-4">
+          {[
+            { key: "import", label: "Phiếu nhập" },
+            { key: "export", label: "Xuất kho" },
+            { key: "all", label: "Tất cả" },
+          ].map((view) => (
+            <button
+              key={view.key}
+              onClick={() => setHistoryView(view.key as "import" | "export" | "all")}
+              className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-sm sm:text-base font-medium transition-colors ${historyView === view.key
+                ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900"
+                : "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600"
+                }`}
+            >
+              {view.label}
             </button>
           ))}
         </div>
@@ -429,78 +523,80 @@ const InventoryHistorySection: React.FC<{
         />
       </div>
 
-      {/* Summary */}
-      <div className="px-3 py-3 sm:px-6 sm:py-4 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
-        <div className="flex justify-between items-center">
-          <div className="flex items-center gap-4">
-            <div className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
-              Tổng số phiếu:{" "}
-              <span className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100">
-                {groupedReceipts.length}
-              </span>
+      {showImports && (
+        <>
+          {/* Summary */}
+          <div className="px-3 py-3 sm:px-6 sm:py-4 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
+            <div className="flex justify-between items-center">
+              <div className="flex items-center gap-4">
+                <div className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
+                  Tổng số phiếu:{" "}
+                  <span className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100">
+                    {groupedReceipts.length}
+                  </span>
+                </div>
+                {/* Nút in mã vạch và xóa phiếu đã chọn */}
+                {selectedReceipts.size > 0 && (
+                  <>
+                    <button
+                      onClick={() => setShowPrintBarcodeModal(true)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-xs sm:text-sm font-medium rounded-lg transition-colors"
+                    >
+                      <Printer className="w-4 h-4" />
+                      In mã vạch ({partsForBarcodePrint.length} SP)
+                    </button>
+                    <button
+                      onClick={handleDeleteSelectedReceipts}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white text-xs sm:text-sm font-medium rounded-lg transition-colors"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      Xóa {selectedReceipts.size} phiếu
+                    </button>
+                  </>
+                )}
+              </div>
+              <div className="text-right">
+                <div className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
+                  Tổng giá trị
+                </div>
+                <div className="text-base sm:text-lg font-bold text-blue-600">
+                  {formatCurrency(totalAmount)}
+                </div>
+              </div>
             </div>
-            {/* Nút in mã vạch và xóa phiếu đã chọn */}
-            {selectedReceipts.size > 0 && (
-              <>
-                <button
-                  onClick={() => setShowPrintBarcodeModal(true)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-xs sm:text-sm font-medium rounded-lg transition-colors"
-                >
-                  <Printer className="w-4 h-4" />
-                  In mã vạch ({partsForBarcodePrint.length} SP)
-                </button>
-                <button
-                  onClick={handleDeleteSelectedReceipts}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white text-xs sm:text-sm font-medium rounded-lg transition-colors"
-                >
-                  <Trash2 className="w-4 h-4" />
-                  Xóa {selectedReceipts.size} phiếu
-                </button>
-              </>
+          </div>
+
+          {/* Receipts List */}
+          <div className="divide-y divide-slate-200 dark:divide-slate-700">
+            {/* Header Row - Desktop only */}
+            {groupedReceipts.length > 0 && (
+              <div className="hidden md:grid grid-cols-12 gap-4 px-4 py-3 bg-slate-100 dark:bg-slate-700 border-b border-slate-200 dark:border-slate-600 sticky top-0 z-10">
+                <div className="col-span-1 text-xs font-semibold text-slate-600 dark:text-slate-300"></div>
+                <div className="col-span-2 text-xs font-semibold text-slate-600 dark:text-slate-300">
+                  Mã phiếu
+                </div>
+                <div className="col-span-2 text-xs font-semibold text-slate-600 dark:text-slate-300">
+                  Nhà cung cấp
+                </div>
+                <div className="col-span-4 text-xs font-semibold text-slate-600 dark:text-slate-300">
+                  Chi tiết
+                </div>
+                <div className="col-span-2 text-xs font-semibold text-slate-600 dark:text-slate-300">
+                  Thanh toán
+                </div>
+                <div className="col-span-1 text-xs font-semibold text-slate-600 dark:text-slate-300">
+                  Thao tác
+                </div>
+              </div>
             )}
-          </div>
-          <div className="text-right">
-            <div className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
-              Tổng giá trị
-            </div>
-            <div className="text-base sm:text-lg font-bold text-blue-600">
-              {formatCurrency(totalAmount)}
-            </div>
-          </div>
-        </div>
-      </div>
 
-      {/* Receipts List */}
-      <div className="divide-y divide-slate-200 dark:divide-slate-700">
-        {/* Header Row - Desktop only */}
-        {groupedReceipts.length > 0 && (
-          <div className="hidden md:grid grid-cols-12 gap-4 px-4 py-3 bg-slate-100 dark:bg-slate-700 border-b border-slate-200 dark:border-slate-600 sticky top-0 z-10">
-            <div className="col-span-1 text-xs font-semibold text-slate-600 dark:text-slate-300"></div>
-            <div className="col-span-2 text-xs font-semibold text-slate-600 dark:text-slate-300">
-              Mã phiếu
-            </div>
-            <div className="col-span-2 text-xs font-semibold text-slate-600 dark:text-slate-300">
-              Nhà cung cấp
-            </div>
-            <div className="col-span-4 text-xs font-semibold text-slate-600 dark:text-slate-300">
-              Chi tiết
-            </div>
-            <div className="col-span-2 text-xs font-semibold text-slate-600 dark:text-slate-300">
-              Thanh toán
-            </div>
-            <div className="col-span-1 text-xs font-semibold text-slate-600 dark:text-slate-300">
-              Thao tác
-            </div>
-          </div>
-        )}
-
-        {groupedReceipts.length === 0 ? (
-          <div className="px-3 py-8 sm:px-6 sm:py-12 text-center text-slate-500">
-            <div className="text-4xl sm:text-6xl mb-4">📦</div>
-            <div className="text-sm sm:text-base">Không có dữ liệu</div>
-          </div>
-        ) : (
-          groupedReceipts.map((receipt, index) => {
+            {groupedReceipts.length === 0 ? (
+              <div className="px-3 py-8 sm:px-6 sm:py-12 text-center text-slate-500">
+                <div className="text-4xl sm:text-6xl mb-4">📦</div>
+                <div className="text-sm sm:text-base">Không có dữ liệu</div>
+              </div>
+            ) : (
+              groupedReceipts.map((receipt, index) => {
             const receiptDate = new Date(receipt.date);
             const formattedDate = receiptDate.toLocaleDateString("vi-VN", {
               day: "2-digit",
@@ -901,6 +997,113 @@ const InventoryHistorySection: React.FC<{
           Hiển thị {groupedReceipts.length} phiếu nhập
         </div>
       </div>
+        </>
+      )}
+
+      {showExports && (
+        <div className="border-t border-slate-200 dark:border-slate-700">
+          <div className="p-3 sm:p-6 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100">
+                  Lịch sử xuất kho
+                </h3>
+                <div className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
+                  Hiển thị {groupedExportReceipts.length} phiếu xuất
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {groupedExportReceipts.length === 0 ? (
+            <div className="px-3 py-8 sm:px-6 sm:py-10 text-center text-slate-500 bg-white dark:bg-slate-800">
+              <div className="text-4xl sm:text-5xl mb-2">🚚</div>
+              <div className="text-sm sm:text-base">Chưa có dữ liệu xuất kho</div>
+            </div>
+          ) : (
+            <div className="bg-white dark:bg-slate-800">
+              <div className="divide-y divide-slate-200 dark:divide-slate-700">
+                {groupedExportReceipts.map((group) => {
+                  const d = new Date(group.date);
+                  const dateStr = d.toLocaleDateString("vi-VN", {
+                    day: "2-digit",
+                    month: "2-digit",
+                    year: "numeric",
+                  });
+                  const timeStr = d.toLocaleTimeString("vi-VN", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  });
+                  const totalQty = group.items.reduce(
+                    (sum, item) => sum + item.quantity,
+                    0
+                  );
+                  const isExpanded = expandedExportReceipts.has(group.groupKey);
+                  const visibleItems = isExpanded ? group.items : group.items.slice(0, 3);
+
+                  const remainingCount = Math.max(0, group.items.length - visibleItems.length);
+
+                  return (
+                    <div
+                      key={group.groupKey}
+                      className="p-4 rounded-xl border border-slate-200/70 dark:border-slate-700/70 bg-white/60 dark:bg-slate-800/60 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
+                    >
+                      <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
+                        <div className="md:col-span-4">
+                          <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                            {group.refLabel}
+                          </div>
+                          <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                            {dateStr} · {timeStr}
+                          </div>
+                          <div className="mt-2 inline-flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300">
+                            <span className="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700">
+                              {group.items.length} dòng phụ tùng
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="md:col-span-6">
+                          <div className="flex flex-wrap gap-2">
+                            {visibleItems.map((item) => (
+                              <span
+                                key={item.id}
+                                className="inline-flex items-center gap-2 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-700 text-xs text-slate-700 dark:text-slate-200"
+                              >
+                                <span className="truncate max-w-[220px]">{item.partName}</span>
+                                <span className="font-semibold text-red-600 dark:text-red-400">-{item.quantity}</span>
+                              </span>
+                            ))}
+                            {remainingCount > 0 && (
+                              <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-slate-200/70 dark:bg-slate-600/60 text-xs text-slate-600 dark:text-slate-200">
+                                +{remainingCount} món
+                              </span>
+                            )}
+                          </div>
+
+                          {group.items.length > 3 && (
+                            <button
+                              onClick={() => toggleExportExpand(group.groupKey)}
+                              className="mt-2 inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400"
+                            >
+                              {isExpanded ? "Thu gọn" : "Xem thêm"}
+                            </button>
+                          )}
+                        </div>
+
+                        <div className="md:col-span-2 md:text-right">
+                          <div className="text-xs text-slate-500 dark:text-slate-400">Tổng xuất</div>
+                          <div className="text-lg font-bold text-red-600 dark:text-red-400">-{totalQty}</div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Edit Receipt Modal */}
       {editingReceipt && (

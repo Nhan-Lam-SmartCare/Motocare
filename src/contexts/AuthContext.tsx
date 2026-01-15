@@ -19,6 +19,7 @@ export interface UserProfile {
   name?: string;
   full_name?: string; // legacy fallback
   avatar_url?: string;
+  branch_id?: string | null;
   created_at: string;
 }
 

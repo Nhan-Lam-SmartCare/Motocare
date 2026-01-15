@@ -28,6 +28,12 @@ const InventoryHistorySectionMobile: React.FC<
     formatDate(new Date(), true)
   );
   const [searchTerm, setSearchTerm] = useState("");
+  const [historyView, setHistoryView] = useState<"import" | "export" | "all">(
+    "import"
+  );
+  const [expandedExportReceipts, setExpandedExportReceipts] = useState<Set<string>>(
+    new Set()
+  );
   const [showFilters, setShowFilters] = useState(false);
   const [selectedReceipt, setSelectedReceipt] = useState<{
     receiptCode: string;
@@ -37,8 +43,8 @@ const InventoryHistorySectionMobile: React.FC<
     total: number;
   } | null>(null);
 
-  const filteredTransactions = useMemo(() => {
-    let filtered = transactions.filter((t) => t.type === "Nhập kho");
+  const filteredAllTransactions = useMemo(() => {
+    let filtered = transactions.slice();
     const now = new Date();
 
     switch (activeTimeFilter) {
@@ -86,14 +92,91 @@ const InventoryHistorySectionMobile: React.FC<
     searchTerm,
   ]);
 
+  const filteredImportTransactions = useMemo(
+    () => filteredAllTransactions.filter((t) => t.type === "Nhập kho"),
+    [filteredAllTransactions]
+  );
+
+  const filteredExportTransactions = useMemo(
+    () => filteredAllTransactions.filter((t) => t.type === "Xuất kho"),
+    [filteredAllTransactions]
+  );
+
+  const groupedExportReceipts = useMemo(() => {
+    const groups = new Map<
+      string,
+      {
+        groupKey: string;
+        refLabel: string;
+        date: string;
+        items: InventoryTransaction[];
+      }
+    >();
+
+    filteredExportTransactions.forEach((transaction) => {
+      const d = new Date(transaction.date);
+      const dateKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(
+        2,
+        "0"
+      )}-${String(d.getDate()).padStart(2, "0")}`;
+
+      const refLabel = transaction.saleId
+        ? `Sale: ${transaction.saleId}`
+        : transaction.workOrderId
+          ? `WO: ${transaction.workOrderId}`
+          : transaction.notes
+            ? `Ghi chú: ${transaction.notes}`
+            : "Không rõ tham chiếu";
+
+      const refKey = transaction.saleId
+        ? `sale:${transaction.saleId}`
+        : transaction.workOrderId
+          ? `wo:${transaction.workOrderId}`
+          : transaction.notes
+            ? `note:${transaction.notes}`
+            : "unknown";
+
+      const groupKey = `${dateKey}_${refKey}`;
+
+      if (!groups.has(groupKey)) {
+        groups.set(groupKey, {
+          groupKey,
+          refLabel,
+          date: transaction.date,
+          items: [],
+        });
+      }
+      groups.get(groupKey)!.items.push(transaction);
+    });
+
+    return Array.from(groups.values()).sort(
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+    );
+  }, [filteredExportTransactions]);
+
+  const showImports = historyView === "import" || historyView === "all";
+  const showExports = historyView === "export" || historyView === "all";
+
+  const toggleExportExpand = (groupKey: string) => {
+    setExpandedExportReceipts((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(groupKey)) {
+        newSet.delete(groupKey);
+      } else {
+        newSet.add(groupKey);
+      }
+      return newSet;
+    });
+  };
+
   const totalAmount = useMemo(() => {
-    return filteredTransactions.reduce((sum, t) => sum + t.totalPrice, 0);
-  }, [filteredTransactions]);
+    return filteredImportTransactions.reduce((sum, t) => sum + t.totalPrice, 0);
+  }, [filteredImportTransactions]);
 
   const groupedReceipts = useMemo(() => {
     const groups = new Map<string, InventoryTransaction[]>();
 
-    filteredTransactions.forEach((transaction) => {
+    filteredImportTransactions.forEach((transaction) => {
       const date = new Date(transaction.date);
       const dateKey = `${date.getFullYear()}-${String(
         date.getMonth() + 1
@@ -148,7 +231,17 @@ const InventoryHistorySectionMobile: React.FC<
         };
       })
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-  }, [filteredTransactions]);
+  }, [filteredImportTransactions, suppliers]);
+
+  const displayCount = useMemo(() => {
+    if (historyView === "export") {
+      return groupedExportReceipts.length;
+    }
+    if (historyView === "all") {
+      return groupedReceipts.length + groupedExportReceipts.length;
+    }
+    return groupedReceipts.length;
+  }, [historyView, groupedReceipts.length, groupedExportReceipts.length]);
 
   return (
     <>
@@ -161,6 +254,24 @@ const InventoryHistorySectionMobile: React.FC<
             placeholder="Tìm NCC, phụ tùng..."
             className="w-full px-4 py-2.5 border border-slate-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-slate-100 placeholder-slate-400 text-sm"
           />
+          <div className="grid grid-cols-3 gap-2">
+            {[
+              { key: "import", label: "Phiếu nhập" },
+              { key: "export", label: "Xuất kho" },
+              { key: "all", label: "Tất cả" },
+            ].map((view) => (
+              <button
+                key={view.key}
+                onClick={() => setHistoryView(view.key as "import" | "export" | "all")}
+                className={`px-3 py-2 rounded-lg text-xs font-semibold transition-colors ${historyView === view.key
+                  ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900"
+                  : "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300"
+                  }`}
+              >
+                {view.label}
+              </button>
+            ))}
+          </div>
           <div className="flex items-center gap-2">
             <button
               onClick={() => setShowFilters(true)}
@@ -182,106 +293,199 @@ const InventoryHistorySectionMobile: React.FC<
               Bộ lọc
             </button>
             <div className="px-4 py-2 bg-slate-100 dark:bg-slate-700 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-300">
-              {groupedReceipts.length}
+              {displayCount}
             </div>
           </div>
         </div>
 
-        <div className="px-3 py-3 bg-blue-50 dark:bg-blue-900/20 border-b border-blue-100 dark:border-blue-800">
-          <div className="flex justify-between items-center">
-            <div className="text-xs text-blue-600 dark:text-blue-400">
-              Tổng giá trị nhập
-            </div>
-            <div className="text-xl font-bold text-blue-600 dark:text-blue-400">
-              {formatCurrency(totalAmount)}
+        {showImports && (
+          <div className="px-3 py-3 bg-blue-50 dark:bg-blue-900/20 border-b border-blue-100 dark:border-blue-800">
+            <div className="flex justify-between items-center">
+              <div className="text-xs text-blue-600 dark:text-blue-400">
+                Tổng giá trị nhập
+              </div>
+              <div className="text-xl font-bold text-blue-600 dark:text-blue-400">
+                {formatCurrency(totalAmount)}
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         <div className="flex-1 overflow-auto">
-          {groupedReceipts.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full p-8 text-center">
-              <div className="text-6xl mb-4">📦</div>
-              <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">
-                Không có dữ liệu
-              </h3>
-              <p className="text-sm text-slate-600 dark:text-slate-400">
-                Thử thay đổi bộ lọc hoặc thời gian
-              </p>
-            </div>
-          ) : (
-            <div className="divide-y divide-slate-200 dark:divide-slate-700">
-              {groupedReceipts.map((receipt) => {
-                const receiptDate = new Date(receipt.date);
-                const formattedDate = receiptDate.toLocaleDateString("vi-VN", {
-                  day: "2-digit",
-                  month: "2-digit",
-                  year: "numeric",
-                });
-                const formattedTime = receiptDate.toLocaleTimeString("vi-VN", {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                });
+          {showImports && (
+            <>
+              {groupedReceipts.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-full p-8 text-center">
+                  <div className="text-6xl mb-4">📦</div>
+                  <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">
+                    Không có dữ liệu
+                  </h3>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">
+                    Thử thay đổi bộ lọc hoặc thời gian
+                  </p>
+                </div>
+              ) : (
+                <div className="divide-y divide-slate-200 dark:divide-slate-700">
+                  {groupedReceipts.map((receipt) => {
+                    const receiptDate = new Date(receipt.date);
+                    const formattedDate = receiptDate.toLocaleDateString("vi-VN", {
+                      day: "2-digit",
+                      month: "2-digit",
+                      year: "numeric",
+                    });
+                    const formattedTime = receiptDate.toLocaleTimeString("vi-VN", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    });
 
-                const receiptDebt = supplierDebts.find((debt: any) =>
-                  debt.description?.includes(receipt.receiptCode)
-                );
-                const remainingDebt = receiptDebt?.remainingAmount || 0;
-                const hasDebt = remainingDebt > 0;
+                    const receiptDebt = supplierDebts.find((debt: any) =>
+                      debt.description?.includes(receipt.receiptCode)
+                    );
+                    const remainingDebt = receiptDebt?.remainingAmount || 0;
+                    const hasDebt = remainingDebt > 0;
 
-                return (
-                  <button
-                    key={receipt.receiptCode}
-                    onClick={() =>
-                      setSelectedReceipt({
-                        ...receipt,
-                        date: new Date(receipt.date),
-                      })
-                    }
-                    className="w-full p-4 bg-white dark:bg-[#1e293b] hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors text-left"
-                  >
-                    <div className="flex items-start justify-between gap-3 mb-3">
-                      <div>
-                        <div className="text-sm font-bold text-cyan-600 dark:text-cyan-400">
-                          {receipt.receiptCode}
+                    return (
+                      <button
+                        key={receipt.receiptCode}
+                        onClick={() =>
+                          setSelectedReceipt({
+                            ...receipt,
+                            date: new Date(receipt.date),
+                          })
+                        }
+                        className="w-full p-4 bg-white dark:bg-[#1e293b] hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors text-left"
+                      >
+                        <div className="flex items-start justify-between gap-3 mb-3">
+                          <div>
+                            <div className="text-sm font-bold text-cyan-600 dark:text-cyan-400">
+                              {receipt.receiptCode}
+                            </div>
+                            <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                              {formattedDate} · {formattedTime}
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-xs text-slate-500 dark:text-slate-400">
+                              Tổng tiền
+                            </div>
+                            <div className="text-base font-bold text-slate-900 dark:text-white">
+                              {formatCurrency(receipt.total)}
+                            </div>
+                          </div>
                         </div>
-                        <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                          {formattedDate} · {formattedTime}
+
+                        <div className="flex items-center gap-2 mb-2">
+                          <div className="w-8 h-8 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center text-lg">
+                            🏢
+                          </div>
+                          <div className="text-sm font-medium text-slate-900 dark:text-white">
+                            {receipt.supplier}
+                          </div>
                         </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-xs text-slate-500 dark:text-slate-400">
-                          Tổng tiền
+
+                        <div className="text-xs text-slate-600 dark:text-slate-400">
+                          {receipt.items.length} sản phẩm
                         </div>
-                        <div className="text-base font-bold text-slate-900 dark:text-white">
-                          {formatCurrency(receipt.total)}
-                        </div>
-                      </div>
+
+                        {hasDebt && (
+                          <div className="mt-2">
+                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-200">
+                              ⚠️ Còn nợ {formatCurrency(remainingDebt)}
+                            </span>
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </>
+          )}
+
+          {showExports && (
+            <div className={showImports ? "mt-4" : ""}>
+              <div className="px-3 py-3 bg-white dark:bg-[#1e293b] border-y border-slate-200 dark:border-slate-700">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                      Lịch sử xuất kho
                     </div>
-
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="w-8 h-8 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center text-lg">
-                        🏢
-                      </div>
-                      <div className="text-sm font-medium text-slate-900 dark:text-white">
-                        {receipt.supplier}
-                      </div>
+                    <div className="text-xs text-slate-500 dark:text-slate-400">
+                      {groupedExportReceipts.length} phiếu
                     </div>
+                  </div>
+                </div>
+              </div>
 
-                    <div className="text-xs text-slate-600 dark:text-slate-400">
-                      {receipt.items.length} sản phẩm
-                    </div>
+              {groupedExportReceipts.length === 0 ? (
+                <div className="px-3 py-6 text-center text-slate-500">
+                  <div className="text-4xl mb-2">🚚</div>
+                  <div className="text-sm">Chưa có dữ liệu xuất kho</div>
+                </div>
+              ) : (
+                <div className="divide-y divide-slate-200 dark:divide-slate-700">
+                  {groupedExportReceipts.map((group) => {
+                    const d = new Date(group.date);
+                    const dateStr = d.toLocaleDateString("vi-VN", {
+                      day: "2-digit",
+                      month: "2-digit",
+                      year: "numeric",
+                    });
+                    const timeStr = d.toLocaleTimeString("vi-VN", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    });
+                    const totalQty = group.items.reduce(
+                      (sum, item) => sum + item.quantity,
+                      0
+                    );
+                    const isExpanded = expandedExportReceipts.has(group.groupKey);
+                    const visibleItems = isExpanded
+                      ? group.items
+                      : group.items.slice(0, 3);
 
-                    {hasDebt && (
-                      <div className="mt-2">
-                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-200">
-                          ⚠️ Còn nợ {formatCurrency(remainingDebt)}
-                        </span>
+                    return (
+                      <div key={group.groupKey} className="p-3 bg-white dark:bg-[#0f172a]">
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                              {group.refLabel}
+                            </div>
+                            <div className="text-xs text-slate-500 dark:text-slate-400">
+                              {dateStr} · {timeStr}
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-xs text-slate-500 dark:text-slate-400">Xuất</div>
+                            <div className="text-lg font-bold text-red-600 dark:text-red-400">-{totalQty}</div>
+                          </div>
+                        </div>
+                        <div className="mt-2 text-xs text-slate-600 dark:text-slate-400">
+                          {group.items.length} dòng phụ tùng
+                        </div>
+                        <div className="mt-2 space-y-2">
+                          {visibleItems.map((item) => (
+                            <div key={item.id} className="flex items-center justify-between text-sm">
+                              <div className="text-slate-700 dark:text-slate-200">
+                                {item.partName}
+                              </div>
+                              <div className="font-semibold text-red-600 dark:text-red-400">-{item.quantity}</div>
+                            </div>
+                          ))}
+                        </div>
+                        {group.items.length > 3 && (
+                          <button
+                            onClick={() => toggleExportExpand(group.groupKey)}
+                            className="mt-2 inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400"
+                          >
+                            {isExpanded ? "Thu gọn" : "Xem thêm"}
+                          </button>
+                        )}
                       </div>
-                    )}
-                  </button>
-                );
-              })}
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
         </div>

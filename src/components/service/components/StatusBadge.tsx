@@ -4,7 +4,8 @@ export type WorkOrderStatus =
   | "Tiếp nhận"
   | "Đang sửa"
   | "Đã sửa xong"
-  | "Trả máy";
+  | "Trả máy"
+  | "Đã hủy";
 
 const StatusBadge: React.FC<{ status: WorkOrderStatus }> = ({ status }) => {
   const styles = {
@@ -16,6 +17,8 @@ const StatusBadge: React.FC<{ status: WorkOrderStatus }> = ({ status }) => {
       "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400",
     "Trả máy":
       "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400",
+    "Đã hủy":
+      "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400",
   };
 
   return (

@@ -336,6 +336,60 @@ const WorkOrderModal: React.FC<{
     const { mutateAsync: updateWorkOrderAtomicAsync } =
       useUpdateWorkOrderAtomicRepo();
 
+    const WORK_ORDER_DRAFT_VERSION = 1 as const;
+    const WORK_ORDER_DRAFT_TTL_MS = 24 * 60 * 60 * 1000; // 24h
+
+    const profileId = (profile as any)?.id || (profile as any)?.user_id || "anon";
+
+    const draftKey = useMemo(() => {
+      const orderKey = order?.id || "new";
+      return `workorder_draft_v${WORK_ORDER_DRAFT_VERSION}:${currentBranchId}:${profileId}:${orderKey}:desktop`;
+    }, [WORK_ORDER_DRAFT_VERSION, currentBranchId, order?.id, profileId]);
+
+    const draftCheckedRef = useRef(false);
+    useEffect(() => {
+      draftCheckedRef.current = false;
+    }, [draftKey]);
+
+    const loadDraft = () => {
+      try {
+        const raw = localStorage.getItem(draftKey);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw) as {
+          v: number;
+          updatedAt: number;
+          data: any;
+        };
+        if (parsed?.v !== WORK_ORDER_DRAFT_VERSION) return null;
+        if (!parsed?.updatedAt || Date.now() - parsed.updatedAt > WORK_ORDER_DRAFT_TTL_MS) {
+          localStorage.removeItem(draftKey);
+          return null;
+        }
+        return parsed.data;
+      } catch {
+        return null;
+      }
+    };
+
+    const saveDraft = (data: any) => {
+      try {
+        localStorage.setItem(
+          draftKey,
+          JSON.stringify({ v: WORK_ORDER_DRAFT_VERSION, updatedAt: Date.now(), data })
+        );
+      } catch {
+        // ignore quota / storage errors
+      }
+    };
+
+    const clearDraft = () => {
+      try {
+        localStorage.removeItem(draftKey);
+      } catch {
+        // ignore
+      }
+    };
+
     const [formData, setFormData] = useState<Partial<WorkOrder>>(() => {
       if (order?.id) return order;
       return {
@@ -496,6 +550,89 @@ const WorkOrderModal: React.FC<{
       setEditCustomerName("");
       setEditCustomerPhone("");
     }, [order]);
+
+    // Auto-restore draft after syncing from `order`
+    useEffect(() => {
+      if (draftCheckedRef.current) return;
+      draftCheckedRef.current = true;
+
+      const draft = loadDraft();
+      if (!draft) return;
+
+      if (draft.formData && typeof draft.formData === "object") {
+        setFormData((prev) => ({
+          ...prev,
+          ...draft.formData,
+          branchId: currentBranchId,
+        }));
+      }
+      if (typeof draft.customerSearch === "string") setCustomerSearch(draft.customerSearch);
+      if (Array.isArray(draft.selectedParts)) setSelectedParts(draft.selectedParts);
+      if (Array.isArray(draft.additionalServices)) setAdditionalServices(draft.additionalServices);
+      if (typeof draft.depositAmount === "number") setDepositAmount(draft.depositAmount);
+      if (typeof draft.showDepositInput === "boolean") setShowDepositInput(draft.showDepositInput);
+      if (typeof draft.partialPayment === "number") setPartialPayment(draft.partialPayment);
+      if (typeof draft.showPartialPayment === "boolean") setShowPartialPayment(draft.showPartialPayment);
+      if (draft.discountType === "amount" || draft.discountType === "percent") {
+        setDiscountType(draft.discountType);
+      }
+      if (typeof draft.discountPercent === "number") setDiscountPercent(draft.discountPercent);
+    }, [draftKey, currentBranchId]);
+
+    // Auto-save draft while editing (debounced)
+    useEffect(() => {
+      if (!draftCheckedRef.current) return; // avoid overwriting before restore check
+
+      const hasMeaningfulData =
+        !!formData.customerName?.trim() ||
+        !!formData.customerPhone?.trim() ||
+        !!formData.issueDescription?.trim() ||
+        !!String(formData.currentKm ?? "").trim() ||
+        selectedParts.length > 0 ||
+        additionalServices.length > 0 ||
+        (depositAmount > 0 && showDepositInput) ||
+        (partialPayment > 0 && showPartialPayment) ||
+        (formData.laborCost || 0) > 0 ||
+        (formData.discount || 0) > 0;
+
+      const timer = setTimeout(() => {
+        if (!hasMeaningfulData) {
+          try {
+            localStorage.removeItem(draftKey);
+          } catch {
+            // ignore
+          }
+          return;
+        }
+
+        saveDraft({
+          formData,
+          customerSearch,
+          selectedParts,
+          additionalServices,
+          depositAmount,
+          showDepositInput,
+          partialPayment,
+          showPartialPayment,
+          discountType,
+          discountPercent,
+        });
+      }, 500);
+
+      return () => clearTimeout(timer);
+    }, [
+      draftKey,
+      formData,
+      customerSearch,
+      selectedParts,
+      additionalServices,
+      depositAmount,
+      showDepositInput,
+      partialPayment,
+      showPartialPayment,
+      discountType,
+      discountPercent,
+    ]);
 
     // Search customers from Supabase when search term changes
     useEffect(() => {
@@ -1047,6 +1184,7 @@ const WorkOrderModal: React.FC<{
         showToast.success(
           "Đã đặt cọc thành công! Phiếu chi đặt hàng đã được tạo."
         );
+        clearDraft();
         onClose();
       } catch (error: any) {
         console.error("Error processing deposit:", error);
@@ -1344,6 +1482,7 @@ const WorkOrderModal: React.FC<{
         showToast.success(
           order?.id ? "Đã cập nhật phiếu" : "Đã lưu phiếu thành công"
         );
+        clearDraft();
         onClose();
       } catch (error: any) {
         console.error("Error saving work order:", error);
@@ -1480,7 +1619,7 @@ const WorkOrderModal: React.FC<{
               discount: discount,
               partsUsed: selectedParts,
               additionalServices:
-                additionalServices.length > 0 ? additionalServices : null,
+                additionalServices.length > 0 ? additionalServices : undefined,
               total: total,
               branchId: currentBranchId,
               paymentStatus: paymentStatus,
@@ -1955,6 +2094,7 @@ const WorkOrderModal: React.FC<{
             }
 
             // Close modal after successful save
+            clearDraft();
             onClose();
           } catch (error: any) {
             console.error("Error creating work order (atomic):", error);
@@ -1986,7 +2126,7 @@ const WorkOrderModal: React.FC<{
               discount: discount,
               partsUsed: selectedParts,
               additionalServices:
-                additionalServices.length > 0 ? additionalServices : null,
+                additionalServices.length > 0 ? additionalServices : undefined,
               total: total,
               branchId: currentBranchId,
               paymentStatus: paymentStatus,
@@ -2046,7 +2186,7 @@ const WorkOrderModal: React.FC<{
                   order.partsUsed ||
                   [],
                 additionalServices:
-                  additionalServices.length > 0 ? additionalServices : null,
+                  additionalServices.length > 0 ? additionalServices : undefined,
                 total: (workOrderRow as any).total || order.total,
                 branchId:
                   (workOrderRow as any).branchid ||
@@ -2106,7 +2246,7 @@ const WorkOrderModal: React.FC<{
                 discount: discount,
                 partsUsed: selectedParts,
                 additionalServices:
-                  additionalServices.length > 0 ? additionalServices : null,
+                  additionalServices.length > 0 ? additionalServices : undefined,
                 total: total,
                 depositAmount: depositAmount,
                 depositTransactionId: depositTxId || order.depositTransactionId,
@@ -2303,6 +2443,7 @@ const WorkOrderModal: React.FC<{
             }
 
             // Close modal after successful update
+            clearDraft();
             onClose();
           } catch (error: any) {
             console.error(

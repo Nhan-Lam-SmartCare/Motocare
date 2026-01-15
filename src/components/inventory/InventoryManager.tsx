@@ -3,7 +3,6 @@ import React, {
   useMemo,
   useCallback,
   useEffect,
-  useRef,
 } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
@@ -23,25 +22,22 @@ import {
   MoreHorizontal,
   ShoppingCart,
   ScanLine,
-
 } from "lucide-react";
 import { useAppContext } from "../../contexts/AppContext";
 import { safeAudit } from "../../lib/repository/auditLogsRepository";
 import { supabase } from "../../supabaseClient";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import {
-  usePartsRepo,
   usePartsRepoPaged,
   useCreatePartRepo,
   useUpdatePartRepo,
   useDeletePartRepo,
 } from "../../hooks/usePartsRepository";
-import { formatCurrency, formatDate } from "../../utils/format";
+import { formatCurrency } from "../../utils/format";
 import { getCategoryColor } from "../../utils/categoryColors";
 import {
   exportPartsToExcel,
   exportInventoryTemplate,
-  importPartsFromExcel,
   importPartsFromExcelDetailed,
 } from "../../utils/excel";
 import { showToast } from "../../utils/toast";
@@ -56,18 +52,15 @@ import {
   useCreateInventoryTxRepo,
   useCreateReceiptAtomicRepo,
 } from "../../hooks/useInventoryTransactionsRepository";
-import { useWorkOrdersRepo, useUpdateWorkOrderRepo, useUpdateWorkOrderAtomicRepo } from "../../hooks/useWorkOrdersRepository";
-import { useCategories, useCreateCategory } from "../../hooks/useCategories";
-import { useSuppliers } from "../../hooks/useSuppliers";
-import type { Part, InventoryTransaction, WorkOrder } from "../../types";
-import { fetchPartBySku, createPart } from "../../lib/repository/partsRepository";
-import { useSupplierDebtsRepo } from "../../hooks/useDebtsRepository";
+import {
+  useWorkOrdersRepo,
+  useUpdateWorkOrderAtomicRepo,
+} from "../../hooks/useWorkOrdersRepository";
+import { useCategories } from "../../hooks/useCategories";
+import type { Part, WorkOrder } from "../../types";
+import { createPart } from "../../lib/repository/partsRepository";
 import { createCashTransaction } from "../../lib/repository/cashTransactionsRepository";
-import FormattedNumberInput from "../common/FormattedNumberInput";
-import { validatePriceAndQty } from "../../utils/validation";
-import { GoodsReceiptMobileModal } from "../inventory/GoodsReceiptMobileModal";
 import InventoryHistorySectionMobile from "../inventory/InventoryHistorySectionMobile";
-import PrintBarcodeModal from "../inventory/PrintBarcodeModal";
 import BatchPrintBarcodeModal from "../inventory/BatchPrintBarcodeModal";
 import BarcodeScannerModal from "../common/BarcodeScannerModal";
 import { PurchaseOrdersList } from "../purchase-orders/PurchaseOrdersList";
@@ -76,68 +69,15 @@ import { PODetailView } from "../purchase-orders/PODetailView";
 import { ExternalDataImport } from "../inventory/ExternalDataImport";
 import type { PurchaseOrder } from "../../types";
 import EditReceiptModal from "../inventory/components/EditReceiptModal";
-import SupplierModal from "../inventory/components/SupplierModal";
-import AddProductToReceiptModal from "../inventory/components/AddProductToReceiptModal";
 // Extracted modals
-import AddProductModal from "./modals/AddProductModal";
 import GoodsReceiptMobileWrapper from "./modals/GoodsReceiptMobileWrapper";
 import GoodsReceiptModal from "./modals/GoodsReceiptModal";
-import InventoryHistoryModal from "./modals/InventoryHistoryModal";
 import InventoryHistorySection from "./InventoryHistorySection";
 import ImportInventoryModal from "./modals/ImportInventoryModal";
 import EditPartModal from "./modals/EditPartModal";
 
 const LOW_STOCK_THRESHOLD = 5;
-const FILTER_THEME_STYLES: Record<
-  "neutral" | "success" | "warning" | "danger",
-  {
-    buttonActive: string;
-    buttonInactive: string;
-    badgeActive: string;
-    badgeInactive: string;
-  }
-> = {
-  neutral: {
-    buttonActive:
-      "border-blue-500 bg-blue-500/10 shadow-[0_5px_25px_rgba(59,130,246,0.15)] text-slate-900 dark:text-slate-100",
-    buttonInactive:
-      "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-blue-300/70",
-    badgeActive:
-      "border-blue-500 text-blue-600 bg-white/60 dark:bg-slate-900/40 dark:text-blue-400",
-    badgeInactive:
-      "border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300",
-  },
-  success: {
-    buttonActive:
-      "border-emerald-500 bg-emerald-50 shadow-[0_5px_25px_rgba(16,185,129,0.2)] text-emerald-900 dark:bg-emerald-950/50 dark:text-emerald-200",
-    buttonInactive:
-      "border-emerald-200 bg-emerald-50/40 hover:border-emerald-400/70 dark:border-emerald-800 dark:bg-emerald-950/20",
-    badgeActive:
-      "border-emerald-500 text-emerald-700 bg-emerald-50 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-600",
-    badgeInactive:
-      "border-emerald-200 text-emerald-600 dark:border-emerald-700 dark:text-emerald-400",
-  },
-  warning: {
-    buttonActive:
-      "border-amber-500 bg-amber-50 shadow-[0_5px_25px_rgba(245,158,11,0.25)] text-amber-900 dark:bg-amber-950/50 dark:text-amber-200",
-    buttonInactive:
-      "border-amber-200 bg-amber-50/40 hover:border-amber-400/70 dark:border-amber-800 dark:bg-amber-950/20",
-    badgeActive:
-      "border-amber-500 text-amber-700 bg-amber-50 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-600",
-    badgeInactive:
-      "border-amber-200 text-amber-600 dark:border-amber-700 dark:text-amber-400",
-  },
-  danger: {
-    buttonActive:
-      "border-red-500 bg-red-50 shadow-[0_5px_25px_rgba(239,68,68,0.25)] text-red-900 dark:bg-red-950/50 dark:text-red-200",
-    buttonInactive:
-      "border-red-200 bg-red-50/40 hover:border-red-400/70 dark:border-red-800 dark:bg-red-950/20",
-    badgeActive:
-      "border-red-500 text-red-700 bg-red-50 dark:bg-red-950/50 dark:text-red-300 dark:border-red-700",
-    badgeInactive:
-      "border-red-200 text-red-600 dark:border-red-700 dark:text-red-400",
-  },
-};
+
 
 // Main Inventory Manager Component (New)
 const InventoryManagerNew: React.FC = () => {
@@ -178,12 +118,6 @@ const InventoryManagerNew: React.FC = () => {
   const [editingPart, setEditingPart] = useState<Part | null>(null);
   const [editingReceipt, setEditingReceipt] = useState<any | null>(null);
   const [showImportModal, setShowImportModal] = useState(false);
-  const [showSupplierModal, setShowSupplierModal] = useState(false);
-  const [showAddProductToReceiptModal, setShowAddProductToReceiptModal] =
-    useState(false);
-  const [showImportInventoryModal, setShowImportInventoryModal] =
-    useState(false);
-  const [showEditPartModal, setShowEditPartModal] = useState(false);
   const [reservedInfoPartId, setReservedInfoPartId] = useState<string | null>(null);
   const [showExternalImport, setShowExternalImport] = useState(false);
   const [showBatchPrintModal, setShowBatchPrintModal] = useState(false);
@@ -246,7 +180,6 @@ const InventoryManagerNew: React.FC = () => {
   const {
     data: pagedResult,
     isLoading: partsLoading,
-    isError: partsError,
     refetch: refetchInventory,
   } = usePartsRepoPaged({
     page,
@@ -568,6 +501,11 @@ const InventoryManagerNew: React.FC = () => {
         discount: number;
       }
     ) => {
+      if (!supplierId) {
+        showToast.warning("Vui lòng chọn nhà cung cấp");
+        return;
+      }
+
       // Generate receipt code: NH-YYYYMMDD-XXX
       const today = new Date();
       const dateStr = today.toISOString().split("T")[0].replace(/-/g, "");
@@ -575,13 +513,7 @@ const InventoryManagerNew: React.FC = () => {
         .toString()
         .padStart(3, "0")}`;
 
-      console.log("📦 Saving goods receipt:", {
-        receiptCode,
-        supplierId,
-        totalAmount,
-        paymentInfo,
-        itemCount: items.length,
-      });
+
 
       // Get supplier name
       const { data: suppliers } = await supabase
@@ -592,17 +524,11 @@ const InventoryManagerNew: React.FC = () => {
       const supplierName = suppliers?.name || "Không xác định";
 
       // Calculate debt amount
-      const paidAmount = paymentInfo?.paidAmount || 0;
-      const debtAmount = totalAmount - paidAmount;
+      const rawPaidAmount = paymentInfo?.paidAmount || 0;
+      const paidAmount = Math.min(Math.max(rawPaidAmount, 0), totalAmount);
+      const debtAmount = Math.max(0, totalAmount - paidAmount);
 
-      console.log("💰 Payment calculation:", {
-        totalAmount,
-        paidAmount,
-        debtAmount,
-        paymentType: paymentInfo?.paymentType,
-        paymentMethod: paymentInfo?.paymentMethod,
-        willCreateDebt: debtAmount > 0,
-      });
+
 
       // ⚠️ IMPORTANT: Stock is now auto-updated by trigger (trg_inventory_tx_after_insert)
       // We only need to:
@@ -616,8 +542,6 @@ const InventoryManagerNew: React.FC = () => {
         const processedItems = await Promise.all(
           items.map(async (item) => {
             if (item._isNewProduct && item._productData) {
-              console.log("🆕 Đang tạo sản phẩm mới:", item._productData.name);
-
               // Create the new product in DB
               try {
                 // OPTIMIZATION: Use direct createPart instead of mutation hook to avoid
@@ -643,10 +567,10 @@ const InventoryManagerNew: React.FC = () => {
                   },
                 });
 
-                if (!result.ok || !result.data) {
+                if (!result.ok) {
                   console.error("❌ Link lỗi khi tạo sản phẩm:", result.error);
                   throw new Error(
-                    `Không thể tạo sản phẩm ${item._productData.name}: ${result.error?.message}`
+                    `Không thể tạo sản phẩm ${item._productData.name}: ${result.error.message}`
                   );
                 }
 
@@ -662,10 +586,6 @@ const InventoryManagerNew: React.FC = () => {
                     `Không thể tạo sản phẩm ${item._productData.name}`
                   );
                 }
-
-                console.log(
-                  `✅ Đã tạo sản phẩm: ${item._productData.name} với ID: ${realPartId}`
-                );
 
                 return {
                   partId: realPartId,
@@ -695,12 +615,6 @@ const InventoryManagerNew: React.FC = () => {
         );
 
         // Use atomic RPC for receipt creation and stock update
-        console.log("📦 Profile data:", {
-          id: profile?.id,
-          name: profile?.name,
-          full_name: profile?.full_name,
-          email: profile?.email,
-        });
         await createReceiptAtomicMutation.mutateAsync({
           items: processedItems,
           supplierId,
@@ -733,11 +647,7 @@ const InventoryManagerNew: React.FC = () => {
                 recipient: supplierName,
               });
 
-              if (cashTxResult.ok) {
-                console.log(
-                  `✅ Đã ghi chi tiền ${paidAmount.toLocaleString()} đ vào sổ quỹ (${paymentSourceId})`
-                );
-              } else {
+              if (!cashTxResult.ok) {
                 console.error("❌ Lỗi ghi sổ quỹ:", cashTxResult.error);
                 paymentFailed = true;
               }
@@ -769,7 +679,6 @@ const InventoryManagerNew: React.FC = () => {
                 console.error("❌ Lỗi tạo công nợ:", debtError);
                 debtFailed = true;
               } else {
-                console.log("✅ Đã ghi nhận nợ NCC:", debtAmount);
                 // Invalidate supplier debts query to refresh UI
                 queryClient.invalidateQueries({ queryKey: ["supplierDebts"] });
               }
@@ -872,7 +781,6 @@ const InventoryManagerNew: React.FC = () => {
           setSelectedItems((prev) => prev.filter((i) => i !== id));
           // Force refetch to update duplicate detection immediately
           await refetchAllParts();
-          console.log("🔄 Refetched allPartsForTotals after delete");
           showToast.success(`Đã xóa phụ tùng "${part.name}"`);
         },
         onError: (error) => {
@@ -906,7 +814,7 @@ const InventoryManagerNew: React.FC = () => {
     const totalCount = selectedItems.length;
 
     // Delete all selected items
-    selectedItems.forEach((id, index) => {
+    selectedItems.forEach((id) => {
       deletePartMutation.mutate(
         { id },
         {
@@ -916,7 +824,6 @@ const InventoryManagerNew: React.FC = () => {
             if (successCount + errorCount === totalCount) {
               // Force refetch to update duplicate detection immediately
               await refetchAllParts();
-              console.log("🔄 Refetched allPartsForTotals after bulk delete");
               if (errorCount === 0) {
                 showToast.success(`Đã xóa ${successCount} phụ tùng`);
               } else {
@@ -948,20 +855,8 @@ const InventoryManagerNew: React.FC = () => {
   };
 
   // Handle save edited receipt
-  const handleSaveEditedReceipt = async (
-    receiptId: string,
-    updatedData: {
-      date: string;
-      supplierId: string;
-      items: any[];
-      totalAmount: number;
-      paidAmount: number;
-      notes?: string;
-    }
-  ) => {
+  const handleSaveEditedReceipt = async (_updatedData: any) => {
     try {
-      console.log("💾 Saving edited receipt:", receiptId, updatedData);
-
       // 1. Update transaction notes/date if needed (limited edit capability for now)
       // Ideally we should update all transactions linked to this receipt
       // But for now, we might just update the main info or trigger a re-process
@@ -1068,8 +963,6 @@ const InventoryManagerNew: React.FC = () => {
 
           if (updateError) {
             console.warn(`Could not update stock for ${tx.part_id}:`, updateError);
-          } else {
-            console.log(`✅ Trừ tồn kho: ${tx.part_name || tx.part_id} - Số lượng: ${tx.quantity_change} (${branchStock} → ${newBranchStock})`);
           }
         }
       }
@@ -1135,24 +1028,8 @@ const InventoryManagerNew: React.FC = () => {
     }
   };
 
-  const resetFilters = () => {
-    setStockFilter("all");
-    setCategoryFilter("all");
-    setShowDuplicatesOnly(false);
-    setPage(1);
-    setShowAdvancedFilters(false);
-  };
-
-  const advancedFiltersActive =
-    stockFilter !== "all" || categoryFilter !== "all" || showDuplicatesOnly;
-
   const shouldShowLowStockBanner =
     stockHealth.lowStock > 0 && stockFilter !== "low-stock";
-
-  const lowStockPercent =
-    stockHealth.totalProducts > 0
-      ? Math.round((stockHealth.lowStock / stockHealth.totalProducts) * 100)
-      : 0;
 
   // Handle export to Excel
   const handleExportExcel = () => {
@@ -1593,10 +1470,6 @@ const InventoryManagerNew: React.FC = () => {
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => {
-                        console.log(
-                          "Stock tab: Đặt hàng button clicked, selectedItems:",
-                          selectedItems
-                        );
                         setShowCreatePO(true);
                       }}
                       className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
@@ -2161,7 +2034,6 @@ const InventoryManagerNew: React.FC = () => {
             ) : (
               <PurchaseOrdersList
                 onCreateNew={() => {
-                  console.log("InventoryManager: setShowCreatePO(true) called");
                   setShowCreatePO(true);
                 }}
                 onViewDetail={(po) => setSelectedPO(po)}
@@ -2242,10 +2114,6 @@ const InventoryManagerNew: React.FC = () => {
               {(() => {
                 const part = allPartsData?.find(p => p.id === reservedInfoPartId);
 
-                // Debug logging
-                console.log("Checking reserved for part:", part?.name, reservedInfoPartId);
-                console.log("Total work orders:", workOrders.length);
-
                 const reservingOrders = workOrders.filter((wo: WorkOrder) => {
                   if (!wo.partsUsed) return false;
 
@@ -2260,8 +2128,6 @@ const InventoryManagerNew: React.FC = () => {
 
                   return hasPart && isNotCancelled && isNotPaid;
                 });
-
-                console.log("Filtered reserving orders:", reservingOrders.length);
 
                 if (!part) return <div className="p-6 text-center text-slate-500">Không tìm thấy thông tin sản phẩm</div>;
 
@@ -2384,7 +2250,6 @@ const InventoryManagerNew: React.FC = () => {
           part={editingPart}
           onClose={() => setEditingPart(null)}
           onSave={(updatedPart) => {
-            console.log("💾 Saving part updates:", updatedPart);
             // Only send fields that are allowed in database schema
             const updates: Partial<Part> = {
               name: updatedPart.name,
@@ -2398,7 +2263,6 @@ const InventoryManagerNew: React.FC = () => {
             if (updatedPart.costPrice) {
               updates.costPrice = updatedPart.costPrice;
             }
-            console.log("📤 Sending updates:", updates);
             updatePartMutation.mutate({
               id: updatedPart.id,
               updates,
@@ -2412,11 +2276,9 @@ const InventoryManagerNew: React.FC = () => {
       {/* Edit Receipt Modal */}
       {editingReceipt && (
         <EditReceiptModal
-          isOpen={!!editingReceipt}
           onClose={() => setEditingReceipt(null)}
           receipt={editingReceipt}
           onSave={handleSaveEditedReceipt}
-          parts={allPartsData || []}
           currentBranchId={currentBranchId}
         />
       )}
@@ -2440,7 +2302,6 @@ const InventoryManagerNew: React.FC = () => {
 
               // OPTIMIZATION: Batch fetch all parts by SKU in one query
               const allSkus = importedData.map((item) => item.sku);
-              console.log(`🔍 Checking ${allSkus.length} SKUs...`);
 
               // Check for duplicate SKUs in import file
               const skuCounts = new Map<string, number>();
@@ -2483,8 +2344,6 @@ const InventoryManagerNew: React.FC = () => {
                   allExistingParts.push(...data);
                 }
               }
-
-              console.log(`✅ Found ${allExistingParts.length} existing parts`);
 
               const existingPartsMap = new Map(
                 allExistingParts.map((p) => [p.sku, p])
@@ -2601,13 +2460,12 @@ const InventoryManagerNew: React.FC = () => {
                   console.error("❌ Batch create error:", createError);
                   throw new Error(`Lỗi tạo phụ tùng: ${createError.message}`);
                 }
-                console.log(`✅ Created ${createdParts?.length || 0} parts`);
+                void createdParts;
               }
 
               // BATCH: Execute all updates
               if (partsToUpdate.length > 0) {
                 let updateSuccess = 0;
-                let updateFailed = 0;
 
                 for (const update of partsToUpdate) {
                   const { error } = await supabase
@@ -2625,14 +2483,11 @@ const InventoryManagerNew: React.FC = () => {
                       `❌ Update error for part ${update.id}:`,
                       error
                     );
-                    updateFailed++;
                   } else {
                     updateSuccess++;
                   }
                 }
-                console.log(
-                  `✅ Updated ${updateSuccess}/${partsToUpdate.length} parts`
-                );
+                void updateSuccess;
               }
 
               // BATCH: Create inventory transactions
@@ -2668,7 +2523,9 @@ const InventoryManagerNew: React.FC = () => {
                     at: importDate,
                   },
                 });
-              } catch { }
+              } catch {
+                /* best-effort audit: ignore */
+              }
 
               setShowImportModal(false);
 
@@ -2795,14 +2652,6 @@ const InventoryManagerNew: React.FC = () => {
       {/* Create Purchase Order Modal */}
       {(showCreatePO || editingPO) && (
         <>
-          {console.log(
-            "About to render CreatePOModal, showCreatePO:",
-            showCreatePO,
-            "editingPO:",
-            editingPO,
-            "selectedItems:",
-            selectedItems
-          )}
           <CreatePOModal
             isOpen={!!(showCreatePO || editingPO)}
             onClose={() => {

@@ -52,7 +52,7 @@ const SalesAnalytics: React.FC<SalesAnalyticsProps> = ({
     );
     const totalOrders = filteredSales.length;
     const totalItems = filteredSales.reduce(
-      (sum, sale) => sum + sale.items.reduce((s, item) => s + item.quantity, 0),
+      (sum, sale) => sum + sale.items.reduce((s: number, item: any) => s + item.quantity, 0),
       0
     );
     const avgOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
@@ -95,7 +95,7 @@ const SalesAnalytics: React.FC<SalesAnalyticsProps> = ({
 
     // 1. Process Sales
     filteredSales.forEach((sale) => {
-      sale.items.forEach((item) => {
+      sale.items.forEach((item: any) => {
         // Normalize ID access
         const pId = item.partId || (item as any).id;
         if (!pId) return;

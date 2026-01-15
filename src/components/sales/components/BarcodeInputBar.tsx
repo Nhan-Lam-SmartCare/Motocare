@@ -7,7 +7,7 @@ interface BarcodeInputBarProps {
     onSubmit: (e: React.FormEvent) => void;
     onCameraClick: () => void;
     onClose?: () => void;
-    inputRef: React.RefObject<HTMLInputElement>;
+    inputRef: React.RefObject<HTMLInputElement | null>;
     showCloseButton?: boolean;
 }
 

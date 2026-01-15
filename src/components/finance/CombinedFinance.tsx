@@ -160,7 +160,7 @@ const CombinedFinance: React.FC = () => {
         category: tx.category,
         amount: tx.amount,
         date: tx.date,
-        description: tx.notes || tx.description,
+        description: tx.notes || (tx as any).description || "",
         source: "motocare" as const,
       }));
 

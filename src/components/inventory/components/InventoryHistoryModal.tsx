@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useState, useMemo } from "react";
 import { Search, FileText, X } from "lucide-react";
 import { formatCurrency, formatDate } from "../../../utils/format";

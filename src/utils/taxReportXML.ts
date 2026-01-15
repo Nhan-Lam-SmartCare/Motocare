@@ -15,7 +15,7 @@ import { formatDate } from "./format";
 // INTERFACES
 // =====================================================
 
-interface OrganizationTaxInfo {
+export interface OrganizationTaxInfo {
   taxCode: string;
   name: string;
   address: string;
@@ -166,7 +166,7 @@ export function prepareVATReportData(
   const period = getPeriodFromDateRange(startDate, endDate);
 
   // ===== THUẾ ĐẦU RA (từ bán hàng) =====
-  const outputTransactions = [];
+  const outputTransactions: VATReportData["outputVAT"]["transactions"] = [];
   let totalOutputRevenue = 0;
   let totalOutputVAT = 0;
 
@@ -238,7 +238,7 @@ export function prepareVATReportData(
   });
 
   // ===== THUẾ ĐẦU VÀO (từ mua hàng/chi phí) =====
-  const inputTransactions = [];
+  const inputTransactions: VATReportData["inputVAT"]["transactions"] = [];
   let totalInputExpense = 0;
   let totalInputVAT = 0;
 

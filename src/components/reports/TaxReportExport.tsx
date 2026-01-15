@@ -22,8 +22,8 @@ const TaxReportExport: React.FC = () => {
   const { currentBranchId } = useAppContext();
 
   // Fetch data
-  const { data: salesData = [] } = useSalesRepo({ branchId: currentBranchId });
-  const { data: workOrdersData = [] } = useWorkOrders(currentBranchId);
+  const { data: salesData = [] } = useSalesRepo();
+  const { data: workOrdersData = [] } = useWorkOrders();
   const { data: cashTxData = [] } = useCashTxRepo({
     branchId: currentBranchId,
   });
@@ -74,11 +74,19 @@ const TaxReportExport: React.FC = () => {
     const { startDate, endDate } = getDateRange();
 
     const filteredSales = salesData.filter((sale) => {
+      const saleBranchId = (sale as any).branchId || (sale as any).branchid;
+      if (saleBranchId && currentBranchId && saleBranchId !== currentBranchId) {
+        return false;
+      }
       const saleDate = new Date(sale.date);
       return saleDate >= startDate && saleDate <= endDate;
     });
 
     const filteredWorkOrders = workOrdersData.filter((wo: any) => {
+      const woBranchId = wo.branchId || wo.branchid;
+      if (woBranchId && currentBranchId && woBranchId !== currentBranchId) {
+        return false;
+      }
       const woDate = new Date(wo.creationDate || wo.creationdate);
       return woDate >= startDate && woDate <= endDate;
     });

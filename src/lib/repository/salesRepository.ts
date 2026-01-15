@@ -682,6 +682,9 @@ export async function updateDeliveryStatus(
   shipperId?: string
 ): Promise<RepoResult<void>> {
   try {
+    const { data: authData } = await supabase.auth.getUser();
+    const userId = authData?.user?.id ?? null;
+
     const updates: any = { delivery_status: status };
 
     // Assign shipper when moving to shipping status
@@ -708,7 +711,7 @@ export async function updateDeliveryStatus(
     }
 
     // Audit log
-    await safeAudit({
+    await safeAudit(userId, {
       action: "update_delivery_status",
       tableName: SALES_TABLE,
       recordId: saleId,
@@ -734,6 +737,9 @@ export async function completeDelivery(
   branchId: string
 ): Promise<RepoResult<void>> {
   try {
+    const { data: authData } = await supabase.auth.getUser();
+    const userId = authData?.user?.id ?? null;
+
     // Get sale info first
     const { data: sale, error: fetchError } = await supabase
       .from(SALES_TABLE)
@@ -789,7 +795,7 @@ export async function completeDelivery(
     }
 
     // Audit log
-    await safeAudit({
+    await safeAudit(userId, {
       action: "complete_delivery",
       tableName: SALES_TABLE,
       recordId: saleId,
@@ -820,6 +826,9 @@ export async function cancelDeliveredOrder(
   refundReason: string
 ): Promise<RepoResult<void>> {
   try {
+    const { data: authData } = await supabase.auth.getUser();
+    const userId = authData?.user?.id ?? null;
+
     // Get sale info first
     const { data: sale, error: fetchError } = await supabase
       .from(SALES_TABLE)
@@ -885,7 +894,7 @@ export async function cancelDeliveredOrder(
     }
 
     // Audit log
-    await safeAudit({
+    await safeAudit(userId, {
       action: "cancel_delivered_order",
       tableName: SALES_TABLE,
       recordId: saleId,

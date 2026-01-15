@@ -263,14 +263,23 @@ function exportCSV(rows: unknown[]) {
     ];
     const lines = [headers.join(",")];
     for (const r of rows) {
+      const row = r as {
+        created_at?: unknown;
+        action?: unknown;
+        table_name?: unknown;
+        record_id?: unknown;
+        user_id?: unknown;
+        old_data?: unknown;
+        new_data?: unknown;
+      };
       const line = [
-        r.created_at,
-        r.action,
-        r.table_name ?? "",
-        r.record_id ?? "",
-        r.user_id ?? "",
-        JSON.stringify(r.old_data ?? ""),
-        JSON.stringify(r.new_data ?? ""),
+        row.created_at,
+        row.action,
+        row.table_name ?? "",
+        row.record_id ?? "",
+        row.user_id ?? "",
+        JSON.stringify(row.old_data ?? ""),
+        JSON.stringify(row.new_data ?? ""),
       ]
         .map((v) => `"${String(v).replace(/"/g, '""')}"`)
         .join(",");

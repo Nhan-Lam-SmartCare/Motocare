@@ -34,6 +34,7 @@ export const WORK_ORDER_STATUS = {
   IN_PROGRESS: "Đang sửa",
   COMPLETED: "Đã sửa xong",
   DELIVERED: "Trả máy",
+  CANCELLED: "Đã hủy",
 } as const;
 
 export type WorkOrderStatus =
@@ -44,6 +45,7 @@ export const WORK_ORDER_STATUS_COLORS: Record<WorkOrderStatus, string> = {
   [WORK_ORDER_STATUS.IN_PROGRESS]: "bg-blue-100 text-blue-800",
   [WORK_ORDER_STATUS.COMPLETED]: "bg-green-100 text-green-800",
   [WORK_ORDER_STATUS.DELIVERED]: "bg-gray-100 text-gray-800",
+  [WORK_ORDER_STATUS.CANCELLED]: "bg-red-100 text-red-800",
 };
 
 // =============================================================================

@@ -12,33 +12,6 @@ import BarcodeScannerModal from '../../common/BarcodeScannerModal';
 import SupplierModal from '../../inventory/components/SupplierModal';
 import AddProductModal from './AddProductModal';
 import type { Part } from '../../../types';
-import { 
-  X, Plus, Save, Scan, Printer, ShoppingCart, Trash2, Search, 
-  ChevronDown, ChevronUp, AlertCircle, CheckCircle, Package, ArrowRight,
-  Camera, FileText 
-} from 'lucide-react';
-
-interface ReceiptItem {
-  partId: string;
-  partName: string;
-  sku: string;
-  quantity: number;
-  unitPrice: number; // Giá nhập
-  sellingPrice: number; // Giá bán lẻ (đề xuất)
-  wholesalePrice: number; // Giá bán buôn (đề xuất)
-  currentStock: number;
-  newStock: number;
-  category: string;
-  unit: string;
-  image?: string;
-  notes?: string;
-}
-
-interface PaymentInfo {
-  method: "cash" | "bank_transfer";
-  paidAmount: number;
-  notes?: string;
-}
 
 // Goods Receipt Modal Component (Ảnh 2)
 const GoodsReceiptModal: React.FC<{
@@ -71,7 +44,6 @@ const GoodsReceiptModal: React.FC<{
   const [showCameraScanner, setShowCameraScanner] = useState(false);
   const [showBarcodeInput, setShowBarcodeInput] = useState(false);
   const [selectedSupplier, setSelectedSupplier] = useState("");
-  const [step, setStep] = useState<1 | 2>(1); // 1: Chọn hàng, 2: Thanh toán
   const { data: suppliers = [] } = useSuppliers();
   const [showSupplierModal, setShowSupplierModal] = useState(false);
   const createPartMutation = useCreatePartRepo();
@@ -173,20 +145,11 @@ const GoodsReceiptModal: React.FC<{
   };
 
   const filteredParts = useMemo(() => {
-    console.log(
-      "🔍 Desktop Modal - parts:",
-      parts?.length || 0,
-      parts?.slice(0, 2)
-    );
-    console.log("🔍 Desktop Modal - searchTerm:", searchTerm);
-
     if (!parts || parts.length === 0) {
-      console.log("⚠️ parts is empty or undefined");
       return [];
     }
 
     if (!searchTerm || searchTerm.trim() === "") {
-      console.log("✅ Showing all parts:", parts.length);
       return parts;
     }
 
@@ -195,7 +158,6 @@ const GoodsReceiptModal: React.FC<{
       (p) =>
         p.name?.toLowerCase().includes(q) || p.sku?.toLowerCase().includes(q)
     );
-    console.log("✅ Filtered results:", filtered.length);
     return filtered;
   }, [parts, searchTerm]);
 
@@ -265,8 +227,6 @@ const GoodsReceiptModal: React.FC<{
 
   // Handle camera barcode scan - Modal tự đóng sau khi quét
   const handleCameraScan = (barcode: string) => {
-    console.log("📷 Camera scanned:", barcode);
-
     const normalizeCode = (code: string): string =>
       code.toLowerCase().replace(/[-\s./\\]/g, "");
     const normalizedBarcode = normalizeCode(barcode);
@@ -361,12 +321,30 @@ const GoodsReceiptModal: React.FC<{
       showToast.warning("Vui lòng chọn sản phẩm nhập kho");
       return;
     }
-    const supplierName =
-      suppliers.find((s: any) => s.id === selectedSupplier)?.name || "";
+    if (!selectedSupplier) {
+      showToast.warning("Vui lòng chọn nhà cung cấp");
+      return;
+    }
 
     // Calculate paidAmount based on paymentType
     // Default to "full" if paymentType is null (user selected payment method but didn't explicitly click payment type)
     const effectivePaymentType = paymentType || "full";
+
+    if (effectivePaymentType === "partial") {
+      if (!partialAmount || partialAmount <= 0) {
+        showToast.warning("Vui lòng nhập số tiền trả trước");
+        return;
+      }
+      if (partialAmount > totalAmount) {
+        showToast.warning(
+          `Số tiền trả trước không được vượt quá tổng tiền (${formatCurrency(
+            totalAmount
+          )})`
+        );
+        return;
+      }
+    }
+
     const calculatedPaidAmount =
       effectivePaymentType === "full"
         ? totalAmount
@@ -376,7 +354,7 @@ const GoodsReceiptModal: React.FC<{
 
     onSave(receiptItems, selectedSupplier, totalAmount, "", {
       paymentMethod: paymentMethod || "cash",
-      paymentType: paymentType || "full",
+      paymentType: effectivePaymentType,
       paidAmount: calculatedPaidAmount,
       discount,
     });

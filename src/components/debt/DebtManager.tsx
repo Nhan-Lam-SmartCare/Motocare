@@ -1000,7 +1000,7 @@ const DebtManager: React.FC = () => {
                       <div className="col-span-1 md:col-span-3">
                         <div className="text-sm text-primary-text space-y-1">
                           {(() => {
-                            const lines = debt.description.split("\n");
+                            const lines: string[] = String(debt.description ?? "").split("\n");
                             // Lấy dòng đầu tiên (xe + số phiếu)
                             const firstLine = lines[0];
 
@@ -1013,13 +1013,13 @@ const DebtManager: React.FC = () => {
                                 .slice(
                                   lines.indexOf(partsSection) + 1,
                                   lines.findIndex(
-                                    (l, i) =>
+                                    (l: string, i: number) =>
                                       i > lines.indexOf(partsSection) &&
                                       (l.includes("Dịch vụ:") ||
                                         l.includes("Công lao động:"))
                                   ) || lines.length
                                 )
-                                .filter((l) => l.trim().startsWith("•"))
+                                .filter((l: string) => l.trim().startsWith("•"))
                               : [];
 
                             // Lấy dịch vụ (nếu có)
@@ -1031,12 +1031,12 @@ const DebtManager: React.FC = () => {
                                 .slice(
                                   lines.indexOf(serviceSection) + 1,
                                   lines.findIndex(
-                                    (l, i) =>
+                                    (l: string, i: number) =>
                                       i > lines.indexOf(serviceSection) &&
                                       l.includes("Công lao động:")
                                   ) || lines.length
                                 )
-                                .filter((l) => l.trim().startsWith("•"))
+                                .filter((l: string) => l.trim().startsWith("•"))
                               : [];
 
                             // Lấy công lao động
@@ -1689,7 +1689,7 @@ const DebtManager: React.FC = () => {
               ? selectedCustomerTotal
               : selectedSupplierTotal
           }
-          debtType={activeTab}
+          debtType={activeTab === "installment" ? "customer" : activeTab}
           onConfirm={async (paymentMethod, paymentTime, shouldPrint) => {
             try {
               const totalAmount =
@@ -1936,7 +1936,7 @@ const DebtManager: React.FC = () => {
       {/* Add Debt Modal */}
       {showAddDebtModal && (
         <AddDebtModal
-          activeTab={activeTab}
+          activeTab={activeTab === "installment" ? "customer" : activeTab}
           customers={customers}
           suppliers={suppliers}
           currentBranchId={currentBranchId}
@@ -1956,7 +1956,7 @@ const DebtManager: React.FC = () => {
       {showEditDebtModal && selectedDebt && (
         <EditDebtModal
           debt={selectedDebt}
-          activeTab={activeTab}
+          activeTab={activeTab === "installment" ? "customer" : activeTab}
           customers={customers}
           suppliers={suppliers}
           onClose={() => {
@@ -1985,7 +1985,7 @@ const DebtManager: React.FC = () => {
       {showDetailModal && selectedDebt && (
         <DetailDebtModal
           debt={selectedDebt}
-          activeTab={activeTab}
+          activeTab={activeTab === "installment" ? "customer" : activeTab}
           storeSettings={storeSettings}
           onClose={() => {
             setShowDetailModal(false);
@@ -1998,7 +1998,7 @@ const DebtManager: React.FC = () => {
       {showDeleteConfirm && selectedDebt && (
         <DeleteConfirmDialog
           debt={selectedDebt}
-          activeTab={activeTab}
+          activeTab={activeTab === "installment" ? "customer" : activeTab}
           onClose={() => {
             setShowDeleteConfirm(false);
             setSelectedDebt(null);

@@ -8,7 +8,7 @@ export interface UseBarcodeScannerReturn {
     barcodeInput: string;
     showBarcodeInput: boolean;
     showCameraScanner: boolean;
-    barcodeInputRef: React.RefObject<HTMLInputElement>;
+    barcodeInputRef: React.RefObject<HTMLInputElement | null>;
 
     // Actions
     setBarcodeInput: (input: string) => void;

@@ -25,7 +25,7 @@ export interface StoreSettings {
 // ============================================
 // Work Order Status Types
 // ============================================
-export type WorkOrderStatus = "Tiếp nhận" | "Đang sửa" | "Đã sửa xong" | "Trả máy";
+export type WorkOrderStatus = "Tiếp nhận" | "Đang sửa" | "Đã sửa xong" | "Trả máy" | "Đã hủy";
 export type ServiceTabKey = "all" | "pending" | "inProgress" | "done" | "delivered";
 export type FilterColor = "slate" | "blue" | "orange" | "green" | "purple";
 

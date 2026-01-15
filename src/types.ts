@@ -150,6 +150,7 @@ export interface WorkOrderPart {
 export interface WorkOrder {
   id: string;
   creationDate: string; // ISO
+  estimatedCompletion?: string; // ISO (optional)
   customerName: string;
   customerPhone?: string;
   vehicleModel?: string;
@@ -158,6 +159,7 @@ export interface WorkOrder {
   currentKm?: number; // Số km hiện tại tại thời điểm tạo phiếu
   issueDescription?: string;
   technicianName?: string;
+  assignedTechnician?: string;
   status: "Tiếp nhận" | "Đang sửa" | "Đã sửa xong" | "Trả máy" | "Đã hủy";
   laborCost: number;
   discount?: number; // Order level discount
@@ -204,6 +206,7 @@ export interface InventoryTransaction {
   unitPrice?: number; // for nhập kho (cost)
   totalPrice: number;
   branchId: string;
+  supplierId?: string;
   notes?: string;
   saleId?: string;
   workOrderId?: string;
@@ -230,7 +233,7 @@ export type CashTransactionCategory =
 
 export interface CashTransaction {
   id: string;
-  type: "income" | "expense";
+  type: "income" | "expense" | "deposit";
   date: string;
   amount: number;
   recipient?: string; // Đối tượng thu/chi

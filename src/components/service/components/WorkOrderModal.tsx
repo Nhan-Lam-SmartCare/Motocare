@@ -394,6 +394,7 @@ const WorkOrderModal: React.FC<{
       if (order?.id) return order;
       return {
         id: order?.id || "",
+        customerId: order?.customerId || "",
         customerName: order?.customerName || "",
         customerPhone: order?.customerPhone || "",
         vehicleModel: order?.vehicleModel || "",
@@ -466,10 +467,28 @@ const WorkOrderModal: React.FC<{
     // This allows adding parts to a "paid" order if it's still being repaired
     const canEditPriceAndParts = (!isOrderPaid || formData.status !== "Trả máy") && !isOrderRefunded;
 
+    const allCustomers = useMemo(() => {
+      const allCandidates = [...customers, ...serverCustomers];
+      return Array.from(new Map(allCandidates.map((c) => [c.id, c])).values());
+    }, [customers, serverCustomers]);
+
     // Get customer's vehicles
-    const currentCustomer = customers.find(
-      (c) => c.phone === formData.customerPhone
-    );
+    const customerById = formData.customerId
+      ? allCustomers.find((c) => c.id === formData.customerId)
+      : undefined;
+    const customerByPhone = formData.customerPhone
+      ? allCustomers.find(
+          (c) => (c.phone || "").trim() === (formData.customerPhone || "").trim()
+        )
+      : undefined;
+    const nameKey = normalizeSearchText(formData.customerName || "");
+    const nameMatches = nameKey
+      ? allCustomers.filter(
+          (c) => normalizeSearchText(c.name || "") === nameKey
+        )
+      : [];
+    const currentCustomer =
+      customerById || customerByPhone || (nameMatches.length === 1 ? nameMatches[0] : null);
     const customerVehicles = currentCustomer?.vehicles || [];
 
     // Discount state
@@ -707,19 +726,13 @@ const WorkOrderModal: React.FC<{
     };
 
     // Filter customers based on search - show all if search is empty
-    // COMBINE local customers and server results
     const filteredCustomers = useMemo(() => {
-      // Merge local customers and server customers, removing duplicates by ID
-      const allCandidates = [...customers, ...serverCustomers];
-      const uniqueCandidates = Array.from(new Map(allCandidates.map(c => [c.id, c])).values());
-
       if (!customerSearch.trim()) {
-        // Show all customers when no search term
-        return uniqueCandidates.slice(0, 10); // Limit to first 10 for performance
+        return allCustomers.slice(0, 10); // Limit to first 10 for performance
       }
 
       const q = normalizeSearchText(customerSearch);
-      return uniqueCandidates.filter(
+      return allCustomers.filter(
         (c) =>
           normalizeSearchText(c.name).includes(q) ||
           c.phone?.toLowerCase().includes(q) ||
@@ -729,7 +742,7 @@ const WorkOrderModal: React.FC<{
               v.licensePlate?.toLowerCase().includes(q.toLowerCase())
             ))
       );
-    }, [customers, serverCustomers, customerSearch]);
+    }, [allCustomers, customerSearch]);
 
     // Close dropdown when clicking outside
     useEffect(() => {
@@ -2612,7 +2625,12 @@ const WorkOrderModal: React.FC<{
                           setShowCustomerDropdown(true);
                           setFormData({
                             ...formData,
+                            customerId: "",
                             customerName: e.target.value,
+                            customerPhone: "",
+                            vehicleId: undefined,
+                            vehicleModel: "",
+                            licensePlate: "",
                           });
                         }}
                         onFocus={() => setShowCustomerDropdown(true)}
@@ -2637,6 +2655,7 @@ const WorkOrderModal: React.FC<{
 
                                     setFormData({
                                       ...formData,
+                                      customerId: customer.id,
                                       customerName: customer.name,
                                       customerPhone: customer.phone,
                                       vehicleId: primaryVehicle?.id,
@@ -2846,6 +2865,7 @@ const WorkOrderModal: React.FC<{
                                     ...formData,
                                     customerName: "",
                                     customerPhone: "",
+                                    customerId: "",
                                     vehicleId: undefined,
                                     vehicleModel: "",
                                     licensePlate: "",
@@ -4358,6 +4378,7 @@ const WorkOrderModal: React.FC<{
                         // Set the new customer to the form AND search field
                         setFormData({
                           ...formData,
+                          customerId: customerId,
                           customerName: newCustomer.name,
                           customerPhone: newCustomer.phone,
                           vehicleId: vehicles.length > 0 ? vehicleId : undefined,
@@ -4435,6 +4456,7 @@ const WorkOrderModal: React.FC<{
                         // Set the existing customer to the form
                         setFormData({
                           ...formData,
+                          customerId: existingCustomer.id,
                           customerName: existingCustomer.name,
                           customerPhone: existingCustomer.phone,
                           vehicleId: vehicleIdToUse,

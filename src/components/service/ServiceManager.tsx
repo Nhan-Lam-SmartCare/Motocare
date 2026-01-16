@@ -2689,8 +2689,7 @@ export default function ServiceManager() {
 
                           {/* Lợi nhuận - Chỉ hiển thị cho owner khi bật toggle */}
                           {isOwner &&
-                            showProfit &&
-                            order.paymentStatus === "paid" && (
+                            showProfit && (
                               <div
                                 className="flex items-center gap-1 text-xs"
                                 title="Lợi nhuận và biên lợi nhuận trên tổng tiền"

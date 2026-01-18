@@ -459,9 +459,9 @@ const InventoryHistorySection: React.FC<{
                 <button
                   key={filter.key}
                   onClick={() => setActiveTimeFilter(filter.key)}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${activeTimeFilter === filter.key
-                    ? "bg-blue-600 text-white"
-                    : "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600"
+                  className={`px-3 py-1.5 rounded-full text-sm font-semibold transition-colors ${activeTimeFilter === filter.key
+                    ? "bg-blue-600 text-white shadow-sm"
+                    : "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-slate-600"
                     }`}
                 >
                   {filter.label}
@@ -474,16 +474,16 @@ const InventoryHistorySection: React.FC<{
                 Loại phiếu:
               </span>
               {[
-                { key: "import", label: "Phiếu nhập" },
-                { key: "export", label: "Xuất kho" },
-                { key: "all", label: "Tất cả" },
+                { key: "import", label: "Phiếu nhập", active: "bg-emerald-600 text-white shadow-sm", idle: "bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-900/20 dark:text-emerald-300" },
+                { key: "export", label: "Xuất kho", active: "bg-rose-600 text-white shadow-sm", idle: "bg-rose-50 text-rose-700 hover:bg-rose-100 dark:bg-rose-900/20 dark:text-rose-300" },
+                { key: "all", label: "Tất cả", active: "bg-slate-900 text-white shadow-sm dark:bg-slate-100 dark:text-slate-900", idle: "bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-300" },
               ].map((view) => (
                 <button
                   key={view.key}
                   onClick={() => setHistoryView(view.key as "import" | "export" | "all")}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${historyView === view.key
-                    ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900"
-                    : "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600"
+                  className={`px-3 py-1.5 rounded-full text-sm font-semibold transition-colors ${historyView === view.key
+                    ? view.active
+                    : view.idle
                     }`}
                 >
                   {view.label}

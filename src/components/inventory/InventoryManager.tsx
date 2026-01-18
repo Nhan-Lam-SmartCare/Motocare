@@ -191,6 +191,28 @@ const InventoryManagerNew: React.FC = () => {
   // Fetch work orders for "Reserved" stock details
   const { data: workOrders = [] } = useWorkOrdersRepo();
 
+  const activeReservedByPartId = useMemo(() => {
+    const map = new Map<string, number>();
+    const branchKey = currentBranchId || "";
+
+    workOrders.forEach((wo: WorkOrder) => {
+      if (wo.status === "Đã hủy") return;
+      const paymentStatus = wo.paymentStatus || (wo as any).paymentstatus;
+      if (paymentStatus === "paid") return;
+      if (branchKey && wo.branchId && wo.branchId !== branchKey) return;
+      if (!wo.partsUsed || wo.partsUsed.length === 0) return;
+
+      wo.partsUsed.forEach((p) => {
+        if (!p?.partId) return;
+        const qty = Number(p.quantity || 0);
+        if (qty <= 0) return;
+        map.set(p.partId, (map.get(p.partId) || 0) + qty);
+      });
+    });
+
+    return map;
+  }, [workOrders, currentBranchId]);
+
   const repoParts = pagedResult?.data || [];
   const totalParts = pagedResult?.meta?.total || 0;
   const totalPages = Math.max(1, Math.ceil(totalParts / pageSize));
@@ -1722,6 +1744,7 @@ const InventoryManagerNew: React.FC = () => {
                         const branchKey = currentBranchId || "";
                         const stock = part.stock?.[branchKey] || 0;
                         const reserved = part.reserved?.[branchKey] || 0;
+                        const activeReserved = activeReservedByPartId.get(part.id) || 0;
                         const available = stock - reserved; // ✅ Calculate available stock
                         const retailPrice = part.retailPrice?.[branchKey] || 0;
                         const wholesalePrice =
@@ -1837,7 +1860,7 @@ const InventoryManagerNew: React.FC = () => {
                                 >
                                   {available.toLocaleString()}
                                 </span>
-                                {reserved > 0 && (
+                                {activeReserved > 0 && (
                                   <span
                                     className="text-[10px] text-amber-600 dark:text-amber-400 cursor-pointer hover:underline hover:text-amber-700"
                                     onClick={(e) => {
@@ -1846,7 +1869,7 @@ const InventoryManagerNew: React.FC = () => {
                                     }}
                                     title="Nhấn để xem chi tiết phiếu đang giữ hàng"
                                   >
-                                    (Đặt trước: {reserved})
+                                    (Đặt trước: {activeReserved})
                                   </span>
                                 )}
                                 <span

@@ -666,16 +666,28 @@ const CustomerManager: React.FC = () => {
   }, [customers.length]);
 
   const filtered = useMemo(() => {
-    const q = search.toLowerCase();
-    let result = customers.filter(
-      (c) =>
-        c.name.toLowerCase().includes(q) ||
-        (c.phone && c.phone.includes(q)) ||
-        (c.vehicles &&
-          c.vehicles.some((v: any) =>
-            v.licensePlate?.toLowerCase().includes(q)
-          ))
-    );
+    const q = search.trim().toLowerCase();
+    let result = customers.filter((c) => {
+      if (!q) return true;
+
+      const vehiclesText = (c.vehicles || [])
+        .map((v: any) => [v.model, v.licensePlate].filter(Boolean).join(" "))
+        .join(" ");
+
+      const text = [
+        c.name,
+        c.phone,
+        c.email,
+        c.vehicleModel,
+        c.licensePlate,
+        vehiclesText,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+
+      return text.includes(q);
+    });
 
     // Apply segment filter
     if (activeFilter !== "all") {
@@ -995,7 +1007,7 @@ const CustomerManager: React.FC = () => {
                 </svg>
                 <input
                   type="text"
-                  placeholder="Tìm theo tên, SĐT, biển số xe..."
+                  placeholder="Tìm theo tên, SĐT, biển số, dòng xe..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   className="w-full pl-9 pr-14 md:pr-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm text-sm"

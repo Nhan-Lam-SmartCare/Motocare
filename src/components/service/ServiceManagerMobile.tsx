@@ -419,14 +419,39 @@ export function ServiceManagerMobile({
 
     // Search filter
     if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(
-        (w) =>
-          w.customerName?.toLowerCase().includes(query) ||
-          w.customerPhone?.toLowerCase().includes(query) ||
-          w.licensePlate?.toLowerCase().includes(query) ||
-          w.id?.toLowerCase().includes(query)
-      );
+      const query = searchQuery.trim().toLowerCase();
+      filtered = filtered.filter((w) => {
+        const partsText = (w.partsUsed || [])
+          .map((p) => [p.partName, p.sku, p.category].filter(Boolean).join(" "))
+          .join(" ");
+        const servicesText = (w.additionalServices || [])
+          .map((s) => [s.description].filter(Boolean).join(" "))
+          .join(" ");
+
+        const text = [
+          w.id,
+          w.customerName,
+          w.customerPhone,
+          w.vehicleModel,
+          w.licensePlate,
+          w.issueDescription,
+          w.technicianName,
+          w.assignedTechnician,
+          w.status,
+          w.paymentStatus,
+          w.paymentMethod,
+          w.notes,
+          w.currentKm != null ? String(w.currentKm) : "",
+          w.total != null ? String(w.total) : "",
+          partsText,
+          servicesText,
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+
+        return text.includes(query);
+      });
     }
 
     return filtered.sort((a, b) => {
@@ -577,7 +602,7 @@ export function ServiceManagerMobile({
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 dark:text-gray-500" />
                 <input
                   type="text"
-                  placeholder="Tìm tên, SĐT, biển số..."
+                  placeholder="Tìm tên, SĐT, biển số, dòng xe..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full pl-10 pr-3 py-2.5 bg-slate-100 dark:bg-[#2b2b40] border border-slate-300 dark:border-gray-700 rounded-xl text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-gray-500 text-sm focus:outline-none focus:border-[#009ef7]"

@@ -2218,7 +2218,7 @@ export default function ServiceManager() {
           <div className="relative flex-1 min-w-[180px] max-w-[280px]">
             <input
               type="text"
-              placeholder="Mã phiếu, tên khách..."
+              placeholder="Mã phiếu, tên khách, dòng xe..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-8 pr-3 py-1.5 bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400"

@@ -60,6 +60,40 @@ export function useServiceFilters({
     dateFilteredOrders,
 }: UseServiceFiltersOptions): UseServiceFiltersReturn {
 
+    const buildSearchText = useCallback((order: WorkOrder) => {
+        const partsText = (order.partsUsed || [])
+            .map((p) => [p.partName, p.sku, p.category].filter(Boolean).join(" "))
+            .join(" ");
+
+        const servicesText = (order.additionalServices || [])
+            .map((s) => [s.description].filter(Boolean).join(" "))
+            .join(" ");
+
+        const text = [
+            order.id,
+            order.customerName,
+            order.customerPhone,
+            order.vehicleModel,
+            order.licensePlate,
+            order.issueDescription,
+            order.technicianName,
+            order.assignedTechnician,
+            order.status,
+            order.paymentStatus,
+            order.paymentMethod,
+            order.notes,
+            order.currentKm != null ? String(order.currentKm) : "",
+            order.total != null ? String(order.total) : "",
+            partsText,
+            servicesText,
+        ]
+            .filter(Boolean)
+            .join(" ")
+            .toLowerCase();
+
+        return text;
+    }, []);
+
     // Filter state
     const [searchQuery, setSearchQuery] = useState("");
     const [activeTab, setActiveTab] = useState<ServiceTabKey>("all");
@@ -96,12 +130,10 @@ export function useServiceFilters({
 
         // Search filter (using debounced value)
         if (debouncedSearchQuery) {
-            filtered = filtered.filter(
-                (o) =>
-                    o.customerName.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
-                    o.vehicleModel?.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
-                    o.licensePlate?.toLowerCase().includes(debouncedSearchQuery.toLowerCase())
-            );
+            const query = debouncedSearchQuery.trim().toLowerCase();
+            if (query) {
+                filtered = filtered.filter((o) => buildSearchText(o).includes(query));
+            }
         }
 
         // Date filter

@@ -661,11 +661,13 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
       const from = page * CUSTOMER_PAGE_SIZE;
       const to = from + CUSTOMER_PAGE_SIZE - 1;
 
-      // Use a simple OR query on name and phone
+      // Use a simple OR query on name, phone, vehicle model, license plate
       const { data, error, count } = await supabase
         .from("customers")
         .select("*", { count: "exact", head: false })
-        .or(`name.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%`)
+        .or(
+          `name.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%,vehiclemodel.ilike.%${searchTerm}%,licenseplate.ilike.%${searchTerm}%`
+        )
         .range(from, to);
 
       if (!error && data) {
@@ -729,9 +731,12 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
       (c) =>
         normalizeSearchText(c.name).includes(term) ||
         c.phone?.toLowerCase().includes(term) ||
+        normalizeSearchText(c.vehicleModel || "").includes(term) ||
+        normalizeSearchText(c.licensePlate || "").includes(term) ||
         (c.vehicles &&
           c.vehicles.some((v: any) =>
             normalizeSearchText(v.licensePlate).includes(term) ||
+            normalizeSearchText(v.model || "").includes(term) ||
             v.licensePlate?.toLowerCase().includes(term.toLowerCase())
           ))
     );

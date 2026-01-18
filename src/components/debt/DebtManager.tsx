@@ -2926,7 +2926,10 @@ const AddDebtModal: React.FC<{
                     type="text"
                     value={formData.licensePlate}
                     onChange={(e) =>
-                      setFormData({ ...formData, licensePlate: e.target.value })
+                      setFormData({
+                        ...formData,
+                        licensePlate: e.target.value.toUpperCase(),
+                      })
                     }
                     className="w-full px-4 py-3 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white"
                   />
@@ -3075,7 +3078,10 @@ const EditDebtModal: React.FC<{
                   type="text"
                   value={formData.licensePlate}
                   onChange={(e) =>
-                    setFormData({ ...formData, licensePlate: e.target.value })
+                    setFormData({
+                      ...formData,
+                      licensePlate: e.target.value.toUpperCase(),
+                    })
                   }
                   className="w-full px-4 py-3 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white"
                 />

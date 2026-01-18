@@ -498,7 +498,6 @@ const InventoryManagerNew: React.FC = () => {
         paymentMethod: "cash" | "bank";
         paymentType: "full" | "partial" | "note";
         paidAmount: number;
-        discount: number;
       }
     ) => {
       if (!supplierId) {

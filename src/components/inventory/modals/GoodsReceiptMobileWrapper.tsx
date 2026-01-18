@@ -28,7 +28,6 @@ const GoodsReceiptMobileWrapper: React.FC<{
       paymentMethod: "cash" | "bank";
       paymentType: "full" | "partial" | "note";
       paidAmount: number;
-      discount: number;
     }
   ) => Promise<void> | void;
 }> = ({ isOpen, onClose, parts, currentBranchId, onSave }) => {
@@ -45,10 +44,6 @@ const GoodsReceiptMobileWrapper: React.FC<{
   >([]);
   const [selectedSupplier, setSelectedSupplier] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
-  const [discount, setDiscount] = useState(0);
-  const [discountType, setDiscountType] = useState<"amount" | "percent">(
-    "amount"
-  );
   const [paymentMethod, setPaymentMethod] = useState<"cash" | "bank">("cash");
   const [paymentType, setPaymentType] = useState<"full" | "partial" | "note">(
     "full"
@@ -72,8 +67,6 @@ const GoodsReceiptMobileWrapper: React.FC<{
       setReceiptItems([]);
       setSelectedSupplier("");
       setSearchTerm("");
-      setDiscount(0);
-      setDiscountType("amount");
       setPaymentMethod("cash");
       setPaymentType("full");
       setPartialAmount(0);
@@ -135,11 +128,7 @@ const GoodsReceiptMobileWrapper: React.FC<{
       (sum, item) => sum + item.quantity * item.importPrice,
       0
     );
-    const discountAmount =
-      discountType === "percent"
-        ? Math.round((subtotal * discount) / 100)
-        : discount;
-    const totalAmount = Math.max(0, subtotal - discountAmount);
+    const totalAmount = subtotal;
 
     // Calculate paid amount based on payment type
     // Default to "full" if paymentType is somehow not set
@@ -158,7 +147,6 @@ const GoodsReceiptMobileWrapper: React.FC<{
         paymentMethod,
         paymentType: effectivePaymentType,
         paidAmount,
-        discount: discountAmount,
       });
       // clearDraft(); // removed because not defined here, handled by parent or logic inside onSave if passed properly? 
       // In original it called clearDraft(), but clearDraft likely isn't in scope.
@@ -197,10 +185,6 @@ const GoodsReceiptMobileWrapper: React.FC<{
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
         onSave={handleSave}
-        discount={discount}
-        setDiscount={setDiscount}
-        discountType={discountType}
-        setDiscountType={setDiscountType}
         paymentMethod={paymentMethod}
         setPaymentMethod={setPaymentMethod}
         paymentType={paymentType}

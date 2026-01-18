@@ -30,7 +30,6 @@ const GoodsReceiptModal: React.FC<{
       paymentMethod: "cash" | "bank";
       paymentType: "full" | "partial" | "note";
       paidAmount: number;
-      discount: number;
     }
   ) => void;
 }> = ({ isOpen, onClose, parts, currentBranchId, onSave }) => {
@@ -70,11 +69,6 @@ const GoodsReceiptModal: React.FC<{
     "full" | "partial" | "note" | null
   >(null);
   const [partialAmount, setPartialAmount] = useState(0);
-  const [discount, setDiscount] = useState(0);
-  const [discountType, setDiscountType] = useState<"amount" | "percent">(
-    "amount"
-  );
-  const [discountPercent, setDiscountPercent] = useState(0);
 
   // Auto-save key cho localStorage
   const DRAFT_KEY = `goods_receipt_draft_${currentBranchId}`;
@@ -100,9 +94,6 @@ const GoodsReceiptModal: React.FC<{
               if (shouldRestore) {
                 setReceiptItems(draft.receiptItems || []);
                 setSelectedSupplier(draft.selectedSupplier || "");
-                setDiscount(draft.discount || 0);
-                setDiscountType(draft.discountType || "amount");
-                setDiscountPercent(draft.discountPercent || 0);
                 showToast.success("Đã khôi phục phiếu nhập từ bản nháp");
               } else {
                 localStorage.removeItem(DRAFT_KEY);
@@ -125,9 +116,6 @@ const GoodsReceiptModal: React.FC<{
       const draft = {
         receiptItems,
         selectedSupplier,
-        discount,
-        discountType,
-        discountPercent,
         timestamp: Date.now(),
       };
       localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
@@ -136,9 +124,6 @@ const GoodsReceiptModal: React.FC<{
     isOpen,
     receiptItems,
     selectedSupplier,
-    discount,
-    discountType,
-    discountPercent,
     DRAFT_KEY,
   ]);
 
@@ -256,9 +241,7 @@ const GoodsReceiptModal: React.FC<{
     );
   }, [receiptItems]);
 
-  const totalAmount = useMemo(() => {
-    return Math.max(0, subtotal - discount);
-  }, [subtotal, discount]);
+  const totalAmount = useMemo(() => subtotal, [subtotal]);
 
   const { profile } = useAuth();
   const handleSave = () => {
@@ -287,15 +270,11 @@ const GoodsReceiptModal: React.FC<{
       paymentMethod: paymentMethod || "cash",
       paymentType: paymentType || "full",
       paidAmount: calculatedPaidAmount,
-      discount,
     });
     clearDraft(); // Xóa draft sau khi hoàn tất
     setReceiptItems([]);
     setSelectedSupplier("");
     setSearchTerm("");
-    setDiscount(0);
-    setDiscountPercent(0);
-    setDiscountType("amount");
   };
 
   const handleAddNewProduct = (productData: any) => {

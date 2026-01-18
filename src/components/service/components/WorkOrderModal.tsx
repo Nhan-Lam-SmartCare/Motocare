@@ -673,11 +673,13 @@ const WorkOrderModal: React.FC<{
         const from = page * CUSTOMER_PAGE_SIZE;
         const to = from + CUSTOMER_PAGE_SIZE - 1;
 
-        // Use a simple OR query on name and phone
+        // Use a simple OR query on name, phone, vehicle model, license plate
         const { data, error, count } = await supabase
           .from("customers")
           .select("*", { count: "exact", head: false })
-          .or(`name.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%`)
+          .or(
+            `name.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%,vehiclemodel.ilike.%${searchTerm}%,licenseplate.ilike.%${searchTerm}%`
+          )
           .range(from, to);
 
         if (!error && data) {
@@ -736,9 +738,12 @@ const WorkOrderModal: React.FC<{
         (c) =>
           normalizeSearchText(c.name).includes(q) ||
           c.phone?.toLowerCase().includes(q) ||
+          normalizeSearchText(c.vehicleModel || "").includes(q) ||
+          normalizeSearchText(c.licensePlate || "").includes(q) ||
           (c.vehicles &&
             c.vehicles.some((v: any) =>
               normalizeSearchText(v.licensePlate).includes(q) ||
+              normalizeSearchText(v.model || "").includes(q) ||
               v.licensePlate?.toLowerCase().includes(q.toLowerCase())
             ))
       );
@@ -3010,7 +3015,7 @@ const WorkOrderModal: React.FC<{
                                         value={editVehicleLicensePlate}
                                         onChange={(e) =>
                                           setEditVehicleLicensePlate(
-                                            e.target.value
+                                            e.target.value.toUpperCase()
                                           )
                                         }
                                         className="w-full px-2 py-1.5 text-sm border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
@@ -4311,7 +4316,7 @@ const WorkOrderModal: React.FC<{
                       onChange={(e) =>
                         setNewCustomer({
                           ...newCustomer,
-                          licensePlate: e.target.value,
+                          licensePlate: e.target.value.toUpperCase(),
                         })
                       }
                       className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
@@ -4565,7 +4570,7 @@ const WorkOrderModal: React.FC<{
                     onChange={(e) =>
                       setNewVehicle({
                         ...newVehicle,
-                        licensePlate: e.target.value,
+                        licensePlate: e.target.value.toUpperCase(),
                       })
                     }
                     className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"

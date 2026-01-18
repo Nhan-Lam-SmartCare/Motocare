@@ -40,10 +40,6 @@ interface Props {
   searchTerm: string;
   setSearchTerm: (term: string) => void;
   onSave: () => void;
-  discount: number;
-  setDiscount: (val: number) => void;
-  discountType: "amount" | "percent";
-  setDiscountType: (type: "amount" | "percent") => void;
   paymentMethod: "cash" | "bank";
   setPaymentMethod: (method: "cash" | "bank") => void;
   paymentType: "full" | "partial" | "note";
@@ -68,10 +64,6 @@ export const GoodsReceiptMobileModal: React.FC<Props> = ({
   searchTerm,
   setSearchTerm,
   onSave,
-  discount,
-  setDiscount,
-  discountType,
-  setDiscountType,
   paymentMethod,
   setPaymentMethod,
   paymentType,
@@ -265,12 +257,7 @@ export const GoodsReceiptMobileModal: React.FC<Props> = ({
     0
   );
 
-  const discountAmount =
-    discountType === "percent"
-      ? Math.round((subtotal * discount) / 100)
-      : discount;
-
-  const totalAmount = Math.max(0, subtotal - discountAmount);
+  const totalAmount = subtotal;
 
   const handleContinue = () => {
     if (!selectedSupplier) {
@@ -293,32 +280,6 @@ export const GoodsReceiptMobileModal: React.FC<Props> = ({
           {step === 1 ? (
             /* ===== BƯỚC 1: CHỌN HÀNG ===== */
             <>
-              {/* Header */}
-              <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-2 flex items-center justify-between flex-shrink-0 shadow-md">
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={onClose}
-                    className="text-white text-xl leading-none p-1"
-                  >
-                    ×
-                  </button>
-                  <h2 className="text-base font-bold text-white">
-                    Tạo phiếu nhập
-                  </h2>
-                </div>
-              </div>
-
-              {/* Supplier Selection Card */}
-              <div className="p-3 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 flex-shrink-0">
-                <div
-                  onClick={() => setShowSupplierModal(true)}
-                  className={`p-4 rounded-xl border-2 cursor-pointer active:scale-98 transition-transform ${selectedSupplier
-                    ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
-                    : "border-dashed border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800"
-                    }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
                       {selectedSupplier ? (
                         <>
                           <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">
@@ -522,35 +483,6 @@ export const GoodsReceiptMobileModal: React.FC<Props> = ({
                 </div>
               </div>
 
-              {/* Product List */}
-              <div className="flex-1 overflow-y-auto p-3 bg-slate-50 dark:bg-slate-900">
-                {!parts || parts.length === 0 ? (
-                  <div className="text-center text-slate-500 py-12">
-                    <div className="text-5xl mb-3">⏳</div>
-                    <div>Đang tải danh sách sản phẩm...</div>
-                  </div>
-                ) : filteredParts.length === 0 ? (
-                  <div className="text-center text-slate-500 py-12">
-                    <div className="text-5xl mb-3">📦</div>
-                    <div>Không tìm thấy sản phẩm</div>
-                    {searchTerm && (
-                      <div className="text-sm mt-2">
-                        Tìm kiếm: "{searchTerm}"
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {filteredParts.map((part) => {
-                      const inCart = receiptItems.find(
-                        (item) => item.partId === part.id
-                      );
-                      return (
-                        <div
-                          key={part.id}
-                          className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700"
-                        >
-                          <div className="flex items-start justify-between gap-3">
                             <div className="flex-1 min-w-0">
                               <div className="font-bold text-slate-900 dark:text-slate-100 text-base leading-tight mb-1">
                                 {part.name}
@@ -757,35 +689,6 @@ export const GoodsReceiptMobileModal: React.FC<Props> = ({
                       <span className="font-medium">
                         {formatCurrency(subtotal)}
                       </span>
-                    </div>
-
-                    {/* Discount */}
-                    <div className="flex justify-between items-center">
-                      <span className="text-slate-700 dark:text-slate-300">
-                        Giảm giá
-                      </span>
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="number"
-                          inputMode="numeric"
-                          value={discount}
-                          onChange={(e) => setDiscount(Number(e.target.value))}
-                          placeholder="0"
-                          className="w-24 px-3 py-1.5 border border-slate-300 dark:border-slate-600 rounded-lg text-right bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
-                        />
-                        <select
-                          value={discountType}
-                          onChange={(e) =>
-                            setDiscountType(
-                              e.target.value as "amount" | "percent"
-                            )
-                          }
-                          className="px-2 py-1.5 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 text-sm"
-                        >
-                          <option value="amount">₫</option>
-                          <option value="percent">%</option>
-                        </select>
-                      </div>
                     </div>
 
                     {/* Total */}

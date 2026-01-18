@@ -280,6 +280,15 @@ export const GoodsReceiptMobileModal: React.FC<Props> = ({
           {step === 1 ? (
             /* ===== BƯỚC 1: CHỌN HÀNG ===== */
             <>
+              {/* Header: Supplier selection */}
+              <div className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex-shrink-0">
+                <div className="p-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowSupplierModal(true)}
+                    className="w-full flex items-center justify-between gap-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 px-4 py-3"
+                  >
+                    <div className="text-left">
                       {selectedSupplier ? (
                         <>
                           <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">
@@ -323,7 +332,7 @@ export const GoodsReceiptMobileModal: React.FC<Props> = ({
                         d="M9 5l7 7-7 7"
                       />
                     </svg>
-                  </div>
+                  </button>
                 </div>
               </div>
 
@@ -483,7 +492,26 @@ export const GoodsReceiptMobileModal: React.FC<Props> = ({
                 </div>
               </div>
 
-                            <div className="flex-1 min-w-0">
+              {/* Product List */}
+              <div className="flex-1 overflow-y-auto bg-slate-50 dark:bg-slate-900">
+                <div className="p-3">
+                  {filteredParts.length === 0 ? (
+                    <div className="text-center text-slate-500 dark:text-slate-400 py-10">
+                      Không tìm thấy sản phẩm
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {filteredParts.map((part) => {
+                        const inCart = receiptItems.find(
+                          (item) => item.partId === part.id
+                        );
+                        return (
+                          <div
+                            key={part.id}
+                            className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700"
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="flex-1 min-w-0">
                               <div className="font-bold text-slate-900 dark:text-slate-100 text-base leading-tight mb-1">
                                 {part.name}
                               </div>
@@ -552,6 +580,7 @@ export const GoodsReceiptMobileModal: React.FC<Props> = ({
                   <span className="text-2xl">+</span>
                   <span className="font-medium">Tạo sản phẩm mới</span>
                 </button>
+              </div>
               </div>
 
               {/* Floating Cart Footer */}

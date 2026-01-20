@@ -2408,6 +2408,195 @@ const WorkOrderModal: React.FC<{
               );
             }
 
+            // 🔹 Update/Create outsourcing expense when editing PAID order (gia công/đặt hàng)
+            if (paymentStatus === "paid") {
+              const outsourcingTotal = (additionalServices || []).reduce(
+                (sum, service) =>
+                  sum + (service.costPrice || 0) * (service.quantity || 1),
+                0
+              );
+              const desiredAmount = -outsourcingTotal; // expense is negative
+
+              try {
+                const { data: existingTxs, error: fetchErr } = await supabase
+                  .from("cash_transactions")
+                  .select("id, amount, paymentsource, branchid, category")
+                  .eq("reference", order.id)
+                  .in("category", ["outsourcing", "outsourcing_expense", "service_cost"]);
+
+                if (fetchErr) {
+                  console.error(
+                    "[Outsourcing-update] fetch error:",
+                    fetchErr
+                  );
+                } else {
+                  const existingTx = Array.isArray(existingTxs)
+                    ? existingTxs[0]
+                    : undefined;
+                  const paymentSourceId =
+                    (existingTx as any)?.paymentsource || "cash";
+
+                  if (outsourcingTotal > 0) {
+                    if (!existingTx) {
+                      const outsourcingTxId = `EXPENSE-${Date.now()}-${Math.random()
+                        .toString(36)
+                        .substr(2, 9)}`;
+
+                      const { error: insertErr } = await supabase
+                        .from("cash_transactions")
+                        .insert({
+                          id: outsourcingTxId,
+                          type: "expense",
+                          category: "outsourcing",
+                          amount: desiredAmount,
+                          date: new Date().toISOString(),
+                          description: `Chi phí gia công bên ngoài - Phiếu #${order.id
+                            .split("-")
+                            .pop()} - ${additionalServices
+                              .map((s) => s.description)
+                              .join(", ")}`,
+                          branchid: currentBranchId,
+                          paymentsource: "cash",
+                          reference: order.id,
+                        });
+
+                      if (insertErr) {
+                        console.error(
+                          "[Outsourcing-update] insert error:",
+                          insertErr
+                        );
+                      } else {
+                        setCashTransactions((prev: any[]) => [
+                          ...prev,
+                          {
+                            id: outsourcingTxId,
+                            type: "expense",
+                            category: "outsourcing",
+                            amount: desiredAmount,
+                            date: new Date().toISOString(),
+                            description: `Chi phí gia công bên ngoài - Phiếu #${order.id
+                              .split("-")
+                              .pop()}`,
+                            branchId: currentBranchId,
+                            paymentSource: "cash",
+                            reference: order.id,
+                          },
+                        ]);
+
+                        setPaymentSources((prev: any[]) =>
+                          prev.map((ps) => {
+                            if (ps.id === "cash") {
+                              return {
+                                ...ps,
+                                balance: {
+                                  ...ps.balance,
+                                  [currentBranchId]:
+                                    (ps.balance[currentBranchId] || 0) -
+                                    outsourcingTotal,
+                                },
+                              };
+                            }
+                            return ps;
+                          })
+                        );
+                      }
+                    } else if (existingTx.amount !== desiredAmount) {
+                      const delta = desiredAmount - (existingTx.amount || 0);
+
+                      const { error: updateErr } = await supabase
+                        .from("cash_transactions")
+                        .update({
+                          amount: desiredAmount,
+                          description: `Chi phí gia công bên ngoài - Phiếu #${order.id
+                            .split("-")
+                            .pop()} - ${additionalServices
+                              .map((s) => s.description)
+                              .join(", ")}`,
+                        })
+                        .eq("id", existingTx.id);
+
+                      if (updateErr) {
+                        console.error(
+                          "[Outsourcing-update] update error:",
+                          updateErr
+                        );
+                      } else {
+                        setCashTransactions((prev: any[]) =>
+                          prev.map((tx) =>
+                            tx.id === existingTx.id
+                              ? {
+                                  ...tx,
+                                  amount: desiredAmount,
+                                  description: `Chi phí gia công bên ngoài - Phiếu #${order.id
+                                    .split("-")
+                                    .pop()}`,
+                                }
+                              : tx
+                          )
+                        );
+
+                        if (delta !== 0) {
+                          setPaymentSources((prev: any[]) =>
+                            prev.map((ps) => {
+                              if (ps.id === paymentSourceId) {
+                                return {
+                                  ...ps,
+                                  balance: {
+                                    ...ps.balance,
+                                    [currentBranchId]:
+                                      (ps.balance[currentBranchId] || 0) + delta,
+                                  },
+                                };
+                              }
+                              return ps;
+                            })
+                          );
+                        }
+                      }
+                    }
+                  } else if (existingTx) {
+                    // If cost is cleared, remove existing expense
+                    const { error: deleteErr } = await supabase
+                      .from("cash_transactions")
+                      .delete()
+                      .eq("id", existingTx.id);
+
+                    if (deleteErr) {
+                      console.error(
+                        "[Outsourcing-update] delete error:",
+                        deleteErr
+                      );
+                    } else {
+                      setCashTransactions((prev: any[]) =>
+                        prev.filter((tx) => tx.id !== existingTx.id)
+                      );
+
+                      const refund = Math.abs(existingTx.amount || 0);
+                      if (refund > 0) {
+                        setPaymentSources((prev: any[]) =>
+                          prev.map((ps) => {
+                            if (ps.id === paymentSourceId) {
+                              return {
+                                ...ps,
+                                balance: {
+                                  ...ps.balance,
+                                  [currentBranchId]:
+                                    (ps.balance[currentBranchId] || 0) + refund,
+                                },
+                              };
+                            }
+                            return ps;
+                          })
+                        );
+                      }
+                    }
+                  }
+                }
+              } catch (err) {
+                console.error("[Outsourcing-update] unexpected error:", err);
+              }
+            }
+
             console.log(
               "[handleSave] updateWorkOrderAtomicAsync SUCCESS - Response:",
               responseData

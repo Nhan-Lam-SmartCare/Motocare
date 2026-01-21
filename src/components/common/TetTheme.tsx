@@ -17,41 +17,7 @@ const TetTheme: React.FC = () => {
 
     return createPortal(
         <div className="fixed inset-0 pointer-events-none z-[9999] overflow-hidden font-sans">
-            {/* --- Top Lantern Strings --- */}
-            {/* Left Cluster */}
-            <div className="absolute top-[-5px] left-4 md:left-12 flex flex-col items-center animate-sway origin-top z-50">
-                {/* String */}
-                <div className="h-6 w-[1px] bg-red-800/80"></div>
-                {/* Lantern Body */}
-                <div className="relative">
-                    <div className="text-5xl md:text-7xl filter drop-shadow-[0_0_15px_rgba(220,38,38,0.6)] brightness-110 transform hover:scale-110 transition-transform cursor-pointer">
-                        🏮
-                    </div>
-                    {/* Glow center */}
-                    <div className="absolute inset-0 bg-yellow-500/20 blur-xl rounded-full"></div>
-                </div>
-                {/* Tassel */}
-                <div className="flex flex-col items-center mt-[-10px] space-y-[-2px]">
-                    <div className="w-1 h-2 bg-red-700"></div>
-                    <div className="text-red-600 text-2xl filter drop-shadow-sm">🧶</div>
-                </div>
-            </div>
-
-            {/* Right Cluster - Slightly different height/delay */}
-            <div className="absolute top-[-15px] right-4 md:right-12 flex flex-col items-center animate-sway origin-top delay-1000 z-50">
-                <div className="h-10 w-[1px] bg-red-800/80"></div>
-                <div className="relative">
-                    <div className="text-6xl md:text-8xl filter drop-shadow-[0_0_20px_rgba(220,38,38,0.8)] brightness-110">
-                        🏮
-                    </div>
-                    <div className="absolute inset-0 bg-yellow-500/20 blur-xl rounded-full"></div>
-                </div>
-                {/* Tassel */}
-                <div className="flex flex-col items-center mt-[-12px] space-y-[-2px]">
-                    <div className="w-1.5 h-3 bg-red-700"></div>
-                    <div className="text-red-600 text-3xl filter drop-shadow-sm">🧶</div>
-                </div>
-            </div>
+            {/* --- Lanterns removed to avoid blocking UI on mobile --- */}
 
             {/* --- Decorative Corners (Blossom Branches) --- */}
             {/* Bottom Left - Mai Vàng (Apricot) */}

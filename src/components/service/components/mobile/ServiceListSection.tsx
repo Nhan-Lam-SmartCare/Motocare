@@ -45,59 +45,72 @@ export const ServiceListSection: React.FC<ServiceListSectionProps> = ({
 
             {/* Services List */}
             {additionalServices.length > 0 && (
-                <div className="space-y-2.5">
+                <div className="space-y-3">
                     {additionalServices.map((service) => (
                         <div
                             key={service.id}
-                            className="p-4 bg-white dark:bg-[#1e1e2d] border border-slate-200 dark:border-slate-700/30 rounded-2xl shadow-sm"
+                            className="p-3 bg-[#1e1e2d] border border-gray-800 rounded-xl shadow-sm relative group overflow-hidden"
                         >
-                            <div className="flex items-start justify-between gap-3">
+                            <div className="flex items-start justify-between gap-3 mb-3">
                                 <div className="flex-1 min-w-0">
-                                    <div className="text-sm font-bold text-slate-900 dark:text-white truncate">
-                                        {service.name}
-                                    </div>
-                                    <div className="mt-2 flex flex-col gap-2">
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-[10px] text-slate-500 w-8">Bán:</span>
-                                            <input
-                                                type="text"
-                                                value={formatNumberWithDots(service.sellingPrice)}
-                                                onChange={(e) => {
-                                                    const newPrice = parseFormattedNumber(e.target.value);
-                                                    onUpdateService(service.id, { sellingPrice: newPrice });
-                                                }}
-                                                inputMode="numeric"
-                                                className="w-24 px-2 py-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-orange-600 dark:text-orange-400 text-xs font-bold focus:border-blue-500 focus:outline-none transition-all"
-                                            />
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-[10px] text-slate-500 w-8">Vốn:</span>
-                                            <input
-                                                type="text"
-                                                value={formatNumberWithDots(service.costPrice || 0)}
-                                                onChange={(e) => {
-                                                    const newCost = parseFormattedNumber(e.target.value);
-                                                    onUpdateService(service.id, { costPrice: newCost });
-                                                }}
-                                                inputMode="numeric"
-                                                className="w-24 px-2 py-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-500 dark:text-slate-400 text-xs font-bold focus:border-blue-500 focus:outline-none transition-all"
-                                            />
+                                    <div className="mb-2">
+                                        <div className="text-base font-bold text-white break-words leading-tight">
+                                            {service.name}
                                         </div>
                                     </div>
                                 </div>
                                 <button
                                     onClick={() => onRemoveService(service.id)}
-                                    className="w-10 h-10 flex items-center justify-center text-slate-500 hover:text-red-400 active:scale-95 transition-all bg-slate-50 dark:bg-slate-800 rounded-xl mt-1"
+                                    className="p-2 text-slate-500 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors"
                                 >
-                                    <Trash2 className="w-5 h-5" />
+                                    <Trash2 className="w-4 h-4" />
                                 </button>
                             </div>
-                            <div className="mt-3 pt-3 border-t border-slate-700/30 flex justify-between items-center">
-                                <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">
-                                    SL: {service.quantity} x {formatCurrency(service.sellingPrice)}
+
+                            <div className="flex items-center gap-3">
+                                {/* Selling Price */}
+                                <div className="flex-1 relative">
+                                    <label className="text-[10px] text-slate-500 absolute -top-2 left-0 bg-[#1e1e2d] px-1">Giá bán</label>
+                                    <div className="flex items-center px-3 py-2 bg-slate-900/50 border border-gray-700 rounded-lg focus-within:border-orange-500/50 focus-within:bg-slate-900 transition-colors">
+                                        <input
+                                            type="text"
+                                            value={formatNumberWithDots(service.sellingPrice)}
+                                            onChange={(e) => {
+                                                const newPrice = parseFormattedNumber(e.target.value);
+                                                onUpdateService(service.id, { sellingPrice: newPrice });
+                                            }}
+                                            inputMode="numeric"
+                                            className="w-full bg-transparent text-sm font-bold text-orange-400 focus:outline-none"
+                                        />
+                                        <span className="text-xs text-slate-500 ml-1">đ</span>
+                                    </div>
+                                </div>
+
+                                {/* Cost Price (Small) */}
+                                <div className="w-24 relative">
+                                    <label className="text-[10px] text-slate-500 absolute -top-2 left-0 bg-[#1e1e2d] px-1">Giá vốn</label>
+                                    <div className="flex items-center px-2 py-2 bg-slate-900/50 border border-gray-700 rounded-lg focus-within:border-slate-500/50 focus-within:bg-slate-900 transition-colors">
+                                        <input
+                                            type="text"
+                                            value={formatNumberWithDots(service.costPrice || 0)}
+                                            onChange={(e) => {
+                                                const newCost = parseFormattedNumber(e.target.value);
+                                                onUpdateService(service.id, { costPrice: newCost });
+                                            }}
+                                            inputMode="numeric"
+                                            className="w-full bg-transparent text-xs font-medium text-slate-400 focus:outline-none"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Total - Bottom highlight */}
+                            <div className="mt-3 pt-2 border-t border-dashed border-gray-800 flex justify-between items-center">
+                                <span className="text-[10px] text-slate-500 font-medium">
+                                    SL: {service.quantity || 1}
                                 </span>
                                 <span className="text-sm font-bold text-orange-400">
-                                    {formatCurrency(service.sellingPrice * service.quantity)}
+                                    {formatCurrency(service.sellingPrice * (service.quantity || 1))}
                                 </span>
                             </div>
                         </div>
@@ -108,10 +121,17 @@ export const ServiceListSection: React.FC<ServiceListSectionProps> = ({
             {/* Add Service Button */}
             <button
                 onClick={onShowAddService}
-                className="w-full py-3.5 bg-orange-600/10 border border-orange-500/30 hover:bg-orange-600/20 rounded-2xl text-orange-400 transition-all flex items-center justify-center gap-2 text-xs font-bold active:scale-[0.98]"
+                className="group relative w-full overflow-hidden rounded-2xl p-[1px] focus:outline-none active:scale-[0.99] transition-transform"
             >
-                <Plus className="w-4 h-4" />
-                Thêm dịch vụ ngoài
+                <div className="absolute inset-0 bg-gradient-to-r from-orange-500 to-amber-500 opacity-30 group-hover:opacity-100 transition-opacity" />
+                <div className="relative flex items-center justify-center gap-2 bg-[#1e1e2d] dark:bg-[#151521] group-hover:bg-[#1e1e2d]/90 px-4 py-3.5 rounded-2xl transition-colors">
+                    <div className="w-6 h-6 rounded-full bg-orange-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <Plus className="w-3.5 h-3.5 text-orange-400" />
+                    </div>
+                    <span className="text-sm font-bold text-orange-400 group-hover:text-orange-300">
+                        Thêm dịch vụ ngoài
+                    </span>
+                </div>
             </button>
         </div>
     );

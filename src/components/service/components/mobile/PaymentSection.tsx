@@ -58,7 +58,7 @@ export const PaymentSection: React.FC<PaymentSectionProps> = ({
     partialAmount,
     setPartialAmount,
 }) => {
-    const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+    const [isDetailsOpen, setIsDetailsOpen] = useState(true);
 
     // Calculate paid/remaining for display
     const totalPaid = (isDeposit ? depositAmount : 0) + (showPaymentInput ? partialAmount : 0);

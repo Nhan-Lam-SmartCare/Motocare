@@ -642,6 +642,10 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
   // State for preventing duplicate submissions
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Tab navigation state
+  type TabType = 'info' | 'parts' | 'payment';
+  const [activeTab, setActiveTab] = useState<TabType>('info');
+
   // Helper functions for number formatting
   const formatNumberWithDots = (value: number | string): string => {
     if (value === 0 || value === "0") return "0";
@@ -1556,187 +1560,266 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
           <div className="w-9"></div>
         </div>
 
+        {/* Tab Navigation Bar */}
+        <div className="flex-shrink-0 bg-white dark:bg-[#1e1e2d] border-b border-slate-200 dark:border-slate-700/50">
+          <div className="grid grid-cols-3 gap-0">
+            {[
+              { id: 'info' as const, label: 'THÔNG TIN', icon: User },
+              { id: 'parts' as const, label: 'PHỤ TÙNG', icon: Package },
+              { id: 'payment' as const, label: 'T.TOÁN', icon: Banknote },
+            ].map((tab) => {
+              const isActive = activeTab === tab.id;
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`relative flex flex-col items-center justify-center py-2.5 transition-all ${isActive
+                    ? 'text-blue-600 dark:text-blue-400'
+                    : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'
+                    }`}
+                >
+                  <Icon className={`w-4 h-4 mb-0.5 ${isActive ? 'text-blue-600 dark:text-blue-400' : ''}`} />
+                  <span className="text-[9px] font-bold tracking-tight">{tab.label}</span>
+                  {isActive && (
+                    <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-blue-600 dark:bg-blue-400 rounded-full" />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto pb-32">
-          {/* KHỐI 1: TRẠNG THÁI & KỸ THUẬT VIÊN */}
-          <div className="p-4 space-y-4">
-            {/* Status Segmented Control */}
-            <div className="space-y-2">
-              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">
-                Trạng thái sửa chữa
-              </label>
-              <div className="grid grid-cols-4 gap-1.5 p-1 bg-white dark:bg-[#1e1e2d] rounded-xl border border-slate-200 dark:border-slate-700/50">
-                {[
-                  { id: WORK_ORDER_STATUS.RECEIVED, label: "Nhận", icon: FileText },
-                  { id: WORK_ORDER_STATUS.IN_PROGRESS, label: "Sửa", icon: Wrench },
-                  { id: WORK_ORDER_STATUS.COMPLETED, label: "Xong", icon: CheckCircle },
-                  { id: WORK_ORDER_STATUS.DELIVERED, label: "Trả", icon: Bike },
-                ].map((item) => {
-                  const isActive = status === item.id;
-                  const Icon = item.icon;
-                  return (
-                    <button
-                      key={item.id}
-                      onClick={() => setStatus(item.id as WorkOrderStatus)}
-                      className={`flex flex-col items-center justify-center py-2.5 rounded-lg transition-all ${isActive
-                        ? "bg-blue-600 text-white shadow-lg shadow-blue-500/20 scale-[1.02]"
-                        : "text-slate-500 hover:text-slate-300"
-                        }`}
-                    >
-                      <Icon className={`w-4 h-4 mb-1 ${isActive ? "text-white" : "text-slate-500"}`} />
-                      <span className="text-[10px] font-bold">{item.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
 
-            {/* Technician Selection - Premium Chips */}
-            <div className="space-y-2.5">
-              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">
-                Kỹ thuật viên phụ trách
-              </label>
-              <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide -mx-1 px-1">
-                {employees
-                  .filter(emp => !["Nguyễn Xuân Nhạn", "Võ Thanh Lâm"].includes(emp.name))
-                  .map((emp) => {
-                    const isActive = selectedTechnicianId === emp.id;
-                    return (
-                      <button
-                        key={emp.id}
-                        onClick={() => setSelectedTechnicianId(emp.id)}
-                        className={`flex-shrink-0 flex items-center gap-2 px-3 py-2 rounded-xl border transition-all ${isActive
-                          ? "bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-500/20 scale-[1.02]"
-                          : "bg-white dark:bg-[#1e1e2d] border-slate-200 dark:border-slate-700/50 text-slate-500 dark:text-slate-400 hover:border-slate-400 dark:hover:border-slate-600"
-                          }`}
-                      >
-                        <div className={`w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-bold ${isActive ? "bg-white/20 text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-500"
-                          }`}>
-                          {emp.name.split(" ").pop()?.charAt(0) || "T"}
-                        </div>
-                        <span className="text-xs font-bold whitespace-nowrap">{emp.name}</span>
-                        {isActive && <Check className="w-3 h-3" />}
-                      </button>
-                    );
-                  })}
-              </div>
-            </div>
-          </div>
-
-          {/* KHỐI 2: KHÁCH HÀNG & XE */}
-          <CustomerInfoSection
-            selectedCustomer={selectedCustomer}
-            showCustomerSearch={showCustomerSearch}
-            customerSearchTerm={customerSearchTerm}
-            setCustomerSearchTerm={setCustomerSearchTerm}
-            filteredCustomers={filteredCustomers}
-            onSelectCustomer={handleSelectCustomer}
-            onLoadMoreCustomers={handleLoadMoreCustomers}
-            hasMoreCustomers={hasMoreCustomers}
-            isSearchingCustomer={isSearchingCustomer}
-            onShowAddCustomer={() => setShowAddCustomer(true)}
-            setNewCustomerName={setNewCustomerName}
-            setNewCustomerPhone={setNewCustomerPhone}
-            isEditingCustomer={isEditingCustomer}
-            setIsEditingCustomer={setIsEditingCustomer}
-            editCustomerName={editCustomerName}
-            setEditCustomerName={setEditCustomerName}
-            editCustomerPhone={editCustomerPhone}
-            setEditCustomerPhone={setEditCustomerPhone}
-            onSaveEditedCustomer={handleSaveEditedCustomer}
-            onClearCustomer={() => {
-              setSelectedCustomer(null);
-              setSelectedVehicle(null);
-              setShowCustomerSearch(true);
-              setIsEditingCustomer(false);
-            }}
-          />
-
-          <VehicleInfoSection
-            selectedCustomer={selectedCustomer}
-            selectedVehicle={selectedVehicle}
-            customerVehicles={customerVehicles}
-            onSelectVehicle={handleSelectVehicle}
-            onClearVehicle={() => {
-              setSelectedVehicle(null);
-              setCurrentKm("");
-            }}
-            showAddVehicle={showAddVehicle}
-            setShowAddVehicle={setShowAddVehicle}
-            newVehiclePlate={newVehiclePlate}
-            setNewVehiclePlate={setNewVehiclePlate}
-            newVehicleName={newVehicleName}
-            setNewVehicleName={setNewVehicleName}
-            showVehicleDropdown={showVehicleDropdown}
-            setShowVehicleDropdown={setShowVehicleDropdown}
-            onAddVehicle={handleAddVehicle}
-            currentKm={currentKm}
-            setCurrentKm={setCurrentKm}
-            maintenanceWarnings={maintenanceWarnings}
-            issueDescription={issueDescription}
-            setIssueDescription={setIssueDescription}
-          />
-
-          {/* KHỐI 3A: PHỤ TÙNG & 3B: DỊCH VỤ */}
-          {selectedCustomer && selectedVehicle && (
+          {/* TAB 1: THÔNG TIN - Status, Technician, Customer, Vehicle */}
+          {activeTab === 'info' && (
             <>
-              <PartsListSection
+              {/* KHỐI 1: TRẠNG THÁI & KỸ THUẬT VIÊN */}
+              <div className="p-4 space-y-4">
+                {/* Status Segmented Control */}
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">
+                    Trạng thái sửa chữa
+                  </label>
+                  <div className="grid grid-cols-4 gap-1.5 p-1 bg-white dark:bg-[#1e1e2d] rounded-xl border border-slate-200 dark:border-slate-700/50">
+                    {[
+                      { id: WORK_ORDER_STATUS.RECEIVED, label: "Nhận", icon: FileText },
+                      { id: WORK_ORDER_STATUS.IN_PROGRESS, label: "Sửa", icon: Wrench },
+                      { id: WORK_ORDER_STATUS.COMPLETED, label: "Xong", icon: CheckCircle },
+                      { id: WORK_ORDER_STATUS.DELIVERED, label: "Trả", icon: Bike },
+                    ].map((item) => {
+                      const isActive = status === item.id;
+                      const Icon = item.icon;
+                      return (
+                        <button
+                          key={item.id}
+                          onClick={() => setStatus(item.id as WorkOrderStatus)}
+                          className={`flex flex-col items-center justify-center py-2.5 rounded-lg transition-all ${isActive
+                            ? "bg-blue-600 text-white shadow-lg shadow-blue-500/20 scale-[1.02]"
+                            : "text-slate-500 hover:text-slate-300"
+                            }`}
+                        >
+                          <Icon className={`w-4 h-4 mb-1 ${isActive ? "text-white" : "text-slate-500"}`} />
+                          <span className="text-[10px] font-bold">{item.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Technician Selection - Premium Chips */}
+                <div className="space-y-2.5">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">
+                    Kỹ thuật viên phụ trách
+                  </label>
+                  <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide -mx-1 px-1">
+                    {employees
+                      .filter(emp => !["Nguyễn Xuân Nhạn", "Võ Thanh Lâm"].includes(emp.name))
+                      .map((emp) => {
+                        const isActive = selectedTechnicianId === emp.id;
+                        return (
+                          <button
+                            key={emp.id}
+                            onClick={() => setSelectedTechnicianId(emp.id)}
+                            className={`flex-shrink-0 flex items-center gap-2 px-3 py-2 rounded-xl border transition-all ${isActive
+                              ? "bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-500/20 scale-[1.02]"
+                              : "bg-white dark:bg-[#1e1e2d] border-slate-200 dark:border-slate-700/50 text-slate-500 dark:text-slate-400 hover:border-slate-400 dark:hover:border-slate-600"
+                              }`}
+                          >
+                            <div className={`w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-bold ${isActive ? "bg-white/20 text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-500"
+                              }`}>
+                              {emp.name.split(" ").pop()?.charAt(0) || "T"}
+                            </div>
+                            <span className="text-xs font-bold whitespace-nowrap">{emp.name}</span>
+                            {isActive && <Check className="w-3 h-3" />}
+                          </button>
+                        );
+                      })}
+                  </div>
+                </div>
+              </div>
+
+              {/* KHỐI 2: KHÁCH HÀNG & XE */}
+              <CustomerInfoSection
                 selectedCustomer={selectedCustomer}
-                selectedVehicle={selectedVehicle}
-                selectedParts={selectedParts}
-                onRemovePart={handleRemovePart}
-                onUpdatePartQuantity={handleUpdatePartQuantity}
-                onUpdatePartPrice={(partId, newPrice) => {
-                  setSelectedParts(
-                    selectedParts.map((p) =>
-                      p.partId === partId ? { ...p, sellingPrice: newPrice } : p
-                    )
-                  );
+                showCustomerSearch={showCustomerSearch}
+                customerSearchTerm={customerSearchTerm}
+                setCustomerSearchTerm={setCustomerSearchTerm}
+                filteredCustomers={filteredCustomers}
+                onSelectCustomer={handleSelectCustomer}
+                onLoadMoreCustomers={handleLoadMoreCustomers}
+                hasMoreCustomers={hasMoreCustomers}
+                isSearchingCustomer={isSearchingCustomer}
+                onShowAddCustomer={() => setShowAddCustomer(true)}
+                setNewCustomerName={setNewCustomerName}
+                setNewCustomerPhone={setNewCustomerPhone}
+                isEditingCustomer={isEditingCustomer}
+                setIsEditingCustomer={setIsEditingCustomer}
+                editCustomerName={editCustomerName}
+                setEditCustomerName={setEditCustomerName}
+                editCustomerPhone={editCustomerPhone}
+                setEditCustomerPhone={setEditCustomerPhone}
+                onSaveEditedCustomer={handleSaveEditedCustomer}
+                onClearCustomer={() => {
+                  setSelectedCustomer(null);
+                  setSelectedVehicle(null);
+                  setShowCustomerSearch(true);
+                  setIsEditingCustomer(false);
                 }}
-                onShowPartSearch={() => setShowPartSearch(true)}
               />
 
-              <ServiceListSection
+              <VehicleInfoSection
                 selectedCustomer={selectedCustomer}
                 selectedVehicle={selectedVehicle}
-                additionalServices={additionalServices}
-                onRemoveService={handleRemoveService}
-                onUpdateService={(id, updates) => {
-                  setAdditionalServices(
-                    additionalServices.map((s) =>
-                      s.id === id ? { ...s, ...updates } : s
-                    )
-                  );
+                customerVehicles={customerVehicles}
+                onSelectVehicle={handleSelectVehicle}
+                onClearVehicle={() => {
+                  setSelectedVehicle(null);
+                  setCurrentKm("");
                 }}
-                onShowAddService={() => setShowAddService(true)}
+                showAddVehicle={showAddVehicle}
+                setShowAddVehicle={setShowAddVehicle}
+                newVehiclePlate={newVehiclePlate}
+                setNewVehiclePlate={setNewVehiclePlate}
+                newVehicleName={newVehicleName}
+                setNewVehicleName={setNewVehicleName}
+                showVehicleDropdown={showVehicleDropdown}
+                setShowVehicleDropdown={setShowVehicleDropdown}
+                onAddVehicle={handleAddVehicle}
+                currentKm={currentKm}
+                setCurrentKm={setCurrentKm}
+                maintenanceWarnings={maintenanceWarnings}
+                issueDescription={issueDescription}
+                setIssueDescription={setIssueDescription}
               />
+
+              {/* Next Button */}
+              <div className="p-4 pt-2">
+                <button
+                  onClick={() => setActiveTab('parts')}
+                  className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
+                >
+                  Tiếp tục: Phụ tùng & Dịch vụ
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
             </>
           )}
 
-          {/* KHỐI 4: TÀI CHÍNH */}
-          <PaymentSection
-            laborCost={laborCost}
-            setLaborCost={setLaborCost}
-            partsTotal={partsTotal}
-            servicesTotal={servicesTotal}
-            discount={discount}
-            setDiscount={setDiscount}
-            discountType={discountType}
-            setDiscountType={setDiscountType}
-            discountAmount={discountAmount}
-            total={total}
-            isDeposit={isDeposit}
-            setIsDeposit={setIsDeposit}
-            depositAmount={depositAmount}
-            setDepositAmount={setDepositAmount}
-            paymentMethod={paymentMethod}
-            setPaymentMethod={setPaymentMethod}
-            status={status}
-            showPaymentInput={showPaymentInput}
-            setShowPaymentInput={setShowPaymentInput}
-            partialAmount={partialAmount}
-            setPartialAmount={setPartialAmount}
-          />
+          {/* TAB 2: PHỤ TÙNG - Parts & Services */}
+          {activeTab === 'parts' && (
+            <>
+              {selectedCustomer && selectedVehicle ? (
+                <>
+                  <PartsListSection
+                    selectedCustomer={selectedCustomer}
+                    selectedVehicle={selectedVehicle}
+                    selectedParts={selectedParts}
+                    onRemovePart={handleRemovePart}
+                    onUpdatePartQuantity={handleUpdatePartQuantity}
+                    onUpdatePartPrice={(partId, newPrice) => {
+                      setSelectedParts(
+                        selectedParts.map((p) =>
+                          p.partId === partId ? { ...p, sellingPrice: newPrice } : p
+                        )
+                      );
+                    }}
+                    onShowPartSearch={() => setShowPartSearch(true)}
+                  />
+
+                  <ServiceListSection
+                    selectedCustomer={selectedCustomer}
+                    selectedVehicle={selectedVehicle}
+                    additionalServices={additionalServices}
+                    onRemoveService={handleRemoveService}
+                    onUpdateService={(id, updates) => {
+                      setAdditionalServices(
+                        additionalServices.map((s) =>
+                          s.id === id ? { ...s, ...updates } : s
+                        )
+                      );
+                    }}
+                    onShowAddService={() => setShowAddService(true)}
+                  />
+
+                  {/* Next Button */}
+                  <div className="p-4 pt-2">
+                    <button
+                      onClick={() => setActiveTab('payment')}
+                      className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
+                    >
+                      Tiếp tục: Thanh toán
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <div className="p-4">
+                  <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4 text-center">
+                    <AlertTriangle className="w-8 h-8 text-yellow-500 mx-auto mb-2" />
+                    <p className="text-sm font-medium text-yellow-600 dark:text-yellow-400">
+                      Vui lòng chọn khách hàng và xe trước
+                    </p>
+                    <button
+                      onClick={() => setActiveTab('info')}
+                      className="mt-3 px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg text-sm font-bold transition-all"
+                    >
+                      Quay lại tab Thông tin
+                    </button>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+
+          {/* TAB 4: T.TOÁN - Payment */}
+          {activeTab === 'payment' && (
+            <PaymentSection
+              laborCost={laborCost}
+              setLaborCost={setLaborCost}
+              partsTotal={partsTotal}
+              servicesTotal={servicesTotal}
+              discount={discount}
+              setDiscount={setDiscount}
+              discountType={discountType}
+              setDiscountType={setDiscountType}
+              discountAmount={discountAmount}
+              total={total}
+              isDeposit={isDeposit}
+              setIsDeposit={setIsDeposit}
+              depositAmount={depositAmount}
+              setDepositAmount={setDepositAmount}
+              paymentMethod={paymentMethod}
+              setPaymentMethod={setPaymentMethod}
+              status={status}
+              showPaymentInput={showPaymentInput}
+              setShowPaymentInput={setShowPaymentInput}
+              partialAmount={partialAmount}
+              setPartialAmount={setPartialAmount}
+            />
+          )}
         </div>
 
         {/* STICKY FOOTER - Action Buttons */}
@@ -2014,149 +2097,138 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
         )
       }
 
-      {/* Add Service Modal - Bottom Sheet Design */}
-      {
-        showAddService && (
-          <div className="fixed inset-0 bg-black/70 z-[110] flex items-end md:items-center md:justify-center">
-            <div className="w-full md:max-w-md bg-white dark:bg-[#1e1e2d] rounded-t-2xl md:rounded-xl overflow-hidden transition-colors">
-              {/* Header */}
-              <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700">
-                <h3 className="text-slate-900 dark:text-white font-semibold text-base">
-                  THÊM DỊCH VỤ GIA CÔNG
-                </h3>
-                <button
-                  onClick={() => {
-                    setShowAddService(false);
-                    setNewServiceName("");
-                    setNewServiceCost(0);
-                    setNewServicePrice(0);
-                    setNewServiceQuantity(1);
-                  }}
-                  className="p-1.5 text-slate-400 hover:text-white"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              {/* Form Content */}
-              <div className="p-4 space-y-4 max-h-[70vh] overflow-y-auto">
-                {/* Service Name */}
-                <div>
-                  <label className="block text-sm font-medium text-slate-500 dark:text-slate-300 mb-2">
-                    Tên công việc / Mô tả:
-                  </label>
-                  <input
-                    type="text"
-                    value={newServiceName}
-                    onChange={(e) => setNewServiceName(e.target.value)}
-                    placeholder="Nhập tên (VD: Hàn yếm, Sơn...)"
-                    className="w-full px-4 py-3 bg-slate-50 dark:bg-[#151521] border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:border-[#009ef7] focus:outline-none transition-colors"
-                    autoFocus
-                  />
+      {/* Add Service Modal - Redesigned Compact Layout */}
+      {showAddService && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[110] flex items-end md:items-center md:justify-center">
+          <div className="w-full md:max-w-md bg-white dark:bg-[#1e1e2d] rounded-t-3xl md:rounded-2xl overflow-hidden transition-colors shadow-2xl">
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700/50">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-orange-500/10 flex items-center justify-center">
+                  <Wrench className="w-4.5 h-4.5 text-orange-500" />
                 </div>
+                <h3 className="text-slate-900 dark:text-white font-bold text-sm">
+                  Thêm dịch vụ gia công
+                </h3>
+              </div>
+              <button
+                onClick={() => {
+                  setShowAddService(false);
+                  setNewServiceName("");
+                  setNewServiceCost(0);
+                  setNewServicePrice(0);
+                  setNewServiceQuantity(1);
+                }}
+                className="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 active:scale-95 transition-all"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
 
-                {/* Quantity Stepper */}
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
-                    Số lượng:
+            {/* Form Content - Compact */}
+            <div className="p-4 space-y-4">
+              {/* Service Name with inline Quantity */}
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                    Tên công việc
                   </label>
-                  <div className="flex items-center justify-center gap-4">
+                  {/* Mini Quantity Stepper */}
+                  <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 rounded-lg p-0.5">
                     <button
-                      onClick={() =>
-                        setNewServiceQuantity(Math.max(1, newServiceQuantity - 1))
-                      }
-                      className="w-12 h-12 bg-slate-100 dark:bg-[#2b2b40] hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg flex items-center justify-center text-slate-900 dark:text-white text-2xl font-bold transition-colors"
+                      onClick={() => setNewServiceQuantity(Math.max(1, newServiceQuantity - 1))}
+                      className="w-6 h-6 flex items-center justify-center text-slate-500 hover:text-slate-700 dark:hover:text-white text-sm font-bold rounded transition-colors"
                     >
                       −
                     </button>
-                    <div className="w-20 h-12 bg-slate-50 dark:bg-[#151521] border border-slate-200 dark:border-slate-700 rounded-lg flex items-center justify-center">
-                      <span className="text-slate-900 dark:text-white text-xl font-bold">
-                        {newServiceQuantity}
-                      </span>
-                    </div>
+                    <span className="w-5 text-center text-slate-900 dark:text-white text-xs font-bold">
+                      {newServiceQuantity}
+                    </span>
                     <button
-                      onClick={() =>
-                        setNewServiceQuantity(newServiceQuantity + 1)
-                      }
-                      className="w-12 h-12 bg-slate-100 dark:bg-[#2b2b40] hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg flex items-center justify-center text-slate-900 dark:text-white text-2xl font-bold transition-colors"
+                      onClick={() => setNewServiceQuantity(newServiceQuantity + 1)}
+                      className="w-6 h-6 flex items-center justify-center text-orange-500 hover:text-orange-600 text-sm font-bold rounded transition-colors"
                     >
                       +
                     </button>
                   </div>
                 </div>
+                <input
+                  type="text"
+                  value={newServiceName}
+                  onChange={(e) => setNewServiceName(e.target.value)}
+                  placeholder="VD: Hàn yếm, Sơn xe, Thay lọc gió..."
+                  className="w-full px-4 py-3 bg-slate-50 dark:bg-[#151521] border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                  autoFocus
+                />
+              </div>
 
-                {/* Cost & Price Section */}
+              {/* Price Section - Side by side */}
+              <div className="grid grid-cols-2 gap-3">
+                {/* Cost Price (smaller, less emphasis) */}
                 <div>
-                  <h4 className="text-sm font-semibold text-slate-500 dark:text-slate-300 mb-3 uppercase tracking-wide">
-                    CHI PHÍ & GIÁ BÁN
-                  </h4>
-                  <div className="grid grid-cols-2 gap-3">
-                    {/* Cost Price */}
-                    <div>
-                      <label className="block text-xs text-slate-500 mb-1.5">
-                        Giá nhập (Vốn):
-                      </label>
-                      <div className="relative">
-                        <NumberInput
-                          value={newServiceCost}
-                          onChange={(val: number) => setNewServiceCost(val)}
-                          placeholder="0"
-                          className="w-full px-3 py-3 pr-8 bg-slate-50 dark:bg-[#151521] border border-slate-200 dark:border-slate-700 rounded-lg text-slate-500 dark:text-slate-400 text-sm focus:border-slate-400 dark:focus:border-slate-600 focus:outline-none transition-colors"
-                        />
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs">
-                          đ
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Selling Price */}
-                    <div>
-                      <label className="block text-xs text-[#ffc700] mb-1.5 font-medium">
-                        Đơn giá (Báo khách):
-                      </label>
-                      <div className="relative">
-                        <NumberInput
-                          value={newServicePrice}
-                          onChange={(val: number) => setNewServicePrice(val)}
-                          allowNegative={true}
-                          placeholder="0"
-                          className="w-full px-3 py-3 pr-8 bg-slate-50 dark:bg-[#151521] border-2 border-[#009ef7] rounded-lg text-slate-900 dark:text-white text-sm font-semibold focus:border-[#0077c7] focus:outline-none transition-colors"
-                        />
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[#009ef7] text-xs font-bold pointer-events-none">
-                          đ
-                        </span>
-                      </div>
-                    </div>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 block">
+                    Giá vốn
+                  </label>
+                  <div className="relative">
+                    <NumberInput
+                      value={newServiceCost}
+                      onChange={(val: number) => setNewServiceCost(val)}
+                      placeholder="0"
+                      className="w-full px-3 py-2.5 pr-7 bg-slate-50 dark:bg-[#151521] border border-slate-200 dark:border-slate-700 rounded-xl text-slate-600 dark:text-slate-400 text-sm focus:ring-1 focus:ring-slate-400 focus:border-transparent transition-all"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs">đ</span>
                   </div>
                 </div>
 
-                {/* Total Amount - Auto Calculate */}
-                <div className="p-4 bg-slate-50 dark:bg-[#151521] border border-slate-200 dark:border-slate-700 rounded-lg">
-                  <div className="flex items-center justify-between">
-                    <span className="text-slate-400 text-sm">
-                      Thành tiền (Tự tính):
-                    </span>
-                    <span className="text-[#50cd89] text-xl font-bold">
-                      {formatCurrency(newServicePrice * newServiceQuantity)}
-                    </span>
+                {/* Selling Price (highlighted) */}
+                <div>
+                  <label className="text-[10px] font-bold text-orange-500 uppercase tracking-wider mb-1.5 block">
+                    Đơn giá bán ⭐
+                  </label>
+                  <div className="relative">
+                    <NumberInput
+                      value={newServicePrice}
+                      onChange={(val: number) => setNewServicePrice(val)}
+                      allowNegative={true}
+                      placeholder="0"
+                      className="w-full px-3 py-2.5 pr-7 bg-orange-500/5 dark:bg-orange-500/10 border-2 border-orange-500/50 rounded-xl text-slate-900 dark:text-white text-sm font-bold focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-orange-500 text-xs font-bold">đ</span>
                   </div>
                 </div>
               </div>
 
-              {/* Footer Button */}
-              <div className="p-4 border-t border-slate-200 dark:border-slate-700">
-                <button
-                  onClick={handleAddService}
-                  disabled={!newServiceName.trim()}
-                  className="w-full py-4 bg-gradient-to-r from-[#009ef7] to-purple-600 hover:from-[#0077c7] hover:to-purple-700 disabled:from-slate-700 disabled:to-slate-700 disabled:cursor-not-allowed text-white font-bold text-sm rounded-lg transition-all shadow-lg"
-                >
-                  LƯU VÀO PHIẾU
-                </button>
+              {/* Total - Summary Card */}
+              <div className="bg-gradient-to-r from-orange-500/10 to-amber-500/10 rounded-xl p-3.5 border border-orange-500/20">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-slate-500 dark:text-slate-400">Thành tiền:</span>
+                    {newServiceQuantity > 1 && (
+                      <span className="text-[10px] text-slate-400 bg-slate-200 dark:bg-slate-700 px-1.5 py-0.5 rounded">
+                        ×{newServiceQuantity}
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-lg font-bold text-orange-500">
+                    {formatCurrency(newServicePrice * newServiceQuantity)}
+                  </span>
+                </div>
               </div>
             </div>
+
+            {/* Footer Button */}
+            <div className="p-4 pt-0">
+              <button
+                onClick={handleAddService}
+                disabled={!newServiceName.trim()}
+                className="w-full py-3.5 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 disabled:from-slate-600 disabled:to-slate-600 disabled:cursor-not-allowed text-white font-bold text-sm rounded-xl transition-all shadow-lg shadow-orange-500/20 active:scale-[0.98]"
+              >
+                ✓ Thêm vào phiếu
+              </button>
+            </div>
           </div>
-        )
-      }
+        </div>
+      )}
 
       {/* Add Vehicle Modal - Premium Redesign */}
       {showAddVehicle && (

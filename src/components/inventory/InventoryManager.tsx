@@ -1527,6 +1527,7 @@ const InventoryManagerNew: React.FC = () => {
                   {filteredParts.map((part, index) => {
                     const stock = part.stock[currentBranchId] || 0;
                     const retailPrice = part.retailPrice[currentBranchId] || 0;
+                    const costPrice = part.costPrice?.[currentBranchId] || 0;
                     const isDuplicate = hasDuplicateSku(part.sku || "");
                     return (
                       <div
@@ -1559,6 +1560,10 @@ const InventoryManagerNew: React.FC = () => {
                               {/* Hiển thị giá bán */}
                               <div className="text-[13px] text-emerald-400 font-semibold">
                                 {formatCurrency(retailPrice)}
+                              </div>
+                              {/* Hiển thị giá nhập */}
+                              <div className="text-[10px] text-slate-400 mt-0.5">
+                                Vốn: {formatCurrency(costPrice)}
                               </div>
                             </div>
                           </div>

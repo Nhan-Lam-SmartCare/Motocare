@@ -233,7 +233,13 @@ export default function ServiceManager() {
   }, [searchQuery, activeTab, dateFilter, technicianFilter, paymentFilter]);
 
   useEffect(() => {
-    setFetchLimit(100);
+    // If viewing results, set a reasonable limit. If viewing ALL (0 days), increase limit to ensure we see older active orders.
+    // User already flagged "chậm hơn" (slower) so they expect it.
+    if (dateRangeDays === 0) {
+      setFetchLimit(500);
+    } else {
+      setFetchLimit(100);
+    }
   }, [dateRangeDays, currentBranchId]);
 
   // Track mobile state for responsive layout
@@ -381,6 +387,11 @@ export default function ServiceManager() {
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
       filtered = filtered.filter((o) => {
+        // ALWAYS show active orders (Tiếp nhận/Đang sửa) regardless of date filter
+        if (o.status === "Tiếp nhận" || o.status === "Đang sửa") {
+          return true;
+        }
+
         const orderDate = new Date(o.creationDate || (o as any).creationdate);
 
         if (dateFilter === "today") {

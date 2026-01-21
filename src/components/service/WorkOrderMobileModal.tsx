@@ -1341,17 +1341,20 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
                         </div>
                       </div>
                       {/* Hiển thị giá vốn để debug */}
-                      <div className="mt-1 text-[10px] text-slate-400 dark:text-slate-500 flex justify-between">
-                        <span>
-                          Giá vốn: {formatCurrency(part.costPrice || 0)}/cái
-                        </span>
-                        <span className="text-yellow-600 dark:text-yellow-400">
-                          Lãi:{" "}
-                          {formatCurrency(
-                            (part.price - (part.costPrice || 0)) * part.quantity
-                          )}
-                        </span>
-                      </div>
+                      {/* Hiển thị giá vốn và lãi - Chỉ chủ shop thấy */}
+                      {isOwner && (
+                        <div className="mt-1 text-[10px] text-slate-400 dark:text-slate-500 flex justify-between">
+                          <span>
+                            Giá vốn: {formatCurrency(part.costPrice || 0)}/cái
+                          </span>
+                          <span className="text-yellow-600 dark:text-yellow-400">
+                            Lãi:{" "}
+                            {formatCurrency(
+                              (part.price - (part.costPrice || 0)) * part.quantity
+                            )}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>

@@ -71,7 +71,9 @@ const WorkOrderCard = React.memo(({
   onCall,
   onPrint,
   onDelete,
-  canDelete
+  canDelete,
+  isOwner = false,
+  showFinancials = false
 }: {
   workOrder: WorkOrder;
   onEdit: (wo: WorkOrder) => void;
@@ -79,6 +81,8 @@ const WorkOrderCard = React.memo(({
   onPrint: (wo: WorkOrder) => void;
   onDelete: (wo: WorkOrder) => void;
   canDelete: boolean;
+  isOwner?: boolean;
+  showFinancials?: boolean;
 }) => {
   // Get status badge color
   const getStatusColor = (status: string) => {
@@ -198,8 +202,30 @@ const WorkOrderCard = React.memo(({
                 </span>
               )}
           </div>
-          <div className="text-slate-900 dark:text-white font-bold text-sm">
-            {formatCurrency(workOrder.total || 0)}
+          <div className="flex flex-col items-end">
+            {/* Total amount - color coded by payment status */}
+            <div className={`font-bold text-sm ${workOrder.paymentStatus === "paid"
+                ? "text-emerald-500"
+                : (workOrder.depositAmount && workOrder.depositAmount > 0) || workOrder.paymentStatus === "partial"
+                  ? "text-amber-500"
+                  : "text-red-500"
+              }`}>
+              {formatCurrency(workOrder.total || 0)}
+            </div>
+            {/* Profit display - only for owner when showFinancials is on */}
+            {isOwner && showFinancials && (() => {
+              // Calculate total cost from parts and services
+              const partsCost = workOrder.partsUsed?.reduce((sum, p) => sum + ((p.costPrice || 0) * p.quantity), 0) || 0;
+              const servicesCost = workOrder.additionalServices?.reduce((sum, s) => sum + ((s.costPrice || 0) * (s.quantity || 1)), 0) || 0;
+              const totalCost = partsCost + servicesCost;
+              const profit = (workOrder.total || 0) - totalCost;
+
+              return (
+                <div className={`text-[10px] font-semibold ${profit >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+                  Lãi: {formatCurrency(profit)}
+                </div>
+              );
+            })()}
           </div>
         </div>
       </div>
@@ -707,6 +733,8 @@ export function ServiceManagerMobile({
                       onPrint={onPrintWorkOrder}
                       onDelete={onDeleteWorkOrder}
                       canDelete={canDeleteWorkOrder}
+                      isOwner={isOwner}
+                      showFinancials={showFinancials}
                     />
                   ))
                 )}

@@ -43,6 +43,11 @@ import { NumberInput } from "../common/NumberInput";
 import { showToast } from "../../utils/toast";
 import { supabase } from "../../supabaseClient";
 import { useDebouncedValue } from "../../hooks/useDebouncedValue";
+import { CustomerInfoSection } from "./components/mobile/CustomerInfoSection";
+import { VehicleInfoSection } from "./components/mobile/VehicleInfoSection";
+import { PartsListSection } from "./components/mobile/PartsListSection";
+import { ServiceListSection } from "./components/mobile/ServiceListSection";
+import { PaymentSection } from "./components/mobile/PaymentSection";
 
 interface WorkOrderMobileModalProps {
   isOpen: boolean;
@@ -56,6 +61,7 @@ interface WorkOrderMobileModalProps {
   upsertCustomer?: (customer: any) => void;
   viewMode?: boolean; // true = xem chi tiết, false = chỉnh sửa
   onSwitchToEdit?: () => void; // callback khi bấm nút chỉnh sửa từ view mode
+  isOwner?: boolean; // true = chủ shop, có thể xem lợi nhuận
 }
 
 // Local type for status options if needed, or just use the one from constants
@@ -73,6 +79,7 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
   upsertCustomer,
   viewMode = false,
   onSwitchToEdit,
+  isOwner = false,
 }) => {
   const WORK_ORDER_DRAFT_VERSION = 1 as const;
   const WORK_ORDER_DRAFT_TTL_MS = 24 * 60 * 60 * 1000; // 24h
@@ -1154,7 +1161,7 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
       } else {
         errorMessage = "❌ Lỗi kết nối (Timeout/Mạng). Vui lòng kiểm tra kết nối mạng.";
       }
-      
+
       alert(errorMessage + "\n\nDữ liệu đã được lưu tạm. Bạn có thể thử lại hoặc chụp màn hình.");
       // onClose(); // Don't close so user can retry
     }
@@ -1459,6 +1466,18 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
                     )}
                   </span>
                 </div>
+
+                {/* Profit display - only for owner */}
+                {isOwner && (workOrder as any).profit != null && (
+                  <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-700/30 flex items-center justify-between text-xs">
+                    <span className="text-slate-500 dark:text-slate-400">Lợi nhuận</span>
+                    <span
+                      className={`font-bold ${(workOrder as any).profit >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500 dark:text-red-400'}`}
+                    >
+                      {formatCurrency((workOrder as any).profit)}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -1602,934 +1621,119 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
           </div>
 
           {/* KHỐI 2: KHÁCH HÀNG & XE */}
-          <div className="px-4 pb-4 space-y-3">
-            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">
-              Thông tin khách hàng
-            </label>
+          <CustomerInfoSection
+            selectedCustomer={selectedCustomer}
+            showCustomerSearch={showCustomerSearch}
+            customerSearchTerm={customerSearchTerm}
+            setCustomerSearchTerm={setCustomerSearchTerm}
+            filteredCustomers={filteredCustomers}
+            onSelectCustomer={handleSelectCustomer}
+            onLoadMoreCustomers={handleLoadMoreCustomers}
+            hasMoreCustomers={hasMoreCustomers}
+            isSearchingCustomer={isSearchingCustomer}
+            onShowAddCustomer={() => setShowAddCustomer(true)}
+            setNewCustomerName={setNewCustomerName}
+            setNewCustomerPhone={setNewCustomerPhone}
+            isEditingCustomer={isEditingCustomer}
+            setIsEditingCustomer={setIsEditingCustomer}
+            editCustomerName={editCustomerName}
+            setEditCustomerName={setEditCustomerName}
+            editCustomerPhone={editCustomerPhone}
+            setEditCustomerPhone={setEditCustomerPhone}
+            onSaveEditedCustomer={handleSaveEditedCustomer}
+            onClearCustomer={() => {
+              setSelectedCustomer(null);
+              setSelectedVehicle(null);
+              setShowCustomerSearch(true);
+              setIsEditingCustomer(false);
+            }}
+          />
 
-            {/* Customer Selection */}
-            {showCustomerSearch ? (
-              <div className="space-y-3">
-                <div className="relative group">
-                  <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 group-focus-within:text-blue-500 transition-colors" />
-                  <input
-                    type="text"
-                    value={customerSearchTerm}
-                    onChange={(e) => setCustomerSearchTerm(e.target.value)}
-                    placeholder="Tìm tên hoặc số điện thoại..."
-                    className="w-full pl-11 pr-4 py-3.5 bg-white dark:bg-[#1e1e2d] border border-slate-200 dark:border-slate-700/50 rounded-2xl text-slate-900 dark:text-white text-sm placeholder-slate-400 dark:placeholder-slate-600 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all shadow-inner"
-                    autoFocus
-                  />
-                </div>
-
-                {/* Customer List */}
-                <div className="max-h-60 overflow-y-auto space-y-2.5 pr-1 custom-scrollbar">
-                  {filteredCustomers.map((customer) => {
-                    const primaryVehicle =
-                      customer.vehicles?.find((v: any) => v.isPrimary) ||
-                      customer.vehicles?.[0];
-
-                    return (
-                      <div
-                        key={customer.id}
-                        onClick={() => handleSelectCustomer(customer)}
-                        className="p-4 bg-white dark:bg-[#1e1e2d] border border-slate-200 dark:border-slate-700/30 rounded-2xl cursor-pointer hover:border-blue-500/50 hover:bg-blue-50 dark:hover:bg-blue-500/5 transition-all active:scale-[0.98]"
-                      >
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-400 font-bold">
-                              {customer.name.charAt(0).toUpperCase()}
-                            </div>
-                            <div>
-                              <div className="text-slate-900 dark:text-white font-bold text-sm">
-                                {customer.name}
-                              </div>
-                              <div className="text-xs text-slate-500 flex items-center gap-1">
-                                <Smartphone className="w-3 h-3" />
-                                {customer.phone}
-                              </div>
-                            </div>
-                          </div>
-                          <ChevronRight className="w-4 h-4 text-slate-600" />
-                        </div>
-
-                        {(primaryVehicle?.model || customer.vehicleModel) && (
-                          <div className="flex items-center gap-2 px-3 py-2 bg-slate-800/50 rounded-xl">
-                            <Bike className="w-3.5 h-3.5 text-blue-400" />
-                            <span className="text-xs text-slate-300 font-medium truncate">
-                              {primaryVehicle?.model || customer.vehicleModel}
-                            </span>
-                            {(primaryVehicle?.licensePlate || customer.licensePlate) && (
-                              <span className="text-[10px] font-mono font-bold text-yellow-500 bg-yellow-500/10 px-1.5 py-0.5 rounded border border-yellow-500/20">
-                                {primaryVehicle?.licensePlate || customer.licensePlate}
-                              </span>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-
-                  {/* Load More Button */}
-                  {hasMoreCustomers && customerSearchTerm && (
-                    <button
-                      type="button"
-                      onClick={handleLoadMoreCustomers}
-                      className="w-full py-3 text-blue-500 font-medium text-xs bg-blue-500/10 rounded-xl active:scale-[0.98] transition-transform"
-                    >
-                      {isSearchingCustomer
-                        ? "Đang tải..."
-                        : "⬇️ Tải thêm khách hàng..."}
-                    </button>
-                  )}
-
-                  {/* Show add new customer when no results or always at bottom */}
-                  {customerSearchTerm && filteredCustomers.length === 0 && (
-                    <div className="text-center py-3 text-slate-400 text-xs">
-                      Không tìm thấy khách hàng
-                    </div>
-                  )}
-
-                  {/* Add new customer button */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowAddCustomer(true);
-                      // Pre-fill phone if search term looks like a phone number
-                      if (/^[0-9]+$/.test(customerSearchTerm)) {
-                        setNewCustomerPhone(customerSearchTerm);
-                        setNewCustomerName("");
-                      } else {
-                        setNewCustomerName(customerSearchTerm);
-                        setNewCustomerPhone("");
-                      }
-                    }}
-                    className="w-full p-3 bg-green-500/20 border-2 border-dashed border-green-500/50 rounded-lg text-green-400 font-medium flex items-center justify-center gap-2 hover:bg-green-500/30 transition-colors"
-                  >
-                    <Plus className="w-4 h-4" />
-                    Thêm khách hàng mới
-                  </button>
-                </div>
-              </div>
-            ) : selectedCustomer ? (
-              <div className="p-4 bg-white dark:bg-[#1e1e2d] border border-blue-200 dark:border-blue-500/30 rounded-2xl shadow-lg shadow-blue-500/5">
-                {isEditingCustomer ? (
-                  // Edit mode - show input fields
-                  <div className="space-y-3">
-                    <div className="space-y-1.5">
-                      <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">
-                        Tên khách hàng
-                      </label>
-                      <input
-                        type="text"
-                        value={editCustomerName}
-                        onChange={(e) => setEditCustomerName(e.target.value)}
-                        className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white text-sm focus:border-blue-500 transition-all"
-                        placeholder="Nhập tên khách hàng"
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">
-                        Số điện thoại
-                      </label>
-                      <input
-                        type="tel"
-                        value={editCustomerPhone}
-                        onChange={(e) => setEditCustomerPhone(e.target.value)}
-                        className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white text-sm focus:border-blue-500 transition-all"
-                        placeholder="Nhập số điện thoại"
-                      />
-                    </div>
-                    <div className="flex gap-2 pt-1">
-                      <button
-                        onClick={() => {
-                          setIsEditingCustomer(false);
-                          setEditCustomerName(selectedCustomer.name);
-                          setEditCustomerPhone(selectedCustomer.phone || "");
-                        }}
-                        className="flex-1 py-2.5 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-300 rounded-xl text-xs font-bold active:scale-95 transition-all"
-                      >
-                        Hủy
-                      </button>
-                      <button
-                        onClick={handleSaveEditedCustomer}
-                        className="flex-1 py-2.5 bg-emerald-600 text-white rounded-xl text-xs font-bold active:scale-95 transition-all shadow-lg shadow-emerald-500/20"
-                      >
-                        Lưu thay đổi
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  // View mode - show customer info with edit button
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-2xl bg-blue-500/10 flex items-center justify-center text-blue-400 font-bold text-lg shadow-inner">
-                        {selectedCustomer.name.charAt(0).toUpperCase()}
-                      </div>
-                      <div>
-                        <div className="text-slate-900 dark:text-white font-bold text-base">
-                          {selectedCustomer.name}
-                        </div>
-                        <div className="text-xs text-slate-400 flex items-center gap-1.5">
-                          <PhoneCall className="w-3 h-3 text-blue-400" />
-                          {selectedCustomer.phone}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => {
-                          setEditCustomerName(selectedCustomer.name);
-                          setEditCustomerPhone(selectedCustomer.phone || "");
-                          setIsEditingCustomer(true);
-                        }}
-                        className="w-9 h-9 flex items-center justify-center bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-xl active:scale-95 transition-all"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => {
-                          setSelectedCustomer(null);
-                          setSelectedVehicle(null);
-                          setShowCustomerSearch(true);
-                          setIsEditingCustomer(false);
-                        }}
-                        className="w-9 h-9 flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 rounded-xl active:scale-95 transition-all"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            ) : null}
-
-            {/* Vehicle Selection */}
-            {selectedCustomer && (
-              <div className="space-y-3 pt-2">
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">
-                  Chọn xe sửa chữa
-                </label>
-
-                <div className="grid grid-cols-1 gap-2.5">
-                  {customerVehicles.map((vehicle) => {
-                    const isActive = selectedVehicle?.id === vehicle.id;
-                    return (
-                      <div
-                        key={vehicle.id}
-                        onClick={() => handleSelectVehicle(vehicle)}
-                        className={`p-4 rounded-2xl cursor-pointer transition-all border ${isActive
-                          ? "bg-blue-600 border-blue-500 shadow-lg shadow-blue-500/20"
-                          : "bg-white dark:bg-[#1e1e2d] border-slate-200 dark:border-slate-700/30 hover:border-slate-400 dark:hover:border-slate-600"
-                          }`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isActive ? "bg-white/20 text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400"
-                              }`}>
-                              <Bike className="w-5 h-5" />
-                            </div>
-                            <div>
-                              <div className={`font-bold text-sm ${isActive ? "text-white" : "text-slate-900 dark:text-slate-200"}`}>
-                                {vehicle.model}
-                              </div>
-                              <div className={`text-xs font-mono ${isActive ? "text-blue-100" : "text-slate-500"}`}>
-                                {vehicle.licensePlate}
-                              </div>
-                            </div>
-                          </div>
-                          {isActive && <CheckCircle className="w-5 h-5 text-white" />}
-                        </div>
-                      </div>
-                    );
-                  })}
-
-                  {/* Add New Vehicle Button */}
-                  <button
-                    onClick={() => setShowAddVehicle(true)}
-                    className="w-full py-3.5 border-2 border-dashed border-slate-700 hover:border-blue-500/50 hover:bg-blue-500/5 rounded-2xl text-slate-500 hover:text-blue-400 transition-all flex items-center justify-center gap-2 text-xs font-bold"
-                  >
-                    <Plus className="w-4 h-4" />
-                    Thêm xe mới
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Vehicle Info Inputs */}
-            {selectedVehicle && (
-              <div className="space-y-4 mt-4">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">
-                    Số KM hiện tại
-                  </label>
-                  <div className="relative">
-                    <TrendingUp className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-                    <input
-                      type="number"
-                      value={currentKm}
-                      onChange={(e) => setCurrentKm(e.target.value)}
-                      placeholder="Nhập số KM..."
-                      inputMode="numeric"
-                      className="w-full pl-11 pr-4 py-3 bg-white dark:bg-[#1e1e2d] border border-slate-200 dark:border-slate-700/50 rounded-xl text-slate-900 dark:text-white text-sm focus:border-blue-500 transition-all"
-                    />
-                  </div>
-                </div>
-
-                {/* Maintenance Warnings */}
-                {maintenanceWarnings.length > 0 && (
-                  <div className="p-4 bg-gradient-to-br from-orange-500/10 to-red-500/10 border border-orange-500/20 rounded-2xl space-y-3">
-                    <div className="flex items-center gap-2">
-                      <div className="w-7 h-7 rounded-lg bg-orange-500/20 flex items-center justify-center text-orange-400">
-                        <AlertTriangle className="w-4 h-4" />
-                      </div>
-                      <span className="text-xs font-bold text-orange-400 uppercase tracking-tight">
-                        Cần bảo dưỡng định kỳ
-                      </span>
-                    </div>
-                    <div className="grid grid-cols-1 gap-2">
-                      {maintenanceWarnings.map((warning) => (
-                        <div
-                          key={warning.type}
-                          className={`flex items-center justify-between p-3 rounded-xl border ${warning.isOverdue
-                            ? "bg-red-500/10 border-red-500/20 text-red-300"
-                            : "bg-orange-500/5 border-orange-500/10 text-orange-300"
-                            }`}
-                        >
-                          <div className="flex items-center gap-2">
-                            <span className="text-base">{warning.icon}</span>
-                            <span className="text-xs font-bold">{warning.name}</span>
-                          </div>
-                          <div className="text-[10px] font-mono font-bold bg-black/20 px-2 py-1 rounded">
-                            {warning.isOverdue
-                              ? `QUÁ ${formatKm(Math.abs(warning.kmUntilDue))}`
-                              : `CÒN ${formatKm(warning.kmUntilDue)}`}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">
-                    Mô tả tình trạng xe
-                  </label>
-                  <div className="relative">
-                    <Wrench className="absolute left-3.5 top-3.5 w-4 h-4 text-slate-500" />
-                    <textarea
-                      value={issueDescription}
-                      onChange={(e) => setIssueDescription(e.target.value)}
-                      placeholder="Mô tả các vấn đề cần sửa chữa..."
-                      rows={3}
-                      className="w-full pl-11 pr-4 py-3 bg-white dark:bg-[#1e1e2d] border border-slate-200 dark:border-slate-700/50 rounded-xl text-slate-900 dark:text-white text-sm resize-none focus:border-blue-500 transition-all"
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
+          <VehicleInfoSection
+            selectedCustomer={selectedCustomer}
+            selectedVehicle={selectedVehicle}
+            customerVehicles={customerVehicles}
+            onSelectVehicle={handleSelectVehicle}
+            onClearVehicle={() => {
+              setSelectedVehicle(null);
+              setCurrentKm("");
+            }}
+            showAddVehicle={showAddVehicle}
+            setShowAddVehicle={setShowAddVehicle}
+            newVehiclePlate={newVehiclePlate}
+            setNewVehiclePlate={setNewVehiclePlate}
+            newVehicleName={newVehicleName}
+            setNewVehicleName={setNewVehicleName}
+            showVehicleDropdown={showVehicleDropdown}
+            setShowVehicleDropdown={setShowVehicleDropdown}
+            onAddVehicle={handleAddVehicle}
+            currentKm={currentKm}
+            setCurrentKm={setCurrentKm}
+            maintenanceWarnings={maintenanceWarnings}
+            issueDescription={issueDescription}
+            setIssueDescription={setIssueDescription}
+          />
 
           {/* KHỐI 3A: PHỤ TÙNG & 3B: DỊCH VỤ */}
           {selectedCustomer && selectedVehicle && (
             <>
-              <div className="px-4 pb-4 space-y-3">
-                <div className="flex items-center justify-between ml-1">
-                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                    Phụ tùng sử dụng
-                  </label>
-                  {selectedParts.length > 0 && (
-                    <span className="text-[10px] font-bold text-blue-400 bg-blue-400/10 px-2 py-0.5 rounded-full">
-                      {selectedParts.length} món
-                    </span>
-                  )}
-                </div>
+              <PartsListSection
+                selectedCustomer={selectedCustomer}
+                selectedVehicle={selectedVehicle}
+                selectedParts={selectedParts}
+                onRemovePart={handleRemovePart}
+                onUpdatePartQuantity={handleUpdatePartQuantity}
+                onUpdatePartPrice={(partId, newPrice) => {
+                  setSelectedParts(
+                    selectedParts.map((p) =>
+                      p.partId === partId ? { ...p, sellingPrice: newPrice } : p
+                    )
+                  );
+                }}
+                onShowPartSearch={() => setShowPartSearch(true)}
+              />
 
-                {/* Parts List */}
-                {selectedParts.length > 0 && (
-                  <div className="space-y-2.5">
-                    {selectedParts.map((part, index) => (
-                      <div
-                        key={part.partId}
-                        className="p-4 bg-white dark:bg-[#1e1e2d] border border-slate-200 dark:border-slate-700/30 rounded-2xl shadow-sm"
-                      >
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="flex-1 min-w-0">
-                            <div className="text-sm font-bold text-slate-900 dark:text-white truncate">
-                              {part.partName}
-                            </div>
-                            <div className="text-[10px] text-slate-500 font-mono mt-0.5">
-                              {part.sku}
-                            </div>
-                            <div className="mt-2 flex items-center gap-2">
-                              <span className="text-[10px] text-slate-500">Giá:</span>
-                              <input
-                                type="text"
-                                value={formatNumberWithDots(part.sellingPrice)}
-                                onChange={(e) => {
-                                  const newPrice = parseFormattedNumber(e.target.value);
-                                  setSelectedParts(
-                                    selectedParts.map((p) =>
-                                      p.partId === part.partId
-                                        ? { ...p, sellingPrice: newPrice }
-                                        : p
-                                    )
-                                  );
-                                }}
-                                inputMode="numeric"
-                                className="w-24 px-2 py-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-blue-600 dark:text-blue-400 text-xs font-bold focus:border-blue-500 focus:outline-none transition-all"
-                              />
-                            </div>
-                          </div>
-                          <div className="flex flex-col items-end gap-3">
-                            <button
-                              onClick={() => handleRemovePart(part.partId)}
-                              className="w-10 h-10 flex items-center justify-center text-slate-500 hover:text-red-400 active:scale-95 transition-all"
-                            >
-                              <Trash2 className="w-5 h-5" />
-                            </button>
-                            <div className="flex items-center bg-slate-100 dark:bg-slate-800 rounded-xl p-1 border border-slate-200 dark:border-slate-700/50">
-                              <button
-                                onClick={() => handleUpdatePartQuantity(part.partId, -1)}
-                                className="w-9 h-9 flex items-center justify-center text-slate-400 active:bg-slate-200 dark:active:bg-slate-700 rounded-lg transition-all"
-                              >
-                                <Minus className="w-4 h-4" />
-                              </button>
-                              <span className="w-8 text-center text-sm font-bold text-slate-900 dark:text-white">
-                                {part.quantity}
-                              </span>
-                              <button
-                                onClick={() => handleUpdatePartQuantity(part.partId, 1)}
-                                className="w-9 h-9 flex items-center justify-center text-blue-400 active:bg-slate-700 rounded-lg transition-all"
-                              >
-                                <Plus className="w-4 h-4" />
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="mt-3 pt-3 border-t border-slate-700/30 flex justify-between items-center">
-                          <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Thành tiền</span>
-                          <span className="text-sm font-bold text-emerald-400">
-                            {formatCurrency(part.quantity * part.sellingPrice)}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* Add Part Button */}
-                <button
-                  onClick={() => setShowPartSearch(true)}
-                  className="w-full py-3.5 bg-blue-600/10 border border-blue-500/30 hover:bg-blue-600/20 rounded-2xl text-blue-400 transition-all flex items-center justify-center gap-2 text-xs font-bold active:scale-[0.98]"
-                >
-                  <Plus className="w-4 h-4" />
-                  Thêm phụ tùng
-                </button>
-              </div>
-
-              {/* 3B: DỊCH VỤ (GIA CÔNG) */}
-              <div className="px-4 pb-4 space-y-3">
-                <div className="flex items-center justify-between ml-1">
-                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                    Dịch vụ & Gia công
-                  </label>
-                  {additionalServices.length > 0 && (
-                    <span className="text-[10px] font-bold text-orange-400 bg-orange-400/10 px-2 py-0.5 rounded-full">
-                      {additionalServices.length} mục
-                    </span>
-                  )}
-                </div>
-
-                {/* Services List */}
-                {additionalServices.length > 0 && (
-                  <div className="space-y-2.5">
-                    {additionalServices.map((service) => (
-                      <div
-                        key={service.id}
-                        className="p-4 bg-white dark:bg-[#1e1e2d] border border-slate-200 dark:border-slate-700/30 rounded-2xl shadow-sm"
-                      >
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="flex-1 min-w-0">
-                            <div className="text-sm font-bold text-slate-900 dark:text-white truncate">
-                              {service.name}
-                            </div>
-                            <div className="mt-2 flex flex-col gap-2">
-                              <div className="flex items-center gap-2">
-                                <span className="text-[10px] text-slate-500 w-8">Bán:</span>
-                                <input
-                                  type="text"
-                                  value={formatNumberWithDots(service.sellingPrice)}
-                                  onChange={(e) => {
-                                    const newPrice = parseFormattedNumber(e.target.value);
-                                    setAdditionalServices(
-                                      additionalServices.map((s) =>
-                                        s.id === service.id
-                                          ? { ...s, sellingPrice: newPrice }
-                                          : s
-                                      )
-                                    );
-                                  }}
-                                  inputMode="numeric"
-                                  className="w-24 px-2 py-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-orange-600 dark:text-orange-400 text-xs font-bold focus:border-blue-500 focus:outline-none transition-all"
-                                />
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <span className="text-[10px] text-slate-500 w-8">Vốn:</span>
-                                <input
-                                  type="text"
-                                  value={formatNumberWithDots(service.costPrice || 0)}
-                                  onChange={(e) => {
-                                    const newCost = parseFormattedNumber(e.target.value);
-                                    setAdditionalServices(
-                                      additionalServices.map((s) =>
-                                        s.id === service.id
-                                          ? { ...s, costPrice: newCost }
-                                          : s
-                                      )
-                                    );
-                                  }}
-                                  inputMode="numeric"
-                                  className="w-24 px-2 py-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-500 dark:text-slate-400 text-xs font-bold focus:border-blue-500 focus:outline-none transition-all"
-                                />
-                              </div>
-                            </div>
-                          </div>
-                          <button
-                            onClick={() => handleRemoveService(service.id)}
-                            className="w-8 h-8 flex items-center justify-center text-slate-500 hover:text-red-400 active:scale-95 transition-all"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                        <div className="mt-3 pt-3 border-t border-slate-700/30 flex justify-between items-center">
-                          <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">
-                            SL: {service.quantity} x {formatCurrency(service.sellingPrice)}
-                          </span>
-                          <span className="text-sm font-bold text-orange-400">
-                            {formatCurrency(service.sellingPrice * service.quantity)}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* Add Service Button */}
-                <button
-                  onClick={() => setShowAddService(true)}
-                  className="w-full py-3.5 bg-orange-600/10 border border-orange-500/30 hover:bg-orange-600/20 rounded-2xl text-orange-400 transition-all flex items-center justify-center gap-2 text-xs font-bold active:scale-[0.98]"
-                >
-                  <Plus className="w-4 h-4" />
-                  Thêm dịch vụ ngoài
-                </button>
-              </div>
+              <ServiceListSection
+                selectedCustomer={selectedCustomer}
+                selectedVehicle={selectedVehicle}
+                additionalServices={additionalServices}
+                onRemoveService={handleRemoveService}
+                onUpdateService={(id, updates) => {
+                  setAdditionalServices(
+                    additionalServices.map((s) =>
+                      s.id === id ? { ...s, ...updates } : s
+                    )
+                  );
+                }}
+                onShowAddService={() => setShowAddService(true)}
+              />
             </>
           )}
 
           {/* KHỐI 4: TÀI CHÍNH */}
-          <div className="px-3 pb-3 space-y-2.5">
-            <h3 className="text-xs font-semibold text-white uppercase tracking-wide">
-              THANH TOÁN
-            </h3>
-
-            <div className="p-4 bg-[#1e1e2d] rounded-lg space-y-2">
-              {/* Labor Cost */}
-              <div>
-                <label className="block text-xs font-medium text-slate-400 mb-1">
-                  Tiền công
-                </label>
-                <input
-                  type="text"
-                  value={formatNumberWithDots(laborCost)}
-                  onChange={(e) =>
-                    setLaborCost(parseFormattedNumber(e.target.value))
-                  }
-                  placeholder="0"
-                  inputMode="numeric"
-                  className="w-full px-2.5 py-1.5 bg-slate-100 dark:bg-[#2b2b40] rounded-lg text-slate-900 dark:text-white text-xs"
-                />
-              </div>
-
-              {/* Deposit Toggle */}
-              <div className="pt-2">
-                <div className="flex items-center justify-between p-3 bg-slate-100 dark:bg-[#2b2b40] rounded-lg">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center">
-                      <span className="text-lg">💳</span>
-                    </div>
-                    <span className="text-slate-900 dark:text-white font-medium text-sm">
-                      Đặt cọc trước
-                    </span>
-                  </div>
-                  <button
-                    onClick={() => setIsDeposit(!isDeposit)}
-                    className={`relative w-12 h-6 rounded-full transition-colors ${isDeposit ? "bg-[#009ef7]" : "bg-slate-600"
-                      }`}
-                  >
-                    <div
-                      className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow-md transition-transform ${isDeposit ? "right-0.5" : "left-0.5"
-                        }`}
-                    >
-                      {isDeposit && (
-                        <span className="absolute inset-0 flex items-center justify-center text-[#009ef7] text-[10px] font-bold">
-                          ON
-                        </span>
-                      )}
-                    </div>
-                  </button>
-                </div>
-
-                {isDeposit && (
-                  <div className="mt-3 p-3 bg-slate-50 dark:bg-[#151521] border-2 border-[#009ef7] rounded-lg">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-lg">💵</span>
-                      <span className="text-slate-500 dark:text-slate-400 text-xs">
-                        Nhập số tiền cọc...
-                      </span>
-                    </div>
-                    <input
-                      type="text"
-                      value={formatNumberWithDots(depositAmount)}
-                      onChange={(e) =>
-                        setDepositAmount(
-                          parseFormattedNumber(e.target.value)
-                        )
-                      }
-                      placeholder="0"
-                      inputMode="numeric"
-                      className="w-full px-3 py-2.5 bg-white dark:bg-[#2b2b40] border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white text-sm focus:border-[#009ef7] focus:outline-none transition-colors"
-                    />
-                  </div>
-                )}
-              </div>
-
-              {/* Payment Method */}
-              <div className="pt-2">
-                <label className="block text-xs font-medium text-slate-400 mb-2">
-                  Phương thức thanh toán
-                </label>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    onClick={() => setPaymentMethod("cash")}
-                    className={`relative p-3 rounded-lg transition-all border-2 ${paymentMethod === "cash"
-                      ? "bg-emerald-500/10 border-emerald-500 shadow-lg shadow-emerald-500/20"
-                      : "bg-slate-100 dark:bg-[#2b2b40] border-transparent hover:border-slate-400 dark:hover:border-slate-600"
-                      }`}
-                  >
-                    <div className="flex flex-col items-center gap-1">
-                      <div
-                        className={`text-xl ${paymentMethod === "cash" ? "scale-110" : ""
-                          } transition-transform`}
-                      >
-                        💵
-                      </div>
-                      <span
-                        className={`text-xs font-medium ${paymentMethod === "cash"
-                          ? "text-emerald-400"
-                          : "text-slate-400"
-                          }`}
-                      >
-                        Tiền mặt
-                      </span>
-                    </div>
-                    {paymentMethod === "cash" && (
-                      <div className="absolute top-1 right-1 w-4 h-4 bg-emerald-500 rounded-full flex items-center justify-center">
-                        <svg
-                          className="w-2.5 h-2.5 text-white"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={3}
-                            d="M5 13l4 4L19 7"
-                          />
-                        </svg>
-                      </div>
-                    )}
-                  </button>
-                  <button
-                    onClick={() => setPaymentMethod("bank")}
-                    className={`relative p-3 rounded-lg transition-all border-2 ${paymentMethod === "bank"
-                      ? "bg-blue-500/10 border-blue-500 shadow-lg shadow-blue-500/20"
-                      : "bg-slate-100 dark:bg-[#2b2b40] border-transparent hover:border-slate-400 dark:hover:border-slate-600"
-                      }`}
-                  >
-                    <div className="flex flex-col items-center gap-1">
-                      <div
-                        className={`text-xl ${paymentMethod === "bank" ? "scale-110" : ""
-                          } transition-transform`}
-                      >
-                        🏦
-                      </div>
-                      <span
-                        className={`text-xs font-medium ${paymentMethod === "bank"
-                          ? "text-blue-400"
-                          : "text-slate-400"
-                          }`}
-                      >
-                        Chuyển khoản
-                      </span>
-                    </div>
-                    {paymentMethod === "bank" && (
-                      <div className="absolute top-1 right-1 w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
-                        <svg
-                          className="w-2.5 h-2.5 text-white"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={3}
-                            d="M5 13l4 4L19 7"
-                          />
-                        </svg>
-                      </div>
-                    )}
-                  </button>
-                </div>
-
-                {/* Payment at return - available when status is "Trả máy" (new or existing order) */}
-                {status === "Trả máy" && (
-                  <div className="mt-3">
-                    {/* Checkbox to enable payment */}
-                    <div className="flex items-center justify-between p-3 bg-slate-100 dark:bg-[#2b2b40] rounded-lg">
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center">
-                          <span className="text-lg">✅</span>
-                        </div>
-                        <span className="text-slate-900 dark:text-white font-medium text-sm">
-                          Thanh toán khi trả xe
-                        </span>
-                      </div>
-                      <button
-                        onClick={() => {
-                          const newValue = !showPaymentInput;
-                          setShowPaymentInput(newValue);
-                          if (!newValue) {
-                            setPartialAmount(0);
-                          }
-                        }}
-                        className={`relative w-12 h-6 rounded-full transition-colors ${showPaymentInput
-                          ? "bg-emerald-500"
-                          : "bg-slate-600"
-                          }`}
-                      >
-                        <div
-                          className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow-md transition-transform ${showPaymentInput ? "right-0.5" : "left-0.5"
-                            }`}
-                        >
-                          {showPaymentInput && (
-                            <span className="absolute inset-0 flex items-center justify-center text-emerald-500 text-[10px] font-bold">
-                              ON
-                            </span>
-                          )}
-                        </div>
-                      </button>
-                    </div>
-
-                    {/* Payment Input - show when checkbox is enabled */}
-                    {showPaymentInput && (
-                      <div className="mt-3 p-3 bg-slate-50 dark:bg-[#151521] border-2 border-emerald-500 rounded-lg">
-                        <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-2">
-                          Số tiền thanh toán thêm:
-                        </label>
-                        <input
-                          type="text"
-                          value={formatNumberWithDots(partialAmount)}
-                          onChange={(e) =>
-                            setPartialAmount(
-                              parseFormattedNumber(e.target.value)
-                            )
-                          }
-                          placeholder="0"
-                          inputMode="numeric"
-                          className="w-full px-3 py-2.5 bg-white dark:bg-[#2b2b40] border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white text-sm focus:border-emerald-500 focus:outline-none transition-colors mb-2"
-                        />
-                        {/* Quick amount buttons */}
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => setPartialAmount(0)}
-                            className="flex-1 px-3 py-2 bg-slate-200 dark:bg-slate-600 hover:bg-slate-300 dark:hover:bg-slate-500 text-slate-700 dark:text-white rounded-lg text-xs font-medium transition-colors"
-                          >
-                            0%
-                          </button>
-                          <button
-                            onClick={() => {
-                              const remainingToPay =
-                                total - (isDeposit ? depositAmount : 0);
-                              setPartialAmount(
-                                Math.round(remainingToPay * 0.5)
-                              );
-                            }}
-                            className="flex-1 px-3 py-2 bg-slate-200 dark:bg-slate-600 hover:bg-slate-300 dark:hover:bg-slate-500 text-slate-700 dark:text-white rounded-lg text-xs font-medium transition-colors"
-                          >
-                            50%
-                          </button>
-                          <button
-                            onClick={() => {
-                              const remainingToPay =
-                                total - (isDeposit ? depositAmount : 0);
-                              setPartialAmount(remainingToPay);
-                            }}
-                            className="flex-1 px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-medium transition-colors"
-                          >
-                            100%
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* Summary Section - Premium Redesign */}
-              <div className="mt-6 p-4 bg-white dark:bg-[#1e1e2d] rounded-2xl border border-slate-200 dark:border-slate-700/30 space-y-4">
-                <div className="flex items-center gap-2 mb-1">
-                  <TrendingUp className="w-4 h-4 text-blue-400" />
-                  <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
-                    Tổng kết chi phí
-                  </h3>
-                </div>
-
-                <div className="space-y-2.5">
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs text-slate-500 dark:text-slate-400">Phí dịch vụ:</span>
-                    <span className="text-xs font-bold text-slate-900 dark:text-white">
-                      {formatCurrency(laborCost)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs text-slate-500 dark:text-slate-400">Tiền phụ tùng:</span>
-                    <span className="text-xs font-bold text-slate-900 dark:text-white">
-                      {formatCurrency(partsTotal)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs text-slate-500 dark:text-slate-400">Gia công/Đặt hàng:</span>
-                    <span className="text-xs font-bold text-slate-900 dark:text-white">
-                      {formatCurrency(servicesTotal)}
-                    </span>
-                  </div>
-
-                  {/* Discount Row */}
-                  <div className="pt-2.5 border-t border-slate-700/50 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-red-400 font-bold">Giảm giá:</span>
-                    </div>
-                    <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-[#2b2b40] p-1 rounded-xl border border-slate-200 dark:border-slate-700/50">
-                      <input
-                        type="text"
-                        value={formatNumberWithDots(discount)}
-                        onChange={(e) =>
-                          setDiscount(parseFormattedNumber(e.target.value))
-                        }
-                        placeholder="0"
-                        className="w-16 bg-transparent text-slate-900 dark:text-white text-xs font-bold text-right focus:outline-none px-1"
-                      />
-                      <div className="flex bg-white dark:bg-slate-800 rounded-lg p-0.5">
-                        <button
-                          onClick={() => setDiscountType("amount")}
-                          className={`px-2 py-1 rounded-md text-[10px] font-bold transition-all ${discountType === "amount"
-                            ? "bg-blue-600 text-white shadow-sm"
-                            : "text-slate-400 dark:text-slate-500"
-                            }`}
-                        >
-                          ₫
-                        </button>
-                        <button
-                          onClick={() => setDiscountType("percent")}
-                          className={`px-2 py-1 rounded-md text-[10px] font-bold transition-all ${discountType === "percent"
-                            ? "bg-blue-600 text-white shadow-sm"
-                            : "text-slate-400 dark:text-slate-500"
-                            }`}
-                        >
-                          %
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Quick percent buttons - only show in percent mode */}
-                  {discountType === "percent" && (
-                    <div className="flex gap-1.5 justify-end">
-                      {[5, 10, 15, 20].map((percent) => (
-                        <button
-                          key={percent}
-                          onClick={() => setDiscount(percent)}
-                          className="px-2.5 py-1 text-[10px] bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg transition-colors font-bold"
-                        >
-                          {percent}%
-                        </button>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Show discount amount if in percent mode */}
-                  {discountType === "percent" && discount > 0 && (
-                    <div className="text-[10px] text-slate-500 text-right font-mono">
-                      = -{formatCurrency(discountAmount)}
-                    </div>
-                  )}
-                </div>
-
-                {/* Total Section */}
-                <div className="pt-4 border-t-2 border-slate-700/50">
-                  <div className="flex justify-between items-end mb-4">
-                    <div className="flex flex-col">
-                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Tổng thanh toán</span>
-                      <span className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
-                        {formatCurrency(total)}
-                      </span>
-                    </div>
-                    {total - (isDeposit ? depositAmount : 0) - (showPaymentInput ? partialAmount : 0) <= 0 && (
-                      <div className="px-3 py-1 bg-emerald-500/20 border border-emerald-500/30 rounded-full flex items-center gap-1.5 mb-1">
-                        <CheckCircle className="w-3 h-3 text-emerald-400" />
-                        <span className="text-[10px] font-bold text-emerald-400 uppercase">Đã trả đủ</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Payment breakdown */}
-                  {((isDeposit && depositAmount > 0) || (showPaymentInput && partialAmount > 0)) && (
-                    <div className="p-3 bg-slate-50 dark:bg-[#151521] rounded-xl border border-slate-200 dark:border-slate-700/50 space-y-2">
-                      {isDeposit && depositAmount > 0 && (
-                        <div className="flex justify-between items-center">
-                          <span className="text-[10px] font-bold text-purple-400 uppercase">Đã đặt cọc</span>
-                          <span className="text-xs font-bold text-purple-400">
-                            -{formatCurrency(depositAmount)}
-                          </span>
-                        </div>
-                      )}
-                      {showPaymentInput && partialAmount > 0 && (
-                        <div className="flex justify-between items-center">
-                          <span className="text-[10px] font-bold text-blue-400 uppercase">Thanh toán thêm</span>
-                          <span className="text-xs font-bold text-blue-400">
-                            -{formatCurrency(partialAmount)}
-                          </span>
-                        </div>
-                      )}
-
-                      <div className="pt-2 border-t border-slate-200 dark:border-slate-700/50 flex justify-between items-center">
-                        <span className="text-xs font-bold text-slate-900 dark:text-white">Còn lại:</span>
-                        <span className={`text-lg font-black ${total - (isDeposit ? depositAmount : 0) - (showPaymentInput ? partialAmount : 0) > 0
-                          ? "text-amber-400"
-                          : "text-green-400"
-                          }`}>
-                          {formatCurrency(Math.max(0, total - (isDeposit ? depositAmount : 0) - (showPaymentInput ? partialAmount : 0)))}
-                        </span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
+          <PaymentSection
+            laborCost={laborCost}
+            setLaborCost={setLaborCost}
+            partsTotal={partsTotal}
+            servicesTotal={servicesTotal}
+            discount={discount}
+            setDiscount={setDiscount}
+            discountType={discountType}
+            setDiscountType={setDiscountType}
+            discountAmount={discountAmount}
+            total={total}
+            isDeposit={isDeposit}
+            setIsDeposit={setIsDeposit}
+            depositAmount={depositAmount}
+            setDepositAmount={setDepositAmount}
+            paymentMethod={paymentMethod}
+            setPaymentMethod={setPaymentMethod}
+            status={status}
+            showPaymentInput={showPaymentInput}
+            setShowPaymentInput={setShowPaymentInput}
+            partialAmount={partialAmount}
+            setPartialAmount={setPartialAmount}
+          />
         </div>
 
         {/* STICKY FOOTER - Action Buttons */}
@@ -2576,7 +1780,12 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
           {/* Row 2: Main action buttons */}
           <div className="flex gap-2">
             <button
-              onClick={onClose}
+              onClick={() => {
+                // Confirm Close
+                if (window.confirm("Bạn có chắc muốn thoát? Các thay đổi sẽ được lưu nháp nhưng chưa được cập nhật lên hệ thống.")) {
+                  onClose();
+                }
+              }}
               className="px-3 py-2.5 bg-slate-100 dark:bg-[#2b2b40] text-slate-500 dark:text-slate-300 rounded-lg font-medium hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors text-xs"
             >
               Hủy

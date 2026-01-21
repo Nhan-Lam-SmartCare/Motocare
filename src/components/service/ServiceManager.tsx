@@ -1387,6 +1387,7 @@ export default function ServiceManager() {
             upsertCustomer={upsertCustomer}
             viewMode={mobileModalViewMode}
             onSwitchToEdit={() => setMobileModalViewMode(false)}
+            isOwner={isOwner}
           />
         )}
 

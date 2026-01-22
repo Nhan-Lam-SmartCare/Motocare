@@ -44,6 +44,7 @@ import { NumberInput } from "../common/NumberInput";
 import { showToast } from "../../utils/toast";
 import { supabase } from "../../supabaseClient";
 import { useDebouncedValue } from "../../hooks/useDebouncedValue";
+import { useInputHistory } from "../../hooks/useInputHistory";
 import { CustomerInfoSection } from "./components/mobile/CustomerInfoSection";
 import { VehicleInfoSection } from "./components/mobile/VehicleInfoSection";
 import { PartsListSection } from "./components/mobile/PartsListSection";
@@ -643,6 +644,11 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
   // State for preventing duplicate submissions
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Input history for auto-complete
+  const customerNameHistory = useInputHistory('customer_name');
+  const licensePlateHistory = useInputHistory('license_plate');
+  const phoneHistory = useInputHistory('phone');
+
   // Tab navigation state
   type TabType = 'info' | 'parts' | 'payment';
   const [activeTab, setActiveTabRaw] = useState<TabType>('info');
@@ -709,6 +715,17 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
       });
       triggerHaptic("success");
       clearDraft();
+
+      // Save to input history for future auto-complete
+      if (selectedCustomer?.name) {
+        customerNameHistory.addToHistory(selectedCustomer.name);
+      }
+      if (selectedCustomer?.phone) {
+        phoneHistory.addToHistory(selectedCustomer.phone);
+      }
+      if (selectedVehicle?.licensePlate) {
+        licensePlateHistory.addToHistory(selectedVehicle.licensePlate);
+      }
     } catch (error) {
       console.error("Save error:", error);
       triggerHaptic("error");

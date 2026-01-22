@@ -54,9 +54,14 @@ module.exports = {
           "0%": { transform: "translateY(100%)" },
           "100%": { transform: "translateY(0)" },
         },
+        "shimmer": {
+          "0%": { backgroundPosition: "-200% 0" },
+          "100%": { backgroundPosition: "200% 0" },
+        },
       },
       animation: {
         "slide-up": "slide-up 0.3s ease-out",
+        "shimmer": "shimmer 1.5s infinite",
       },
       borderWidth: {
         3: "3px",

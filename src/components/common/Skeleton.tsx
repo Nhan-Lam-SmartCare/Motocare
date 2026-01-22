@@ -16,7 +16,7 @@ const Skeleton: React.FC<SkeletonProps> = ({
   count = 1,
 }) => {
   const baseClasses =
-    "bg-slate-200 dark:bg-slate-700 animate-pulse bg-gradient-to-r from-slate-200 via-slate-300 to-slate-200 dark:from-slate-700 dark:via-slate-600 dark:to-slate-700 bg-[length:200%_100%]";
+    "bg-slate-200 dark:bg-slate-700 bg-gradient-to-r from-slate-200 via-slate-100 to-slate-200 dark:from-slate-700 dark:via-slate-600 dark:to-slate-700 bg-[length:200%_100%] animate-shimmer";
 
   const variantClasses = {
     text: "rounded h-4",

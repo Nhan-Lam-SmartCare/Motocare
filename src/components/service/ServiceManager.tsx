@@ -86,6 +86,7 @@ import {
   getDateFilterLabel,
 } from "./types/service.types";
 import { useDebouncedValue } from "../../hooks/useDebouncedValue";
+import { useKeyboardShortcuts } from "../../hooks/useKeyboardShortcuts";
 import {
   POPULAR_MOTORCYCLES,
   PAGE_SIZE,
@@ -202,9 +203,59 @@ export default function ServiceManager() {
     "all"
   );
   const [activeTab, setActiveTab] = useState<ServiceTabKey>("all");
-  const [dateFilter, setDateFilter] = useState("week"); // Default to 7 days
+
+  // Read initial filter values from URL params
+  const urlDateFilter = searchParams.get("date") || "week";
+  const urlPaymentFilter = searchParams.get("payment") || "all";
+  const urlSearch = searchParams.get("q") || "";
+
+  const [dateFilter, setDateFilterState] = useState(urlDateFilter);
   const [technicianFilter, setTechnicianFilter] = useState("all");
-  const [paymentFilter, setPaymentFilter] = useState("all");
+  const [paymentFilter, setPaymentFilterState] = useState(urlPaymentFilter);
+
+  // Ref for search input (keyboard shortcut focus)
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Sync search query from URL on mount
+  useEffect(() => {
+    if (urlSearch && !searchQuery) {
+      setSearchQuery(urlSearch);
+    }
+  }, []);
+
+  // Wrapper functions to sync filters with URL
+  const setDateFilter = (value: string) => {
+    setDateFilterState(value);
+    const newParams = new URLSearchParams(searchParams);
+    if (value === "week") {
+      newParams.delete("date");
+    } else {
+      newParams.set("date", value);
+    }
+    setSearchParams(newParams, { replace: true });
+  };
+
+  const setPaymentFilter = (value: string) => {
+    setPaymentFilterState(value);
+    const newParams = new URLSearchParams(searchParams);
+    if (value === "all") {
+      newParams.delete("payment");
+    } else {
+      newParams.set("payment", value);
+    }
+    setSearchParams(newParams, { replace: true });
+  };
+
+  // Sync search query to URL (debounced)
+  useEffect(() => {
+    const newParams = new URLSearchParams(searchParams);
+    if (debouncedSearchQuery) {
+      newParams.set("q", debouncedSearchQuery);
+    } else {
+      newParams.delete("q");
+    }
+    setSearchParams(newParams, { replace: true });
+  }, [debouncedSearchQuery]);
   const [showProfit, setShowProfit] = useState(false); // Toggle profit visibility
   const [rowActionMenuId, setRowActionMenuId] = useState<string | null>(null);
   const [dropdownPosition, setDropdownPosition] = useState({
@@ -354,6 +405,30 @@ export default function ServiceManager() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [rowActionMenuId]);
+
+  // Keyboard shortcuts for power users (Desktop only)
+  useKeyboardShortcuts({
+    enabled: !isMobile && !showModal && !showMobileModal && !showPrintPreview && !showRefundModal,
+    onCreateNew: () => {
+      handleOpenModal();
+    },
+    onFocusSearch: () => {
+      searchInputRef.current?.focus();
+    },
+    onEscape: () => {
+      if (showPrintPreview) {
+        setShowPrintPreview(false);
+      } else if (showRefundModal) {
+        setShowRefundModal(false);
+      } else if (showModal) {
+        setShowModal(false);
+      } else if (showMobileModal) {
+        setShowMobileModal(false);
+      } else if (showTemplateModal) {
+        setShowTemplateModal(false);
+      }
+    },
+  });
 
   const filteredOrders = useMemo(() => {
     let filtered = displayWorkOrders.filter((o) => !o.refunded);
@@ -2229,6 +2304,7 @@ export default function ServiceManager() {
           {/* Search */}
           <div className="relative flex-1 min-w-[180px] max-w-[280px]">
             <input
+              ref={searchInputRef}
               type="text"
               placeholder="Mã phiếu, tên khách, dòng xe..."
               value={searchQuery}

@@ -17,6 +17,7 @@ interface PartsListSectionProps {
     onUpdatePartQuantity: (partId: string, delta: number) => void;
     onUpdatePartPrice: (partId: string, newPrice: number) => void;
     onShowPartSearch: () => void;
+    canEditPriceAndParts: boolean;
 }
 
 export const PartsListSection: React.FC<PartsListSectionProps> = ({
@@ -27,6 +28,7 @@ export const PartsListSection: React.FC<PartsListSectionProps> = ({
     onUpdatePartQuantity,
     onUpdatePartPrice,
     onShowPartSearch,
+    canEditPriceAndParts,
 }) => {
     if (!selectedCustomer || !selectedVehicle) return null;
 
@@ -46,9 +48,11 @@ export const PartsListSection: React.FC<PartsListSectionProps> = ({
             {/* Parts List */}
             {selectedParts.length > 0 && (
                 <div className="space-y-3">
-                    {selectedParts.map((part) => (
+                    {selectedParts.map((part) => {
+                        const partKey = (part as any).partId || part.id;
+                        return (
                         <div
-                            key={part.id}
+                            key={partKey}
                             className="p-3 bg-[#1e1e2d] border border-gray-800 rounded-xl shadow-sm relative group overflow-hidden"
                         >
                             <div className="flex items-start justify-between gap-3 mb-3">
@@ -65,8 +69,12 @@ export const PartsListSection: React.FC<PartsListSectionProps> = ({
                                     </div>
                                 </div>
                                 <button
-                                    onClick={() => onRemovePart(part.id)}
-                                    className="p-2 text-slate-500 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors"
+                                    onClick={() => onRemovePart(partKey)}
+                                    disabled={!canEditPriceAndParts}
+                                    className={`p-2 rounded-lg transition-colors ${canEditPriceAndParts
+                                            ? "text-slate-500 hover:text-red-400 hover:bg-red-400/10"
+                                            : "text-slate-600 opacity-50 cursor-not-allowed"
+                                        }`}
                                 >
                                     <Trash2 className="w-4 h-4" />
                                 </button>
@@ -83,10 +91,11 @@ export const PartsListSection: React.FC<PartsListSectionProps> = ({
                                             value={formatNumberWithDots(part.sellingPrice)}
                                             onChange={(e) => {
                                                 const newPrice = parseFormattedNumber(e.target.value);
-                                                onUpdatePartPrice(part.id, newPrice);
+                                                onUpdatePartPrice(partKey, newPrice);
                                             }}
                                             inputMode="numeric"
-                                            className="w-full bg-transparent text-sm font-bold text-blue-400 focus:outline-none"
+                                            disabled={!canEditPriceAndParts}
+                                            className={`w-full bg-transparent text-sm font-bold text-blue-400 focus:outline-none ${!canEditPriceAndParts ? "opacity-50 cursor-not-allowed" : ""}`}
                                         />
                                         <span className="text-xs text-slate-500 ml-1">đ</span>
                                     </div>
@@ -95,8 +104,12 @@ export const PartsListSection: React.FC<PartsListSectionProps> = ({
                                 {/* Quantity Control */}
                                 <div className="flex items-center gap-1 bg-slate-900/50 p-1 rounded-lg border border-gray-700">
                                     <button
-                                        onClick={() => onUpdatePartQuantity(part.id, -1)}
-                                        className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-700 rounded-md transition-colors"
+                                        onClick={() => onUpdatePartQuantity(partKey, -1)}
+                                        disabled={!canEditPriceAndParts}
+                                        className={`w-8 h-8 flex items-center justify-center rounded-md transition-colors ${canEditPriceAndParts
+                                                ? "text-slate-400 hover:text-white hover:bg-slate-700"
+                                                : "text-slate-600 opacity-50 cursor-not-allowed"
+                                            }`}
                                     >
                                         <Minus className="w-3.5 h-3.5" />
                                     </button>
@@ -104,8 +117,12 @@ export const PartsListSection: React.FC<PartsListSectionProps> = ({
                                         {part.quantity}
                                     </span>
                                     <button
-                                        onClick={() => onUpdatePartQuantity(part.id, 1)}
-                                        className="w-8 h-8 flex items-center justify-center text-blue-400 hover:bg-blue-500/20 rounded-md transition-colors"
+                                        onClick={() => onUpdatePartQuantity(partKey, 1)}
+                                        disabled={!canEditPriceAndParts}
+                                        className={`w-8 h-8 flex items-center justify-center rounded-md transition-colors ${canEditPriceAndParts
+                                                ? "text-blue-400 hover:bg-blue-500/20"
+                                                : "text-slate-600 opacity-50 cursor-not-allowed"
+                                            }`}
                                     >
                                         <Plus className="w-3.5 h-3.5" />
                                     </button>
@@ -120,14 +137,16 @@ export const PartsListSection: React.FC<PartsListSectionProps> = ({
                                 </span>
                             </div>
                         </div>
-                    ))}
+                    );
+                    })}
                 </div>
             )}
 
             {/* Add Part Button - Modern & Premium */}
             <button
                 onClick={onShowPartSearch}
-                className="group relative w-full overflow-hidden rounded-2xl p-[1px] focus:outline-none active:scale-[0.99] transition-transform"
+                disabled={!canEditPriceAndParts}
+                className={`group relative w-full overflow-hidden rounded-2xl p-[1px] focus:outline-none active:scale-[0.99] transition-transform ${!canEditPriceAndParts ? "opacity-50 cursor-not-allowed" : ""}`}
             >
                 <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-cyan-500 opacity-30 group-hover:opacity-100 transition-opacity" />
                 <div className="relative flex items-center justify-center gap-2 bg-[#1e1e2d] dark:bg-[#151521] group-hover:bg-[#1e1e2d]/90 px-4 py-3.5 rounded-2xl transition-colors">

@@ -41,6 +41,7 @@ interface PaymentSectionProps {
     setShowPaymentInput: (show: boolean) => void;
     partialAmount: number;
     setPartialAmount: (amount: number) => void;
+    canEditPriceAndParts: boolean;
 }
 
 export const PaymentSection: React.FC<PaymentSectionProps> = ({
@@ -65,6 +66,7 @@ export const PaymentSection: React.FC<PaymentSectionProps> = ({
     setShowPaymentInput,
     partialAmount,
     setPartialAmount,
+    canEditPriceAndParts,
 }) => {
     // Calculate paid/remaining for display
     const totalPaid = (isDeposit ? depositAmount : 0) + (showPaymentInput ? partialAmount : 0);
@@ -94,6 +96,7 @@ export const PaymentSection: React.FC<PaymentSectionProps> = ({
                             <NumberInput
                                 value={laborCost}
                                 onChange={(val) => setLaborCost(val)}
+                                disabled={!canEditPriceAndParts}
                                 className="w-28 px-2 py-1.5 bg-white dark:bg-[#1e1e2d] border border-slate-200 dark:border-slate-700 rounded-lg font-bold text-sm text-slate-900 dark:text-white focus:border-blue-500 transition-all text-right"
                                 placeholder="0"
                             />
@@ -127,19 +130,21 @@ export const PaymentSection: React.FC<PaymentSectionProps> = ({
                             <div className="flex bg-white dark:bg-[#1e1e2d] rounded p-0.5 border border-slate-200 dark:border-slate-700">
                                 <button
                                     onClick={() => setDiscountType("amount")}
+                                    disabled={!canEditPriceAndParts}
                                     className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all ${discountType === "amount"
                                         ? "bg-red-500 text-white"
                                         : "text-slate-400"
-                                        }`}
+                                        } ${!canEditPriceAndParts ? "opacity-50 cursor-not-allowed" : ""}`}
                                 >
                                     VNĐ
                                 </button>
                                 <button
                                     onClick={() => setDiscountType("percent")}
+                                    disabled={!canEditPriceAndParts}
                                     className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all ${discountType === "percent"
                                         ? "bg-red-500 text-white"
                                         : "text-slate-400"
-                                        }`}
+                                        } ${!canEditPriceAndParts ? "opacity-50 cursor-not-allowed" : ""}`}
                                 >
                                     %
                                 </button>
@@ -147,6 +152,7 @@ export const PaymentSection: React.FC<PaymentSectionProps> = ({
                             <NumberInput
                                 value={discount}
                                 onChange={(val) => setDiscount(val)}
+                                disabled={!canEditPriceAndParts}
                                 className="w-28 px-2 py-1 bg-white dark:bg-[#1e1e2d] border border-red-200 dark:border-red-900/30 focus:border-red-500 rounded-lg font-bold text-red-500 text-sm text-right"
                                 placeholder="0"
                             />
@@ -158,7 +164,11 @@ export const PaymentSection: React.FC<PaymentSectionProps> = ({
                                 <button
                                     key={pct}
                                     onClick={() => setDiscount(pct)}
-                                    className="px-2 py-0.5 bg-red-100 dark:bg-red-900/40 text-[10px] font-bold text-red-500 rounded hover:bg-red-200 transition-colors"
+                                    disabled={!canEditPriceAndParts}
+                                    className={`px-2 py-0.5 text-[10px] font-bold rounded transition-colors ${canEditPriceAndParts
+                                            ? "bg-red-100 dark:bg-red-900/40 text-red-500 hover:bg-red-200"
+                                            : "bg-red-100/40 dark:bg-red-900/20 text-red-400 opacity-50 cursor-not-allowed"
+                                        }`}
                                 >
                                     -{pct}%
                                 </button>
@@ -187,7 +197,8 @@ export const PaymentSection: React.FC<PaymentSectionProps> = ({
                         </span>
                         <button
                             onClick={() => setIsDeposit(!isDeposit)}
-                            className={`w-9 h-5 rounded-full transition-colors relative ${isDeposit ? "bg-purple-500" : "bg-slate-300 dark:bg-slate-600"}`}
+                            disabled={!canEditPriceAndParts}
+                            className={`w-9 h-5 rounded-full transition-colors relative ${isDeposit ? "bg-purple-500" : "bg-slate-300 dark:bg-slate-600"} ${!canEditPriceAndParts ? "opacity-50 cursor-not-allowed" : ""}`}
                         >
                             <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all shadow-sm ${isDeposit ? "left-5" : "left-1"}`} />
                         </button>
@@ -202,6 +213,7 @@ export const PaymentSection: React.FC<PaymentSectionProps> = ({
                         <NumberInput
                             value={depositAmount}
                             onChange={(val) => setDepositAmount(val)}
+                            disabled={!canEditPriceAndParts}
                             className="w-full px-3 py-2 bg-white dark:bg-[#1e1e2d] border border-purple-200 dark:border-purple-500/30 rounded-lg font-bold text-purple-600 dark:text-purple-400 focus:border-purple-500"
                             placeholder="0"
                         />
@@ -212,10 +224,11 @@ export const PaymentSection: React.FC<PaymentSectionProps> = ({
                 <div className="grid grid-cols-2 gap-3">
                     <button
                         onClick={() => setPaymentMethod("cash")}
+                        disabled={!canEditPriceAndParts}
                         className={`relative p-3 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${paymentMethod === "cash"
                             ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
                             : "border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-[#151521] text-slate-500 hover:border-emerald-200"
-                            }`}
+                            } ${!canEditPriceAndParts ? "opacity-50 cursor-not-allowed" : ""}`}
                     >
                         <Banknote className="w-6 h-6" />
                         <span className="text-xs font-bold uppercase">Tiền mặt</span>
@@ -225,10 +238,11 @@ export const PaymentSection: React.FC<PaymentSectionProps> = ({
                     </button>
                     <button
                         onClick={() => setPaymentMethod("bank")}
+                        disabled={!canEditPriceAndParts}
                         className={`relative p-3 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${paymentMethod === "bank"
                             ? "border-blue-500 bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400"
                             : "border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-[#151521] text-slate-500 hover:border-blue-200"
-                            }`}
+                            } ${!canEditPriceAndParts ? "opacity-50 cursor-not-allowed" : ""}`}
                     >
                         <Landmark className="w-6 h-6" />
                         <span className="text-xs font-bold uppercase">Chuyển khoản</span>
@@ -253,6 +267,7 @@ export const PaymentSection: React.FC<PaymentSectionProps> = ({
                         </div>
                         <button
                             onClick={() => {
+                                if (!canEditPriceAndParts) return;
                                 const newValue = !showPaymentInput;
                                 setShowPaymentInput(newValue);
                                 // Default to 100% when toggled ON, 0 when OFF
@@ -262,7 +277,8 @@ export const PaymentSection: React.FC<PaymentSectionProps> = ({
                                     setPartialAmount(0);
                                 }
                             }}
-                            className={`w-10 h-6 rounded-full transition-colors relative ${showPaymentInput ? "bg-emerald-500" : "bg-slate-300 dark:bg-slate-600"}`}
+                            disabled={!canEditPriceAndParts}
+                            className={`w-10 h-6 rounded-full transition-colors relative ${showPaymentInput ? "bg-emerald-500" : "bg-slate-300 dark:bg-slate-600"} ${!canEditPriceAndParts ? "opacity-50 cursor-not-allowed" : ""}`}
                         >
                             <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all shadow-sm ${showPaymentInput ? "left-5" : "left-1"}`} />
                         </button>
@@ -273,13 +289,41 @@ export const PaymentSection: React.FC<PaymentSectionProps> = ({
                             <NumberInput
                                 value={partialAmount}
                                 onChange={setPartialAmount}
+                                disabled={!canEditPriceAndParts}
                                 className="w-full px-3 py-2 bg-white dark:bg-[#1e1e2d] border border-emerald-200 dark:border-emerald-500/30 rounded-lg font-bold text-emerald-600 focus:border-emerald-500"
                                 placeholder="Nhập số tiền..."
                             />
                             <div className="flex gap-2 mt-2">
-                                <button onClick={() => setPartialAmount(0)} className="flex-1 py-1.5 text-xs bg-white dark:bg-[#1e1e2d] border border-slate-200 dark:border-slate-700 rounded-lg font-bold text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">0%</button>
-                                <button onClick={() => setPartialAmount(Math.round((total - (isDeposit ? depositAmount : 0)) * 0.5))} className="flex-1 py-1.5 text-xs bg-white dark:bg-[#1e1e2d] border border-slate-200 dark:border-slate-700 rounded-lg font-bold text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">50%</button>
-                                <button onClick={() => setPartialAmount(total - (isDeposit ? depositAmount : 0))} className="flex-1 py-1.5 text-xs bg-emerald-500 text-white rounded-lg font-bold shadow-sm hover:bg-emerald-600 transition-colors">100%</button>
+                                <button
+                                    onClick={() => setPartialAmount(0)}
+                                    disabled={!canEditPriceAndParts}
+                                    className={`flex-1 py-1.5 text-xs border rounded-lg font-bold transition-colors ${canEditPriceAndParts
+                                            ? "bg-white dark:bg-[#1e1e2d] border-slate-200 dark:border-slate-700 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800"
+                                            : "bg-white/60 dark:bg-[#1e1e2d]/60 border-slate-200 dark:border-slate-700 text-slate-400 opacity-50 cursor-not-allowed"
+                                        }`}
+                                >
+                                    0%
+                                </button>
+                                <button
+                                    onClick={() => setPartialAmount(Math.round((total - (isDeposit ? depositAmount : 0)) * 0.5))}
+                                    disabled={!canEditPriceAndParts}
+                                    className={`flex-1 py-1.5 text-xs border rounded-lg font-bold transition-colors ${canEditPriceAndParts
+                                            ? "bg-white dark:bg-[#1e1e2d] border-slate-200 dark:border-slate-700 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800"
+                                            : "bg-white/60 dark:bg-[#1e1e2d]/60 border-slate-200 dark:border-slate-700 text-slate-400 opacity-50 cursor-not-allowed"
+                                        }`}
+                                >
+                                    50%
+                                </button>
+                                <button
+                                    onClick={() => setPartialAmount(total - (isDeposit ? depositAmount : 0))}
+                                    disabled={!canEditPriceAndParts}
+                                    className={`flex-1 py-1.5 text-xs rounded-lg font-bold shadow-sm transition-colors ${canEditPriceAndParts
+                                            ? "bg-emerald-500 text-white hover:bg-emerald-600"
+                                            : "bg-emerald-500/40 text-white/70 opacity-50 cursor-not-allowed"
+                                        }`}
+                                >
+                                    100%
+                                </button>
                             </div>
                         </div>
                     )}

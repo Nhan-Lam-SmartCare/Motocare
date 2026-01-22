@@ -47,6 +47,7 @@ import {
   useWorkOrdersRepo,
   useWorkOrdersFilteredRepo,
 } from "../../hooks/useWorkOrdersRepository";
+import { completeWorkOrderPayment } from "../../lib/repository/workOrdersRepository";
 import type { RepairTemplate } from "../../hooks/useRepairTemplatesRepository";
 import { usePartsRepo } from "../../hooks/usePartsRepository";
 import { useEmployeesRepo } from "../../hooks/useEmployeesRepository";
@@ -1019,7 +1020,7 @@ export default function ServiceManager() {
           }-${Date.now()}`;
         finalOrderId = orderId;
 
-        await createWorkOrderAtomicAsync({
+        const createResponse = await createWorkOrderAtomicAsync({
           id: orderId,
           customerName: customer.name,
           customerPhone: customer.phone,
@@ -1046,6 +1047,25 @@ export default function ServiceManager() {
           remainingAmount: remainingAmount,
           creationDate: new Date().toISOString(),
         } as any);
+
+        if (
+          paymentStatus === "paid" &&
+          parts.length > 0 &&
+          !(createResponse as any)?.inventoryDeducted
+        ) {
+          try {
+            await completeWorkOrderPayment(
+              orderId,
+              paymentMethod || "cash",
+              0
+            );
+          } catch (err) {
+            console.error(
+              "[handleMobileSave] Error deducting inventory (create):",
+              err
+            );
+          }
+        }
 
         finalOrderData = {
           id: orderId,
@@ -1104,6 +1124,22 @@ export default function ServiceManager() {
           totalPaid: totalPaid > 0 ? totalPaid : undefined,
           remainingAmount: remainingAmount,
         } as any);
+
+        const wasUnpaidOrPartial = editingOrder.paymentStatus !== "paid";
+        if (paymentStatus === "paid" && wasUnpaidOrPartial && parts.length > 0) {
+          try {
+            await completeWorkOrderPayment(
+              editingOrder.id,
+              paymentMethod || "cash",
+              0
+            );
+          } catch (err) {
+            console.error(
+              "[handleMobileSave] Error deducting inventory (update):",
+              err
+            );
+          }
+        }
 
         finalOrderData = {
           ...editingOrder,

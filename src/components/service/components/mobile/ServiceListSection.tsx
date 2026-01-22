@@ -17,6 +17,7 @@ interface ServiceListSectionProps {
     onRemoveService: (id: string) => void;
     onUpdateService: (id: string, updates: Partial<ServiceItem>) => void;
     onShowAddService: () => void;
+    canEditPriceAndParts: boolean;
 }
 
 export const ServiceListSection: React.FC<ServiceListSectionProps> = ({
@@ -26,6 +27,7 @@ export const ServiceListSection: React.FC<ServiceListSectionProps> = ({
     onRemoveService,
     onUpdateService,
     onShowAddService,
+    canEditPriceAndParts,
 }) => {
     // Only show if customer and vehicle are selected
     if (!selectedCustomer || !selectedVehicle) return null;
@@ -61,7 +63,11 @@ export const ServiceListSection: React.FC<ServiceListSectionProps> = ({
                                 </div>
                                 <button
                                     onClick={() => onRemoveService(service.id)}
-                                    className="p-2 text-slate-500 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors"
+                                    disabled={!canEditPriceAndParts}
+                                    className={`p-2 rounded-lg transition-colors ${canEditPriceAndParts
+                                            ? "text-slate-500 hover:text-red-400 hover:bg-red-400/10"
+                                            : "text-slate-600 opacity-50 cursor-not-allowed"
+                                        }`}
                                 >
                                     <Trash2 className="w-4 h-4" />
                                 </button>
@@ -80,7 +86,8 @@ export const ServiceListSection: React.FC<ServiceListSectionProps> = ({
                                                 onUpdateService(service.id, { sellingPrice: newPrice });
                                             }}
                                             inputMode="numeric"
-                                            className="w-full bg-transparent text-sm font-bold text-orange-400 focus:outline-none"
+                                            disabled={!canEditPriceAndParts}
+                                            className={`w-full bg-transparent text-sm font-bold text-orange-400 focus:outline-none ${!canEditPriceAndParts ? "opacity-50 cursor-not-allowed" : ""}`}
                                         />
                                         <span className="text-xs text-slate-500 ml-1">đ</span>
                                     </div>
@@ -121,7 +128,8 @@ export const ServiceListSection: React.FC<ServiceListSectionProps> = ({
             {/* Add Service Button */}
             <button
                 onClick={onShowAddService}
-                className="group relative w-full overflow-hidden rounded-2xl p-[1px] focus:outline-none active:scale-[0.99] transition-transform"
+                disabled={!canEditPriceAndParts}
+                className={`group relative w-full overflow-hidden rounded-2xl p-[1px] focus:outline-none active:scale-[0.99] transition-transform ${!canEditPriceAndParts ? "opacity-50 cursor-not-allowed" : ""}`}
             >
                 <div className="absolute inset-0 bg-gradient-to-r from-orange-500 to-amber-500 opacity-30 group-hover:opacity-100 transition-opacity" />
                 <div className="relative flex items-center justify-center gap-2 bg-[#1e1e2d] dark:bg-[#151521] group-hover:bg-[#1e1e2d]/90 px-4 py-3.5 rounded-2xl transition-colors">

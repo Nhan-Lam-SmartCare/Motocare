@@ -329,6 +329,34 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
     console.log("[WorkOrderMobileModal] initialVehicle:", initialVehicle);
 
     if (workOrder) {
+      setStatus((workOrder.status as WorkOrderStatus) || WORK_ORDER_STATUS.RECEIVED);
+      setSelectedTechnicianId(
+        employees.find((e) => e.name === workOrder?.technicianName)?.id || ""
+      );
+      setIssueDescription(workOrder.issueDescription || "");
+      setLaborCost(workOrder.laborCost || 0);
+      setDiscount(workOrder.discount || 0);
+      setDiscountType("amount");
+      setSelectedParts(
+        workOrder.partsUsed?.map((p) => ({
+          partId: p.partId || "",
+          partName: p.partName,
+          quantity: p.quantity,
+          sellingPrice: p.price || 0,
+          costPrice: p.costPrice || 0,
+          sku: p.sku || "",
+          category: p.category || "",
+        })) || []
+      );
+      setAdditionalServices(
+        workOrder.additionalServices?.map((s) => ({
+          id: s.id || `srv-${Date.now()}-${Math.random()}`,
+          name: s.description || "",
+          quantity: s.quantity || 1,
+          costPrice: s.costPrice || 0,
+          sellingPrice: s.price || 0,
+        })) || []
+      );
       setSelectedCustomer(initialCustomer);
       setSelectedVehicle(initialVehicle);
       // Load currentKm: ưu tiên từ workOrder, nếu không có thì từ vehicle
@@ -336,6 +364,9 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
         setCurrentKm(workOrder.currentKm.toString());
       } else if (initialVehicle?.currentKm) {
         setCurrentKm(initialVehicle.currentKm.toString());
+      }
+      if (workOrder.paymentMethod === "cash" || workOrder.paymentMethod === "bank") {
+        setPaymentMethod(workOrder.paymentMethod);
       }
       // Nếu đang edit và có initialCustomer, ẩn form tìm kiếm
       setShowCustomerSearch(!initialCustomer);
@@ -348,15 +379,33 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
         setDepositAmount(0);
         setIsDeposit(false);
       }
+
+      if (workOrder.additionalPayment && workOrder.additionalPayment > 0) {
+        setPartialAmount(workOrder.additionalPayment);
+        setShowPaymentInput(true);
+      } else {
+        setPartialAmount(0);
+        setShowPaymentInput(false);
+      }
     } else {
+      setStatus(WORK_ORDER_STATUS.RECEIVED);
+      setSelectedTechnicianId("");
+      setIssueDescription("");
+      setLaborCost(0);
+      setDiscount(0);
+      setDiscountType("amount");
+      setSelectedParts([]);
+      setAdditionalServices([]);
       setSelectedCustomer(null);
       setSelectedVehicle(null);
       setCurrentKm("");
       setShowCustomerSearch(true);
       setDepositAmount(0);
       setIsDeposit(false);
+      setPartialAmount(0);
+      setShowPaymentInput(false);
     }
-  }, [workOrder, initialCustomer, initialVehicle]);
+  }, [workOrder, initialCustomer, initialVehicle, employees]);
 
   const draftKey = useMemo(() => {
     const orderKey = workOrder?.id || "new";
@@ -694,24 +743,54 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
 
     try {
       setIsSubmitting(true);
+      const transformedParts = selectedParts.map((p) => ({
+        partId: p.partId,
+        partName: p.partName,
+        quantity: p.quantity,
+        price: p.sellingPrice,
+        costPrice: p.costPrice || 0,
+        sku: p.sku || "",
+        category: p.category || "",
+      }));
+
+      const transformedServices = additionalServices.map((s) => ({
+        id: s.id,
+        description: s.name,
+        quantity: s.quantity,
+        price: s.sellingPrice,
+        costPrice: s.costPrice,
+      }));
+
+      const totalDeposit = isDeposit ? depositAmount : 0;
+      let additionalPayment = showPaymentInput ? partialAmount : 0;
+      if (status === "Trả máy" && !showPaymentInput) {
+        additionalPayment = Math.max(0, total - totalDeposit);
+      }
+      const totalPaid = totalDeposit + additionalPayment;
+      const remainingAmount = Math.max(0, total - totalPaid);
+
       // Wait for onSave to complete (it might throw if invalid)
       await onSave({
         ...workOrder,
         customer: selectedCustomer,
         vehicle: selectedVehicle,
-        partsUsed: selectedParts,
-        additionalServices,
+        parts: transformedParts,
+        partsUsed: transformedParts,
+        additionalServices: transformedServices,
         laborCost,
-        discount,
+        discount: discountAmount,
         discountType,
+        total,
         isDeposit,
         depositAmount,
         paymentMethod,
         currentKm,
         issueDescription,
         status,
-        selectedTechnicianId,
-        partialAmount: showPaymentInput ? partialAmount : 0
+        technicianId: selectedTechnicianId,
+        partialAmount: showPaymentInput ? partialAmount : 0,
+        totalPaid,
+        remainingAmount,
       });
       triggerHaptic("success");
       clearDraft();
@@ -937,6 +1016,9 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
   }, [subtotal, discount, discountType]);
 
   const total = Math.max(0, subtotal - discountAmount);
+
+  const isOrderPaid = workOrder?.paymentStatus === "paid" && (workOrder?.status === "Trả máy" || status === "Trả máy");
+  const canEditPriceAndParts = !isOrderPaid;
 
   // Handlers
   const handleSelectCustomer = (customer: Customer) => {
@@ -1651,6 +1733,19 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
           <div className="w-9"></div>
         </div>
 
+        {isOrderPaid && (
+          <div className="mx-4 mt-3 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+            <div className="flex items-start gap-2">
+              <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 mt-0.5" />
+              <div className="text-xs text-amber-700 dark:text-amber-300">
+                Phiếu đã thanh toán: Không thể sửa giá và phụ tùng.
+                <br />
+                Bạn vẫn có thể cập nhật giá vốn dịch vụ.
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Tab Navigation Bar */}
         <div className="flex-shrink-0 bg-white dark:bg-[#1e1e2d] border-b border-slate-200 dark:border-slate-700/50">
           <div className="grid grid-cols-3 gap-0">
@@ -1838,6 +1933,7 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
                       );
                     }}
                     onShowPartSearch={() => setShowPartSearch(true)}
+                    canEditPriceAndParts={canEditPriceAndParts}
                   />
 
                   <ServiceListSection
@@ -1853,6 +1949,7 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
                       );
                     }}
                     onShowAddService={() => setShowAddService(true)}
+                    canEditPriceAndParts={canEditPriceAndParts}
                   />
 
                   {/* Next Button */}
@@ -1909,6 +2006,7 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
               setShowPaymentInput={setShowPaymentInput}
               partialAmount={partialAmount}
               setPartialAmount={setPartialAmount}
+              canEditPriceAndParts={canEditPriceAndParts}
             />
           )}
         </div>

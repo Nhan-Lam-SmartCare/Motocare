@@ -29,6 +29,7 @@ import {
   ScanBarcode,
 } from "lucide-react";
 import BarcodeScannerModal from "../common/BarcodeScannerModal";
+import { triggerHaptic } from "../../utils/haptics";
 import { formatCurrency, formatWorkOrderId, normalizeSearchText } from "../../utils/format";
 import { getCategoryColor } from "../../utils/categoryColors";
 import type { WorkOrder, Part, Customer, Vehicle, Employee } from "../../types";
@@ -644,7 +645,77 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
 
   // Tab navigation state
   type TabType = 'info' | 'parts' | 'payment';
-  const [activeTab, setActiveTab] = useState<TabType>('info');
+  const [activeTab, setActiveTabRaw] = useState<TabType>('info');
+  const setActiveTab = (tab: TabType) => {
+    triggerHaptic("selection");
+    setActiveTabRaw(tab);
+  };
+
+  // --- KEYBOARD & VIEWPORT HANDLING ---
+  // Fix for mobile keyboard covering the Save button
+  // We use window.visualViewport to detect the actual visible height
+  const [viewportHeight, setViewportHeight] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleResize = () => {
+      if (window.visualViewport) {
+        setViewportHeight(window.visualViewport.height);
+      }
+    };
+
+    window.visualViewport?.addEventListener("resize", handleResize);
+    window.visualViewport?.addEventListener("scroll", handleResize);
+
+    // Initial set
+    handleResize();
+
+    return () => {
+      window.visualViewport?.removeEventListener("resize", handleResize);
+      window.visualViewport?.removeEventListener("scroll", handleResize);
+    };
+  }, [isOpen]);
+
+  // Handle Save with Haptics and Validation
+  const handleSaveInternal = async () => {
+    // Basic validation
+    if (!selectedVehicle && !newVehiclePlate) {
+      showToast.error("Vui lòng chọn hoặc thêm xe");
+      triggerHaptic("error");
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      // Wait for onSave to complete (it might throw if invalid)
+      await onSave({
+        ...workOrder,
+        customer: selectedCustomer,
+        vehicle: selectedVehicle,
+        partsUsed: selectedParts,
+        additionalServices,
+        laborCost,
+        discount,
+        discountType,
+        isDeposit,
+        depositAmount,
+        paymentMethod,
+        currentKm,
+        issueDescription,
+        status,
+        selectedTechnicianId,
+        partialAmount: showPaymentInput ? partialAmount : 0
+      });
+      triggerHaptic("success");
+      clearDraft();
+    } catch (error) {
+      console.error("Save error:", error);
+      triggerHaptic("error");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   // Helper functions for number formatting
   const formatNumberWithDots = (value: number | string): string => {
@@ -1541,7 +1612,10 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
   return (
     <div className="fixed inset-0 bg-black/50 z-[100] flex items-end md:items-center justify-center">
       {/* Mobile Full Screen */}
-      <div className="md:hidden w-full h-full bg-slate-50 dark:bg-[#151521] flex flex-col transition-colors">
+      <div
+        className="md:hidden w-full bg-slate-50 dark:bg-[#151521] flex flex-col transition-colors"
+        style={{ height: viewportHeight ? `${viewportHeight}px` : '100vh' }}
+      >
         {/* Header */}
         <div className="flex-shrink-0 bg-white dark:bg-[#1e1e2d] px-4 py-4 flex items-center justify-between border-b border-slate-200 dark:border-slate-700/50">
           <div className="flex items-center gap-3">
@@ -1878,7 +1952,7 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
             </button>
             {/* Nút Lưu Phiếu - luôn hiển thị */}
             <button
-              onClick={handleSave}
+              onClick={handleSaveInternal}
               disabled={isSubmitting}
               className="flex-1 py-2.5 bg-slate-600 hover:bg-slate-500 rounded-lg font-medium text-white transition-colors text-xs disabled:opacity-50 disabled:cursor-not-allowed"
             >
@@ -1887,7 +1961,7 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
             {/* Nút Đặt cọc - chỉ hiển thị khi có đặt cọc và không phải trạng thái Trả máy */}
             {status !== "Trả máy" && isDeposit && depositAmount > 0 && (
               <button
-                onClick={handleSave}
+                onClick={handleSaveInternal}
                 disabled={isSubmitting}
                 className="flex-1 py-2.5 bg-purple-600 hover:bg-purple-700 rounded-lg font-medium text-white transition-colors text-xs disabled:opacity-50 disabled:cursor-not-allowed"
               >
@@ -1897,7 +1971,7 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
             {/* Nút Thanh toán - chỉ hiển thị khi trạng thái Trả máy */}
             {status === "Trả máy" && (
               <button
-                onClick={handleSave}
+                onClick={handleSaveInternal}
                 disabled={isSubmitting}
                 className="flex-1 py-2.5 bg-green-600 hover:bg-green-700 rounded-lg font-medium text-white transition-colors text-xs disabled:opacity-50 disabled:cursor-not-allowed"
               >

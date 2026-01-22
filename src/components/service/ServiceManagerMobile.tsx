@@ -39,6 +39,7 @@ import { useRepairTemplates, type RepairTemplate } from "../../hooks/useRepairTe
 import { RepairTemplatesModal } from "./components/RepairTemplatesModal";
 import { PullToRefresh } from "../common/PullToRefresh";
 import Skeleton, { CardSkeleton } from "../common/Skeleton";
+import { triggerHaptic } from "../../utils/haptics";
 
 interface ServiceManagerMobileProps {
   workOrders: WorkOrder[];
@@ -205,10 +206,10 @@ const WorkOrderCard = React.memo(({
           <div className="flex flex-col items-end">
             {/* Total amount - color coded by payment status */}
             <div className={`font-bold text-sm ${workOrder.paymentStatus === "paid"
-                ? "text-emerald-500"
-                : (workOrder.depositAmount && workOrder.depositAmount > 0) || workOrder.paymentStatus === "partial"
-                  ? "text-amber-500"
-                  : "text-red-500"
+              ? "text-emerald-500"
+              : (workOrder.depositAmount && workOrder.depositAmount > 0) || workOrder.paymentStatus === "partial"
+                ? "text-amber-500"
+                : "text-red-500"
               }`}>
               {formatCurrency(workOrder.total || 0)}
             </div>
@@ -309,7 +310,11 @@ export function ServiceManagerMobile({
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [showFilterPopup, setShowFilterPopup] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
-  const [activeTab, setActiveTab] = useState<"orders" | "history" | "templates">("orders");
+  const [activeTab, setActiveTabRaw] = useState<"orders" | "history" | "templates">("orders");
+  const setActiveTab = (tab: "orders" | "history" | "templates") => {
+    triggerHaptic("selection");
+    setActiveTabRaw(tab);
+  };
 
   // Financial data visibility state (owner-only feature)
   const [showFinancials, setShowFinancials] = useState(false);
@@ -330,6 +335,7 @@ export function ServiceManagerMobile({
     if (isCreating) return;
 
     setIsCreating(true);
+    triggerHaptic("medium");
     onCreateWorkOrder();
 
     // Reset after 2 seconds to allow new creation
@@ -500,11 +506,12 @@ export function ServiceManagerMobile({
               <div className="grid grid-cols-4 gap-1.5">
                 {/* Tiếp nhận */}
                 <button
-                  onClick={() =>
+                  onClick={() => {
                     setStatusFilter(
                       statusFilter === "Tiếp nhận" ? "all" : "Tiếp nhận"
-                    )
-                  }
+                    );
+                    triggerHaptic("selection");
+                  }}
                   className={`p-2 rounded-lg text-center transition-all ${statusFilter === "Tiếp nhận"
                     ? "bg-gradient-to-br from-[#009ef7]/20 to-[#009ef7]/10 border-2 border-[#009ef7]"
                     : "bg-slate-100 dark:bg-[#2b2b40] border border-slate-300 dark:border-gray-700"
@@ -517,9 +524,10 @@ export function ServiceManagerMobile({
 
                 {/* Đang sửa */}
                 <button
-                  onClick={() =>
-                    setStatusFilter(statusFilter === "Đang sửa" ? "all" : "Đang sửa")
-                  }
+                  onClick={() => {
+                    setStatusFilter(statusFilter === "Đang sửa" ? "all" : "Đang sửa");
+                    triggerHaptic("selection");
+                  }}
                   className={`p-2 rounded-lg text-center transition-all ${statusFilter === "Đang sửa"
                     ? "bg-gradient-to-br from-[#f1416c]/20 to-[#f1416c]/10 border-2 border-[#f1416c]"
                     : "bg-slate-100 dark:bg-[#2b2b40] border border-slate-300 dark:border-gray-700"
@@ -532,11 +540,12 @@ export function ServiceManagerMobile({
 
                 {/* Đã sửa xong */}
                 <button
-                  onClick={() =>
+                  onClick={() => {
                     setStatusFilter(
                       statusFilter === "Đã sửa xong" ? "all" : "Đã sửa xong"
-                    )
-                  }
+                    );
+                    triggerHaptic("selection");
+                  }}
                   className={`p-2 rounded-lg text-center transition-all ${statusFilter === "Đã sửa xong"
                     ? "bg-gradient-to-br from-[#50cd89]/20 to-[#50cd89]/10 border-2 border-[#50cd89]"
                     : "bg-slate-100 dark:bg-[#2b2b40] border border-slate-300 dark:border-gray-700"
@@ -551,9 +560,10 @@ export function ServiceManagerMobile({
 
                 {/* Trả máy */}
                 <button
-                  onClick={() =>
-                    setStatusFilter(statusFilter === "Trả máy" ? "all" : "Trả máy")
-                  }
+                  onClick={() => {
+                    setStatusFilter(statusFilter === "Trả máy" ? "all" : "Trả máy");
+                    triggerHaptic("selection");
+                  }}
                   className={`p-2 rounded-lg text-center transition-all ${statusFilter === "Trả máy"
                     ? "bg-gradient-to-br from-purple-500/20 to-purple-500/10 border-2 border-purple-500"
                     : "bg-slate-100 dark:bg-[#2b2b40] border border-slate-300 dark:border-gray-700"
@@ -751,101 +761,108 @@ export function ServiceManagerMobile({
               <Plus className="w-5 h-5 text-white" />
             </button>
           </>
-        )}
+        )
+        }
 
         {/* HISTORY TAB */}
         {/* HISTORY TAB */}
-        {activeTab === "history" && (
-          <div className="pb-20">
-            <ServiceHistory currentBranchId={currentBranchId} />
-          </div>
-        )}
+        {
+          activeTab === "history" && (
+            <div className="pb-20">
+              <ServiceHistory currentBranchId={currentBranchId} />
+            </div>
+          )
+        }
 
         {/* TEMPLATES TAB */}
-        {activeTab === "templates" && (
-          <div className="p-3">
-            <div className="space-y-3">
-              {templates?.map((template) => (
-                <div
-                  key={template.id}
-                  className="bg-white dark:bg-[#1e1e2d] rounded-xl p-4 border border-slate-200 dark:border-gray-800 active:bg-slate-50 dark:active:bg-[#2b2b40] transition-colors cursor-pointer"
-                  onClick={() => onApplyTemplate(template)}
-                >
-                  <div className="flex justify-between items-start mb-2">
-                    <div>
-                      <h3 className="font-bold text-slate-900 dark:text-white">{template.name}</h3>
-                      <p className="text-xs text-slate-600 dark:text-gray-500 mt-1">
-                        {template.description}
-                      </p>
+        {
+          activeTab === "templates" && (
+            <div className="p-3">
+              <div className="space-y-3">
+                {templates?.map((template) => (
+                  <div
+                    key={template.id}
+                    className="bg-white dark:bg-[#1e1e2d] rounded-xl p-4 border border-slate-200 dark:border-gray-800 active:bg-slate-50 dark:active:bg-[#2b2b40] transition-colors cursor-pointer"
+                    onClick={() => onApplyTemplate(template)}
+                  >
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <h3 className="font-bold text-slate-900 dark:text-white">{template.name}</h3>
+                        <p className="text-xs text-slate-600 dark:text-gray-500 mt-1">
+                          {template.description}
+                        </p>
+                      </div>
+                      <span className="text-[#009ef7] font-bold">
+                        {formatCurrency(
+                          template.labor_cost +
+                          (template.parts?.reduce(
+                            (s: number, p: any) => s + p.price * p.quantity,
+                            0
+                          ) || 0)
+                        )}
+                      </span>
                     </div>
-                    <span className="text-[#009ef7] font-bold">
-                      {formatCurrency(
-                        template.labor_cost +
-                        (template.parts?.reduce(
-                          (s: number, p: any) => s + p.price * p.quantity,
-                          0
-                        ) || 0)
-                      )}
-                    </span>
+                    <div className="flex items-center gap-4 text-xs text-slate-600 dark:text-gray-400 mt-3 pt-3 border-t border-slate-200 dark:border-gray-800">
+                      <div className="flex items-center gap-1">
+                        <Wrench className="w-3.5 h-3.5" />
+                        {template.duration} phút
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Package className="w-3.5 h-3.5" />
+                        {template.parts?.length || 0} phụ tùng
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-4 text-xs text-slate-600 dark:text-gray-400 mt-3 pt-3 border-t border-slate-200 dark:border-gray-800">
-                    <div className="flex items-center gap-1">
-                      <Wrench className="w-3.5 h-3.5" />
-                      {template.duration} phút
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Package className="w-3.5 h-3.5" />
-                      {template.parts?.length || 0} phụ tùng
-                    </div>
-                  </div>
-                </div>
-              ))}
+                ))}
 
-              {(!templates || templates.length === 0) && (
-                <div className="text-center py-10 text-slate-600 dark:text-gray-500">
-                  Chưa có mẫu sửa chữa nào
-                </div>
-              )}
+                {(!templates || templates.length === 0) && (
+                  <div className="text-center py-10 text-slate-600 dark:text-gray-500">
+                    Chưa có mẫu sửa chữa nào
+                  </div>
+                )}
+              </div>
+
+              {/* FAB for Templates */}
+              <button
+                onClick={() => {
+                  // Open template modal for creating
+                  // Since we don't have direct access to open the modal in create mode easily without prop drilling or state lift, 
+                  // we can use the existing onOpenTemplates which opens the modal in ServiceManager.
+                  // Ideally we should refactor to handle it here, but for now:
+                  onOpenTemplates();
+                }}
+                className="fixed bottom-20 right-4 w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-700 rounded-full shadow-xl shadow-purple-500/50 flex items-center justify-center hover:from-purple-600 hover:to-purple-800 transition-all z-[60] active:scale-95"
+              >
+                <Plus className="w-5 h-5 text-white" />
+              </button>
             </div>
-
-            {/* FAB for Templates */}
-            <button
-              onClick={() => {
-                // Open template modal for creating
-                // Since we don't have direct access to open the modal in create mode easily without prop drilling or state lift, 
-                // we can use the existing onOpenTemplates which opens the modal in ServiceManager.
-                // Ideally we should refactor to handle it here, but for now:
-                onOpenTemplates();
-              }}
-              className="fixed bottom-20 right-4 w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-700 rounded-full shadow-xl shadow-purple-500/50 flex items-center justify-center hover:from-purple-600 hover:to-purple-800 transition-all z-[60] active:scale-95"
-            >
-              <Plus className="w-5 h-5 text-white" />
-            </button>
-          </div>
-        )}
+          )
+        }
 
         {/* Filter Popup (Optional) */}
-        {showFilterPopup && (
-          <div className="fixed inset-0 bg-black/50 z-50 flex items-end md:items-center md:justify-center">
-            <div className="bg-white dark:bg-[#1e1e2d] rounded-t-3xl md:rounded-2xl w-full md:max-w-md p-6 space-y-4 animate-slide-up">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
-                  Bộ lọc nâng cao
-                </h3>
-                <button
-                  onClick={() => setShowFilterPopup(false)}
-                  className="text-slate-600 dark:text-gray-500 hover:text-slate-900 dark:hover:text-gray-300"
-                >
-                  ✕
-                </button>
-              </div>
-              {/* Add more filter options here */}
-              <div className="text-slate-600 dark:text-gray-400 text-sm text-center py-8">
-                Các tùy chọn lọc sẽ được bổ sung...
+        {
+          showFilterPopup && (
+            <div className="fixed inset-0 bg-black/50 z-50 flex items-end md:items-center md:justify-center">
+              <div className="bg-white dark:bg-[#1e1e2d] rounded-t-3xl md:rounded-2xl w-full md:max-w-md p-6 space-y-4 animate-slide-up">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
+                    Bộ lọc nâng cao
+                  </h3>
+                  <button
+                    onClick={() => setShowFilterPopup(false)}
+                    className="text-slate-600 dark:text-gray-500 hover:text-slate-900 dark:hover:text-gray-300"
+                  >
+                    ✕
+                  </button>
+                </div>
+                {/* Add more filter options here */}
+                <div className="text-slate-600 dark:text-gray-400 text-sm text-center py-8">
+                  Các tùy chọn lọc sẽ được bổ sung...
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )
+        }
 
         <style>{`
         .scrollbar-hide::-webkit-scrollbar {
@@ -867,10 +884,10 @@ export function ServiceManagerMobile({
           animation: slide-up 0.3s ease-out;
         }
       `}</style>
-      </div>
+      </div >
 
       {/* BOTTOM NAVIGATION BAR */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-[#1e1e2d] border-t border-slate-200 dark:border-gray-800 px-6 py-2 z-[100] flex justify-between items-center pb-safe">
+      < div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-[#1e1e2d] border-t border-slate-200 dark:border-gray-800 px-6 py-2 z-[100] flex justify-between items-center pb-safe" >
         <button
           onClick={() => setActiveTab("orders")}
           className={`flex flex-col items-center gap-1 transition-colors ${activeTab === "orders" ? "text-[#009ef7]" : "text-slate-600 dark:text-gray-500 hover:text-slate-900 dark:hover:text-gray-300"
@@ -897,7 +914,7 @@ export function ServiceManagerMobile({
           <FileText className={`w-6 h-6 ${activeTab === "templates" ? "fill-current/20" : ""}`} />
           <span className="text-[10px] font-medium">Mẫu SC</span>
         </button>
-      </div>
-    </div>
+      </div >
+    </div >
   );
 }

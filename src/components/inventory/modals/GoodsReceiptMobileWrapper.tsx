@@ -3,6 +3,7 @@ import { useAuth } from '../../../contexts/AuthContext';
 import { GoodsReceiptMobileModal } from '../../inventory/GoodsReceiptMobileModal';
 import { showToast } from '../../../utils/toast';
 import { useCreatePartRepo } from '../../../hooks/usePartsRepository';
+import { triggerHaptic } from '../../../utils/haptics';
 import AddProductModal from './AddProductModal';
 import type { Part } from '../../../types';
 
@@ -148,6 +149,7 @@ const GoodsReceiptMobileWrapper: React.FC<{
         paymentType: effectivePaymentType,
         paidAmount,
       });
+      triggerHaptic("success");
       // clearDraft(); // removed because not defined here, handled by parent or logic inside onSave if passed properly? 
       // In original it called clearDraft(), but clearDraft likely isn't in scope.
       // Wait, original file (Step 3162) had `clearDraft();`.
@@ -167,6 +169,7 @@ const GoodsReceiptMobileWrapper: React.FC<{
       onClose();
     } catch (error) {
       console.error("Save error:", error);
+      triggerHaptic("error");
     } finally {
       setIsSubmitting(false);
     }

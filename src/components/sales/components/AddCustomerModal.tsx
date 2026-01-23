@@ -80,7 +80,7 @@ const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
                 onCustomerChange({ ...newCustomer, phone: e.target.value })
               }
               className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500"
-              placeholder="Nhập số điện thoại"
+              placeholder="Nhập SĐT (nhiều số, cách nhau dấu phẩy)"
             />
           </div>
 

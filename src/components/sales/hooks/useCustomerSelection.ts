@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback } from "react";
 import type { Customer } from "../../../types";
 import { showToast } from "../../../utils/toast";
+import { supabase } from "../../../supabaseClient";
 
 export interface NewCustomerData {
     name: string;
@@ -51,71 +52,128 @@ export function useCustomerSelection(
         licensePlate: "",
     });
 
+    const extractPhoneNumbers = useCallback((value: string) => {
+        const matches = value.match(/\d{8,12}/g);
+        return matches ? matches.map((m) => m.trim()) : [];
+    }, []);
+
     // Filter customers based on search
     const filteredCustomers = useMemo(() => {
         if (!customerSearch) return allCustomers;
-        const search = customerSearch.toLowerCase();
-        return allCustomers.filter(
-            (c) =>
-                c.name?.toLowerCase().includes(search) ||
-                c.phone?.includes(search)
-        );
-    }, [allCustomers, customerSearch]);
+        const normalizePhone = (value: string) => value.replace(/\D/g, "");
+        const searchText = customerSearch.toLowerCase().trim();
+        const searchDigits = normalizePhone(customerSearch);
+
+        return allCustomers.filter((c) => {
+            const nameMatch = c.name?.toLowerCase().includes(searchText);
+            const phoneNumbers = extractPhoneNumbers(c.phone || "");
+            const phoneMatch = searchDigits
+                ? phoneNumbers.some((num) => num.includes(searchDigits))
+                : c.phone?.toLowerCase().includes(searchText);
+            return Boolean(nameMatch || phoneMatch);
+        });
+    }, [allCustomers, customerSearch, extractPhoneNumbers]);
 
     // Handle save new customer
     const handleSaveNewCustomer = useCallback(
-        (customers: Customer[], createCustomerMutation: any) => {
-            if (!newCustomer.name || !newCustomer.phone) {
+        async (customers: Customer[], createCustomerMutation: any) => {
+            const normalizePhone = (value: string) => value.replace(/\D/g, "");
+            const trimmedName = newCustomer.name.trim();
+            const trimmedPhone = newCustomer.phone.trim();
+            const normalizedPhone = normalizePhone(trimmedPhone);
+            const phoneNumbers = extractPhoneNumbers(trimmedPhone);
+
+            if (!trimmedName || !trimmedPhone) {
                 alert("Vui lòng nhập tên và số điện thoại");
                 return;
             }
 
-            // Check if customer already exists
-            const existingCustomer = customers.find(
-                (c) => c.phone === newCustomer.phone
-            );
+            if (phoneNumbers.length === 0) {
+                alert("Số điện thoại không hợp lệ");
+                return;
+            }
+
+            // Check if customer already exists (normalized)
+            const existingCustomer = customers.find((c) => {
+                const existingNumbers = extractPhoneNumbers(c.phone || "");
+                return existingNumbers.some((num) => phoneNumbers.includes(num));
+            });
             if (existingCustomer) {
-                alert("Số điện thoại này đã tồn tại!");
+                setSelectedCustomer(existingCustomer);
+                setCustomerSearch(existingCustomer.name || trimmedPhone);
+                setShowAddCustomerModal(false);
+                showToast.info("SĐT đã tồn tại. Đã chọn khách hàng cũ.");
                 return;
             }
 
             // Create new customer
             const customer = {
                 id: `CUST-${Date.now()}`,
-                name: newCustomer.name,
-                phone: newCustomer.phone,
+                name: trimmedName,
+                phone: phoneNumbers.join(", "),
                 created_at: new Date().toISOString(),
-                vehicleModel: newCustomer.vehicleModel,
-                licensePlate: newCustomer.licensePlate,
+                vehicleModel: newCustomer.vehicleModel?.trim() || "",
+                licensePlate: newCustomer.licensePlate?.trim() || "",
             };
 
-            // Save to database using mutation
-            createCustomerMutation.mutate(customer, {
-                onSuccess: (savedCustomer: Customer) => {
-                    // Select the new customer
-                    setSelectedCustomer({
-                        id: savedCustomer.id,
-                        name: savedCustomer.name,
-                        phone: savedCustomer.phone,
-                        created_at: savedCustomer.created_at,
-                    });
-                    setCustomerSearch(savedCustomer.name);
+            try {
+                const savedCustomer: Customer = await createCustomerMutation.mutateAsync(
+                    customer
+                );
 
-                    // Reset form and close modal
-                    setNewCustomer({
-                        name: "",
-                        phone: "",
-                        vehicleModel: "",
-                        licensePlate: "",
-                    });
-                    setShowAddCustomerModal(false);
-                    showToast.success("Đã thêm khách hàng mới!");
-                },
-                onError: (error: any) => {
-                    console.error("Error creating customer:", error);
-                    showToast.error("Không thể thêm khách hàng. Vui lòng thử lại.");
-                },
-            });
+                // Select the new customer
+                setSelectedCustomer({
+                    id: savedCustomer.id,
+                    name: savedCustomer.name,
+                    phone: savedCustomer.phone,
+                    created_at: savedCustomer.created_at,
+                });
+                setCustomerSearch(savedCustomer.name);
+
+                // Reset form and close modal
+                setNewCustomer({
+                    name: "",
+                    phone: "",
+                    vehicleModel: "",
+                    licensePlate: "",
+                });
+                setShowAddCustomerModal(false);
+                showToast.success("Đã thêm khách hàng mới!");
+            } catch (error: any) {
+                console.error("Error creating customer:", error);
+
+                const errorCode = String(error?.code || error?.cause?.code || "");
+                const errorMessage = String(error?.message || "");
+                const isDuplicatePhone =
+                    errorCode === "23505" ||
+                    errorMessage.includes("customers_phone_unique") ||
+                    errorMessage.includes("customers_phone_unique_idx") ||
+                    errorMessage.toLowerCase().includes("duplicate key");
+
+                if (isDuplicatePhone) {
+                    const orFilters = phoneNumbers
+                        .map((num) => `phone.ilike.%${num}%`)
+                        .join(",");
+                    const query = supabase
+                        .from("customers")
+                        .select("*")
+                        .limit(1);
+
+                    const { data: existingByPhone } = orFilters
+                        ? await query.or(orFilters).maybeSingle()
+                        : await query.ilike("phone", `%${trimmedPhone}%`).maybeSingle();
+
+                    if (existingByPhone) {
+                        setSelectedCustomer(existingByPhone as Customer);
+                        setCustomerSearch(existingByPhone.name || trimmedPhone);
+                        setShowAddCustomerModal(false);
+                        showToast.info("SĐT đã tồn tại. Đã chọn khách hàng cũ.");
+                        return;
+                    }
+                }
+
+                showToast.error("Không thể thêm khách hàng. Vui lòng thử lại.");
+            }
         },
         [newCustomer]
     );

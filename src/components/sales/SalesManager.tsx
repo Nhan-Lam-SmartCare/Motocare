@@ -378,6 +378,7 @@ const SalesManager: React.FC = () => {
             }
 
             const saleData = {
+                id: crypto.randomUUID(),
                 items: cart.cartItems,
                 customer: customer.selectedCustomer
                     ? {
@@ -389,6 +390,8 @@ const SalesManager: React.FC = () => {
                 paymentMethod: finalization.paymentMethod,
                 discount: cart.orderDiscount,
                 branchId: currentBranchId,
+                userId: user?.id || undefined,
+                userName: user?.email || "Unknown",
                 createdBy: user?.id || "",
                 saleTime,
                 paidAmount,
@@ -410,7 +413,7 @@ const SalesManager: React.FC = () => {
             };
 
             const newSale = await createSaleAtomicAsync(saleData as any);
-            const saleId = (newSale as any).data?.id || (newSale as any).id;
+            const saleId = (newSale as any)?.id;
 
             // Force update note if it wasn't saved by RPC (backup)
             if (finalization.paymentType === "installment" && saleId) {

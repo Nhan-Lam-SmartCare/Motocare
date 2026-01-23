@@ -107,7 +107,11 @@ export const useCreateSaleRepo = () => {
   const qc = useQueryClient();
   return useMutation({
     // Route legacy hook to atomic implementation for better integrity
-    mutationFn: (input: Partial<Sale>) => createSaleAtomic(input),
+    mutationFn: async (input: Partial<Sale>) => {
+      const res = await createSaleAtomic(input);
+      if (!res.ok) throw res.error;
+      return res.data;
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["salesRepo"] });
       qc.invalidateQueries({ queryKey: ["salesRepoPaged"] });
@@ -122,8 +126,12 @@ export const useCreateSaleRepo = () => {
 export const useCreateSaleAtomicRepo = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (input: Partial<Sale>) => createSaleAtomic(input),
-    onSuccess: (res) => {
+    mutationFn: async (input: Partial<Sale>) => {
+      const res = await createSaleAtomic(input);
+      if (!res.ok) throw res.error;
+      return res.data;
+    },
+    onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: ["salesRepo"] });
       qc.invalidateQueries({ queryKey: ["salesRepoPaged"] });
       qc.invalidateQueries({ queryKey: ["salesRepoKeyset"] });
@@ -133,8 +141,8 @@ export const useCreateSaleAtomicRepo = () => {
       qc.invalidateQueries({ queryKey: ["cashTransactions"] });
       qc.invalidateQueries({ queryKey: ["paymentSources"] });
       showToast.success("Đã tạo hóa đơn (atomic)");
-      if ((res as any)?.data?.inventoryTxCount) {
-        showToast.info(`Xuất kho: ${(res as any).data.inventoryTxCount} dòng`);
+      if ((data as any)?.inventoryTxCount) {
+        showToast.info(`Xuất kho: ${(data as any).inventoryTxCount} dòng`);
       }
     },
     onError: (err: any) => showToast.error(mapRepoErrorForUser(err)),

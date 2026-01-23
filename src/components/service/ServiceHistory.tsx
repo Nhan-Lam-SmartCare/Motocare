@@ -517,15 +517,7 @@ export const ServiceHistory: React.FC<ServiceHistoryProps> = ({
           </div>
         </div>
 
-        <div className="col-span-2 md:col-span-1 bg-white dark:bg-slate-800 rounded-xl p-3 md:p-4 border border-slate-200 dark:border-slate-700">
-          <button
-            onClick={exportToCSV}
-            className="w-full px-4 py-2 bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg text-sm font-medium flex items-center justify-center gap-2 transition-colors"
-          >
-            <Download className="w-4 h-4" />
-            Xuất Excel
-          </button>
-        </div>
+        
       </div>
 
       {/* Action Bar - Mobile optimized */}

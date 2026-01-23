@@ -1093,6 +1093,21 @@ export default function ServiceManager() {
           creationDate: new Date().toISOString(),
         };
 
+        // Fallback: ensure additionalServices is persisted (in case RPC ignores it)
+        if (additionalServices?.length) {
+          try {
+            await supabase
+              .from("work_orders")
+              .update({ additionalServices })
+              .eq("id", orderId);
+          } catch (err) {
+            console.error(
+              "[handleMobileSave] Fallback update additionalServices failed (create)",
+              err
+            );
+          }
+        }
+
         showToast.success("Tạo phiếu sửa chữa thành công!");
       } else {
         // --- UPDATE ORDER ---
@@ -1163,6 +1178,21 @@ export default function ServiceManager() {
           totalPaid: totalPaid > 0 ? totalPaid : undefined,
           remainingAmount: remainingAmount,
         };
+
+        // Fallback: ensure additionalServices is persisted (in case RPC ignores it)
+        if (additionalServices?.length) {
+          try {
+            await supabase
+              .from("work_orders")
+              .update({ additionalServices })
+              .eq("id", editingOrder.id);
+          } catch (err) {
+            console.error(
+              "[handleMobileSave] Fallback update additionalServices failed (update)",
+              err
+            );
+          }
+        }
 
         showToast.success("Cập nhật phiếu sửa chữa thành công!");
       }

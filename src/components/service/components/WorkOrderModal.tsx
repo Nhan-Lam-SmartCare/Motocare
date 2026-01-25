@@ -2135,8 +2135,10 @@ const WorkOrderModal: React.FC<{
               id: order.id,
               customerName: formData.customerName || "",
               customerPhone: formData.customerPhone || "",
+              vehicleId: formData.vehicleId || "",
               vehicleModel: formData.vehicleModel || "",
               licensePlate: formData.licensePlate || "",
+              currentKm: formData.currentKm,
               issueDescription: formData.issueDescription || "",
               technicianName: formData.technicianName || "",
               status: formData.status || "Tiếp nhận",
@@ -2173,6 +2175,10 @@ const WorkOrderModal: React.FC<{
                   (workOrderRow as any).customerphone ||
                   (workOrderRow as any).customerPhone ||
                   order.customerPhone,
+                vehicleId:
+                  (workOrderRow as any).vehicleid ||
+                  (workOrderRow as any).vehicleId ||
+                  order.vehicleId,
                 vehicleModel:
                   (workOrderRow as any).vehiclemodel ||
                   (workOrderRow as any).vehicleModel ||
@@ -2181,6 +2187,10 @@ const WorkOrderModal: React.FC<{
                   (workOrderRow as any).licenseplate ||
                   (workOrderRow as any).licensePlate ||
                   order.licensePlate,
+                currentKm:
+                  (workOrderRow as any).currentkm ||
+                  (workOrderRow as any).currentKm ||
+                  order.currentKm,
                 issueDescription:
                   (workOrderRow as any).issuedescription ||
                   (workOrderRow as any).issueDescription ||
@@ -2254,8 +2264,10 @@ const WorkOrderModal: React.FC<{
                 ...order,
                 customerName: formData.customerName || order.customerName,
                 customerPhone: formData.customerPhone || order.customerPhone,
+                vehicleId: formData.vehicleId || order.vehicleId,
                 vehicleModel: formData.vehicleModel || order.vehicleModel,
                 licensePlate: formData.licensePlate || order.licensePlate,
+                currentKm: formData.currentKm ?? order.currentKm,
                 issueDescription:
                   formData.issueDescription || order.issueDescription,
                 technicianName: formData.technicianName || order.technicianName,

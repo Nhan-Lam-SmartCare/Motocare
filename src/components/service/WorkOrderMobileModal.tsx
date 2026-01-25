@@ -1336,7 +1336,12 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
         errorMessage = "❌ Lỗi kết nối (Timeout/Mạng). Vui lòng kiểm tra kết nối mạng.";
       }
 
-      alert(errorMessage + "\n\nDữ liệu đã được lưu tạm. Bạn có thể thử lại hoặc chụp màn hình.");
+      if (!error?.suppressAlert) {
+        alert(
+          errorMessage +
+            "\n\nDữ liệu đã được lưu tạm. Bạn có thể thử lại hoặc chụp màn hình."
+        );
+      }
       // onClose(); // Don't close so user can retry
     }
   };

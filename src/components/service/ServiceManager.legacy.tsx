@@ -1048,12 +1048,16 @@ export default function ServiceManager() {
 
       // Validate required fields
       if (!workOrderData.customer?.name) {
-        showToast.error("Vui lòng nhập tên khách hàng");
-        return;
+        const err = new Error("Vui lòng nhập tên khách hàng");
+        (err as any).suppressAlert = true;
+        showToast.error(err.message);
+        throw err;
       }
       if (!workOrderData.customer?.phone) {
-        showToast.error("Vui lòng nhập số điện thoại");
-        return;
+        const err = new Error("Vui lòng nhập số điện thoại");
+        (err as any).suppressAlert = true;
+        showToast.error(err.message);
+        throw err;
       }
 
       // Extract data from workOrderData
@@ -1434,6 +1438,12 @@ export default function ServiceManager() {
       showToast.error(
         `Lỗi: ${error.message || "Không thể lưu phiếu sửa chữa"}`
       );
+      const err =
+        error instanceof Error
+          ? error
+          : new Error(error?.message || "Không thể lưu phiếu sửa chữa");
+      (err as any).suppressAlert = true;
+      throw err;
     }
   };
 

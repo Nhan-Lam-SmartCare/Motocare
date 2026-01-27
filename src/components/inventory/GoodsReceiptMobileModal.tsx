@@ -286,7 +286,7 @@ export const GoodsReceiptMobileModal: React.FC<Props> = ({
                   <button
                     type="button"
                     onClick={() => setShowSupplierModal(true)}
-                    className="w-full flex items-center justify-between gap-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 px-4 py-3"
+                    className="w-full flex items-center justify-between gap-3 rounded-xl border border-[color:rgba(var(--brand-primary),0.35)] dark:border-[color:rgba(var(--brand-primary),0.25)] bg-[color:rgba(var(--brand-primary),0.08)] dark:bg-slate-900 px-4 py-3"
                   >
                     <div className="text-left">
                       {selectedSupplier ? (

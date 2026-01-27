@@ -65,7 +65,7 @@ export const SupplierSelectionModal: React.FC<SupplierSelectionModalProps> = ({
         className="bg-white dark:bg-slate-800 w-full sm:max-w-md h-[85vh] sm:h-auto sm:max-h-[80vh] rounded-t-3xl sm:rounded-xl overflow-hidden flex flex-col"
       >
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-4 flex items-center justify-between flex-shrink-0">
+        <div className="bg-gradient-to-r from-[rgb(var(--brand-primary))] to-[rgb(var(--brand-secondary))] p-4 flex items-center justify-between flex-shrink-0">
           <h3 className="text-lg font-bold text-white">
             {showAddForm ? "Thêm NCC mới" : "Chọn nhà cung cấp"}
           </h3>
@@ -87,7 +87,7 @@ export const SupplierSelectionModal: React.FC<SupplierSelectionModalProps> = ({
                   placeholder="Tìm theo tên, SĐT..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full px-4 py-3 pl-10 border border-slate-300 dark:border-slate-600 rounded-xl bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100"
+                  className="w-full px-4 py-3 pl-10 border border-slate-300 dark:border-slate-600 rounded-xl bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-[rgb(var(--brand-primary))] focus:ring-opacity-30 focus:border-[rgb(var(--brand-primary))]"
                 />
                 <svg
                   className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400"
@@ -122,7 +122,7 @@ export const SupplierSelectionModal: React.FC<SupplierSelectionModalProps> = ({
                     }}
                     className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${
                       selectedSupplierId === supplier.id
-                        ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
+                        ? "border-[color:rgba(var(--brand-primary),0.6)] bg-[color:rgba(var(--brand-primary),0.08)] dark:bg-[color:rgba(var(--brand-primary),0.15)]"
                         : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 active:scale-98"
                     }`}
                   >
@@ -148,7 +148,7 @@ export const SupplierSelectionModal: React.FC<SupplierSelectionModalProps> = ({
             <div className="p-3 border-t border-slate-200 dark:border-slate-700 flex-shrink-0">
               <button
                 onClick={() => setShowAddForm(true)}
-                className="w-full py-4 bg-green-600 hover:bg-green-700 active:scale-98 text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-transform"
+                className="w-full py-4 bg-gradient-to-r from-[rgb(var(--brand-primary))] to-[rgb(var(--brand-secondary))] hover:brightness-110 active:scale-98 text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-transform shadow-md shadow-emerald-500/20"
               >
                 <span className="text-xl">+</span>
                 <span>Thêm nhà cung cấp mới</span>
@@ -170,7 +170,7 @@ export const SupplierSelectionModal: React.FC<SupplierSelectionModalProps> = ({
                     setNewSupplier({ ...newSupplier, name: e.target.value })
                   }
                   placeholder="Nhập tên NCC"
-                  className="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
+                  className="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-[rgb(var(--brand-primary))] focus:ring-opacity-30 focus:border-[rgb(var(--brand-primary))]"
                 />
               </div>
 
@@ -186,7 +186,7 @@ export const SupplierSelectionModal: React.FC<SupplierSelectionModalProps> = ({
                     setNewSupplier({ ...newSupplier, phone: e.target.value })
                   }
                   placeholder="Nhập SĐT"
-                  className="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
+                  className="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-[rgb(var(--brand-primary))] focus:ring-opacity-30 focus:border-[rgb(var(--brand-primary))]"
                 />
               </div>
 
@@ -201,7 +201,7 @@ export const SupplierSelectionModal: React.FC<SupplierSelectionModalProps> = ({
                   }
                   placeholder="Nhập địa chỉ"
                   rows={3}
-                  className="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 resize-none"
+                  className="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 resize-none focus:ring-2 focus:ring-[rgb(var(--brand-primary))] focus:ring-opacity-30 focus:border-[rgb(var(--brand-primary))]"
                 />
               </div>
 
@@ -216,7 +216,7 @@ export const SupplierSelectionModal: React.FC<SupplierSelectionModalProps> = ({
                   }
                   placeholder="Ghi chú thêm"
                   rows={2}
-                  className="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 resize-none"
+                  className="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 resize-none focus:ring-2 focus:ring-[rgb(var(--brand-primary))] focus:ring-opacity-30 focus:border-[rgb(var(--brand-primary))]"
                 />
               </div>
             </div>
@@ -240,7 +240,7 @@ export const SupplierSelectionModal: React.FC<SupplierSelectionModalProps> = ({
               <button
                 onClick={handleAddSupplier}
                 disabled={!newSupplier.name.trim() || createSupplier.isPending}
-                className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 dark:disabled:bg-slate-600 text-white rounded-xl font-bold active:scale-98 transition-transform disabled:cursor-not-allowed"
+                className="flex-1 py-3 bg-gradient-to-r from-[rgb(var(--brand-primary))] to-[rgb(var(--brand-secondary))] hover:brightness-110 disabled:from-slate-300 disabled:to-slate-300 dark:disabled:from-slate-600 dark:disabled:to-slate-600 text-white rounded-xl font-bold active:scale-98 transition-transform disabled:cursor-not-allowed"
               >
                 {createSupplier.isPending ? "Đang thêm..." : "Thêm NCC"}
               </button>

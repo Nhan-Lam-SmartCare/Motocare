@@ -14,7 +14,7 @@ import {
   Boxes, Package, Search, FileText, Filter, Edit, Trash2,
   Plus, Repeat, UploadCloud, DownloadCloud, MoreHorizontal, ShoppingCart,
   Calendar, ArrowUpRight, ArrowDownLeft, X, Check, AlertTriangle, Printer,
-  ChevronDown, ChevronUp, ChevronLeft, ChevronRight
+  ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Eye
 } from 'lucide-react';
 import ConfirmModal from '../common/ConfirmModal';
 import InventoryHistoryModal from './modals/InventoryHistoryModal';
@@ -46,6 +46,13 @@ const InventoryHistorySection: React.FC<{
     "import"
   );
   const [editingReceipt, setEditingReceipt] = useState<{
+    receiptCode: string;
+    date: Date;
+    supplier: string;
+    items: InventoryTransaction[];
+    total: number;
+  } | null>(null);
+  const [selectedReceipt, setSelectedReceipt] = useState<{
     receiptCode: string;
     date: Date;
     supplier: string;
@@ -970,30 +977,44 @@ const InventoryHistorySection: React.FC<{
 
                   {/* Cột 5: Thao tác */}
                   <div className="col-span-1">
-                    <button
-                      onClick={() =>
-                        setEditingReceipt({
-                          ...receipt,
-                          date: new Date(receipt.date),
-                        })
-                      }
-                      className="p-1.5 text-blue-400 hover:bg-blue-500/20 rounded transition-colors"
-                      title="Chỉnh sửa"
-                    >
-                      <svg
-                        className="w-5 h-5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
+                    <div className="flex items-center justify-end gap-2">
+                      <button
+                        onClick={() =>
+                          setSelectedReceipt({
+                            ...receipt,
+                            date: new Date(receipt.date),
+                          })
+                        }
+                        className="p-1.5 text-emerald-500 hover:bg-emerald-500/20 rounded transition-colors"
+                        title="Xem chi tiết"
                       >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                        />
-                      </svg>
-                    </button>
+                        <Eye className="w-5 h-5" />
+                      </button>
+                      <button
+                        onClick={() =>
+                          setEditingReceipt({
+                            ...receipt,
+                            date: new Date(receipt.date),
+                          })
+                        }
+                        className="p-1.5 text-blue-400 hover:bg-blue-500/20 rounded transition-colors"
+                        title="Chỉnh sửa"
+                      >
+                        <svg
+                          className="w-5 h-5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                          />
+                        </svg>
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1113,6 +1134,98 @@ const InventoryHistorySection: React.FC<{
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {selectedReceipt && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white dark:bg-slate-800 rounded-xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700">
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                Chi tiết phiếu nhập
+              </h3>
+              <button
+                onClick={() => setSelectedReceipt(null)}
+                className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-auto p-4 space-y-4">
+              <div className="bg-cyan-50 dark:bg-cyan-900/20 rounded-lg p-3">
+                <div className="text-xs text-cyan-600 dark:text-cyan-400 mb-1">
+                  Mã phiếu
+                </div>
+                <div className="text-lg font-bold text-cyan-600 dark:text-cyan-400">
+                  {selectedReceipt.receiptCode}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-3">
+                  <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">
+                    Ngày/giờ nhập
+                  </div>
+                  <div className="text-sm font-medium text-slate-900 dark:text-white">
+                    {formatDate(selectedReceipt.date, false)}
+                  </div>
+                </div>
+                <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3">
+                  <div className="text-xs text-blue-600 dark:text-blue-400 mb-1">
+                    Tổng tiền
+                  </div>
+                  <div className="text-lg font-bold text-blue-600 dark:text-blue-400">
+                    {formatCurrency(selectedReceipt.total)}
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-orange-50 dark:bg-orange-900/20 rounded-lg p-3">
+                <div className="text-xs text-orange-600 dark:text-orange-400 mb-1">
+                  Nhà cung cấp
+                </div>
+                <div className="text-base font-semibold text-orange-900 dark:text-orange-100">
+                  {selectedReceipt.supplier}
+                </div>
+              </div>
+
+              <div>
+                <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-2">
+                  Danh sách sản phẩm ({selectedReceipt.items.length})
+                </h4>
+                <div className="space-y-2">
+                  {selectedReceipt.items.map((item) => {
+                    const part = parts.find((p) => p.id === item.partId);
+                    const sellingPrice =
+                      part?.retailPrice?.[currentBranchId || ""] || 0;
+                    return (
+                      <div
+                        key={item.id}
+                        className="flex items-start justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg"
+                      >
+                        <div className="flex-1">
+                          <div className="text-sm font-medium text-slate-900 dark:text-white">
+                            {item.quantity} x {item.partName}
+                          </div>
+                          <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                            Giá nhập: {formatCurrency(item.unitPrice || 0)} / SP
+                          </div>
+                          {sellingPrice > 0 && (
+                            <div className="text-xs text-emerald-600 dark:text-emerald-400 mt-0.5">
+                              Giá bán: {formatCurrency(sellingPrice)} / SP
+                            </div>
+                          )}
+                        </div>
+                        <div className="text-sm font-bold text-slate-900 dark:text-white">
+                          {formatCurrency(item.quantity * (item.unitPrice || 0))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 

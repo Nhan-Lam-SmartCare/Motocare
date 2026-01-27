@@ -76,6 +76,13 @@
   /* red-700 */
   --color-accent-red-border: 254 202 202;
   /* red-200 */
+
+  /* Brand Theme (default: blue) */
+  --brand-primary: 59 130 246;
+  /* blue-500 */
+  --brand-secondary: 37 99 235;
+  /* blue-600 */
+  --brand-contrast: 255 255 255;
 }
 
 /* Dark Mode Colors */

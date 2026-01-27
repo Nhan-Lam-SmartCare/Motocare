@@ -125,7 +125,7 @@ const SupplierModal: React.FC<SupplierModalProps> = ({
                                 value={name}
                                 onChange={(e) => setName(e.target.value)}
                                 placeholder="Nhập tên nhà cung cấp"
-                                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-[rgb(var(--brand-primary))] focus:ring-opacity-40 focus:border-[rgb(var(--brand-primary))]"
                                 required
                                 autoFocus
                                 disabled={isSubmitting}
@@ -141,7 +141,7 @@ const SupplierModal: React.FC<SupplierModalProps> = ({
                                 value={phone}
                                 onChange={(e) => setPhone(e.target.value)}
                                 placeholder="Nhập số điện thoại"
-                                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-[rgb(var(--brand-primary))] focus:ring-opacity-40 focus:border-[rgb(var(--brand-primary))]"
                                 disabled={isSubmitting}
                             />
                         </div>
@@ -155,7 +155,7 @@ const SupplierModal: React.FC<SupplierModalProps> = ({
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 placeholder="Nhập email"
-                                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-[rgb(var(--brand-primary))] focus:ring-opacity-40 focus:border-[rgb(var(--brand-primary))]"
                                 disabled={isSubmitting}
                             />
                         </div>
@@ -169,7 +169,7 @@ const SupplierModal: React.FC<SupplierModalProps> = ({
                                 onChange={(e) => setAddress(e.target.value)}
                                 placeholder="Nhập địa chỉ"
                                 rows={3}
-                                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-[rgb(var(--brand-primary))] focus:ring-opacity-40 focus:border-[rgb(var(--brand-primary))] resize-none"
                                 disabled={isSubmitting}
                             />
                         </div>
@@ -187,7 +187,7 @@ const SupplierModal: React.FC<SupplierModalProps> = ({
                         </button>
                         <button
                             type="submit"
-                            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium flex items-center gap-2 transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
+                            className="px-4 py-2 bg-gradient-to-r from-[rgb(var(--brand-primary))] to-[rgb(var(--brand-secondary))] hover:brightness-110 text-white rounded-lg font-medium flex items-center gap-2 transition-colors disabled:opacity-70 disabled:cursor-not-allowed shadow-md shadow-emerald-500/20"
                             disabled={isSubmitting}
                         >
                             {isSubmitting && (

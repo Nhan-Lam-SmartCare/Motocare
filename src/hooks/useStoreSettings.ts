@@ -14,6 +14,7 @@ export interface StoreSettings {
     logo_url?: string;
     bank_qr_url?: string;
     primary_color?: string;
+    theme_preset?: string;
     business_hours?: string;
 }
 

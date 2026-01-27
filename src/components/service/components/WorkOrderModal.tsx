@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../../../contexts/AuthContext";
-import type { WorkOrder, Part, WorkOrderPart, Vehicle } from "../../../types";
+import type { WorkOrder, Part, WorkOrderPart, Vehicle, InventoryTransaction } from "../../../types";
 import { formatCurrency, formatWorkOrderId, normalizeSearchText } from "../../../utils/format";
 import { NumberInput } from "../../common/NumberInput";
 import { getCategoryColor } from "../../../utils/categoryColors";
@@ -417,6 +417,10 @@ const WorkOrderModal: React.FC<{
     const [searchPart, setSearchPart] = useState("");
     const [searchPartCategory, setSearchPartCategory] = useState<string>("");
     const [selectedParts, setSelectedParts] = useState<WorkOrderPart[]>([]);
+    const [inventoryTxs, setInventoryTxs] = useState<InventoryTransaction[]>([]);
+    const [inventoryTxLoading, setInventoryTxLoading] = useState(false);
+    const [inventoryTxError, setInventoryTxError] = useState<string | null>(null);
+    const [isDeductingInventory, setIsDeductingInventory] = useState(false);
     const [showPartSearch, setShowPartSearch] = useState(false);
     const [partialPayment, setPartialPayment] = useState(0);
     const [showPartialPayment, setShowPartialPayment] = useState(false);
@@ -569,6 +573,98 @@ const WorkOrderModal: React.FC<{
       setEditCustomerName("");
       setEditCustomerPhone("");
     }, [order]);
+
+    useEffect(() => {
+      let isMounted = true;
+      const fetchInventoryTxs = async () => {
+        if (!order?.id) return;
+        setInventoryTxLoading(true);
+        setInventoryTxError(null);
+        const { data, error } = await supabase
+          .from("inventory_transactions")
+          .select(
+            "id,type,partId,partName,quantity,date,unitPrice,totalPrice,branchId,notes,workOrderId"
+          )
+          .eq("workOrderId", order.id)
+          .eq("type", "Xuất kho")
+          .order("date", { ascending: false });
+
+        if (!isMounted) return;
+        if (error) {
+          setInventoryTxError(
+            (error as any)?.message || "Không thể tải lịch sử xuất kho"
+          );
+          setInventoryTxs([]);
+        } else {
+          setInventoryTxs((data || []) as InventoryTransaction[]);
+        }
+        setInventoryTxLoading(false);
+      };
+
+      fetchInventoryTxs();
+      return () => {
+        isMounted = false;
+      };
+    }, [order?.id]);
+
+    const exportQtyByPartId = useMemo(() => {
+      const map = new Map<string, number>();
+      inventoryTxs.forEach((tx) => {
+        map.set(tx.partId, (map.get(tx.partId) || 0) + (tx.quantity || 0));
+      });
+      return map;
+    }, [inventoryTxs]);
+
+    const handleRefreshInventoryTxs = async () => {
+      if (!order?.id) return;
+      setInventoryTxLoading(true);
+      setInventoryTxError(null);
+      const { data, error } = await supabase
+        .from("inventory_transactions")
+        .select(
+          "id,type,partId,partName,quantity,date,unitPrice,totalPrice,branchId,notes,workOrderId"
+        )
+        .eq("workOrderId", order.id)
+        .eq("type", "Xuất kho")
+        .order("date", { ascending: false });
+      if (error) {
+        setInventoryTxError(
+          (error as any)?.message || "Không thể tải lịch sử xuất kho"
+        );
+        setInventoryTxs([]);
+      } else {
+        setInventoryTxs((data || []) as InventoryTransaction[]);
+      }
+      setInventoryTxLoading(false);
+    };
+
+    const handleManualDeductInventory = async () => {
+      if (!order?.id) return;
+      if (formData.paymentStatus !== "paid") {
+        showToast.warning("Phiếu chưa thanh toán đủ nên chưa thể trừ kho");
+        return;
+      }
+      setIsDeductingInventory(true);
+      try {
+        const result = await completeWorkOrderPayment(
+          order.id,
+          formData.paymentMethod || "cash",
+          0
+        );
+        if (!result.ok) {
+          showToast.warning(
+            "Không thể trừ kho: " + (result.error.message || "Lỗi không xác định")
+          );
+        } else {
+          showToast.success("Đã trừ kho cho phiếu này");
+        }
+        await handleRefreshInventoryTxs();
+      } catch (err: any) {
+        showToast.error(err?.message || "Không thể trừ kho");
+      } finally {
+        setIsDeductingInventory(false);
+      }
+    };
 
     // Auto-restore draft after syncing from `order`
     useEffect(() => {
@@ -2804,6 +2900,100 @@ const WorkOrderModal: React.FC<{
                   </p>
                 </div>
               </div>
+            </div>
+          )}
+
+          {formData.id && selectedParts.length > 0 && (
+            <div className="mx-4 mt-3 md:mx-6 p-4 bg-slate-50 dark:bg-slate-700/30 border border-slate-200 dark:border-slate-600 rounded-lg">
+              <div className="flex items-center justify-between gap-2">
+                <div className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+                  Kiểm tra trừ kho
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleRefreshInventoryTxs}
+                    className="text-xs px-2 py-1 rounded-lg border border-slate-200 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700"
+                  >
+                    Làm mới
+                  </button>
+                  {formData.paymentStatus === "paid" && inventoryTxs.length === 0 && (
+                    <button
+                      onClick={handleManualDeductInventory}
+                      disabled={isDeductingInventory}
+                      className="text-xs px-2.5 py-1 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-60"
+                    >
+                      {isDeductingInventory ? "Đang trừ..." : "Trừ kho ngay"}
+                    </button>
+                  )}
+                  <span
+                    className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                      (formData as any).inventory_deducted ||
+                      (formData as any).inventoryDeducted
+                        ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300"
+                        : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300"
+                    }`}
+                  >
+                    {(formData as any).inventory_deducted ||
+                    (formData as any).inventoryDeducted
+                      ? "Đã trừ kho"
+                      : "Chưa trừ kho"}
+                  </span>
+                </div>
+              </div>
+
+              <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                Xuất kho ghi nhận: {inventoryTxs.length} dòng
+                {formData.paymentStatus !== "paid" && (
+                  <> • Chưa thanh toán đủ nên chưa trừ kho (chỉ giữ)</>
+                )}
+              </div>
+
+              {inventoryTxLoading ? (
+                <div className="text-xs text-slate-500 dark:text-slate-400 mt-2">
+                  Đang tải lịch sử xuất kho...
+                </div>
+              ) : inventoryTxError ? (
+                <div className="text-xs text-red-500 mt-2">
+                  {inventoryTxError}
+                </div>
+              ) : (
+                <div className="mt-3 space-y-2 max-h-[40vh] overflow-auto pr-1">
+                  {selectedParts.map((p) => {
+                    const exportedQty = exportQtyByPartId.get(p.partId) || 0;
+                    const missingQty = Math.max(0, p.quantity - exportedQty);
+                    return (
+                      <div
+                        key={p.partId}
+                        className="flex items-center justify-between text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2"
+                      >
+                        <div className="min-w-0">
+                          <div className="font-medium text-slate-800 dark:text-slate-100 truncate">
+                            {p.partName}
+                          </div>
+                          <div className="text-slate-500 dark:text-slate-400">
+                            Dùng: {p.quantity} • Xuất: {exportedQty}
+                          </div>
+                        </div>
+                        <span
+                          className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${
+                            missingQty === 0 && exportedQty > 0
+                              ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300"
+                              : exportedQty > 0
+                              ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300"
+                              : "bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300"
+                          }`}
+                        >
+                          {missingQty === 0 && exportedQty > 0
+                            ? "Đã trừ"
+                            : exportedQty > 0
+                            ? `Thiếu ${missingQty}`
+                            : "Chưa trừ"}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
 

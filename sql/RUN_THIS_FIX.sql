@@ -66,7 +66,7 @@ BEGIN
       WHERE it."workOrderId" = wo.id
         AND it.type = 'Xuất kho'
     ) = 0
-    AND wo.creationdate >= '2025-11-01';
+      ;
   
   RAISE NOTICE '   📊 Tìm thấy % phiếu đã thanh toán nhưng chưa trừ kho', v_total_orders;
   RAISE NOTICE '';
@@ -97,7 +97,7 @@ BEGIN
         WHERE it."workOrderId" = wo.id
           AND it.type = 'Xuất kho'
       ) = 0
-      AND wo.creationdate >= '2025-11-01'
+      
     ORDER BY wo.creationdate ASC
   LOOP
     RAISE NOTICE '   🔧 Phiếu ID: % (Ngày: %)', v_order.id, v_order.creationdate::date;

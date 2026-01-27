@@ -51,6 +51,7 @@ DECLARE
   v_payment_tx_id TEXT;
   v_old_deposit NUMERIC;
   v_old_additional NUMERIC;
+  v_old_cash_tx_id TEXT;
   v_warnings JSONB := '[]'::jsonb;
   v_index INT := 0;
   v_parts_count INT := COALESCE(jsonb_array_length(p_parts_used), 0);
@@ -66,8 +67,8 @@ BEGIN
   END IF;
 
   -- Get existing order
-  SELECT partsUsed, branchId, depositAmount, additionalPayment
-  INTO v_old_parts, v_branch_id, v_old_deposit, v_old_additional
+  SELECT partsUsed, branchId, depositAmount, additionalPayment, cashTransactionId
+  INTO v_old_parts, v_branch_id, v_old_deposit, v_old_additional, v_old_cash_tx_id
   FROM work_orders
   WHERE id = p_order_id;
 
@@ -202,22 +203,33 @@ BEGIN
     );
   END IF;
 
-  IF p_additional_payment > COALESCE(v_old_additional, 0) AND p_payment_method IS NOT NULL THEN
-    v_payment_tx_id := gen_random_uuid()::text;
-    INSERT INTO cash_transactions(
-      id, type, category, amount, date, description, branchId, paymentSource, reference
-    )
-    VALUES (
-      v_payment_tx_id,
-      'income',
-      'service_income',
-      p_additional_payment - COALESCE(v_old_additional, 0),
-      NOW(),
-      'Thu tiền bổ sung ' || p_order_id,
-      v_branch_id,
-      p_payment_method,
-      p_order_id
-    );
+  IF p_additional_payment > 0 AND p_payment_method IS NOT NULL THEN
+    IF p_additional_payment > COALESCE(v_old_additional, 0)
+       OR (COALESCE(v_old_additional, 0) > 0 AND v_old_cash_tx_id IS NULL) THEN
+      v_payment_tx_id := gen_random_uuid()::text;
+      INSERT INTO cash_transactions(
+        id, type, category, amount, date, description, branchId, paymentSource, reference
+      )
+      VALUES (
+        v_payment_tx_id,
+        'income',
+        'service_income',
+        CASE
+          WHEN p_additional_payment > COALESCE(v_old_additional, 0)
+            THEN p_additional_payment - COALESCE(v_old_additional, 0)
+          ELSE p_additional_payment
+        END,
+        NOW(),
+        CASE
+          WHEN p_additional_payment > COALESCE(v_old_additional, 0)
+            THEN 'Thu tiền bổ sung ' || p_order_id
+          ELSE 'Thu tiền sửa chữa ' || p_order_id
+        END,
+        v_branch_id,
+        p_payment_method,
+        p_order_id
+      );
+    END IF;
   END IF;
 
   -- ==========================================================================

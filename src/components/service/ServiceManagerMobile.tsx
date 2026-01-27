@@ -461,7 +461,8 @@ export function ServiceManagerMobile({
           .join(" ");
 
         const text = [
-          w.id,
+          w.id, // Original ID (e.g., SC-1767330309661)
+          formatWorkOrderId(w.id), // Formatted ID (e.g., SC-20260127-309661)
           w.customerName,
           w.customerPhone,
           w.vehicleModel,

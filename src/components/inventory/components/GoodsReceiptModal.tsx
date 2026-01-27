@@ -575,7 +575,7 @@ const GoodsReceiptModal: React.FC<{
                     });
                     setShowSupplierModal(true);
                   }}
-                  className="ml-auto flex items-center gap-1 text-xs px-2 py-1 rounded-lg bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:hover:bg-emerald-900/50 font-medium transition-all"
+                  className="ml-auto flex items-center gap-1 text-xs px-2 py-1 rounded-lg bg-gradient-to-r from-[rgb(var(--brand-primary))] to-[rgb(var(--brand-secondary))] text-white hover:brightness-110 font-medium transition-all shadow-sm shadow-emerald-500/20"
                 >
                   <svg
                     className="w-3.5 h-3.5"
@@ -627,7 +627,7 @@ const GoodsReceiptModal: React.FC<{
                             name: e.target.value,
                           }))
                         }
-                        className="w-full px-3 py-2 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm"
+                        className="w-full px-3 py-2 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm focus:ring-2 focus:ring-[rgb(var(--brand-primary))] focus:ring-opacity-30 focus:border-[rgb(var(--brand-primary))]"
                         placeholder="T�n nh� cung c�p"
                       />
                     </div>
@@ -643,7 +643,7 @@ const GoodsReceiptModal: React.FC<{
                             phone: e.target.value,
                           }))
                         }
-                        className="w-full px-3 py-2 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm"
+                        className="w-full px-3 py-2 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm focus:ring-2 focus:ring-[rgb(var(--brand-primary))] focus:ring-opacity-30 focus:border-[rgb(var(--brand-primary))]"
                         placeholder="ST"
                       />
                     </div>
@@ -660,7 +660,7 @@ const GoodsReceiptModal: React.FC<{
                             address: e.target.value,
                           }))
                         }
-                        className="w-full px-3 py-2 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm resize-none"
+                        className="w-full px-3 py-2 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm resize-none focus:ring-2 focus:ring-[rgb(var(--brand-primary))] focus:ring-opacity-30 focus:border-[rgb(var(--brand-primary))]"
                         placeholder="�9a ch�0 nh� cung c�p"
                       />
                     </div>
@@ -677,7 +677,7 @@ const GoodsReceiptModal: React.FC<{
                             note: e.target.value,
                           }))
                         }
-                        className="w-full px-3 py-2 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm resize-none"
+                        className="w-full px-3 py-2 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm resize-none focus:ring-2 focus:ring-[rgb(var(--brand-primary))] focus:ring-opacity-30 focus:border-[rgb(var(--brand-primary))]"
                         placeholder="Th�ng tin th�m (t�y ch�n)"
                       />
                     </div>
@@ -707,7 +707,7 @@ const GoodsReceiptModal: React.FC<{
                           // mutation hook �� show toast
                         }
                       }}
-                      className="px-4 py-2 text-sm rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-60"
+                      className="px-4 py-2 text-sm rounded bg-gradient-to-r from-[rgb(var(--brand-primary))] to-[rgb(var(--brand-secondary))] text-white hover:brightness-110 disabled:opacity-60"
                       disabled={createSupplier.isPending}
                     >
                       {createSupplier.isPending ? "ang l�u..." : "L�u"}

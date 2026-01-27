@@ -211,6 +211,9 @@ export default function ServiceManager() {
   const urlSearch = searchParams.get("q") || "";
 
   const [dateFilter, setDateFilterState] = useState(urlDateFilter);
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const [customDateStart, setCustomDateStart] = useState(todayStr);
+  const [customDateEnd, setCustomDateEnd] = useState(todayStr);
   const [technicianFilter, setTechnicianFilter] = useState("all");
   const [paymentFilter, setPaymentFilterState] = useState(urlPaymentFilter);
 
@@ -277,6 +280,8 @@ export default function ServiceManager() {
       setDateRangeDays(7);
     } else if (dateFilter === "month") {
       setDateRangeDays(30);
+    } else if (dateFilter === "custom") {
+      setDateRangeDays(0);
     }
   }, [dateFilter]);
 
@@ -449,11 +454,14 @@ export default function ServiceManager() {
 
     // Search filter (using debounced value)
     if (debouncedSearchQuery) {
+      const query = debouncedSearchQuery.toLowerCase();
       filtered = filtered.filter(
         (o) =>
-          o.customerName.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
-          o.vehicleModel?.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
-          o.licensePlate?.toLowerCase().includes(debouncedSearchQuery.toLowerCase())
+          o.id.toLowerCase().includes(query) || // Original ID
+          formatWorkOrderId(o.id).toLowerCase().includes(query) || // Formatted ID
+          o.customerName.toLowerCase().includes(query) ||
+          o.vehicleModel?.toLowerCase().includes(query) ||
+          o.licensePlate?.toLowerCase().includes(query)
       );
     }
 
@@ -480,6 +488,12 @@ export default function ServiceManager() {
           const monthAgo = new Date(today);
           monthAgo.setMonth(monthAgo.getMonth() - 1);
           return orderDate >= monthAgo;
+        } else if (dateFilter === "custom") {
+          if (!customDateStart || !customDateEnd) return true;
+          const start = new Date(customDateStart);
+          const end = new Date(customDateEnd);
+          end.setHours(23, 59, 59, 999);
+          return orderDate >= start && orderDate <= end;
         }
         return true;
       });
@@ -512,6 +526,8 @@ export default function ServiceManager() {
     activeTab,
     debouncedSearchQuery, // Use debounced value to reduce re-renders
     dateFilter,
+    customDateStart,
+    customDateEnd,
     technicianFilter,
     paymentFilter,
   ]);
@@ -1441,6 +1457,8 @@ export default function ServiceManager() {
     setTechnicianFilter("all");
     setPaymentFilter("all");
     setDateFilter("week");
+    setCustomDateStart(todayStr);
+    setCustomDateEnd(todayStr);
   };
 
   const handleLoadMore = () => {
@@ -2402,8 +2420,26 @@ export default function ServiceManager() {
             <option value="today">Hôm nay</option>
             <option value="week">7 ngày qua</option>
             <option value="month">30 ngày qua</option>
+            <option value="custom">Tùy chọn</option>
             <option value="all">Tất cả (chậm hơn)</option>
           </select>
+          {dateFilter === "custom" && (
+            <div className="flex items-center gap-2">
+              <input
+                type="date"
+                value={customDateStart}
+                onChange={(e) => setCustomDateStart(e.target.value)}
+                className="px-2 py-1.5 text-xs bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg"
+              />
+              <span className="text-xs text-slate-500">—</span>
+              <input
+                type="date"
+                value={customDateEnd}
+                onChange={(e) => setCustomDateEnd(e.target.value)}
+                className="px-2 py-1.5 text-xs bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg"
+              />
+            </div>
+          )}
           <select
             value={technicianFilter}
             onChange={(e) => setTechnicianFilter(e.target.value)}

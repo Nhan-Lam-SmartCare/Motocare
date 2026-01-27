@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 // Dùng supabaseClient thống nhất để tránh nhiều phiên GoTrue
 import { supabase } from "../../supabaseClient";
 import { useAuth } from "../../contexts/AuthContext";
@@ -41,6 +42,7 @@ interface StoreSettings {
   logo_url?: string;
   bank_qr_url?: string;
   primary_color?: string;
+  theme_preset?: string;
   business_hours?: string;
   established_year?: number;
   bank_name?: string;
@@ -72,6 +74,7 @@ interface Branch {
 
 export const SettingsManager = () => {
   const { profile, hasRole } = useAuth();
+  const queryClient = useQueryClient();
   const [settings, setSettings] = useState<StoreSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -89,6 +92,24 @@ export const SettingsManager = () => {
   const [showAddStaff, setShowAddStaff] = useState(false);
   const [newStaffEmail, setNewStaffEmail] = useState("");
   const [newStaffName, setNewStaffName] = useState("");
+
+  const themePresets = [
+    {
+      id: "logo",
+      label: "Logo (Xanh/Vàng)",
+      primary: "#10B981",
+      secondary: "#F59E0B",
+    },
+    { id: "emerald", label: "Emerald", primary: "#10B981", secondary: "#059669" },
+    { id: "amber", label: "Amber", primary: "#F59E0B", secondary: "#D97706" },
+    { id: "blue", label: "Blue", primary: "#3B82F6", secondary: "#2563EB" },
+    {
+      id: "custom",
+      label: "Tùy chỉnh",
+      primary: settings?.primary_color || "#3B82F6",
+      secondary: settings?.primary_color || "#3B82F6",
+    },
+  ];
   const [newStaffRole, setNewStaffRole] = useState<"manager" | "staff">(
     "staff"
   );
@@ -398,6 +419,7 @@ export const SettingsManager = () => {
 
       // Reload settings after save to confirm changes
       await loadSettings();
+      await queryClient.invalidateQueries({ queryKey: ["store_settings"] });
 
       showToast.success("Đã lưu cài đặt thành công!");
       void safeAudit(profile?.id || null, {
@@ -499,6 +521,16 @@ export const SettingsManager = () => {
       showToast.error(error.message || "Không thể tải mã QR lên");
     } finally {
       setUploadingQR(false);
+    }
+  };
+
+  const handleThemePresetSelect = (presetId: string) => {
+    if (!settings) return;
+    updateField("theme_preset", presetId);
+
+    const preset = themePresets.find((p) => p.id === presetId);
+    if (presetId !== "custom" && preset?.primary) {
+      updateField("primary_color", preset.primary);
     }
   };
 
@@ -947,35 +979,77 @@ export const SettingsManager = () => {
               </div>
             </div>
 
-            {/* Color Theme */}
+            {/* Theme Presets */}
             <div className="pt-4 md:pt-6 border-t border-slate-200 dark:border-slate-700">
               <div>
+                <label className="block text-xs md:text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                  Chủ đề giao diện
+                </label>
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                  {themePresets.map((preset) => {
+                    const isActive =
+                      (settings.theme_preset || "blue") === preset.id;
+                    return (
+                      <button
+                        key={preset.id}
+                        type="button"
+                        onClick={() => handleThemePresetSelect(preset.id)}
+                        disabled={!isOwner}
+                        className={`group rounded-lg border transition p-2 text-left ${isActive
+                          ? "border-emerald-500 ring-2 ring-emerald-500/30"
+                          : "border-slate-200 dark:border-slate-700"
+                          } ${!isOwner ? "opacity-50 cursor-not-allowed" : "hover:border-emerald-400"}`}
+                      >
+                        <div
+                          className="h-9 rounded-md mb-2"
+                          style={{
+                            background:
+                              preset.id === "custom"
+                                ? preset.primary
+                                : `linear-gradient(90deg, ${preset.primary}, ${preset.secondary})`,
+                          }}
+                        />
+                        <div className="text-xs font-semibold text-slate-700 dark:text-slate-200">
+                          {preset.label}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="text-[10px] md:text-xs text-slate-500 dark:text-slate-400 mt-2">
+                  Chọn chủ đề để thay đổi nhanh giao diện theo logo
+                </p>
+              </div>
+
+              <div className="mt-4">
                 <label className="block text-xs md:text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5 md:mb-2">
-                  Màu chủ đạo
+                  Màu chủ đạo (tùy chỉnh)
                 </label>
                 <div className="flex gap-2">
                   <input
                     type="color"
                     value={settings.primary_color || "#3B82F6"}
-                    onChange={(e) =>
-                      updateField("primary_color", e.target.value)
-                    }
+                    onChange={(e) => {
+                      updateField("primary_color", e.target.value);
+                      updateField("theme_preset", "custom");
+                    }}
                     disabled={!isOwner}
                     className="w-12 h-10 md:w-16 md:h-12 rounded border border-slate-300 dark:border-slate-600 cursor-pointer disabled:opacity-50"
                   />
                   <input
                     type="text"
                     value={settings.primary_color || "#3B82F6"}
-                    onChange={(e) =>
-                      updateField("primary_color", e.target.value)
-                    }
+                    onChange={(e) => {
+                      updateField("primary_color", e.target.value);
+                      updateField("theme_preset", "custom");
+                    }}
                     disabled={!isOwner}
                     placeholder="#3B82F6"
                     className="flex-1 px-3 py-2 md:px-4 md:py-2.5 text-sm md:text-base border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white disabled:opacity-50"
                   />
                 </div>
                 <p className="text-[10px] md:text-xs text-slate-500 dark:text-slate-400 mt-1">
-                  Màu này sẽ được sử dụng trong giao diện hệ thống
+                  Màu này sẽ được dùng khi chọn preset "Tùy chỉnh"
                 </p>
               </div>
             </div>

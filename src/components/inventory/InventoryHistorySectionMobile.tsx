@@ -629,10 +629,10 @@ const InventoryHistorySectionMobile: React.FC<
               <div className="grid grid-cols-2 gap-3">
                 <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-3">
                   <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">
-                    Ngày nhập
+                    Ngày/giờ nhập
                   </div>
                   <div className="text-sm font-medium text-slate-900 dark:text-white">
-                    {formatDate(new Date(selectedReceipt.date))}
+                    {formatDate(new Date(selectedReceipt.date), false)}
                   </div>
                 </div>
                 <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3">

@@ -5,6 +5,7 @@
 
 import { useState, useMemo, useCallback } from "react";
 import { useDebouncedValue } from "../../../hooks/useDebouncedValue";
+import { formatWorkOrderId } from "../../../utils/format";
 import type {
     ServiceTabKey,
     QuickStatusFilter,
@@ -70,7 +71,8 @@ export function useServiceFilters({
             .join(" ");
 
         const text = [
-            order.id,
+            order.id, // Original ID (e.g., SC-1767330309661)
+            formatWorkOrderId(order.id), // Formatted ID (e.g., SC-20260127-309661)
             order.customerName,
             order.customerPhone,
             order.vehicleModel,

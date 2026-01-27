@@ -22,6 +22,8 @@ import {
   MoreHorizontal,
   ShoppingCart,
   ScanLine,
+  Eye,
+  X,
 } from "lucide-react";
 import { useAppContext } from "../../contexts/AppContext";
 import { safeAudit } from "../../lib/repository/auditLogsRepository";
@@ -33,7 +35,7 @@ import {
   useUpdatePartRepo,
   useDeletePartRepo,
 } from "../../hooks/usePartsRepository";
-import { formatCurrency } from "../../utils/format";
+import { formatCurrency, formatDate } from "../../utils/format";
 import { getCategoryColor } from "../../utils/categoryColors";
 import {
   exportPartsToExcel,
@@ -57,7 +59,7 @@ import {
   useUpdateWorkOrderAtomicRepo,
 } from "../../hooks/useWorkOrdersRepository";
 import { useCategories } from "../../hooks/useCategories";
-import type { Part, WorkOrder } from "../../types";
+import type { Part, WorkOrder, InventoryTransaction } from "../../types";
 import { createPart } from "../../lib/repository/partsRepository";
 import { createCashTransaction } from "../../lib/repository/cashTransactionsRepository";
 import InventoryHistorySectionMobile from "../inventory/InventoryHistorySectionMobile";
@@ -116,6 +118,7 @@ const InventoryManagerNew: React.FC = () => {
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [editingPart, setEditingPart] = useState<Part | null>(null);
+  const [selectedPartDetail, setSelectedPartDetail] = useState<Part | null>(null);
   const [editingReceipt, setEditingReceipt] = useState<any | null>(null);
   const [showImportModal, setShowImportModal] = useState(false);
   const [reservedInfoPartId, setReservedInfoPartId] = useState<string | null>(null);
@@ -130,6 +133,24 @@ const InventoryManagerNew: React.FC = () => {
     top: 0,
     right: 0,
   });
+
+  const allImports = useMemo(() => {
+    if (!selectedPartDetail) return [] as InventoryTransaction[];
+    return invTx
+      .filter(
+        (tx) => tx.type === "Nhập kho" && tx.partId === selectedPartDetail.id
+      )
+      .sort(
+        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+      );
+  }, [invTx, selectedPartDetail]);
+
+  const lastImport = allImports[0];
+
+  const extractSupplierName = (notes?: string | null) => {
+    if (!notes || !notes.includes("NCC:")) return "";
+    return notes.split("NCC:")[1]?.split("Phone:")[0]?.trim() || "";
+  };
 
 
 
@@ -1600,10 +1621,21 @@ const InventoryManagerNew: React.FC = () => {
                                 <div className="absolute right-0 bottom-full mb-2 w-40 bg-slate-800 border border-slate-700 rounded-lg shadow-xl z-[9999]">
                                   <button
                                     onClick={() => {
-                                      setEditingPart(part);
+                                      setSelectedPartDetail(part);
                                       setMobileMenuOpenIndex(null);
                                     }}
                                     className="w-full text-left px-3 py-2.5 text-sm hover:bg-slate-700 flex items-center gap-2 text-white rounded-t-lg"
+                                    aria-label={`Xem chi tiết ${part.name}`}
+                                  >
+                                    <Eye className="w-4 h-4 text-emerald-400" />
+                                    <span>Xem chi tiết</span>
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      setEditingPart(part);
+                                      setMobileMenuOpenIndex(null);
+                                    }}
+                                    className="w-full text-left px-3 py-2.5 text-sm hover:bg-slate-700 flex items-center gap-2 text-white"
                                     aria-label={`Chỉnh sửa ${part.name}`}
                                   >
                                     <Edit className="w-4 h-4 text-blue-400" />
@@ -1938,10 +1970,21 @@ const InventoryManagerNew: React.FC = () => {
                                     <button
                                       onClick={(event) => {
                                         event.stopPropagation();
+                                        setSelectedPartDetail(part);
+                                        setOpenActionRow(null);
+                                      }}
+                                      className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm hover:bg-emerald-50 dark:hover:bg-slate-700 rounded-t-xl"
+                                    >
+                                      <Eye className="h-4 w-4 text-emerald-500" />
+                                      Xem chi tiết
+                                    </button>
+                                    <button
+                                      onClick={(event) => {
+                                        event.stopPropagation();
                                         setEditingPart(part);
                                         setOpenActionRow(null);
                                       }}
-                                      className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm hover:bg-blue-50 dark:hover:bg-slate-700 rounded-t-xl"
+                                      className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm hover:bg-blue-50 dark:hover:bg-slate-700"
                                     >
                                       <Edit className="h-4 w-4 text-blue-500" />
                                       Chỉnh sửa
@@ -2266,6 +2309,99 @@ const InventoryManagerNew: React.FC = () => {
               >
                 Đóng
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {selectedPartDetail && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white dark:bg-slate-800 rounded-xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700">
+              <div>
+                <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                  Chi tiết phụ tùng
+                </h3>
+                <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                  {selectedPartDetail.name}
+                </div>
+              </div>
+              <button
+                onClick={() => setSelectedPartDetail(null)}
+                className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-auto p-4 space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-3">
+                  <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">
+                    Mã/Barcode
+                  </div>
+                  <div className="text-sm font-medium text-slate-900 dark:text-white">
+                    {selectedPartDetail.barcode || selectedPartDetail.sku || "--"}
+                  </div>
+                </div>
+                <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-3">
+                  <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">
+                    Tồn kho hiện tại
+                  </div>
+                  <div className="text-sm font-semibold text-slate-900 dark:text-white">
+                    {selectedPartDetail.stock?.[currentBranchId || ""]?.toLocaleString() || 0}
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-cyan-50 dark:bg-cyan-900/20 rounded-lg p-3">
+                <div className="text-xs text-cyan-600 dark:text-cyan-400 mb-1">
+                  Lần nhập gần nhất
+                </div>
+                <div className="text-sm font-medium text-slate-900 dark:text-white">
+                  {lastImport?.date ? formatDate(new Date(lastImport.date), false) : "--"}
+                </div>
+                {lastImport && (
+                  <div className="mt-2 text-xs text-slate-600 dark:text-slate-300 space-y-1">
+                    <div>SL: {lastImport.quantity}</div>
+                    <div>
+                      NCC: {extractSupplierName(lastImport.notes) || "--"}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-2">
+                  Lịch sử nhập ({allImports.length})
+                </h4>
+                {allImports.length === 0 ? (
+                  <div className="text-sm text-slate-500 dark:text-slate-400">
+                    Chưa có dữ liệu nhập
+                  </div>
+                ) : (
+                  <div className="space-y-2 max-h-[40vh] overflow-auto pr-1">
+                    {allImports.map((tx) => (
+                      <div
+                        key={tx.id}
+                        className="flex items-start justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg"
+                      >
+                        <div className="flex-1">
+                          <div className="text-sm font-medium text-slate-900 dark:text-white">
+                            {formatDate(new Date(tx.date), false)}
+                          </div>
+                          <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                            SL: {tx.quantity} • NCC: {extractSupplierName(tx.notes) || "--"}
+                          </div>
+                        </div>
+                        <div className="text-sm font-bold text-slate-900 dark:text-white">
+                          {formatCurrency(tx.totalPrice || tx.quantity * (tx.unitPrice || 0))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>

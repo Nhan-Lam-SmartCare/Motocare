@@ -478,6 +478,7 @@ const WorkOrderModal: React.FC<{
     }, [customers, serverCustomers]);
 
     // Get customer's vehicles
+    // 🔹 FIX: Ưu tiên tìm theo Phone (duy nhất) thay vì Name (có thể trùng)
     const customerById = formData.customerId
       ? allCustomers.find((c) => c.id === formData.customerId)
       : undefined;
@@ -486,14 +487,10 @@ const WorkOrderModal: React.FC<{
           (c) => (c.phone || "").trim() === (formData.customerPhone || "").trim()
         )
       : undefined;
-    const nameKey = normalizeSearchText(formData.customerName || "");
-    const nameMatches = nameKey
-      ? allCustomers.filter(
-          (c) => normalizeSearchText(c.name || "") === nameKey
-        )
-      : [];
-    const currentCustomer =
-      customerById || customerByPhone || (nameMatches.length === 1 ? nameMatches[0] : null);
+    
+    // ❌ REMOVED: Không tự động chọn khách hàng theo tên (vì có thể trùng tên)
+    // Chỉ dùng customerId hoặc customerPhone để xác định khách hàng
+    const currentCustomer = customerById || customerByPhone || null;
     const customerVehicles = currentCustomer?.vehicles || [];
 
     // Discount state

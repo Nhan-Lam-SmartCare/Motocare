@@ -1,6 +1,11 @@
 -- Atomic work order update RPC: updates work order and adjusts inventory/cash for parts changes
 -- Handles: adding new parts, removing parts, quantity changes
 
+-- Drop old versions with different signatures
+DROP FUNCTION IF EXISTS public.work_order_update_atomic(TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, NUMERIC, NUMERIC, JSONB, JSONB, NUMERIC, TEXT, TEXT, NUMERIC, NUMERIC, TEXT) CASCADE;
+DROP FUNCTION IF EXISTS public.work_order_update_atomic(TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, NUMERIC, NUMERIC, JSONB, JSONB, NUMERIC, TEXT, TEXT, NUMERIC, NUMERIC, TEXT) CASCADE;
+DROP FUNCTION IF EXISTS public.work_order_update_atomic CASCADE;
+
 CREATE OR REPLACE FUNCTION public.work_order_update_atomic(
   p_order_id TEXT,
   p_customer_name TEXT,

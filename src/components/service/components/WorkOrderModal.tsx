@@ -421,6 +421,7 @@ const WorkOrderModal: React.FC<{
     const [inventoryTxLoading, setInventoryTxLoading] = useState(false);
     const [inventoryTxError, setInventoryTxError] = useState<string | null>(null);
     const [isDeductingInventory, setIsDeductingInventory] = useState(false);
+    const [showInventoryCheck, setShowInventoryCheck] = useState(false);
     const [showPartSearch, setShowPartSearch] = useState(false);
     const [partialPayment, setPartialPayment] = useState(0);
     const [showPartialPayment, setShowPartialPayment] = useState(false);
@@ -2904,12 +2905,31 @@ const WorkOrderModal: React.FC<{
           )}
 
           {formData.id && selectedParts.length > 0 && (
-            <div className="mx-4 mt-3 md:mx-6 p-4 bg-slate-50 dark:bg-slate-700/30 border border-slate-200 dark:border-slate-600 rounded-lg">
-              <div className="flex items-center justify-between gap-2">
-                <div className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-                  Kiểm tra trừ kho
-                </div>
+            <div className="mx-4 mt-3 md:mx-6 p-3 bg-slate-50 dark:bg-slate-700/30 border border-slate-200 dark:border-slate-600 rounded-lg">
+              <button
+                type="button"
+                onClick={() => setShowInventoryCheck(!showInventoryCheck)}
+                className="w-full flex items-center justify-between gap-2 text-left hover:opacity-80 transition-opacity"
+              >
                 <div className="flex items-center gap-2">
+                  <svg
+                    className={`w-4 h-4 text-slate-500 dark:text-slate-400 transition-transform ${
+                      showInventoryCheck ? "rotate-90" : ""
+                    }`}
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                  <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+                    Kiểm tra trừ kho
+                  </span>
+                  <span className="text-xs text-slate-500 dark:text-slate-400">
+                    ({inventoryTxs.length} dòng xuất kho)
+                  </span>
+                </div>
+                <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                   <button
                     onClick={handleRefreshInventoryTxs}
                     className="text-xs px-2 py-1 rounded-lg border border-slate-200 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700"
@@ -2939,25 +2959,27 @@ const WorkOrderModal: React.FC<{
                       : "Chưa trừ kho"}
                   </span>
                 </div>
-              </div>
+              </button>
 
-              <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                Xuất kho ghi nhận: {inventoryTxs.length} dòng
-                {formData.paymentStatus !== "paid" && (
-                  <> • Chưa thanh toán đủ nên chưa trừ kho (chỉ giữ)</>
-                )}
-              </div>
+              {showInventoryCheck && (
+                <>
+                  <div className="text-xs text-slate-500 dark:text-slate-400 mt-2 pl-6">
+                    Xuất kho ghi nhận: {inventoryTxs.length} dòng
+                    {formData.paymentStatus !== "paid" && (
+                      <> • Chưa thanh toán đủ nên chưa trừ kho (chỉ giữ)</>
+                    )}
+                  </div>
 
-              {inventoryTxLoading ? (
-                <div className="text-xs text-slate-500 dark:text-slate-400 mt-2">
-                  Đang tải lịch sử xuất kho...
-                </div>
-              ) : inventoryTxError ? (
-                <div className="text-xs text-red-500 mt-2">
-                  {inventoryTxError}
-                </div>
-              ) : (
-                <div className="mt-3 space-y-2 max-h-[40vh] overflow-auto pr-1">
+                  {inventoryTxLoading ? (
+                    <div className="text-xs text-slate-500 dark:text-slate-400 mt-2 pl-6">
+                      Đang tải lịch sử xuất kho...
+                    </div>
+                  ) : inventoryTxError ? (
+                    <div className="text-xs text-red-500 mt-2 pl-6">
+                      {inventoryTxError}
+                    </div>
+                  ) : (
+                    <div className="mt-3 space-y-2 max-h-[40vh] overflow-auto pr-1 pl-6">
                   {selectedParts.map((p) => {
                     const exportedQty = exportQtyByPartId.get(p.partId) || 0;
                     const missingQty = Math.max(0, p.quantity - exportedQty);
@@ -2992,7 +3014,9 @@ const WorkOrderModal: React.FC<{
                       </div>
                     );
                   })}
-                </div>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           )}

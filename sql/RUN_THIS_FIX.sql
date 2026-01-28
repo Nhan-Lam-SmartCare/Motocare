@@ -360,16 +360,15 @@ BEGIN
     paymentdate = CASE WHEN v_payment_tx_id IS NOT NULL THEN NOW() ELSE paymentdate END,
     paymentmethod = COALESCE(p_payment_method, paymentmethod),
     inventory_deducted = CASE WHEN v_should_deduct_inventory THEN TRUE ELSE inventory_deducted END
-  WHERE id = p_order_id;
+  WHERE id = p_order_id
+  RETURNING * INTO v_order;
 
+  -- ✅ FIX: Trả về format đúng với TypeScript code
   RETURN jsonb_build_object(
-    'success', true,
-    'orderId', p_order_id,
-    'paymentStatus', v_new_status,
-    'totalPaid', v_total_paid,
-    'remainingAmount', v_remaining,
-    'inventoryDeducted', v_should_deduct_inventory,
-    'paymentTransactionId', v_payment_tx_id
+    'workOrder', row_to_json(v_order),
+    'paymentTransactionId', v_payment_tx_id,
+    'newPaymentStatus', v_new_status,
+    'inventoryDeducted', v_should_deduct_inventory
   );
 
 EXCEPTION

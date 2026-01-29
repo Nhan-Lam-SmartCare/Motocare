@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Share2, Printer, X } from 'lucide-react';
 import { formatCurrency, formatWorkOrderId } from '../../../utils/format';
 import { showToast } from '../../../utils/toast';
+import { generateVietQRUrl, findBankBin } from '../../../utils/vietqr';
 import type { WorkOrder, WorkOrderPart } from '../../../types';
 
 interface StoreSettings {
@@ -34,6 +35,47 @@ const PrintOrderPreviewModal: React.FC<PrintOrderPreviewModalProps> = ({
     onPrint,
 }) => {
     if (!isOpen || !printOrder) return null;
+
+    // Generate dynamic VietQR URL with amount and description
+    const dynamicQRUrl = useMemo(() => {
+        console.log('[PrintOrderPreview] Generating dynamic QR...', {
+            bank_name: storeSettings?.bank_name,
+            bank_account_number: storeSettings?.bank_account_number,
+            bank_account_holder: storeSettings?.bank_account_holder,
+            printOrder: printOrder?.id,
+        });
+
+        if (!storeSettings?.bank_name || !storeSettings?.bank_account_number || !storeSettings?.bank_account_holder) {
+            console.warn('[PrintOrderPreview] Missing bank info, using static QR');
+            return null; // Return null to use static QR
+        }
+
+        const bankBin = findBankBin(storeSettings.bank_name);
+        if (!bankBin) {
+            console.warn('[PrintOrderPreview] Bank BIN not found for:', storeSettings.bank_name);
+            return null; // Return null to use static QR
+        }
+
+        const amount = printOrder.remainingAmount && printOrder.remainingAmount > 0 
+            ? printOrder.remainingAmount 
+            : printOrder.total || 0;
+        
+        const orderCode = formatWorkOrderId(printOrder.id, storeSettings.work_order_prefix);
+        const description = `Thanh toan ${orderCode}`;
+
+        const qrUrl = generateVietQRUrl({
+            bankId: bankBin,
+            accountNumber: storeSettings.bank_account_number,
+            accountName: storeSettings.bank_account_holder,
+            amount: amount,
+            description: description,
+            template: 'compact2',
+        });
+
+        console.log('[PrintOrderPreview] Generated dynamic QR URL:', qrUrl);
+        console.log('[PrintOrderPreview] QR params:', { bankBin, amount, description });
+        return qrUrl;
+    }, [printOrder, storeSettings]);
 
     const handleShare = async () => {
         try {
@@ -365,9 +407,24 @@ const PrintOrderPreviewModal: React.FC<PrintOrderPreviewModalProps> = ({
                                                     </div>
                                                 )}
                                             </div>
-                                            {/* QR Code - Larger */}
-                                            {storeSettings.bank_qr_url && (
-                                                <div style={{ flexShrink: 0 }}>
+                                            {/* QR Code - Dynamic with amount & description */}
+                                            {dynamicQRUrl ? (
+                                                <div style={{ flexShrink: 0, textAlign: 'center' }}>
+                                                    <img
+                                                        src={dynamicQRUrl}
+                                                        alt="QR Banking"
+                                                        style={{
+                                                            height: "25mm",
+                                                            width: "25mm",
+                                                            objectFit: "contain",
+                                                        }}
+                                                    />
+                                                    <div style={{ fontSize: '6pt', color: '#666', marginTop: '1mm' }}>
+                                                        Quét mã thanh toán
+                                                    </div>
+                                                </div>
+                                            ) : storeSettings.bank_qr_url ? (
+                                                <div style={{ flexShrink: 0, textAlign: 'center' }}>
                                                     <img
                                                         src={storeSettings.bank_qr_url}
                                                         alt="QR Banking"
@@ -377,8 +434,11 @@ const PrintOrderPreviewModal: React.FC<PrintOrderPreviewModalProps> = ({
                                                             objectFit: "contain",
                                                         }}
                                                     />
+                                                    <div style={{ fontSize: '6pt', color: '#ff6b6b', marginTop: '1mm' }}>
+                                                        QR tĩnh (không có số tiền)
+                                                    </div>
                                                 </div>
-                                            )}
+                                            ) : null}
                                         </div>
                                     )}
                                 </div>
@@ -942,6 +1002,59 @@ const PrintOrderPreviewModal: React.FC<PrintOrderPreviewModalProps> = ({
                                     </tbody>
                                 </table>
                             </div>
+
+                            {/* Dynamic QR Payment Code */}
+                            {dynamicQRUrl && (
+                                <div
+                                    style={{
+                                        marginTop: "6mm",
+                                        padding: "4mm",
+                                        border: "2px solid #2563eb",
+                                        borderRadius: "4mm",
+                                        backgroundColor: "#eff6ff",
+                                        textAlign: "center",
+                                    }}
+                                >
+                                    <p
+                                        style={{
+                                            margin: "0 0 3mm 0",
+                                            fontSize: "11pt",
+                                            fontWeight: "bold",
+                                            color: "#2563eb",
+                                        }}
+                                    >
+                                        📱 QUÉT MÃ ĐỂ THANH TOÁN
+                                    </p>
+                                    <img
+                                        src={dynamicQRUrl}
+                                        alt="QR Payment"
+                                        style={{
+                                            width: "40mm",
+                                            height: "40mm",
+                                            margin: "0 auto",
+                                            display: "block",
+                                        }}
+                                    />
+                                    <p
+                                        style={{
+                                            margin: "3mm 0 0 0",
+                                            fontSize: "9pt",
+                                            color: "#666",
+                                        }}
+                                    >
+                                        Số tiền: <strong>{formatCurrency(printOrder.total)} ₫</strong>
+                                    </p>
+                                    <p
+                                        style={{
+                                            margin: "1mm 0 0 0",
+                                            fontSize: "8pt",
+                                            color: "#666",
+                                        }}
+                                    >
+                                        {storeSettings?.bank_name} - {storeSettings?.bank_account_number}
+                                    </p>
+                                </div>
+                            )}
 
                             {/* Footer */}
                             <div

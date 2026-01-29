@@ -839,13 +839,24 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
       const from = page * CUSTOMER_PAGE_SIZE;
       const to = from + CUSTOMER_PAGE_SIZE - 1;
 
-      // Use a simple OR query on name, phone, vehicle model, license plate
+      // Extract digits for better phone search (supports multiple phone numbers)
+      const searchDigits = searchTerm.replace(/\D/g, "");
+      const isPhoneSearch = searchDigits.length >= 10; // Chỉ tìm SĐT khi đủ 10 số
+
+      // Build OR query - only include phone search if digits >= 10
+      const orConditions = [
+        `name.ilike.%${searchTerm}%`,
+        `vehiclemodel.ilike.%${searchTerm}%`,
+        `licenseplate.ilike.%${searchTerm}%`
+      ];
+      if (isPhoneSearch) {
+        orConditions.push(`phone.ilike.%${searchDigits}%`);
+      }
+
       const { data, error, count } = await supabase
         .from("customers")
         .select("*", { count: "exact", head: false })
-        .or(
-          `name.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%,vehiclemodel.ilike.%${searchTerm}%,licenseplate.ilike.%${searchTerm}%`
-        )
+        .or(orConditions.join(","))
         .range(from, to);
 
       if (!error && data) {

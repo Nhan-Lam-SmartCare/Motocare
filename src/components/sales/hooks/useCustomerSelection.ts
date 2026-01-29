@@ -66,10 +66,11 @@ export function useCustomerSelection(
 
         return allCustomers.filter((c) => {
             const nameMatch = c.name?.toLowerCase().includes(searchText);
+            // Tìm theo SĐT
             const phoneNumbers = extractPhoneNumbers(c.phone || "");
-            const phoneMatch = searchDigits
-                ? phoneNumbers.some((num) => num.includes(searchDigits))
-                : c.phone?.toLowerCase().includes(searchText);
+            const phoneMatch = searchDigits.length > 0
+                ? phoneNumbers.some((num) => num.includes(searchDigits) || searchDigits.includes(num))
+                : false;
             return Boolean(nameMatch || phoneMatch);
         });
     }, [allCustomers, customerSearch, extractPhoneNumbers]);

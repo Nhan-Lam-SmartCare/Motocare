@@ -33,21 +33,32 @@ export function validatePriceAndQty(
 /**
  * Validate Vietnamese phone number format
  * Accepts: 0xxxxxxxxx (10 digits) or 0xxxxxxxxxx (11 digits) or +84xxxxxxxxx
+ * Also accepts multiple phone numbers separated by comma
  */
 export function validatePhoneNumber(phone: string): ValidationResult {
   if (!phone || !phone.trim()) {
     return { ok: false, error: "Số điện thoại không được để trống" };
   }
 
-  const cleaned = phone.trim().replace(/\s+/g, "");
+  // Split by comma and validate each phone number
+  const phoneNumbers = phone
+    .split(",")
+    .map((p) => p.trim().replace(/\s+/g, ""))
+    .filter((p) => p.length > 0);
+
+  if (phoneNumbers.length === 0) {
+    return { ok: false, error: "Số điện thoại không được để trống" };
+  }
+
   const phoneRegex = /^(0|\+84)[0-9]{9,10}$/;
 
-  if (!phoneRegex.test(cleaned)) {
-    return {
-      ok: false,
-      error:
-        "Số điện thoại không hợp lệ. Vui lòng nhập 10-11 số (VD: 0912345678)",
-    };
+  for (const phoneNumber of phoneNumbers) {
+    if (!phoneRegex.test(phoneNumber)) {
+      return {
+        ok: false,
+        error: `Số điện thoại không hợp lệ: "${phoneNumber}". Vui lòng nhập 10-11 số (VD: 0912345678). Nhiều số cách nhau bằng dấu phẩy.`,
+      };
+    }
   }
 
   return { ok: true };

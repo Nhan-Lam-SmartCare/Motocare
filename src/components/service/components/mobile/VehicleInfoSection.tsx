@@ -105,61 +105,63 @@ export const VehicleInfoSection: React.FC<VehicleInfoSectionProps> = ({
                         </label>
                     )}
 
-                    <div className="grid grid-cols-1 gap-2.5">
-                        {customerVehicles.map((vehicle) => {
-                            const isActive = selectedVehicle?.id === vehicle.id;
-                            return (
-                                <div
-                                    key={vehicle.id}
-                                    onClick={() => onSelectVehicle(vehicle)}
-                                    className={`p-4 rounded-2xl cursor-pointer transition-all border ${isActive
-                                        ? "bg-blue-600 border-blue-500 shadow-lg shadow-blue-500/20"
-                                        : "bg-white dark:bg-[#1e1e2d] border-slate-200 dark:border-slate-700/30 hover:border-slate-400 dark:hover:border-slate-600"
-                                        }`}
-                                >
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-3">
-                                            <div
-                                                className={`w-10 h-10 rounded-xl flex items-center justify-center ${isActive
-                                                    ? "bg-white/20 text-white"
-                                                    : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400"
-                                                    }`}
-                                            >
-                                                <Bike className="w-5 h-5" />
-                                            </div>
-                                            <div>
+                    {/* Vehicle List */}
+                    {customerVehicles.length > 0 && (
+                        <div className="grid grid-cols-1 gap-2.5">
+                            {customerVehicles.map((vehicle) => {
+                                const isActive = selectedVehicle?.id === vehicle.id;
+                                return (
+                                    <div
+                                        key={vehicle.id}
+                                        onClick={() => onSelectVehicle(vehicle)}
+                                        className={`p-4 rounded-2xl cursor-pointer transition-all border ${isActive
+                                            ? "bg-blue-600 border-blue-500 shadow-lg shadow-blue-500/20"
+                                            : "bg-white dark:bg-[#1e1e2d] border-slate-200 dark:border-slate-700/30 hover:border-slate-400 dark:hover:border-slate-600"
+                                            }`}
+                                    >
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-3">
                                                 <div
-                                                    className={`font-bold text-sm ${isActive
-                                                        ? "text-white"
-                                                        : "text-slate-900 dark:text-slate-200"
+                                                    className={`w-10 h-10 rounded-xl flex items-center justify-center ${isActive
+                                                        ? "bg-white/20 text-white"
+                                                        : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400"
                                                         }`}
                                                 >
-                                                    {vehicle.model}
+                                                    <Bike className="w-5 h-5" />
                                                 </div>
-                                                <div
-                                                    className={`text-xs font-mono ${isActive ? "text-blue-100" : "text-slate-500"
-                                                        }`}
-                                                >
-                                                    {vehicle.licensePlate}
+                                                <div>
+                                                    <div
+                                                        className={`font-bold text-sm ${isActive
+                                                            ? "text-white"
+                                                            : "text-slate-900 dark:text-slate-200"
+                                                            }`}
+                                                    >
+                                                        {vehicle.model}
+                                                    </div>
+                                                    <div
+                                                        className={`text-xs font-mono ${isActive ? "text-blue-100" : "text-slate-500"
+                                                            }`}
+                                                    >
+                                                        {vehicle.licensePlate}
+                                                    </div>
                                                 </div>
                                             </div>
+                                            {isActive && <CheckCircle className="w-5 h-5 text-white" />}
                                         </div>
-                                        {isActive && <CheckCircle className="w-5 h-5 text-white" />}
                                     </div>
-                                </div>
-                            );
-                        })}
+                                );
+                            })}
+                        </div>
+                    )}
 
-                        {/* Add New Vehicle Button - Always visible */}
-                        <button
-                            onClick={() => setShowAddVehicle(true)}
-                            className="w-full py-3.5 border-2 border-dashed border-slate-700 hover:border-blue-500/50 hover:bg-blue-500/5 rounded-2xl text-slate-500 hover:text-blue-400 transition-all flex items-center justify-center gap-2 text-xs font-bold"
-                        >
-                            <Plus className="w-4 h-4" />
-                            Thêm xe mới
-                        </button>
-
-                    </div>
+                    {/* Add New Vehicle Button - Always visible when customer selected */}
+                    <button
+                        onClick={() => setShowAddVehicle(true)}
+                        className="w-full py-3.5 border-2 border-dashed border-blue-500/30 hover:border-blue-500/50 hover:bg-blue-500/5 rounded-2xl text-blue-500 hover:text-blue-400 transition-all flex items-center justify-center gap-2 text-xs font-bold"
+                    >
+                        <Plus className="w-4 h-4" />
+                        Thêm xe mới
+                    </button>
                 </div>
             )}
 

@@ -871,12 +871,17 @@ const SalesManager: React.FC = () => {
   const filteredCustomers = useMemo(() => {
     if (!customerSearch) return customers.slice(0, 10);
     const searchLower = customerSearch.toLowerCase();
+    const searchDigits = customerSearch.replace(/\D/g, ""); // Extract digits only
     return customers
       .filter((customer) => {
         // Tìm theo tên
         if (customer.name.toLowerCase().includes(searchLower)) return true;
         // Tìm theo SĐT
-        if (customer.phone?.includes(customerSearch)) return true;
+        if (searchDigits.length > 0 && customer.phone) {
+          const phoneNumbers = customer.phone.split(",").map(p => p.trim().replace(/\D/g, ""));
+          // Check if any phone number contains the search digits
+          if (phoneNumbers.some(num => num.includes(searchDigits) || searchDigits.includes(num))) return true;
+        }
         // Tìm theo biển số xe (trong mảng vehicles hoặc licensePlate cũ)
         if (customer.licensePlate?.toLowerCase().includes(searchLower))
           return true;

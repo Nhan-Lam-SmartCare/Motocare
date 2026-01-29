@@ -482,10 +482,16 @@ const WorkOrderModal: React.FC<{
     const customerById = formData.customerId
       ? allCustomers.find((c) => c.id === formData.customerId)
       : undefined;
+    
+    // Tìm theo phone - hỗ trợ nhiều số điện thoại, normalize để so sánh
     const customerByPhone = formData.customerPhone
-      ? allCustomers.find(
-          (c) => (c.phone || "").trim() === (formData.customerPhone || "").trim()
-        )
+      ? allCustomers.find((c) => {
+          if (!c.phone) return false;
+          const normalizePhone = (p: string) => p.replace(/\D/g, "");
+          const customerPhones = c.phone.split(",").map(p => normalizePhone(p.trim()));
+          const searchPhones = formData.customerPhone.split(",").map(p => normalizePhone(p.trim()));
+          return customerPhones.some(cp => searchPhones.some(sp => cp === sp || cp.includes(sp) || sp.includes(cp)));
+        })
       : undefined;
     
     // ❌ REMOVED: Không tự động chọn khách hàng theo tên (vì có thể trùng tên)
@@ -3242,6 +3248,99 @@ const WorkOrderModal: React.FC<{
                                 )}
                             </div>
                             <div className="flex items-center gap-1">
+                              {/* Save Customer Button - Only show if customer not in DB yet */}
+                              {!currentCustomer && (
+                                <button
+                                  type="button"
+                                  onClick={async () => {
+                                    if (!formData.customerName?.trim() || !formData.customerPhone?.trim()) {
+                                      showToast.error("Vui lòng nhập đầy đủ tên và số điện thoại");
+                                      return;
+                                    }
+                                    
+                                    // Validate phone
+                                    const phoneValidation = validatePhoneNumber(formData.customerPhone);
+                                    if (!phoneValidation.ok) {
+                                      showToast.error(phoneValidation.error || "Số điện thoại không hợp lệ");
+                                      return;
+                                    }
+
+                                    try {
+                                      const newCustomerId = `CUST-${Date.now()}`;
+                                      const newCustomerData = {
+                                        id: newCustomerId,
+                                        name: formData.customerName.trim(),
+                                        phone: formData.customerPhone.trim(),
+                                        created_at: new Date().toISOString(),
+                                      };
+                                      
+                                      // Call upsertCustomer (it doesn't return value, just updates context)
+                                      upsertCustomer(newCustomerData);
+                                      
+                                      // Update formData with customerId
+                                      setFormData({
+                                        ...formData,
+                                        customerId: newCustomerId,
+                                      });
+                                      
+                                      showToast.success("Đã lưu khách hàng vào hệ thống!");
+                                      
+                                      // Invalidate customers query to refresh data
+                                      queryClient.invalidateQueries({ queryKey: ["customers"] });
+                                    } catch (error: any) {
+                                      console.error("Error saving customer:", error);
+                                      
+                                      // Check if it's a duplicate phone error
+                                      const isDuplicatePhone = error?.code === '23505' || error?.message?.includes('customers_phone_unique');
+                                      
+                                      if (isDuplicatePhone) {
+                                        // Phone already exists, find the existing customer
+                                        const normalizePhone = (p: string) => p.replace(/\D/g, "");
+                                        const searchPhoneDigits = normalizePhone(formData.customerPhone);
+                                        
+                                        const existingCustomer = allCustomers.find(c => {
+                                          if (!c.phone) return false;
+                                          const phones = c.phone.split(",").map(p => normalizePhone(p.trim()));
+                                          return phones.some(p => p === searchPhoneDigits);
+                                        });
+                                        
+                                        if (existingCustomer) {
+                                          setFormData({
+                                            ...formData,
+                                            customerId: existingCustomer.id,
+                                            customerName: existingCustomer.name,
+                                            customerPhone: existingCustomer.phone,
+                                          });
+                                          setCustomerSearch(existingCustomer.name);
+                                          showToast.info(`Số điện thoại đã tồn tại. Đã chọn khách hàng: ${existingCustomer.name}`);
+                                        } else {
+                                          showToast.error("Số điện thoại đã tồn tại trong hệ thống!");
+                                        }
+                                      } else {
+                                        showToast.error("Không thể lưu khách hàng");
+                                      }
+                                    }
+                                  }}
+                                  className="text-green-500 hover:text-green-600 text-sm flex items-center gap-1 px-2 py-1 rounded border border-green-500 hover:bg-green-50 dark:hover:bg-green-900/20"
+                                  title="Lưu khách hàng vào hệ thống"
+                                >
+                                  <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    className="w-4 h-4"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8zM23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"
+                                    />
+                                  </svg>
+                                  <span className="text-xs font-medium">Lưu KH</span>
+                                </button>
+                              )}
                               {/* Edit Button */}
                               <button
                                 type="button"
@@ -3362,8 +3461,8 @@ const WorkOrderModal: React.FC<{
                     </div>
                   )}
 
-                  {/* Vehicle Selection & Add Vehicle (for selected customer) */}
-                  {currentCustomer && (
+                  {/* Vehicle Selection & Add Vehicle - Hiển thị khi đã có thông tin khách hàng */}
+                  {(currentCustomer || formData.customerName) && (
                     <div className="mt-3 space-y-2">
                       <div className="flex items-center justify-between">
                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">

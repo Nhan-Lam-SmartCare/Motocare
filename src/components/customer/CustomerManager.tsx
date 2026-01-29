@@ -674,9 +674,18 @@ const CustomerManager: React.FC = () => {
         .map((v: any) => [v.model, v.licensePlate].filter(Boolean).join(" "))
         .join(" ");
 
+      // Handle phone search - normalize digits for comparison
+      const searchDigits = q.replace(/\D/g, "");
+      if (searchDigits.length > 0 && c.phone) {
+        const phoneNumbers = c.phone.split(",").map(p => p.trim().replace(/\D/g, ""));
+        // Kiểm tra xem số tìm kiếm có khớp với bất kỳ số nào không
+        if (phoneNumbers.some(num => num.includes(searchDigits) || searchDigits.includes(num))) {
+          return true;
+        }
+      }
+
       const text = [
         c.name,
-        c.phone,
         c.email,
         c.vehicleModel,
         c.licensePlate,

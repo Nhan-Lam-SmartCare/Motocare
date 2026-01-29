@@ -57,6 +57,7 @@ import {
 } from "../../hooks/useDebtsRepository";
 import { showToast } from "../../utils/toast";
 import { printElementById } from "../../utils/print";
+import { generateVietQRUrl, findBankBin } from "../../utils/vietqr";
 import { supabase } from "../../supabaseClient";
 import { WorkOrderMobileModal } from "./WorkOrderMobileModal";
 import WorkOrderModal from "./components/WorkOrderModal";
@@ -350,6 +351,22 @@ export default function ServiceManager() {
   const [refundingOrder, setRefundingOrder] = useState<WorkOrder | null>(null);
   const [showRefundModal, setShowRefundModal] = useState(false);
   const [refundReason, setRefundReason] = useState("");
+
+  // Load store settings on mount for QR code generation
+  useEffect(() => {
+    const loadStoreSettings = async () => {
+      const { data } = await supabase
+        .from("store_settings")
+        .select("*")
+        .limit(1)
+        .single();
+      if (data) {
+        console.log("[ServiceManager] Store settings loaded on mount:", data);
+        setStoreSettings(data);
+      }
+    };
+    loadStoreSettings();
+  }, []);
 
   // Share invoice as image function
   const handleShareInvoice = async () => {
@@ -647,24 +664,49 @@ export default function ServiceManager() {
   // Handle print work order - show preview modal
   const handlePrintOrder = async (order: WorkOrder) => {
     setPrintOrder(order);
-
-    // Load store settings for print preview (single row, no branch_id)
-    try {
-      const { data, error } = await supabase
-        .from("store_settings")
-        .select("*")
-        .limit(1)
-        .single();
-
-      if (!error && data) {
-        setStoreSettings(data);
-      }
-    } catch (err) {
-      console.error("Error loading store settings:", err);
-    }
-
     setShowPrintPreview(true);
   };
+
+  // Generate dynamic VietQR for print
+  const printQRUrl = useMemo(() => {
+    console.log('[ServiceManager] Generating dynamic QR...', {
+      printOrder: printOrder?.id,
+      bank_name: storeSettings?.bank_name,
+      bank_account_number: storeSettings?.bank_account_number,
+      bank_account_holder: storeSettings?.bank_account_holder,
+    });
+
+    if (!printOrder || !storeSettings?.bank_name || !storeSettings?.bank_account_number || !storeSettings?.bank_account_holder) {
+      console.warn('[ServiceManager] Missing info, using static QR');
+      return null;
+    }
+
+    const bankBin = findBankBin(storeSettings.bank_name);
+    if (!bankBin) {
+      console.warn('[ServiceManager] Bank BIN not found for:', storeSettings.bank_name);
+      return null;
+    }
+
+    const amount = printOrder.remainingAmount && printOrder.remainingAmount > 0 
+      ? printOrder.remainingAmount 
+      : printOrder.total || 0;
+    
+    const orderCode = formatWorkOrderId(printOrder.id, storeSettings.work_order_prefix);
+    const description = `Thanh toan ${orderCode}`;
+
+    const qrUrl = generateVietQRUrl({
+      bankId: bankBin,
+      accountNumber: storeSettings.bank_account_number,
+      accountName: storeSettings.bank_account_holder,
+      amount: amount,
+      description: description,
+      template: 'compact2',
+    });
+
+    console.log('[ServiceManager] Generated dynamic QR URL:', qrUrl);
+    console.log('[ServiceManager] QR params:', { bankBin, amount, description });
+    return qrUrl;
+  }, [printOrder, storeSettings]);
 
   // Handle actual print
   const handleDoPrint = () => {
@@ -2158,9 +2200,24 @@ export default function ServiceManager() {
                             </div>
                           )}
                         </div>
-                        {/* QR Code */}
-                        {storeSettings.bank_qr_url && (
-                          <div style={{ flexShrink: 0 }}>
+                        {/* QR Code - Dynamic */}
+                        {printQRUrl ? (
+                          <div style={{ flexShrink: 0, textAlign: 'center' }}>
+                            <img
+                              src={printQRUrl}
+                              alt="QR Banking"
+                              style={{
+                                height: "25mm",
+                                width: "25mm",
+                                objectFit: "contain",
+                              }}
+                            />
+                            <div style={{ fontSize: '6pt', color: '#666', marginTop: '1mm' }}>
+                              Quét mã thanh toán
+                            </div>
+                          </div>
+                        ) : storeSettings.bank_qr_url ? (
+                          <div style={{ flexShrink: 0, textAlign: 'center' }}>
                             <img
                               src={storeSettings.bank_qr_url}
                               alt="QR Banking"
@@ -2170,8 +2227,11 @@ export default function ServiceManager() {
                                 objectFit: "contain",
                               }}
                             />
+                            <div style={{ fontSize: '6pt', color: '#ff6b6b', marginTop: '1mm' }}>
+                              QR tĩnh (không có số tiền)
+                            </div>
                           </div>
-                        )}
+                        ) : null}
                       </div>
                     </div>
                   )}
@@ -3961,6 +4021,59 @@ export default function ServiceManager() {
                       </tbody>
                     </table>
                   </div>
+
+                  {/* Dynamic QR Payment Code */}
+                  {printQRUrl && (
+                    <div
+                      style={{
+                        marginTop: "6mm",
+                        padding: "4mm",
+                        border: "2px solid #2563eb",
+                        borderRadius: "4mm",
+                        backgroundColor: "#eff6ff",
+                        textAlign: "center",
+                      }}
+                    >
+                      <p
+                        style={{
+                          margin: "0 0 3mm 0",
+                          fontSize: "11pt",
+                          fontWeight: "bold",
+                          color: "#2563eb",
+                        }}
+                      >
+                        📱 QUÉT MÃ ĐỂ THANH TOÁN
+                      </p>
+                      <img
+                        src={printQRUrl}
+                        alt="QR Payment"
+                        style={{
+                          width: "40mm",
+                          height: "40mm",
+                          margin: "0 auto",
+                          display: "block",
+                        }}
+                      />
+                      <p
+                        style={{
+                          margin: "3mm 0 0 0",
+                          fontSize: "9pt",
+                          color: "#666",
+                        }}
+                      >
+                        Số tiền: <strong>{formatCurrency(printOrder.total)} ₫</strong>
+                      </p>
+                      <p
+                        style={{
+                          margin: "1mm 0 0 0",
+                          fontSize: "8pt",
+                          color: "#666",
+                        }}
+                      >
+                        {storeSettings?.bank_name} - {storeSettings?.bank_account_number}
+                      </p>
+                    </div>
+                  )}
 
                   {/* Footer - Signatures & Bank Info */}
                   <div

@@ -1298,6 +1298,12 @@ const WorkOrderModal: React.FC<{
 
         // Update UI state
         workOrderData.depositTransactionId = depositTxId;
+        
+        // 🔹 Invalidate queries để refresh danh sách
+        if (invalidateWorkOrders) {
+          invalidateWorkOrders();
+        }
+        
         onSave(workOrderData);
 
         showToast.success(
@@ -2161,6 +2167,11 @@ const WorkOrderModal: React.FC<{
               }
             }
 
+            // 🔹 Invalidate queries để refresh danh sách ngay
+            if (invalidateWorkOrders) {
+              invalidateWorkOrders();
+            }
+
             // Call onSave to update the workOrders state
             onSave(finalOrder);
 
@@ -2210,6 +2221,11 @@ const WorkOrderModal: React.FC<{
                 total,
                 totalPaid
               );
+            }
+
+            // 🔹 Invalidate queries trước khi đóng modal để đảm bảo data mới được fetch
+            if (invalidateWorkOrders) {
+              invalidateWorkOrders();
             }
 
             // Close modal after successful save

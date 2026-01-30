@@ -84,13 +84,6 @@ export const GoodsReceiptMobileModal: React.FC<Props> = ({
   const [showBarcodeInput, setShowBarcodeInput] = useState(false);
   const { data: suppliers = [] } = useSuppliers();
 
-  console.log(
-    "🔍 GoodsReceiptMobileModal - parts:",
-    parts?.length || 0,
-    parts?.slice(0, 2)
-  );
-  console.log("🔍 searchTerm:", searchTerm);
-
   const filteredParts =
     parts?.filter((part) => {
       if (!searchTerm || searchTerm.trim() === "") return true; // Show all if no search
@@ -100,8 +93,6 @@ export const GoodsReceiptMobileModal: React.FC<Props> = ({
         part.sku?.toLowerCase().includes(term)
       );
     }) || [];
-
-  console.log("🔍 filteredParts:", filteredParts?.length || 0);
 
   const addToReceipt = (part: Part) => {
     const existing = receiptItems.find((item) => item.partId === part.id);
@@ -165,7 +156,6 @@ export const GoodsReceiptMobileModal: React.FC<Props> = ({
 
   // Handle camera scan result - Modal tự đóng sau khi quét
   const handleCameraScan = (barcode: string) => {
-    console.log("📷 Camera scanned:", barcode);
 
     // Normalize barcode để so sánh - loại bỏ dấu gạch, khoảng trắng
     const normalizeCode = (code: string): string =>
@@ -261,14 +251,14 @@ export const GoodsReceiptMobileModal: React.FC<Props> = ({
 
   const handleContinue = () => {
     if (!selectedSupplier) {
-      alert("Vui lòng chọn nhà cung cấp");
+      showToast.warning("Vui lòng chọn nhà cung cấp");
       return;
     }
     setStep(2);
   };
 
   const handleSaveDraft = () => {
-    alert("Chức năng lưu nháp đang phát triển");
+    showToast.info("Chức năng lưu nháp đang phát triển");
   };
 
   if (!isOpen) return null;
@@ -814,7 +804,7 @@ export const GoodsReceiptMobileModal: React.FC<Props> = ({
                           if (value <= totalAmount) {
                             setPartialAmount(value);
                           } else {
-                            alert("Số tiền trả không được vượt quá tổng tiền");
+                            showToast.warning("Số tiền trả không được vượt quá tổng tiền");
                           }
                         }}
                         placeholder="Nhập số tiền"

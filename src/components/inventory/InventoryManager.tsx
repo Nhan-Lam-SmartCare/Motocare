@@ -245,7 +245,7 @@ const InventoryManagerNew: React.FC = () => {
     queryFn: async () => {
       let query = supabase
         .from("parts")
-        .select("id, name, sku, category, stock, reserved, costPrice, retailPrice")
+        .select("id, name, sku, category, stock, reservedstock, costPrice, retailPrice")
         .order("name");
 
       if (categoryFilter && categoryFilter !== "all") {
@@ -281,7 +281,7 @@ const InventoryManagerNew: React.FC = () => {
 
     allPartsData.forEach((part) => {
       const stock = part.stock?.[branchKey] || 0;
-      const reserved = part.reserved?.[branchKey] || 0;
+      const reserved = part.reservedstock?.[branchKey] || 0;
       const available = stock - reserved; // ✅ Calculate available stock
 
       if (available > 0) summary.inStock += 1;
@@ -404,7 +404,7 @@ const InventoryManagerNew: React.FC = () => {
 
       filtered = baseList.filter((part: any) => {
         const stock = part.stock?.[branchKey] || 0;
-        const reserved = part.reserved?.[branchKey] || 0;
+        const reserved = part.reservedstock?.[branchKey] || 0;
         const available = stock - reserved; // ✅ Calculate available stock
 
         if (stockFilter === "in-stock") return available > 0;
@@ -490,7 +490,7 @@ const InventoryManagerNew: React.FC = () => {
     if (!allPartsData) return 0;
     return allPartsData.reduce((sum, part: any) => {
       const stock = part.stock?.[currentBranchId] || 0;
-      const reserved = part.reserved?.[currentBranchId] || 0;
+      const reserved = part.reservedstock?.[currentBranchId] || 0;
       return sum + (stock - reserved); // ✅ Use available stock
     }, 0);
   }, [allPartsData, currentBranchId]);
@@ -499,7 +499,7 @@ const InventoryManagerNew: React.FC = () => {
     if (!allPartsData) return 0;
     return allPartsData.reduce((sum, part: any) => {
       const stock = part.stock?.[currentBranchId] || 0;
-      const reserved = part.reserved?.[currentBranchId] || 0;
+      const reserved = part.reservedstock?.[currentBranchId] || 0;
       const available = stock - reserved; // ✅ Calculate available
       const costPrice = part.costPrice?.[currentBranchId] || 0;
       return sum + available * costPrice; // ✅ Use available stock
@@ -1780,7 +1780,7 @@ const InventoryManagerNew: React.FC = () => {
                       filteredParts.map((part) => {
                         const branchKey = currentBranchId || "";
                         const stock = part.stock?.[branchKey] || 0;
-                        const reserved = part.reserved?.[branchKey] || 0;
+                        const reserved = part.reservedstock?.[branchKey] || 0;
                         const activeReserved = activeReservedByPartId.get(part.id) || 0;
                         const available = stock - reserved; // ✅ Calculate available stock
                         const retailPrice = part.retailPrice?.[branchKey] || 0;
@@ -2227,7 +2227,7 @@ const InventoryManagerNew: React.FC = () => {
                       </p>
                       {/* Debug Info */}
                       <div className="mt-4 p-2 bg-slate-100 dark:bg-slate-900 rounded text-[10px] text-slate-400 font-mono text-left w-full overflow-hidden">
-                        Part Reserved Qty: {part.reserved?.[currentBranchId] || 0} <br />
+                        Part Reserved Qty: {part.reservedstock?.[currentBranchId] || 0} <br />
                         Nghi vấn: Số liệu bị lệch. Hãy thử tạo phiếu mới rồi xóa để reset.
                       </div>
                     </div>

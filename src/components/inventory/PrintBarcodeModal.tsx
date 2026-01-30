@@ -3,6 +3,7 @@ import { X, Printer, Plus, Minus } from "lucide-react";
 import JsBarcode from "jsbarcode";
 import { Part } from "../../types";
 import { formatCurrency } from "../../utils/format";
+import { showToast } from "../../utils/toast";
 
 interface PrintBarcodeModalProps {
   part: Part;
@@ -129,7 +130,7 @@ const PrintBarcodeModal: React.FC<PrintBarcodeModalProps> = ({
 
     const printWindow = window.open("", "_blank");
     if (!printWindow) {
-      alert("Vui lòng cho phép popup để in");
+      showToast.error("Vui lòng cho phép popup để in");
       return;
     }
 

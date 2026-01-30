@@ -14,6 +14,7 @@ import {
 import JsBarcode from "jsbarcode";
 import { Part } from "../../types";
 import { formatCurrency } from "../../utils/format";
+import { showToast } from "../../utils/toast";
 
 interface BatchPrintBarcodeModalProps {
   parts: Part[];
@@ -338,7 +339,7 @@ const BatchPrintBarcodeModal: React.FC<BatchPrintBarcodeModalProps> = ({
   // Handle batch print
   const handlePrint = () => {
     if (selectedParts.size === 0) {
-      alert("Vui lòng chọn ít nhất 1 sản phẩm");
+      showToast.warning("Vui lòng chọn ít nhất 1 sản phẩm");
       return;
     }
 
@@ -360,7 +361,7 @@ const BatchPrintBarcodeModal: React.FC<BatchPrintBarcodeModalProps> = ({
     // Open print window AFTER confirmation
     const printWindow = window.open("", "_blank");
     if (!printWindow) {
-      alert("Vui lòng cho phép popup để in");
+      showToast.error("Vui lòng cho phép popup để in");
       return;
     }
 

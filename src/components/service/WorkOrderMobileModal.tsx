@@ -224,10 +224,21 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
   // Find customer and vehicle from workOrder data
   const initialCustomer = useMemo(() => {
     if (!workOrder) return null;
-    const foundCustomer = customers.find(
-      (c) =>
-        c.phone === workOrder.customerPhone || c.name === workOrder.customerName
-    );
+    
+    // 🔹 FIX: Ưu tiên tìm theo customerId (unique), sau đó phone (unique), cuối cùng mới name
+    let foundCustomer = workOrder.customerId
+      ? customers.find((c) => c.id === workOrder.customerId)
+      : undefined;
+    
+    // Nếu không tìm thấy theo ID, thử tìm theo phone (chính xác)
+    if (!foundCustomer && workOrder.customerPhone) {
+      foundCustomer = customers.find((c) => c.phone === workOrder.customerPhone);
+    }
+    
+    // Cuối cùng mới tìm theo name (không tin cậy vì có thể trùng)
+    if (!foundCustomer && workOrder.customerName) {
+      foundCustomer = customers.find((c) => c.name === workOrder.customerName);
+    }
 
     // If not found, create a temporary customer object from workOrder data
     if (!foundCustomer && workOrder.customerName) {

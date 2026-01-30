@@ -478,24 +478,25 @@ const WorkOrderModal: React.FC<{
     }, [customers, serverCustomers]);
 
     // Get customer's vehicles
-    // 🔹 FIX: Ưu tiên tìm theo Phone (duy nhất) thay vì Name (có thể trùng)
+    // 🔹 FIX: Ưu tiên tìm theo customerId (unique), chỉ fallback sang phone khi không có ID
     const customerById = formData.customerId
       ? allCustomers.find((c) => c.id === formData.customerId)
       : undefined;
     
-    // Tìm theo phone - hỗ trợ nhiều số điện thoại, normalize để so sánh
-    const customerByPhone = formData.customerPhone
+    // Chỉ tìm theo phone khi KHÔNG có customerId (tránh match nhầm)
+    const customerByPhone = !formData.customerId && formData.customerPhone
       ? allCustomers.find((c) => {
           if (!c.phone) return false;
           const normalizePhone = (p: string) => p.replace(/\D/g, "");
+          const formPhone = normalizePhone(formData.customerPhone);
           const customerPhones = c.phone.split(",").map(p => normalizePhone(p.trim()));
-          const searchPhones = formData.customerPhone.split(",").map(p => normalizePhone(p.trim()));
-          return customerPhones.some(cp => searchPhones.some(sp => cp === sp || cp.includes(sp) || sp.includes(cp)));
+          // Chỉ match khi phone khớp HOÀN TOÀN (không dùng includes để tránh match nhầm)
+          return customerPhones.some(cp => cp === formPhone);
         })
       : undefined;
     
-    // ❌ REMOVED: Không tự động chọn khách hàng theo tên (vì có thể trùng tên)
-    // Chỉ dùng customerId hoặc customerPhone để xác định khách hàng
+    // Ưu tiên customerId, sau đó mới đến phone
+    // Nếu có customerId thì KHÔNG fallback sang phone (để tránh hiển thị nhầm xe)
     const currentCustomer = customerById || customerByPhone || null;
     const customerVehicles = currentCustomer?.vehicles || [];
 

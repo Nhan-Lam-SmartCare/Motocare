@@ -4274,16 +4274,18 @@ const WorkOrderModal: React.FC<{
             {/* Always show "Lưu Phiếu" */}
             <button
               onClick={handleSaveOnly}
-              className="px-6 py-2 bg-slate-500 hover:bg-slate-600 text-white rounded-lg font-medium"
+              disabled={isSubmitting}
+              className={`px-6 py-2 rounded-lg font-medium ${isSubmitting ? 'bg-slate-400 cursor-not-allowed' : 'bg-slate-500 hover:bg-slate-600'} text-white`}
             >
-              Lưu Phiếu
+              {isSubmitting ? 'Đang lưu...' : 'Lưu Phiếu'}
             </button>
 
             {/* Show "Đặt cọc" button only when status is NOT "Trả máy" and deposit input is shown */}
             {formData.status !== "Trả máy" && showDepositInput && (
               <button
                 onClick={handleSave}
-                className="px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium flex items-center gap-2"
+                disabled={isSubmitting}
+                className={`px-6 py-2 rounded-lg font-medium flex items-center gap-2 ${isSubmitting ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-500 hover:bg-blue-600'} text-white`}
               >
                 <svg
                   className="w-5 h-5"
@@ -4306,7 +4308,8 @@ const WorkOrderModal: React.FC<{
             {formData.status === "Trả máy" && (
               <button
                 onClick={handleSave}
-                className="px-6 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium flex items-center gap-2"
+                disabled={isSubmitting}
+                className={`px-6 py-2 rounded-lg font-medium flex items-center gap-2 ${isSubmitting ? 'bg-green-400 cursor-not-allowed' : 'bg-green-500 hover:bg-green-600'} text-white`}
               >
                 <svg
                   className="w-5 h-5"

@@ -50,12 +50,6 @@ export async function fetchWorkOrders(): Promise<RepoResult<WorkOrder[]>> {
       .select("*")
       .order("creationdate", { ascending: false }); // Use lowercase to match DB column
 
-    console.log("[fetchWorkOrders] Raw data from DB:", data);
-    console.log(
-      "[fetchWorkOrders] Status values:",
-      data?.map((d) => ({ id: d.id, status: d.status }))
-    );
-
     if (error)
       return failure({
         code: "supabase",
@@ -111,14 +105,6 @@ export async function fetchWorkOrdersFiltered(options?: {
     }
 
     const { data, error } = await query;
-
-    console.log(
-      `[fetchWorkOrdersFiltered] Loaded ${
-        data?.length || 0
-      } orders (limit: ${limit}, daysBack: ${
-        daysBack === 0 ? "ALL" : daysBack
-      })`
-    );
 
     if (error)
       return failure({
@@ -179,26 +165,17 @@ export async function createWorkOrderAtomic(input: Partial<WorkOrder>): Promise<
       p_user_id: null, // For audit log only
     } as any;
 
-    console.log(
-      "[DEBUG] Creating work order with payload:",
-      JSON.stringify(payload, null, 2)
-    );
-
     const { data, error } = await supabase.rpc(
       "work_order_create_atomic",
       payload
     );
 
-    console.log("[DEBUG] RPC Response - data:", data, "error:", error);
-
     // 🔹 DETAILED ERROR LOGGING
     if (error) {
-      console.error("[DEBUG] RPC Error Details:", {
+      console.error("[createWorkOrderAtomic] RPC Error:", {
         code: error.code,
         message: error.message,
         details: error.details,
-        hint: error.hint,
-        fullError: JSON.stringify(error, null, 2),
       });
     }
 
@@ -385,8 +362,6 @@ export async function updateWorkOrderAtomic(input: Partial<WorkOrder>): Promise<
       p_customer_phone: input.customerPhone || "",
       p_vehicle_model: input.vehicleModel || "",
       p_license_plate: input.licensePlate || "",
-      // ❌ REMOVED: p_vehicle_id - SQL function không có param này
-      // ❌ REMOVED: p_current_km - SQL function không có param này
       p_issue_description: input.issueDescription || "",
       p_technician_name: input.technicianName || "",
       p_status: input.status || "Tiếp nhận",
@@ -400,6 +375,8 @@ export async function updateWorkOrderAtomic(input: Partial<WorkOrder>): Promise<
       p_deposit_amount: input.depositAmount || 0,
       p_additional_payment: input.additionalPayment || 0,
       p_user_id: null, // For audit log only
+      p_vehicle_id: input.vehicleId || null, // 🔹 FIX: Thêm vehicleId
+      p_current_km: input.currentKm || null, // 🔹 FIX: Thêm currentKm
     } as any;
 
     const { data, error } = await supabase.rpc(

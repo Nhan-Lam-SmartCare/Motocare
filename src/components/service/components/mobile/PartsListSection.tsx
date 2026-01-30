@@ -1,12 +1,21 @@
 import React from "react";
 import { Trash2, Minus, Plus } from "lucide-react";
-import type { Part } from "../../../../types";
 import { formatCurrency, formatNumberWithDots, parseFormattedNumber } from "../../../../utils/format";
 
-interface SelectedPart extends Part {
+// More flexible type that works with both Part and WorkOrder.partsUsed structure
+interface SelectedPart {
+    partId: string;
+    partName: string;
     quantity: number;
     sellingPrice: number;
-    partName?: string; // Support for WorkOrder structure
+    costPrice?: number;
+    sku?: string;
+    category?: string;
+    // Optional Part fields for backward compatibility
+    id?: string;
+    name?: string;
+    stock?: any;
+    retailPrice?: any;
 }
 
 interface PartsListSectionProps {

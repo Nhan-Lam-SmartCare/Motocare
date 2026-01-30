@@ -153,6 +153,7 @@ export interface WorkOrder {
   estimatedCompletion?: string; // ISO (optional)
   customerName: string;
   customerPhone?: string;
+  customerId?: string; // Link to customer record
   vehicleModel?: string;
   licensePlate?: string;
   vehicleId?: string; // NEW: Link to specific vehicle from customer.vehicles[]

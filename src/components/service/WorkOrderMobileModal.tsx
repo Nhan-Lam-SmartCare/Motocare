@@ -205,10 +205,6 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
 
   // Update selectedCustomer and selectedVehicle when workOrder changes
   useEffect(() => {
-    console.log("[WorkOrderMobileModal] workOrder:", workOrder);
-    console.log("[WorkOrderMobileModal] initialCustomer:", initialCustomer);
-    console.log("[WorkOrderMobileModal] initialVehicle:", initialVehicle);
-
     if (workOrder) {
       setStatus((workOrder.status as WorkOrderStatus) || WORK_ORDER_STATUS.RECEIVED);
       setSelectedTechnicianId(
@@ -929,11 +925,11 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
   const handleSaveEditedCustomer = () => {
     if (!selectedCustomer) return;
     if (!editCustomerName.trim()) {
-      alert("Vui lòng nhập tên khách hàng");
+      showToast.error("Vui lòng nhập tên khách hàng");
       return;
     }
     if (!editCustomerPhone.trim()) {
-      alert("Vui lòng nhập số điện thoại");
+      showToast.error("Vui lòng nhập số điện thoại");
       return;
     }
 
@@ -1122,14 +1118,14 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
     if (isSubmitting) return;
 
     if (!selectedCustomer || !selectedVehicle) {
-      alert("Vui lòng chọn khách hàng và xe");
+      showToast.error("Vui lòng chọn khách hàng và xe");
       return;
     }
 
     // Validate phone format (10-11 digits)
     const phoneRegex = /^[0-9]{10,11}$/;
     if (selectedCustomer.phone && !phoneRegex.test(selectedCustomer.phone.trim())) {
-      alert("Số điện thoại không hợp lệ! (cần 10-11 chữ số)");
+      showToast.error("Số điện thoại không hợp lệ! (cần 10-11 chữ số)");
       return;
     }
 
@@ -1182,15 +1178,6 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
       remainingAmount,
     };
 
-    console.log(
-      "[WorkOrderMobileModal] currentKm state:",
-      currentKm,
-      "parsed:",
-      parseInt(currentKm),
-      "final:",
-      workOrderData.currentKm
-    );
-
     // Execute save callback with offline fallback
     try {
       await onSave(workOrderData);
@@ -1236,9 +1223,9 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
       }
 
       if (!error?.suppressAlert) {
-        alert(
+        showToast.error(
           errorMessage +
-            "\n\nDữ liệu đã được lưu tạm. Bạn có thể thử lại hoặc chụp màn hình."
+            " Dữ liệu đã được lưu tạm."
         );
       }
       // onClose(); // Don't close so user can retry
@@ -1944,7 +1931,7 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
                       })
                       .catch(() => { });
                   } else {
-                    alert(
+                    showToast.warning(
                       "Chức năng chia sẻ không khả dụng trên trình duyệt này"
                     );
                   }

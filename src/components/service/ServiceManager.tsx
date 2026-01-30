@@ -154,6 +154,8 @@ export default function ServiceManager() {
   // Fetch customers from Supabase directly
   const [fetchedCustomers, setFetchedCustomers] = useState<any[]>([]);
   useEffect(() => {
+    let isMounted = true;
+    
     const fetchCustomers = async () => {
       const { data, error } = await supabase
         .from("customers")
@@ -161,11 +163,15 @@ export default function ServiceManager() {
         .order("created_at", { ascending: false })
         .limit(100); // Limit to 100 most recent customers for better mobile performance
 
-      if (!error && data) {
+      if (!error && data && isMounted) {
         setFetchedCustomers(data);
       }
     };
     fetchCustomers();
+    
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   // Use fetched data if available, otherwise use context
@@ -177,16 +183,6 @@ export default function ServiceManager() {
 
   // Sync fetched work orders to context
   useEffect(() => {
-    console.log(
-      "[ServiceManager] fetchedWorkOrders:",
-      fetchedWorkOrders?.length,
-      fetchedWorkOrders
-    );
-    console.log(
-      "[ServiceManager] workOrders from context:",
-      workOrders?.length,
-      workOrders
-    );
     if (fetchedWorkOrders) {
       setWorkOrders(fetchedWorkOrders);
     }

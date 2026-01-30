@@ -200,6 +200,8 @@ export default function ServiceManager() {
   // Fetch customers from Supabase directly
   const [fetchedCustomers, setFetchedCustomers] = useState<any[]>([]);
   useEffect(() => {
+    let isMounted = true;
+    
     const fetchCustomers = async () => {
       const { data, error } = await supabase
         .from("customers")
@@ -207,11 +209,15 @@ export default function ServiceManager() {
         .order("created_at", { ascending: false })
         .limit(100); // Limit to 100 most recent customers for better mobile performance
 
-      if (!error && data) {
+      if (!error && data && isMounted) {
         setFetchedCustomers(data);
       }
     };
     fetchCustomers();
+    
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   // Use fetched data if available, otherwise use context
@@ -1024,7 +1030,6 @@ export default function ServiceManager() {
 
       console.log("[ServiceManager] createCustomerDebt payload:", payload);
       const result = await createCustomerDebt.mutateAsync(payload as any);
-      console.log("[ServiceManager] createCustomerDebt result:", result);
       showToast.success(
         `Đã tạo/cập nhật công nợ ${remainingAmount.toLocaleString()}đ (Mã: ${result?.id || "N/A"
         })`

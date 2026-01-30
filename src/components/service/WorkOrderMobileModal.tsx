@@ -45,9 +45,11 @@ import { showToast } from "../../utils/toast";
 import { supabase } from "../../supabaseClient";
 import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 import { useInputHistory } from "../../hooks/useInputHistory";
+import { useAuth } from "../../contexts/AuthContext";
 import { CustomerInfoSection } from "./components/mobile/CustomerInfoSection";
 import { VehicleInfoSection } from "./components/mobile/VehicleInfoSection";
 import { PartsListSection } from "./components/mobile/PartsListSection";
+import { POPULAR_MOTORCYCLES } from "./constants/service.constants";
 import { ServiceListSection } from "./components/mobile/ServiceListSection";
 import { PaymentSection } from "./components/mobile/PaymentSection";
 
@@ -83,143 +85,11 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
   onSwitchToEdit,
   isOwner = false,
 }) => {
+  const { profile } = useAuth();
+  const profileId = (profile as any)?.id || (profile as any)?.user_id || "anon";
+  
   const WORK_ORDER_DRAFT_VERSION = 1 as const;
   const WORK_ORDER_DRAFT_TTL_MS = 24 * 60 * 60 * 1000; // 24h
-
-  // Popular motorcycle models in Vietnam - same as desktop
-  const POPULAR_MOTORCYCLES = [
-    // === HONDA ===
-    "Honda Wave Alpha",
-    "Honda Wave RSX",
-    "Honda Wave RSX FI",
-    "Honda Wave 110",
-    "Honda Wave S110",
-    "Honda Super Dream",
-    "Honda Dream",
-    "Honda Blade 110",
-    "Honda Future 125",
-    "Honda Future Neo",
-    "Honda Winner X",
-    "Honda Winner 150",
-    "Honda CB150R",
-    "Honda CB150X",
-    "Honda CB300R",
-    "Honda Vision",
-    "Honda Air Blade 125",
-    "Honda Air Blade 150",
-    "Honda Air Blade 160",
-    "Honda SH Mode 125",
-    "Honda SH 125i",
-    "Honda SH 150i",
-    "Honda SH 160i",
-    "Honda SH 350i",
-    "Honda Lead 125",
-    "Honda PCX 125",
-    "Honda PCX 160",
-    "Honda Vario 125",
-    "Honda Vario 150",
-    "Honda Vario 160",
-    "Honda ADV 150",
-    "Honda ADV 160",
-    "Honda ADV 350",
-    "Honda Forza 250",
-    "Honda Forza 300",
-    "Honda Forza 350",
-    "Honda Giorno",
-    "Honda Stylo 160",
-    "Honda Click",
-    "Honda Super Cub",
-    "Honda Dream II",
-    // === YAMAHA ===
-    "Yamaha Sirius",
-    "Yamaha Sirius FI",
-    "Yamaha Sirius RC",
-    "Yamaha Jupiter",
-    "Yamaha Jupiter FI",
-    "Yamaha Jupiter Finn",
-    "Yamaha Exciter 135",
-    "Yamaha Exciter 150",
-    "Yamaha Exciter 155",
-    "Yamaha FZ150i",
-    "Yamaha MT-15",
-    "Yamaha R15",
-    "Yamaha Grande",
-    "Yamaha Grande Hybrid",
-    "Yamaha Janus",
-    "Yamaha FreeGo",
-    "Yamaha FreeGo S",
-    "Yamaha Latte",
-    "Yamaha NVX 125",
-    "Yamaha NVX 155",
-    "Yamaha NMAX",
-    "Yamaha NMAX 155",
-    "Yamaha XMAX 300",
-    "Yamaha Nouvo",
-    "Yamaha Nouvo LX",
-    "Yamaha Mio",
-    "Yamaha Mio Classico",
-    // === SUZUKI ===
-    "Suzuki Axelo",
-    "Suzuki Viva",
-    "Suzuki Smash",
-    "Suzuki Revo",
-    "Suzuki Raider 150",
-    "Suzuki Raider R150",
-    "Suzuki Satria F150",
-    "Suzuki GSX-R150",
-    "Suzuki GSX-S150",
-    "Suzuki Address",
-    "Suzuki Address 110",
-    "Suzuki Impulse",
-    "Suzuki Burgman Street",
-    // === SYM ===
-    "SYM Elegant",
-    "SYM Attila",
-    "SYM Attila Venus",
-    "SYM Angela",
-    "SYM Galaxy",
-    "SYM Star SR",
-    "SYM Shark",
-    // === PIAGGIO & VESPA ===
-    "Piaggio Liberty",
-    "Piaggio Liberty 125",
-    "Piaggio Liberty 150",
-    "Piaggio Medley",
-    "Piaggio Medley 125",
-    "Vespa Sprint",
-    "Vespa Sprint 125",
-    "Vespa Sprint 150",
-    "Vespa Primavera",
-    "Vespa Primavera 125",
-    "Vespa LX",
-    "Vespa S",
-    "Vespa GTS",
-    "Vespa GTS 125",
-    "Vespa GTS 300",
-    // === KYMCO ===
-    "Kymco Like",
-    "Kymco Like 125",
-    "Kymco Like 150",
-    "Kymco Many",
-    "Kymco Many 110",
-    "Kymco Many 125",
-    // === VINFAST ===
-    "VinFast Klara",
-    "VinFast Klara S",
-    "VinFast Ludo",
-    "VinFast Impes",
-    "VinFast Tempest",
-    "VinFast Vento",
-    "VinFast Evo200",
-    "VinFast Feliz",
-    "VinFast Feliz S",
-    "VinFast Theon",
-    // === KHÁC ===
-    "Xe điện khác",
-    "Xe 50cc khác",
-    "Xe nhập khẩu khác",
-    "Khác",
-  ];
 
   // Find customer and vehicle from workOrder data
   const initialCustomer = useMemo(() => {
@@ -420,8 +290,8 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
 
   const draftKey = useMemo(() => {
     const orderKey = workOrder?.id || "new";
-    return `workorder_draft_v${WORK_ORDER_DRAFT_VERSION}:${currentBranchId}:${orderKey}:mobile`;
-  }, [WORK_ORDER_DRAFT_VERSION, currentBranchId, workOrder?.id]);
+    return `workorder_draft_v${WORK_ORDER_DRAFT_VERSION}:${currentBranchId}:${profileId}:${orderKey}:mobile`;
+  }, [WORK_ORDER_DRAFT_VERSION, currentBranchId, profileId, workOrder?.id]);
 
   const draftCheckedRef = useRef(false);
   useEffect(() => {
@@ -1253,6 +1123,13 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
 
     if (!selectedCustomer || !selectedVehicle) {
       alert("Vui lòng chọn khách hàng và xe");
+      return;
+    }
+
+    // Validate phone format (10-11 digits)
+    const phoneRegex = /^[0-9]{10,11}$/;
+    if (selectedCustomer.phone && !phoneRegex.test(selectedCustomer.phone.trim())) {
+      alert("Số điện thoại không hợp lệ! (cần 10-11 chữ số)");
       return;
     }
 

@@ -18,6 +18,7 @@ import {
   validateDepositAmount,
 } from "../../../utils/validation";
 import { useDebouncedValue } from "../../../hooks/useDebouncedValue";
+import { POPULAR_MOTORCYCLES } from "../constants/service.constants";
 
 export interface StoreSettings {
   store_name?: string;
@@ -64,270 +65,6 @@ const WorkOrderModal: React.FC<{
   storeSettings,
   invalidateWorkOrders,
 }) => {
-    // Popular motorcycle models in Vietnam
-    const POPULAR_MOTORCYCLES = [
-      // === HONDA ===
-      // Xe số
-      "Honda Wave Alpha",
-      "Honda Wave RSX",
-      "Honda Wave RSX FI",
-      "Honda Wave 110",
-      "Honda Wave S110",
-      "Honda Super Dream",
-      "Honda Dream",
-      "Honda Blade 110",
-      "Honda Future 125",
-      "Honda Future Neo",
-      // Xe côn tay
-      "Honda Winner X",
-      "Honda Winner 150",
-      "Honda CB150R",
-      "Honda CB150X",
-      "Honda CB300R",
-      "Honda CB500F",
-      "Honda CB650R",
-      "Honda CBR150R",
-      "Honda CBR250RR",
-      "Honda CBR500R",
-      "Honda CBR650R",
-      "Honda Rebel 300",
-      "Honda Rebel 500",
-      "Honda CRF150L",
-      "Honda CRF250L",
-      "Honda CRF300L",
-      "Honda XR150L",
-      // Xe tay ga
-      "Honda Vision",
-      "Honda Air Blade 125",
-      "Honda Air Blade 150",
-      "Honda Air Blade 160",
-      "Honda SH Mode 125",
-      "Honda SH 125i",
-      "Honda SH 150i",
-      "Honda SH 160i",
-      "Honda SH 350i",
-      "Honda Lead 125",
-      "Honda PCX 125",
-      "Honda PCX 160",
-      "Honda Vario 125",
-      "Honda Vario 150",
-      "Honda Vario 160",
-      "Honda ADV 150",
-      "Honda ADV 160",
-      "Honda ADV 350",
-      "Honda Forza 250",
-      "Honda Forza 300",
-      "Honda Forza 350",
-      "Honda Giorno",
-      "Honda Stylo 160",
-      // Xe cũ/ngưng sản xuất
-      "Honda @",
-      "Honda Click",
-      "Honda Dylan",
-      "Honda PS",
-      "Honda Spacy",
-      "Honda SCR",
-      "Honda NSR",
-      "Honda Astrea",
-      "Honda Cub 50",
-      "Honda Cub 70",
-      "Honda Cub 81",
-      "Honda Cub 82",
-      "Honda Cub 86",
-      "Honda Super Cub",
-      "Honda Dream II",
-      "Honda Dream Thái",
-
-      // === YAMAHA ===
-      // Xe số
-      "Yamaha Sirius",
-      "Yamaha Sirius FI",
-      "Yamaha Sirius RC",
-      "Yamaha Jupiter",
-      "Yamaha Jupiter FI",
-      "Yamaha Jupiter Finn",
-      "Yamaha Jupiter MX",
-      // Xe côn tay
-      "Yamaha Exciter 135",
-      "Yamaha Exciter 150",
-      "Yamaha Exciter 155",
-      "Yamaha FZ150i",
-      "Yamaha FZ155i",
-      "Yamaha MT-03",
-      "Yamaha MT-07",
-      "Yamaha MT-09",
-      "Yamaha MT-10",
-      "Yamaha MT-15",
-      "Yamaha R15",
-      "Yamaha R3",
-      "Yamaha R6",
-      "Yamaha R7",
-      "Yamaha XSR155",
-      "Yamaha XSR700",
-      "Yamaha XSR900",
-      "Yamaha WR155R",
-      "Yamaha TFX 150",
-      // Xe tay ga
-      "Yamaha Grande",
-      "Yamaha Grande Hybrid",
-      "Yamaha Janus",
-      "Yamaha FreeGo",
-      "Yamaha FreeGo S",
-      "Yamaha Latte",
-      "Yamaha NVX 125",
-      "Yamaha NVX 155",
-      "Yamaha NVX 155 VVA",
-      "Yamaha NMAX",
-      "Yamaha NMAX 155",
-      "Yamaha XMAX 300",
-      "Yamaha TMAX 530",
-      "Yamaha TMAX 560",
-      "Yamaha Lexi",
-      "Yamaha Aerox",
-      // Xe cũ/ngưng sản xuất
-      "Yamaha Nouvo",
-      "Yamaha Nouvo LX",
-      "Yamaha Nouvo SX",
-      "Yamaha Mio",
-      "Yamaha Mio Classico",
-      "Yamaha Mio Ultimo",
-      "Yamaha Taurus",
-      "Yamaha Spark",
-      "Yamaha Force",
-
-      // === SUZUKI ===
-      // Xe số
-      "Suzuki Axelo",
-      "Suzuki Viva",
-      "Suzuki Best",
-      "Suzuki Smash",
-      "Suzuki Sport",
-      "Suzuki Revo",
-      // Xe côn tay
-      "Suzuki Raider 150",
-      "Suzuki Raider R150",
-      "Suzuki Satria F150",
-      "Suzuki GSX-R150",
-      "Suzuki GSX-S150",
-      "Suzuki GSX-R1000",
-      "Suzuki GSX-S1000",
-      "Suzuki Gixxer 150",
-      "Suzuki Gixxer 250",
-      "Suzuki V-Strom 250",
-      "Suzuki V-Strom 650",
-      "Suzuki V-Strom 1050",
-      "Suzuki Intruder 150",
-      "Suzuki Bandit 150",
-      // Xe tay ga
-      "Suzuki Address",
-      "Suzuki Address 110",
-      "Suzuki Impulse",
-      "Suzuki Burgman Street",
-      "Suzuki Burgman 125",
-      "Suzuki Burgman 200",
-      "Suzuki Burgman 400",
-      "Suzuki Avenis",
-      // Xe cũ
-      "Suzuki GN125",
-      "Suzuki GD110",
-      "Suzuki EN150",
-      "Suzuki Hayate",
-      "Suzuki Sky Drive",
-      "Suzuki Sapphire",
-
-      // === SYM ===
-      "SYM Elegant",
-      "SYM Elite 50",
-      "SYM Attila",
-      "SYM Attila Venus",
-      "SYM Attila Elizabeth",
-      "SYM Angela",
-      "SYM Galaxy",
-      "SYM Star SR",
-      "SYM Shark",
-      "SYM Shark Mini",
-      "SYM Passing",
-      "SYM X-Pro",
-      "SYM Abela",
-      "SYM Husky",
-
-      // === PIAGGIO & VESPA ===
-      "Piaggio Liberty",
-      "Piaggio Liberty 50",
-      "Piaggio Liberty 125",
-      "Piaggio Liberty 150",
-      "Piaggio Medley",
-      "Piaggio Medley 125",
-      "Piaggio Medley 150",
-      "Piaggio Beverly",
-      "Piaggio MP3",
-      "Piaggio Zip",
-      "Vespa Sprint",
-      "Vespa Sprint 125",
-      "Vespa Sprint 150",
-      "Vespa Primavera",
-      "Vespa Primavera 125",
-      "Vespa Primavera 150",
-      "Vespa LX",
-      "Vespa S",
-      "Vespa GTS",
-      "Vespa GTS 125",
-      "Vespa GTS 300",
-      "Vespa GTV",
-      "Vespa Sei Giorni",
-
-      // === KYMCO ===
-      "Kymco Like",
-      "Kymco Like 125",
-      "Kymco Like 150",
-      "Kymco Many",
-      "Kymco Many 50",
-      "Kymco Many 110",
-      "Kymco Many 125",
-      "Kymco Jockey",
-      "Kymco Candy",
-      "Kymco People S",
-      "Kymco AK550",
-      "Kymco X-Town 300",
-      "Kymco Downtown",
-      "Kymco Visar",
-
-      // === VINFAST (Xe điện) ===
-      "VinFast Klara",
-      "VinFast Klara A1",
-      "VinFast Klara A2",
-      "VinFast Klara S",
-      "VinFast Ludo",
-      "VinFast Impes",
-      "VinFast Tempest",
-      "VinFast Vento",
-      "VinFast Evo200",
-      "VinFast Feliz",
-      "VinFast Feliz S",
-      "VinFast Theon",
-      "VinFast Theon S",
-
-      // === YADEA (Xe điện) ===
-      "Yadea Xmen Neo",
-      "Yadea Ulike",
-      "Yadea G5",
-      "Yadea Sunra X7",
-      "Yadea Odora",
-
-      // === PEGA (Xe điện) ===
-      "Pega eSH",
-      "Pega NewTech",
-      "Pega Cap A",
-      "Pega X-Men",
-      "Pega Aura",
-
-      // === Khác ===
-      "Xe điện khác",
-      "Xe 50cc khác",
-      "Xe nhập khẩu khác",
-      "Khác",
-    ];
-
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const queryClient = useQueryClient();
     const { profile } = useAuth();
@@ -543,11 +280,9 @@ const WorkOrderModal: React.FC<{
       }
 
       // Sync additional services (Báo giá)
-      console.log('[WorkOrderModal] Syncing additionalServices from order:', order?.additionalServices);
       if (order?.additionalServices && Array.isArray(order.additionalServices) && order.additionalServices.length > 0) {
         setAdditionalServices(order.additionalServices);
       } else {
-        console.log('[WorkOrderModal] Setting additionalServices to empty array');
         setAdditionalServices([]);
       }
 
@@ -804,6 +539,7 @@ const WorkOrderModal: React.FC<{
         }
       } catch (err) {
         console.error("Error searching customers:", err);
+        showToast.error("Lỗi tìm kiếm khách hàng");
       } finally {
         setIsSearchingCustomer(false);
       }
@@ -1008,16 +744,6 @@ const WorkOrderModal: React.FC<{
     const discount = formData.discount || 0;
     const total = Math.max(0, subtotal - discount);
 
-    // Debug log
-    console.log("Tinh toan:", {
-      laborCost: formData.laborCost,
-      partsTotal,
-      servicesTotal,
-      subtotal,
-      discount,
-      total,
-    });
-
     // Calculate payment summary
     const totalDeposit = depositAmount || order.depositAmount || 0;
     // 🔹 FIX: Chỉ tính additionalPayment MỚI khi checkbox được check
@@ -1037,15 +763,6 @@ const WorkOrderModal: React.FC<{
       paidAmount: number
     ) => {
       if (remainingAmount <= 0) return;
-
-      console.log("[createCustomerDebtIfNeeded] CALLED with:", {
-        workOrderId: workOrder.id,
-        totalAmount,
-        paidAmount,
-        remainingAmount,
-        customerName: workOrder.customerName,
-        timestamp: new Date().toISOString(),
-      });
 
       try {
         const safeCustomerId =
@@ -1125,9 +842,7 @@ const WorkOrderModal: React.FC<{
           workOrderId: workOrder.id, // 🔹 Link debt với work order
         };
 
-        console.log("[ServiceManager] createCustomerDebt payload:", payload);
         const result = await createCustomerDebt.mutateAsync(payload as any);
-        console.log("[ServiceManager] createCustomerDebt result:", result);
         showToast.success(
           `Đã tạo/cập nhật công nợ ${remainingAmount.toLocaleString()}đ (Mã: ${result?.id || "N/A"
           })`
@@ -1345,10 +1060,6 @@ const WorkOrderModal: React.FC<{
 
         if (!existingCustomer) {
           // Chỉ tạo khách hàng mới nếu SĐT chưa tồn tại
-          console.log(
-            `[WorkOrderModal] Creating new customer: ${formData.customerName} (${formData.customerPhone})`
-          );
-
           const vehicleId = `VEH-${Date.now()}`;
           const vehicles = [];
           if (formData.vehicleModel || formData.licensePlate) {
@@ -1371,9 +1082,6 @@ const WorkOrderModal: React.FC<{
           });
         } else {
           // Khách hàng đã tồn tại - chỉ cập nhật thông tin xe nếu cần
-          console.log(
-            `[WorkOrderModal] Customer exists: ${existingCustomer.name} (${existingCustomer.phone})`
-          );
           if (
             formData.vehicleModel &&
             existingCustomer.vehicleModel !== formData.vehicleModel
@@ -1383,9 +1091,6 @@ const WorkOrderModal: React.FC<{
               vehicleModel: formData.vehicleModel,
               licensePlate: formData.licensePlate,
             });
-            console.log(
-              `[WorkOrderModal] Updated vehicle info for existing customer`
-            );
           }
         }
       }
@@ -1444,7 +1149,6 @@ const WorkOrderModal: React.FC<{
             console.error("[UPDATE ERROR]", error);
             throw error;
           }
-          console.log("[UPDATE SUCCESS]", data);
 
           // Update vehicle currentKm if km was provided
           if (
@@ -1452,9 +1156,6 @@ const WorkOrderModal: React.FC<{
             formData.vehicleId &&
             formData.customerPhone
           ) {
-            console.log(
-              `[WorkOrderModal UPDATE] Attempting to update km ${formData.currentKm} for vehicle ${formData.vehicleId}`
-            );
             const customer = customers.find(
               (c) => c.phone === formData.customerPhone
             );
@@ -1484,33 +1185,17 @@ const WorkOrderModal: React.FC<{
                     updateError
                   );
                 } else {
-                  console.log(
-                    `[WorkOrderModal UPDATE] ✅ Updated km ${formData.currentKm} to DB for vehicle ${formData.vehicleId}`
-                  );
                   // Update local context
                   upsertCustomer({
                     ...customer,
                     vehicles: updatedVehicles,
                   });
                 }
-              } else {
-                console.warn(
-                  `[WorkOrderModal UPDATE] ⚠️ Vehicle ${formData.vehicleId} not found in customer vehicles`
-                );
               }
-            } else {
-              console.warn(
-                `[WorkOrderModal UPDATE] ⚠️ Customer not found: ${formData.customerPhone}`
-              );
             }
-          } else {
-            console.log(
-              `[WorkOrderModal UPDATE] ⚠️ Skipping km update - currentKm: ${formData.currentKm}, vehicleId: ${formData.vehicleId}, phone: ${formData.customerPhone}`
-            );
           }
         } else {
           // Insert new
-          console.log("[INSERT] Attempting to insert:", workOrderData);
           const { data, error } = await supabase
             .from("work_orders")
             .insert(workOrderData)
@@ -1518,13 +1203,8 @@ const WorkOrderModal: React.FC<{
 
           if (error) {
             console.error("[INSERT ERROR]", error);
-            console.error(
-              "[INSERT ERROR DETAILS]",
-              JSON.stringify(error, null, 2)
-            );
             throw error;
           }
-          console.log("[INSERT SUCCESS]", data);
 
           // Update vehicle currentKm if km was provided
           if (
@@ -1532,9 +1212,6 @@ const WorkOrderModal: React.FC<{
             formData.vehicleId &&
             formData.customerPhone
           ) {
-            console.log(
-              `[WorkOrderModal CREATE] Attempting to update km ${formData.currentKm} for vehicle ${formData.vehicleId}`
-            );
             const customer = customers.find(
               (c) => c.phone === formData.customerPhone
             );
@@ -1575,26 +1252,13 @@ const WorkOrderModal: React.FC<{
                   updateError
                 );
               } else {
-                console.log(
-                  `[WorkOrderModal CREATE] ✅ ${vehicleExists ? "Updated" : "Added"
-                  } km ${formData.currentKm} to DB for vehicle ${formData.vehicleId
-                  }`
-                );
                 // Update local context
                 upsertCustomer({
                   ...customer,
                   vehicles: updatedVehicles,
                 });
               }
-            } else {
-              console.warn(
-                `[WorkOrderModal CREATE] ⚠️ Customer not found: ${formData.customerPhone}`
-              );
             }
-          } else {
-            console.log(
-              `[WorkOrderModal CREATE] ⚠️ Skipping km update - currentKm: ${formData.currentKm}, vehicleId: ${formData.vehicleId}, phone: ${formData.customerPhone}`
-            );
           }
         }
 
@@ -1620,32 +1284,30 @@ const WorkOrderModal: React.FC<{
 
     // 🔹 Function to handle payment processing
     const handleSave = async () => {
-      // 🔹 DEBUG - Log order info
-      console.log(
-        "[handleSave] Starting - order:",
-        order?.id,
-        "formData.status:",
-        formData.status
-      );
-
       // 🔹 PREVENT DUPLICATE SUBMISSIONS (synchronous check with ref)
       if (submittingRef.current || isSubmitting) {
-        console.log("[handleSave] Already submitting, skipping...");
         return;
       }
       submittingRef.current = true; // Set immediately before async operations
-
       setIsSubmitting(true);
+
+      // Helper function to reset submitting state
+      const resetSubmitting = () => {
+        submittingRef.current = false;
+        setIsSubmitting(false);
+      };
 
       try {
         // 🔹 VALIDATION FRONTEND
         // 1. Validate customer name & phone required
         if (!formData.customerName?.trim()) {
           showToast.error("Vui lòng nhập tên khách hàng");
+          resetSubmitting();
           return;
         }
         if (!formData.customerPhone?.trim()) {
           showToast.error("Vui lòng nhập số điện thoại");
+          resetSubmitting();
           return;
         }
 
@@ -1653,12 +1315,14 @@ const WorkOrderModal: React.FC<{
         const phoneRegex = /^[0-9]{10,11}$/;
         if (!phoneRegex.test(formData.customerPhone.trim())) {
           showToast.error("Số điện thoại không hợp lệ! (cần 10-11 chữ số)");
+          resetSubmitting();
           return;
         }
 
         // 3. Validate total > 0 ONLY if status is "Trả máy"
         if (total <= 0 && formData.status === "Trả máy") {
           showToast.error("Tổng tiền phải lớn hơn 0 khi trả máy");
+          resetSubmitting();
           return;
         }
 
@@ -1671,10 +1335,6 @@ const WorkOrderModal: React.FC<{
           // 🔹 VALIDATE DUPLICATE PHONE
           if (!existingCustomer) {
             // Chỉ tạo khách hàng mới nếu SĐT chưa tồn tại
-            console.log(
-              `[WorkOrderModal] Creating new customer: ${formData.customerName} (${formData.customerPhone})`
-            );
-
             const vehicleId = `VEH-${Date.now()}`;
             const vehicles = [];
             if (formData.vehicleModel || formData.licensePlate) {
@@ -1697,9 +1357,6 @@ const WorkOrderModal: React.FC<{
             });
           } else {
             // Khách hàng đã tồn tại - chỉ cập nhật thông tin xe nếu cần
-            console.log(
-              `[WorkOrderModal] Customer exists: ${existingCustomer.name} (${existingCustomer.phone})`
-            );
             if (
               formData.vehicleModel &&
               existingCustomer.vehicleModel !== formData.vehicleModel
@@ -1709,9 +1366,6 @@ const WorkOrderModal: React.FC<{
                 vehicleModel: formData.vehicleModel,
                 licensePlate: formData.licensePlate,
               });
-              console.log(
-                `[WorkOrderModal] Updated vehicle info for existing customer`
-              );
             }
           }
         }
@@ -1968,12 +1622,6 @@ const WorkOrderModal: React.FC<{
 
                 // Create expense transaction
                 try {
-                  console.log("[Outsourcing] Inserting expense transaction:", {
-                    id: outsourcingTxId,
-                    amount: -totalOutsourcingCost,
-                    branchid: currentBranchId,
-                  });
-
                   // Check if transaction already exists
                   const { data: existingTx } = await supabase
                     .from("cash_transactions")
@@ -1982,11 +1630,7 @@ const WorkOrderModal: React.FC<{
                     .eq("category", "outsourcing")
                     .maybeSingle();
 
-                  if (existingTx) {
-                    console.log(
-                      "[Outsourcing] Transaction already exists, skipping insert"
-                    );
-                  } else {
+                  if (!existingTx) {
                     const { error: expenseError } = await supabase
                       .from("cash_transactions")
                       .insert({
@@ -2011,7 +1655,6 @@ const WorkOrderModal: React.FC<{
                         `Lỗi tạo phiếu chi gia công: ${expenseError.message}`
                       );
                     } else {
-                      console.log("[Outsourcing] Insert SUCCESS");
                       // Update context
                       setCashTransactions((prev: any[]) => [
                         ...prev,
@@ -2067,12 +1710,6 @@ const WorkOrderModal: React.FC<{
                   .substr(2, 9)}`;
 
                 try {
-                  console.log("[Negative Sales] Inserting expense transaction:", {
-                    id: negativeSalesTxId,
-                    amount: -negativeSalesPayment,
-                    branchid: currentBranchId,
-                  });
-
                   const negativeServices = additionalServices.filter(
                     (s) => s.price < 0 && (s.costPrice || 0) === 0
                   );
@@ -2085,11 +1722,7 @@ const WorkOrderModal: React.FC<{
                     .eq("category", "refund")
                     .maybeSingle();
 
-                  if (existingNegTx) {
-                    console.log(
-                      "[Negative Sales] Transaction already exists, skipping insert"
-                    );
-                  } else {
+                  if (!existingNegTx) {
                     const { error: negExpenseError } = await supabase
                       .from("cash_transactions")
                       .insert({
@@ -2117,7 +1750,6 @@ const WorkOrderModal: React.FC<{
                         `Lỗi tạo phiếu chi (giá bán âm): ${negExpenseError.message}`
                       );
                     } else {
-                      console.log("[Negative Sales] Insert SUCCESS");
                       // Update context
                       setCashTransactions((prev: any[]) => [
                         ...prev,
@@ -2176,7 +1808,7 @@ const WorkOrderModal: React.FC<{
             onSave(finalOrder);
 
             // 🔹 FIX: Nếu tạo phiếu mới với paymentStatus = 'paid', gọi complete_payment để trừ kho
-            // FIXME: Đã cập nhật để kiểm tra flag inventoryDeducted từ response của atomic create
+            // Kiểm tra flag inventoryDeducted từ response của atomic create
             // Nếu atomic create đã trừ kho rồi (inventoryDeducted = true) thì KHÔNG gọi complete_payment nữa
             if (
               paymentStatus === "paid" &&
@@ -2184,9 +1816,6 @@ const WorkOrderModal: React.FC<{
               !responseData?.inventoryDeducted
             ) {
               try {
-                console.log(
-                  "[handleSave] New order is fully paid AND atomic create didn't deduct inventory. Calling completeWorkOrderPayment..."
-                );
                 const result = await completeWorkOrderPayment(
                   orderId,
                   formData.paymentMethod || "cash",
@@ -2208,13 +1837,6 @@ const WorkOrderModal: React.FC<{
 
             // 🔹 Auto-create customer debt ONLY when status is "Trả máy" and there's remaining amount
             if (formData.status === "Trả máy" && remainingAmount > 0) {
-              console.log("[handleSave] Creating debt with finalOrder:", {
-                id: finalOrder.id,
-                customerName: finalOrder.customerName,
-                customerPhone: finalOrder.customerPhone,
-                licensePlate: finalOrder.licensePlate,
-                vehicleModel: finalOrder.vehicleModel,
-              });
               await createCustomerDebtIfNeeded(
                 finalOrder,
                 remainingAmount,
@@ -2240,14 +1862,7 @@ const WorkOrderModal: React.FC<{
 
         // 🔹 If this is an UPDATE (with or without parts), use atomic RPC
         if (order?.id) {
-          console.log(
-            "[handleSave] UPDATE block - Order ID:",
-            order.id,
-            "Status:",
-            formData.status
-          );
           try {
-            console.log("[handleSave] Calling updateWorkOrderAtomicAsync...");
             const responseData = await updateWorkOrderAtomicAsync({
               id: order.id,
               customerName: formData.customerName || "",
@@ -2726,11 +2341,6 @@ const WorkOrderModal: React.FC<{
               }
             }
 
-            console.log(
-              "[handleSave] updateWorkOrderAtomicAsync SUCCESS - Response:",
-              responseData
-            );
-
             // 🔹 Force invalidate queries để refresh data mới từ DB
             if (invalidateWorkOrders) {
               invalidateWorkOrders();
@@ -2746,9 +2356,6 @@ const WorkOrderModal: React.FC<{
               selectedParts.length > 0
             ) {
               try {
-                console.log(
-                  "[handleSave] Order became fully paid, calling completeWorkOrderPayment to deduct inventory"
-                );
                 const result = await completeWorkOrderPayment(
                   order.id,
                   formData.paymentMethod || "cash",
@@ -2785,6 +2392,10 @@ const WorkOrderModal: React.FC<{
             console.error(
               "[handleSave] Error updating work order (atomic):",
               error
+            );
+            showToast.error(
+              "Lỗi khi cập nhật phiếu: " +
+              (error.message || error.hint || "Không xác định")
             );
           }
           return;
@@ -2913,11 +2524,9 @@ const WorkOrderModal: React.FC<{
                     ⚠️ Phiếu đã thanh toán
                   </h4>
                   <p className="text-xs text-amber-700 dark:text-amber-400">
-                    <p className="text-xs text-amber-700 dark:text-amber-400">
-                      Phiếu đã thanh toán: Không thể thay đổi danh sách dịch vụ và giá bán (Revenue).
-                      <br className="mb-1" />
-                      Tuy nhiên, bạn chẫn có thể cập nhật <b>Giá vốn (Cost)</b> của các dịch vụ để tính lợi nhuận chính xác, cũng như thông tin khách hàng và ghi chú.
-                    </p>
+                    Phiếu đã thanh toán: Không thể thay đổi danh sách dịch vụ và giá bán (Revenue).
+                    <br className="mb-1" />
+                    Tuy nhiên, bạn vẫn có thể cập nhật <b>Giá vốn (Cost)</b> của các dịch vụ để tính lợi nhuận chính xác, cũng như thông tin khách hàng và ghi chú.
                   </p>
                 </div>
               </div>
@@ -4195,7 +3804,6 @@ const WorkOrderModal: React.FC<{
                               // 🔹 FIX: Nếu xóa hết services VÀ đang edit order có sẵn → Update DB ngay
                               if (newServices.length === 0 && order?.id) {
                                 try {
-                                  console.log('[WorkOrderModal] Xóa hết additionalServices, update DB ngay');
                                   await supabase
                                     .from('work_orders')
                                     .update({ additionalservices: null })
@@ -4203,6 +3811,7 @@ const WorkOrderModal: React.FC<{
                                   showToast.success('Đã xóa phần gia công/đặt hàng');
                                 } catch (error) {
                                   console.error('[WorkOrderModal] Error clearing additionalServices:', error);
+                                  showToast.error('Lỗi khi xóa phần gia công/đặt hàng');
                                 }
                               }
                             }}
@@ -4878,11 +4487,6 @@ const WorkOrderModal: React.FC<{
 
                       if (!existingCustomer) {
                         // Customer doesn't exist - create new one
-                        console.log(
-                          "[WorkOrderModal] Creating new customer from modal:",
-                          newCustomer.phone
-                        );
-
                         const customerId = `CUST-${Date.now()}`;
                         const vehicleId = `VEH-${Date.now()}`;
                         const vehicles = [];
@@ -4920,12 +4524,6 @@ const WorkOrderModal: React.FC<{
                         });
                       } else {
                         // Customer exists - just use existing customer and optionally update vehicle
-                        console.log(
-                          "[WorkOrderModal] Customer already exists from modal:",
-                          existingCustomer.id,
-                          existingCustomer.phone
-                        );
-
                         const hasVehicleChange =
                           (newCustomer.vehicleModel &&
                             newCustomer.vehicleModel !==
@@ -4937,9 +4535,6 @@ const WorkOrderModal: React.FC<{
                         let vehicleIdToUse = existingCustomer.vehicles?.[0]?.id;
 
                         if (hasVehicleChange) {
-                          console.log(
-                            "[WorkOrderModal] Updating vehicle info for existing customer from modal"
-                          );
                           const vehicleId = `VEH-${Date.now()}`;
                           const vehicles = [...(existingCustomer.vehicles || [])];
 

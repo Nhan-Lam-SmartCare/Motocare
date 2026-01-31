@@ -297,6 +297,18 @@ export default function EmployeeAdvanceManager() {
         showToast.success(`Đã ghi nhận thanh toán ${formatCurrency(amount)}`);
       }
 
+      // 🔹 NOTE: remaining_amount và paid_amount được tự động cập nhật bởi database trigger
+      // Trigger: trigger_update_advance_on_payment (xem employee_advance_schema.sql)
+      
+      // Kiểm tra nếu đã trả hết thì đổi status
+      const newRemainingAmount = selectedAdvance.remainingAmount - amount;
+      if (newRemainingAmount <= 0) {
+        await supabase
+          .from("employee_advances")
+          .update({ status: "paid" })
+          .eq("id", selectedAdvance.id);
+      }
+
       // Refresh data
       queryClient.invalidateQueries({ queryKey: ["employee-advances"] });
 

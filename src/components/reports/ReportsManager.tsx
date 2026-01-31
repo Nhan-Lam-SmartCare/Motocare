@@ -38,6 +38,7 @@ import {
 } from "../../utils/excelExport";
 import { DailyDetailModal } from "../reports/DailyDetailModal";
 import { ReportsManagerMobile } from "../reports/ReportsManagerMobile";
+import TaxReportExport from "../reports/TaxReportExport";
 
 import {
   calculateFinancialSummary,
@@ -1779,28 +1780,7 @@ const ReportsManager: React.FC = () => {
         )}
 
         {activeTab === "tax" && (
-          <div className="space-y-6">
-            <div className="text-center py-12">
-              <FileText className="w-16 h-16 mx-auto mb-4 text-indigo-600 dark:text-indigo-400" />
-              <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">
-                Xuất báo cáo thuế
-              </h3>
-              <p className="text-slate-600 dark:text-slate-400 mb-6 max-w-md mx-auto">
-                Xuất file XML theo định dạng chuẩn Tổng cục Thuế để nhập vào
-                phần mềm kê khai thuế (HTKK)
-              </p>
-              <a
-                href="#/tax-report"
-                className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all"
-              >
-                <FileText className="w-5 h-5" />
-                Mở trang xuất báo cáo thuế
-              </a>
-              <div className="mt-6 text-sm text-slate-500 dark:text-slate-400">
-                <p>💡 Hỗ trợ: Tờ khai VAT (01/GTGT) và Báo cáo doanh thu</p>
-              </div>
-            </div>
-          </div>
+          <TaxReportExport />
         )}
       </div>
       {/* Daily Detail Modal */}

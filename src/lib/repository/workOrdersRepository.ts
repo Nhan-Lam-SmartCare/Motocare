@@ -66,6 +66,31 @@ export async function fetchWorkOrders(): Promise<RepoResult<WorkOrder[]>> {
   }
 }
 
+// 🔹 NEW: Fetch single work order by ID - used when opening modal to get fresh data
+export async function fetchWorkOrderById(id: string): Promise<RepoResult<WorkOrder>> {
+  try {
+    const { data, error } = await supabase
+      .from(WORK_ORDERS_TABLE)
+      .select("*")
+      .eq("id", id)
+      .single();
+
+    if (error)
+      return failure({
+        code: error.code === "PGRST116" ? "not_found" : "supabase",
+        message: error.code === "PGRST116" ? "Không tìm thấy phiếu sửa chữa" : "Không thể tải phiếu sửa chữa",
+        cause: error,
+      });
+    return success(normalizeWorkOrder(data));
+  } catch (e: any) {
+    return failure({
+      code: "network",
+      message: "Lỗi kết nối tới máy chủ",
+      cause: e,
+    });
+  }
+}
+
 // Optimized fetch with filtering and pagination
 export async function fetchWorkOrdersFiltered(options?: {
   limit?: number;
@@ -446,9 +471,11 @@ export async function updateWorkOrderAtomic(input: Partial<WorkOrder>): Promise<
           message: "Chi nhánh không khớp với quyền hiện tại",
           cause: error,
         });
+      // 🔹 Log chi tiết lỗi để debug
+      console.error("[updateWorkOrderAtomic] Full error:", JSON.stringify(error, null, 2));
       return failure({
         code: "supabase",
-        message: "Cập nhật phiếu sửa chữa (atomic) thất bại",
+        message: `Cập nhật phiếu sửa chữa (atomic) thất bại: ${error?.message || error?.details || 'Lỗi không xác định'}`,
         cause: error,
       });
     }

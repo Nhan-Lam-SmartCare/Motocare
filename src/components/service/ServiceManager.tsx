@@ -47,7 +47,7 @@ import {
   useWorkOrdersRepo,
   useWorkOrdersFilteredRepo,
 } from "../../hooks/useWorkOrdersRepository";
-import { completeWorkOrderPayment } from "../../lib/repository/workOrdersRepository";
+import { completeWorkOrderPayment, fetchWorkOrderById } from "../../lib/repository/workOrdersRepository";
 import type { RepairTemplate } from "../../hooks/useRepairTemplatesRepository";
 import { usePartsRepo } from "../../hooks/usePartsRepository";
 import { useEmployeesRepo } from "../../hooks/useEmployeesRepository";
@@ -601,9 +601,17 @@ export default function ServiceManager() {
   );
   const statusSnapshotCards = getStatusSnapshotCards(stats);
 
-  const handleOpenModal = (order?: WorkOrder) => {
-    if (order) {
-      setEditingOrder(order);
+  const handleOpenModal = async (order?: WorkOrder) => {
+    if (order && order.id) {
+      // 🔹 FIX: Load fresh data from database to avoid stale data issues
+      const result = await fetchWorkOrderById(order.id);
+      if (result.ok) {
+        setEditingOrder(result.data);
+      } else {
+        // Fallback to cached order if fetch fails
+        console.warn("[handleOpenModal] Failed to fetch fresh data, using cached:", result.error);
+        setEditingOrder(order);
+      }
     } else {
       // Create empty order template
       setEditingOrder({
@@ -1518,8 +1526,19 @@ export default function ServiceManager() {
             setMobileModalViewMode(false); // Tạo mới = edit mode
             setShowMobileModal(true);
           }}
-          onEditWorkOrder={(workOrder) => {
-            setEditingOrder(workOrder);
+          onEditWorkOrder={async (workOrder) => {
+            // 🔹 FIX: Load fresh data from database to avoid stale data issues
+            if (workOrder.id) {
+              const result = await fetchWorkOrderById(workOrder.id);
+              if (result.ok) {
+                setEditingOrder(result.data);
+              } else {
+                console.warn("[onEditWorkOrder] Failed to fetch fresh data, using cached:", result.error);
+                setEditingOrder(workOrder);
+              }
+            } else {
+              setEditingOrder(workOrder);
+            }
             setMobileModalViewMode(true); // Click vào phiếu = view mode trước
             setShowMobileModal(true);
           }}

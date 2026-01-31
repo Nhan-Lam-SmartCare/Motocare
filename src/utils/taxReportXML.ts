@@ -561,15 +561,22 @@ export function generateRevenueReportXML(
  * Download XML file
  */
 export function downloadXMLFile(xmlContent: string, fileName: string) {
-  const blob = new Blob([xmlContent], { type: "application/xml" });
+  const blob = new Blob([xmlContent], { type: "application/xml;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
   link.download = fileName;
+  link.style.display = "none";
   document.body.appendChild(link);
+  
+  // Use setTimeout to ensure the download starts before cleanup
   link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
+  
+  // Delay cleanup to ensure download completes
+  setTimeout(() => {
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }, 1000);
 }
 
 /**

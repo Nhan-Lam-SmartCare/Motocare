@@ -1,9 +1,10 @@
 import React, { useState, useMemo } from "react";
-import { FileText, Download, Calendar, Info } from "lucide-react";
+import { FileText, Download, Calendar, Info, FileSpreadsheet } from "lucide-react";
 import { useAppContext } from "../../contexts/AppContext";
 import { useSalesRepo } from "../../hooks/useSalesRepository";
 import { useWorkOrders } from "../../hooks/useSupabase";
 import { useCashTxRepo } from "../../hooks/useCashTransactionsRepository";
+import { useParts } from "../../hooks/useSupabase";
 import { showToast } from "../../utils/toast";
 import { formatCurrency, formatDate } from "../../utils/format";
 import {
@@ -12,6 +13,8 @@ import {
   getPeriodFromDateRange,
   type OrganizationTaxInfo,
 } from "../../utils/taxReportXML";
+import { exportS1aHKD, type BusinessInfo } from "../../utils/excelExport";
+import { calculateFinancialSummary, isPaidWorkOrder, getWorkOrderAccountingDate } from "../../lib/reports/financialSummary";
 
 /**
  * TAX REPORT EXPORT COMPONENT
@@ -21,15 +24,16 @@ import {
 const TaxReportExport: React.FC = () => {
   const { currentBranchId } = useAppContext();
 
-  // Fetch data
+  // Fetch data - sử dụng cùng nguồn với ReportsManager
   const { data: salesData = [] } = useSalesRepo();
   const { data: workOrdersData = [] } = useWorkOrders();
   const { data: cashTxData = [] } = useCashTxRepo({
     branchId: currentBranchId,
   });
+  const { data: partsData = [] } = useParts();
 
   // State
-  const [reportType, setReportType] = useState<"vat" | "revenue">("vat");
+  const [reportType, setReportType] = useState<"vat" | "revenue" | "s1a-hkd">("s1a-hkd");
   const [periodType, setPeriodType] = useState<"month" | "quarter">("month");
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
@@ -51,6 +55,14 @@ const TaxReportExport: React.FC = () => {
     accountantPhone: "090.123.4567",
   };
 
+  // Business info for S1a-HKD (Hộ kinh doanh)
+  const businessInfo: BusinessInfo = {
+    businessName: "Hộ kinh doanh MOTOCARE", // TODO: Fetch from settings
+    taxCode: "0123456789",
+    address: "123 Đường ABC, Quận 1, TP.HCM",
+    businessLocation: "123 Đường ABC, Quận 1, TP.HCM",
+  };
+
   // Calculate date range
   const getDateRange = () => {
     let startDate: Date;
@@ -70,10 +82,17 @@ const TaxReportExport: React.FC = () => {
   };
 
   // Filter data by date range
+  // Chỉ lấy dữ liệu đã thanh toán/hoàn thành để tính doanh thu
   const getFilteredData = () => {
     const { startDate, endDate } = getDateRange();
 
     const filteredSales = salesData.filter((sale) => {
+      // Chỉ lấy đơn hàng đã hoàn thành (không bị hủy/hoàn tiền)
+      const status = (sale as any).status;
+      if (status === "cancelled" || status === "refunded") {
+        return false;
+      }
+      
       const saleBranchId = (sale as any).branchId || (sale as any).branchid;
       if (saleBranchId && currentBranchId && saleBranchId !== currentBranchId) {
         return false;
@@ -83,12 +102,18 @@ const TaxReportExport: React.FC = () => {
     });
 
     const filteredWorkOrders = workOrdersData.filter((wo: any) => {
+      // Chỉ lấy phiếu đã thanh toán
+      const isPaid = wo.paymentStatus === "paid" || wo.paymentstatus === "paid";
+      if (!isPaid) {
+        return false;
+      }
+      
       const woBranchId = wo.branchId || wo.branchid;
       if (woBranchId && currentBranchId && woBranchId !== currentBranchId) {
         return false;
       }
-      const woDate = new Date(wo.creationDate || wo.creationdate);
-      return woDate >= startDate && woDate <= endDate;
+      const woDate = getWorkOrderAccountingDate(wo);
+      return woDate && woDate >= startDate && woDate <= endDate;
     });
 
     const filteredCashTx = cashTxData.filter((tx) => {
@@ -103,43 +128,41 @@ const TaxReportExport: React.FC = () => {
     };
   };
 
-  // Calculate preview stats
+  // Calculate preview stats - dùng cùng logic với ReportsManager
   const previewStats = useMemo(() => {
-    const { sales, workOrders } = getFilteredData();
-
-    let totalRevenue = 0;
-    let totalVAT = 0;
-    let transactionCount = 0;
-
-    // From sales
-    sales.forEach((sale) => {
-      const amountBeforeVAT = Math.round(sale.total / 1.1);
-      const vatAmount = sale.total - amountBeforeVAT;
-      totalRevenue += amountBeforeVAT;
-      totalVAT += vatAmount;
-      transactionCount++;
+    const { startDate, endDate } = getDateRange();
+    
+    // Sử dụng calculateFinancialSummary giống ReportsManager
+    const financialSummary = calculateFinancialSummary({
+      sales: salesData,
+      workOrders: workOrdersData,
+      parts: partsData,
+      cashTransactions: cashTxData,
+      branchId: currentBranchId,
+      start: startDate,
+      end: endDate,
     });
 
-    // From work orders (paid)
-    workOrders.forEach((wo: any) => {
-      const isPaid = wo.paymentStatus === "paid" || wo.paymentstatus === "paid";
-      if (isPaid) {
-        const total =
-          parseFloat(wo.totalPrice || wo.totalprice || 0) +
-          parseFloat(wo.laborCost || wo.laborcost || 0);
-        const amountBeforeVAT = Math.round(total / 1.1);
-        const vatAmount = total - amountBeforeVAT;
-        totalRevenue += amountBeforeVAT;
-        totalVAT += vatAmount;
-        transactionCount++;
-      }
-    });
+    // Tổng doanh thu (đã bao gồm VAT) = salesRevenue + woRevenue
+    const totalRevenueWithVAT = financialSummary.totalRevenue;
+    // Doanh thu chưa VAT (giả sử VAT 10%)
+    const totalRevenueBeforeVAT = Math.round(totalRevenueWithVAT / 1.1);
+    const totalVAT = totalRevenueWithVAT - totalRevenueBeforeVAT;
+    const transactionCount = financialSummary.orderCount;
 
-    return { totalRevenue, totalVAT, transactionCount };
+    return { 
+      totalRevenue: totalRevenueBeforeVAT, 
+      totalVAT, 
+      transactionCount,
+      // Lưu thêm để export
+      financialSummary,
+    };
   }, [
     salesData,
     workOrdersData,
     cashTxData,
+    partsData,
+    currentBranchId,
     selectedYear,
     selectedMonth,
     selectedQuarter,
@@ -150,7 +173,12 @@ const TaxReportExport: React.FC = () => {
   const handleExport = () => {
     try {
       const { startDate, endDate } = getDateRange();
-      const { sales, workOrders, cashTransactions } = getFilteredData();
+      
+      // Sử dụng dữ liệu đã lọc đúng từ financialSummary
+      const { financialSummary } = previewStats;
+      const sales = financialSummary.filteredSales;
+      const workOrders = financialSummary.filteredWorkOrders;
+      const { cashTransactions } = getFilteredData();
 
       if (sales.length === 0 && workOrders.length === 0) {
         showToast.warning("Không có dữ liệu trong kỳ này!");
@@ -159,7 +187,19 @@ const TaxReportExport: React.FC = () => {
 
       let result;
 
-      if (reportType === "vat") {
+      if (reportType === "s1a-hkd") {
+        // Export S1a-HKD Excel (Hộ kinh doanh dưới 500 triệu/năm)
+        result = exportS1aHKD(
+          sales,
+          workOrders,
+          businessInfo,
+          startDate,
+          endDate
+        );
+        showToast.success(
+          `Đã xuất sổ doanh thu S1a-HKD: ${result.fileName}\nTổng doanh thu: ${formatCurrency(result.totalRevenue)}`
+        );
+      } else if (reportType === "vat") {
         result = exportVATReportXML(
           sales,
           workOrders,
@@ -185,7 +225,7 @@ const TaxReportExport: React.FC = () => {
       }
     } catch (error) {
       console.error("Export error:", error);
-      showToast.error("Có lỗi khi xuất báo cáo thuế!");
+      showToast.error("Có lỗi khi xuất báo cáo!");
     }
   };
 
@@ -206,17 +246,12 @@ const TaxReportExport: React.FC = () => {
       </div>
 
       {/* Info Banner */}
-      <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+      <div className="mb-6 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
         <div className="flex gap-3">
-          <Info className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-          <div className="text-sm text-blue-900 dark:text-blue-100">
-            <p className="font-semibold mb-1">Hướng dẫn sử dụng:</p>
-            <ol className="list-decimal list-inside space-y-1">
-              <li>Chọn loại báo cáo và kỳ báo cáo</li>
-              <li>Kiểm tra thông tin tổng quan</li>
-              <li>Nhấn "Xuất XML" để tải file</li>
-              <li>Mở phần mềm kê khai thuế và nhập file XML</li>
-            </ol>
+          <Info className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+          <div className="text-sm text-amber-900 dark:text-amber-100">
+            <p className="font-semibold mb-1">💡 Hộ kinh doanh dưới 500 triệu/năm:</p>
+            <p>Chỉ cần xuất <strong>Sổ doanh thu S1a-HKD</strong> (file Excel) - không cần kê khai VAT.</p>
           </div>
         </div>
       </div>
@@ -233,36 +268,65 @@ const TaxReportExport: React.FC = () => {
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
               Loại báo cáo
             </label>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {/* S1a-HKD - Recommended for small businesses */}
+              <button
+                onClick={() => setReportType("s1a-hkd")}
+                className={`p-3 rounded-lg border-2 transition-all text-left ${
+                  reportType === "s1a-hkd"
+                    ? "border-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 ring-2 ring-emerald-200"
+                    : "border-slate-300 dark:border-slate-600 hover:border-slate-400"
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+                  <span className="text-sm font-semibold text-slate-900 dark:text-white">
+                    Sổ S1a-HKD
+                  </span>
+                  <span className="text-[10px] px-1.5 py-0.5 bg-emerald-100 text-emerald-700 rounded-full font-medium">
+                    Đề xuất
+                  </span>
+                </div>
+                <div className="text-xs text-slate-600 dark:text-slate-400 mt-1">
+                  Doanh thu &lt; 500tr/năm (Excel)
+                </div>
+              </button>
+
               <button
                 onClick={() => setReportType("vat")}
-                className={`p-3 rounded-lg border-2 transition-all ${
+                className={`p-3 rounded-lg border-2 transition-all text-left ${
                   reportType === "vat"
                     ? "border-blue-600 bg-blue-50 dark:bg-blue-900/20"
                     : "border-slate-300 dark:border-slate-600 hover:border-slate-400"
                 }`}
               >
-                <div className="text-sm font-semibold text-slate-900 dark:text-white">
-                  Tờ khai VAT (01/GTGT)
+                <div className="flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-blue-600" />
+                  <span className="text-sm font-semibold text-slate-900 dark:text-white">
+                    Tờ khai VAT
+                  </span>
                 </div>
                 <div className="text-xs text-slate-600 dark:text-slate-400 mt-1">
-                  Kê khai thuế giá trị gia tăng
+                  01/GTGT (XML)
                 </div>
               </button>
 
               <button
                 onClick={() => setReportType("revenue")}
-                className={`p-3 rounded-lg border-2 transition-all ${
+                className={`p-3 rounded-lg border-2 transition-all text-left ${
                   reportType === "revenue"
                     ? "border-blue-600 bg-blue-50 dark:bg-blue-900/20"
                     : "border-slate-300 dark:border-slate-600 hover:border-slate-400"
                 }`}
               >
-                <div className="text-sm font-semibold text-slate-900 dark:text-white">
-                  Báo cáo doanh thu
+                <div className="flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-purple-600" />
+                  <span className="text-sm font-semibold text-slate-900 dark:text-white">
+                    Báo cáo doanh thu
+                  </span>
                 </div>
                 <div className="text-xs text-slate-600 dark:text-slate-400 mt-1">
-                  Chi tiết doanh thu theo kỳ
+                  Chi tiết theo kỳ (XML)
                 </div>
               </button>
             </div>
@@ -417,11 +481,22 @@ const TaxReportExport: React.FC = () => {
         className={`w-full py-3 rounded-lg font-semibold transition-all flex items-center justify-center gap-2 ${
           previewStats.transactionCount === 0
             ? "bg-slate-300 dark:bg-slate-700 text-slate-500 cursor-not-allowed"
-            : "bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg hover:shadow-xl"
+            : reportType === "s1a-hkd"
+              ? "bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white shadow-lg hover:shadow-xl"
+              : "bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg hover:shadow-xl"
         }`}
       >
-        <Download className="w-5 h-5" />
-        Xuất file XML
+        {reportType === "s1a-hkd" ? (
+          <>
+            <FileSpreadsheet className="w-5 h-5" />
+            Xuất file Excel (S1a-HKD)
+          </>
+        ) : (
+          <>
+            <Download className="w-5 h-5" />
+            Xuất file XML
+          </>
+        )}
       </button>
 
       {previewStats.transactionCount === 0 && (

@@ -223,11 +223,25 @@ export function calculateFinancialSummary(params: {
   const partsCostMap = buildPartsCostMap(parts, branchId);
 
   const filteredSales = (sales || []).filter((sale: any) => {
+    // Loại bỏ đơn hàng đã hủy hoặc hoàn tiền
+    const status = (sale?.status || "").toLowerCase();
+    if (status === "cancelled" || status === "refunded") {
+      return false;
+    }
     const saleDate = new Date(sale?.date);
     return !Number.isNaN(saleDate.getTime()) && saleDate >= start && saleDate <= end;
   });
 
   const filteredWorkOrders = (workOrders || []).filter((wo: any) => {
+    // Loại bỏ phiếu đã hủy hoặc hoàn tiền
+    const woStatus = (wo?.status || "").toLowerCase();
+    if (woStatus === "đã hủy" || woStatus === "cancelled") {
+      return false;
+    }
+    // Loại bỏ phiếu đã hoàn tiền
+    if (wo?.refunded === true) {
+      return false;
+    }
     const woDate = getWorkOrderAccountingDate(wo);
     return isDateInRange(woDate, start, end) && isPaidWorkOrder(wo);
   });

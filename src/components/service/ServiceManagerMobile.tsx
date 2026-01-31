@@ -44,7 +44,7 @@ import { triggerHaptic } from "../../utils/haptics";
 interface ServiceManagerMobileProps {
   workOrders: WorkOrder[];
   onCreateWorkOrder: () => void;
-  onEditWorkOrder: (workOrder: WorkOrder) => void;
+  onEditWorkOrder: (workOrder: WorkOrder) => void | Promise<void>;
   onDeleteWorkOrder: (workOrder: WorkOrder) => void;
   onCallCustomer: (phone: string) => void;
   onPrintWorkOrder: (workOrder: WorkOrder) => void;

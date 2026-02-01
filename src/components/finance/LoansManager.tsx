@@ -11,6 +11,7 @@ import {
   useLoanPaymentsRepo,
   useCreateLoanPaymentRepo,
 } from "../../hooks/useLoansRepository";
+import { useUpdatePaymentSourceBalanceRepo } from "../../hooks/usePaymentSourcesRepository";
 import { showToast } from "../../utils/toast";
 import { createCashTransaction } from "../../lib/repository/cashTransactionsRepository";
 
@@ -31,6 +32,7 @@ const LoansManager: React.FC = () => {
   const updateLoan = useUpdateLoanRepo();
   const deleteLoan = useDeleteLoanRepo();
   const createLoanPayment = useCreateLoanPaymentRepo();
+  const updatePaymentSourceBalanceRepo = useUpdatePaymentSourceBalanceRepo();
   const [showAddLoanModal, setShowAddLoanModal] = useState(false);
   const [showEditLoanModal, setShowEditLoanModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -335,7 +337,11 @@ const LoansManager: React.FC = () => {
                 );
               }
 
-              // Cập nhật số dư nguồn tiền
+              // Cập nhật số dư nguồn tiền (local state)
+              const newBalance =
+                (paymentSources.find((ps) => ps.id === payment.paymentMethod)
+                  ?.balance[currentBranchId] || 0) - payment.totalAmount;
+              
               setPaymentSources(
                 paymentSources.map((ps) =>
                   ps.id === payment.paymentMethod
@@ -343,14 +349,24 @@ const LoansManager: React.FC = () => {
                         ...ps,
                         balance: {
                           ...ps.balance,
-                          [currentBranchId]:
-                            (ps.balance[currentBranchId] || 0) -
-                            payment.totalAmount,
+                          [currentBranchId]: newBalance,
                         },
                       }
                     : ps
                 )
               );
+
+              // 💾 Persist số dư nguồn tiền vào database
+              try {
+                await updatePaymentSourceBalanceRepo.mutateAsync({
+                  sourceId: payment.paymentMethod,
+                  branchId: currentBranchId,
+                  balance: newBalance,
+                });
+                console.log("✅ Đã cập nhật số dư nguồn tiền vào DB");
+              } catch (balanceErr) {
+                console.error("❌ Lỗi cập nhật số dư nguồn tiền:", balanceErr);
+              }
 
               setShowPaymentModal(false);
               setSelectedLoan(null);

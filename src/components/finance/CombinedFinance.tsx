@@ -144,9 +144,10 @@ const CombinedFinance: React.FC = () => {
   const combinedTransactions = useMemo(() => {
     const now = new Date();
     const today = now.toISOString().slice(0, 10);
-    const weekAgo = new Date(now.setDate(now.getDate() - 7))
-      .toISOString()
-      .slice(0, 10);
+    // Fix: Tạo Date riêng để tránh mutation của now
+    const weekAgoDate = new Date();
+    weekAgoDate.setDate(weekAgoDate.getDate() - 7);
+    const weekAgo = weekAgoDate.toISOString().slice(0, 10);
     const monthAgo = new Date();
     monthAgo.setMonth(monthAgo.getMonth() - 1);
     const monthAgoStr = monthAgo.toISOString().slice(0, 10);

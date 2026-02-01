@@ -42,6 +42,7 @@ export const AddTransactionModal: React.FC<{
         e.preventDefault();
         const numAmount = parseFloat(amount.replace(/\./g, "")) || 0;
         if (numAmount <= 0) {
+            alert("Vui lòng nhập số tiền hợp lệ (lớn hơn 0)");
             return;
         }
         onSave({
@@ -330,9 +331,17 @@ export const EditTransactionModal: React.FC<{
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+        
+        // Validate amount
+        const parsedAmount = parseFloat(amount);
+        if (isNaN(parsedAmount) || parsedAmount <= 0) {
+            alert("Vui lòng nhập số tiền hợp lệ (lớn hơn 0)");
+            return;
+        }
+        
         onSave({
             type,
-            amount: parseFloat(amount),
+            amount: parsedAmount,
             category,
             paymentSourceId: paymentSource,
             recipient,

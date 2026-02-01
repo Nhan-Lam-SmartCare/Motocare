@@ -51,7 +51,7 @@ interface AppContextType {
   upsertPart: (part: Partial<Part> & { id?: string }) => void;
   deletePart: (partId: string) => void;
   setCustomers: React.Dispatch<React.SetStateAction<Customer[]>>;
-  upsertCustomer: (customer: Partial<Customer> & { id?: string }) => void;
+  upsertCustomer: (customer: Partial<Customer> & { id?: string }) => Promise<string>;
   setSuppliers: React.Dispatch<React.SetStateAction<Supplier[]>>;
   upsertSupplier: (supplier: Partial<Supplier> & { id?: string }) => void;
   setWorkOrders: React.Dispatch<React.SetStateAction<WorkOrder[]>>;
@@ -276,7 +276,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   }, []);
 
   const upsertCustomer = useCallback(
-    async (customer: Partial<Customer> & { id?: string }) => {
+    async (customer: Partial<Customer> & { id?: string }): Promise<string> => {
       // Prepare customer data for database
       const customerId =
         customer.id ||
@@ -292,7 +292,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
             .from("customers")
             .select("id")
             .eq("id", customer.id)
-            .single();
+            .maybeSingle(); // Use maybeSingle to avoid 406 error when not found
           if (dbCustomer) {
             existingCustomer = { id: dbCustomer.id } as Customer;
           }
@@ -393,6 +393,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
                   (c) => c.id === existingId
                 );
                 if (existingIndex >= 0) {
+                  // Khách hàng đã có trong local state, cập nhật
                   return prev.map((c) =>
                     c.id === existingId
                       ? ({
@@ -405,9 +406,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
                       : c
                   );
                 }
-                return prev;
+                // Khách hàng chưa có trong local state (có thể do pagination), thêm vào
+                const updatedCustomer: Customer = {
+                  id: existingId,
+                  name: customer.name || duplicates[0].name || "Khách hàng",
+                  phone: customer.phone,
+                  vehicleModel: customer.vehicleModel || duplicates[0].vehiclemodel || undefined,
+                  licensePlate: customer.licensePlate || duplicates[0].licenseplate || undefined,
+                  vehicles: updatedVehicles,
+                  created_at: new Date().toISOString(),
+                } as Customer;
+                return [updatedCustomer, ...prev];
               });
-              return; // Kết thúc, không tạo mới
+              return existingId; // Trả về ID thực của khách hàng đã tồn tại
             }
           }
 
@@ -432,8 +443,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
           if (error) {
             console.error("Lỗi thêm khách hàng vào Supabase:", error);
             showToast.error("Lỗi lưu khách hàng mới");
+            return customerId; // Vẫn trả về ID mới dù lỗi
           } else {
             showToast.success("Đã lưu khách hàng mới");
+            return customerId; // Trả về ID mới
           }
         }
       } catch (err) {
@@ -470,6 +483,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         } as Customer;
         return [newCustomer, ...prev];
       });
+      
+      return customerId; // Trả về ID cuối cùng
     },
     [customers]
   );

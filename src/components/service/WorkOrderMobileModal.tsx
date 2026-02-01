@@ -922,7 +922,7 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
   };
 
   // Handle save edited customer info
-  const handleSaveEditedCustomer = () => {
+  const handleSaveEditedCustomer = async () => {
     if (!selectedCustomer) return;
     if (!editCustomerName.trim()) {
       showToast.error("Vui lòng nhập tên khách hàng");
@@ -941,7 +941,7 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
 
     // Save to database if upsertCustomer is available
     if (upsertCustomer) {
-      upsertCustomer(updatedCustomer);
+      await upsertCustomer(updatedCustomer);
     }
 
     // Update local state
@@ -1022,7 +1022,7 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
     setAdditionalServices(additionalServices.filter((s) => s.id !== id));
   };
 
-  const handleAddVehicle = () => {
+  const handleAddVehicle = async () => {
     if (!newVehiclePlate || !newVehicleName) return;
     const newVehicle: Vehicle = {
       id: `veh-${Date.now()}`,
@@ -1045,7 +1045,7 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
 
       // Save to database via upsertCustomer
       if (upsertCustomer) {
-        upsertCustomer(updatedCustomer);
+        await upsertCustomer(updatedCustomer);
       }
 
       // Update local state
@@ -1058,10 +1058,10 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
     setShowAddVehicle(false);
   };
 
-  const handleAddNewCustomer = () => {
+  const handleAddNewCustomer = async () => {
     if (!newCustomerName || !newCustomerPhone) return;
 
-    const customerId = `CUST-${Date.now()}`;
+    const tempCustomerId = `CUST-${Date.now()}`;
     const vehicleId = `VEH-${Date.now()}`;
 
     // Create vehicles array if vehicle info provided
@@ -1077,7 +1077,7 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
 
     // Create new customer object
     const newCustomerObj: Customer = {
-      id: customerId,
+      id: tempCustomerId,
       name: newCustomerName,
       phone: newCustomerPhone,
       vehicles: vehicles,
@@ -1093,12 +1093,14 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
     };
 
     // Save to database if upsertCustomer is available
+    // Get the real customer ID (could be existing customer with same phone)
+    let realCustomerId = tempCustomerId;
     if (upsertCustomer) {
-      upsertCustomer(newCustomerObj);
+      realCustomerId = await upsertCustomer(newCustomerObj);
     }
 
-    // Set selected customer and vehicle
-    setSelectedCustomer(newCustomerObj);
+    // Set selected customer and vehicle with the real ID
+    setSelectedCustomer({ ...newCustomerObj, id: realCustomerId });
     if (vehicles.length > 0) {
       setSelectedVehicle(vehicles[0]);
     }

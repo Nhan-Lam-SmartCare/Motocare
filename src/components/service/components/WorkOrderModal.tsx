@@ -1154,9 +1154,12 @@ const WorkOrderModal: React.FC<{
           if (
             formData.currentKm &&
             formData.vehicleId &&
-            formData.customerPhone
+            (formData.customerId || formData.customerPhone)
           ) {
-            const customer = customers.find(
+            // Find customer by ID first (more reliable), fallback to phone
+            const customer = (formData.customerId && customers.find(
+              (c) => c.id === formData.customerId
+            )) || customers.find(
               (c) => c.phone === formData.customerPhone
             );
             if (customer) {
@@ -1173,11 +1176,14 @@ const WorkOrderModal: React.FC<{
                     : v
                 );
 
+                // Use formData.customerId if available (more reliable from upsertCustomer)
+                const customerIdToUpdate = formData.customerId || customer.id;
+
                 // Save to Supabase database
                 const { error: updateError } = await supabase
                   .from("customers")
                   .update({ vehicles: updatedVehicles })
-                  .eq("id", customer.id);
+                  .eq("id", customerIdToUpdate);
 
                 if (updateError) {
                   console.error(
@@ -1188,6 +1194,7 @@ const WorkOrderModal: React.FC<{
                   // Update local context
                   upsertCustomer({
                     ...customer,
+                    id: customerIdToUpdate, // Ensure correct ID is used
                     vehicles: updatedVehicles,
                   });
                 }
@@ -1210,9 +1217,12 @@ const WorkOrderModal: React.FC<{
           if (
             formData.currentKm &&
             formData.vehicleId &&
-            formData.customerPhone
+            (formData.customerId || formData.customerPhone)
           ) {
-            const customer = customers.find(
+            // Find customer by ID first (more reliable), fallback to phone
+            const customer = (formData.customerId && customers.find(
+              (c) => c.id === formData.customerId
+            )) || customers.find(
               (c) => c.phone === formData.customerPhone
             );
             if (customer) {
@@ -1240,11 +1250,14 @@ const WorkOrderModal: React.FC<{
                 updatedVehicles = [...existingVehicles, newVehicle];
               }
 
+              // Use formData.customerId if available (more reliable from upsertCustomer)
+              const customerIdToUpdate = formData.customerId || customer.id;
+
               // Save to Supabase database
               const { error: updateError } = await supabase
                 .from("customers")
                 .update({ vehicles: updatedVehicles })
-                .eq("id", customer.id);
+                .eq("id", customerIdToUpdate);
 
               if (updateError) {
                 console.error(
@@ -1255,6 +1268,7 @@ const WorkOrderModal: React.FC<{
                 // Update local context
                 upsertCustomer({
                   ...customer,
+                  id: customerIdToUpdate, // Ensure correct ID is used
                   vehicles: updatedVehicles,
                 });
               }
@@ -2892,24 +2906,22 @@ const WorkOrderModal: React.FC<{
                                     }
 
                                     try {
-                                      const newCustomerId = `CUST-${Date.now()}`;
+                                      const tempCustomerId = `CUST-${Date.now()}`;
                                       const newCustomerData = {
-                                        id: newCustomerId,
+                                        id: tempCustomerId,
                                         name: formData.customerName.trim(),
                                         phone: formData.customerPhone.trim(),
                                         created_at: new Date().toISOString(),
                                       };
                                       
-                                      // Call upsertCustomer (it doesn't return value, just updates context)
-                                      upsertCustomer(newCustomerData);
+                                      // Call upsertCustomer and get the real customer ID (new or existing)
+                                      const realCustomerId = await upsertCustomer(newCustomerData);
                                       
-                                      // Update formData with customerId
+                                      // Update formData with the real customerId
                                       setFormData({
                                         ...formData,
-                                        customerId: newCustomerId,
+                                        customerId: realCustomerId,
                                       });
-                                      
-                                      showToast.success("Đã lưu khách hàng vào hệ thống!");
                                       
                                       // Invalidate customers query to refresh data
                                       queryClient.invalidateQueries({ queryKey: ["customers"] });

@@ -30,7 +30,7 @@ import {
   useDeleteCustomer,
   useCreateCustomersBulk,
 } from "../../hooks/useSupabase";
-import { formatDate, formatCurrency, formatAnyId } from "../../utils/format";
+import { formatDate, formatCurrency, formatAnyId, normalizeSearchText } from "../../utils/format";
 import { validatePhoneNumber } from "../../utils/validation";
 import { PlusIcon, TrashIcon, XMarkIcon, UsersIcon } from "../Icons";
 import {
@@ -46,6 +46,8 @@ import {
   getVehiclesNeedingMaintenance,
   MAINTENANCE_CYCLES,
 } from "../../utils/maintenanceReminder";
+import { supabase } from "../../supabaseClient";
+import { useDebounce } from "../../hooks/useDebounce";
 
 // --- COMPONENTS ---
 
@@ -485,6 +487,11 @@ const CustomerManager: React.FC = () => {
   const updateCustomer = useUpdateCustomer();
   const deleteCustomer = useDeleteCustomer();
 
+  // Refetch customers khi component mount để đảm bảo data mới nhất
+  useEffect(() => {
+    refetch();
+  }, [refetch]);
+
   // Lấy danh sách nhà cung cấp từ Supabase
   const { data: suppliers = [], isLoading: suppliersLoading } = useSuppliers();
   const createSupplier = useCreateSupplier();
@@ -511,6 +518,68 @@ const CustomerManager: React.FC = () => {
   };
   const [search, setSearch] = useState("");
   const [editCustomer, setEditCustomer] = useState<Customer | null>(null);
+  
+  // Server search state - để tìm khách hàng từ database khi có search term
+  const [serverCustomers, setServerCustomers] = useState<Customer[]>([]);
+  const [isSearchingServer, setIsSearchingServer] = useState(false);
+  const debouncedSearch = useDebounce(search, 300);
+
+  // Fetch customers từ server khi có search term
+  useEffect(() => {
+    const searchFromServer = async () => {
+      const searchTerm = debouncedSearch.trim();
+      if (!searchTerm) {
+        setServerCustomers([]);
+        return;
+      }
+
+      setIsSearchingServer(true);
+      try {
+        const { data, error } = await supabase
+          .from("customers")
+          .select("*")
+          .or(
+            `name.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%,vehiclemodel.ilike.%${searchTerm}%,licenseplate.ilike.%${searchTerm}%`
+          )
+          .order("created_at", { ascending: false })
+          .limit(100);
+
+        if (!error && data) {
+          // Map database columns to camelCase
+          const mappedData = data.map((c: any) => ({
+            ...c,
+            totalSpent: c.totalSpent ?? c.totalspent ?? 0,
+            visitCount: c.visitCount ?? c.visitcount ?? 0,
+            lastVisit: c.lastVisit ?? c.lastvisit ?? null,
+            vehicleModel: c.vehicleModel ?? c.vehiclemodel ?? null,
+            licensePlate: c.licensePlate ?? c.licenseplate ?? null,
+            loyaltyPoints: c.loyaltyPoints ?? c.loyaltypoints ?? 0,
+          }));
+          setServerCustomers(mappedData);
+        }
+      } catch (err) {
+        console.error("Error searching customers from server:", err);
+      } finally {
+        setIsSearchingServer(false);
+      }
+    };
+
+    searchFromServer();
+  }, [debouncedSearch]);
+
+  // Merge customers từ react-query và server search (loại bỏ trùng lặp)
+  const allCustomers = useMemo(() => {
+    if (!debouncedSearch.trim()) {
+      return customers;
+    }
+    // Khi có search, ưu tiên dùng kết quả từ server
+    const customerMap = new Map<string, Customer>();
+    // Thêm customers từ context trước
+    customers.forEach(c => customerMap.set(c.id, c));
+    // Server customers sẽ override (có thể mới hơn)
+    serverCustomers.forEach(c => customerMap.set(c.id, c));
+    return Array.from(customerMap.values());
+  }, [customers, serverCustomers, debouncedSearch]);
 
   // STATE MỚI: Cho việc thêm Nhà cung cấp
   const [showSupplierModal, setShowSupplierModal] = useState(false);
@@ -666,36 +735,71 @@ const CustomerManager: React.FC = () => {
   }, [customers.length]);
 
   const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    let result = customers.filter((c) => {
-      if (!q) return true;
+    const searchTerm = search.trim();
+    if (!searchTerm) {
+      // Không có search term, trả về tất cả (với filter segment nếu có)
+      let result = allCustomers;
+      if (activeFilter !== "all") {
+        const segmentMap: Record<string, string> = {
+          vip: "VIP",
+          loyal: "Loyal",
+          potential: "Potential",
+          "at-risk": "At Risk",
+          lost: "Lost",
+          new: "New",
+        };
+        const targetSegment = segmentMap[activeFilter];
+        result = result.filter((c) => c.segment === targetSegment);
+      }
+      return result;
+    }
 
-      const vehiclesText = (c.vehicles || [])
-        .map((v: any) => [v.model, v.licensePlate].filter(Boolean).join(" "))
-        .join(" ");
+    // Normalize search text (bỏ dấu tiếng Việt)
+    const q = normalizeSearchText(searchTerm);
+    const qLower = searchTerm.toLowerCase();
+    
+    // Extract digits for phone search
+    const searchDigits = searchTerm.replace(/\D/g, "");
 
-      // Handle phone search - normalize digits for comparison
-      const searchDigits = q.replace(/\D/g, "");
+    let result = allCustomers.filter((c) => {
+      // 1. Search by phone (exact digits match)
       if (searchDigits.length > 0 && c.phone) {
-        const phoneNumbers = c.phone.split(",").map(p => p.trim().replace(/\D/g, ""));
-        // Kiểm tra xem số tìm kiếm có khớp với bất kỳ số nào không
-        if (phoneNumbers.some(num => num.includes(searchDigits) || searchDigits.includes(num))) {
+        const phoneDigits = c.phone.replace(/\D/g, "");
+        if (phoneDigits.includes(searchDigits) || searchDigits.includes(phoneDigits)) {
           return true;
         }
       }
 
-      const text = [
-        c.name,
-        c.email,
-        c.vehicleModel,
-        c.licensePlate,
-        vehiclesText,
-      ]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase();
+      // 2. Search by name (normalized - bỏ dấu)
+      if (normalizeSearchText(c.name).includes(q)) {
+        return true;
+      }
 
-      return text.includes(q);
+      // 3. Search by email
+      if (c.email?.toLowerCase().includes(qLower)) {
+        return true;
+      }
+
+      // 4. Search by vehicle model (normalized)
+      if (normalizeSearchText(c.vehicleModel || "").includes(q)) {
+        return true;
+      }
+
+      // 5. Search by license plate
+      if (c.licensePlate?.toLowerCase().includes(qLower)) {
+        return true;
+      }
+
+      // 6. Search in vehicles array
+      if (c.vehicles && c.vehicles.some((v: any) =>
+        normalizeSearchText(v.licensePlate || "").includes(q) ||
+        normalizeSearchText(v.model || "").includes(q) ||
+        v.licensePlate?.toLowerCase().includes(qLower)
+      )) {
+        return true;
+      }
+
+      return false;
     });
 
     // Apply segment filter
@@ -713,7 +817,7 @@ const CustomerManager: React.FC = () => {
     }
 
     return result;
-  }, [customers, search, activeFilter]);
+  }, [allCustomers, search, activeFilter]);
 
   const displayedCustomers = useMemo(
     () => filtered.slice(0, displayCount),
@@ -1021,6 +1125,14 @@ const CustomerManager: React.FC = () => {
                   onChange={(e) => setSearch(e.target.value)}
                   className="w-full pl-9 pr-14 md:pr-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm text-sm"
                 />
+                {isSearchingServer && (
+                  <div className="absolute right-14 md:right-3 top-1/2 -translate-y-1/2">
+                    <svg className="animate-spin h-4 w-4 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                  </div>
+                )}
                 <button
                   onClick={() => setShowActionSheet(true)}
                   className="md:hidden absolute right-2 top-1/2 -translate-y-1/2 inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-semibold text-slate-600 shadow-sm transition-colors hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"

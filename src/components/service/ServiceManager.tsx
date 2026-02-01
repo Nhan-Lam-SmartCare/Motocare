@@ -3222,7 +3222,10 @@ export default function ServiceManager() {
           }}
           onSave={() => {
             // React Query hooks already invalidate queries on success
-            // Just close modal - data will auto-refresh via invalidateQueries
+            // Also trigger refetch to ensure data is refreshed
+            queryClient.invalidateQueries({ queryKey: ["workOrdersRepo"] });
+            queryClient.invalidateQueries({ queryKey: ["workOrdersFiltered"] });
+            setTimeout(() => refetchWorkOrders(), 100);
             setShowModal(false);
             setEditingOrder(undefined);
           }}
@@ -3236,9 +3239,15 @@ export default function ServiceManager() {
           paymentSources={paymentSources}
           currentBranchId={currentBranchId}
           storeSettings={storeSettings}
-          invalidateWorkOrders={() =>
-            queryClient.invalidateQueries({ queryKey: ["workOrdersRepo"] })
-          }
+          invalidateWorkOrders={async () => {
+            // Invalidate queries immediately
+            queryClient.invalidateQueries({ queryKey: ["workOrdersRepo"] });
+            queryClient.invalidateQueries({ queryKey: ["workOrdersFiltered"] });
+            // Small delay then refetch to ensure DB has committed
+            setTimeout(() => {
+              refetchWorkOrders();
+            }, 100);
+          }}
         />
       )}
 

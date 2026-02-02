@@ -1463,40 +1463,9 @@ const WorkOrderModal: React.FC<{
             };
 
             // Update cash transactions in context (for UI consistency)
-            // 🔹 Also INSERT to database for persistence
+            // ✅ No need to INSERT - stored procedure already created the transaction
             if (depositTxId && depositAmount > 0) {
-              // INSERT deposit transaction to database
-              try {
-                const { error: depositDbError } = await supabase
-                  .from("cash_transactions")
-                  .insert({
-                    id: depositTxId,
-                    type: "income",
-                    category: "service_deposit",
-                    amount: depositAmount,
-                    date: new Date().toISOString(),
-                    description: `Dat coc sua chua #${(
-                      formatWorkOrderId(
-                        orderId,
-                        storeSettings?.work_order_prefix
-                      ) || ""
-                    )
-                      .split("-")
-                      .pop()} - ${formData.customerName}`,
-                    branchid: currentBranchId,
-                    paymentsource: formData.paymentMethod,
-                    workorderid: orderId,
-                  });
-                if (depositDbError) {
-                  console.error(
-                    "[WorkOrderModal] deposit insert error:",
-                    depositDbError
-                  );
-                }
-              } catch (e) {
-                console.error("[WorkOrderModal] deposit insert exception:", e);
-              }
-
+              // Just update local state for UI consistency
               setCashTransactions((prev: any[]) => [
                 ...prev,
                 {
@@ -1537,38 +1506,8 @@ const WorkOrderModal: React.FC<{
             }
 
             if (paymentTxId && totalAdditionalPayment > 0) {
-              // INSERT payment transaction to database
-              try {
-                const { error: paymentDbError } = await supabase
-                  .from("cash_transactions")
-                  .insert({
-                    id: paymentTxId,
-                    type: "income",
-                    category: "service_income",
-                    amount: totalAdditionalPayment,
-                    date: new Date().toISOString(),
-                    description: `Thu tien sua chua #${(
-                      formatWorkOrderId(
-                        orderId,
-                        storeSettings?.work_order_prefix
-                      ) || ""
-                    )
-                      .split("-")
-                      .pop()} - ${formData.customerName}`,
-                    branchid: currentBranchId,
-                    paymentsource: formData.paymentMethod,
-                    workorderid: orderId,
-                  });
-                if (paymentDbError) {
-                  console.error(
-                    "[WorkOrderModal] payment insert error:",
-                    paymentDbError
-                  );
-                }
-              } catch (e) {
-                console.error("[WorkOrderModal] payment insert exception:", e);
-              }
-
+              // ✅ No need to INSERT - stored procedure already created the transaction
+              // Just update local state for UI consistency
               setCashTransactions((prev: any[]) => [
                 ...prev,
                 {

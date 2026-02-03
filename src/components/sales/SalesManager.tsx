@@ -762,6 +762,9 @@ const SalesManager: React.FC = () => {
                                     onClear={() => customer.setSelectedCustomer(null)}
                                     onAddNew={() => customer.setShowAddCustomerModal(true)}
                                     onDropdownToggle={customer.setShowCustomerDropdown}
+                                    isSearching={customer.isSearchingCustomer}
+                                    hasMoreCustomers={customer.hasMoreCustomers}
+                                    onLoadMore={customer.handleLoadMoreCustomers}
                                 />
                             </div>
 

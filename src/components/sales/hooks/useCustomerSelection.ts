@@ -1,7 +1,21 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import type { Customer } from "../../../types";
 import { showToast } from "../../../utils/toast";
 import { supabase } from "../../../supabaseClient";
+import { useDebounce } from "../../../hooks/useDebounce";
+
+// Normalize Vietnamese text for search (remove diacritics)
+function normalizeSearchText(text: string): string {
+    if (!text) return "";
+    return text
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/đ/g, "d")
+        .replace(/Đ/g, "D");
+}
+
+const CUSTOMER_PAGE_SIZE = 20;
 
 export interface NewCustomerData {
     name: string;
@@ -17,6 +31,8 @@ export interface UseCustomerSelectionReturn {
     showCustomerDropdown: boolean;
     showAddCustomerModal: boolean;
     newCustomer: NewCustomerData;
+    isSearchingCustomer: boolean;
+    hasMoreCustomers: boolean;
 
     // Actions
     setSelectedCustomer: (customer: Customer | null) => void;
@@ -28,6 +44,7 @@ export interface UseCustomerSelectionReturn {
         customers: Customer[],
         createCustomerMutation: any
     ) => void;
+    handleLoadMoreCustomers: (e: React.MouseEvent) => void;
 
     // Computed
     filteredCustomers: Customer[];
@@ -52,28 +69,137 @@ export function useCustomerSelection(
         licensePlate: "",
     });
 
+    // Server-side search states
+    const [serverCustomers, setServerCustomers] = useState<Customer[]>([]);
+    const [isSearchingCustomer, setIsSearchingCustomer] = useState(false);
+    const [hasMoreCustomers, setHasMoreCustomers] = useState(true);
+    const [customerPage, setCustomerPage] = useState(0);
+
+    // Debounce customer search for server queries
+    const debouncedCustomerSearch = useDebounce(customerSearch, 300);
+
     const extractPhoneNumbers = useCallback((value: string) => {
         const matches = value.match(/\d{8,12}/g);
         return matches ? matches.map((m) => m.trim()) : [];
     }, []);
 
-    // Filter customers based on search
-    const filteredCustomers = useMemo(() => {
-        if (!customerSearch) return allCustomers;
-        const normalizePhone = (value: string) => value.replace(/\D/g, "");
-        const searchText = customerSearch.toLowerCase().trim();
-        const searchDigits = normalizePhone(customerSearch);
+    // Server-side search function
+    const fetchCustomers = useCallback(async (page: number, searchTerm: string, isLoadMore = false) => {
+        if (!searchTerm || !searchTerm.trim()) {
+            if (!isLoadMore) setServerCustomers([]);
+            return;
+        }
 
-        return allCustomers.filter((c) => {
-            const nameMatch = c.name?.toLowerCase().includes(searchText);
-            // Tìm theo SĐT
+        setIsSearchingCustomer(true);
+        try {
+            const from = page * CUSTOMER_PAGE_SIZE;
+            const to = from + CUSTOMER_PAGE_SIZE - 1;
+
+            // Extract digits for better phone search
+            const searchDigits = searchTerm.replace(/\D/g, "");
+            
+            // Build OR query - search by name, phone, vehicle model, license plate
+            const orConditions = [
+                `name.ilike.%${searchTerm}%`,
+                `vehiclemodel.ilike.%${searchTerm}%`,
+                `licenseplate.ilike.%${searchTerm}%`
+            ];
+            // Include phone search if we have digits
+            if (searchDigits.length > 0) {
+                orConditions.push(`phone.ilike.%${searchDigits}%`);
+            }
+
+            const { data, error, count } = await supabase
+                .from("customers")
+                .select("*", { count: "exact", head: false })
+                .or(orConditions.join(","))
+                .range(from, to);
+
+            if (!error && data) {
+                if (isLoadMore) {
+                    setServerCustomers((prev) => {
+                        // Deduplicate
+                        const newIds = new Set(data.map(c => c.id));
+                        const filteredPrev = prev.filter(c => !newIds.has(c.id));
+                        return [...filteredPrev, ...data as Customer[]];
+                    });
+                } else {
+                    setServerCustomers(data as Customer[]);
+                }
+
+                // Check if we reached the end
+                if (data.length < CUSTOMER_PAGE_SIZE || (count !== null && from + data.length >= count)) {
+                    setHasMoreCustomers(false);
+                } else {
+                    setHasMoreCustomers(true);
+                }
+            }
+        } catch (err) {
+            console.error("Error searching customers:", err);
+        } finally {
+            setIsSearchingCustomer(false);
+        }
+    }, []);
+
+    // Effect to trigger search when debounced term changes
+    useEffect(() => {
+        // Reset page when search term changes
+        setCustomerPage(0);
+        setHasMoreCustomers(true);
+
+        // Only fetch if has search term
+        if (debouncedCustomerSearch && debouncedCustomerSearch.trim()) {
+            fetchCustomers(0, debouncedCustomerSearch.trim(), false);
+        } else {
+            setServerCustomers([]);
+        }
+    }, [debouncedCustomerSearch, fetchCustomers]);
+
+    // Handler for Load More button
+    const handleLoadMoreCustomers = useCallback((e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const nextPage = customerPage + 1;
+        setCustomerPage(nextPage);
+        fetchCustomers(nextPage, debouncedCustomerSearch.trim(), true);
+    }, [customerPage, debouncedCustomerSearch, fetchCustomers]);
+
+    // Filter customers based on search - combining local and server results
+    const filteredCustomers = useMemo(() => {
+        // Merge local customers and server customers, removing duplicates by ID
+        const allCandidates = [...allCustomers, ...serverCustomers];
+        const uniqueCandidates = Array.from(new Map(allCandidates.map(c => [c.id, c])).values());
+
+        if (!customerSearch) return uniqueCandidates.slice(0, 20); // Show first 20 when no search
+        
+        const term = normalizeSearchText(customerSearch);
+        const searchDigits = customerSearch.replace(/\D/g, "");
+
+        return uniqueCandidates.filter((c) => {
+            // Search by name (normalized - remove diacritics)
+            const nameMatch = normalizeSearchText(c.name).includes(term);
+            
+            // Search by phone
             const phoneNumbers = extractPhoneNumbers(c.phone || "");
             const phoneMatch = searchDigits.length > 0
                 ? phoneNumbers.some((num) => num.includes(searchDigits) || searchDigits.includes(num))
                 : false;
-            return Boolean(nameMatch || phoneMatch);
+            
+            // Search by vehicle model
+            const vehicleModelMatch = normalizeSearchText(c.vehicleModel || "").includes(term);
+            
+            // Search by license plate  
+            const licensePlateMatch = normalizeSearchText(c.licensePlate || "").includes(term);
+            
+            // Search in vehicles array
+            const vehicleMatch = c.vehicles?.some((v: any) =>
+                normalizeSearchText(v.model || "").includes(term) ||
+                normalizeSearchText(v.licensePlate || "").includes(term)
+            );
+            
+            return Boolean(nameMatch || phoneMatch || vehicleModelMatch || licensePlateMatch || vehicleMatch);
         });
-    }, [allCustomers, customerSearch, extractPhoneNumbers]);
+    }, [allCustomers, serverCustomers, customerSearch, extractPhoneNumbers]);
 
     // Handle save new customer
     const handleSaveNewCustomer = useCallback(
@@ -186,6 +312,8 @@ export function useCustomerSelection(
         showCustomerDropdown,
         showAddCustomerModal,
         newCustomer,
+        isSearchingCustomer,
+        hasMoreCustomers,
 
         // Actions
         setSelectedCustomer,
@@ -194,6 +322,7 @@ export function useCustomerSelection(
         setShowAddCustomerModal,
         setNewCustomer,
         handleSaveNewCustomer,
+        handleLoadMoreCustomers,
 
         // Computed
         filteredCustomers,

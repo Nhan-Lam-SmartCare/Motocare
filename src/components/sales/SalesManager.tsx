@@ -618,7 +618,7 @@ const SalesManager: React.FC = () => {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* Left: Products (Desktop) / Mobile Tab Content */}
                     <div className={`lg:col-span-2 ${mobileTab !== "products" ? "hidden md:block" : ""}`}>
-                        {/* Search Bar with Scan Button */}
+                        {/* Search Bar with Scan Button + Wholesale Toggle */}
                         <div className="mb-3 flex items-center gap-2">
                             <input
                                 type="text"
@@ -627,6 +627,19 @@ const SalesManager: React.FC = () => {
                                 onChange={(e) => inventory.setPartSearch(e.target.value)}
                                 className="flex-1 px-4 py-3 bg-white dark:bg-slate-800 border-2 border-slate-300 dark:border-slate-600 rounded-lg"
                             />
+                            {/* Mobile Wholesale Toggle */}
+                            <button
+                                type="button"
+                                onClick={() => cart.setIsWholesaleMode(!cart.isWholesaleMode)}
+                                className={`md:hidden flex items-center gap-1 px-3 py-3 rounded-lg text-xs font-bold transition-all shrink-0 ${cart.isWholesaleMode
+                                    ? "bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-md"
+                                    : "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400"
+                                    }`}
+                                title="Bật/tắt giá sỉ"
+                            >
+                                💰
+                                {cart.isWholesaleMode && <span>Sỉ</span>}
+                            </button>
                             <button
                                 onClick={() => barcode.setShowBarcodeInput(!barcode.showBarcodeInput)}
                                 className="flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:shadow-lg transition-all shrink-0"
@@ -703,6 +716,25 @@ const SalesManager: React.FC = () => {
                                         }).length}
                                     </span>
                                 </button>
+
+                                {/* Wholesale Toggle */}
+                                <div className="h-6 w-px bg-slate-300 dark:bg-slate-600 mx-1"></div>
+                                <button
+                                    type="button"
+                                    onClick={() => cart.setIsWholesaleMode(!cart.isWholesaleMode)}
+                                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all whitespace-nowrap ${cart.isWholesaleMode
+                                        ? "bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-md"
+                                        : "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 hover:bg-green-100 dark:hover:bg-green-900/30"
+                                        }`}
+                                    title="Bật để tự động áp dụng giá sỉ khi thêm sản phẩm"
+                                >
+                                    <span>💰 Giá sỉ</span>
+                                    {cart.isWholesaleMode && (
+                                        <span className="px-1.5 py-0.5 rounded-full text-[10px] font-black bg-white/30">
+                                            ON
+                                        </span>
+                                    )}
+                                </button>
                             </div>
                         </div>
 
@@ -747,7 +779,14 @@ const SalesManager: React.FC = () => {
                                     </button>
                                 </div>
                             )}
-                            <h2 className="text-xl font-bold mb-4">Giỏ hàng</h2>
+                            <div className="flex items-center justify-between mb-4">
+                                <h2 className="text-xl font-bold">Giỏ hàng</h2>
+                                {cart.isWholesaleMode && (
+                                    <span className="inline-flex items-center gap-1 px-2 py-1 bg-gradient-to-r from-green-500 to-emerald-500 text-white text-xs font-bold rounded-full shadow-sm">
+                                        💰 Giá sỉ
+                                    </span>
+                                )}
+                            </div>
 
                             {/* Customer Selection */}
                             <div className="mb-4">

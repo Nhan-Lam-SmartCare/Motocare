@@ -24,6 +24,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 }) => {
     const stock = Number(part.stock?.[currentBranchId] ?? 0);
     const price = part.retailPrice?.[currentBranchId] ?? 0;
+    const wholesalePrice = part.wholesalePrice?.[currentBranchId] ?? 0;
     const isOutOfStock = stock <= 0;
     const isLowStock = stock > 0 && stock <= 5;
     const colors = getCategoryColor(part.category);
@@ -95,9 +96,16 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                 {/* Price */}
                 <div className="pt-2 border-t border-slate-100 dark:border-slate-700">
                     <div className="flex items-baseline justify-between">
-                        <span className="text-lg font-bold text-blue-600 dark:text-blue-400">
-                            {formatCurrency(price)}
-                        </span>
+                        <div className="flex flex-col">
+                            <span className="text-lg font-bold text-blue-600 dark:text-blue-400">
+                                {formatCurrency(price)}
+                            </span>
+                            {wholesalePrice > 0 && wholesalePrice !== price && (
+                                <span className="text-xs text-green-600 dark:text-green-400 font-medium">
+                                    Sỉ: {formatCurrency(wholesalePrice)}
+                                </span>
+                            )}
+                        </div>
                         <span
                             className={`text-sm font-medium ${isOutOfStock
                                 ? "text-red-600 dark:text-red-400"

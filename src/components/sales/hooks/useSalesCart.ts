@@ -8,6 +8,7 @@ export interface UseSalesCartReturn {
     orderDiscount: number;
     discountType: "amount" | "percent";
     discountPercent: number;
+    isWholesaleMode: boolean;
 
     // Actions
     addToCart: (part: Part, branchId: string) => void;
@@ -17,6 +18,7 @@ export interface UseSalesCartReturn {
     setOrderDiscount: (discount: number) => void;
     setDiscountType: (type: "amount" | "percent") => void;
     setDiscountPercent: (percent: number) => void;
+    setIsWholesaleMode: (isWholesale: boolean) => void;
     clearCart: () => void;
     setCartItems: React.Dispatch<React.SetStateAction<CartItem[]>>;
 
@@ -39,11 +41,16 @@ export function useSalesCart(
         "amount"
     );
     const [discountPercent, setDiscountPercent] = useState(0);
+    const [isWholesaleMode, setIsWholesaleMode] = useState(false);
 
     // Cart operations
     const addToCart = useCallback(
         (part: Part, branchId: string) => {
-            const price = part.retailPrice?.[branchId] ?? 0;
+            // Chọn giá dựa theo mode sỉ/lẻ
+            const retailPrice = part.retailPrice?.[branchId] ?? 0;
+            const wholesalePrice = part.wholesalePrice?.[branchId] ?? 0;
+            // Nếu bật mode sỉ và có giá sỉ thì dùng giá sỉ, không thì dùng giá lẻ
+            const price = isWholesaleMode && wholesalePrice > 0 ? wholesalePrice : retailPrice;
             const stock = part.stock?.[branchId] ?? 0;
             const existing = initialCartItems.find((item) => item.partId === part.id);
 
@@ -77,7 +84,7 @@ export function useSalesCart(
                 setGlobalCartItems((prev) => [...prev, newItem]);
             }
         },
-        [initialCartItems, setGlobalCartItems]
+        [initialCartItems, setGlobalCartItems, isWholesaleMode]
     );
 
     const removeFromCart = useCallback(
@@ -152,6 +159,7 @@ export function useSalesCart(
         orderDiscount,
         discountType,
         discountPercent,
+        isWholesaleMode,
 
         // Actions
         addToCart,
@@ -161,6 +169,7 @@ export function useSalesCart(
         setOrderDiscount,
         setDiscountType,
         setDiscountPercent,
+        setIsWholesaleMode,
         clearCart: clearGlobalCart,
         setCartItems: setGlobalCartItems,
 

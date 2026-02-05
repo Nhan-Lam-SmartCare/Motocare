@@ -3,6 +3,7 @@ import { useAuth } from '../../../contexts/AuthContext';
 import { canDo } from '../../../utils/permissions';
 import { useSuppliers } from '../../../hooks/useSuppliers';
 import { useCreatePartRepo } from '../../../hooks/usePartsRepository';
+import { useStoreSettings } from '../../../hooks/useStoreSettings';
 import { showToast } from '../../../utils/toast';
 import { formatCurrency } from '../../../utils/format';
 import { getCategoryColor } from '../../../utils/categoryColors';
@@ -44,9 +45,15 @@ const GoodsReceiptModal: React.FC<{
   const [showBarcodeInput, setShowBarcodeInput] = useState(false);
   const [selectedSupplier, setSelectedSupplier] = useState("");
   const { data: suppliers = [] } = useSuppliers();
+  const { data: storeSettings } = useStoreSettings();
   const [showSupplierModal, setShowSupplierModal] = useState(false);
   const createPartMutation = useCreatePartRepo();
   const [showAddProductModal, setShowAddProductModal] = useState(false);
+
+  // Get markup percentages from settings (with fallbacks)
+  const retailMarkup = (storeSettings?.retail_markup_percent ?? 40) / 100 + 1; // VD: 40% => 1.4
+  const wholesaleMarkup = (storeSettings?.wholesale_markup_percent ?? 25) / 100 + 1; // VD: 25% => 1.25
+
   const [receiptItems, setReceiptItems] = useState<
     Array<{
       partId: string;
@@ -362,7 +369,7 @@ const GoodsReceiptModal: React.FC<{
           costPrice: { [currentBranchId]: productData.importPrice },
           retailPrice: { [currentBranchId]: productData.retailPrice },
           wholesalePrice: {
-            [currentBranchId]: Math.round(productData.retailPrice * 0.9),
+            [currentBranchId]: Math.round(productData.importPrice * wholesaleMarkup),
           },
         });
 
@@ -937,7 +944,7 @@ const GoodsReceiptModal: React.FC<{
                                 item.quantity
                               );
                               const newImport = clean.importPrice;
-                              const autoPrice = Math.round(newImport * 1.5);
+                              const autoPrice = Math.round(newImport * retailMarkup);
                               setReceiptItems((items) =>
                                 items.map((it) =>
                                   it.partId === item.partId
@@ -948,7 +955,7 @@ const GoodsReceiptModal: React.FC<{
                                         it.sellingPrice === 0 ||
                                           it.sellingPrice ===
                                           Math.round(
-                                            (it.importPrice || 0) * 1.5
+                                            (it.importPrice || 0) * retailMarkup
                                           )
                                           ? autoPrice
                                           : it.sellingPrice,

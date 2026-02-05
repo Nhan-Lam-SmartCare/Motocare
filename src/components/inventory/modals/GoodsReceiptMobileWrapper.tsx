@@ -3,6 +3,7 @@ import { useAuth } from '../../../contexts/AuthContext';
 import { GoodsReceiptMobileModal } from '../../inventory/GoodsReceiptMobileModal';
 import { showToast } from '../../../utils/toast';
 import { useCreatePartRepo } from '../../../hooks/usePartsRepository';
+import { useStoreSettings } from '../../../hooks/useStoreSettings';
 import { triggerHaptic } from '../../../utils/haptics';
 import AddProductModal from './AddProductModal';
 import type { Part } from '../../../types';
@@ -54,6 +55,10 @@ const GoodsReceiptMobileWrapper: React.FC<{
   const [isSubmitting, setIsSubmitting] = useState(false);
   const createPartMutation = useCreatePartRepo();
 
+  // Get store settings for pricing markup
+  const { data: storeSettings } = useStoreSettings();
+  const wholesaleMarkup = (storeSettings?.wholesale_markup_percent ?? 25) / 100 + 1; // VD: 25% => 1.25
+
   // Debug logging
   console.log(
     "📦 GoodsReceiptMobileWrapper - parts received:",
@@ -104,7 +109,7 @@ const GoodsReceiptMobileWrapper: React.FC<{
           retailPrice: productData.retailPrice,
           wholesalePrice:
             productData.wholesalePrice ||
-            Math.round(productData.retailPrice * 0.9),
+            Math.round(productData.importPrice * wholesaleMarkup),
         },
       },
     ]);

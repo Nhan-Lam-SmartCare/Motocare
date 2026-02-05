@@ -59,6 +59,7 @@ import {
   useUpdateWorkOrderAtomicRepo,
 } from "../../hooks/useWorkOrdersRepository";
 import { useCategories } from "../../hooks/useCategories";
+import { useStoreSettings } from "../../hooks/useStoreSettings";
 import type { Part, WorkOrder, InventoryTransaction } from "../../types";
 import { createPart } from "../../lib/repository/partsRepository";
 import { createCashTransaction } from "../../lib/repository/cashTransactionsRepository";
@@ -92,6 +93,12 @@ const InventoryManagerNew: React.FC = () => {
   const { data: invTx = [] } = useInventoryTxRepo({
     branchId: currentBranchId,
   });
+
+  // Get store settings for pricing markup
+  const { data: storeSettings } = useStoreSettings();
+  const retailMarkup = (storeSettings?.retail_markup_percent ?? 40) / 100 + 1; // VD: 40% => 1.4
+  const wholesaleMarkup = (storeSettings?.wholesale_markup_percent ?? 25) / 100 + 1; // VD: 25% => 1.25
+
   const [activeTab, setActiveTab] = useState("stock"); // stock, categories, lookup, history, purchase-orders
   const [showGoodsReceipt, setShowGoodsReceipt] = useState(false);
   const [showCreatePO, setShowCreatePO] = useState(false);
@@ -605,7 +612,7 @@ const InventoryManagerNew: React.FC = () => {
                   wholesalePrice: {
                     [currentBranchId]:
                       item._productData.wholesalePrice ||
-                      Math.round(item._productData.retailPrice * 0.9),
+                      Math.round(item._productData.importPrice * wholesaleMarkup),
                   },
                 });
 

@@ -16,6 +16,9 @@ export interface StoreSettings {
     primary_color?: string;
     theme_preset?: string;
     business_hours?: string;
+    // Pricing markup percentages
+    retail_markup_percent?: number; // % lợi nhuận giá lẻ (VD: 40 = 40%)
+    wholesale_markup_percent?: number; // % lợi nhuận giá sỉ (VD: 25 = 25%)
 }
 
 export const useStoreSettings = () => {

@@ -1,5 +1,6 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { useCreatePartRepo } from '../../../hooks/usePartsRepository';
+import { useStoreSettings } from '../../../hooks/useStoreSettings';
 import { showToast } from '../../../utils/toast';
 import { formatCurrency } from '../../../utils/format';
 import { validatePriceAndQty } from '../../../utils/validation';
@@ -38,6 +39,8 @@ const AddProductModal: React.FC<{
   const [warrantyUnit, setWarrantyUnit] = useState("tháng");
   const [retailOverridden, setRetailOverridden] = useState<boolean>(false);
   const { data: categories = [] } = useCategories();
+  const { data: storeSettings } = useStoreSettings();
+  const retailMarkup = (storeSettings?.retail_markup_percent ?? 40) / 100 + 1; // VD: 40% => 1.4
   const createCategory = useCreateCategory();
   const [showInlineCat, setShowInlineCat] = useState(false);
   const [inlineCatName, setInlineCatName] = useState("");
@@ -273,7 +276,7 @@ const AddProductModal: React.FC<{
                       setImportPrice(result.clean.importPrice);
                       if (!retailOverridden) {
                         setRetailPrice(
-                          Math.round(result.clean.importPrice * 1.5)
+                          Math.round(result.clean.importPrice * retailMarkup)
                         );
                       }
                     }}

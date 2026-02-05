@@ -1,5 +1,89 @@
-import React from "react";
+import React, { useState, useMemo, useRef, useEffect } from "react";
 import { XMarkIcon } from "../../Icons";
+
+// Danh sách dòng xe phổ biến tại Việt Nam
+const POPULAR_MOTORCYCLES = [
+  // === HONDA ===
+  "Honda Wave Alpha",
+  "Honda Wave RSX",
+  "Honda Wave 110i",
+  "Honda Future 125",
+  "Honda Blade 110",
+  "Honda Air Blade 125",
+  "Honda Air Blade 160",
+  "Honda Vision",
+  "Honda Lead 125",
+  "Honda SH Mode 125",
+  "Honda SH 125i",
+  "Honda SH 160i",
+  "Honda PCX 125",
+  "Honda PCX 160",
+  "Honda Vario 125",
+  "Honda Vario 160",
+  "Honda Winner X",
+  "Honda Winner 150",
+  "Honda CB150R",
+  "Honda CBR150R",
+  "Honda MSX 125",
+  "Honda Monkey 125",
+  "Honda Super Cub C125",
+  "Honda Rebel 300",
+  "Honda Rebel 500",
+  "Honda CB500X",
+  "Honda Africa Twin",
+  // === YAMAHA ===
+  "Yamaha Sirius",
+  "Yamaha Jupiter",
+  "Yamaha Exciter 150",
+  "Yamaha Exciter 155",
+  "Yamaha Grande",
+  "Yamaha Latte",
+  "Yamaha Janus",
+  "Yamaha FreeGo 125",
+  "Yamaha FreeGo S",
+  "Yamaha NVX 125",
+  "Yamaha NVX 155",
+  "Yamaha Nmax 155",
+  "Yamaha Xmax 300",
+  "Yamaha R15",
+  "Yamaha MT-15",
+  "Yamaha TFX 150",
+  "Yamaha XSR 155",
+  "Yamaha XSR 900",
+  "Yamaha Tenere 700",
+  // === SUZUKI ===
+  "Suzuki Raider 150",
+  "Suzuki Satria F150",
+  "Suzuki GSX-R150",
+  "Suzuki GSX-S150",
+  "Suzuki Address",
+  "Suzuki Impulse",
+  "Suzuki V-Strom 250",
+  // === SYM ===
+  "SYM Angela",
+  "SYM Attila",
+  "SYM Shark Mini",
+  "SYM Elegant",
+  "SYM Star SR",
+  // === PIAGGIO/VESPA ===
+  "Vespa Sprint",
+  "Vespa Primavera",
+  "Vespa LX",
+  "Vespa GTS",
+  "Piaggio Medley",
+  "Piaggio Liberty",
+  "Piaggio Zip",
+  // === VINFAST ===
+  "VinFast Klara",
+  "VinFast Ludo",
+  "VinFast Impes",
+  "VinFast Feliz",
+  "VinFast Theon",
+  "VinFast Evo200",
+  // === Khác ===
+  "Xe điện khác",
+  "Khác",
+];
 
 interface AddCustomerModalProps {
   isOpen: boolean;
@@ -26,10 +110,40 @@ const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
   onCustomerChange,
   onSave,
 }) => {
+  const [showVehicleDropdown, setShowVehicleDropdown] = useState(false);
+  const vehicleInputRef = useRef<HTMLInputElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Filter vehicle models based on input
+  const filteredModels = useMemo(() => {
+    if (!newCustomer.vehicleModel.trim()) return POPULAR_MOTORCYCLES.slice(0, 15);
+    const search = newCustomer.vehicleModel.toLowerCase();
+    return POPULAR_MOTORCYCLES.filter((m) =>
+      m.toLowerCase().includes(search)
+    ).slice(0, 10);
+  }, [newCustomer.vehicleModel]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(e.target as Node) &&
+        vehicleInputRef.current &&
+        !vehicleInputRef.current.contains(e.target as Node)
+      ) {
+        setShowVehicleDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   if (!isOpen) return null;
 
   const handleClose = () => {
     onClose();
+    setShowVehicleDropdown(false);
     onCustomerChange({
       name: "",
       phone: "",
@@ -84,22 +198,50 @@ const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
             />
           </div>
 
-          <div>
+          <div className="relative">
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
               Dòng xe
             </label>
             <input
+              ref={vehicleInputRef}
               type="text"
               value={newCustomer.vehicleModel}
-              onChange={(e) =>
+              onChange={(e) => {
                 onCustomerChange({
                   ...newCustomer,
                   vehicleModel: e.target.value,
-                })
-              }
+                });
+                setShowVehicleDropdown(true);
+              }}
+              onFocus={() => setShowVehicleDropdown(true)}
               className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500"
-              placeholder="VD: Honda SH 2023"
+              placeholder="Chọn hoặc nhập dòng xe..."
+              autoComplete="off"
             />
+            {/* Vehicle Model Dropdown */}
+            {showVehicleDropdown && filteredModels.length > 0 && (
+              <div
+                ref={dropdownRef}
+                className="absolute z-20 w-full mt-1 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg shadow-xl max-h-[200px] overflow-y-auto"
+              >
+                {filteredModels.map((model) => (
+                  <button
+                    key={model}
+                    type="button"
+                    onClick={() => {
+                      onCustomerChange({
+                        ...newCustomer,
+                        vehicleModel: model,
+                      });
+                      setShowVehicleDropdown(false);
+                    }}
+                    className="w-full text-left px-3 py-2 text-sm hover:bg-blue-50 dark:hover:bg-blue-900/30 text-slate-700 dark:text-slate-200 border-b border-slate-100 dark:border-slate-600 last:border-0 transition-colors"
+                  >
+                    {model}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           <div>

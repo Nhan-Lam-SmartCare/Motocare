@@ -2110,40 +2110,10 @@ const WorkOrderModal: React.FC<{
       <div className="fixed inset-0 bg-black/50 z-50 flex items-end md:items-center justify-center p-0 md:p-4">
         <div className="bg-white dark:bg-slate-800 w-full h-full md:h-auto md:max-h-[90vh] md:max-w-6xl rounded-t-3xl md:rounded-xl shadow-2xl md:shadow-lg flex flex-col overflow-hidden">
           {/* Header */}
-          <div className="bg-gradient-to-r from-slate-50 to-white dark:from-slate-800 dark:to-slate-800 border-b border-slate-200 dark:border-slate-700 px-4 py-3 md:px-6 md:py-4 flex-shrink-0">
+          <div className="bg-gradient-to-r from-slate-50 to-white dark:from-slate-800 dark:to-slate-800 border-b border-slate-200 dark:border-slate-700 px-4 py-2.5 md:px-6 flex-shrink-0">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-lg bg-blue-500/10 dark:bg-blue-400/10 flex items-center justify-center">
-                  <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M11.42 15.17l-5.18-5.18m0 0L12 4.23l5.76 5.76m-5.76-5.76V19.77" />
-                  </svg>
-                </div>
-                <div>
-                  <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">
-                    {formData.id
-                      ? `Phiếu sửa chữa ${formatWorkOrderId(formData.id, storeSettings?.work_order_prefix)}`
-                      : "Tạo Phiếu sửa chữa mới"}
-                  </h2>
-                  {formData.customerName && (
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                      {formData.customerName} {formData.licensePlate ? `• ${formData.licensePlate}` : ""}
-                    </p>
-                  )}
-                </div>
-              </div>
-              <button
-                onClick={onClose}
-                className="w-8 h-8 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
-                aria-label="Đóng"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-
-            {/* Status Stepper */}
-            <div className="flex items-center gap-1 mt-3 overflow-x-auto pb-1">
+              {/* Status Stepper */}
+              <div className="flex items-center gap-1 overflow-x-auto pb-0.5 flex-1 mr-3">
               {[
                 { key: "Tiếp nhận", icon: "📋", color: "blue" },
                 { key: "Đang sửa", icon: "🔧", color: "orange" },
@@ -2177,6 +2147,29 @@ const WorkOrderModal: React.FC<{
                   </div>
                 );
               })}
+              </div>
+
+              {/* Right: Badge + Close Button */}
+              <div className="flex items-center gap-2 flex-shrink-0">
+                {formData.id ? (
+                  <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-600">
+                    #{formatWorkOrderId(formData.id, storeSettings?.work_order_prefix)}
+                  </span>
+                ) : (
+                  <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-700">
+                    Phiếu mới
+                  </span>
+                )}
+                <button
+                  onClick={onClose}
+                  className="w-8 h-8 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+                  aria-label="Đóng"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
             </div>
           </div>
 
@@ -3598,23 +3591,23 @@ const WorkOrderModal: React.FC<{
                     <div className="flex justify-between items-center text-sm">
                       <span className="text-red-500 font-medium">Giảm giá</span>
                       <div className="flex items-center gap-1.5">
-                        <input
-                          type="number"
-                          placeholder="0"
+                        <NumberInput
                           value={discountType === "amount" ? formData.discount || "" : discountPercent}
-                          onChange={(e) => {
-                            const value = Number(e.target.value) || 0;
+                          onChange={(val) => {
                             if (discountType === "amount") {
-                              setFormData({ ...formData, discount: Math.min(value, subtotal) });
+                              setFormData({ ...formData, discount: Math.min(val, subtotal) });
                             } else {
-                              const percent = Math.min(value, 100);
+                              const percent = Math.min(val, 100);
                               setDiscountPercent(percent);
                               setFormData({ ...formData, discount: Math.round((subtotal * percent) / 100) });
                             }
                           }}
-                          className="w-16 px-2 py-1 border border-slate-300 dark:border-slate-600 rounded text-right bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 text-xs"
-                          min="0"
+                          allowNegative={false}
+                          allowDecimal={false}
+                          className="w-24 px-2 py-1 border border-slate-300 dark:border-slate-600 rounded text-right bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 text-xs"
+                          min={0}
                           max={discountType === "amount" ? subtotal : 100}
+                          placeholder="0"
                         />
                         <select
                           value={discountType}

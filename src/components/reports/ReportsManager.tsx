@@ -987,235 +987,383 @@ const ReportsManager: React.FC = () => {
               </div>
             </div>
 
-            {/* Bảng chi tiết theo ngày - Giống Excel */}
-            <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
-              <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-700">
-                <h3 className="text-base font-semibold text-slate-900 dark:text-white">
-                  Chi tiết đơn hàng theo ngày (
-                  {revenueReport.dailyReport.length} ngày)
-                </h3>
+            {/* Bảng chi tiết theo ngày - Redesigned */}
+            <div className="bg-slate-900 rounded-xl border border-slate-700/50 overflow-hidden shadow-xl">
+              {/* Table Header */}
+              <div className="px-5 py-3.5 border-b border-slate-700/50 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <span className="text-base">📅</span>
+                  <h3 className="text-sm font-bold text-white tracking-wide">
+                    Chi tiết theo ngày
+                  </h3>
+                  <span className="px-2.5 py-0.5 bg-amber-500/20 text-amber-400 text-[11px] font-semibold rounded-full border border-amber-500/30">
+                    {revenueReport.dailyReport.length} ngày
+                  </span>
+                </div>
+                <span className="text-[11px] text-slate-500 italic hidden sm:block">
+                  Nhấn vào ngày để xem chi tiết
+                </span>
               </div>
+
               <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-blue-600 text-white">
-                    <tr>
-                      <th className="px-2 py-2 text-center text-[10px] font-bold uppercase">
+                <table className="w-full text-xs">
+                  {/* Grouped Column Headers */}
+                  <thead>
+                    <tr className="border-b border-slate-700/70">
+                      <th rowSpan={2} className="px-2 py-2 text-center text-[10px] font-bold text-slate-400 uppercase tracking-wider w-8 bg-slate-800/50">
                         #
                       </th>
                       <th
-                        className="px-2 py-2 text-left text-[10px] font-bold uppercase cursor-pointer hover:bg-blue-700 transition-colors select-none"
+                        rowSpan={2}
+                        className="px-3 py-2 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider cursor-pointer hover:text-white transition-colors select-none bg-slate-800/50"
                         onClick={() => handleSort("date")}
                       >
-                        <div className="flex items-center justify-between gap-1">
+                        <div className="flex items-center gap-1">
                           <span>Ngày</span>
                           {sortColumn === "date" && (
-                            <span className="text-yellow-300">
+                            <span className="text-amber-400 text-xs">
                               {sortDirection === "asc" ? "↑" : "↓"}
                             </span>
                           )}
                         </div>
                       </th>
-                      <th
-                        className="px-2 py-2 text-right text-[10px] font-bold uppercase cursor-pointer hover:bg-blue-700 transition-colors select-none"
-                        onClick={() => handleSort("totalCost")}
-                      >
-                        <div className="flex items-center justify-end gap-1">
-                          <span>
-                            Vốn NK
-                            <br />
-                            (1)
-                          </span>
-                          {sortColumn === "totalCost" && (
-                            <span className="text-yellow-300">
-                              {sortDirection === "asc" ? "↑" : "↓"}
-                            </span>
-                          )}
-                        </div>
+                      {/* DOANH THU group */}
+                      <th colSpan={2} className="px-2 py-1.5 text-center text-[10px] font-bold uppercase tracking-widest bg-slate-800/30 border-l border-slate-700/50">
+                        <span className="text-emerald-400">DOANH THU</span>
                       </th>
-                      <th
-                        className="px-2 py-2 text-right text-[10px] font-bold uppercase cursor-pointer hover:bg-blue-700 transition-colors select-none"
-                        onClick={() => handleSort("totalRevenue")}
-                      >
-                        <div className="flex items-center justify-end gap-1">
-                          <span>
-                            Tiền hàng
-                            <br />
-                            (2)
-                          </span>
-                          {sortColumn === "totalRevenue" && (
-                            <span className="text-yellow-300">
-                              {sortDirection === "asc" ? "↑" : "↓"}
-                            </span>
-                          )}
-                        </div>
+                      {/* GIÁ VỐN HÀNG BÁN group */}
+                      <th colSpan={2} className="px-2 py-1.5 text-center text-[10px] font-bold uppercase tracking-widest bg-slate-800/30 border-l border-slate-700/50">
+                        <span className="text-sky-400">GIÁ VỐN HÀNG BÁN</span>
                       </th>
-                      <th className="px-2 py-2 text-right text-[10px] font-bold uppercase">
-                        Vốn SC
-                        <br />
-                        (3)
-                      </th>
-                      <th className="px-2 py-2 text-right text-[10px] font-bold uppercase">
-                        Công SC
-                        <br />
-                        (4)
-                      </th>
-                      <th className="px-2 py-2 text-right text-[10px] font-bold uppercase">
-                        Doanh thu
-                        <br />
-                        (5=2)
-                      </th>
-                      <th className="px-2 py-2 text-right text-[10px] font-bold uppercase">
-                        Lợi nhuận
-                        <br />
-                        (6=2-1)
-                      </th>
-                      <th className="px-2 py-2 text-right text-[10px] font-bold uppercase">
-                        Thu khác
-                        <br />
-                        (7)
-                      </th>
-                      <th className="px-2 py-2 text-right text-[10px] font-bold uppercase">
-                        Chi khác
-                        <br />
-                        (8)
-                      </th>
-                      <th className="px-2 py-2 text-right text-[10px] font-bold uppercase bg-green-700">
-                        LN ròng
-                        <br />
-                        (9=(6+7)-8)
+                      {/* LỢI NHUẬN group */}
+                      <th colSpan={3} className="px-2 py-1.5 text-center text-[10px] font-bold uppercase tracking-widest bg-slate-800/30 border-l border-slate-700/50">
+                        <span className="text-rose-400">LỢI NHUẬN</span>
                       </th>
                     </tr>
+                    <tr className="border-b border-slate-700/70 bg-slate-800/40">
+                      {/* DOANH THU sub-columns */}
+                      <th className="px-2 py-1.5 text-right text-[10px] font-semibold text-slate-400 border-l border-slate-700/50">Bán hàng</th>
+                      <th className="px-2 py-1.5 text-right text-[10px] font-semibold text-slate-400">Sửa chữa</th>
+                      {/* GIÁ VỐN sub-columns */}
+                      <th className="px-2 py-1.5 text-right text-[10px] font-semibold text-slate-400 border-l border-slate-700/50">Vốn BH</th>
+                      <th className="px-2 py-1.5 text-right text-[10px] font-semibold text-slate-400">Vật tư SC</th>
+                      {/* LỢI NHUẬN sub-columns */}
+                      <th className="px-2 py-1.5 text-right text-[10px] font-semibold text-slate-400 border-l border-slate-700/50">Lãi gộp</th>
+                      <th className="px-2 py-1.5 text-right text-[10px] font-semibold text-slate-400">Thu/Chi khác</th>
+                      <th className="px-2 py-1.5 text-right text-[10px] font-bold text-slate-300">Lãi ròng</th>
+                    </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
+                  <tbody>
                     {sortedDailyReport.map((day, index) => {
-                      // Tính toán từ dữ liệu thực
-                      const vonNhapKho = day.partsCost || 0; // Giá vốn phụ tùng
-                      const tienHang = day.totalRevenue; // Doanh thu từ bán hàng + sửa chữa
-                      const vonSuaChua = day.servicesCost || 0; // Giá vốn dịch vụ gia công
-                      const congSuaChua = 0; // Công thợ (nếu cần tách riêng trong tương lai)
-                      const doanhThu = tienHang;
-                      const loiNhuan = day.totalProfit; // Doanh thu - Giá vốn
-
-                      // Tính phiếu thu/chi theo ngày từ cashTxData (loại trừ thu "Dịch vụ")
-                      const dayDateStr = day.date; // Format: YYYY-MM-DD
+                      const isExpanded = selectedDate === day.date;
+                      // Tách riêng doanh thu bán hàng và sửa chữa
+                      const salesRevenue = day.sales.reduce((sum, s) => sum + s.total, 0);
+                      const woRevenue = day.workOrders.reduce((sum, wo: any) => sum + (wo.totalPaid || wo.totalpaid || wo.total || 0), 0);
+                      // Giá vốn: COGS (bán hàng), Vật tư SC (sửa chữa)
+                      const salesCOGS = day.sales.reduce((sum, s) => {
+                        return sum + s.items.reduce((c, it: any) => {
+                          const cost = it.costPrice || partsCostMap.get(it.partId) || partsCostMap.get(it.sku) || 0;
+                          return c + cost * it.quantity;
+                        }, 0);
+                      }, 0);
+                      const woParts = day.workOrders.reduce((sum, wo: any) => {
+                        const parts = wo.partsUsed || wo.partsused || [];
+                        return sum + parts.reduce((c: number, p: any) => {
+                          const partId = p.partId || p.partid;
+                          const cost = p.costPrice || p.costprice || partsCostMap.get(partId) || partsCostMap.get(p.sku) || 0;
+                          return c + cost * (p.quantity || 0);
+                        }, 0);
+                      }, 0);
+                      const laiGop = (salesRevenue + woRevenue) - (salesCOGS + woParts);
+                      // Tính phiếu thu/chi theo ngày
+                      const dayDateStr = day.date;
                       const thuKhac = cashTxData
-                        .filter(
-                          (t) =>
-                            t.type === "income" &&
-                            !isExcludedIncomeCategory(t.category) &&
-                            t.date.slice(0, 10) === dayDateStr
-                        )
+                        .filter(t => t.type === "income" && !isExcludedIncomeCategory(t.category) && t.date.slice(0, 10) === dayDateStr)
                         .reduce((sum, t) => sum + t.amount, 0);
-                      // Chi khác: loại trừ chi nhập kho (đã tính trong giá vốn)
-                      // CHỈ TÍNH expense với amount DƯƠNG (chi thực tế)
                       const chiKhac = cashTxData
-                        .filter(
-                          (t) =>
-                            t.type === "expense" &&
-                            t.amount > 0 && // CHỈ LẤY SỐ DƯƠNG
-                            !isExcludedExpenseCategory(t.category) &&
-                            t.date.slice(0, 10) === dayDateStr
-                        )
+                        .filter(t => t.type === "expense" && t.amount > 0 && !isExcludedExpenseCategory(t.category) && t.date.slice(0, 10) === dayDateStr)
                         .reduce((sum, t) => sum + t.amount, 0);
-                      const loiNhuanRong = loiNhuan + thuKhac - chiKhac;
+                      const thuChiKhac = thuKhac - chiKhac;
+                      const laiRong = laiGop + thuKhac - chiKhac;
+                      // Chi tiết giao dịch khác cho ngày
+                      const dayCashTx = cashTxData.filter(t => !isExcludedIncomeCategory(t.category) && !isExcludedExpenseCategory(t.category) && t.date.slice(0, 10) === dayDateStr);
 
                       return (
-                        <tr
-                          key={day.date}
-                          className="hover:bg-blue-50 dark:hover:bg-blue-900/20 cursor-pointer transition-colors group"
-                          onClick={() => setSelectedDate(day.date)}
-                          title="Nhấn để xem chi tiết"
-                        >
-                          <td className="px-2 py-2 text-center text-xs font-medium text-slate-900 dark:text-white">
-                            {index + 1}
-                          </td>
-                          <td className="px-2 py-2 whitespace-nowrap text-xs font-medium text-blue-600 dark:text-blue-400 group-hover:underline">
-                            {new Date(day.date).toLocaleDateString("vi-VN")}
-                          </td>
-                          <td className={`px-2 py-2 text-right text-xs ${vonNhapKho === 0 ? 'text-slate-300 dark:text-slate-600' : 'text-slate-900 dark:text-white'}`}>
-                            {formatCurrency(vonNhapKho)}
-                          </td>
-                          <td className={`px-2 py-2 text-right text-xs font-semibold ${tienHang === 0 ? 'text-slate-300 dark:text-slate-600' : 'text-blue-600 dark:text-blue-400'}`}>
-                            {formatCurrency(tienHang)}
-                          </td>
-                          <td className={`px-2 py-2 text-right text-xs ${vonSuaChua === 0 ? 'text-slate-300 dark:text-slate-600' : 'text-slate-900 dark:text-white'}`}>
-                            {formatCurrency(vonSuaChua)}
-                          </td>
-                          <td className={`px-2 py-2 text-right text-xs ${congSuaChua === 0 ? 'text-slate-300 dark:text-slate-600' : 'text-slate-900 dark:text-white'}`}>
-                            {formatCurrency(congSuaChua)}
-                          </td>
-                          <td className={`px-2 py-2 text-right text-xs font-bold ${doanhThu === 0 ? 'text-slate-300 dark:text-slate-600' : 'text-blue-600 dark:text-blue-400'}`}>
-                            {formatCurrency(doanhThu)}
-                          </td>
-                          <td className={`px-2 py-2 text-right text-xs font-bold ${loiNhuan === 0 ? 'text-slate-300 dark:text-slate-600' : 'text-orange-600 dark:text-orange-400'}`}>
-                            {formatCurrency(loiNhuan)}
-                          </td>
-                          <td className={`px-2 py-2 text-right text-xs ${thuKhac === 0 ? 'text-slate-300 dark:text-slate-600' : 'text-slate-900 dark:text-white'}`}>
-                            {formatCurrency(thuKhac)}
-                          </td>
-                          <td className={`px-2 py-2 text-right text-xs ${chiKhac === 0 ? 'text-slate-300 dark:text-slate-600' : 'text-red-600 dark:text-red-400'}`}>
-                            {formatCurrency(chiKhac)}
-                          </td>
-                          <td className={`px-2 py-2 text-right text-xs font-black ${loiNhuanRong === 0 ? 'text-slate-300 dark:text-slate-600' : 'text-green-700 dark:text-green-400'} bg-green-50 dark:bg-green-900/20 group-hover:bg-green-100 dark:group-hover:bg-green-900/30`}>
-                            {formatCurrency(loiNhuanRong)}
-                          </td>
-                        </tr>
+                        <React.Fragment key={day.date}>
+                          <tr
+                            className={`border-b border-slate-800 cursor-pointer transition-colors group ${isExpanded ? 'bg-slate-800/80' : 'hover:bg-slate-800/40'}`}
+                            onClick={() => setSelectedDate(isExpanded ? null : day.date)}
+                            title="Nhấn để xem chi tiết"
+                          >
+                            <td className="px-2 py-2.5 text-center text-xs font-medium text-slate-500">
+                              {isExpanded ? (
+                                <span className="text-amber-400 text-[10px]">▼</span>
+                              ) : (
+                                <span>{index + 1}</span>
+                              )}
+                            </td>
+                            <td className="px-3 py-2.5 whitespace-nowrap text-xs font-semibold text-blue-400 group-hover:text-blue-300">
+                              {new Date(day.date).toLocaleDateString("vi-VN")}
+                            </td>
+                            {/* Bán hàng */}
+                            <td className={`px-2 py-2.5 text-right text-xs font-semibold border-l border-slate-800 ${salesRevenue === 0 ? 'text-slate-600' : 'text-orange-400'}`}>
+                              {salesRevenue === 0 ? '-' : formatCurrency(salesRevenue)}
+                            </td>
+                            {/* Sửa chữa */}
+                            <td className={`px-2 py-2.5 text-right text-xs font-semibold ${woRevenue === 0 ? 'text-slate-600' : 'text-amber-400'}`}>
+                              {woRevenue === 0 ? '-' : formatCurrency(woRevenue)}
+                            </td>
+                            {/* COGS */}
+                            <td className={`px-2 py-2.5 text-right text-xs border-l border-slate-800 ${salesCOGS === 0 ? 'text-slate-600' : 'text-sky-400'}`}>
+                              {salesCOGS === 0 ? '-' : formatCurrency(salesCOGS)}
+                            </td>
+                            {/* Vật tư SC */}
+                            <td className={`px-2 py-2.5 text-right text-xs ${woParts === 0 ? 'text-slate-600' : 'text-cyan-400'}`}>
+                              {woParts === 0 ? '-' : formatCurrency(woParts)}
+                            </td>
+                            {/* Lãi gộp */}
+                            <td className={`px-2 py-2.5 text-right text-xs font-semibold border-l border-slate-800 ${laiGop === 0 ? 'text-slate-600' : 'text-emerald-400'}`}>
+                              {laiGop === 0 ? '-' : formatCurrency(laiGop)}
+                            </td>
+                            {/* Thu/Chi khác */}
+                            <td className={`px-2 py-2.5 text-right text-xs ${thuChiKhac === 0 ? 'text-slate-600' : thuChiKhac > 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                              {thuChiKhac === 0 ? '-' : (thuChiKhac > 0 ? '+' : '') + formatCurrency(thuChiKhac)}
+                            </td>
+                            {/* Lãi ròng */}
+                            <td className={`px-2 py-2.5 text-right text-xs font-bold ${laiRong === 0 ? 'text-slate-600' : laiRong > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                              {laiRong === 0 ? '-' : (laiRong > 0 ? '+' : '') + formatCurrency(laiRong)}
+                            </td>
+                          </tr>
+
+                          {/* Expanded Detail Row */}
+                          {isExpanded && (
+                            <tr>
+                              <td colSpan={9} className="p-0">
+                                <div className="bg-slate-850 border-t border-b border-slate-700/50 px-4 py-4" style={{ backgroundColor: 'rgb(17 24 39)' }}>
+                                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                                    {/* CÁCH TÍNH LỢI NHUẬN */}
+                                    <div className="bg-slate-800/80 rounded-xl border border-slate-700/50 p-4">
+                                      <h4 className="text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-3 flex items-center gap-2">
+                                        <span className="text-base">📊</span>
+                                        CÁCH TÍNH LỢI NHUẬN NGÀY {new Date(day.date).toLocaleDateString('vi-VN')}
+                                      </h4>
+                                      <div className="space-y-2.5 text-xs">
+                                        <div className="flex justify-between items-center">
+                                          <span className="text-slate-400">Doanh thu bán hàng</span>
+                                          <span className="font-bold text-white">{formatCurrency(salesRevenue + woRevenue)}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center">
+                                          <span className="text-slate-400">(-) Giá vốn hàng bán</span>
+                                          <span className="font-bold text-rose-400">- {formatCurrency(salesCOGS + woParts)}</span>
+                                        </div>
+                                        <div className="border-t border-slate-700/50 pt-2 flex justify-between items-center">
+                                          <span className="text-slate-300 font-medium">= Lãi gộp bán hàng</span>
+                                          <span className="font-bold text-emerald-400">{formatCurrency(laiGop)}</span>
+                                        </div>
+                                        {thuChiKhac !== 0 && (
+                                          <div className="flex justify-between items-center">
+                                            <span className="text-slate-400">{thuChiKhac > 0 ? '(+) Thu khác' : '(-) Chi khác'}</span>
+                                            <span className={`font-bold ${thuChiKhac > 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                                              {thuChiKhac > 0 ? '+' : ''}{formatCurrency(thuChiKhac)}
+                                            </span>
+                                          </div>
+                                        )}
+                                        <div className="border-t-2 border-slate-600 pt-2.5 flex justify-between items-center">
+                                          <span className="text-white font-black text-sm">= LÃI RÒNG</span>
+                                          <span className={`font-black text-base ${laiRong >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                                            {laiRong > 0 ? '+' : ''}{formatCurrency(laiRong)}
+                                          </span>
+                                        </div>
+                                      </div>
+                                    </div>
+
+                                    {/* ĐƠN BÁN HÀNG */}
+                                    <div className="bg-slate-800/80 rounded-xl border border-slate-700/50 p-4">
+                                      <h4 className="text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-3 flex items-center gap-2">
+                                        <span className="text-base">📦</span>
+                                        ĐƠN BÁN HÀNG ({day.sales.length})
+                                      </h4>
+                                      {day.sales.length === 0 ? (
+                                        <div className="text-xs text-slate-500 py-4 text-center">Không có đơn BH</div>
+                                      ) : (
+                                        <>
+                                        {/* Tổng bán hàng */}
+                                        <div className="flex justify-between items-center mb-3 pb-2.5 border-b border-slate-700/50">
+                                          <div className="text-[11px] text-slate-400">Tổng doanh thu</div>
+                                          <div className="text-right">
+                                            <span className="font-bold text-sky-400 text-xs">{formatCurrency(salesRevenue)}</span>
+                                            <span className={`text-[10px] ml-2 ${salesRevenue - salesCOGS >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                                              Lãi: {formatCurrency(salesRevenue - salesCOGS)}
+                                            </span>
+                                          </div>
+                                        </div>
+                                        <div className="space-y-3 max-h-64 overflow-y-auto pr-1">
+                                          {day.sales.map((sale) => {
+                                            const saleCost = sale.items.reduce((c, it: any) => {
+                                              const cost = it.costPrice || partsCostMap.get(it.partId) || partsCostMap.get(it.sku) || 0;
+                                              return c + cost * it.quantity;
+                                            }, 0);
+                                            const saleProfit = sale.total - saleCost;
+                                            return (
+                                              <div key={sale.id} className="bg-slate-900/60 rounded-lg p-3 border border-slate-700/30">
+                                                <div className="flex justify-between items-start mb-1.5">
+                                                  <div className="flex items-center gap-1.5">
+                                                    <span className="font-bold text-white text-xs">{sale.customer.name}</span>
+                                                    {saleProfit > 0 && <span className="text-amber-400 text-xs">⭐</span>}
+                                                  </div>
+                                                  <div className="text-right">
+                                                    <div className="font-bold text-sky-400 text-xs">{formatCurrency(sale.total)}</div>
+                                                    <div className={`text-[10px] mt-0.5 ${saleProfit >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                                                      Lãi: {formatCurrency(saleProfit)}
+                                                    </div>
+                                                  </div>
+                                                </div>
+                                                <div className="text-[10px] text-slate-500 mb-1.5">
+                                                  {sale.sale_code || '---'} • {sale.paymentMethod === 'bank' ? 'CK' : 'TM'}
+                                                </div>
+                                                <div className="space-y-0.5">
+                                                  {sale.items.map((item, idx) => (
+                                                    <div key={idx} className="flex justify-between text-[10px]">
+                                                      <span className="text-slate-400 truncate mr-2">{item.partName}</span>
+                                                      <span className="text-slate-300 whitespace-nowrap flex-shrink-0">
+                                                        x{item.quantity} = {formatCurrency(item.sellingPrice * item.quantity)}
+                                                      </span>
+                                                    </div>
+                                                  ))}
+                                                </div>
+                                              </div>
+                                            );
+                                          })}
+                                        </div>
+                                        </>
+                                      )}
+                                    </div>
+
+                                    {/* SỬA CHỮA + GIAO DỊCH KHÁC */}
+                                    <div className="space-y-4">
+                                      {/* SỬA CHỮA */}
+                                      <div className="bg-slate-800/80 rounded-xl border border-slate-700/50 p-4">
+                                        <h4 className="text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-3 flex items-center gap-2">
+                                          <span className="text-base">⚙️</span>
+                                          SỬA CHỮA ({day.workOrders.length})
+                                        </h4>
+                                        {day.workOrders.length === 0 ? (
+                                          <div className="text-xs text-slate-500 py-2 text-center">Không có đơn SC</div>
+                                        ) : (
+                                          <>
+                                          {/* Tổng sửa chữa */}
+                                          <div className="flex justify-between items-center mb-2.5 pb-2 border-b border-slate-700/50">
+                                            <div className="text-[11px] text-slate-400">Tổng doanh thu</div>
+                                            <div className="text-right">
+                                              <span className="font-bold text-purple-400 text-xs">{formatCurrency(woRevenue)}</span>
+                                              <span className={`text-[10px] ml-2 ${woRevenue - woParts >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                                                Lãi: {formatCurrency(woRevenue - woParts)}
+                                              </span>
+                                            </div>
+                                          </div>
+                                          <div className="space-y-2 max-h-32 overflow-y-auto pr-1">
+                                            {day.workOrders.map((wo: any) => {
+                                              const woTotal = wo.totalPaid || wo.totalpaid || wo.total || 0;
+                                              const woPartsCost = (wo.partsUsed || wo.partsused || []).reduce((c: number, p: any) => {
+                                                const partId = p.partId || p.partid;
+                                                const cost = p.costPrice || p.costprice || partsCostMap.get(partId) || partsCostMap.get(p.sku) || 0;
+                                                return c + cost * (p.quantity || 0);
+                                              }, 0);
+                                              const woProfit = woTotal - woPartsCost;
+                                              return (
+                                                <div key={wo.id} className="bg-slate-900/60 rounded-lg p-2.5 border border-slate-700/30">
+                                                  <div className="flex justify-between items-start">
+                                                    <div>
+                                                      <div className="font-semibold text-white text-[11px]">{wo.customerName || wo.customername}</div>
+                                                      <div className="text-[10px] text-slate-500">{wo.vehicleModel || wo.vehiclemodel || ''} {wo.licensePlate || wo.licenseplate || ''}</div>
+                                                    </div>
+                                                    <div className="text-right">
+                                                      <div className="font-bold text-purple-400 text-xs">{formatCurrency(woTotal)}</div>
+                                                      <div className={`text-[10px] mt-0.5 ${woProfit >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                                                        Lãi: {formatCurrency(woProfit)}
+                                                      </div>
+                                                    </div>
+                                                  </div>
+                                                </div>
+                                              );
+                                            })}
+                                          </div>
+                                          </>
+                                        )}
+                                      </div>
+
+                                      {/* GIAO DỊCH KHÁC */}
+                                      <div className="bg-slate-800/80 rounded-xl border border-slate-700/50 p-4">
+                                        <h4 className="text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-3 flex items-center gap-2">
+                                          <span className="text-base">💰</span>
+                                          GIAO DỊCH KHÁC ({dayCashTx.length})
+                                        </h4>
+                                        {dayCashTx.length === 0 ? (
+                                          <div className="text-xs text-slate-500 py-2 text-center">Không có giao dịch</div>
+                                        ) : (
+                                          <div className="space-y-1.5 max-h-32 overflow-y-auto pr-1">
+                                            {dayCashTx.map((tx) => (
+                                              <div key={tx.id} className="flex justify-between items-center text-[11px]">
+                                                <span className="text-slate-400 truncate mr-2">
+                                                  {(tx as any).description || tx.notes || formatCashTxCategory(tx.category || '')}
+                                                </span>
+                                                <span className={`font-bold whitespace-nowrap flex-shrink-0 ${tx.type === 'income' ? 'text-emerald-400' : 'text-rose-400'}`}>
+                                                  {tx.type === 'income' ? '+' : '-'}{formatCurrency(Math.abs(tx.amount))}
+                                                </span>
+                                              </div>
+                                            ))}
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                        </React.Fragment>
                       );
                     })}
                     {/* Tổng hàng */}
-                    {revenueReport.dailyReport.length > 0 && (
-                      <tr className="bg-blue-50 dark:bg-blue-900/20 font-bold border-t-2 border-blue-600">
-                        <td
-                          colSpan={2}
-                          className="px-2 py-2 text-left text-xs font-black text-slate-900 dark:text-white"
-                        >
-                          Tổng:
-                        </td>
-                        {/* Vốn NK (1) */}
-                        <td className={`px-2 py-2 text-right text-xs ${revenueReport.totalCost === 0 ? 'text-slate-300 dark:text-slate-600' : 'text-slate-900 dark:text-white'}`}>
-                          {formatCurrency(revenueReport.totalCost)}
-                        </td>
-                        {/* Tiền hàng (2) */}
-                        <td className={`px-2 py-2 text-right text-xs font-black ${revenueReport.totalRevenue === 0 ? 'text-slate-300 dark:text-slate-600' : 'text-blue-600 dark:text-blue-400'}`}>
-                          {formatCurrency(revenueReport.totalRevenue)}
-                        </td>
-                        {/* Vốn SC (3) - Tổng giá vốn dịch vụ gia công */}
-                        <td className={`px-2 py-2 text-right text-xs ${revenueReport.dailyReport.reduce((sum, d) => sum + d.servicesCost, 0) === 0 ? 'text-slate-300 dark:text-slate-600' : 'text-slate-900 dark:text-white'}`}>
-                          {formatCurrency(revenueReport.dailyReport.reduce((sum, d) => sum + d.servicesCost, 0))}
-                        </td>
-                        {/* Công SC (4) = 0 - hiện tại chưa có dữ liệu công SC riêng */}
-                        <td className="px-2 py-2 text-right text-xs text-slate-300 dark:text-slate-600">
-                          {formatCurrency(0)}
-                        </td>
-                        {/* Doanh thu (5) = Tiền hàng */}
-                        <td className={`px-2 py-2 text-right text-xs font-black ${revenueReport.totalRevenue === 0 ? 'text-slate-300 dark:text-slate-600' : 'text-blue-600 dark:text-blue-400'}`}>
-                          {formatCurrency(revenueReport.totalRevenue)}
-                        </td>
-                        {/* Lợi nhuận (6) */}
-                        <td className={`px-2 py-2 text-right text-xs font-black ${revenueReport.totalProfit === 0 ? 'text-slate-300 dark:text-slate-600' : 'text-orange-600 dark:text-orange-400'}`}>
-                          {formatCurrency(revenueReport.totalProfit)}
-                        </td>
-                        {/* Thu khác (7) */}
-                        <td className={`px-2 py-2 text-right text-xs ${cashTotals.totalIncome === 0 ? 'text-slate-300 dark:text-slate-600' : 'text-slate-900 dark:text-white'}`}>
-                          {formatCurrency(cashTotals.totalIncome)}
-                        </td>
-                        {/* Chi khác (8) */}
-                        <td className={`px-2 py-2 text-right text-xs ${cashTotals.totalExpense === 0 ? 'text-slate-300 dark:text-slate-600' : 'text-red-600 dark:text-red-400'}`}>
-                          {formatCurrency(cashTotals.totalExpense)}
-                        </td>
-                        {/* LN ròng (9) */}
-                        <td
-                          className={`px-2 py-2 text-right text-xs font-black ${netProfit === 0
-                            ? 'text-slate-300 dark:text-slate-600'
-                            : netProfit > 0
-                              ? "text-green-700 dark:text-green-400 bg-green-100 dark:bg-green-900/30"
-                              : "text-red-700 dark:text-red-400 bg-red-100 dark:bg-red-900/30"
-                            }`}
-                        >
-                          {formatCurrency(netProfit)}
-                        </td>
-                      </tr>
-                    )}
+                    {revenueReport.dailyReport.length > 0 && (() => {
+                      const totalSalesRev = revenueReport.dailyReport.reduce((sum, d) => sum + d.sales.reduce((s, sale) => s + sale.total, 0), 0);
+                      const totalWoRev = revenueReport.dailyReport.reduce((sum, d) => sum + d.workOrders.reduce((s, wo: any) => s + (wo.totalPaid || wo.totalpaid || wo.total || 0), 0), 0);
+                      const totalSalesCOGS = revenueReport.dailyReport.reduce((sum, d) => sum + d.sales.reduce((s, sale) => s + sale.items.reduce((c, it: any) => c + ((it.costPrice || partsCostMap.get(it.partId) || partsCostMap.get(it.sku) || 0) * it.quantity), 0), 0), 0);
+                      const totalWoParts = revenueReport.dailyReport.reduce((sum, d) => sum + d.workOrders.reduce((s, wo: any) => {
+                        const parts = wo.partsUsed || wo.partsused || [];
+                        return s + parts.reduce((c: number, p: any) => c + ((p.costPrice || p.costprice || partsCostMap.get(p.partId || p.partid) || partsCostMap.get(p.sku) || 0) * (p.quantity || 0)), 0);
+                      }, 0), 0);
+                      const totalLaiGop = (totalSalesRev + totalWoRev) - (totalSalesCOGS + totalWoParts);
+                      const totalThuChiKhac = cashTotals.totalIncome - cashTotals.totalExpense;
+                      return (
+                        <tr className="border-t-2 border-slate-600 bg-slate-800/60">
+                          <td colSpan={2} className="px-3 py-2.5 text-left text-xs font-black text-white uppercase tracking-wider">
+                            Tổng:
+                          </td>
+                          <td className={`px-2 py-2.5 text-right text-xs font-bold border-l border-slate-700/50 ${totalSalesRev === 0 ? 'text-slate-600' : 'text-orange-400'}`}>
+                            {formatCurrency(totalSalesRev)}
+                          </td>
+                          <td className={`px-2 py-2.5 text-right text-xs font-bold ${totalWoRev === 0 ? 'text-slate-600' : 'text-amber-400'}`}>
+                            {formatCurrency(totalWoRev)}
+                          </td>
+                          <td className={`px-2 py-2.5 text-right text-xs font-bold border-l border-slate-700/50 ${totalSalesCOGS === 0 ? 'text-slate-600' : 'text-sky-400'}`}>
+                            {formatCurrency(totalSalesCOGS)}
+                          </td>
+                          <td className={`px-2 py-2.5 text-right text-xs font-bold ${totalWoParts === 0 ? 'text-slate-600' : 'text-cyan-400'}`}>
+                            {formatCurrency(totalWoParts)}
+                          </td>
+                          <td className={`px-2 py-2.5 text-right text-xs font-bold border-l border-slate-700/50 ${totalLaiGop === 0 ? 'text-slate-600' : 'text-emerald-400'}`}>
+                            {formatCurrency(totalLaiGop)}
+                          </td>
+                          <td className={`px-2 py-2.5 text-right text-xs font-bold ${totalThuChiKhac === 0 ? 'text-slate-600' : totalThuChiKhac > 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                            {totalThuChiKhac === 0 ? '-' : (totalThuChiKhac > 0 ? '+' : '') + formatCurrency(totalThuChiKhac)}
+                          </td>
+                          <td className={`px-2 py-2.5 text-right text-xs font-black ${netProfit === 0 ? 'text-slate-600' : netProfit > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                            {netProfit > 0 ? '+' : ''}{formatCurrency(netProfit)}
+                          </td>
+                        </tr>
+                      );
+                    })()}
                   </tbody>
                 </table>
               </div>
@@ -1642,7 +1790,7 @@ const ReportsManager: React.FC = () => {
                             {record.month}
                           </td>
                           <td className="px-4 py-2 text-sm text-slate-900 dark:text-white">
-                            {employee?.name || "N/A"}
+                            {record.employeeName || employee?.name || "N/A"}
                           </td>
                           <td className="px-4 py-2 text-sm text-right font-medium text-slate-900 dark:text-white">
                             {formatCurrency(record.netSalary)}
@@ -1783,25 +1931,7 @@ const ReportsManager: React.FC = () => {
           <TaxReportExport />
         )}
       </div>
-      {/* Daily Detail Modal */}
-      {selectedDate && (
-        <DailyDetailModal
-          isOpen={!!selectedDate}
-          onClose={() => setSelectedDate(null)}
-          date={selectedDate}
-          sales={
-            revenueReport.dailyReport.find((d) => d.date === selectedDate)
-              ?.sales || []
-          }
-          workOrders={
-            revenueReport.dailyReport.find((d) => d.date === selectedDate)
-              ?.workOrders || []
-          }
-          cashTransactions={cashTxData.filter(
-            (t) => t.date.slice(0, 10) === selectedDate
-          )}
-        />
-      )}
+      {/* Daily Detail - now inline in table, modal removed */}
     </div>
   );
 };

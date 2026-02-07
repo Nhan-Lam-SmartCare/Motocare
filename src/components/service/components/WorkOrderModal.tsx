@@ -2108,37 +2108,76 @@ const WorkOrderModal: React.FC<{
 
     return (
       <div className="fixed inset-0 bg-black/50 z-50 flex items-end md:items-center justify-center p-0 md:p-4">
-        <div className="bg-white dark:bg-slate-800 w-full h-full md:h-auto md:max-h-[90vh] md:max-w-5xl rounded-t-3xl md:rounded-xl shadow-2xl md:shadow-lg flex flex-col overflow-hidden">
+        <div className="bg-white dark:bg-slate-800 w-full h-full md:h-auto md:max-h-[90vh] md:max-w-6xl rounded-t-3xl md:rounded-xl shadow-2xl md:shadow-lg flex flex-col overflow-hidden">
           {/* Header */}
-          <div className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-4 py-3 md:px-6 md:py-4 flex items-center justify-between rounded-t-3xl md:rounded-t-xl flex-shrink-0">
-            <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">
-              {formData.id
-                ? `Chi tiết Phiếu sửa chữa - ${formatWorkOrderId(
-                  formData.id,
-                  storeSettings?.work_order_prefix
-                )}`
-                : "Tạo Phiếu sửa chữa mới"}
-            </h2>
-            <button
-              onClick={onClose}
-              className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
-              aria-label="Đóng"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                className="w-5 h-5"
+          <div className="bg-gradient-to-r from-slate-50 to-white dark:from-slate-800 dark:to-slate-800 border-b border-slate-200 dark:border-slate-700 px-4 py-3 md:px-6 md:py-4 flex-shrink-0">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-lg bg-blue-500/10 dark:bg-blue-400/10 flex items-center justify-center">
+                  <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M11.42 15.17l-5.18-5.18m0 0L12 4.23l5.76 5.76m-5.76-5.76V19.77" />
+                  </svg>
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">
+                    {formData.id
+                      ? `Phiếu sửa chữa ${formatWorkOrderId(formData.id, storeSettings?.work_order_prefix)}`
+                      : "Tạo Phiếu sửa chữa mới"}
+                  </h2>
+                  {formData.customerName && (
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                      {formData.customerName} {formData.licensePlate ? `• ${formData.licensePlate}` : ""}
+                    </p>
+                  )}
+                </div>
+              </div>
+              <button
+                onClick={onClose}
+                className="w-8 h-8 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+                aria-label="Đóng"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
-            </button>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Status Stepper */}
+            <div className="flex items-center gap-1 mt-3 overflow-x-auto pb-1">
+              {[
+                { key: "Tiếp nhận", icon: "📋", color: "blue" },
+                { key: "Đang sửa", icon: "🔧", color: "orange" },
+                { key: "Đã sửa xong", icon: "✅", color: "purple" },
+                { key: "Trả máy", icon: "🏍️", color: "green" },
+              ].map((step, idx, arr) => {
+                const statuses = arr.map(s => s.key);
+                const currentIdx = statuses.indexOf(formData.status || "Tiếp nhận");
+                const stepIdx = idx;
+                const isActive = stepIdx === currentIdx;
+                const isPast = stepIdx < currentIdx;
+                const colorMap: Record<string, string> = {
+                  blue: isActive ? "bg-blue-500 text-white border-blue-500 shadow-blue-200 dark:shadow-blue-900" : isPast ? "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800" : "bg-slate-50 dark:bg-slate-700/50 text-slate-400 dark:text-slate-500 border-slate-200 dark:border-slate-600",
+                  orange: isActive ? "bg-orange-500 text-white border-orange-500 shadow-orange-200 dark:shadow-orange-900" : isPast ? "bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-300 border-orange-200 dark:border-orange-800" : "bg-slate-50 dark:bg-slate-700/50 text-slate-400 dark:text-slate-500 border-slate-200 dark:border-slate-600",
+                  purple: isActive ? "bg-purple-500 text-white border-purple-500 shadow-purple-200 dark:shadow-purple-900" : isPast ? "bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800" : "bg-slate-50 dark:bg-slate-700/50 text-slate-400 dark:text-slate-500 border-slate-200 dark:border-slate-600",
+                  green: isActive ? "bg-green-500 text-white border-green-500 shadow-green-200 dark:shadow-green-900" : isPast ? "bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800" : "bg-slate-50 dark:bg-slate-700/50 text-slate-400 dark:text-slate-500 border-slate-200 dark:border-slate-600",
+                };
+                return (
+                  <div key={step.key} className="flex items-center gap-1 flex-shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, status: step.key as any })}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${colorMap[step.color]} ${isActive ? "shadow-sm" : ""}`}
+                    >
+                      <span className="text-sm">{step.icon}</span>
+                      <span className="hidden sm:inline">{step.key}</span>
+                    </button>
+                    {idx < arr.length - 1 && (
+                      <div className={`w-4 h-0.5 rounded-full ${isPast ? "bg-slate-300 dark:bg-slate-500" : "bg-slate-200 dark:bg-slate-700"}`} />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
           {/* 🔹 Warning Banner for Paid Orders */}
@@ -2289,14 +2328,21 @@ const WorkOrderModal: React.FC<{
             </div>
           )}
 
-          {/* Scrollable Content */}
-          <div className="px-4 py-5 md:px-6 md:py-6 space-y-6 overflow-y-auto flex-1 pb-24 md:pb-6">
-            {/* Customer & Vehicle Info */}
-            <div className="grid gap-6 lg:grid-cols-2">
+          {/* Main Content: 2-Panel Layout */}
+          <div className="flex flex-1 overflow-hidden">
+            {/* Left Panel - Scrollable Form */}
+            <div className="flex-1 px-4 py-5 md:px-6 md:py-5 space-y-5 overflow-y-auto pb-24 md:pb-6">
+            {/* Section 1: Customer & Vehicle Info */}
+            <div className="grid gap-5 lg:grid-cols-2">
               <div className="space-y-4">
-                <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                  Thông tin Khách hàng & Sự cố
-                </h3>
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-md bg-blue-500/10 dark:bg-blue-400/10 flex items-center justify-center flex-shrink-0">
+                    <span className="text-xs font-bold text-blue-600 dark:text-blue-400">1</span>
+                  </div>
+                  <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                    Khách hàng & Xe
+                  </h3>
+                </div>
 
                 <div>
                   <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
@@ -2944,59 +2990,16 @@ const WorkOrderModal: React.FC<{
               </div>
 
               <div className="space-y-4">
-                <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                  Chi tiết Dịch vụ
-                </h3>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                      Trạng thái
-                    </label>
-                    <select
-                      value={formData.status || "Tiếp nhận"}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          status: e.target.value as any,
-                        })
-                      }
-                      className={`w-full px-3 py-2 border rounded-lg font-medium ${formData.status === "Tiếp nhận"
-                        ? "bg-blue-100 dark:bg-blue-900/30 border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-300"
-                        : formData.status === "Đang sửa"
-                          ? "bg-orange-100 dark:bg-orange-900/30 border-orange-300 dark:border-orange-700 text-orange-700 dark:text-orange-300"
-                          : formData.status === "Đã sửa xong"
-                            ? "bg-purple-100 dark:bg-purple-900/30 border-purple-300 dark:border-purple-700 text-purple-700 dark:text-purple-300"
-                            : "bg-green-100 dark:bg-green-900/30 border-green-300 dark:border-green-700 text-green-700 dark:text-green-300"
-                        }`}
-                    >
-                      <option
-                        value="Tiếp nhận"
-                        className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
-                      >
-                        Tiếp nhận
-                      </option>
-                      <option
-                        value="Đang sửa"
-                        className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
-                      >
-                        Đang sửa
-                      </option>
-                      <option
-                        value="Đã sửa xong"
-                        className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
-                      >
-                        Đã sửa xong
-                      </option>
-                      <option
-                        value="Trả máy"
-                        className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
-                      >
-                        Trả máy
-                      </option>
-                    </select>
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-md bg-emerald-500/10 dark:bg-emerald-400/10 flex items-center justify-center flex-shrink-0">
+                    <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">2</span>
                   </div>
-                  <div>
+                  <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                    Chi tiết Dịch vụ
+                  </h3>
+                </div>
+
+                <div>
                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                       Kỹ thuật viên
                     </label>
@@ -3025,7 +3028,6 @@ const WorkOrderModal: React.FC<{
                         ))}
                     </select>
                   </div>
-                </div>
 
                 <div>
                   <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
@@ -3067,9 +3069,17 @@ const WorkOrderModal: React.FC<{
             {/* Parts Used */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                  Phụ tùng sử dụng
-                </h3>
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-md bg-amber-500/10 dark:bg-amber-400/10 flex items-center justify-center flex-shrink-0">
+                    <span className="text-xs font-bold text-amber-600 dark:text-amber-400">3</span>
+                  </div>
+                  <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                    Phụ tùng sử dụng
+                  </h3>
+                  {selectedParts.length > 0 && (
+                    <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300">{selectedParts.length}</span>
+                  )}
+                </div>
                 <button
                   onClick={() => setShowPartSearch(!showPartSearch)}
                   disabled={!canEditPriceAndParts}
@@ -3315,9 +3325,17 @@ const WorkOrderModal: React.FC<{
 
             {/* Quote/Estimate Section */}
             <div className="border-t border-slate-200 dark:border-slate-700 pt-4">
-              <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">
-                Báo giá (Gia công, Đặt hàng)
-              </h3>
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-6 h-6 rounded-md bg-purple-500/10 dark:bg-purple-400/10 flex items-center justify-center flex-shrink-0">
+                  <span className="text-xs font-bold text-purple-600 dark:text-purple-400">4</span>
+                </div>
+                <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                  Báo giá (Gia công, Đặt hàng)
+                </h3>
+                {additionalServices.length > 0 && (
+                  <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300">{additionalServices.length}</span>
+                )}
+              </div>
 
               <div className="border border-slate-300 dark:border-slate-600 rounded-lg overflow-hidden">
                 <table className="w-full">
@@ -3543,351 +3561,121 @@ const WorkOrderModal: React.FC<{
                 </table>
               </div>
             </div>
+            {/* END Left Panel */}
+            </div>
 
-            {/* Payment Section */}
-            <div className="border-t border-slate-200 dark:border-slate-700 pt-4 mt-4">
-              <div className="grid gap-6 lg:grid-cols-2">
-                {/* Left: Payment Options */}
-                <div className="space-y-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-4">
-                  <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                    Thanh toán
-                  </h3>
+            {/* Right Panel - Sticky Sidebar */}
+            <div className="hidden lg:flex lg:flex-col lg:w-80 xl:w-96 border-l border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 overflow-y-auto flex-shrink-0">
+              <div className="p-4 space-y-4 flex flex-col h-full">
+                {/* Summary Card */}
+                <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4 space-y-3">
+                  <div className="flex items-center gap-2 mb-1">
+                    <svg className="w-4 h-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                    </svg>
+                    <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                      Tổng kết
+                    </h3>
+                  </div>
 
-                  <div className="space-y-3">
-                    {/* Deposit checkbox */}
-                    <label className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={showDepositInput}
-                        onChange={(e) => {
-                          setShowDepositInput(e.target.checked);
-                          if (!e.target.checked) setDepositAmount(0);
-                        }}
-                        disabled={!!order?.depositAmount} // Disable if already deposited
-                        className="w-4 h-4"
-                      />
-                      <span className="text-sm text-slate-700 dark:text-slate-300">
-                        Đặt cọc{" "}
-                        {order?.depositAmount
-                          ? `(Đã cọc: ${formatCurrency(order.depositAmount)})`
-                          : ""}
-                      </span>
-                    </label>
-
-                    {/* Deposit input - only show when checkbox is checked and not already deposited */}
-                    {showDepositInput && !order?.depositAmount && (
-                      <div className="pl-6">
-                        <NumberInput
-                          placeholder="Số tiền đặt cọc"
-                          value={depositAmount || ""}
-                          onChange={(val) => setDepositAmount(val)}
-                          className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
-                        />
-                      </div>
-                    )}
-
-                    <div className="border-t border-slate-200 dark:border-slate-700 pt-3"></div>
-
-                    {/* Payment method selection */}
-                    <div>
-                      <label className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 block">
-                        Phương thức thanh toán:
-                      </label>
-                      <div className="flex items-center gap-4 pl-2">
-                        <label className="flex items-center gap-2">
-                          <input
-                            type="radio"
-                            name="paymentMethod"
-                            value="cash"
-                            checked={formData.paymentMethod === "cash"}
-                            onChange={(e) =>
-                              setFormData({ ...formData, paymentMethod: "cash" })
-                            }
-                            className="w-4 h-4"
-                          />
-                          <span className="inline-flex items-center gap-1 text-sm text-slate-700 dark:text-slate-300">
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              className="w-4 h-4"
-                            >
-                              <rect
-                                x="2"
-                                y="6"
-                                width="20"
-                                height="12"
-                                rx="2"
-                                ry="2"
-                              />
-                              <circle cx="12" cy="12" r="3" />
-                            </svg>
-                            Tiền mặt
-                          </span>
-                        </label>
-                        <label className="flex items-center gap-2">
-                          <input
-                            type="radio"
-                            name="paymentMethod"
-                            value="bank"
-                            checked={formData.paymentMethod === "bank"}
-                            onChange={(e) =>
-                              setFormData({ ...formData, paymentMethod: "bank" })
-                            }
-                            className="w-4 h-4"
-                          />
-                          <span className="inline-flex items-center gap-1 text-sm text-slate-700 dark:text-slate-300">
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              className="w-4 h-4"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M3 21h18M3 10h18M7 6h10l2 4H5l2-4Zm2 4v11m6-11v11"
-                              />
-                            </svg>
-                            Chuyển khoản
-                          </span>
-                        </label>
-                      </div>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-slate-500 dark:text-slate-400">Phí dịch vụ</span>
+                      <span className="font-medium text-slate-800 dark:text-slate-200">{formatCurrency(formData.laborCost || 0)}</span>
                     </div>
-
-                    <div className="border-t border-slate-200 dark:border-slate-700 pt-3"></div>
-
-                    {/* Partial payment checkbox - only show if status is "Trả máy" */}
-                    {formData.status === "Trả máy" && (
-                      <>
-                        <label className="flex items-center gap-2">
-                          <input
-                            type="checkbox"
-                            checked={showPartialPayment}
-                            onChange={(e) => {
-                              setShowPartialPayment(e.target.checked);
-                              if (!e.target.checked) setPartialPayment(0);
-                            }}
-                            className="w-4 h-4"
-                          />
-                          <span className="text-sm text-slate-700 dark:text-slate-300">
-                            Thanh toán khi trả xe
-                          </span>
-                        </label>
-
-                        {/* Partial Payment Input - only show when checkbox is checked */}
-                        {showPartialPayment && (
-                          <div className="pl-6 space-y-2">
-                            <label className="text-xs text-slate-600 dark:text-slate-400">
-                              Số tiền thanh toán thêm:
-                            </label>
-                            <div className="flex items-center gap-2">
-                              <NumberInput
-                                placeholder="0"
-                                value={partialPayment || ""}
-                                onChange={(val) => setPartialPayment(val)}
-                                className="flex-1 px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
-                              />
-                              <button
-                                onClick={() => setPartialPayment(0)}
-                                className="px-3 py-1.5 bg-slate-200 dark:bg-slate-600 hover:bg-slate-300 dark:hover:bg-slate-500 text-slate-700 dark:text-slate-200 rounded text-xs font-medium"
-                              >
-                                0%
-                              </button>
-                              <button
-                                onClick={() =>
-                                  setPartialPayment(
-                                    Math.round(remainingAmount * 0.5)
-                                  )
-                                }
-                                className="px-3 py-1.5 bg-slate-200 dark:bg-slate-600 hover:bg-slate-300 dark:hover:bg-slate-500 text-slate-700 dark:text-slate-200 rounded text-xs font-medium"
-                              >
-                                50%
-                              </button>
-                              <button
-                                onClick={() => setPartialPayment(remainingAmount)}
-                                className="px-3 py-1.5 bg-slate-200 dark:bg-slate-600 hover:bg-slate-300 dark:hover:bg-slate-500 text-slate-700 dark:text-slate-200 rounded text-xs font-medium"
-                              >
-                                100%
-                              </button>
-                            </div>
-                          </div>
-                        )}
-                      </>
-                    )}
+                    <div className="flex justify-between text-sm">
+                      <span className="text-slate-500 dark:text-slate-400">Phụ tùng</span>
+                      <span className="font-medium text-slate-800 dark:text-slate-200">{formatCurrency(partsTotal)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-slate-500 dark:text-slate-400">Gia công/Đặt hàng</span>
+                      <span className="font-medium text-slate-800 dark:text-slate-200">{formatCurrency(servicesTotal)}</span>
+                    </div>
                   </div>
 
-                  {formData.status !== "Trả máy" && (
-                    <p className="text-xs text-slate-500 dark:text-slate-400 italic">
-                      * Thanh toán khi trả xe chỉ khả dụng khi trạng thái là "Trả
-                      máy"
-                    </p>
-                  )}
-                </div>
-
-                {/* Right: Summary */}
-                <div className="space-y-3 bg-slate-50 dark:bg-slate-700/30 border border-slate-200 dark:border-slate-700 rounded-lg p-4">
-                  <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
-                    Tổng kết
-                  </h3>
-
-                  <div className="flex justify-between text-sm">
-                    <span className="text-slate-600 dark:text-slate-400">
-                      Phí dịch vụ:
-                    </span>
-                    <span className="font-medium text-slate-900 dark:text-slate-100">
-                      {formatCurrency(formData.laborCost || 0)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-slate-600 dark:text-slate-400">
-                      Tiền phụ tùng:
-                    </span>
-                    <span className="font-medium text-slate-900 dark:text-slate-100">
-                      {formatCurrency(partsTotal)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-slate-600 dark:text-slate-400">
-                      Gia công/Đặt hàng:
-                    </span>
-                    <span className="font-medium text-slate-900 dark:text-slate-100">
-                      {formatCurrency(servicesTotal)}
-                    </span>
-                  </div>
-
-                  <div className="pt-2 border-t border-slate-300 dark:border-slate-600">
+                  {/* Discount */}
+                  <div className="pt-2 border-t border-slate-200 dark:border-slate-700">
                     <div className="flex justify-between items-center text-sm">
-                      <span className="text-red-600 font-medium">Giảm giá:</span>
-                      <div className="flex items-center gap-2">
+                      <span className="text-red-500 font-medium">Giảm giá</span>
+                      <div className="flex items-center gap-1.5">
                         <input
                           type="number"
                           placeholder="0"
-                          value={
-                            discountType === "amount"
-                              ? formData.discount || ""
-                              : discountPercent
-                          }
+                          value={discountType === "amount" ? formData.discount || "" : discountPercent}
                           onChange={(e) => {
                             const value = Number(e.target.value) || 0;
                             if (discountType === "amount") {
-                              const maxDiscount = subtotal;
-                              setFormData({
-                                ...formData,
-                                discount: Math.min(value, maxDiscount),
-                              });
+                              setFormData({ ...formData, discount: Math.min(value, subtotal) });
                             } else {
                               const percent = Math.min(value, 100);
                               setDiscountPercent(percent);
-                              setFormData({
-                                ...formData,
-                                discount: Math.round((subtotal * percent) / 100),
-                              });
+                              setFormData({ ...formData, discount: Math.round((subtotal * percent) / 100) });
                             }
                           }}
-                          className="w-20 px-2 py-1 border border-slate-300 dark:border-slate-600 rounded text-right bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 text-sm"
+                          className="w-16 px-2 py-1 border border-slate-300 dark:border-slate-600 rounded text-right bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 text-xs"
                           min="0"
                           max={discountType === "amount" ? subtotal : 100}
                         />
                         <select
                           value={discountType}
                           onChange={(e) => {
-                            const newType = e.target.value as
-                              | "amount"
-                              | "percent";
-                            setDiscountType(newType);
-                            setFormData({
-                              ...formData,
-                              discount: 0,
-                            });
+                            setDiscountType(e.target.value as "amount" | "percent");
+                            setFormData({ ...formData, discount: 0 });
                             setDiscountPercent(0);
                           }}
-                          className="px-2 py-1 border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 text-sm"
+                          className="px-1.5 py-1 border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 text-xs"
                         >
                           <option value="amount">đ</option>
                           <option value="percent">%</option>
                         </select>
                       </div>
                     </div>
-
-                    {/* Quick percent buttons */}
                     {discountType === "percent" && (
-                      <div className="flex gap-1 justify-end mt-2">
+                      <div className="flex gap-1 justify-end mt-1.5">
                         {[5, 10, 15, 20].map((percent) => (
                           <button
                             key={percent}
                             onClick={() => {
                               setDiscountPercent(percent);
-                              setFormData({
-                                ...formData,
-                                discount: Math.round((subtotal * percent) / 100),
-                              });
+                              setFormData({ ...formData, discount: Math.round((subtotal * percent) / 100) });
                             }}
-                            className="px-2 py-1 text-xs bg-slate-100 dark:bg-slate-700 hover:bg-blue-100 dark:hover:bg-blue-900/30 text-slate-700 dark:text-slate-300 rounded transition-colors"
+                            className={`px-2 py-0.5 text-[10px] rounded transition-colors ${discountPercent === percent ? 'bg-blue-500 text-white' : 'bg-slate-100 dark:bg-slate-700 hover:bg-blue-100 dark:hover:bg-blue-900/30 text-slate-600 dark:text-slate-300'}`}
                           >
                             {percent}%
                           </button>
                         ))}
                       </div>
                     )}
-
-                    {/* Show amount if percent mode */}
                     {discountType === "percent" && discountPercent > 0 && (
-                      <div className="text-xs text-slate-500 dark:text-slate-400 text-right mt-1">
-                        = {formatCurrency(formData.discount || 0)}
-                      </div>
+                      <div className="text-[10px] text-slate-400 text-right mt-1">= {formatCurrency(formData.discount || 0)}</div>
                     )}
                   </div>
 
-                  <div className="pt-2 border-t-2 border-slate-400 dark:border-slate-500">
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-base font-bold text-slate-900 dark:text-slate-100">
-                        Tổng cộng:
-                      </span>
-                      <span className="text-lg font-bold text-blue-600 dark:text-blue-400">
-                        {formatCurrency(total)}
-                      </span>
+                  {/* Total */}
+                  <div className="pt-3 border-t-2 border-blue-200 dark:border-blue-800">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-bold text-slate-900 dark:text-slate-100">Tổng cộng</span>
+                      <span className="text-xl font-bold text-blue-600 dark:text-blue-400">{formatCurrency(total)}</span>
                     </div>
-
-                    {/* Show payment breakdown if there's deposit or partial payment */}
                     {(totalDeposit > 0 || totalAdditionalPayment > 0) && (
-                      <div className="space-y-1 pt-2 border-t border-slate-300 dark:border-slate-600">
+                      <div className="space-y-1 pt-2 mt-2 border-t border-slate-200 dark:border-slate-700">
                         {totalDeposit > 0 && (
-                          <div className="flex justify-between text-sm">
-                            <span className="text-green-600 dark:text-green-400">
-                              Đã đặt cọc:
-                            </span>
-                            <span className="font-medium text-green-600 dark:text-green-400">
-                              -{formatCurrency(totalDeposit)}
-                            </span>
+                          <div className="flex justify-between text-xs">
+                            <span className="text-green-600 dark:text-green-400">Đã đặt cọc</span>
+                            <span className="font-medium text-green-600 dark:text-green-400">-{formatCurrency(totalDeposit)}</span>
                           </div>
                         )}
                         {totalAdditionalPayment > 0 && (
-                          <div className="flex justify-between text-sm">
-                            <span className="text-green-600 dark:text-green-400">
-                              Thanh toán thêm:
-                            </span>
-                            <span className="font-medium text-green-600 dark:text-green-400">
-                              -{formatCurrency(totalAdditionalPayment)}
-                            </span>
+                          <div className="flex justify-between text-xs">
+                            <span className="text-green-600 dark:text-green-400">TT thêm</span>
+                            <span className="font-medium text-green-600 dark:text-green-400">-{formatCurrency(totalAdditionalPayment)}</span>
                           </div>
                         )}
-                        <div className="flex justify-between items-center pt-2 border-t border-slate-300 dark:border-slate-600">
-                          <span className="text-base font-bold text-slate-900 dark:text-slate-100">
-                            {remainingAmount > 0
-                              ? "Còn phải thu:"
-                              : "Đã thanh toán đủ"}
+                        <div className="flex justify-between items-center pt-1.5 border-t border-slate-200 dark:border-slate-700">
+                          <span className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                            {remainingAmount > 0 ? "Còn phải thu" : "Đã thanh toán đủ"}
                           </span>
-                          <span
-                            className={`text-lg font-bold ${remainingAmount > 0
-                              ? "text-red-600 dark:text-red-400"
-                              : "text-green-600 dark:text-green-400"
-                              }`}
-                          >
+                          <span className={`text-base font-bold ${remainingAmount > 0 ? "text-red-500" : "text-green-500"}`}>
                             {formatCurrency(remainingAmount)}
                           </span>
                         </div>
@@ -3895,72 +3683,206 @@ const WorkOrderModal: React.FC<{
                     )}
                   </div>
                 </div>
+
+                {/* Payment Options Card */}
+                <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4 space-y-3">
+                  <div className="flex items-center gap-2 mb-1">
+                    <svg className="w-4 h-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                    <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">Thanh toán</h3>
+                  </div>
+
+                  {/* Deposit */}
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={showDepositInput}
+                      onChange={(e) => { setShowDepositInput(e.target.checked); if (!e.target.checked) setDepositAmount(0); }}
+                      disabled={!!order?.depositAmount}
+                      className="w-4 h-4 rounded"
+                    />
+                    <span className="text-sm text-slate-700 dark:text-slate-300">
+                      Đặt cọc {order?.depositAmount ? `(Đã cọc: ${formatCurrency(order.depositAmount)})` : ""}
+                    </span>
+                  </label>
+                  {showDepositInput && !order?.depositAmount && (
+                    <div className="pl-6">
+                      <NumberInput
+                        placeholder="Số tiền đặt cọc"
+                        value={depositAmount || ""}
+                        onChange={(val) => setDepositAmount(val)}
+                        className="w-full px-3 py-1.5 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 text-sm"
+                      />
+                    </div>
+                  )}
+
+                  <div className="border-t border-slate-200 dark:border-slate-700"></div>
+
+                  {/* Payment Method */}
+                  <div>
+                    <label className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-2 block uppercase tracking-wide">Phương thức</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, paymentMethod: "cash" })}
+                        className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium border-2 transition-all ${formData.paymentMethod === "cash" ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300" : "border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-400 hover:border-slate-300"}`}
+                      >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <rect x="2" y="6" width="20" height="12" rx="2" ry="2" />
+                          <circle cx="12" cy="12" r="3" />
+                        </svg>
+                        Tiền mặt
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, paymentMethod: "bank" })}
+                        className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium border-2 transition-all ${formData.paymentMethod === "bank" ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300" : "border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-400 hover:border-slate-300"}`}
+                      >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M3 21h18M3 10h18M7 6h10l2 4H5l2-4Zm2 4v11m6-11v11" />
+                        </svg>
+                        Chuyển khoản
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Partial payment - Trả máy only */}
+                  {formData.status === "Trả máy" && (
+                    <>
+                      <div className="border-t border-slate-200 dark:border-slate-700"></div>
+                      <label className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={showPartialPayment}
+                          onChange={(e) => { setShowPartialPayment(e.target.checked); if (!e.target.checked) setPartialPayment(0); }}
+                          className="w-4 h-4 rounded"
+                        />
+                        <span className="text-sm text-slate-700 dark:text-slate-300">Thanh toán khi trả xe</span>
+                      </label>
+                      {showPartialPayment && (
+                        <div className="pl-6 space-y-2">
+                          <label className="text-xs text-slate-500 dark:text-slate-400">Số tiền thanh toán thêm:</label>
+                          <div className="flex items-center gap-1.5">
+                            <NumberInput
+                              placeholder="0"
+                              value={partialPayment || ""}
+                              onChange={(val) => setPartialPayment(val)}
+                              className="flex-1 px-3 py-1.5 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 text-sm"
+                            />
+                          </div>
+                          <div className="flex gap-1">
+                            <button onClick={() => setPartialPayment(0)} className="px-2 py-1 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 rounded text-xs">0%</button>
+                            <button onClick={() => setPartialPayment(Math.round(remainingAmount * 0.5))} className="px-2 py-1 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 rounded text-xs">50%</button>
+                            <button onClick={() => setPartialPayment(remainingAmount)} className="px-2 py-1 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 rounded text-xs">100%</button>
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  )}
+
+                  {formData.status !== "Trả máy" && (
+                    <p className="text-[10px] text-slate-400 italic leading-relaxed">
+                      * Thanh toán khi trả xe chỉ khả dụng khi trạng thái là "Trả máy"
+                    </p>
+                  )}
+                </div>
+
+                {/* Action Buttons - Sticky at bottom */}
+                <div className="mt-auto pt-3 space-y-2">
+                  <button
+                    onClick={handleSaveOnly}
+                    disabled={isSubmitting}
+                    className={`w-full px-4 py-2.5 rounded-xl font-medium text-sm flex items-center justify-center gap-2 transition-all ${isSubmitting ? 'bg-slate-300 dark:bg-slate-600 cursor-not-allowed' : 'bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-600'}`}
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                    </svg>
+                    {isSubmitting ? 'Đang lưu...' : 'Lưu Phiếu'}
+                  </button>
+
+                  {formData.status !== "Trả máy" && showDepositInput && (
+                    <button
+                      onClick={handleSave}
+                      disabled={isSubmitting}
+                      className={`w-full px-4 py-2.5 rounded-xl font-medium text-sm flex items-center justify-center gap-2 transition-all ${isSubmitting ? 'bg-blue-300 cursor-not-allowed' : 'bg-blue-500 hover:bg-blue-600 shadow-sm shadow-blue-200 dark:shadow-blue-900'} text-white`}
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      Đặt cọc
+                    </button>
+                  )}
+
+                  {formData.status === "Trả máy" && (
+                    <button
+                      onClick={handleSave}
+                      disabled={isSubmitting}
+                      className={`w-full px-4 py-2.5 rounded-xl font-medium text-sm flex items-center justify-center gap-2 transition-all ${isSubmitting ? 'bg-green-300 cursor-not-allowed' : 'bg-green-500 hover:bg-green-600 shadow-sm shadow-green-200 dark:shadow-green-900'} text-white`}
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      Thanh toán
+                    </button>
+                  )}
+
+                  <button
+                    onClick={onClose}
+                    className="w-full px-4 py-2 text-sm text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
+                  >
+                    Hủy
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Mobile-only: Payment & Summary Section (shown below form on mobile) */}
+            <div className="lg:hidden px-4 py-5 space-y-4 border-t border-slate-200 dark:border-slate-700">
+              {/* Mobile Summary */}
+              <div className="bg-slate-50 dark:bg-slate-700/30 border border-slate-200 dark:border-slate-700 rounded-xl p-4 space-y-2">
+                <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-2">Tổng kết</h3>
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-500">Phí dịch vụ</span>
+                  <span className="font-medium">{formatCurrency(formData.laborCost || 0)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-500">Phụ tùng</span>
+                  <span className="font-medium">{formatCurrency(partsTotal)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-500">Gia công</span>
+                  <span className="font-medium">{formatCurrency(servicesTotal)}</span>
+                </div>
+                <div className="pt-2 border-t-2 border-blue-200 dark:border-blue-800">
+                  <div className="flex justify-between items-center">
+                    <span className="font-bold text-slate-900 dark:text-slate-100">Tổng cộng</span>
+                    <span className="text-xl font-bold text-blue-600 dark:text-blue-400">{formatCurrency(total)}</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Footer Actions */}
-          <div className="border-t border-slate-200 dark:border-slate-700 px-4 py-4 md:px-6 flex items-center justify-end gap-3 bg-white md:bg-slate-50 dark:bg-slate-800/70 md:dark:bg-slate-800/50 rounded-b-3xl md:rounded-b-xl flex-shrink-0">
-            <button
-              onClick={onClose}
-              className="px-4 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-lg"
-            >
+          {/* Mobile-only Footer */}
+          <div className="lg:hidden border-t border-slate-200 dark:border-slate-700 px-4 py-3 flex items-center justify-end gap-2 bg-white dark:bg-slate-800 flex-shrink-0">
+            <button onClick={onClose} className="px-4 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-lg text-sm">
               Hủy
             </button>
-
-            {/* Always show "Lưu Phiếu" */}
             <button
               onClick={handleSaveOnly}
               disabled={isSubmitting}
-              className={`px-6 py-2 rounded-lg font-medium ${isSubmitting ? 'bg-slate-400 cursor-not-allowed' : 'bg-slate-500 hover:bg-slate-600'} text-white`}
+              className={`px-5 py-2 rounded-lg font-medium text-sm ${isSubmitting ? 'bg-slate-400 cursor-not-allowed' : 'bg-slate-500 hover:bg-slate-600'} text-white`}
             >
               {isSubmitting ? 'Đang lưu...' : 'Lưu Phiếu'}
             </button>
-
-            {/* Show "Đặt cọc" button only when status is NOT "Trả máy" and deposit input is shown */}
             {formData.status !== "Trả máy" && showDepositInput && (
-              <button
-                onClick={handleSave}
-                disabled={isSubmitting}
-                className={`px-6 py-2 rounded-lg font-medium flex items-center gap-2 ${isSubmitting ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-500 hover:bg-blue-600'} text-white`}
-              >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
+              <button onClick={handleSave} disabled={isSubmitting} className={`px-5 py-2 rounded-lg font-medium text-sm ${isSubmitting ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-500 hover:bg-blue-600'} text-white`}>
                 Đặt cọc
               </button>
             )}
-
-            {/* Show "Thanh toán" button only when status is "Trả máy" */}
             {formData.status === "Trả máy" && (
-              <button
-                onClick={handleSave}
-                disabled={isSubmitting}
-                className={`px-6 py-2 rounded-lg font-medium flex items-center gap-2 ${isSubmitting ? 'bg-green-400 cursor-not-allowed' : 'bg-green-500 hover:bg-green-600'} text-white`}
-              >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"
-                  />
-                </svg>
+              <button onClick={handleSave} disabled={isSubmitting} className={`px-5 py-2 rounded-lg font-medium text-sm ${isSubmitting ? 'bg-green-400 cursor-not-allowed' : 'bg-green-500 hover:bg-green-600'} text-white`}>
                 Thanh toán
               </button>
             )}

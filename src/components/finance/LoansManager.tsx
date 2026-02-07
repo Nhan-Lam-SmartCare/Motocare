@@ -312,29 +312,60 @@ const LoansManager: React.FC = () => {
               showToast.success("Đã ghi nhận thanh toán thành công");
 
               // 💰 Tạo giao dịch chi trong Sổ quỹ (INSERT vào database)
-              const cashTxResult = await createCashTransaction({
-                type: "expense",
-                amount: payment.totalAmount,
-                branchId: currentBranchId,
-                paymentSourceId: payment.paymentMethod,
-                date: payment.paymentDate,
-                notes: `Trả nợ vay - ${
-                  selectedLoan.lenderName
-                } (Gốc: ${formatCurrency(
-                  payment.principalAmount
-                )}, Lãi: ${formatCurrency(payment.interestAmount)})`,
-                category: "loan_payment",
-                recipient: selectedLoan.lenderName,
-                loanPaymentId: payment.id,
-              });
+              // Tách riêng: Gốc = loan_principal (loại trừ khỏi báo cáo lợi nhuận)
+              //             Lãi = loan_interest (TÍNH vào chi phí báo cáo)
+              if (payment.principalAmount > 0) {
+                const principalTxResult = await createCashTransaction({
+                  type: "expense",
+                  amount: payment.principalAmount,
+                  branchId: currentBranchId,
+                  paymentSourceId: payment.paymentMethod,
+                  date: payment.paymentDate,
+                  notes: `Trả gốc vay - ${selectedLoan.lenderName}`,
+                  category: "loan_principal",
+                  recipient: selectedLoan.lenderName,
+                  loanPaymentId: payment.id,
+                });
+                if (!principalTxResult.ok) {
+                  console.error("❌ Lỗi ghi sổ quỹ trả gốc:", principalTxResult.error);
+                }
+              }
 
-              if (cashTxResult.ok) {
-                console.log("✅ Đã ghi sổ quỹ trả nợ vay:", cashTxResult.data);
-              } else {
-                console.error("❌ Lỗi ghi sổ quỹ:", cashTxResult.error);
-                showToast.warning(
-                  `Trả nợ OK nhưng chưa ghi được sổ quỹ: ${cashTxResult.error?.message}`
-                );
+              if (payment.interestAmount > 0) {
+                const interestTxResult = await createCashTransaction({
+                  type: "expense",
+                  amount: payment.interestAmount,
+                  branchId: currentBranchId,
+                  paymentSourceId: payment.paymentMethod,
+                  date: payment.paymentDate,
+                  notes: `Trả lãi vay - ${selectedLoan.lenderName}`,
+                  category: "loan_interest",
+                  recipient: selectedLoan.lenderName,
+                  loanPaymentId: payment.id,
+                });
+                if (interestTxResult.ok) {
+                  console.log("✅ Đã ghi sổ quỹ trả lãi vay:", interestTxResult.data);
+                } else {
+                  console.error("❌ Lỗi ghi sổ quỹ trả lãi:", interestTxResult.error);
+                  showToast.warning(
+                    `Trả nợ OK nhưng chưa ghi được sổ quỹ lãi: ${interestTxResult.error?.message}`
+                  );
+                }
+              }
+
+              // Fallback: nếu cả gốc và lãi đều = 0 nhưng totalAmount > 0
+              if (payment.principalAmount === 0 && payment.interestAmount === 0 && payment.totalAmount > 0) {
+                await createCashTransaction({
+                  type: "expense",
+                  amount: payment.totalAmount,
+                  branchId: currentBranchId,
+                  paymentSourceId: payment.paymentMethod,
+                  date: payment.paymentDate,
+                  notes: `Trả nợ vay - ${selectedLoan.lenderName}`,
+                  category: "loan_payment",
+                  recipient: selectedLoan.lenderName,
+                  loanPaymentId: payment.id,
+                });
               }
 
               // Cập nhật số dư nguồn tiền (local state)
@@ -359,9 +390,9 @@ const LoansManager: React.FC = () => {
               // 💾 Persist số dư nguồn tiền vào database
               try {
                 await updatePaymentSourceBalanceRepo.mutateAsync({
-                  sourceId: payment.paymentMethod,
+                  id: payment.paymentMethod,
                   branchId: currentBranchId,
-                  balance: newBalance,
+                  delta: -payment.totalAmount,
                 });
                 console.log("✅ Đã cập nhật số dư nguồn tiền vào DB");
               } catch (balanceErr) {

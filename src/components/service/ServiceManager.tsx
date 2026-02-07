@@ -1120,7 +1120,7 @@ export default function ServiceManager() {
           try {
             await supabase
               .from("work_orders")
-              .update({ additionalServices })
+              .update({ additionalservices: additionalServices })
               .eq("id", orderId);
           } catch (err) {
             console.error(
@@ -1206,7 +1206,7 @@ export default function ServiceManager() {
           try {
             await supabase
               .from("work_orders")
-              .update({ additionalServices })
+              .update({ additionalservices: additionalServices })
               .eq("id", editingOrder.id);
           } catch (err) {
             console.error(

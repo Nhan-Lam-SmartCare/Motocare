@@ -503,6 +503,8 @@ export async function refundSale(
       const branchId = (saleRow as Sale).branchId || "CN1";
       const items: CartItem[] = (saleRow as Sale).items || [];
       for (const it of items) {
+        // Skip quick_service items (dịch vụ nhanh không có stock)
+        if (it.partId?.startsWith("quick_service_")) continue;
         // Lookup partId via SKU if needed
         let partId = it.partId;
         if (!partId) {
@@ -512,6 +514,22 @@ export async function refundSale(
           }
         }
         if (partId) {
+          // Cập nhật stock trực tiếp (trigger đã bị xóa, không tự update)
+          const { data: partData } = await supabase
+            .from("parts")
+            .select("stock")
+            .eq("id", partId)
+            .single();
+          if (partData) {
+            const currentStock = (partData.stock as any)?.[branchId] || 0;
+            await supabase
+              .from("parts")
+              .update({
+                stock: { ...partData.stock, [branchId]: currentStock + it.quantity },
+              })
+              .eq("id", partId);
+          }
+          // Ghi lịch sử inventory transaction
           await createInventoryTransaction({
             type: "Nhập kho",
             partId,
@@ -624,13 +642,31 @@ export async function returnSaleItem(params: {
         const lookup = await fetchPartBySku(target.sku);
         if (lookup.ok && lookup.data) partId = (lookup.data as any).id;
       }
-      if (partId) {
+      // Skip quick_service items
+      if (partId && !partId.startsWith("quick_service_")) {
+        const restockBranchId = (saleRow as Sale).branchId || "CN1";
+        // Cập nhật stock trực tiếp (trigger đã bị xóa, không tự update)
+        const { data: partData } = await supabase
+          .from("parts")
+          .select("stock")
+          .eq("id", partId)
+          .single();
+        if (partData) {
+          const currentStock = (partData.stock as any)?.[restockBranchId] || 0;
+          await supabase
+            .from("parts")
+            .update({
+              stock: { ...partData.stock, [restockBranchId]: currentStock + params.quantity },
+            })
+            .eq("id", partId);
+        }
+        // Ghi lịch sử inventory transaction
         await createInventoryTransaction({
           type: "Nhập kho",
           partId,
           partName: target.partName,
           quantity: params.quantity,
-          branchId: (saleRow as Sale).branchId || "CN1",
+          branchId: restockBranchId,
           notes: `Trả hàng SKU ${params.itemSku} từ hóa đơn ${params.saleId}`,
         });
       }

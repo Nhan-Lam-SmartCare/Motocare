@@ -15,25 +15,25 @@ function normalizeWorkOrder(row: any): WorkOrder {
     vehicleId: row.vehicleid || row.vehicleId,
     vehicleModel: row.vehiclemodel || row.vehicleModel,
     licensePlate: row.licenseplate || row.licensePlate,
-    currentKm: row.currentkm || row.currentKm,
+    currentKm: row.currentkm ?? row.currentKm ?? undefined,
     issueDescription: row.issuedescription || row.issueDescription,
     technicianName: row.technicianname || row.technicianName,
     status: row.status,
-    laborCost: row.laborcost || row.laborCost || 0,
-    discount: row.discount,
+    laborCost: row.laborcost ?? row.laborCost ?? 0,
+    discount: row.discount ?? 0,
     partsUsed: row.partsused || row.partsUsed,
     additionalServices: row.additionalservices || row.additionalServices,
     notes: row.notes,
-    total: row.total,
+    total: row.total ?? 0,
     branchId: row.branchid || row.branchId,
-    depositAmount: row.depositamount || row.depositAmount,
+    depositAmount: row.depositamount ?? row.depositAmount ?? 0,
     depositDate: row.depositdate || row.depositDate,
     depositTransactionId: row.deposittransactionid || row.depositTransactionId,
     paymentStatus: row.paymentstatus || row.paymentStatus,
     paymentMethod: row.paymentmethod || row.paymentMethod,
-    additionalPayment: row.additionalpayment || row.additionalPayment,
-    totalPaid: row.totalpaid || row.totalPaid,
-    remainingAmount: row.remainingamount || row.remainingAmount,
+    additionalPayment: row.additionalpayment ?? row.additionalPayment ?? 0,
+    totalPaid: row.totalpaid ?? row.totalPaid ?? 0,
+    remainingAmount: row.remainingamount ?? row.remainingAmount ?? 0,
     paymentDate: row.paymentdate || row.paymentDate,
     cashTransactionId: row.cashtransactionid || row.cashTransactionId,
     refunded: row.refunded,
@@ -480,7 +480,7 @@ export async function updateWorkOrderAtomic(input: Partial<WorkOrder>): Promise<
       });
     }
 
-    const workOrderRow = (data as any).workOrder as WorkOrder | undefined;
+    const workOrderRow = (data as any).workOrder as any | undefined;
     const depositTransactionId = (data as any).depositTransactionId as
       | string
       | undefined;
@@ -495,6 +495,9 @@ export async function updateWorkOrderAtomic(input: Partial<WorkOrder>): Promise<
       return failure({ code: "unknown", message: "Kết quả RPC không hợp lệ" });
     }
 
+    // 🔹 FIX: Normalize data (RPC returns snake_case from row_to_json)
+    const normalized = normalizeWorkOrder(workOrderRow);
+
     // Audit (best-effort)
     let userId: string | null = null;
     try {
@@ -504,13 +507,13 @@ export async function updateWorkOrderAtomic(input: Partial<WorkOrder>): Promise<
     await safeAudit(userId, {
       action: "work_order.update",
       tableName: WORK_ORDERS_TABLE,
-      recordId: (workOrderRow as any).id,
+      recordId: normalized.id,
       oldData: null,
-      newData: workOrderRow,
+      newData: normalized,
     });
 
     return success({
-      ...(workOrderRow as any),
+      ...normalized,
       depositTransactionId,
       paymentTransactionId,
       stockWarnings,

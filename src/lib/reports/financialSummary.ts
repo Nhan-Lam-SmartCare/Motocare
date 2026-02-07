@@ -20,6 +20,7 @@ export const REPORTS_EXCLUDED_EXPENSE_CATEGORIES = [
   "import",
   "refund",
   "sale_refund",
+  "loan_principal",
   "loan_payment",
   "debt_payment",
 ] as const;
@@ -94,6 +95,17 @@ function canonicalizeCategory(category: string | null | undefined): string {
     "thu hồi tạm ứng": "employee_advance_repayment",
     "thu hoi tam ung": "employee_advance_repayment",
     "employee_advance_repayment": "employee_advance_repayment",
+
+    // Loan payments
+    "trả gốc vay": "loan_principal",
+    "tra goc vay": "loan_principal",
+    "loan_principal": "loan_principal",
+    "trả lãi vay": "loan_interest",
+    "tra lai vay": "loan_interest",
+    "loan_interest": "loan_interest",
+    "trả nợ vay": "loan_payment",
+    "tra no vay": "loan_payment",
+    "loan_payment": "loan_payment",
   };
 
   return aliases[normalized] || normalized;

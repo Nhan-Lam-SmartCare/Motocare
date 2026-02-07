@@ -42,7 +42,7 @@ const WorkOrderModal: React.FC<{
   partsLoading: boolean;
   customers: any[];
   employees: any[];
-  upsertCustomer: (customer: any) => void;
+  upsertCustomer: (customer: any) => Promise<string> | void;
   setCashTransactions: (fn: (prev: any[]) => any[]) => void;
   setPaymentSources: (fn: (prev: any[]) => any[]) => void;
   paymentSources: any[];
@@ -225,10 +225,10 @@ const WorkOrderModal: React.FC<{
       ? allCustomers.find((c) => {
           if (!c.phone) return false;
           const normalizePhone = (p: string) => p.replace(/\D/g, "");
-          const formPhone = normalizePhone(formData.customerPhone);
-          const customerPhones = c.phone.split(",").map(p => normalizePhone(p.trim()));
+          const formPhone = normalizePhone(formData.customerPhone!);
+          const customerPhones = c.phone.split(",").map((p: string) => normalizePhone(p.trim()));
           // Chỉ match khi phone khớp HOÀN TOÀN (không dùng includes để tránh match nhầm)
-          return customerPhones.some(cp => cp === formPhone);
+          return customerPhones.some((cp: string) => cp === formPhone);
         })
       : undefined;
     
@@ -745,7 +745,7 @@ const WorkOrderModal: React.FC<{
     const total = Math.max(0, subtotal - discount);
 
     // Calculate payment summary
-    const totalDeposit = depositAmount || order.depositAmount || 0;
+    const totalDeposit = depositAmount ?? order.depositAmount ?? 0;
     // 🔹 FIX: Chỉ tính additionalPayment MỚI khi checkbox được check
     // Không lấy giá trị cũ để tránh thanh toán 2 lần
     // 🔹 CHỈ TÍNH THANH TOÁN KHI STATUS LÀ "TRẢ MÁY"
@@ -853,187 +853,16 @@ const WorkOrderModal: React.FC<{
       }
     };
 
-    // 🔹 Function to handle deposit (Đặt cọc để đặt hàng)
-    const handleDeposit = async () => {
-      // Validation
-      if (!formData.customerName?.trim()) {
-        showToast.error("Vui lòng nhập tên khách hàng");
-        return;
-      }
-      if (!formData.customerPhone?.trim()) {
-        showToast.error("Vui lòng nhập số điện thoại");
-        return;
-      }
-
-      // Validate phone number format using utility
-      const phoneValidation = validatePhoneNumber(formData.customerPhone);
-      if (!phoneValidation.ok) {
-        showToast.error(phoneValidation.error || "Số điện thoại không hợp lệ!");
-        return;
-      }
-
-      if (depositAmount <= 0) {
-        showToast.error("Vui lòng nhập số tiền đặt cọc");
-        return;
-      }
-
-      // Validate deposit amount using utility
-      const depositValidation = validateDepositAmount(depositAmount, total);
-      if (!depositValidation.ok) {
-        showToast.error(depositValidation.error || "Tiền đặt cọc không hợp lệ!");
-        return;
-      }
-
-      if (!formData.paymentMethod) {
-        showToast.error("Vui lòng chọn phương thức thanh toán");
-        return;
-      }
-
-      try {
-        const orderId =
-          formData.id ||
-          `${storeSettings?.work_order_prefix || "SC"}-${Date.now()}`;
-
-        // Prepare work order data with deposit
-        const workOrderData: WorkOrder = {
-          id: orderId,
-          customerName: formData.customerName || "",
-          customerPhone: formData.customerPhone || "",
-          vehicleId: formData.vehicleId,
-          vehicleModel: formData.vehicleModel || "",
-          licensePlate: formData.licensePlate || "",
-          currentKm: formData.currentKm,
-          issueDescription: formData.issueDescription || "",
-          technicianName: formData.technicianName || "",
-          status: formData.status || "Tiếp nhận",
-          laborCost: formData.laborCost || 0,
-          discount: discount,
-          partsUsed: selectedParts,
-          additionalServices:
-            additionalServices.length > 0 ? additionalServices : undefined,
-          total: total,
-          branchId: currentBranchId,
-          depositAmount: depositAmount,
-          depositDate: new Date().toISOString(),
-          paymentStatus: "partial",
-          paymentMethod: formData.paymentMethod,
-          totalPaid: depositAmount,
-          remainingAmount: total - depositAmount,
-          creationDate: formData.creationDate || new Date().toISOString(),
-        };
-
-        // Save to database using Supabase
-        if (formData.id) {
-          // Update existing work order
-          await supabase
-            .from("work_orders")
-            .update({
-              customername: workOrderData.customerName,
-              customerphone: workOrderData.customerPhone,
-              vehicleid: workOrderData.vehicleId,
-              vehiclemodel: workOrderData.vehicleModel,
-              licenseplate: workOrderData.licensePlate,
-              issuedescription: workOrderData.issueDescription,
-              technicianname: workOrderData.technicianName,
-              status: workOrderData.status,
-              laborcost: workOrderData.laborCost,
-              discount: workOrderData.discount,
-              partsused: workOrderData.partsUsed,
-              additionalservices: workOrderData.additionalServices,
-              total: workOrderData.total,
-              depositamount: workOrderData.depositAmount,
-              depositdate: workOrderData.depositDate,
-              paymentstatus: workOrderData.paymentStatus,
-              paymentmethod: workOrderData.paymentMethod,
-              totalpaid: workOrderData.totalPaid,
-              remainingamount: workOrderData.remainingAmount,
-            })
-            .eq("id", formData.id);
-        } else {
-          // Insert new work order
-          await supabase.from("work_orders").insert({
-            id: workOrderData.id,
-            customername: workOrderData.customerName,
-            customerphone: workOrderData.customerPhone,
-            vehicleid: workOrderData.vehicleId,
-            vehiclemodel: workOrderData.vehicleModel,
-            licenseplate: workOrderData.licensePlate,
-            issuedescription: workOrderData.issueDescription,
-            technicianname: workOrderData.technicianName,
-            status: workOrderData.status,
-            laborcost: workOrderData.laborCost,
-            discount: workOrderData.discount,
-            partsused: workOrderData.partsUsed,
-            additionalservices: workOrderData.additionalServices,
-            total: workOrderData.total,
-            branchid: workOrderData.branchId,
-            depositamount: workOrderData.depositAmount,
-            depositdate: workOrderData.depositDate,
-            paymentstatus: workOrderData.paymentStatus,
-            paymentmethod: workOrderData.paymentMethod,
-            totalpaid: workOrderData.totalPaid,
-            remainingamount: workOrderData.remainingAmount,
-            creationDate: workOrderData.creationDate,
-          });
-        }
-
-        // Create deposit cash transaction (Thu tiền cọc vào quỹ)
-        const depositTxId = `TX-${Date.now()}-${Math.random()
-          .toString(36)
-          .substr(2, 9)}-DEP`;
-        await supabase.from("cash_transactions").insert({
-          id: depositTxId,
-          type: "income",
-          category: "service_deposit",
-          amount: depositAmount,
-          date: new Date().toISOString(),
-          description: `Đặt cọc sửa chữa #${orderId.split("-").pop()} - ${formData.customerName
-            }`,
-          branchid: currentBranchId,
-          paymentsource: formData.paymentMethod,
-          reference: orderId,
-        });
-
-        // Create expense transaction (Phiếu chi để đặt hàng)
-        const expenseTxId = `TX-${Date.now()}-${Math.random()
-          .toString(36)
-          .substr(2, 9)}-EXP`;
-        await supabase.from("cash_transactions").insert({
-          id: expenseTxId,
-          type: "expense",
-          category: "parts_purchase",
-          amount: depositAmount,
-          date: new Date().toISOString(),
-          description: `Đặt hàng phụ tùng cho #${orderId.split("-").pop()} - ${formData.customerName
-            }`,
-          branchid: currentBranchId,
-          paymentsource: formData.paymentMethod,
-          reference: orderId,
-        });
-
-        // Update UI state
-        workOrderData.depositTransactionId = depositTxId;
-        
-        // 🔹 Invalidate queries để refresh danh sách
-        if (invalidateWorkOrders) {
-          invalidateWorkOrders();
-        }
-        
-        onSave(workOrderData);
-
-        showToast.success(
-          "Đã đặt cọc thành công! Phiếu chi đặt hàng đã được tạo."
-        );
-        clearDraft();
-        onClose();
-      } catch (error: any) {
-        console.error("Error processing deposit:", error);
-        showToast.error("Lỗi khi xử lý đặt cọc");
-      }
-    };
-
     // 🔹 Function to save work order without payment processing
     const handleSaveOnly = async () => {
+      // 🔹 PREVENT DUPLICATE SUBMISSIONS
+      if (submittingRef.current || isSubmitting) {
+        return;
+      }
+      submittingRef.current = true;
+      setIsSubmitting(true);
+
+      try {
       // Validation
       if (!formData.customerName?.trim()) {
         showToast.error("Vui lòng nhập tên khách hàng");
@@ -1105,7 +934,6 @@ const WorkOrderModal: React.FC<{
         paymentStatus = "partial";
       }
 
-      try {
         const orderId =
           order?.id ||
           `${storeSettings?.work_order_prefix || "SC"}-${Date.now()}`;
@@ -1293,6 +1121,10 @@ const WorkOrderModal: React.FC<{
           "Lỗi khi lưu phiếu: " +
           (error.message || error.hint || "Không xác định")
         );
+      } finally {
+        // 🔹 FIX: Reset submitting guard for handleSaveOnly
+        submittingRef.current = false;
+        setIsSubmitting(false);
       }
     };
 
@@ -1336,6 +1168,13 @@ const WorkOrderModal: React.FC<{
         // 3. Validate total > 0 ONLY if status is "Trả máy"
         if (total <= 0 && formData.status === "Trả máy") {
           showToast.error("Tổng tiền phải lớn hơn 0 khi trả máy");
+          resetSubmitting();
+          return;
+        }
+
+        // 4. Validate payment method when there's a payment (deposit or additional payment)
+        if ((depositAmount > 0 || (formData.status === "Trả máy" && showPartialPayment && partialPayment > 0)) && !formData.paymentMethod) {
+          showToast.error("Vui lòng chọn phương thức thanh toán");
           resetSubmitting();
           return;
         }
@@ -1757,9 +1596,6 @@ const WorkOrderModal: React.FC<{
               invalidateWorkOrders();
             }
 
-            // Call onSave to update the workOrders state
-            onSave(finalOrder);
-
             // 🔹 FIX: Nếu tạo phiếu mới với paymentStatus = 'paid', gọi complete_payment để trừ kho
             // Kiểm tra flag inventoryDeducted từ response của atomic create
             // Nếu atomic create đã trừ kho rồi (inventoryDeducted = true) thì KHÔNG gọi complete_payment nữa
@@ -1797,6 +1633,10 @@ const WorkOrderModal: React.FC<{
                 totalPaid
               );
             }
+
+            // 🔹 Call onSave AFTER all async operations complete (not before)
+            // to prevent modal unmount before completePayment finishes
+            onSave(finalOrder);
 
             // 🔹 Invalidate queries trước khi đóng modal để đảm bảo data mới được fetch
             if (invalidateWorkOrders) {
@@ -1843,178 +1683,23 @@ const WorkOrderModal: React.FC<{
               remainingAmount: remainingAmount,
             } as any);
 
-            const workOrderRow = (responseData as any).workOrder;
+            // 🔹 FIX: responseData IS already the normalized WorkOrder (from normalizeWorkOrder in repo)
+            // No need for manual snake→camelCase conversion
             const depositTxId = responseData?.depositTransactionId;
             const paymentTxId = responseData?.paymentTransactionId;
 
-            // 🔹 Transform snake_case response to camelCase for WorkOrder interface
-            // If workOrderRow is undefined, build from formData + order
-            const finalOrder: WorkOrder = workOrderRow
-              ? {
-                id: (workOrderRow as any).id || order.id,
-                customerName:
-                  (workOrderRow as any).customername ||
-                  (workOrderRow as any).customerName ||
-                  order.customerName,
-                customerPhone:
-                  (workOrderRow as any).customerphone ||
-                  (workOrderRow as any).customerPhone ||
-                  order.customerPhone,
-                vehicleId:
-                  (workOrderRow as any).vehicleid ||
-                  (workOrderRow as any).vehicleId ||
-                  order.vehicleId,
-                vehicleModel:
-                  (workOrderRow as any).vehiclemodel ||
-                  (workOrderRow as any).vehicleModel ||
-                  order.vehicleModel,
-                licensePlate:
-                  (workOrderRow as any).licenseplate ||
-                  (workOrderRow as any).licensePlate ||
-                  order.licensePlate,
-                currentKm:
-                  (workOrderRow as any).currentkm ||
-                  (workOrderRow as any).currentKm ||
-                  order.currentKm,
-                issueDescription:
-                  (workOrderRow as any).issuedescription ||
-                  (workOrderRow as any).issueDescription ||
-                  order.issueDescription ||
-                  "",
-                technicianName:
-                  (workOrderRow as any).technicianname ||
-                  (workOrderRow as any).technicianName ||
-                  order.technicianName ||
-                  "",
-                status: (workOrderRow as any).status || order.status,
-                laborCost:
-                  (workOrderRow as any).laborcost ||
-                  (workOrderRow as any).laborCost ||
-                  order.laborCost ||
-                  0,
-                discount: (workOrderRow as any).discount || order.discount || 0,
-                partsUsed:
-                  (workOrderRow as any).partsused ||
-                  (workOrderRow as any).partsUsed ||
-                  order.partsUsed ||
-                  [],
-                additionalServices:
-                  additionalServices.length > 0 ? additionalServices : undefined,
-                total: (workOrderRow as any).total || order.total,
-                branchId:
-                  (workOrderRow as any).branchid ||
-                  (workOrderRow as any).branchId ||
-                  order.branchId,
-                depositAmount:
-                  (workOrderRow as any).depositamount ||
-                  (workOrderRow as any).depositAmount ||
-                  order.depositAmount,
-                depositDate:
-                  (workOrderRow as any).depositdate ||
-                  (workOrderRow as any).depositDate ||
-                  order.depositDate,
-                depositTransactionId: depositTxId || order.depositTransactionId,
-                paymentStatus:
-                  (workOrderRow as any).paymentstatus ||
-                  (workOrderRow as any).paymentStatus ||
-                  order.paymentStatus,
-                paymentMethod:
-                  (workOrderRow as any).paymentmethod ||
-                  (workOrderRow as any).paymentMethod ||
-                  order.paymentMethod,
-                additionalPayment:
-                  (workOrderRow as any).additionalpayment ||
-                  (workOrderRow as any).additionalPayment ||
-                  order.additionalPayment,
-                totalPaid:
-                  (workOrderRow as any).totalpaid ||
-                  (workOrderRow as any).totalPaid ||
-                  order.totalPaid,
-                remainingAmount:
-                  (workOrderRow as any).remainingamount ||
-                  (workOrderRow as any).remainingAmount ||
-                  order.remainingAmount,
-                cashTransactionId: paymentTxId || order.cashTransactionId,
-                paymentDate:
-                  (workOrderRow as any).paymentdate ||
-                  (workOrderRow as any).paymentDate ||
-                  order.paymentDate,
-                creationDate:
-                  (workOrderRow as any).creationdate ||
-                  (workOrderRow as any).creationDate ||
-                  order.creationDate,
-              }
-              : {
-                // Build from formData when workOrderRow is undefined
-                ...order,
-                customerName: formData.customerName || order.customerName,
-                customerPhone: formData.customerPhone || order.customerPhone,
-                vehicleId: formData.vehicleId || order.vehicleId,
-                vehicleModel: formData.vehicleModel || order.vehicleModel,
-                licensePlate: formData.licensePlate || order.licensePlate,
-                currentKm: formData.currentKm ?? order.currentKm,
-                issueDescription:
-                  formData.issueDescription || order.issueDescription,
-                technicianName: formData.technicianName || order.technicianName,
-                status: formData.status || order.status,
-                laborCost: formData.laborCost || order.laborCost,
-                discount: discount,
-                partsUsed: selectedParts,
-                additionalServices:
-                  additionalServices.length > 0 ? additionalServices : undefined,
-                total: total,
-                depositAmount: depositAmount,
-                depositTransactionId: depositTxId || order.depositTransactionId,
-                paymentStatus: paymentStatus,
-                paymentMethod: formData.paymentMethod || order.paymentMethod,
-                additionalPayment: totalAdditionalPayment,
-                totalPaid: totalPaid,
-                remainingAmount: remainingAmount,
-                cashTransactionId: paymentTxId || order.cashTransactionId,
-                paymentDate: paymentTxId
-                  ? new Date().toISOString()
-                  : order.paymentDate,
-              };
+            const finalOrder: WorkOrder = {
+              ...(responseData as any),
+              // Override with local values that may not be in the RPC response
+              additionalServices:
+                additionalServices.length > 0 ? additionalServices : undefined,
+              depositTransactionId: depositTxId || order.depositTransactionId,
+              cashTransactionId: paymentTxId || order.cashTransactionId,
+            };
 
-            // Update cash transactions in context AND database if new transactions created
+            // Update cash transactions in context if new deposit transaction created
+            // ✅ No need to INSERT - stored procedure already created the transaction
             if (depositTxId && depositAmount > order.depositAmount!) {
-              const additionalDeposit =
-                depositAmount - (order.depositAmount || 0);
-              // INSERT additional deposit to database
-              try {
-                const { error: addDepositErr } = await supabase
-                  .from("cash_transactions")
-                  .insert({
-                    id: depositTxId,
-                    type: "income",
-                    category: "service_deposit",
-                    amount: additionalDeposit,
-                    date: new Date().toISOString(),
-                    description: `Dat coc bo sung #${(
-                      formatWorkOrderId(
-                        order.id,
-                        storeSettings?.work_order_prefix
-                      ) || ""
-                    )
-                      .split("-")
-                      .pop()} - ${formData.customerName}`,
-                    branchid: currentBranchId,
-                    paymentsource: formData.paymentMethod,
-                    workorderid: order.id,
-                  });
-                if (addDepositErr) {
-                  console.error(
-                    "[WorkOrderModal-update] additional deposit error:",
-                    addDepositErr
-                  );
-                }
-              } catch (e) {
-                console.error(
-                  "[WorkOrderModal-update] additional deposit exception:",
-                  e
-                );
-              }
-
               setCashTransactions((prev: any[]) => [
                 ...prev,
                 {
@@ -2299,8 +1984,6 @@ const WorkOrderModal: React.FC<{
               invalidateWorkOrders();
             }
 
-            onSave(finalOrder);
-
             // 🔹 FIX: Nếu cập nhật phiếu thành paymentStatus = 'paid', gọi complete_payment để trừ kho
             const wasUnpaidOrPartial = order.paymentStatus !== "paid";
             if (
@@ -2337,6 +2020,9 @@ const WorkOrderModal: React.FC<{
                 totalPaid
               );
             }
+
+            // 🔹 Call onSave AFTER all async operations complete (not before)
+            onSave(finalOrder);
 
             // Close modal after successful update
             clearDraft();
@@ -2854,7 +2540,7 @@ const WorkOrderModal: React.FC<{
                                       };
                                       
                                       // Call upsertCustomer and get the real customer ID (new or existing)
-                                      const realCustomerId = await upsertCustomer(newCustomerData);
+                                      const realCustomerId = (await upsertCustomer(newCustomerData)) || tempCustomerId;
                                       
                                       // Update formData with the real customerId
                                       setFormData({
@@ -2877,8 +2563,8 @@ const WorkOrderModal: React.FC<{
                                         
                                         const existingCustomer = allCustomers.find(c => {
                                           if (!c.phone) return false;
-                                          const phones = c.phone.split(",").map(p => normalizePhone(p.trim()));
-                                          return phones.some(p => p === searchPhoneDigits);
+                                          const phones = c.phone.split(",").map((p: string) => normalizePhone(p.trim()));
+                                          return phones.some((p: string) => p === searchPhoneDigits);
                                         });
                                         
                                         if (existingCustomer) {

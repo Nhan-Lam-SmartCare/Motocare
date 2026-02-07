@@ -62,7 +62,7 @@ interface WorkOrderMobileModalProps {
   parts: Part[];
   employees: Employee[];
   currentBranchId: string;
-  upsertCustomer?: (customer: any) => void;
+  upsertCustomer?: (customer: any) => Promise<string> | void;
   viewMode?: boolean; // true = xem chi tiết, false = chỉnh sửa
   onSwitchToEdit?: () => void; // callback khi bấm nút chỉnh sửa từ view mode
   isOwner?: boolean; // true = chủ shop, có thể xem lợi nhuận
@@ -809,11 +809,18 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
     return filtered;
   }, [customers, serverCustomers, customerSearchTerm]);
 
-  // Filtered parts
+  // Filtered parts - first filter by stock > 0 (matching desktop behavior)
+  const availableParts = useMemo(() => {
+    return parts.filter((part) => {
+      const stock = part.stock?.[currentBranchId] || 0;
+      return stock > 0;
+    });
+  }, [parts, currentBranchId]);
+
   const filteredParts = useMemo(() => {
     const term = partSearchTerm.trim().toLowerCase();
 
-    return parts.filter((p) => {
+    return availableParts.filter((p) => {
       if (partCategoryFilter && (p.category || "") !== partCategoryFilter) {
         return false;
       }
@@ -823,16 +830,16 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
         p.sku?.toLowerCase().includes(term)
       );
     });
-  }, [parts, partSearchTerm, partCategoryFilter]);
+  }, [availableParts, partSearchTerm, partCategoryFilter]);
 
   const availablePartCategories = useMemo(() => {
     const unique = new Set<string>();
-    for (const part of parts) {
+    for (const part of availableParts) {
       const c = part.category?.trim();
       if (c) unique.add(c);
     }
     return Array.from(unique).sort((a, b) => a.localeCompare(b, "vi"));
-  }, [parts]);
+  }, [availableParts]);
 
   // Auto-scroll to top of part results when search term changes and has results
   useEffect(() => {
@@ -1096,7 +1103,7 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
     // Get the real customer ID (could be existing customer with same phone)
     let realCustomerId = tempCustomerId;
     if (upsertCustomer) {
-      realCustomerId = await upsertCustomer(newCustomerObj);
+      realCustomerId = (await upsertCustomer(newCustomerObj)) || tempCustomerId;
     }
 
     // Set selected customer and vehicle with the real ID
@@ -1115,124 +1122,6 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
     setCustomerSearchTerm("");
   };
 
-  const handleSave = async () => {
-    // Prevent duplicate submissions
-    if (isSubmitting) return;
-
-    if (!selectedCustomer || !selectedVehicle) {
-      showToast.error("Vui lòng chọn khách hàng và xe");
-      return;
-    }
-
-    // Validate phone format (10-11 digits)
-    const phoneRegex = /^[0-9]{10,11}$/;
-    if (selectedCustomer.phone && !phoneRegex.test(selectedCustomer.phone.trim())) {
-      showToast.error("Số điện thoại không hợp lệ! (cần 10-11 chữ số)");
-      return;
-    }
-
-    // Set submitting state to disable buttons
-    setIsSubmitting(true);
-
-    // Calculate total paid and remaining based on deposit + additional payment
-    const totalDeposit = isDeposit ? depositAmount : 0;
-    const additionalPayment = showPaymentInput ? partialAmount : 0;
-    const totalPaid = totalDeposit + additionalPayment;
-    const remainingAmount = total - totalPaid;
-
-    // Transform parts to use 'price' field (as expected by SQL/types)
-    const transformedParts = selectedParts.map((p) => ({
-      partId: p.partId,
-      partName: p.partName,
-      quantity: p.quantity,
-      price: p.sellingPrice, // Map sellingPrice to price for SQL
-      costPrice: p.costPrice || 0, // Cost price for profit calculation
-      sku: p.sku || "",
-      category: p.category || "",
-    }));
-
-    // Transform additional services to use 'price' field
-    const transformedServices = additionalServices.map((s) => ({
-      id: s.id,
-      description: s.name,
-      quantity: s.quantity,
-      price: s.sellingPrice, // Map sellingPrice to price
-      costPrice: s.costPrice,
-    }));
-
-    const workOrderData = {
-      status,
-      technicianId: selectedTechnicianId,
-      customer: selectedCustomer,
-      vehicle: selectedVehicle,
-      currentKm:
-        currentKm && parseInt(currentKm) > 0 ? parseInt(currentKm) : undefined,
-      issueDescription,
-      parts: transformedParts,
-      additionalServices: transformedServices,
-      laborCost,
-      discount: discountAmount,
-      total: total,
-      depositAmount: totalDeposit,
-      paymentMethod,
-      // Pass payment totals to ServiceManager.handleMobileSave so it can persist payment fields
-      totalPaid,
-      remainingAmount,
-    };
-
-    // Execute save callback with offline fallback
-    try {
-      await onSave(workOrderData);
-      clearDraft();
-      // Note: Not resetting isSubmitting here because modal will close on success
-      // Parent component is responsible for closing the modal
-    } catch (error: any) {
-      console.error("Error saving work order:", error);
-      console.error("Error details:", {
-        message: error?.message,
-        code: error?.code,
-        details: error?.details,
-        hint: error?.hint,
-      });
-      setIsSubmitting(false); // Reset on error so user can retry
-
-      // Fallback: Save to Local Storage as draft
-      const drafts = JSON.parse(localStorage.getItem("offline_drafts") || "[]");
-      drafts.push({
-        ...workOrderData,
-        tempId: `draft-${Date.now()}`,
-        timestamp: new Date().toISOString()
-      });
-      localStorage.setItem("offline_drafts", JSON.stringify(drafts));
-
-      // Show detailed error message
-      let errorMessage = "Có lỗi khi lưu";
-      if (error?.message) {
-        const msg = error.message.toUpperCase();
-        if (msg.includes("UNAUTHORIZED")) {
-          errorMessage = "❌ Bạn không có quyền tạo phiếu sửa chữa. Vui lòng liên hệ quản lý để được cấp quyền.";
-        } else if (msg.includes("BRANCH_MISMATCH")) {
-          errorMessage = "❌ Chi nhánh không khớp. Bạn chỉ có thể tạo phiếu cho chi nhánh của mình.";
-        } else if (msg.includes("INSUFFICIENT_STOCK") || msg.includes("THIẾU TỒN KHO")) {
-          errorMessage = "❌ Tồn kho không đủ cho một hoặc nhiều phụ tùng.";
-        } else if (msg.includes("PART_NOT_FOUND")) {
-          errorMessage = "❌ Không tìm thấy phụ tùng trong kho.";
-        } else {
-          errorMessage = `❌ ${error.message}`;
-        }
-      } else {
-        errorMessage = "❌ Lỗi kết nối (Timeout/Mạng). Vui lòng kiểm tra kết nối mạng.";
-      }
-
-      if (!error?.suppressAlert) {
-        showToast.error(
-          errorMessage +
-            " Dữ liệu đã được lưu tạm."
-        );
-      }
-      // onClose(); // Don't close so user can retry
-    }
-  };
   const getStatusColor = (s: WorkOrderStatus) => {
     switch (s) {
       case WORK_ORDER_STATUS.RECEIVED:

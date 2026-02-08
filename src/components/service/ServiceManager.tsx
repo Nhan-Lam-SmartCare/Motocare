@@ -1863,8 +1863,9 @@ export default function ServiceManager() {
                     </div>
                   )}
 
-                  {/* Parts Table */}
-                  {printOrder.partsUsed && printOrder.partsUsed.length > 0 && (
+                  {/* Parts and Services Table */}
+                  {((printOrder.partsUsed && printOrder.partsUsed.length > 0) ||
+                    (printOrder.additionalServices && printOrder.additionalServices.length > 0)) && (
                     <div style={{ marginBottom: "2mm" }}>
                       <p
                         style={{
@@ -1873,7 +1874,7 @@ export default function ServiceManager() {
                           fontSize: "10pt",
                         }}
                       >
-                        Phụ tùng:
+                        Phụ tùng và dịch vụ:
                       </p>
                       <table
                         style={{
@@ -1917,9 +1918,10 @@ export default function ServiceManager() {
                           </tr>
                         </thead>
                         <tbody>
-                          {printOrder.partsUsed.map(
+                          {/* Parts */}
+                          {printOrder.partsUsed && printOrder.partsUsed.map(
                             (part: WorkOrderPart, idx: number) => (
-                              <tr key={idx}>
+                              <tr key={`part-${idx}`}>
                                 <td
                                   style={{
                                     border: "1px solid #ddd",
@@ -1950,44 +1952,46 @@ export default function ServiceManager() {
                               </tr>
                             )
                           )}
+                          {/* Additional Services */}
+                          {printOrder.additionalServices && printOrder.additionalServices.map(
+                            (service: any, idx: number) => (
+                              <tr key={`service-${idx}`}>
+                                <td
+                                  style={{
+                                    border: "1px solid #ddd",
+                                    padding: "1.5mm",
+                                  }}
+                                >
+                                  {service.description}
+                                </td>
+                                <td
+                                  style={{
+                                    border: "1px solid #ddd",
+                                    padding: "1.5mm",
+                                    textAlign: "center",
+                                  }}
+                                >
+                                  {service.quantity || 1}
+                                </td>
+                                <td
+                                  style={{
+                                    border: "1px solid #ddd",
+                                    padding: "1.5mm",
+                                    textAlign: "right",
+                                    fontWeight: "bold",
+                                  }}
+                                >
+                                  {formatCurrency(
+                                    service.price * (service.quantity || 1)
+                                  )}
+                                </td>
+                              </tr>
+                            )
+                          )}
                         </tbody>
                       </table>
                     </div>
                   )}
-
-                  {/* Additional Services */}
-                  {printOrder.additionalServices &&
-                    printOrder.additionalServices.length > 0 && (
-                      <div style={{ marginBottom: "2mm", fontSize: "9pt" }}>
-                        <p
-                          style={{
-                            fontWeight: "bold",
-                            margin: "0 0 1mm 0",
-                            fontSize: "10pt",
-                          }}
-                        >
-                          Dịch vụ bổ sung:
-                        </p>
-                        {printOrder.additionalServices.map(
-                          (service: any, idx: number) => (
-                            <div
-                              key={idx}
-                              style={{
-                                display: "flex",
-                                justifyContent: "space-between",
-                              }}
-                            >
-                              <span>{service.description}</span>
-                              <span style={{ fontWeight: "bold" }}>
-                                {formatCurrency(
-                                  service.price * (service.quantity || 1)
-                                )}
-                              </span>
-                            </div>
-                          )
-                        )}
-                      </div>
-                    )}
 
                   {/* Cost Summary */}
                   <div
@@ -3625,17 +3629,19 @@ export default function ServiceManager() {
                     </div>
                   </div>
 
-                  {/* Parts Table */}
-                  {printOrder.partsUsed && printOrder.partsUsed.length > 0 && (
+                  {/* Parts and Services Table */}
+                  {((printOrder.partsUsed && printOrder.partsUsed.length > 0) ||
+                    (printOrder.additionalServices && printOrder.additionalServices.length > 0)) && (
                     <div style={{ marginBottom: "4mm", color: "#000" }}>
                       <p
                         style={{
                           fontWeight: "bold",
                           margin: "0 0 2mm 0",
                           fontSize: "11pt",
+                          color: "#000",
                         }}
                       >
-                        Phụ tùng sử dụng:
+                        Phụ tùng và dịch vụ:
                       </p>
                       <table
                         style={{
@@ -3654,7 +3660,7 @@ export default function ServiceManager() {
                                 fontSize: "10pt",
                               }}
                             >
-                              Tên phụ tùng
+                              Tên
                             </th>
                             <th
                               style={{
@@ -3692,9 +3698,10 @@ export default function ServiceManager() {
                           </tr>
                         </thead>
                         <tbody>
-                          {printOrder.partsUsed.map(
+                          {/* Parts */}
+                          {printOrder.partsUsed && printOrder.partsUsed.map(
                             (part: WorkOrderPart, idx: number) => (
-                              <tr key={idx}>
+                              <tr key={`part-${idx}`}>
                                 <td
                                   style={{
                                     border: "1px solid #ddd",
@@ -3738,42 +3745,59 @@ export default function ServiceManager() {
                               </tr>
                             )
                           )}
+                          {/* Additional Services */}
+                          {printOrder.additionalServices && printOrder.additionalServices.map(
+                            (service: any, idx: number) => (
+                              <tr key={`service-${idx}`}>
+                                <td
+                                  style={{
+                                    border: "1px solid #ddd",
+                                    padding: "2mm",
+                                    fontSize: "10pt",
+                                  }}
+                                >
+                                  {service.description}
+                                </td>
+                                <td
+                                  style={{
+                                    border: "1px solid #ddd",
+                                    padding: "2mm",
+                                    textAlign: "center",
+                                    fontSize: "10pt",
+                                  }}
+                                >
+                                  {service.quantity || 1}
+                                </td>
+                                <td
+                                  style={{
+                                    border: "1px solid #ddd",
+                                    padding: "2mm",
+                                    textAlign: "right",
+                                    fontSize: "10pt",
+                                  }}
+                                >
+                                  {formatCurrency(service.price || 0)}
+                                </td>
+                                <td
+                                  style={{
+                                    border: "1px solid #ddd",
+                                    padding: "2mm",
+                                    textAlign: "right",
+                                    fontSize: "10pt",
+                                    fontWeight: "bold",
+                                  }}
+                                >
+                                  {formatCurrency(
+                                    (service.price || 0) * (service.quantity || 1)
+                                  )}
+                                </td>
+                              </tr>
+                            )
+                          )}
                         </tbody>
                       </table>
                     </div>
                   )}
-
-                  {/* Additional Services */}
-                  {printOrder.additionalServices &&
-                    printOrder.additionalServices.length > 0 && (
-                      <div style={{ marginBottom: "4mm", color: "#000" }}>
-                        <p
-                          style={{
-                            fontWeight: "bold",
-                            margin: "0 0 2mm 0",
-                            fontSize: "11pt",
-                            color: "#000",
-                          }}
-                        >
-                          Dịch vụ bổ sung:
-                        </p>
-                        <ul
-                          style={{
-                            margin: "0",
-                            paddingLeft: "5mm",
-                            color: "#000",
-                          }}
-                        >
-                          {printOrder.additionalServices.map((service, idx) => (
-                            <li key={idx} style={{ marginBottom: "1mm" }}>
-                              {service.description} -{" "}
-                              {formatCurrency(service.price)} x{" "}
-                              {service.quantity}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
 
                   {/* Cost Summary */}
                   <div
@@ -4494,8 +4518,9 @@ export default function ServiceManager() {
             </div>
           </div>
 
-          {/* Parts Table */}
-          {printOrder.partsUsed && printOrder.partsUsed.length > 0 && (
+          {/* Parts and Services Table */}
+          {((printOrder.partsUsed && printOrder.partsUsed.length > 0) ||
+            (printOrder.additionalServices && printOrder.additionalServices.length > 0)) && (
             <div style={{ marginBottom: "4mm" }}>
               <p
                 style={{
@@ -4504,7 +4529,7 @@ export default function ServiceManager() {
                   fontSize: "11pt",
                 }}
               >
-                Phụ tùng sử dụng:
+                Phụ tùng và dịch vụ:
               </p>
               <table
                 style={{
@@ -4523,7 +4548,7 @@ export default function ServiceManager() {
                         fontSize: "10pt",
                       }}
                     >
-                      Tên phụ tùng
+                      Tên
                     </th>
                     <th
                       style={{
@@ -4561,9 +4586,10 @@ export default function ServiceManager() {
                   </tr>
                 </thead>
                 <tbody>
-                  {printOrder.partsUsed.map(
+                  {/* Parts */}
+                  {printOrder.partsUsed && printOrder.partsUsed.map(
                     (part: WorkOrderPart, idx: number) => (
-                      <tr key={idx}>
+                      <tr key={`part-${idx}`}>
                         <td
                           style={{
                             border: "1px solid #ddd",
@@ -4607,34 +4633,59 @@ export default function ServiceManager() {
                       </tr>
                     )
                   )}
+                  {/* Additional Services */}
+                  {printOrder.additionalServices && printOrder.additionalServices.map(
+                    (service: any, idx: number) => (
+                      <tr key={`service-${idx}`}>
+                        <td
+                          style={{
+                            border: "1px solid #ddd",
+                            padding: "2mm",
+                            fontSize: "10pt",
+                          }}
+                        >
+                          {service.description}
+                        </td>
+                        <td
+                          style={{
+                            border: "1px solid #ddd",
+                            padding: "2mm",
+                            textAlign: "center",
+                            fontSize: "10pt",
+                          }}
+                        >
+                          {service.quantity || 1}
+                        </td>
+                        <td
+                          style={{
+                            border: "1px solid #ddd",
+                            padding: "2mm",
+                            textAlign: "right",
+                            fontSize: "10pt",
+                          }}
+                        >
+                          {formatCurrency(service.price || 0)}
+                        </td>
+                        <td
+                          style={{
+                            border: "1px solid #ddd",
+                            padding: "2mm",
+                            textAlign: "right",
+                            fontSize: "10pt",
+                            fontWeight: "bold",
+                          }}
+                        >
+                          {formatCurrency(
+                            (service.price || 0) * (service.quantity || 1)
+                          )}
+                        </td>
+                      </tr>
+                    )
+                  )}
                 </tbody>
               </table>
             </div>
           )}
-
-          {/* Additional Services */}
-          {printOrder.additionalServices &&
-            printOrder.additionalServices.length > 0 && (
-              <div style={{ marginBottom: "4mm" }}>
-                <p
-                  style={{
-                    fontWeight: "bold",
-                    margin: "0 0 2mm 0",
-                    fontSize: "11pt",
-                  }}
-                >
-                  Dịch vụ bổ sung:
-                </p>
-                <ul style={{ margin: "0", paddingLeft: "5mm" }}>
-                  {printOrder.additionalServices.map((service, idx) => (
-                    <li key={idx} style={{ marginBottom: "1mm" }}>
-                      {service.description} - {formatCurrency(service.price)} x{" "}
-                      {service.quantity}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
 
           {/* Cost Summary */}
           <div

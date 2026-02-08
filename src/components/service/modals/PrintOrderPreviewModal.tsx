@@ -552,17 +552,19 @@ const PrintOrderPreviewModal: React.FC<PrintOrderPreviewModalProps> = ({
                                 </div>
                             </div>
 
-                            {/* Parts Table */}
-                            {printOrder.partsUsed && printOrder.partsUsed.length > 0 && (
+                            {/* Parts and Services Table */}
+                            {((printOrder.partsUsed && printOrder.partsUsed.length > 0) ||
+                                (printOrder.additionalServices && printOrder.additionalServices.length > 0)) && (
                                 <div style={{ marginBottom: "4mm", color: "#000" }}>
                                     <p
                                         style={{
                                             fontWeight: "bold",
                                             margin: "0 0 2mm 0",
                                             fontSize: "11pt",
+                                            color: "#000",
                                         }}
                                     >
-                                        Phụ tùng sử dụng:
+                                        Phụ tùng và dịch vụ:
                                     </p>
                                     <table
                                         style={{
@@ -581,7 +583,7 @@ const PrintOrderPreviewModal: React.FC<PrintOrderPreviewModalProps> = ({
                                                         fontSize: "10pt",
                                                     }}
                                                 >
-                                                    Tên phụ tùng
+                                                    Tên
                                                 </th>
                                                 <th
                                                     style={{
@@ -619,9 +621,10 @@ const PrintOrderPreviewModal: React.FC<PrintOrderPreviewModalProps> = ({
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {printOrder.partsUsed.map(
+                                            {/* Parts */}
+                                            {printOrder.partsUsed && printOrder.partsUsed.map(
                                                 (part: WorkOrderPart, idx: number) => (
-                                                    <tr key={idx}>
+                                                    <tr key={`part-${idx}`}>
                                                         <td
                                                             style={{
                                                                 border: "1px solid #ddd",
@@ -665,111 +668,59 @@ const PrintOrderPreviewModal: React.FC<PrintOrderPreviewModalProps> = ({
                                                     </tr>
                                                 )
                                             )}
+                                            {/* Additional Services */}
+                                            {printOrder.additionalServices && printOrder.additionalServices.map(
+                                                (service: any, idx: number) => (
+                                                    <tr key={`service-${idx}`}>
+                                                        <td
+                                                            style={{
+                                                                border: "1px solid #ddd",
+                                                                padding: "2mm",
+                                                                fontSize: "10pt",
+                                                            }}
+                                                        >
+                                                            {service.description}
+                                                        </td>
+                                                        <td
+                                                            style={{
+                                                                border: "1px solid #ddd",
+                                                                padding: "2mm",
+                                                                textAlign: "center",
+                                                                fontSize: "10pt",
+                                                            }}
+                                                        >
+                                                            {service.quantity || 1}
+                                                        </td>
+                                                        <td
+                                                            style={{
+                                                                border: "1px solid #ddd",
+                                                                padding: "2mm",
+                                                                textAlign: "right",
+                                                                fontSize: "10pt",
+                                                            }}
+                                                        >
+                                                            {formatCurrency(service.price || 0)}
+                                                        </td>
+                                                        <td
+                                                            style={{
+                                                                border: "1px solid #ddd",
+                                                                padding: "2mm",
+                                                                textAlign: "right",
+                                                                fontSize: "10pt",
+                                                                fontWeight: "bold",
+                                                            }}
+                                                        >
+                                                            {formatCurrency(
+                                                                (service.price || 0) * (service.quantity || 1)
+                                                            )}
+                                                        </td>
+                                                    </tr>
+                                                )
+                                            )}
                                         </tbody>
                                     </table>
                                 </div>
                             )}
-
-                            {/* Additional Services */}
-                            {printOrder.additionalServices &&
-                                printOrder.additionalServices.length > 0 && (
-                                    <div style={{ marginBottom: "4mm", color: "#000" }}>
-                                        <p
-                                            style={{
-                                                fontWeight: "bold",
-                                                margin: "0 0 2mm 0",
-                                                fontSize: "11pt",
-                                                color: "#000",
-                                            }}
-                                        >
-                                            Dịch vụ bổ sung:
-                                        </p>
-                                        <table
-                                            style={{
-                                                width: "100%",
-                                                borderCollapse: "collapse",
-                                                border: "1px solid #ddd",
-                                            }}
-                                        >
-                                            <thead>
-                                                <tr style={{ backgroundColor: "#f5f5f5" }}>
-                                                    <th
-                                                        style={{
-                                                            border: "1px solid #ddd",
-                                                            padding: "2mm",
-                                                            textAlign: "left",
-                                                            fontSize: "10pt",
-                                                        }}
-                                                    >
-                                                        Tên dịch vụ
-                                                    </th>
-                                                    <th
-                                                        style={{
-                                                            border: "1px solid #ddd",
-                                                            padding: "2mm",
-                                                            textAlign: "center",
-                                                            fontSize: "10pt",
-                                                            width: "15%",
-                                                        }}
-                                                    >
-                                                        SL
-                                                    </th>
-                                                    <th
-                                                        style={{
-                                                            border: "1px solid #ddd",
-                                                            padding: "2mm",
-                                                            textAlign: "right",
-                                                            fontSize: "10pt",
-                                                            width: "25%",
-                                                        }}
-                                                    >
-                                                        Thành tiền
-                                                    </th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {printOrder.additionalServices.map(
-                                                    (service: any, idx: number) => (
-                                                        <tr key={idx}>
-                                                            <td
-                                                                style={{
-                                                                    border: "1px solid #ddd",
-                                                                    padding: "2mm",
-                                                                    fontSize: "10pt",
-                                                                }}
-                                                            >
-                                                                {service.description}
-                                                            </td>
-                                                            <td
-                                                                style={{
-                                                                    border: "1px solid #ddd",
-                                                                    padding: "2mm",
-                                                                    textAlign: "center",
-                                                                    fontSize: "10pt",
-                                                                }}
-                                                            >
-                                                                {service.quantity || 1}
-                                                            </td>
-                                                            <td
-                                                                style={{
-                                                                    border: "1px solid #ddd",
-                                                                    padding: "2mm",
-                                                                    textAlign: "right",
-                                                                    fontSize: "10pt",
-                                                                    fontWeight: "bold",
-                                                                }}
-                                                            >
-                                                                {formatCurrency(
-                                                                    (service.price || 0) * (service.quantity || 1)
-                                                                )}
-                                                            </td>
-                                                        </tr>
-                                                    )
-                                                )}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                )}
 
                             {/* Cost Summary - Only show items > 0 */}
                             <div

@@ -2010,48 +2010,9 @@ export default function ServiceManager() {
                         marginBottom: "1mm",
                       }}
                     >
-                      <span>Tiền phụ tùng:</span>
-                      <span>
-                        {formatCurrency(
-                          printOrder.partsUsed?.reduce(
-                            (sum: number, p: WorkOrderPart) =>
-                              sum + p.price * p.quantity,
-                            0
-                          ) || 0
-                        )}
-                      </span>
-                    </div>
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        marginBottom: "1mm",
-                      }}
-                    >
                       <span>Phí dịch vụ:</span>
                       <span>{formatCurrency(printOrder.laborCost || 0)}</span>
                     </div>
-                    {printOrder.additionalServices &&
-                      printOrder.additionalServices.length > 0 && (
-                        <div
-                          style={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            marginBottom: "1mm",
-                          }}
-                        >
-                          <span>Giá công/Đặt hàng:</span>
-                          <span>
-                            {formatCurrency(
-                              printOrder.additionalServices.reduce(
-                                (sum: number, s: any) =>
-                                  sum + (s.price || 0) * (s.quantity || 1),
-                                0
-                              )
-                            )}
-                          </span>
-                        </div>
-                      )}
                     {printOrder.discount != null && printOrder.discount > 0 && (
                       <div
                         style={{
@@ -3826,32 +3787,6 @@ export default function ServiceManager() {
                               fontSize: "10pt",
                             }}
                           >
-                            Tiền phụ tùng:
-                          </td>
-                          <td
-                            style={{
-                              textAlign: "right",
-                              paddingBottom: "2mm",
-                              fontSize: "10pt",
-                            }}
-                          >
-                            {formatCurrency(
-                              printOrder.partsUsed?.reduce(
-                                (sum: number, p: WorkOrderPart) =>
-                                  sum + p.price * p.quantity,
-                                0
-                              ) || 0
-                            )}
-                          </td>
-                        </tr>
-                        <tr>
-                          <td
-                            style={{
-                              fontWeight: "bold",
-                              paddingBottom: "2mm",
-                              fontSize: "10pt",
-                            }}
-                          >
                             Phí dịch vụ:
                           </td>
                           <td
@@ -3862,32 +3797,6 @@ export default function ServiceManager() {
                             }}
                           >
                             {formatCurrency(printOrder.laborCost || 0)}
-                          </td>
-                        </tr>
-                        <tr>
-                          <td
-                            style={{
-                              fontWeight: "bold",
-                              paddingBottom: "2mm",
-                              fontSize: "10pt",
-                            }}
-                          >
-                            Giá công/Đặt hàng:
-                          </td>
-                          <td
-                            style={{
-                              textAlign: "right",
-                              paddingBottom: "2mm",
-                              fontSize: "10pt",
-                            }}
-                          >
-                            {formatCurrency(
-                              printOrder.additionalServices?.reduce(
-                                (sum: number, s: any) =>
-                                  sum + (s.price || 0) * (s.quantity || 1),
-                                0
-                              ) || 0
-                            )}
                           </td>
                         </tr>
                         {printOrder.discount != null &&
@@ -4699,59 +4608,6 @@ export default function ServiceManager() {
           >
             <table style={{ width: "100%", borderSpacing: "0" }}>
               <tbody>
-                <tr>
-                  <td
-                    style={{
-                      fontWeight: "bold",
-                      paddingBottom: "2mm",
-                      fontSize: "10pt",
-                    }}
-                  >
-                    Tiền phụ tùng:
-                  </td>
-                  <td
-                    style={{
-                      textAlign: "right",
-                      paddingBottom: "2mm",
-                      fontSize: "10pt",
-                    }}
-                  >
-                    {formatCurrency(
-                      printOrder.partsUsed?.reduce(
-                        (sum: number, p: WorkOrderPart) =>
-                          sum + p.price * p.quantity,
-                        0
-                      ) || 0
-                    )}
-                  </td>
-                </tr>
-                <tr>
-                  <td
-                    style={{
-                      fontWeight: "bold",
-                      paddingBottom: "2mm",
-                      fontSize: "10pt",
-                    }}
-                  >
-                    Giá công/Đặt hàng:
-                  </td>
-                  <td
-                    style={{
-                      textAlign: "right",
-                      paddingBottom: "2mm",
-                      fontSize: "10pt",
-                    }}
-                  >
-                    {formatCurrency(
-                      printOrder.additionalServices?.reduce(
-                        (sum: number, s: any) =>
-                          sum + (s.price || 0) * (s.quantity || 1),
-                        0
-                      ) || 0
-                    )}
-                  </td>
-                </tr>
-                {/* Dịch vụ bổ sung aggregated above as Giá công/Đặt hàng */}
                 {printOrder.discount != null && printOrder.discount > 0 && (
                   <tr>
                     <td

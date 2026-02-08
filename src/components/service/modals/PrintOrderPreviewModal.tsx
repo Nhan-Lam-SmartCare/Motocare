@@ -735,40 +735,6 @@ const PrintOrderPreviewModal: React.FC<PrintOrderPreviewModalProps> = ({
                             >
                                 <table style={{ width: "100%", borderSpacing: "0" }}>
                                     <tbody>
-                                        {/* Tiền phụ tùng - chỉ hiển thị khi > 0 */}
-                                        {(() => {
-                                            const partsTotal =
-                                                printOrder.partsUsed?.reduce(
-                                                    (sum: number, p: WorkOrderPart) =>
-                                                        sum + p.price * p.quantity,
-                                                    0
-                                                ) || 0;
-                                            return (
-                                                partsTotal > 0 && (
-                                                    <tr>
-                                                        <td
-                                                            style={{
-                                                                fontWeight: "bold",
-                                                                paddingBottom: "2mm",
-                                                                fontSize: "10pt",
-                                                            }}
-                                                        >
-                                                            Tiền phụ tùng:
-                                                        </td>
-                                                        <td
-                                                            style={{
-                                                                textAlign: "right",
-                                                                paddingBottom: "2mm",
-                                                                fontSize: "10pt",
-                                                            }}
-                                                        >
-                                                            {formatCurrency(partsTotal)}
-                                                        </td>
-                                                    </tr>
-                                                )
-                                            );
-                                        })()}
-
                                         {/* Phí dịch vụ (laborCost) - chỉ hiển thị khi > 0 */}
                                         {(printOrder.laborCost ?? 0) > 0 && (
                                             <tr>
@@ -793,41 +759,6 @@ const PrintOrderPreviewModal: React.FC<PrintOrderPreviewModalProps> = ({
                                             </tr>
                                         )}
 
-                                        {/* Giá công/Đặt hàng - chỉ hiển thị khi > 0 */}
-                                        {(() => {
-                                            const additionalTotal =
-                                                printOrder.additionalServices?.reduce(
-                                                    (sum: number, s: any) =>
-                                                        sum + (s.price || 0) * (s.quantity || 1),
-                                                    0
-                                                ) || 0;
-                                            return (
-                                                additionalTotal > 0 && (
-                                                    <tr>
-                                                        <td
-                                                            style={{
-                                                                fontWeight: "bold",
-                                                                paddingBottom: "2mm",
-                                                                fontSize: "10pt",
-                                                            }}
-                                                        >
-                                                            Giá công/Đặt hàng:
-                                                        </td>
-                                                        <td
-                                                            style={{
-                                                                textAlign: "right",
-                                                                paddingBottom: "2mm",
-                                                                fontSize: "10pt",
-                                                            }}
-                                                        >
-                                                            {formatCurrency(additionalTotal)}
-                                                        </td>
-                                                    </tr>
-                                                )
-                                            );
-                                        })()}
-
-                                        {/* Dịch vụ bổ sung aggregated above as Giá công/Đặt hàng */}
                                         {printOrder.discount != null && printOrder.discount > 0 && (
                                             <tr>
                                                 <td

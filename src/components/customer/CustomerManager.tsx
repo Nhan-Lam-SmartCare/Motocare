@@ -19,6 +19,7 @@ import {
   Star,
   History,
   ChevronRight,
+  ChevronDown,
   MapPin,
   Edit2,
   Trash2,
@@ -593,6 +594,7 @@ const CustomerManager: React.FC = () => {
     useState<Customer | null>(null);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [showActionSheet, setShowActionSheet] = useState(false);
+  const [showMaintenanceVehicles, setShowMaintenanceVehicles] = useState(false);
 
   // Fetch sales and work orders for history
   const { data: allSales = [] } = useSalesRepo();
@@ -1315,13 +1317,24 @@ const CustomerManager: React.FC = () => {
           {/* Maintenance Reminder Section for Customer Care Team */}
           {vehiclesNeedingMaintenance.length > 0 && (
             <div className="mb-6">
-              <div className="flex items-center gap-2 mb-4">
-                <AlertTriangle className="w-5 h-5 text-orange-500" />
-                <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-                  Xe cần bảo dưỡng ({vehiclesNeedingMaintenance.length})
-                </h2>
-              </div>
-              <div className="bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20 rounded-xl border border-orange-200 dark:border-orange-800 p-4">
+              <button
+                onClick={() => setShowMaintenanceVehicles(!showMaintenanceVehicles)}
+                className="w-full flex items-center justify-between gap-2 p-4 bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20 rounded-xl border border-orange-200 dark:border-orange-800 hover:border-orange-300 dark:hover:border-orange-700 transition-all group"
+              >
+                <div className="flex items-center gap-2">
+                  <AlertTriangle className="w-5 h-5 text-orange-500" />
+                  <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                    Xe cần bảo dưỡng ({vehiclesNeedingMaintenance.length})
+                  </h2>
+                </div>
+                <ChevronDown
+                  className={`w-5 h-5 text-orange-500 transition-transform duration-200 ${
+                    showMaintenanceVehicles ? "rotate-180" : ""
+                  }`}
+                />
+              </button>
+              {showMaintenanceVehicles && (
+              <div className="bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20 rounded-xl border border-orange-200 dark:border-orange-800 p-4 mt-2">
                 <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory md:grid md:grid-cols-2 lg:grid-cols-3 md:overflow-visible md:snap-none">
                   {vehiclesNeedingMaintenance.slice(0, 9).map((item, index) => {
                     if (!item.customer) return null;
@@ -1439,6 +1452,7 @@ const CustomerManager: React.FC = () => {
                   </p>
                 )}
               </div>
+              )}
             </div>
           )}
 

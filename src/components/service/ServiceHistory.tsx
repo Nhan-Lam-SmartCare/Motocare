@@ -1549,6 +1549,17 @@ export const ServiceHistory: React.FC<ServiceHistoryProps> = ({
                       style={{
                         border: "1px solid #ddd",
                         padding: "2mm",
+                        textAlign: "center",
+                        fontSize: "10pt",
+                        width: "8%",
+                      }}
+                    >
+                      STT
+                    </th>
+                    <th
+                      style={{
+                        border: "1px solid #ddd",
+                        padding: "2mm",
                         textAlign: "left",
                         fontSize: "10pt",
                       }}
@@ -1599,6 +1610,16 @@ export const ServiceHistory: React.FC<ServiceHistoryProps> = ({
                           style={{
                             border: "1px solid #ddd",
                             padding: "2mm",
+                            textAlign: "center",
+                            fontSize: "10pt",
+                          }}
+                        >
+                          {idx + 1}
+                        </td>
+                        <td
+                          style={{
+                            border: "1px solid #ddd",
+                            padding: "2mm",
                             fontSize: "10pt",
                           }}
                         >
@@ -1641,6 +1662,16 @@ export const ServiceHistory: React.FC<ServiceHistoryProps> = ({
                   {/* Additional Services */}
                   {printOrder.additionalServices && printOrder.additionalServices.map((service, idx) => (
                     <tr key={`service-${idx}`}>
+                      <td
+                        style={{
+                          border: "1px solid #ddd",
+                          padding: "2mm",
+                          textAlign: "center",
+                          fontSize: "10pt",
+                        }}
+                      >
+                        {(printOrder.partsUsed?.length || 0) + idx + 1}
+                      </td>
                       <td
                         style={{
                           border: "1px solid #ddd",

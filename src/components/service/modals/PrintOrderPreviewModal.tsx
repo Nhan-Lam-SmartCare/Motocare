@@ -579,6 +579,17 @@ const PrintOrderPreviewModal: React.FC<PrintOrderPreviewModalProps> = ({
                                                     style={{
                                                         border: "1px solid #ddd",
                                                         padding: "2mm",
+                                                        textAlign: "center",
+                                                        fontSize: "10pt",
+                                                        width: "8%",
+                                                    }}
+                                                >
+                                                    STT
+                                                </th>
+                                                <th
+                                                    style={{
+                                                        border: "1px solid #ddd",
+                                                        padding: "2mm",
                                                         textAlign: "left",
                                                         fontSize: "10pt",
                                                     }}
@@ -629,6 +640,16 @@ const PrintOrderPreviewModal: React.FC<PrintOrderPreviewModalProps> = ({
                                                             style={{
                                                                 border: "1px solid #ddd",
                                                                 padding: "2mm",
+                                                                textAlign: "center",
+                                                                fontSize: "10pt",
+                                                            }}
+                                                        >
+                                                            {idx + 1}
+                                                        </td>
+                                                        <td
+                                                            style={{
+                                                                border: "1px solid #ddd",
+                                                                padding: "2mm",
                                                                 fontSize: "10pt",
                                                             }}
                                                         >
@@ -672,6 +693,16 @@ const PrintOrderPreviewModal: React.FC<PrintOrderPreviewModalProps> = ({
                                             {printOrder.additionalServices && printOrder.additionalServices.map(
                                                 (service: any, idx: number) => (
                                                     <tr key={`service-${idx}`}>
+                                                        <td
+                                                            style={{
+                                                                border: "1px solid #ddd",
+                                                                padding: "2mm",
+                                                                textAlign: "center",
+                                                                fontSize: "10pt",
+                                                            }}
+                                                        >
+                                                            {(printOrder.partsUsed?.length || 0) + idx + 1}
+                                                        </td>
                                                         <td
                                                             style={{
                                                                 border: "1px solid #ddd",

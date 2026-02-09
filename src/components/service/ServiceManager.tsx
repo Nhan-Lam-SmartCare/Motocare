@@ -23,6 +23,7 @@ import {
   RefreshCw,
   Eye,
   EyeOff,
+  MoreVertical,
 } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
 import { useAppContext } from "../../contexts/AppContext";
@@ -37,6 +38,7 @@ import {
   formatCurrency,
   formatDate,
   formatWorkOrderId,
+  formatShortWorkOrderId,
 } from "../../utils/format";
 import { getCategoryColor } from "../../utils/categoryColors";
 import {
@@ -63,6 +65,7 @@ import { WorkOrderMobileModal } from "./WorkOrderMobileModal";
 import WorkOrderModal from "./components/WorkOrderModal";
 import { ServiceManagerMobile } from "./ServiceManagerMobile";
 import StatusBadge from "./components/StatusBadge";
+import { getStatusBorderColor } from "./components/StatusBadge";
 import { getQuickStatusFilters } from "./components/QuickStatusFilters";
 import { getStatusSnapshotCards } from "./components/StatusSnapshotCards";
 import {
@@ -2584,28 +2587,32 @@ export default function ServiceManager() {
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-200 dark:divide-slate-700 bg-white dark:bg-slate-800">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60 bg-white dark:bg-slate-800" style={{ borderSpacing: '0 4px' }}>
               {showTableSkeleton ? (
                 Array.from({ length: 6 }).map((_, idx) => (
                   <tr key={`skeleton-${idx}`} className="animate-pulse">
-                    <td className="px-4 py-4">
-                      <div className="h-4 w-40 bg-slate-200 dark:bg-slate-700 rounded" />
-                      <div className="mt-2 h-3 w-28 bg-slate-200 dark:bg-slate-700 rounded" />
+                    <td className="px-4 py-5">
+                      <div className="h-6 w-24 bg-slate-200 dark:bg-slate-700 rounded-lg mb-2" />
+                      <div className="h-3 w-28 bg-slate-200 dark:bg-slate-700 rounded" />
                     </td>
-                    <td className="px-4 py-4">
-                      <div className="h-4 w-44 bg-slate-200 dark:bg-slate-700 rounded" />
+                    <td className="px-4 py-5">
+                      <div className="h-5 w-44 bg-slate-200 dark:bg-slate-700 rounded" />
                       <div className="mt-2 h-3 w-24 bg-slate-200 dark:bg-slate-700 rounded" />
                     </td>
-                    <td className="px-4 py-4">
+                    <td className="px-4 py-5">
                       <div className="h-3 w-56 bg-slate-200 dark:bg-slate-700 rounded" />
                       <div className="mt-2 h-3 w-40 bg-slate-200 dark:bg-slate-700 rounded" />
                     </td>
-                    <td className="px-4 py-4">
+                    <td className="px-4 py-5">
                       <div className="h-4 w-24 bg-slate-200 dark:bg-slate-700 rounded" />
                       <div className="mt-2 h-2 w-56 bg-slate-200 dark:bg-slate-700 rounded" />
                     </td>
-                    <td className="px-4 py-4 text-right">
-                      <div className="inline-block h-9 w-9 bg-slate-200 dark:bg-slate-700 rounded-lg" />
+                    <td className="px-4 py-5 text-right">
+                      <div className="inline-flex gap-1.5">
+                        <div className="h-9 w-9 bg-slate-200 dark:bg-slate-700 rounded-lg" />
+                        <div className="h-9 w-9 bg-slate-200 dark:bg-slate-700 rounded-lg" />
+                        <div className="h-9 w-9 bg-slate-200 dark:bg-slate-700 rounded-lg" />
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -2757,31 +2764,31 @@ export default function ServiceManager() {
                     <tr
                       key={order.id}
                       onClick={() => handleOpenModal(order)}
-                      className="group bg-white dark:bg-slate-800 hover:bg-blue-50/50 dark:hover:bg-slate-700/50 cursor-pointer transition-all duration-150 hover:shadow-sm border-l-4 border-transparent hover:border-blue-500"
+                      className={`group bg-white dark:bg-slate-800/80 hover:bg-blue-50/50 dark:hover:bg-slate-700/50 cursor-pointer transition-all duration-150 hover:shadow-md border-l-4 ${getStatusBorderColor(order.status as WorkOrderStatus)}`}
                     >
-                      {/* Column 1: Mã phiếu */}
-                      <td className="px-4 py-4 align-top">
-                        <div className="space-y-0.5">
-                          <div className="font-mono font-bold text-blue-600 dark:text-blue-400 text-sm">
-                            {formatWorkOrderId(
-                              order.id,
-                              storeSettings?.work_order_prefix
-                            )}
+                      {/* Column 1: Mã phiếu + Status */}
+                      <td className="px-4 py-5 align-top">
+                        <div className="space-y-1.5">
+                          {/* Status badge - prominent */}
+                          <StatusBadge status={order.status as WorkOrderStatus} />
+                          {/* Mã phiếu - shortened */}
+                          <div
+                            className="font-mono text-xs text-slate-500 dark:text-slate-400 cursor-help"
+                            title={formatWorkOrderId(order.id, storeSettings?.work_order_prefix)}
+                          >
+                            {formatShortWorkOrderId(order.id, storeSettings?.work_order_prefix).short}
                           </div>
-                          <div className="text-xs text-slate-500">
-                            <span>Ngày: </span>
-                            <span className="text-slate-600 dark:text-slate-400">
-                              {formatDate(order.creationDate, true)}
-                            </span>
+                          <div className="text-[11px] text-slate-400 dark:text-slate-500">
+                            {formatDate(order.creationDate, true)}
                           </div>
-                          <div className="text-xs text-cyan-600 dark:text-cyan-400">
-                            NV: {order.technicianName || "Chưa phân công"}
+                          <div className="text-[11px] text-cyan-600 dark:text-cyan-400 font-medium">
+                            {order.technicianName || "Chưa phân công"}
                           </div>
                         </div>
                       </td>
 
                       {/* Column 2: Khách hàng */}
-                      <td className="px-4 py-4 align-top">
+                      <td className="px-4 py-5 align-top">
                         <div className="space-y-1">
                           <div className="font-bold text-lg text-slate-900 dark:text-slate-100">
                             {order.customerName}
@@ -2826,7 +2833,7 @@ export default function ServiceManager() {
                       </td>
 
                       {/* Column 3: Chi tiết - Compact format */}
-                      <td className="px-4 py-4 align-top">
+                      <td className="px-4 py-5 align-top">
                         <div className="space-y-1.5 max-w-[220px]">
                           {servicesSummary && (
                             <div
@@ -2876,14 +2883,24 @@ export default function ServiceManager() {
                             </div>
                           )}
 
-                          {/* Status badges for tablet/mobile - show when payment column hidden */}
+                          {/* Payment pill for tablet/mobile - show when payment column hidden */}
                           <div className="lg:hidden flex flex-wrap items-center gap-1.5 pt-1">
-                            <StatusBadge
-                              status={order.status as WorkOrderStatus}
-                            />
                             <span
-                              className={`text-xs px-2 py-0.5 rounded-full ${paymentPillClass}`}
+                              className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-lg font-medium border ${
+                                order.paymentStatus === "paid"
+                                  ? "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700/50"
+                                  : order.paymentStatus === "partial"
+                                    ? "bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-700/50"
+                                    : "bg-slate-50 dark:bg-slate-700/50 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-600"
+                              }`}
                             >
+                              <span className={`w-1.5 h-1.5 rounded-full ${
+                                order.paymentStatus === "paid"
+                                  ? "bg-emerald-500"
+                                  : order.paymentStatus === "partial"
+                                    ? "bg-amber-500"
+                                    : "bg-slate-400"
+                              }`} />
                               {order.paymentStatus === "paid"
                                 ? "Đã TT"
                                 : order.paymentStatus === "partial"
@@ -2895,7 +2912,7 @@ export default function ServiceManager() {
                       </td>
 
                       {/* Column 4: Thanh toán & trạng thái - Clean layout - Hidden on tablet */}
-                      <td className="hidden lg:table-cell px-4 py-4 align-top">
+                      <td className="hidden lg:table-cell px-4 py-5 align-top">
                         <div className="space-y-2 min-w-[200px]">
                           {/* Tổng tiền */}
                           <div className="text-sm font-semibold text-slate-800 dark:text-slate-200">
@@ -3016,16 +3033,26 @@ export default function ServiceManager() {
                               </div>
                             )}
 
-                          {/* Status badges */}
+                          {/* Payment status pill */}
                           <div className="flex flex-wrap items-center gap-1.5">
-                            <StatusBadge
-                              status={order.status as WorkOrderStatus}
-                            />
                             <span
-                              className={`text-xs px-2 py-0.5 rounded-full ${paymentPillClass}`}
+                              className={`inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg font-semibold border ${
+                                order.paymentStatus === "paid"
+                                  ? "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700/50"
+                                  : order.paymentStatus === "partial"
+                                    ? "bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-700/50"
+                                    : "bg-slate-50 dark:bg-slate-700/50 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-600"
+                              }`}
                             >
+                              <span className={`w-1.5 h-1.5 rounded-full ${
+                                order.paymentStatus === "paid"
+                                  ? "bg-emerald-500"
+                                  : order.paymentStatus === "partial"
+                                    ? "bg-amber-500"
+                                    : "bg-slate-400"
+                              }`} />
                               {order.paymentStatus === "paid"
-                                ? "Đã TT"
+                                ? "Đã thanh toán"
                                 : order.paymentStatus === "partial"
                                   ? "TT một phần"
                                   : "Chưa TT"}
@@ -3035,10 +3062,33 @@ export default function ServiceManager() {
                       </td>
 
                       <td
-                        className="px-4 py-4 align-top overflow-visible"
+                        className="px-4 py-5 align-top overflow-visible"
                         onClick={(e) => e.stopPropagation()}
                       >
-                        <div className="flex items-center justify-end gap-2">
+                        <div className="flex items-center justify-end gap-1.5">
+                          {/* Quick action buttons - visible on hover */}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleOpenModal(order);
+                            }}
+                            className="w-9 h-9 inline-flex items-center justify-center rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:text-blue-400 dark:hover:bg-blue-900/20 opacity-0 group-hover:opacity-100 transition-all duration-150"
+                            title="Xem chi tiết"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handlePrintOrder(order);
+                            }}
+                            className="w-9 h-9 inline-flex items-center justify-center rounded-lg text-slate-400 hover:text-purple-600 hover:bg-purple-50 dark:hover:text-purple-400 dark:hover:bg-purple-900/20 opacity-0 group-hover:opacity-100 transition-all duration-150"
+                            title="In phiếu"
+                          >
+                            <Printer className="w-4 h-4" />
+                          </button>
+
+                          {/* More actions menu */}
                           <div className="relative service-row-menu">
                             <button
                               onClick={(e) => {
@@ -3055,9 +3105,10 @@ export default function ServiceManager() {
                               }}
                               aria-haspopup="menu"
                               aria-expanded={rowActionMenuId === order.id}
-                              className="w-10 h-10 inline-flex items-center justify-center border border-slate-200 dark:border-slate-600 rounded-lg text-slate-500 hover:text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+                              className="w-9 h-9 inline-flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+                              title="Thêm thao tác"
                             >
-                              <ChevronDown className="w-4 h-4" />
+                              <MoreVertical className="w-4.5 h-4.5" />
                             </button>
                             {rowActionMenuId === order.id && (
                               <div

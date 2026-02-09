@@ -141,6 +141,44 @@ export const formatWorkOrderId = (id?: string | null, storePrefix?: string) => {
 };
 
 /**
+ * Formats a work order ID in a shorter display format
+ *
+ * Shows only the date (DD/MM) and short suffix for compact display.
+ * Full ID is meant to be shown via tooltip.
+ *
+ * @param id - The work order ID to format
+ * @param storePrefix - Store prefix to use (default: "SC")
+ * @returns Object with { short, full } versions of the ID
+ *
+ * @example
+ * ```typescript
+ * formatShortWorkOrderId('SC-1705312245678', 'SC')
+ * // { short: "SC-245678", full: "SC-20240115-245678" }
+ * ```
+ */
+export const formatShortWorkOrderId = (
+  id?: string | null,
+  storePrefix?: string
+): { short: string; full: string } => {
+  const full = formatWorkOrderId(id, storePrefix);
+  if (!full) return { short: "", full: "" };
+  // If the full format is prefix-YYYYMMDD-NNNNNN, extract prefix and suffix
+  const parts = full.split("-");
+  if (parts.length === 3 && parts[1].length === 8) {
+    const prefix = parts[0];
+    const dateStr = parts[1]; // YYYYMMDD
+    const suffix = parts[2];
+    const day = dateStr.slice(6, 8);
+    const month = dateStr.slice(4, 6);
+    return {
+      short: `${prefix}-${day}${month}-${suffix}`,
+      full,
+    };
+  }
+  return { short: full, full };
+};
+
+/**
  * Generic ID formatter that preserves original prefixes
  *
  * Converts any timestamp-based ID into a readable format while

@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from "react";
 import { useAppContext } from "../../contexts/AppContext";
 import { useAuth } from "../../contexts/AuthContext";
 import { showToast } from "../../utils/toast";
-import { formatCurrency, formatDate } from "../../utils/format";
+import { formatCurrency, formatDate, formatShortWorkOrderId } from "../../utils/format";
 import type { CashTransaction } from "../../types";
 import { PlusIcon } from "../Icons";
 import {
@@ -468,9 +468,14 @@ const CashBook: React.FC = () => {
               </div>
             </div>
 
-            <div className="col-span-2 md:col-span-1 bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 border-2 border-blue-200 dark:border-blue-800">
-              <div className="text-blue-600 dark:text-blue-400 text-xs font-medium mb-1">
-                Chênh lệch
+            <div className="col-span-2 md:col-span-1 bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 border-2 border-blue-200 dark:border-blue-800 relative">
+              <div className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400 text-xs font-medium mb-1">
+                <span>Chênh lệch</span>
+                {summary.balance < 0 && (
+                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-[10px] font-semibold">
+                    ⚠ Âm
+                  </span>
+                )}
               </div>
               <div
                 className={`text-xl font-bold ${summary.balance >= 0
@@ -567,21 +572,25 @@ const CashBook: React.FC = () => {
                 <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
                   Loại:
                 </span>
-                <div className="flex gap-2">
+                <div className="flex gap-1">
                   {[
-                    { value: "all", label: "Tất cả" },
-                    { value: "income", label: "Thu" },
-                    { value: "expense", label: "Chi" },
+                    { value: "all", label: "Tất cả", icon: "" },
+                    { value: "income", label: "Thu", icon: "↑" },
+                    { value: "expense", label: "Chi", icon: "↓" },
                   ].map((option) => (
                     <button
                       key={option.value}
                       onClick={() => setFilterType(option.value as any)}
-                      className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${filterType === option.value
-                        ? "bg-blue-600 text-white"
+                      className={`min-w-[56px] px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${filterType === option.value
+                        ? option.value === "income"
+                          ? "bg-green-600 text-white"
+                          : option.value === "expense"
+                            ? "bg-red-600 text-white"
+                            : "bg-blue-600 text-white"
                         : "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600"
                         }`}
                     >
-                      {option.label}
+                      {option.icon ? `${option.icon} ${option.label}` : option.label}
                     </button>
                   ))}
                 </div>
@@ -763,16 +772,10 @@ const CashBook: React.FC = () => {
                     Danh mục
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">
-                    Đối tượng
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">
                     Nội dung
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">
                     Nguồn tiền
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">
-                    Người tạo
                   </th>
                   <th className="px-4 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">
                     Số tiền
@@ -782,11 +785,11 @@ const CashBook: React.FC = () => {
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
                 {isCashTxLoading ? (
                   <tr>
                     <td
-                      colSpan={8}
+                      colSpan={7}
                       className="px-4 py-8 text-center text-slate-500 dark:text-slate-400"
                     >
                       <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto mb-2"></div>
@@ -796,126 +799,196 @@ const CashBook: React.FC = () => {
                 ) : filteredTransactions.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={8}
+                      colSpan={7}
                       className="px-4 py-8 text-center text-slate-500 dark:text-slate-400"
                     >
                       Không có giao dịch nào
                     </td>
                   </tr>
                 ) : (
-                  filteredTransactions.map((tx) => (
-                    <tr
-                      key={tx.id}
-                      className="hover:bg-slate-50 dark:hover:bg-slate-700/50"
-                    >
-                      <td className="px-4 py-3 text-sm text-slate-900 dark:text-slate-100">
-                        <div className="flex flex-col">
-                          <span>{formatDate(new Date(tx.date))}</span>
-                          <span className="text-xs text-slate-500 dark:text-slate-400">
-                            {new Date(tx.date).toLocaleTimeString("vi-VN", {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span
-                          className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${isIncomeType(tx.type)
-                            ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
-                            : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
-                            }`}
-                        >
-                          {isIncomeType(tx.type) ? "↑ Thu" : "↓ Chi"}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-sm text-slate-600 dark:text-slate-400">
-                        {getCategoryLabel(tx.category)}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-slate-900 dark:text-slate-100 font-medium">
-                        {(tx as any).target_name || (tx as any).recipient || "--"}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-slate-600 dark:text-slate-400">
-                        <div className="flex flex-col">
-                          <span>
-                            {(tx as any).description || tx.notes || "--"}
-                          </span>
-                          {(tx as any).reference && (
-                            <span className="text-xs text-slate-500 dark:text-slate-500 mt-0.5">
-                              ({(tx as any).reference})
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-sm text-slate-600 dark:text-slate-400">
-                        {(() => {
-                          const source =
-                            tx.paymentSourceId ||
-                            (tx as any).paymentsource ||
-                            (tx as any).paymentSource;
-                          if (source === "cash") return "Tiền mặt";
-                          if (source === "bank") return "Ngân hàng";
-                          return source || "--";
-                        })()}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-slate-600 dark:text-slate-400">
-                        {profilesMap[(tx as any).created_by] || (tx as any).created_by || "--"}
-                      </td>
-                      <td
-                        className={`px-4 py-3 text-right text-sm font-semibold ${isIncomeType(tx.type)
-                          ? "text-green-600 dark:text-green-400"
-                          : "text-red-600 dark:text-red-400"
-                          }`}
+                  filteredTransactions.map((tx) => {
+                    const txIsIncome = isIncomeType(tx.type);
+                    // Format reference if it looks like a work order ID
+                    const rawRef = (tx as any).reference || "";
+                    const formattedRef = rawRef && rawRef.match(/SC-|WO-|\d{10,}/)
+                      ? formatShortWorkOrderId(rawRef).short
+                      : rawRef;
+                    const fullRef = rawRef && rawRef.match(/SC-|WO-|\d{10,}/)
+                      ? formatShortWorkOrderId(rawRef).full
+                      : rawRef;
+                    // Merge target_name / recipient into content column
+                    const targetName = (tx as any).target_name || (tx as any).recipient || "";
+                    const createdByName = profilesMap[(tx as any).created_by] || "";
+
+                    return (
+                      <tr
+                        key={tx.id}
+                        className={`group transition-colors duration-100 border-l-4 ${
+                          txIsIncome
+                            ? "border-l-green-400 hover:bg-green-50/50 dark:hover:bg-green-900/10"
+                            : "border-l-red-400 hover:bg-red-50/50 dark:hover:bg-red-900/10"
+                        }`}
                       >
-                        {isIncomeType(tx.type) ? "+" : "-"}
-                        {formatCurrency(Math.abs(tx.amount))}
-                      </td>
-                      <td className="px-4 py-3 text-center">
-                        <div className="flex items-center justify-center gap-2">
-                          <button
-                            onClick={() => setEditingTransaction(tx)}
-                            className="p-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
-                            title="Chỉnh sửa"
+                        <td className="px-4 py-4 text-sm text-slate-900 dark:text-slate-100">
+                          <div className="flex flex-col">
+                            <span className="font-medium">{formatDate(new Date(tx.date))}</span>
+                            <span className="text-xs text-slate-400 dark:text-slate-500">
+                              {new Date(tx.date).toLocaleTimeString("vi-VN", {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </span>
+                            {createdByName && (
+                              <span className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
+                                {createdByName}
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-4 py-4">
+                          <span
+                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border ${
+                              txIsIncome
+                                ? "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 border-green-200 dark:border-green-700/50"
+                                : "bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 border-red-200 dark:border-red-700/50"
+                            }`}
                           >
-                            <svg
-                              className="w-4 h-4"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
+                            <span className={`w-2 h-2 rounded-full ${txIsIncome ? "bg-green-500" : "bg-red-500"}`} />
+                            {txIsIncome ? "↑ Thu" : "↓ Chi"}
+                          </span>
+                        </td>
+                        <td className="px-4 py-4 text-sm text-slate-600 dark:text-slate-400">
+                          {getCategoryLabel(tx.category)}
+                        </td>
+                        <td className="px-4 py-4 text-sm text-slate-600 dark:text-slate-400">
+                          <div className="flex flex-col gap-0.5">
+                            <span className="text-slate-800 dark:text-slate-200">
+                              {(tx as any).description || tx.notes || "--"}
+                            </span>
+                            {targetName && (
+                              <span className="text-xs text-slate-500 dark:text-slate-400">
+                                👤 {targetName}
+                              </span>
+                            )}
+                            {formattedRef && (
+                              <span
+                                className="text-xs font-mono text-blue-500 dark:text-blue-400 cursor-help"
+                                title={fullRef}
+                              >
+                                🔗 {formattedRef}
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-4 py-4 text-sm">
+                          {(() => {
+                            const source =
+                              tx.paymentSourceId ||
+                              (tx as any).paymentsource ||
+                              (tx as any).paymentSource;
+                            if (source === "cash") return (
+                              <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 text-xs font-medium">
+                                💵 Tiền mặt
+                              </span>
+                            );
+                            if (source === "bank") return (
+                              <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 text-xs font-medium">
+                                🏦 Ngân hàng
+                              </span>
+                            );
+                            return <span className="text-slate-400">{source || "--"}</span>;
+                          })()}
+                        </td>
+                        <td
+                          className={`px-4 py-4 text-right text-sm font-bold ${
+                            txIsIncome
+                              ? "text-green-600 dark:text-green-400"
+                              : "text-red-600 dark:text-red-400"
+                          }`}
+                        >
+                          {txIsIncome ? "+" : "-"}
+                          {formatCurrency(Math.abs(tx.amount))}
+                        </td>
+                        <td className="px-4 py-4 text-center">
+                          <div className="flex items-center justify-center gap-1">
+                            <button
+                              onClick={() => setEditingTransaction(tx)}
+                              className="w-8 h-8 inline-flex items-center justify-center rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:text-blue-400 dark:hover:bg-blue-900/20 opacity-60 group-hover:opacity-100 transition-all"
+                              title="Chỉnh sửa giao dịch"
                             >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                              />
-                            </svg>
-                          </button>
-                          <button
-                            onClick={() => setDeletingTransaction(tx)}
-                            className="p-1.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                            title="Xóa"
-                          >
-                            <svg
-                              className="w-4 h-4"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
+                              <svg
+                                className="w-4 h-4"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                                />
+                              </svg>
+                            </button>
+                            <button
+                              onClick={() => setDeletingTransaction(tx)}
+                              className="w-8 h-8 inline-flex items-center justify-center rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:text-red-400 dark:hover:bg-red-900/20 opacity-0 group-hover:opacity-100 transition-all"
+                              title="Xóa giao dịch"
                             >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                              />
-                            </svg>
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
+                              <svg
+                                className="w-4 h-4"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                />
+                              </svg>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
+              {/* Footer totals */}
+              {!isCashTxLoading && filteredTransactions.length > 0 && (
+                <tfoot className="bg-slate-50 dark:bg-slate-700/50 border-t-2 border-slate-200 dark:border-slate-600">
+                  <tr>
+                    <td colSpan={3} className="px-4 py-3 text-sm font-medium text-slate-600 dark:text-slate-300">
+                      Tổng: {filteredTransactions.length} giao dịch
+                      <span className="text-slate-400 dark:text-slate-500 ml-1">
+                        ({filteredTransactions.filter(t => isIncomeType(t.type)).length} thu, {filteredTransactions.filter(t => t.type === "expense").length} chi)
+                      </span>
+                    </td>
+                    <td className="px-4 py-3"></td>
+                    <td className="px-4 py-3"></td>
+                    <td className="px-4 py-3 text-right">
+                      <div className="space-y-0.5">
+                        <div className="text-xs font-semibold text-green-600 dark:text-green-400">
+                          +{formatCurrency(summary.income)}
+                        </div>
+                        <div className="text-xs font-semibold text-red-600 dark:text-red-400">
+                          {formatCurrency(summary.expense)}
+                        </div>
+                        <div className={`text-sm font-bold pt-1 border-t border-slate-200 dark:border-slate-600 ${
+                          summary.balance >= 0
+                            ? "text-blue-700 dark:text-blue-300"
+                            : "text-red-600 dark:text-red-400"
+                        }`}>
+                          = {formatCurrency(summary.balance)}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3"></td>
+                  </tr>
+                </tfoot>
+              )}
             </table>
           </div>
 

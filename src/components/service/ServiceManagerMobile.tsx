@@ -30,6 +30,7 @@ import {
   formatCurrency,
   formatDate,
   formatWorkOrderId,
+  formatShortWorkOrderId,
 } from "../../utils/format";
 import { useAuth } from "../../contexts/AuthContext";
 import { canDo } from "../../utils/permissions";
@@ -127,8 +128,8 @@ const WorkOrderCard = React.memo(({
         {/* Header - Single row: ID + Date + Status */}
         <div className="flex items-center justify-between mb-1.5">
           <div className="flex items-center gap-2">
-            <span className="text-[#009ef7] font-mono text-xs font-semibold">
-              {formatWorkOrderId(workOrder.id)}
+            <span className="text-[#009ef7] font-mono text-xs font-semibold" title={formatWorkOrderId(workOrder.id)}>
+              {formatShortWorkOrderId(workOrder.id).short}
             </span>
             <span className="text-[10px] text-slate-500 dark:text-gray-500">
               {formatDate(workOrder.creationDate)}

@@ -579,11 +579,13 @@ const InventoryManagerNew: React.FC = () => {
 
 
 
-      // ⚠️ IMPORTANT: Stock is now auto-updated by trigger (trg_inventory_tx_after_insert)
-      // We only need to:
+      // ⚠️ IMPORTANT: Trigger đã bị xóa (2026-02-06). Stock được cập nhật bởi:
+      // 1. receipt_create_atomic function (nếu đã deploy version mới)
+      // 2. Frontend fallback (nếu function chưa cập nhật stock)
+      // Steps:
       // 1. Create new products if any (for temp items)
-      // 2. Create inventory_transaction (trigger will update stock)
-      // 3. Update prices (retailPrice, wholesalePrice) - not handled by trigger
+      // 2. Call receipt_create_atomic (creates transactions + updates stock + prices)
+      // 3. Verify & fix stock if needed (fallback)
       // 4. Create supplier debt if needed
 
       try {
@@ -672,6 +674,33 @@ const InventoryManagerNew: React.FC = () => {
           notes: `${receiptCode} | NV:${profile?.name || profile?.full_name || "Nhân viên"
             } NCC:${supplierName}${note ? " | " + note : ""}`,
         });
+
+        // ✅ FALLBACK: Đảm bảo stock được cập nhật đúng
+        // Dùng RPC stock_ensure_update (SECURITY DEFINER) để bypass RLS
+        // Phòng trường hợp DB function chưa deploy version mới
+        try {
+          for (const item of processedItems) {
+            // Stock trước nhập = stock trong allPartsData (cache trước khi gọi mutation)
+            const preStock = allPartsData?.find((p: any) => p.id === item.partId)
+              ?.stock?.[currentBranchId] || 0;
+            const expectedStock = preStock + item.quantity;
+
+            const { data: result } = await supabase.rpc("stock_ensure_update", {
+              p_part_id: item.partId,
+              p_branch_id: currentBranchId,
+              p_expected_stock: expectedStock,
+            });
+
+            if (result?.updated) {
+              console.warn(
+                `⚠️ Stock fallback: ${item.partName} | ${result.old_stock} → ${result.new_stock}`
+              );
+            }
+          }
+        } catch (stockErr) {
+          console.error("⚠️ Stock fallback error (non-critical):", stockErr);
+          // Non-critical: receipt was already created successfully
+        }
 
         // OPTIMIZATION: Run Cash Transaction and Debt Creation in parallel
         // Track failures for consolidated notification

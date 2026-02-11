@@ -444,18 +444,17 @@ const BatchPrintBarcodeModal: React.FC<BatchPrintBarcodeModalProps> = ({
               ${rotateLabel ? 'transform: rotate(-90deg); transform-origin: center center;' : ''}
             }
             .label-category {
-              font-size: ${Math.max(6, currentSize.fontSize - 3)}px;
+              font-size: ${Math.max(7, currentSize.fontSize - 1)}px;
+              font-weight: bold;
               text-align: center;
-              line-height: 1;
+              line-height: 1.1;
               max-width: 100%;
               overflow: hidden;
               white-space: nowrap;
               text-overflow: ellipsis;
-              margin-bottom: 0.5px;
-              opacity: 0.7;
-              font-style: italic;
+              margin-bottom: 1px;
               text-transform: uppercase;
-              letter-spacing: 0.3px;
+              letter-spacing: 0.5px;
             }
             .label-name {
               font-size: ${Math.max(7, currentSize.fontSize - 1)}px;
@@ -997,11 +996,11 @@ const BatchPrintBarcodeModal: React.FC<BatchPrintBarcodeModalProps> = ({
                     >
                       {showCategory && part.category && (
                         <p
-                          className="text-center w-full mb-0.5 italic opacity-70 uppercase tracking-wide text-slate-500 dark:text-slate-400"
+                          className="text-center w-full mb-1 font-bold uppercase tracking-wider text-slate-900 dark:text-slate-100"
                           style={{
                             fontSize: `${Math.max(
-                              7,
-                              currentSize.fontSize - 3
+                              9,
+                              currentSize.fontSize - 1
                             )}px`,
                           }}
                         >

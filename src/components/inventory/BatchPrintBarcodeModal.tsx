@@ -163,6 +163,7 @@ const BatchPrintBarcodeModal: React.FC<BatchPrintBarcodeModalProps> = ({
   const [barcodeFormat, setBarcodeFormat] = useState<BarcodeFormat>("CODE128");
   const [showPrice, setShowPrice] = useState(true);
   const [showName, setShowName] = useState(true);
+  const [showCategory, setShowCategory] = useState(false);
   const [quantityMode, setQuantityMode] = useState<QuantityMode>(
     initialQuantities ? "custom" : "stock"
   );
@@ -379,6 +380,7 @@ const BatchPrintBarcodeModal: React.FC<BatchPrintBarcodeModalProps> = ({
         labelsHTML += `
           <div class="label">
             <div class="label-content">
+              ${showCategory && part.category ? `<div class="label-category">${part.category}</div>` : ""}
               ${showName ? `<div class="label-name">${part.name}</div>` : ""}
               ${barcodeSVG}
               ${showPrice ? `<div class="label-price">${formatCurrency(part.retailPrice[currentBranchId] || 0)}</div>` : ""}
@@ -440,6 +442,20 @@ const BatchPrintBarcodeModal: React.FC<BatchPrintBarcodeModalProps> = ({
               align-items: center;
               justify-content: center;
               ${rotateLabel ? 'transform: rotate(-90deg); transform-origin: center center;' : ''}
+            }
+            .label-category {
+              font-size: ${Math.max(6, currentSize.fontSize - 3)}px;
+              text-align: center;
+              line-height: 1;
+              max-width: 100%;
+              overflow: hidden;
+              white-space: nowrap;
+              text-overflow: ellipsis;
+              margin-bottom: 0.5px;
+              opacity: 0.7;
+              font-style: italic;
+              text-transform: uppercase;
+              letter-spacing: 0.3px;
             }
             .label-name {
               font-size: ${Math.max(7, currentSize.fontSize - 1)}px;
@@ -795,6 +811,17 @@ const BatchPrintBarcodeModal: React.FC<BatchPrintBarcodeModalProps> = ({
                   <label className="flex items-center gap-1.5 cursor-pointer">
                     <input
                       type="checkbox"
+                      checked={showCategory}
+                      onChange={(e) => setShowCategory(e.target.checked)}
+                      className="w-3.5 h-3.5 rounded"
+                    />
+                    <span className="text-xs text-slate-700 dark:text-slate-300">
+                      Danh mục
+                    </span>
+                  </label>
+                  <label className="flex items-center gap-1.5 cursor-pointer">
+                    <input
+                      type="checkbox"
                       checked={showPrice}
                       onChange={(e) => setShowPrice(e.target.checked)}
                       className="w-3.5 h-3.5 rounded"
@@ -914,6 +941,17 @@ const BatchPrintBarcodeModal: React.FC<BatchPrintBarcodeModalProps> = ({
                 <label className="flex items-center gap-1.5 cursor-pointer">
                   <input
                     type="checkbox"
+                    checked={showCategory}
+                    onChange={(e) => setShowCategory(e.target.checked)}
+                    className="w-3.5 h-3.5 rounded"
+                  />
+                  <span className="text-xs text-slate-700 dark:text-slate-300">
+                    Danh mục
+                  </span>
+                </label>
+                <label className="flex items-center gap-1.5 cursor-pointer">
+                  <input
+                    type="checkbox"
                     checked={showPrice}
                     onChange={(e) => setShowPrice(e.target.checked)}
                     className="w-3.5 h-3.5 rounded"
@@ -957,6 +995,19 @@ const BatchPrintBarcodeModal: React.FC<BatchPrintBarcodeModalProps> = ({
                         aspectRatio: `${currentSize.width}/${currentSize.height}`,
                       }}
                     >
+                      {showCategory && part.category && (
+                        <p
+                          className="text-center w-full mb-0.5 italic opacity-70 uppercase tracking-wide text-slate-500 dark:text-slate-400"
+                          style={{
+                            fontSize: `${Math.max(
+                              7,
+                              currentSize.fontSize - 3
+                            )}px`,
+                          }}
+                        >
+                          {part.category}
+                        </p>
+                      )}
                       {showName && (
                         <p
                           className="text-xs font-bold text-slate-900 dark:text-slate-100 text-center w-full mb-1 line-clamp-2 leading-tight"

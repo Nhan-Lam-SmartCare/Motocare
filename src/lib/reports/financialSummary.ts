@@ -7,6 +7,8 @@ export const REPORTS_EXCLUDED_INCOME_CATEGORIES = [
   "service_deposit",
   // Hoàn ứng/thu hồi tạm ứng là luân chuyển nội bộ, không phải doanh thu
   "employee_advance_repayment",
+  // Thu nợ không tính vào lợi nhuận vì lợi nhuận đã được tính lúc bán hàng (doanh thu - giá vốn)
+  "debt_collection",
 ] as const;
 
 export const REPORTS_EXCLUDED_EXPENSE_CATEGORIES = [
@@ -95,6 +97,13 @@ function canonicalizeCategory(category: string | null | undefined): string {
     "thu hồi tạm ứng": "employee_advance_repayment",
     "thu hoi tam ung": "employee_advance_repayment",
     "employee_advance_repayment": "employee_advance_repayment",
+
+    // Debt collection (revenue already recognized at time of sale)
+    "thu nợ": "debt_collection",
+    "thu no": "debt_collection",
+    "thu nợ khách hàng": "debt_collection",
+    "thu no khach hang": "debt_collection",
+    "debt_collection": "debt_collection",
 
     // Loan payments
     "trả gốc vay": "loan_principal",

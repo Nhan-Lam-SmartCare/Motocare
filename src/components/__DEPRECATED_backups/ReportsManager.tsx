@@ -488,6 +488,7 @@ const ReportsManager: React.FC = () => {
     "bán hàng",
     "service_income", // Thu từ phiếu sửa chữa
     "service_deposit", // Đặt cọc dịch vụ
+    "debt_collection", // Thu nợ - lợi nhuận đã tính lúc bán hàng (doanh thu - giá vốn)
   ];
 
   // Các category phiếu chi KHÔNG tính vào lợi nhuận (vì đã tính trong giá vốn)

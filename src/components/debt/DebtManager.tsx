@@ -1738,6 +1738,35 @@ const DebtManager: React.FC = () => {
                     }
                   }
                 }
+                
+                // 🔹 Determine notes text: if single debt with sale/work order link, show code
+                let notesText = `Thu nợ hàng loạt - ${selectedCustomerIds.length} khách hàng`;
+                let recipientText = `${selectedCustomerIds.length} khách hàng`;
+                
+                if (selectedCustomerIds.length === 1) {
+                  const singleDebt = branchCustomerDebts.find(
+                    (d) => d.customerId === selectedCustomerIds[0]
+                  );
+                  
+                  if (singleDebt) {
+                    // Extract sale_code from description (format: BH-YYYYMMDD-XXX or similar)
+                    const saleCodeMatch = singleDebt.description?.match(/[A-Z]+-\d{8}-\d{3}/);
+                    const saleCode = saleCodeMatch ? saleCodeMatch[0] : null;
+                    
+                    // Check if debt has sale link
+                    if (saleCode) {
+                      notesText = `Thu nợ từ đơn hàng ${saleCode}`;
+                      recipientText = singleDebt.customerName;
+                    } else if ((singleDebt as any).workOrderId) {
+                      notesText = `Thu nợ từ phiếu ${(singleDebt as any).workOrderId}`;
+                      recipientText = singleDebt.customerName;
+                    } else {
+                      notesText = `Thu nợ khách hàng - ${singleDebt.customerName}`;
+                      recipientText = singleDebt.customerName;
+                    }
+                  }
+                }
+                
                 setSelectedCustomerIds([]);
 
                 // 💰 Ghi sổ quỹ THU nợ khách hàng
@@ -1747,9 +1776,9 @@ const DebtManager: React.FC = () => {
                   branchId: currentBranchId,
                   paymentSourceId: paymentMethod,
                   date: paymentTime,
-                  notes: `Thu nợ hàng loạt - ${selectedCustomerIds.length} khách hàng`,
+                  notes: notesText,
                   category: "debt_collection",
-                  recipient: `${selectedCustomerIds.length} khách hàng`,
+                  recipient: recipientText,
                 });
 
                 if (!cashTxResult.ok) {

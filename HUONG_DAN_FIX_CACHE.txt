@@ -1,0 +1,69 @@
+======================================
+🔧 HƯỚNG DẪN FIX CASH BALANCE TRIỆT ĐỂ
+======================================
+
+BẠN VỪA FIX DATABASE XONG ✅
+Database đã đúng 100%:
+- Cash final = 5.945.000 ✅
+- Bank final = 14.240.374 ✅
+
+NHƯNG UI VẪN SAI VÌ BROWSER CACHE NẶNG
+
+📋 LÀM THEO CÁC BƯỚC NÀY (QUAN TRỌNG):
+
+Bước 1: ĐÓNG TẤT CẢ TABS localhost:4310
+========================================
+- Đóng tất cả tabs đang mở localhost:4310
+- Kiểm tra không còn tab nào
+
+Bước 2: XÓA CACHE TRONG TRÌNH DUYỆT
+===================================
+Mở DevTools (F12) trong BẤT KỲ trang nào, rồi:
+
+Chrome/Edge:
+1. F12 → Application tab
+2. Bên trái: Clear storage
+3. Tích tất cả các ô:
+   ☑ Local và session storage
+   ☑ IndexedDB  
+   ☑ Cookies
+   ☑ Cache storage
+4. Click "Clear site data"
+
+Firefox:
+1. F12 → Storage tab
+2. Right click "Local Storage" → Delete All
+3. Right click "IndexedDB" → Delete All
+
+Bước 3: MỞ TAB MỚI
+==================
+- Mở tab mới hoàn toàn
+- Vào: http://localhost:4310/finance
+- Click tab "💵 Sổ quỹ"
+
+Bước 4: KIỂM TRA
+===============
+Phải thấy trong phần trên (cards màu xanh lá/đỏ):
+✅ Thu: 113.211.000 đ
+✅ Chi: -131.690.810 đ  
+
+Scroll xuống dưới, góc phải phải thấy:
+✅ Tiền mặt: 67.467.066 đ (hoặc gần 5.945.000)
+✅ Tài khoản: Khoảng 14.240.374 đ
+
+QUAN TRỌNG: 
+- Phải ĐÓNG TẤT CẢ tabs cũ trước
+- Phải XÓA cache/storage
+- Phải MỞ TAB MỚI
+
+Nếu vẫn sai, chạy trong Console:
+```javascript
+localStorage.clear();
+sessionStorage.clear();
+indexedDB.databases().then(dbs => dbs.forEach(db => indexedDB.deleteDatabase(db.name)));
+setTimeout(() => location.reload(true), 1000);
+```
+
+========================================
+Nếu sau các bước trên vẫn sai, BÁO TÔI NGAY.
+========================================

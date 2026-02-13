@@ -264,7 +264,8 @@ const InventoryManagerNew: React.FC = () => {
       if (error) throw error;
       return data || [];
     },
-    staleTime: 30_000, // Cache for 30s to reduce refetches
+    staleTime: 0, // No cache - always refetch for accurate stock
+    refetchInterval: 5000, // Auto-refetch every 5s for realtime stock updates
   });
 
   const stockHealth = useMemo(() => {

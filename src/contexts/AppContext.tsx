@@ -162,12 +162,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     const fetchPaymentSources = async () => {
       try {
+        console.log('[AppContext] 🔄 Fetching payment_sources from DB...');
         const [paymentSourcesRes, payrollRes] = await Promise.all([
           supabase.from("payment_sources").select("*"),
           supabase.from("payroll_records").select("*"),
         ]);
 
         if (!paymentSourcesRes.error && paymentSourcesRes.data) {
+          console.log('[AppContext] ✅ Loaded payment_sources:', paymentSourcesRes.data);
           setPaymentSources(paymentSourcesRes.data);
         }
 

@@ -129,6 +129,7 @@ export const CashBookMobile: React.FC = () => {
 
     // Calculate summary
     const summary = useMemo(() => {
+        // Thu/Chi: Tính từ giao dịch đã lọc theo thời gian
         const income = filteredTransactions
             .filter((tx) => isIncomeType(tx.type))
             .reduce((sum, tx) => sum + Math.abs(tx.amount), 0);
@@ -139,10 +140,12 @@ export const CashBookMobile: React.FC = () => {
 
         const balance = income - expense;
 
+        // Tiền mặt/Ngân hàng: Tính số dư THỰC TẾ từ TẤT CẢ giao dịch (không phụ thuộc filter)
         const allBranchTransactions = cashTransactions.filter(
             (tx) => tx.branchId === currentBranchId
         );
 
+        // Tính biến động tiền mặt từ TẤT CẢ giao dịch
         const cashTransactionsDelta = allBranchTransactions
             .filter((tx) => tx.paymentSourceId === "cash")
             .reduce((sum, tx) => {
@@ -153,6 +156,7 @@ export const CashBookMobile: React.FC = () => {
                 }
             }, 0);
 
+        // Tính biến động ngân hàng từ TẤT CẢ giao dịch
         const bankTransactionsDelta = allBranchTransactions
             .filter((tx) => tx.paymentSourceId === "bank")
             .reduce((sum, tx) => {
@@ -168,6 +172,7 @@ export const CashBookMobile: React.FC = () => {
         const savedInitialBank =
             paymentSources.find((ps) => ps.id === "bank")?.balance[currentBranchId] || 0;
 
+        // Số dư thực tế = Số dư ban đầu + Biến động từ giao dịch
         const cashBalance = savedInitialCash + cashTransactionsDelta;
         const bankBalance = savedInitialBank + bankTransactionsDelta;
 

@@ -19,11 +19,11 @@ export const FinanceManagerMobile: React.FC = () => {
     const [activeTab, setActiveTab] = useState<Tab>("combined");
 
     const tabs = [
-        { key: "combined", label: "Tổng hợp", icon: LayoutDashboard },
-        { key: "cashbook", label: "Sổ quỹ", icon: Wallet },
-        { key: "loans", label: "Vay & Nợ", icon: Banknote },
-        { key: "assets", label: "TSCĐ", icon: Building2 },
-        { key: "capital", label: "Vốn", icon: CircleDollarSign },
+        { key: "combined" as const, label: "Tổng hợp", icon: LayoutDashboard },
+        { key: "cashbook" as const as const, label: "Sổ quỹ", icon: Wallet },
+        { key: "loans" as const, label: "Vay & Nợ", icon: Banknote },
+        { key: "assets" as const, label: "TSCĐ", icon: Building2 },
+        { key: "capital" as const, label: "Vốn", icon: CircleDollarSign },
     ];
 
     return (

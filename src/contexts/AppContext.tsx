@@ -168,9 +168,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
           supabase.from("payroll_records").select("*"),
         ]);
 
-        if (!paymentSourcesRes.error && paymentSourcesRes.data) {
-          console.log('[AppContext] ✅ Loaded payment_sources:', paymentSourcesRes.data);
-          setPaymentSources(paymentSourcesRes.data);
+        if (!paymentSourcesRes.error && Array.isArray(paymentSourcesRes.data)) {
+          if (paymentSourcesRes.data.length > 0) {
+            console.log('[AppContext] ✅ Loaded payment_sources:', paymentSourcesRes.data);
+            setPaymentSources(paymentSourcesRes.data);
+          } else {
+            console.warn('[AppContext] ⚠️ payment_sources empty on first fetch, retrying once...');
+            const retryRes = await supabase.from("payment_sources").select("*");
+            if (!retryRes.error && Array.isArray(retryRes.data) && retryRes.data.length > 0) {
+              console.log('[AppContext] ✅ Loaded payment_sources after retry:', retryRes.data);
+              setPaymentSources(retryRes.data);
+            } else {
+              console.warn('[AppContext] ⚠️ Keep existing paymentSources, skip overwrite with empty data');
+            }
+          }
+        } else if (paymentSourcesRes.error) {
+          console.error('[AppContext] ❌ Failed to load payment_sources:', paymentSourcesRes.error);
         }
 
         if (!payrollRes.error && payrollRes.data) {

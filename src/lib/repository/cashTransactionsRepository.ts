@@ -6,6 +6,31 @@ import { canonicalizeMotocareCashTxCategory } from "../finance/cashTxCategories"
 
 const TABLE = "cash_transactions";
 const READ_TABLE = "cash_transactions_ledger";
+const INCOME_CATEGORIES = new Set([
+  "sale_income",
+  "service_income",
+  "other_income",
+  "debt_collection",
+  "service_deposit",
+  "employee_advance_repayment",
+  "general_income",
+  "deposit",
+]);
+const EXPENSE_CATEGORIES = new Set([
+  "inventory_purchase",
+  "supplier_payment",
+  "debt_payment",
+  "salary",
+  "employee_advance",
+  "loan_payment",
+  "rent",
+  "utilities",
+  "outsourcing",
+  "service_cost",
+  "sale_refund",
+  "other_expense",
+  "general_expense",
+]);
 
 export interface CreateCashTxInput {
   type: CashTransaction["type"]; // "income" | "expense"
@@ -34,18 +59,45 @@ export async function fetchCashTransactions(params?: {
 }): Promise<RepoResult<CashTransaction[]>> {
   try {
     const runQuery = async (table: string) => {
-      let query = supabase.from(table).select("*").order("date", { ascending: false });
+      const effectiveLimit = params?.limit ?? 10000;
+      const batchSize = Math.min(1000, effectiveLimit);
+      const rows: any[] = [];
+      let offset = 0;
 
-      // Filter by branchId - PostgreSQL stores column as lowercase "branchid"
-      if (params?.branchId) {
-        query = query.eq("branchid", params.branchId);
+      while (rows.length < effectiveLimit) {
+        let query = supabase
+          .from(table)
+          .select("*")
+          .order("date", { ascending: false });
+
+        // Filter by branchId - PostgreSQL stores column as lowercase "branchid"
+        if (params?.branchId) {
+          query = query.eq("branchid", params.branchId);
+        }
+        if (params?.startDate) query = query.gte("date", params.startDate);
+        if (params?.endDate) query = query.lte("date", params.endDate);
+
+        const remaining = effectiveLimit - rows.length;
+        const currentBatchSize = Math.min(batchSize, remaining);
+        const from = offset;
+        const to = offset + currentBatchSize - 1;
+
+        const { data, error } = await query.range(from, to);
+        if (error) {
+          return { data: null, error };
+        }
+
+        const batch = data || [];
+        rows.push(...batch);
+
+        if (batch.length < currentBatchSize) {
+          break;
+        }
+
+        offset += batch.length;
       }
-      if (params?.startDate) query = query.gte("date", params.startDate);
-      if (params?.endDate) query = query.lte("date", params.endDate);
-      if (params?.limit) query = query.limit(params.limit);
-      // Don't filter by type at DB level - some old records may not have it
 
-      return await query;
+      return { data: rows, error: null };
     };
 
     // Prefer normalized ledger view for consistent reads.
@@ -63,24 +115,32 @@ export async function fetchCashTransactions(params?: {
       });
 
     // Map DB columns to TypeScript interface (handle both lowercase and camelCase)
-    let mappedData = (data || []).map((row: any) => ({
-      ...row,
-      paymentSourceId:
-        row.paymentsource || row.paymentSource || row.paymentSourceId || "cash",
-      branchId: row.branchid || row.branchId || row.branch_id,
-      // Infer type from category if not present
-      type:
-        row.type ||
-        ([
-          "sale_income",
-          "service_income",
-          "other_income",
-          "debt_collection",
-          "general_income",
-        ].includes(row.category)
-          ? "income"
-          : "expense"),
-    })) as CashTransaction[];
+    let mappedData = (data || []).map((row: any) => {
+      const normalizedType = String(row.type || "")
+        .trim()
+        .toLowerCase();
+      const canonicalCategory = canonicalizeMotocareCashTxCategory(row.category);
+      const normalizedCategory = String(canonicalCategory || row.category || "")
+        .trim()
+        .toLowerCase();
+
+      let normalizedTxType: "income" | "expense" = "expense";
+      if (INCOME_CATEGORIES.has(normalizedCategory)) {
+        normalizedTxType = "income";
+      } else if (EXPENSE_CATEGORIES.has(normalizedCategory)) {
+        normalizedTxType = "expense";
+      } else if (normalizedType === "income" || normalizedType === "deposit") {
+        normalizedTxType = "income";
+      }
+
+      return {
+        ...row,
+        paymentSourceId:
+          row.paymentsource || row.paymentSource || row.paymentSourceId || "cash",
+        branchId: row.branchid || row.branchId || row.branch_id,
+        type: normalizedTxType,
+      };
+    }) as CashTransaction[];
 
     // Filter by type at client level (for backwards compatibility)
     if (params?.type) {

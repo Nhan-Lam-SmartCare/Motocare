@@ -23,12 +23,15 @@ export interface PinCashTransaction {
 }
 
 // Fetch cash transactions từ Pin DB
+// NOTE: loại trừ id bắt đầu bằng "MOTO-" vì đó là bản mirror sync từ Motocare
+// để tránh đếm trùng khi hiển thị số Pin riêng.
 export async function fetchPinCashTransactions(): Promise<
   PinCashTransaction[]
 > {
   const { data, error } = await pinSupabase
     .from("cashtransactions")
     .select("*")
+    .not("id", "like", "MOTO-%")
     .order("date", { ascending: false });
 
   if (error) {
@@ -64,6 +67,8 @@ export async function fetchPinInitialBalance(branchId: string = "CN1"): Promise<
 }
 
 // Fetch tổng số dư từ Pin DB (chia theo tiền mặt và ngân hàng)
+// NOTE: Lấy số dư trực tiếp từ payment_sources.balance để khớp với app Pin.
+// App Pin không tính delta từ transactions mà dùng balance đã được cập nhật/reconcile.
 export async function fetchPinBalanceSummary(branchId: string = "CN1"): Promise<{
   totalIncome: number;
   totalExpense: number;
@@ -71,29 +76,15 @@ export async function fetchPinBalanceSummary(branchId: string = "CN1"): Promise<
   cash: number;
   bank: number;
 }> {
-  // Pin Factory dùng cột payment_source_id
+  // Lấy statistics thu/chi (cho mục đích hiển thị, không dùng tính balance)
   const { data, error } = await pinSupabase
     .from("cashtransactions")
-    .select("type, amount, payment_source_id");
+    .select("type, amount")
+    .not("id", "like", "MOTO-%");
 
   if (error) {
-    console.error("[PinSupabase] Error fetching balance:", error);
-    return { totalIncome: 0, totalExpense: 0, balance: 0, cash: 0, bank: 0 };
+    console.error("[PinSupabase] Error fetching transactions:", error);
   }
-
-  // Helper để kiểm tra là tiền mặt
-  const isCash = (t: any): boolean => {
-    const source = t.payment_source_id;
-    // Tiền mặt nếu payment_source_id là "cash", null, hoặc không có
-    return !source || source === "cash";
-  };
-
-  // Helper để kiểm tra là ngân hàng
-  const isBank = (t: any): boolean => {
-    const source = t.payment_source_id;
-    // Ngân hàng nếu payment_source_id là "bank"
-    return source === "bank";
-  };
 
   const totalIncome = (data || [])
     .filter((t) => t.type === "income")
@@ -103,38 +94,15 @@ export async function fetchPinBalanceSummary(branchId: string = "CN1"): Promise<
     .filter((t) => t.type === "expense")
     .reduce((sum, t) => sum + Math.abs(t.amount || 0), 0);
 
-  // Tính biến động tiền mặt từ transactions
-  const cashIncome = (data || [])
-    .filter((t) => t.type === "income" && isCash(t))
-    .reduce((sum, t) => sum + Math.abs(t.amount || 0), 0);
-  const cashExpense = (data || [])
-    .filter((t) => t.type === "expense" && isCash(t))
-    .reduce((sum, t) => sum + Math.abs(t.amount || 0), 0);
-
-  // Tính biến động ngân hàng từ transactions
-  const bankIncome = (data || [])
-    .filter((t) => t.type === "income" && isBank(t))
-    .reduce((sum, t) => sum + Math.abs(t.amount || 0), 0);
-  const bankExpense = (data || [])
-    .filter((t) => t.type === "expense" && isBank(t))
-    .reduce((sum, t) => sum + Math.abs(t.amount || 0), 0);
-
-  console.log("[PinSupabase] Cash delta: income=", cashIncome, "expense=", cashExpense, "net=", cashIncome - cashExpense);
-  console.log("[PinSupabase] Bank delta: income=", bankIncome, "expense=", bankExpense, "net=", bankIncome - bankExpense);
-
-  // Lấy số dư ban đầu
-  const initialBalance = await fetchPinInitialBalance(branchId);
-  console.log("[PinSupabase] Initial balance: cash=", initialBalance.cash, "bank=", initialBalance.bank);
-
-  // Tính số dư thực tế = Số dư ban đầu + Biến động
-  const cashBalance = initialBalance.cash + (cashIncome - cashExpense);
-  const bankBalance = initialBalance.bank + (bankIncome - bankExpense);
+  // Lấy số dư thực tế từ payment_sources (đã được app Pin reconcile/cập nhật)
+  const currentBalance = await fetchPinInitialBalance(branchId);
+  console.log("[PinSupabase] Current balance from payment_sources: cash=", currentBalance.cash, "bank=", currentBalance.bank);
 
   return {
     totalIncome,
     totalExpense,
-    balance: cashBalance + bankBalance,
-    cash: cashBalance,
-    bank: bankBalance,
+    balance: currentBalance.cash + currentBalance.bank,
+    cash: currentBalance.cash,
+    bank: currentBalance.bank,
   };
 }

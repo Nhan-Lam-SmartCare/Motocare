@@ -87,6 +87,14 @@ const CashBook: React.FC = () => {
     paymentSources.find((ps) => ps.id === "bank")?.balance[currentBranchId] ||
     0;
 
+  // DEBUG: Log payment sources
+  React.useEffect(() => {
+    console.log('[DEBUG CashBook] currentBranchId:', currentBranchId);
+    console.log('[DEBUG CashBook] paymentSources:', paymentSources);
+    console.log('[DEBUG CashBook] cash payment source:', paymentSources.find((ps) => ps.id === "cash"));
+    console.log('[DEBUG CashBook] bank payment source:', paymentSources.find((ps) => ps.id === "bank"));
+  }, [currentBranchId, paymentSources]);
+
   // Filter transactions
   const filteredTransactions = useMemo(() => {
     let filtered = cashTransactions.filter(
@@ -158,15 +166,123 @@ const CashBook: React.FC = () => {
     searchQuery,
   ]);
 
-  // Helper to check if transaction is income type (including "deposit" for backwards compatibility)
-  const isIncomeType = (type: string | undefined) =>
-    type === "income" || type === "deposit";
+  const INCOME_CATEGORIES = new Set([
+    "sale_income",
+    "service_income",
+    "other_income",
+    "debt_collection",
+    "service_deposit",
+    "employee_advance_repayment",
+    "general_income",
+    "deposit",
+  ]);
+  const EXPENSE_CATEGORIES = new Set([
+    "inventory_purchase",
+    "supplier_payment",
+    "debt_payment",
+    "salary",
+    "employee_advance",
+    "loan_payment",
+    "rent",
+    "utilities",
+    "outsourcing",
+    "service_cost",
+    "sale_refund",
+    "other_expense",
+    "general_expense",
+  ]);
 
-  // Calculate summary
-  const summary = useMemo(() => {
-    // Thu/Chi: Tính từ giao dịch đã lọc theo thời gian
+  const isIncomeTx = (tx: CashTransaction) => {
+    const normalizedCategory = String(tx.category || "").trim().toLowerCase();
+    if (INCOME_CATEGORIES.has(normalizedCategory)) return true;
+    if (EXPENSE_CATEGORIES.has(normalizedCategory)) return false;
+    if (tx.type === "income" || tx.type === "deposit") return true;
+    return INCOME_CATEGORIES.has(normalizedCategory);
+  };
+
+  // Calculate ACTUAL BALANCE (from ALL transactions, not filtered)
+  const actualBalance = useMemo(() => {
+    const allBranchTransactions = cashTransactions.filter(
+      (tx) => tx.branchId === currentBranchId
+    );
+
+    console.log('[DEBUG CashBook] Total transactions:', cashTransactions.length);
+    console.log('[DEBUG CashBook] Branch transactions:', allBranchTransactions.length);
+    console.log('[DEBUG CashBook] Sample tx:', allBranchTransactions[0]);
+    console.log('[DEBUG CashBook] Payment source counts:', {
+      cash: allBranchTransactions.filter(tx => tx.paymentSourceId === 'cash').length,
+      bank: allBranchTransactions.filter(tx => tx.paymentSourceId === 'bank').length,
+      other: allBranchTransactions.filter(tx => tx.paymentSourceId !== 'cash' && tx.paymentSourceId !== 'bank').length,
+    });
+    console.log('[DEBUG CashBook] savedInitialCash:', savedInitialCash);
+    console.log('[DEBUG CashBook] savedInitialBank:', savedInitialBank);
+
+    // Tính biến động tiền mặt từ TẤT CẢ giao dịch
+    // FIXED: Không dùng Math.abs() vì DB có sẵn negative amounts
+    const cashTransactionsDelta = allBranchTransactions
+      .filter((tx) => tx.paymentSourceId === "cash")
+      .reduce((sum, tx) => {
+        // Nếu amount > 0: thu, amount < 0: chi (hoặc ngược lại tùy type)
+        // RULE: income → +amount, expense → -amount
+        let delta = 0;
+        if (isIncomeTx(tx)) {
+          delta = Math.abs(tx.amount); // Income luôn cộng (dương)
+        } else {
+          delta = -Math.abs(tx.amount); // Expense luôn trừ (âm)
+        }
+        
+        // Log first 5 transactions for debugging
+        if (allBranchTransactions.filter((t) => t.paymentSourceId === "cash").indexOf(tx) < 5) {
+          console.log('[DEBUG] Cash tx:', {
+            id: tx.id.slice(0, 8),
+            type: tx.type,
+            rawAmount: tx.amount,
+            absAmount: Math.abs(tx.amount),
+            isIncome: isIncomeTx(tx),
+            delta,
+            runningSum: sum + delta
+          });
+        }
+        return sum + delta;
+      }, 0);
+
+    // Tính biến động ngân hàng từ TẤT CẢ giao dịch
+    const bankTransactionsDelta = allBranchTransactions
+      .filter((tx) => tx.paymentSourceId === "bank")
+      .reduce((sum, tx) => {
+        if (isIncomeTx(tx)) {
+          return sum + Math.abs(tx.amount);
+        } else {
+          return sum - Math.abs(tx.amount);
+        }
+      }, 0);
+
+    console.log('[DEBUG CashBook] cashTransactionsDelta:', cashTransactionsDelta);
+    console.log('[DEBUG CashBook] bankTransactionsDelta:', bankTransactionsDelta);
+
+    // Số dư thực tế = Số dư ban đầu + Biến động từ giao dịch
+    const cashBalance = savedInitialCash + cashTransactionsDelta;
+    const bankBalance = savedInitialBank + bankTransactionsDelta;
+
+    console.log('[DEBUG CashBook] FINAL cashBalance:', cashBalance, '=', savedInitialCash, '+', cashTransactionsDelta);
+    console.log('[DEBUG CashBook] FINAL bankBalance:', bankBalance, '=', savedInitialBank, '+', bankTransactionsDelta);
+
+    return {
+      cashBalance,
+      bankBalance,
+      totalBalance: cashBalance + bankBalance,
+    };
+  }, [
+    cashTransactions,
+    currentBranchId,
+    savedInitialCash,
+    savedInitialBank,
+  ]);
+
+  // Calculate FILTERED SUMMARY (from filtered transactions only)
+  const filteredSummary = useMemo(() => {
     const income = filteredTransactions
-      .filter((tx) => isIncomeType(tx.type))
+      .filter((tx) => isIncomeTx(tx))
       .reduce((sum, tx) => sum + Math.abs(tx.amount), 0);
 
     const expense = filteredTransactions
@@ -175,60 +291,55 @@ const CashBook: React.FC = () => {
 
     const balance = income - expense;
 
-    // Tiền mặt/Ngân hàng: Tính số dư THỰC TẾ từ TẤT CẢ giao dịch (không phụ thuộc filter)
-    const allBranchTransactions = cashTransactions.filter(
-      (tx) => tx.branchId === currentBranchId
-    );
+    // Tính riêng cho tiền mặt và ngân hàng trong kỳ lọc
+    const cashIncome = filteredTransactions
+      .filter((tx) => tx.paymentSourceId === "cash" && isIncomeTx(tx))
+      .reduce((sum, tx) => sum + Math.abs(tx.amount), 0);
 
-    // Tính biến động tiền mặt từ TẤT CẢ giao dịch
-    const cashTransactionsDelta = allBranchTransactions
-      .filter((tx) => tx.paymentSourceId === "cash")
-      .reduce((sum, tx) => {
-        if (isIncomeType(tx.type)) {
-          return sum + Math.abs(tx.amount);
-        } else {
-          return sum - Math.abs(tx.amount);
-        }
-      }, 0);
+    const cashExpense = filteredTransactions
+      .filter((tx) => tx.paymentSourceId === "cash" && tx.type === "expense")
+      .reduce((sum, tx) => sum + Math.abs(tx.amount), 0);
 
-    // Tính biến động ngân hàng từ TẤT CẢ giao dịch
-    const bankTransactionsDelta = allBranchTransactions
-      .filter((tx) => tx.paymentSourceId === "bank")
-      .reduce((sum, tx) => {
-        if (isIncomeType(tx.type)) {
-          return sum + Math.abs(tx.amount);
-        } else {
-          return sum - Math.abs(tx.amount);
-        }
-      }, 0);
+    const bankIncome = filteredTransactions
+      .filter((tx) => tx.paymentSourceId === "bank" && isIncomeTx(tx))
+      .reduce((sum, tx) => sum + Math.abs(tx.amount), 0);
 
-    // Số dư thực tế = Số dư ban đầu + Biến động từ giao dịch
-    const cashBalance = savedInitialCash + cashTransactionsDelta;
-    const bankBalance = savedInitialBank + bankTransactionsDelta;
+    const bankExpense = filteredTransactions
+      .filter((tx) => tx.paymentSourceId === "bank" && tx.type === "expense")
+      .reduce((sum, tx) => sum + Math.abs(tx.amount), 0);
 
     return {
       income,
-      expense: -expense, // Display as negative for expense
+      expense,
       balance,
-      cashBalance,
-      bankBalance,
-      totalBalance: cashBalance + bankBalance,
+      cashIncome,
+      cashExpense,
+      cashBalance: cashIncome - cashExpense,
+      bankIncome,
+      bankExpense,
+      bankBalance: bankIncome - bankExpense,
     };
-  }, [
-    filteredTransactions,
-    cashTransactions,
-    currentBranchId,
-    savedInitialCash,
-    savedInitialBank,
-  ]);
+  }, [filteredTransactions]);
+
+  // Determine if we're showing filtered view (not "all")
+  const isFilteredView = filterDateRange !== "all" || filterType !== "all" || filterPaymentSource !== "all" || searchQuery.trim() !== "";
 
   // Hàm lưu số dư ban đầu
   const handleSaveInitialBalance = async () => {
     try {
+      const parseSignedAmount = (value: string) => {
+        const normalized = String(value || "")
+          .replace(/\s+/g, "")
+          .replace(/[,.]/g, "")
+          .replace(/[^0-9-]/g, "");
+        if (!normalized || normalized === "-") return 0;
+        return parseFloat(normalized) || 0;
+      };
+
       const cashAmount =
-        parseFloat(initialCashBalance.replace(/[,.]/g, "")) || 0;
+        parseSignedAmount(initialCashBalance);
       const bankAmount =
-        parseFloat(initialBankBalance.replace(/[,.]/g, "")) || 0;
+        parseSignedAmount(initialBankBalance);
 
       // Cập nhật số dư tiền mặt
       await updatePaymentSourceBalanceRepo.mutateAsync({
@@ -365,8 +476,10 @@ const CashBook: React.FC = () => {
                     type="text"
                     value={initialCashBalance}
                     onChange={(e) => {
-                      const value = e.target.value.replace(/[^0-9]/g, "");
-                      setInitialCashBalance(value);
+                      const raw = e.target.value;
+                      const hasLeadingMinus = raw.trim().startsWith("-");
+                      const digitsOnly = raw.replace(/[^0-9]/g, "");
+                      setInitialCashBalance(hasLeadingMinus ? `-${digitsOnly}` : digitsOnly);
                     }}
                     placeholder="0"
                     className="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-lg font-semibold focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -384,8 +497,10 @@ const CashBook: React.FC = () => {
                     type="text"
                     value={initialBankBalance}
                     onChange={(e) => {
-                      const value = e.target.value.replace(/[^0-9]/g, "");
-                      setInitialBankBalance(value);
+                      const raw = e.target.value;
+                      const hasLeadingMinus = raw.trim().startsWith("-");
+                      const digitsOnly = raw.replace(/[^0-9]/g, "");
+                      setInitialBankBalance(hasLeadingMinus ? `-${digitsOnly}` : digitsOnly);
                     }}
                     placeholder="0"
                     className="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-lg font-semibold focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -421,91 +536,159 @@ const CashBook: React.FC = () => {
           </div>
         )}
 
-        {/* Summary Cards */}
-        <div className="p-3 md:p-4">
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-2 md:gap-3 mb-4">
-            <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3 border-2 border-green-200 dark:border-green-800">
-              <div className="flex items-center gap-2 text-green-600 dark:text-green-400 text-xs font-medium mb-1">
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M7 11l5-5m0 0l5 5m-5-5v12"
-                  />
+        {/* Actual Balance Section - Always visible */}
+        <div className="p-3 md:p-4 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-slate-800 dark:to-slate-700 border-b-2 border-blue-200 dark:border-blue-800">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+              </svg>
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                Số dư thực tế
+              </h3>
+              <span className="text-xs text-slate-500 dark:text-slate-400 font-normal">
+                (Tổng cộng từ đầu)
+              </span>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="bg-white dark:bg-slate-800 rounded-lg p-4 border-2 border-amber-300 dark:border-amber-700 shadow-sm">
+              <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 text-sm font-semibold mb-2">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
                 </svg>
-                <span>Thu</span>
-              </div>
-              <div className="text-green-900 dark:text-green-100 text-xl font-bold">
-                {formatCurrency(summary.income)}
-              </div>
-            </div>
-
-            <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-3 border-2 border-red-200 dark:border-red-800">
-              <div className="flex items-center gap-2 text-red-600 dark:text-red-400 text-xs font-medium mb-1">
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M17 13l-5 5m0 0l-5-5m5 5V6"
-                  />
-                </svg>
-                <span>Chi</span>
-              </div>
-              <div className="text-red-900 dark:text-red-100 text-xl font-bold">
-                {formatCurrency(summary.expense)}
-              </div>
-            </div>
-
-            <div className="col-span-2 md:col-span-1 bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 border-2 border-blue-200 dark:border-blue-800 relative">
-              <div className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400 text-xs font-medium mb-1">
-                <span>Chênh lệch</span>
-                {summary.balance < 0 && (
-                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-[10px] font-semibold">
-                    ⚠ Âm
-                  </span>
-                )}
-              </div>
-              <div
-                className={`text-xl font-bold ${summary.balance >= 0
-                  ? "text-blue-900 dark:text-blue-100"
-                  : "text-red-600 dark:text-red-400"
-                  }`}
-              >
-                {formatCurrency(summary.balance)}
-              </div>
-            </div>
-
-            <div className="bg-amber-50 dark:bg-amber-900/20 rounded-lg p-3 border-2 border-amber-200 dark:border-amber-800">
-              <div className="text-amber-600 dark:text-amber-400 text-xs font-medium mb-1">
                 Tiền mặt
               </div>
-              <div className="text-amber-900 dark:text-amber-100 text-xl font-bold">
-                {formatCurrency(summary.cashBalance)}
+              <div className={`text-2xl font-bold ${
+                actualBalance.cashBalance >= 0 
+                  ? "text-amber-900 dark:text-amber-100" 
+                  : "text-red-600 dark:text-red-400"
+              }`}>
+                {formatCurrency(actualBalance.cashBalance)}
               </div>
+              {actualBalance.cashBalance < 0 && (
+                <div className="mt-1 text-xs text-red-600 dark:text-red-400 font-medium">
+                  ⚠️ Số dư âm - cần kiểm tra
+                </div>
+              )}
             </div>
-
-            <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-3 border-2 border-purple-200 dark:border-purple-800">
-              <div className="text-purple-600 dark:text-purple-400 text-xs font-medium mb-1">
+            <div className="bg-white dark:bg-slate-800 rounded-lg p-4 border-2 border-purple-300 dark:border-purple-700 shadow-sm">
+              <div className="flex items-center gap-2 text-purple-600 dark:text-purple-400 text-sm font-semibold mb-2">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                </svg>
                 Ngân hàng
               </div>
-              <div className="text-purple-900 dark:text-purple-100 text-xl font-bold">
-                {formatCurrency(summary.bankBalance)}
+              <div className={`text-2xl font-bold ${
+                actualBalance.bankBalance >= 0 
+                  ? "text-purple-900 dark:text-purple-100" 
+                  : "text-red-600 dark:text-red-400"
+              }`}>
+                {formatCurrency(actualBalance.bankBalance)}
+              </div>
+              {actualBalance.bankBalance < 0 && (
+                <div className="mt-1 text-xs text-red-600 dark:text-red-400 font-medium">
+                  ⚠️ Số dư âm - cần kiểm tra
+                </div>
+              )}
+            </div>
+            <div className="bg-white dark:bg-slate-800 rounded-lg p-4 border-2 border-blue-300 dark:border-blue-700 shadow-sm">
+              <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400 text-sm font-semibold mb-2">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Tổng cộng
+              </div>
+              <div className={`text-2xl font-bold ${
+                actualBalance.totalBalance >= 0 
+                  ? "text-blue-900 dark:text-blue-100" 
+                  : "text-red-600 dark:text-red-400"
+              }`}>
+                {formatCurrency(actualBalance.totalBalance)}
               </div>
             </div>
           </div>
+        </div>
 
+        {/* Filtered Summary Section - Only show when filtered */}
+        {isFilteredView && (
+          <div className="p-3 md:p-4 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
+            <div className="flex items-center gap-2 mb-3">
+              <svg className="w-4 h-4 text-slate-600 dark:text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+              </svg>
+              <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                Tóm tắt kỳ lọc
+              </h4>
+              <span className="text-xs text-slate-500 dark:text-slate-400">
+                ({filteredTransactions.length} giao dịch)
+              </span>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+              <div className="bg-white dark:bg-slate-800 rounded-lg p-3 border border-green-200 dark:border-green-800">
+                <div className="flex items-center gap-1.5 text-green-600 dark:text-green-400 text-xs font-medium mb-1">
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 11l5-5m0 0l5 5m-5-5v12" />
+                  </svg>
+                  Thu
+                </div>
+                <div className="text-green-900 dark:text-green-100 text-lg font-bold">
+                  {formatCurrency(filteredSummary.income)}
+                </div>
+              </div>
+              <div className="bg-white dark:bg-slate-800 rounded-lg p-3 border border-red-200 dark:border-red-800">
+                <div className="flex items-center gap-1.5 text-red-600 dark:text-red-400 text-xs font-medium mb-1">
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 13l-5 5m0 0l-5-5m5 5V6" />
+                  </svg>
+                  Chi
+                </div>
+                <div className="text-red-900 dark:text-red-100 text-lg font-bold">
+                  {formatCurrency(filteredSummary.expense)}
+                </div>
+              </div>
+              <div className="bg-white dark:bg-slate-800 rounded-lg p-3 border border-blue-200 dark:border-blue-800">
+                <div className="text-blue-600 dark:text-blue-400 text-xs font-medium mb-1">
+                  Chênh lệch
+                </div>
+                <div className={`text-lg font-bold ${
+                  filteredSummary.balance >= 0 
+                    ? "text-blue-900 dark:text-blue-100" 
+                    : "text-red-600 dark:text-red-400"
+                }`}>
+                  {formatCurrency(filteredSummary.balance)}
+                </div>
+              </div>
+              <div className="bg-white dark:bg-slate-800 rounded-lg p-3 border border-amber-200 dark:border-amber-800">
+                <div className="text-amber-600 dark:text-amber-400 text-xs font-medium mb-1">
+                  TM trong kỳ
+                </div>
+                <div className={`text-lg font-bold ${
+                  filteredSummary.cashBalance >= 0 
+                    ? "text-amber-900 dark:text-amber-100" 
+                    : "text-red-600 dark:text-red-400"
+                }`}>
+                  {filteredSummary.cashBalance >= 0 ? "+" : ""}{formatCurrency(filteredSummary.cashBalance)}
+                </div>
+              </div>
+              <div className="bg-white dark:bg-slate-800 rounded-lg p-3 border border-purple-200 dark:border-purple-800">
+                <div className="text-purple-600 dark:text-purple-400 text-xs font-medium mb-1">
+                  NH trong kỳ
+                </div>
+                <div className={`text-lg font-bold ${
+                  filteredSummary.bankBalance >= 0 
+                    ? "text-purple-900 dark:text-purple-100" 
+                    : "text-red-600 dark:text-red-400"
+                }`}>
+                  {filteredSummary.bankBalance >= 0 ? "+" : ""}{formatCurrency(filteredSummary.bankBalance)}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Filters Section */}
+        <div className="p-3 md:p-4">
           {/* Filters */}
           {/* Mobile Filters */}
           <div className="md:hidden space-y-3 mb-4">
@@ -688,12 +871,12 @@ const CashBook: React.FC = () => {
                     </div>
                     <div className="flex items-center gap-2">
                       <div
-                        className={`font-bold ${isIncomeType(tx.type)
+                        className={`font-bold ${isIncomeTx(tx)
                           ? "text-green-600 dark:text-green-400"
                           : "text-red-600 dark:text-red-400"
                           }`}
                       >
-                        {isIncomeType(tx.type) ? "+" : "-"}
+                        {isIncomeTx(tx) ? "+" : "-"}
                         {formatCurrency(Math.abs(tx.amount))}
                       </div>
                     </div>
@@ -807,7 +990,7 @@ const CashBook: React.FC = () => {
                   </tr>
                 ) : (
                   filteredTransactions.map((tx) => {
-                    const txIsIncome = isIncomeType(tx.type);
+                    const txIsIncome = isIncomeTx(tx);
                     // Format reference if it looks like a work order ID
                     const rawRef = (tx as any).reference || "";
                     const formattedRef = rawRef && rawRef.match(/SC-|WO-|\d{10,}/)
@@ -963,7 +1146,7 @@ const CashBook: React.FC = () => {
                     <td colSpan={3} className="px-4 py-3 text-sm font-medium text-slate-600 dark:text-slate-300">
                       Tổng: {filteredTransactions.length} giao dịch
                       <span className="text-slate-400 dark:text-slate-500 ml-1">
-                        ({filteredTransactions.filter(t => isIncomeType(t.type)).length} thu, {filteredTransactions.filter(t => t.type === "expense").length} chi)
+                        ({filteredTransactions.filter((t) => isIncomeTx(t)).length} thu, {filteredTransactions.filter((t) => !isIncomeTx(t)).length} chi)
                       </span>
                     </td>
                     <td className="px-4 py-3"></td>
@@ -971,17 +1154,17 @@ const CashBook: React.FC = () => {
                     <td className="px-4 py-3 text-right">
                       <div className="space-y-0.5">
                         <div className="text-xs font-semibold text-green-600 dark:text-green-400">
-                          +{formatCurrency(summary.income)}
+                          +{formatCurrency(filteredSummary.income)}
                         </div>
                         <div className="text-xs font-semibold text-red-600 dark:text-red-400">
-                          {formatCurrency(summary.expense)}
+                          {formatCurrency(filteredSummary.expense)}
                         </div>
                         <div className={`text-sm font-bold pt-1 border-t border-slate-200 dark:border-slate-600 ${
-                          summary.balance >= 0
+                          filteredSummary.balance >= 0
                             ? "text-blue-700 dark:text-blue-300"
                             : "text-red-600 dark:text-red-400"
                         }`}>
-                          = {formatCurrency(summary.balance)}
+                          = {formatCurrency(filteredSummary.balance)}
                         </div>
                       </div>
                     </td>

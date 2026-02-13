@@ -123,24 +123,48 @@ export const CashBookMobile: React.FC = () => {
         searchQuery,
     ]);
 
-    // Helper to check if transaction is income type
-    const isIncomeType = (type: string | undefined) =>
-        type === "income" || type === "deposit";
+    const INCOME_CATEGORIES = new Set([
+        "sale_income",
+        "service_income",
+        "other_income",
+        "debt_collection",
+        "service_deposit",
+        "employee_advance_repayment",
+        "general_income",
+        "deposit",
+    ]);
+    const EXPENSE_CATEGORIES = new Set([
+        "inventory_purchase",
+        "supplier_payment",
+        "debt_payment",
+        "salary",
+        "employee_advance",
+        "loan_payment",
+        "rent",
+        "utilities",
+        "outsourcing",
+        "service_cost",
+        "sale_refund",
+        "other_expense",
+        "general_expense",
+    ]);
 
-    // Calculate summary
-    const summary = useMemo(() => {
-        // Thu/Chi: Tính từ giao dịch đã lọc theo thời gian
-        const income = filteredTransactions
-            .filter((tx) => isIncomeType(tx.type))
-            .reduce((sum, tx) => sum + Math.abs(tx.amount), 0);
+    const isIncomeTx = (tx: CashTransaction) => {
+        const normalizedCategory = String(tx.category || "").trim().toLowerCase();
+        if (INCOME_CATEGORIES.has(normalizedCategory)) return true;
+        if (EXPENSE_CATEGORIES.has(normalizedCategory)) return false;
+        if (tx.type === "income" || tx.type === "deposit") return true;
+        return INCOME_CATEGORIES.has(normalizedCategory);
+    };
 
-        const expense = filteredTransactions
-            .filter((tx) => tx.type === "expense")
-            .reduce((sum, tx) => sum + Math.abs(tx.amount), 0);
+    // Get initial balances
+    const savedInitialCash =
+        paymentSources.find((ps) => ps.id === "cash")?.balance[currentBranchId] || 0;
+    const savedInitialBank =
+        paymentSources.find((ps) => ps.id === "bank")?.balance[currentBranchId] || 0;
 
-        const balance = income - expense;
-
-        // Tiền mặt/Ngân hàng: Tính số dư THỰC TẾ từ TẤT CẢ giao dịch (không phụ thuộc filter)
+    // Calculate ACTUAL BALANCE (from ALL transactions, not filtered)
+    const actualBalance = useMemo(() => {
         const allBranchTransactions = cashTransactions.filter(
             (tx) => tx.branchId === currentBranchId
         );
@@ -149,7 +173,7 @@ export const CashBookMobile: React.FC = () => {
         const cashTransactionsDelta = allBranchTransactions
             .filter((tx) => tx.paymentSourceId === "cash")
             .reduce((sum, tx) => {
-                if (isIncomeType(tx.type)) {
+                if (isIncomeTx(tx)) {
                     return sum + Math.abs(tx.amount);
                 } else {
                     return sum - Math.abs(tx.amount);
@@ -160,36 +184,73 @@ export const CashBookMobile: React.FC = () => {
         const bankTransactionsDelta = allBranchTransactions
             .filter((tx) => tx.paymentSourceId === "bank")
             .reduce((sum, tx) => {
-                if (isIncomeType(tx.type)) {
+                if (isIncomeTx(tx)) {
                     return sum + Math.abs(tx.amount);
                 } else {
                     return sum - Math.abs(tx.amount);
                 }
             }, 0);
 
-        const savedInitialCash =
-            paymentSources.find((ps) => ps.id === "cash")?.balance[currentBranchId] || 0;
-        const savedInitialBank =
-            paymentSources.find((ps) => ps.id === "bank")?.balance[currentBranchId] || 0;
-
         // Số dư thực tế = Số dư ban đầu + Biến động từ giao dịch
         const cashBalance = savedInitialCash + cashTransactionsDelta;
         const bankBalance = savedInitialBank + bankTransactionsDelta;
 
         return {
-            income,
-            expense: -expense,
-            balance,
             cashBalance,
             bankBalance,
             totalBalance: cashBalance + bankBalance,
         };
     }, [
-        filteredTransactions,
         cashTransactions,
         currentBranchId,
-        paymentSources,
+        savedInitialCash,
+        savedInitialBank,
     ]);
+
+    // Calculate FILTERED SUMMARY (from filtered transactions only)
+    const filteredSummary = useMemo(() => {
+        const income = filteredTransactions
+            .filter((tx) => isIncomeTx(tx))
+            .reduce((sum, tx) => sum + Math.abs(tx.amount), 0);
+
+        const expense = filteredTransactions
+            .filter((tx) => tx.type === "expense")
+            .reduce((sum, tx) => sum + Math.abs(tx.amount), 0);
+
+        const balance = income - expense;
+
+        // Tính riêng cho tiền mặt và ngân hàng trong kỳ lọc
+        const cashIncome = filteredTransactions
+            .filter((tx) => tx.paymentSourceId === "cash" && isIncomeTx(tx))
+            .reduce((sum, tx) => sum + Math.abs(tx.amount), 0);
+
+        const cashExpense = filteredTransactions
+            .filter((tx) => tx.paymentSourceId === "cash" && tx.type === "expense")
+            .reduce((sum, tx) => sum + Math.abs(tx.amount), 0);
+
+        const bankIncome = filteredTransactions
+            .filter((tx) => tx.paymentSourceId === "bank" && isIncomeTx(tx))
+            .reduce((sum, tx) => sum + Math.abs(tx.amount), 0);
+
+        const bankExpense = filteredTransactions
+            .filter((tx) => tx.paymentSourceId === "bank" && tx.type === "expense")
+            .reduce((sum, tx) => sum + Math.abs(tx.amount), 0);
+
+        return {
+            income,
+            expense,
+            balance,
+            cashIncome,
+            cashExpense,
+            cashBalance: cashIncome - cashExpense,
+            bankIncome,
+            bankExpense,
+            bankBalance: bankIncome - bankExpense,
+        };
+    }, [filteredTransactions]);
+
+    // Determine if we're showing filtered view (not "all")
+    const isFilteredView = filterDateRange !== "all" || filterType !== "all" || filterPaymentSource !== "all" || searchQuery.trim() !== "";
 
     return (
         <div className="bg-[#151521] min-h-screen text-white pb-20">
@@ -201,26 +262,33 @@ export const CashBookMobile: React.FC = () => {
                         <Wallet className="w-24 h-24 text-white" />
                     </div>
                     <div className="relative z-10">
-                        <p className="text-blue-100 text-sm font-medium mb-1">Tổng số dư</p>
+                        <p className="text-blue-100 text-sm font-medium mb-1">Tổng số dư thực tế</p>
                         <h3 className="text-3xl font-bold text-white mb-4">
-                            {formatCurrency(summary.totalBalance)}
+                            {formatCurrency(actualBalance.totalBalance)}
                         </h3>
                         <div className="grid grid-cols-2 gap-4">
                             <div className="bg-white/10 rounded-xl p-2 backdrop-blur-sm">
                                 <p className="text-blue-100 text-xs mb-1">Tiền mặt</p>
-                                <p className="font-semibold text-white">{formatCurrency(summary.cashBalance)}</p>
+                                <p className="font-semibold text-white">{formatCurrency(actualBalance.cashBalance)}</p>
                             </div>
                             <div className="bg-white/10 rounded-xl p-2 backdrop-blur-sm">
                                 <p className="text-blue-100 text-xs mb-1">Ngân hàng</p>
-                                <p className="font-semibold text-white">{formatCurrency(summary.bankBalance)}</p>
+                                <p className="font-semibold text-white">{formatCurrency(actualBalance.bankBalance)}</p>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                {/* Income/Expense Summary */}
+                {/* Income/Expense Summary - Show filtered summary */}
                 <div className="snap-center shrink-0 w-[85vw] bg-[#1e1e2d] rounded-2xl p-4 border border-slate-800 shadow-lg">
-                    <h4 className="text-slate-400 text-sm font-medium mb-3">Thu chi trong kỳ</h4>
+                    <div className="flex items-center justify-between mb-3">
+                        <h4 className="text-slate-400 text-sm font-medium">Thu chi trong kỳ</h4>
+                        {isFilteredView && (
+                            <span className="text-xs text-blue-400">
+                                ({filteredTransactions.length} GD)
+                            </span>
+                        )}
+                    </div>
                     <div className="space-y-3">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
@@ -229,7 +297,7 @@ export const CashBookMobile: React.FC = () => {
                                 </div>
                                 <div>
                                     <p className="text-slate-400 text-xs">Tổng thu</p>
-                                    <p className="text-green-500 font-bold">{formatCurrency(summary.income)}</p>
+                                    <p className="text-green-500 font-bold">{formatCurrency(filteredSummary.income)}</p>
                                 </div>
                             </div>
                         </div>
@@ -241,7 +309,23 @@ export const CashBookMobile: React.FC = () => {
                                 </div>
                                 <div>
                                     <p className="text-slate-400 text-xs">Tổng chi</p>
-                                    <p className="text-red-500 font-bold">{formatCurrency(summary.expense)}</p>
+                                    <p className="text-red-500 font-bold">{formatCurrency(filteredSummary.expense)}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="w-full h-[1px] bg-slate-800"></div>
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center">
+                                    <Wallet className="w-6 h-6 text-blue-500" />
+                                </div>
+                                <div>
+                                    <p className="text-slate-400 text-xs">Chênh lệch</p>
+                                    <p className={`font-bold ${
+                                        filteredSummary.balance >= 0 ? "text-blue-500" : "text-red-500"
+                                    }`}>
+                                        {formatCurrency(filteredSummary.balance)}
+                                    </p>
                                 </div>
                             </div>
                         </div>
@@ -339,8 +423,8 @@ export const CashBookMobile: React.FC = () => {
                         >
                             <div className="flex justify-between items-start mb-2">
                                 <div className="flex items-start gap-3">
-                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${isIncomeType(tx.type) ? 'bg-green-500/20' : 'bg-red-500/20'}`}>
-                                        {isIncomeType(tx.type) ? (
+                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${isIncomeTx(tx) ? 'bg-green-500/20' : 'bg-red-500/20'}`}>
+                                        {isIncomeTx(tx) ? (
                                             <ArrowUpCircle className="w-6 h-6 text-green-500" />
                                         ) : (
                                             <ArrowDownCircle className="w-6 h-6 text-red-500" />
@@ -352,8 +436,8 @@ export const CashBookMobile: React.FC = () => {
                                     </div>
                                 </div>
                                 <div className="text-right">
-                                    <p className={`font-bold ${isIncomeType(tx.type) ? 'text-green-500' : 'text-red-500'}`}>
-                                        {isIncomeType(tx.type) ? '+' : '-'}{formatCurrency(Math.abs(tx.amount))}
+                                    <p className={`font-bold ${isIncomeTx(tx) ? 'text-green-500' : 'text-red-500'}`}>
+                                        {isIncomeTx(tx) ? '+' : '-'}{formatCurrency(Math.abs(tx.amount))}
                                     </p>
                                     <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 inline-block mt-1">
                                         {tx.paymentSourceId === 'bank' ? 'Ngân hàng' : 'Tiền mặt'}

@@ -23,7 +23,6 @@ import { showToast } from "../../utils/toast";
 import FormattedNumberInput from "../common/FormattedNumberInput";
 import SupplierModal from "../inventory/components/SupplierModal";
 import { useStoreSettings } from "../../hooks/useStoreSettings";
-import html2canvas from "html2canvas";
 import type { CreatePurchaseOrderInput, Part, PurchaseOrder } from "../../types";
 
 interface CreatePOModalProps {
@@ -199,6 +198,8 @@ export const CreatePOModal: React.FC<CreatePOModalProps> = ({
 
     try {
       showToast.info("Đang tạo hình ảnh...");
+
+      const { default: html2canvas } = await import("html2canvas");
 
       const canvas = await html2canvas(previewRef.current, {
         backgroundColor: "#ffffff",

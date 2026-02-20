@@ -1,7 +1,6 @@
 import React, { useRef } from "react";
 import { formatCurrency, formatDate } from "../../../utils/format";
 import { Printer, Share2, Download } from "lucide-react";
-import html2canvas from "html2canvas"; // Ensure this is installed or use an alternative if not
 
 export interface StoreSettings {
     store_name?: string;
@@ -38,13 +37,41 @@ export const ReceiptTemplateModal: React.FC<ReceiptTemplateModalProps> = ({
     const handleShareInvoice = async () => {
         if (!invoicePreviewRef.current) return;
         try {
-            // Note: This requires html2canvas to be available in the project
-            // If not available, you might need to install it or skip this feature
-            // For now, logging not implemented as we don't know if lib is present
-            console.log("Sharing not fully implemented without html2canvas verification");
-            alert("Chức năng chia sẻ hình ảnh đang được cập nhật");
+            const { default: html2canvas } = await import("html2canvas");
+            const canvas = await html2canvas(invoicePreviewRef.current, {
+                backgroundColor: "#ffffff",
+                scale: 2,
+                useCORS: true,
+            });
+
+            canvas.toBlob(async (blob) => {
+                if (!blob) {
+                    alert("Không thể tạo hình ảnh hóa đơn");
+                    return;
+                }
+
+                const file = new File([blob], `hoa-don-${Date.now()}.png`, {
+                    type: "image/png",
+                });
+
+                if (navigator.share && navigator.canShare?.({ files: [file] })) {
+                    await navigator.share({
+                        title: "Hóa đơn bán lẻ",
+                        text: `Hóa đơn #${sale.sale_code || sale.id.slice(0, 8)}`,
+                        files: [file],
+                    });
+                } else {
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement("a");
+                    link.href = url;
+                    link.download = `hoa-don-${Date.now()}.png`;
+                    link.click();
+                    URL.revokeObjectURL(url);
+                }
+            }, "image/png");
         } catch (err) {
             console.error(err);
+            alert("Không thể chia sẻ hình ảnh hóa đơn");
         }
     };
 

@@ -124,16 +124,50 @@ function isRefundCategory(category: string | null | undefined): boolean {
   return canonicalizeCategory(category) === "refund";
 }
 
+// ✅ FIX: Enhanced category filtering with normalized fallback for unmapped categories
 export function isExcludedIncomeCategory(category: string | null | undefined): boolean {
+  if (!category) return false;
+  
   const canonical = canonicalizeCategory(category);
-  if (!canonical) return false;
-  return REPORTS_EXCLUDED_INCOME_CATEGORIES.some((c) => c === canonical);
+  
+  // Check canonical form first
+  if (REPORTS_EXCLUDED_INCOME_CATEGORIES.some((c) => c === canonical)) {
+    return true;
+  }
+  
+  // Fallback: Check normalized form for unmapped categories (Vietnamese variants)
+  const normalized = normalizeCategory(category);
+  const normalizedExcluded = [
+    "service", "dich vu", "dịch vụ",
+    "sale_income", "ban hang", "bán hàng",
+    "service_income", "service_deposit",
+    "employee_advance_repayment", "ung luong", "ứng lương",
+    "debt_collection", "thu hoi", "thu nợ", "công nợ"
+  ];
+  
+  return normalizedExcluded.some(ex => normalized.includes(ex));
 }
 
 export function isExcludedExpenseCategory(category: string | null | undefined): boolean {
+  if (!category) return false;
+  
   const canonical = canonicalizeCategory(category);
-  if (!canonical) return false;
-  return REPORTS_EXCLUDED_EXPENSE_CATEGORIES.some((c) => c === canonical);
+  
+  // Check canonical form first
+  if (REPORTS_EXCLUDED_EXPENSE_CATEGORIES.some((c) => c === canonical)) {
+    return true;
+  }
+  
+  // Fallback: Check normalized form for unmapped categories
+  const normalized = normalizeCategory(category);
+  const normalizedExcluded = [
+    "supplier_payment", "tra ncc", "trả ncc", "nhà cung cấp",
+    "debt_payment", "tra no", "trả nợ",
+    "employee_advance", "ung luong", "ứng lương",
+    "payroll", "luong", "lương"
+  ];
+  
+  return normalizedExcluded.some(ex => normalized.includes(ex));
 }
 
 export function isPaidWorkOrder(wo: any): boolean {
@@ -148,12 +182,26 @@ export function isPaidWorkOrder(wo: any): boolean {
 export function getWorkOrderAccountingDate(wo: any): Date | null {
   const paymentDateRaw = wo?.paymentDate ?? wo?.paymentdate;
   const creationDateRaw = wo?.creationDate ?? wo?.creationdate;
-  const raw = paymentDateRaw || creationDateRaw;
-  if (!raw) return null;
 
-  const parsed = new Date(raw);
-  if (Number.isNaN(parsed.getTime())) return null;
-  return parsed;
+  if (paymentDateRaw) {
+    const paymentDate = new Date(paymentDateRaw);
+    if (!Number.isNaN(paymentDate.getTime())) return paymentDate;
+  }
+
+  // Legacy fallback: only for paid/partially paid orders missing paymentDate
+  if (isPaidWorkOrder(wo) && creationDateRaw) {
+    const creationDate = new Date(creationDateRaw);
+    if (!Number.isNaN(creationDate.getTime())) {
+      if (typeof console !== "undefined") {
+        console.warn(
+          `[financialSummary] Work order ${wo?.id || "unknown"} missing paymentDate, fallback to creationDate`
+        );
+      }
+      return creationDate;
+    }
+  }
+
+  return null;
 }
 
 export function getWorkOrderAdditionalServices(wo: any): any[] {

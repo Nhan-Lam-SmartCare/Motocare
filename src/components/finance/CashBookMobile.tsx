@@ -149,12 +149,18 @@ export const CashBookMobile: React.FC = () => {
         "general_expense",
     ]);
 
+    // ✅ FIX: Refactored transaction type detection with clear priority (consistent with CashBook.tsx)
     const isIncomeTx = (tx: CashTransaction) => {
         const normalizedCategory = String(tx.category || "").trim().toLowerCase();
-        if (INCOME_CATEGORIES.has(normalizedCategory)) return true;
+        
+        // Priority 1: Check expense categories first (more specific)
         if (EXPENSE_CATEGORIES.has(normalizedCategory)) return false;
-        if (tx.type === "income" || tx.type === "deposit") return true;
-        return INCOME_CATEGORIES.has(normalizedCategory);
+        
+        // Priority 2: Check income categories
+        if (INCOME_CATEGORIES.has(normalizedCategory)) return true;
+        
+        // Priority 3: Fallback to type field only if category not recognized
+        return tx.type === "income" || tx.type === "deposit";
     };
 
     // Get initial balances

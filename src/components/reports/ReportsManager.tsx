@@ -322,14 +322,29 @@ const ReportsManager: React.FC = () => {
       dayData.orderCount += 1;
     });
 
-    // Add work orders to daily data - ✅ FIX: Dùng paymentDate thay vì creationDate
+    // Add work orders to daily data - paymentDate first, fallback for legacy paid orders
     filteredWorkOrders.forEach((wo: any) => {
-      // Ưu tiên paymentDate để group theo ngày thanh toán thực tế
       const paymentDateRaw = wo.paymentDate || wo.paymentdate;
-      const creationDateRaw = wo.creationDate || wo.creationdate;
-      const woDateObj = paymentDateRaw 
-        ? new Date(paymentDateRaw) 
-        : new Date(creationDateRaw);
+
+      let accountingDateRaw = paymentDateRaw;
+      if (!accountingDateRaw) {
+        const creationDateRaw = wo.creationDate || wo.creationdate;
+        if (creationDateRaw) {
+          console.warn(
+            `[ReportsManager] Work order ${wo.id} missing paymentDate, fallback to creationDate (legacy)`
+          );
+          accountingDateRaw = creationDateRaw;
+        }
+      }
+
+      if (!accountingDateRaw) {
+        console.warn(
+          `[ReportsManager] Work order ${wo.id} has no accounting date, skipping from daily revenue report`
+        );
+        return;
+      }
+
+      const woDateObj = new Date(accountingDateRaw);
       const dateKey = woDateObj.toISOString().split("T")[0];
 
       if (!dataByDate.has(dateKey)) {

@@ -746,12 +746,23 @@ const WorkOrderModal: React.FC<{
 
     // Calculate payment summary
     const totalDeposit = depositAmount ?? order.depositAmount ?? 0;
-    // 🔹 FIX: Chỉ tính additionalPayment MỚI khi checkbox được check
-    // Không lấy giá trị cũ để tránh thanh toán 2 lần
-    // 🔹 CHỈ TÍNH THANH TOÁN KHI STATUS LÀ "TRẢ MÁY"
-    const totalAdditionalPayment =
-      formData.status === "Trả máy" && showPartialPayment ? partialPayment : 0;
-    const totalPaid = totalDeposit + totalAdditionalPayment;
+
+    // additionalPayment is treated as cumulative value on WorkOrder
+    const additionalPaymentCumulative =
+      formData.status === "Trả máy" && showPartialPayment
+        ? Math.max(0, partialPayment)
+        : 0;
+
+    const maxAdditionalPayment = Math.max(0, total - totalDeposit);
+    const additionalPaymentClamped = Math.min(
+      additionalPaymentCumulative,
+      maxAdditionalPayment
+    );
+
+    const totalAdditionalPayment = additionalPaymentCumulative;
+
+    const totalPaid = totalDeposit + additionalPaymentClamped;
+
     const remainingAmount = Math.max(0, total - totalPaid);
 
     // Helper: Auto-create customer debt if there's remaining amount
@@ -1165,6 +1176,25 @@ const WorkOrderModal: React.FC<{
           return;
         }
 
+        // ✅ FIX: Validate deposit cannot exceed total amount
+        if (depositAmount > total && total > 0) {
+          showToast.error(`Số tiền đặt cọc (${formatCurrency(depositAmount)}) không được lớn hơn tổng tiền (${formatCurrency(total)})!`);
+          resetSubmitting();
+          return;
+        }
+
+        if (
+          formData.status === "Trả máy" &&
+          showPartialPayment &&
+          partialPayment > maxAdditionalPayment
+        ) {
+          showToast.error(
+            `Số tiền thanh toán thêm không được vượt quá ${formatCurrency(maxAdditionalPayment)}!`
+          );
+          resetSubmitting();
+          return;
+        }
+
         // 3. Validate total > 0 ONLY if status is "Trả máy"
         if (total <= 0 && formData.status === "Trả máy") {
           showToast.error("Tổng tiền phải lớn hơn 0 khi trả máy");
@@ -1258,7 +1288,9 @@ const WorkOrderModal: React.FC<{
               paymentMethod: formData.paymentMethod,
               depositAmount: depositAmount > 0 ? depositAmount : undefined,
               additionalPayment:
-                totalAdditionalPayment > 0 ? totalAdditionalPayment : undefined,
+                additionalPaymentCumulative > 0
+                  ? additionalPaymentCumulative
+                  : undefined,
               totalPaid: totalPaid > 0 ? totalPaid : undefined,
               remainingAmount: remainingAmount,
               creationDate: new Date().toISOString(),
@@ -1293,7 +1325,9 @@ const WorkOrderModal: React.FC<{
               paymentStatus: paymentStatus,
               paymentMethod: formData.paymentMethod,
               additionalPayment:
-                totalAdditionalPayment > 0 ? totalAdditionalPayment : undefined,
+                additionalPaymentCumulative > 0
+                  ? additionalPaymentCumulative
+                  : undefined,
               totalPaid: totalPaid > 0 ? totalPaid : undefined,
               remainingAmount: remainingAmount,
               cashTransactionId: paymentTxId,
@@ -1678,7 +1712,9 @@ const WorkOrderModal: React.FC<{
               paymentMethod: formData.paymentMethod,
               depositAmount: depositAmount > 0 ? depositAmount : undefined,
               additionalPayment:
-                totalAdditionalPayment > 0 ? totalAdditionalPayment : undefined,
+                additionalPaymentCumulative > 0
+                  ? additionalPaymentCumulative
+                  : undefined,
               totalPaid: totalPaid > 0 ? totalPaid : undefined,
               remainingAmount: remainingAmount,
             } as any);
@@ -3766,8 +3802,8 @@ const WorkOrderModal: React.FC<{
                           </div>
                           <div className="flex gap-1">
                             <button onClick={() => setPartialPayment(0)} className="px-2 py-1 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 rounded text-xs">0%</button>
-                            <button onClick={() => setPartialPayment(Math.round(remainingAmount * 0.5))} className="px-2 py-1 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 rounded text-xs">50%</button>
-                            <button onClick={() => setPartialPayment(remainingAmount)} className="px-2 py-1 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 rounded text-xs">100%</button>
+                            <button onClick={() => setPartialPayment(Math.round(maxAdditionalPayment * 0.5))} className="px-2 py-1 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 rounded text-xs">50%</button>
+                            <button onClick={() => setPartialPayment(maxAdditionalPayment)} className="px-2 py-1 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 rounded text-xs">100%</button>
                           </div>
                         </div>
                       )}

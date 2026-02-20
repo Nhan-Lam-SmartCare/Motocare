@@ -161,6 +161,24 @@ export default function EmployeeAdvanceManager() {
           paidAmount: advance.advanceAmount,
           branchid: currentBranchId,
           paymentsource: advance.paymentMethod === "cash" ? "cash" : "bank",
+        },
+      });
+
+      // 2. Ghi sổ quỹ chi ứng lương
+      const transactionId = `ADV-${advance.id}-${Date.now()}`;
+      const { error: txError } = await supabase
+        .from("cash_transactions")
+        .insert({
+          id: transactionId,
+          type: "expense",
+          category: "employee_advance",
+          amount: advance.advanceAmount,
+          date: new Date().toISOString(),
+          description: `Chi ứng lương - ${advance.employeeName} (${formatCurrency(
+            advance.advanceAmount
+          )})`,
+          branchid: currentBranchId,
+          paymentsource: advance.paymentMethod === "cash" ? "cash" : "bank",
         });
 
       if (txError) {

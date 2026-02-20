@@ -88,7 +88,8 @@ const FinancialAnalytics: React.FC<FinancialAnalyticsProps> = ({
       .reduce((sum, sale) => {
         const saleCost = sale.items.reduce((itemSum: number, item: any) => {
           const part = parts.find((p) => p.id === item.partId);
-          const costPrice = part?.wholesalePrice?.[currentBranchId] || 0;
+          // ✅ FIX: Use costPrice (giá vốn) instead of wholesalePrice for COGS calculation
+          const costPrice = part?.costPrice?.[currentBranchId] || part?.wholesalePrice?.[currentBranchId] || 0;
           return itemSum + costPrice * item.quantity;
         }, 0);
         return sum + saleCost;
@@ -110,7 +111,8 @@ const FinancialAnalytics: React.FC<FinancialAnalyticsProps> = ({
         // Giá vốn phụ tùng trong work order
         const partsCost = (wo.partsUsed || []).reduce((partSum: number, woPart: any) => {
           const part = parts.find((p) => p.id === woPart.partId);
-          const costPrice = part?.wholesalePrice?.[currentBranchId] || 0;
+          // ✅ FIX: Use costPrice (giá vốn) instead of wholesalePrice for COGS calculation
+          const costPrice = part?.costPrice?.[currentBranchId] || part?.wholesalePrice?.[currentBranchId] || 0;
           return partSum + costPrice * woPart.quantity;
         }, 0);
         // Giá vốn dịch vụ bên ngoài (gia công)
@@ -147,7 +149,8 @@ const FinancialAnalytics: React.FC<FinancialAnalyticsProps> = ({
         // Calculate cost of goods sold for this sale
         const saleCost = sale.items.reduce((itemSum: number, item: any) => {
           const part = parts.find((p) => p.id === item.partId);
-          const costPrice = part?.wholesalePrice?.[currentBranchId] || 0;
+          // ✅ FIX: Use costPrice (giá vốn) instead of wholesalePrice for COGS calculation
+          const costPrice = part?.costPrice?.[currentBranchId] || part?.wholesalePrice?.[currentBranchId] || 0;
           return itemSum + costPrice * item.quantity;
         }, 0);
         existing.expense += saleCost;
@@ -173,7 +176,8 @@ const FinancialAnalytics: React.FC<FinancialAnalyticsProps> = ({
         // Calculate COGS for work order
         const partsCost = (wo.partsUsed || []).reduce((partSum: number, woPart: any) => {
           const part = parts.find((p) => p.id === woPart.partId);
-          const costPrice = part?.wholesalePrice?.[currentBranchId] || 0;
+          // ✅ FIX: Use costPrice (giá vốn) instead of wholesalePrice for COGS calculation
+          const costPrice = part?.costPrice?.[currentBranchId] || part?.wholesalePrice?.[currentBranchId] || 0;
           return partSum + costPrice * woPart.quantity;
         }, 0);
         const servicesCost = (wo.additionalServices || []).reduce(

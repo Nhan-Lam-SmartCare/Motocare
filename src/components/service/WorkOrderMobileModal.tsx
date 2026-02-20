@@ -638,11 +638,25 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
         costPrice: s.costPrice,
       }));
 
+      if (isDeposit && depositAmount > total && total > 0) {
+        showToast.error("Số tiền đặt cọc không được lớn hơn tổng tiền");
+        setIsSubmitting(false);
+        return;
+      }
+
       const totalDeposit = isDeposit ? depositAmount : 0;
       let additionalPayment = showPaymentInput ? partialAmount : 0;
       if (status === "Trả máy" && !showPaymentInput) {
         additionalPayment = Math.max(0, total - totalDeposit);
       }
+
+      // additionalPayment is cumulative; clamp to valid range
+      const maxAdditionalPayment = Math.max(0, total - totalDeposit);
+      additionalPayment = Math.min(
+        Math.max(0, additionalPayment),
+        maxAdditionalPayment
+      );
+
       const totalPaid = totalDeposit + additionalPayment;
       const remainingAmount = Math.max(0, total - totalPaid);
 

@@ -327,6 +327,24 @@ const SalesManager: React.FC = () => {
             return;
         }
 
+        // ✅ FIX: Validate stock availability before finalizing
+        const outOfStockItems = cart.cartItems.filter(item => {
+            const part = repoParts.find(p => p.id === item.partId);
+            if (!part) return true; // Part not found = out of stock
+            
+            const stock = part.stock[currentBranchId] || 0;
+            const reserved = part.reserved?.[currentBranchId] || 0;
+            const available = stock - reserved;
+            
+            return item.quantity > available;
+        });
+        
+        if (outOfStockItems.length > 0) {
+            const itemNames = outOfStockItems.map(i => i.partName).join(", ");
+            showToast.error(`Không đủ hàng trong kho: ${itemNames}`);
+            return;
+        }
+
         if (!finalization.paymentMethod) {
             showToast.error("Vui lòng chọn phương thức thanh toán!");
             return;

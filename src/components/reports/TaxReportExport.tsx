@@ -10,11 +10,11 @@ import { formatCurrency, formatDate } from "../../utils/format";
 import {
   exportVATReportXML,
   exportRevenueXML,
-  getPeriodFromDateRange,
+  prepareVATReportData,
   type OrganizationTaxInfo,
 } from "../../utils/taxReportXML";
 import { exportS1aHKD, type BusinessInfo } from "../../utils/excelExport";
-import { calculateFinancialSummary, isPaidWorkOrder, getWorkOrderAccountingDate } from "../../lib/reports/financialSummary";
+import { calculateFinancialSummary, getWorkOrderAccountingDate } from "../../lib/reports/financialSummary";
 
 /**
  * TAX REPORT EXPORT COMPONENT
@@ -102,9 +102,10 @@ const TaxReportExport: React.FC = () => {
     });
 
     const filteredWorkOrders = workOrdersData.filter((wo: any) => {
-      // Chỉ lấy phiếu đã thanh toán
-      const isPaid = wo.paymentStatus === "paid" || wo.paymentstatus === "paid";
-      if (!isPaid) {
+      const status = String(wo.paymentStatus ?? wo.paymentstatus ?? "").toLowerCase();
+      const totalPaid = Number(wo.totalPaid ?? wo.totalpaid ?? 0);
+      const isPaidLike = status === "paid" || status === "partial" || totalPaid > 0;
+      if (!isPaidLike) {
         return false;
       }
       
@@ -143,12 +144,18 @@ const TaxReportExport: React.FC = () => {
       end: endDate,
     });
 
-    // Tổng doanh thu (đã bao gồm VAT) = salesRevenue + woRevenue
-    const totalRevenueWithVAT = financialSummary.totalRevenue;
-    // Doanh thu chưa VAT (giả sử VAT 10%)
-    const totalRevenueBeforeVAT = Math.round(totalRevenueWithVAT / 1.1);
-    const totalVAT = totalRevenueWithVAT - totalRevenueBeforeVAT;
-    const transactionCount = financialSummary.orderCount;
+    const vatData = prepareVATReportData(
+      financialSummary.filteredSales,
+      financialSummary.filteredWorkOrders,
+      getFilteredData().cashTransactions,
+      organizationInfo,
+      startDate,
+      endDate
+    );
+
+    const totalRevenueBeforeVAT = vatData.outputVAT.totalRevenue;
+    const totalVAT = vatData.outputVAT.vatAmount;
+    const transactionCount = vatData.outputVAT.transactions.length;
 
     return { 
       totalRevenue: totalRevenueBeforeVAT, 

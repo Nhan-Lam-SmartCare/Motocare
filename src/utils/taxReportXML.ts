@@ -10,6 +10,10 @@
 
 import { Sale, WorkOrder, CashTransaction } from "../types";
 import { formatDate } from "./format";
+import {
+  getWorkOrderAccountingDate,
+  isPaidWorkOrder,
+} from "../lib/reports/financialSummary";
 
 // =====================================================
 // INTERFACES
@@ -201,15 +205,16 @@ export function prepareVATReportData(
     }
   });
 
-  // Từ Work Orders (đã thanh toán)
+  // Từ Work Orders (đã có thu tiền)
   workOrders.forEach((wo: any) => {
-    const woDate = new Date(wo.creationDate || wo.creationdate);
-    const isPaid = wo.paymentStatus === "paid" || wo.paymentstatus === "paid";
+    const woDate = getWorkOrderAccountingDate(wo);
+    const isPaid = isPaidWorkOrder(wo);
 
-    if (woDate >= startDate && woDate <= endDate && isPaid) {
+    if (woDate && woDate >= startDate && woDate <= endDate && isPaid) {
       const total =
-        parseFloat(wo.totalPrice || wo.totalprice || 0) +
-        parseFloat(wo.laborCost || wo.laborcost || 0);
+        parseFloat(
+          wo.totalPaid ?? wo.totalpaid ?? wo.total ?? wo.totalPrice ?? wo.totalprice ?? 0
+        ) || 0;
 
       const vatRate = wo.vatRate || wo.vatrate || 10;
       let amountBeforeVAT = wo.amountBeforeVAT || wo.amount_before_vat;
@@ -223,7 +228,7 @@ export function prepareVATReportData(
 
       outputTransactions.push({
         invoiceNumber: wo.orderNumber || wo.ordernumber || wo.id,
-        date: formatDate(wo.creationDate || wo.creationdate),
+        date: formatDate(woDate.toISOString()),
         customerName: wo.customerName || wo.customername || "Khách hàng",
         customerTaxCode: "",
         amountBeforeVAT,
@@ -478,13 +483,14 @@ export function generateRevenueReportXML(
 
   // Process work orders
   workOrders.forEach((wo: any) => {
-    const woDate = new Date(wo.creationDate || wo.creationdate);
-    const isPaid = wo.paymentStatus === "paid" || wo.paymentstatus === "paid";
+    const woDate = getWorkOrderAccountingDate(wo);
+    const isPaid = isPaidWorkOrder(wo);
 
-    if (woDate >= startDate && woDate <= endDate && isPaid) {
+    if (woDate && woDate >= startDate && woDate <= endDate && isPaid) {
       const total =
-        parseFloat(wo.totalPrice || wo.totalprice || 0) +
-        parseFloat(wo.laborCost || wo.laborcost || 0);
+        parseFloat(
+          wo.totalPaid ?? wo.totalpaid ?? wo.total ?? wo.totalPrice ?? wo.totalprice ?? 0
+        ) || 0;
       const calculated = calculateVAT(total, 10);
       totalRevenue += calculated.amountBeforeVAT;
       totalVAT += calculated.vatAmount;
@@ -492,7 +498,7 @@ export function generateRevenueReportXML(
       transactions.push({
         type: "service",
         id: wo.orderNumber || wo.ordernumber || wo.id,
-        date: formatDate(wo.creationDate || wo.creationdate),
+        date: formatDate(woDate.toISOString()),
         customer: wo.customerName || wo.customername || "Khách hàng",
         amountBeforeVAT: calculated.amountBeforeVAT,
         vatAmount: calculated.vatAmount,

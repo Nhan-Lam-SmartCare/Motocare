@@ -1364,12 +1364,28 @@ export const ServiceHistory: React.FC<ServiceHistoryProps> = ({
                       <span>{storeSettings.bank_name}</span>
                     </div>
                     {storeSettings.bank_account_number && (
-                      <div style={{ color: "#000" }}>
+                      <div
+                        style={{
+                          color: "#000",
+                          whiteSpace: "normal",
+                          overflowWrap: "anywhere",
+                          wordBreak: "break-word",
+                        }}
+                      >
                         STK: {storeSettings.bank_account_number}
                       </div>
                     )}
                     {storeSettings.bank_account_holder && (
-                      <div style={{ color: "#000", fontSize: "7.5pt" }}>
+                      <div
+                        style={{
+                          color: "#000",
+                          fontSize: "7.5pt",
+                          whiteSpace: "normal",
+                          overflowWrap: "anywhere",
+                          wordBreak: "break-word",
+                          lineHeight: "1.25",
+                        }}
+                      >
                         {storeSettings.bank_account_holder}
                       </div>
                     )}

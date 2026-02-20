@@ -3531,7 +3531,14 @@ export default function ServiceManager() {
                           }}
                         >
                           {/* Bank Info */}
-                          <div style={{ textAlign: "right", flex: 1 }}>
+                          <div
+                            style={{
+                              textAlign: "right",
+                              flex: 1,
+                              minWidth: 0,
+                              maxWidth: "42mm",
+                            }}
+                          >
                             <div
                               style={{
                                 fontWeight: "bold",
@@ -3557,12 +3564,28 @@ export default function ServiceManager() {
                               <span>{storeSettings.bank_name}</span>
                             </div>
                             {storeSettings.bank_account_number && (
-                              <div style={{ color: "#000" }}>
+                              <div
+                                style={{
+                                  color: "#000",
+                                  whiteSpace: "normal",
+                                  overflowWrap: "anywhere",
+                                  wordBreak: "break-word",
+                                }}
+                              >
                                 STK: {storeSettings.bank_account_number}
                               </div>
                             )}
                             {storeSettings.bank_account_holder && (
-                              <div style={{ color: "#000", fontSize: "7.5pt" }}>
+                              <div
+                                style={{
+                                  color: "#000",
+                                  fontSize: "7.5pt",
+                                  whiteSpace: "normal",
+                                  overflowWrap: "anywhere",
+                                  wordBreak: "break-word",
+                                  lineHeight: "1.25",
+                                }}
+                              >
                                 {storeSettings.bank_account_holder}
                               </div>
                             )}
@@ -4384,7 +4407,14 @@ export default function ServiceManager() {
                   }}
                 >
                   {/* Bank Info */}
-                  <div style={{ textAlign: "right", flex: 1 }}>
+                  <div
+                    style={{
+                      textAlign: "right",
+                      flex: 1,
+                      minWidth: 0,
+                      maxWidth: "42mm",
+                    }}
+                  >
                     <div
                       style={{
                         fontWeight: "bold",
@@ -4406,12 +4436,28 @@ export default function ServiceManager() {
                       <span>{storeSettings.bank_name}</span>
                     </div>
                     {storeSettings.bank_account_number && (
-                      <div style={{ color: "#000" }}>
+                      <div
+                        style={{
+                          color: "#000",
+                          whiteSpace: "normal",
+                          overflowWrap: "anywhere",
+                          wordBreak: "break-word",
+                        }}
+                      >
                         STK: {storeSettings.bank_account_number}
                       </div>
                     )}
                     {storeSettings.bank_account_holder && (
-                      <div style={{ color: "#000", fontSize: "7.5pt" }}>
+                      <div
+                        style={{
+                          color: "#000",
+                          fontSize: "7.5pt",
+                          whiteSpace: "normal",
+                          overflowWrap: "anywhere",
+                          wordBreak: "break-word",
+                          lineHeight: "1.25",
+                        }}
+                      >
                         {storeSettings.bank_account_holder}
                       </div>
                     )}

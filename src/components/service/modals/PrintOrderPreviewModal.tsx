@@ -399,12 +399,30 @@ const PrintOrderPreviewModal: React.FC<PrintOrderPreviewModalProps> = ({
                                                     <span>{storeSettings.bank_name}</span>
                                                 </div>
                                                 {storeSettings.bank_account_number && (
-                                                    <div style={{ color: "#000", fontSize: "7pt" }}>
+                                                    <div
+                                                        style={{
+                                                            color: "#000",
+                                                            fontSize: "7pt",
+                                                            whiteSpace: "normal",
+                                                            overflowWrap: "anywhere",
+                                                            wordBreak: "break-word",
+                                                        }}
+                                                    >
                                                         STK: {storeSettings.bank_account_number}
                                                     </div>
                                                 )}
                                                 {storeSettings.bank_account_holder && (
-                                                    <div style={{ color: "#000", fontSize: "6.5pt" }}>
+                                                    <div
+                                                        style={{
+                                                            color: "#000",
+                                                            fontSize: "6.5pt",
+                                                            whiteSpace: "normal",
+                                                            overflowWrap: "anywhere",
+                                                            wordBreak: "break-word",
+                                                            lineHeight: "1.25",
+                                                            maxWidth: "38mm",
+                                                        }}
+                                                    >
                                                         {storeSettings.bank_account_holder}
                                                     </div>
                                                 )}

@@ -10,7 +10,10 @@ export default defineConfig(({ mode }) => {
     test: {
       exclude: ["e2e/**", "node_modules/**"],
     },
-    resolve: { alias: { "@": path.resolve(process.cwd(), "src") } },
+    resolve: {
+      alias: { "@": path.resolve(process.cwd(), "src") },
+      dedupe: ["react", "react-dom"],
+    },
     build: {
       chunkSizeWarningLimit: 1200,
       // Cache-busting: thêm hash vào tên file để trình duyệt luôn tải bản mới nhất
@@ -20,7 +23,18 @@ export default defineConfig(({ mode }) => {
           manualChunks(id) {
             if (!id.includes("node_modules")) return;
 
-            if (id.includes("react") || id.includes("react-dom") || id.includes("react-router-dom")) {
+            // React Router must be in its own chunk so React fully initialises first
+            if (id.includes("react-router-dom") || id.includes("react-router") || id.includes("@remix-run")) {
+              return "vendor-router";
+            }
+
+            // Core React runtime – scheduler is an internal React dep
+            if (
+              id.includes("/node_modules/react/") ||
+              id.includes("/node_modules/react-dom/") ||
+              id.includes("/node_modules/scheduler/") ||
+              id.includes("/node_modules/use-sync-external-store/")
+            ) {
               return "vendor-react";
             }
 

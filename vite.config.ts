@@ -28,12 +28,16 @@ export default defineConfig(({ mode }) => {
               return "vendor-router";
             }
 
-            // Core React runtime – scheduler is an internal React dep
+            // ALL React-ecosystem packages (react, react-dom, react-redux, react-is,
+            // scheduler, use-sync-external-store, etc.) must live together so their
+            // module-init code never runs before React exports are populated.
             if (
-              id.includes("/node_modules/react/") ||
-              id.includes("/node_modules/react-dom/") ||
+              id.includes("/node_modules/react") ||
               id.includes("/node_modules/scheduler/") ||
-              id.includes("/node_modules/use-sync-external-store/")
+              id.includes("/node_modules/use-sync-external-store/") ||
+              id.includes("/node_modules/@reduxjs/") ||
+              id.includes("/node_modules/react-is/") ||
+              id.includes("/node_modules/prop-types/")
             ) {
               return "vendor-react";
             }

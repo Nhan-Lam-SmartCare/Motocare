@@ -156,22 +156,9 @@ export default function EmployeeAdvanceManager() {
           status: "paid",
           approvedBy: profile.full_name || profile.email,
           approvedDate: new Date().toISOString(),
-        },
-      });
-
-      // 2. Tạo phiếu chi trong sổ quỹ
-      const transactionId = `ADV-${advanceId}-${Date.now()}`;
-      const { error: txError } = await supabase
-        .from("cash_transactions")
-        .insert({
-          id: transactionId,
-          type: "expense",
-          category: "employee_advance",
-          amount: advance.advanceAmount,
-          date: new Date().toISOString(),
-          description: `Ứng lương - ${advance.employeeName}${
-            advance.reason ? ` (${advance.reason})` : ""
-          }`,
+          // ✅ FIX: Cập nhật remaining_amount và paid_amount
+          remainingAmount: 0,
+          paidAmount: advance.advanceAmount,
           branchid: currentBranchId,
           paymentsource: advance.paymentMethod === "cash" ? "cash" : "bank",
         });
@@ -285,9 +272,15 @@ export default function EmployeeAdvanceManager() {
       // 🔹 NOTE: remaining_amount và paid_amount được tự động cập nhật bởi database trigger
       // Trigger: trigger_update_advance_on_payment (xem employee_advance_schema.sql)
       
+      // ✅ FIX: Query lại remaining_amount MỚI từ database sau khi trigger chạy
+      const { data: updatedAdvance } = await supabase
+        .from("employee_advances")
+        .select("remaining_amount")
+        .eq("id", selectedAdvance.id)
+        .single();
+
       // Kiểm tra nếu đã trả hết thì đổi status
-      const newRemainingAmount = selectedAdvance.remainingAmount - amount;
-      if (newRemainingAmount <= 0) {
+      if (updatedAdvance && updatedAdvance.remaining_amount <= 0) {
         await supabase
           .from("employee_advances")
           .update({ status: "paid" })
@@ -344,8 +337,9 @@ export default function EmployeeAdvanceManager() {
   }, [advances]);
 
   const totalRemaining = useMemo(() => {
+    // ✅ FIX: Chỉ tính đơn còn nợ (remaining_amount > 0)
     return advances
-      .filter((adv) => adv.status === "paid" || adv.status === "approved")
+      .filter((adv) => adv.remainingAmount > 0)
       .reduce((sum, adv) => sum + adv.remainingAmount, 0);
   }, [advances]);
 

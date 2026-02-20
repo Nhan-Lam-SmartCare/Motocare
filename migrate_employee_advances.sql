@@ -33,16 +33,21 @@ WHERE ea.status = 'approved'
 ON CONFLICT (id) DO NOTHING;
 
 -- Bước 2: Cập nhật trạng thái đơn từ 'approved' thành 'paid'
+-- ✅ FIX: Cập nhật cả remaining_amount và paid_amount
 UPDATE employee_advances
 SET 
     status = 'paid',
+    remaining_amount = 0,
+    paid_amount = advance_amount,
     updated_at = NOW()
 WHERE status = 'approved';
 
 -- Bước 3: Kiểm tra kết quả
 SELECT 
     COUNT(*) as total_migrated,
-    SUM(advance_amount) as total_amount
+    SUM(advance_amount) as total_amount,
+    SUM(remaining_amount) as total_remaining,  -- Phải = 0
+    SUM(paid_amount) as total_paid             -- Phải = total_amount
 FROM employee_advances
 WHERE status = 'paid'
     AND EXISTS (
@@ -50,6 +55,19 @@ WHERE status = 'paid'
         WHERE ct.description LIKE '%Migration từ đơn cũ%'
             AND ct.amount = employee_advances.advance_amount
     );
+
+-- Kiểm tra có đơn nào bị sai không
+SELECT 
+    id,
+    employee_name,
+    advance_amount,
+    remaining_amount,  -- Phải = 0
+    paid_amount,       -- Phải = advance_amount
+    status
+FROM employee_advances
+WHERE status = 'paid' 
+    AND (remaining_amount != 0 OR paid_amount != advance_amount);
+-- Không được có record nào!
 
 -- Thông báo hoàn tất
 DO $$

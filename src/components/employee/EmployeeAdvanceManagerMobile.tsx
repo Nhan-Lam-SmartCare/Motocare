@@ -81,8 +81,9 @@ export const EmployeeAdvanceManagerMobile: React.FC = () => {
     }, [advances]);
 
     const totalRemaining = useMemo(() => {
+        // ✅ FIX: Chỉ tính đơn còn nợ (remaining_amount > 0)
         return advances
-            .filter((adv) => adv.status === "paid" || adv.status === "approved")
+            .filter((adv) => adv.remainingAmount > 0)
             .reduce((sum, adv) => sum + adv.remainingAmount, 0);
     }, [advances]);
 
@@ -157,6 +158,9 @@ export const EmployeeAdvanceManagerMobile: React.FC = () => {
                     status: "paid",
                     approvedBy: profile.full_name || profile.email,
                     approvedDate: new Date().toISOString(),
+                    // ✅ FIX: Cập nhật remaining_amount và paid_amount
+                    remainingAmount: 0,
+                    paidAmount: advance.advanceAmount,
                 },
             });
 

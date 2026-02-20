@@ -237,11 +237,16 @@ const FinancialAnalytics: React.FC<FinancialAnalyticsProps> = ({
       .slice(0, 5);
   }, [customerDebts]);
 
-  // Inventory value
+  // Inventory value — dùng giá vốn (costPrice) để phản ánh đúng giá trị tồn kho trên sổ sách
+  // Fallback: wholesalePrice nếu chưa nhập costPrice, cuối cùng là retailPrice
   const inventoryValue = useMemo(() => {
     return parts.reduce((sum, part) => {
       const stock = part.stock[currentBranchId] || 0;
-      const price = part.retailPrice[currentBranchId] || 0;
+      const price =
+        part.costPrice?.[currentBranchId] ||
+        part.wholesalePrice?.[currentBranchId] ||
+        part.retailPrice[currentBranchId] ||
+        0;
       return sum + stock * price;
     }, 0);
   }, [parts, currentBranchId]);

@@ -115,7 +115,9 @@ export const PODetailView: React.FC<PODetailViewProps> = ({
   const totalAmount = po.total_amount || 0;
   const discountAmount = po.discount_amount || 0;
   const shippingFee = po.shipping_fee || 0;
-  const finalAmount = po.final_amount || Math.max(0, totalAmount - discountAmount + shippingFee);
+  // Luôn tính lại từ các thành phần để phản ánh đúng sau khi chỉnh sửa chiết khấu/phí vận chuyển.
+  // Không dùng po.final_amount vì giá trị DB có thể lỗi thời nếu discount/shipping được cập nhật mà không cập nhật final_amount.
+  const finalAmount = Math.max(0, totalAmount - discountAmount + shippingFee);
 
   const handleUpdateCosts = async () => {
     try {

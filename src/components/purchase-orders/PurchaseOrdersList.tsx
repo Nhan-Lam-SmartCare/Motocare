@@ -240,7 +240,7 @@ export const PurchaseOrdersList: React.FC<PurchaseOrdersListProps> = ({
                         Tổng tiền ({po.items?.length || 0} món)
                       </p>
                       <div className="text-xl font-bold text-blue-600 dark:text-blue-400">
-                        {formatCurrency(po.final_amount || (po.total_amount - (po.discount_amount || 0)))}
+                        {formatCurrency(po.final_amount || Math.max(0, po.total_amount - (po.discount_amount || 0) + (po.shipping_fee || 0)))}
                       </div>
                       {po.discount_amount > 0 && (
                         <div className="text-xs text-slate-400 line-through">

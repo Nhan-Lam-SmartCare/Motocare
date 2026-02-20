@@ -142,17 +142,56 @@ export default function EmployeeAdvanceManager() {
   const handleApprove = async (advanceId: string) => {
     if (!profile) return;
 
+    const advance = advances.find((a) => a.id === advanceId);
+    if (!advance) {
+      showToast.error("Không tìm thấy đơn ứng lương");
+      return;
+    }
+
     try {
+      // 1. Duyệt đơn và đánh dấu đã chi trả luôn
       await updateAdvance({
         id: advanceId,
         updates: {
-          status: "approved",
+          status: "paid",
           approvedBy: profile.full_name || profile.email,
           approvedDate: new Date().toISOString(),
         },
       });
+
+      // 2. Tạo phiếu chi trong sổ quỹ
+      const transactionId = `ADV-${advanceId}-${Date.now()}`;
+      const { error: txError } = await supabase
+        .from("cash_transactions")
+        .insert({
+          id: transactionId,
+          type: "expense",
+          category: "employee_advance",
+          amount: advance.advanceAmount,
+          date: new Date().toISOString(),
+          description: `Ứng lương - ${advance.employeeName}${
+            advance.reason ? ` (${advance.reason})` : ""
+          }`,
+          branchid: currentBranchId,
+          paymentsource: advance.paymentMethod === "cash" ? "cash" : "bank",
+        });
+
+      if (txError) {
+        console.error("Error creating cash transaction:", txError);
+        showToast.warning(
+          "Đã duyệt đơn nhưng chưa ghi sổ quỹ. Vui lòng kiểm tra lại."
+        );
+      } else {
+        queryClient.invalidateQueries({ queryKey: ["cash_transactions"] });
+        showToast.success(
+          `Đã duyệt và chi ${advance.advanceAmount.toLocaleString()}đ ứng lương cho ${
+            advance.employeeName
+          }`
+        );
+      }
     } catch (error) {
-      // Error handled by mutation
+      console.error("Error approving advance:", error);
+      showToast.error("Có lỗi khi duyệt ứng lương");
     }
   };
 
@@ -171,60 +210,6 @@ export default function EmployeeAdvanceManager() {
   };
 
   const queryClient = useQueryClient();
-
-  const handlePay = async (advanceId: string) => {
-    // Find the advance to get amount and payment method
-    const advance = advances.find((a) => a.id === advanceId);
-    if (!advance) {
-      showToast.error("Không tìm thấy đơn ứng lương");
-      return;
-    }
-
-    try {
-      // 1. Update advance status to paid
-      await updateAdvance({
-        id: advanceId,
-        updates: {
-          status: "paid",
-        },
-      });
-
-      // 2. Create cash transaction (expense) for the advance payment
-      const transactionId = `ADV-${advanceId}-${Date.now()}`;
-      const { error: txError } = await supabase
-        .from("cash_transactions")
-        .insert({
-          id: transactionId,
-          type: "expense",
-          category: "employee_advance",
-          amount: advance.advanceAmount,
-          date: new Date().toISOString(),
-          description: `Ứng lương - ${advance.employeeName}${
-            advance.reason ? ` (${advance.reason})` : ""
-          }`,
-          branchid: currentBranchId,
-          paymentsource: advance.paymentMethod === "cash" ? "cash" : "bank",
-        });
-
-      if (txError) {
-        console.error("Error creating cash transaction for advance:", txError);
-        showToast.warning(
-          "Đã chi tiền nhưng chưa ghi sổ quỹ. Vui lòng kiểm tra lại."
-        );
-      } else {
-        // Invalidate cash transactions to refresh the data
-        queryClient.invalidateQueries({ queryKey: ["cash_transactions"] });
-        showToast.success(
-          `Đã chi ${advance.advanceAmount.toLocaleString()}đ ứng lương cho ${
-            advance.employeeName
-          }`
-        );
-      }
-    } catch (error) {
-      console.error("Error paying advance:", error);
-      showToast.error("Có lỗi khi chi ứng lương");
-    }
-  };
 
   const handleDelete = async (advanceId: string) => {
     if (!confirm("Bạn có chắc muốn xóa đơn ứng lương này không?")) return;
@@ -695,14 +680,6 @@ export default function EmployeeAdvanceManager() {
                                 <X className="w-4 h-4" />
                               </button>
                             </>
-                          )}
-                          {advance.status === "approved" && (
-                            <button
-                              onClick={() => handlePay(advance.id)}
-                              className="px-3 py-1 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded"
-                            >
-                              Chi trả
-                            </button>
                           )}
                           {/* Nút xóa - hiển thị cho tất cả trạng thái */}
                           <button

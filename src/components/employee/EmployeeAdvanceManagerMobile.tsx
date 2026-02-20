@@ -142,17 +142,52 @@ export const EmployeeAdvanceManagerMobile: React.FC = () => {
 
     const handleApprove = async (advanceId: string) => {
         if (!profile) return;
+
+        const advance = advances.find((a) => a.id === advanceId);
+        if (!advance) {
+            showToast.error("Không tìm thấy đơn ứng lương");
+            return;
+        }
+
         try {
+            // 1. Duyệt đơn và đánh dấu đã chi trả luôn
             await updateAdvance({
                 id: advanceId,
                 updates: {
-                    status: "approved",
+                    status: "paid",
                     approvedBy: profile.full_name || profile.email,
                     approvedDate: new Date().toISOString(),
                 },
             });
-            showToast.success("Đã duyệt đơn ứng lương");
-        } catch (error) { }
+
+            // 2. Tạo phiếu chi trong sổ quỹ
+            const transactionId = `ADV-${advanceId}-${Date.now()}`;
+            const { error: txError } = await supabase.from("cash_transactions").insert({
+                id: transactionId,
+                type: "expense",
+                category: "employee_advance",
+                amount: advance.advanceAmount,
+                date: new Date().toISOString(),
+                description: `Ứng lương - ${advance.employeeName}${
+                    advance.reason ? ` (${advance.reason})` : ""
+                }`,
+                branchid: currentBranchId,
+                paymentsource: advance.paymentMethod === "cash" ? "cash" : "bank",
+            });
+
+            if (txError) {
+                console.error("Error creating cash transaction:", txError);
+                showToast.warning("Đã duyệt đơn nhưng chưa ghi sổ quỹ. Vui lòng kiểm tra lại.");
+            } else {
+                queryClient.invalidateQueries({ queryKey: ["cash_transactions"] });
+                showToast.success(
+                    `Đã duyệt và chi ${advance.advanceAmount.toLocaleString()}đ ứng lương cho ${advance.employeeName}`
+                );
+            }
+        } catch (error) {
+            console.error("Error approving advance:", error);
+            showToast.error("Có lỗi khi duyệt ứng lương");
+        }
     };
 
     const handleReject = async (advanceId: string) => {
@@ -163,35 +198,6 @@ export const EmployeeAdvanceManagerMobile: React.FC = () => {
             });
             showToast.info("Đã từ chối đơn ứng lương");
         } catch (error) { }
-    };
-
-    const handlePay = async (advanceId: string) => {
-        const advance = advances.find((a) => a.id === advanceId);
-        if (!advance) return;
-
-        try {
-            await updateAdvance({
-                id: advanceId,
-                updates: { status: "paid" },
-            });
-
-            const transactionId = `ADV-${advanceId}-${Date.now()}`;
-            await supabase.from("cash_transactions").insert({
-                id: transactionId,
-                type: "expense",
-                category: "employee_advance",
-                amount: advance.advanceAmount,
-                date: new Date().toISOString(),
-                description: `Ứng lương - ${advance.employeeName}`,
-                branchid: currentBranchId,
-                paymentsource: advance.paymentMethod === "cash" ? "cash" : "bank",
-            });
-
-            queryClient.invalidateQueries({ queryKey: ["cash_transactions"] });
-            showToast.success("Đã chi tiền ứng lương");
-        } catch (error) {
-            showToast.error("Có lỗi khi chi ứng lương");
-        }
     };
 
     const handleMakePayment = async () => {
@@ -487,16 +493,7 @@ export const EmployeeAdvanceManagerMobile: React.FC = () => {
                             </div>
                         </div>
 
-                        {selectedAdvance.status === "approved" && (
-                            <button
-                                onClick={() => handlePay(selectedAdvance.id)}
-                                className="w-full py-3 bg-blue-600 text-white rounded-xl font-bold mb-3"
-                            >
-                                Chi tiền ứng lương
-                            </button>
-                        )}
-
-                        {(selectedAdvance.status === "approved" || selectedAdvance.status === "paid") && selectedAdvance.remainingAmount > 0 && (
+                        {selectedAdvance.status === "paid" && selectedAdvance.remainingAmount > 0 && (
                             <div className="space-y-3">
                                 {!showPaymentForm ? (
                                     <button

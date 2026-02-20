@@ -31,8 +31,9 @@ Vào **Authentication** → **Policies** và kiểm tra các policies:
    - ✅ Tạo đơn ứng lương
    - ✅ Chọn nguồn tiền (Tiền mặt/Chuyển khoản)
    - ✅ Trả góp hàng tháng
-   - ✅ Duyệt/Từ chối đơn
-   - ✅ Chi trả
+   - ✅ Duyệt đơn (tự động chi tiền và ghi sổ quỹ)
+   - ✅ Từ chối đơn
+   - ✅ Nhân viên trả nợ ứng lương
    - ✅ Xóa đơn (pending/rejected)
 
 ## Schema Details
@@ -90,16 +91,22 @@ Tổng hợp thông tin ứng lương với:
 
 ## Tích hợp với Sổ quỹ
 
-Khi chi trả ứng lương (status = "paid"), cần ghi nhận vào sổ quỹ:
+✅ **ĐÃ HOÀN THÀNH**: Khi duyệt đơn ứng lương, hệ thống tự động:
 
-- `payment_method = "cash"` → Giảm quỹ tiền mặt
-- `payment_method = "transfer"` → Giảm tài khoản ngân hàng
+1. Ghi nhận chi phí vào `cash_transactions`:
+   - `type: "expense"`
+   - `category: "employee_advance"`
+   - `payment_method = "cash"` → Giảm quỹ tiền mặt
+   - `payment_method = "transfer"` → Giảm tài khoản ngân hàng
 
-**TODO**: Tích hợp với cash_transactions hoặc inventory_transactions để tự động ghi sổ khi chi trả.
+2. Đánh dấu trạng thái đơn thành `"paid"` (Đã chi trả)
+
+**Lưu ý**: Khi nhấn nút "Duyệt", hệ thống sẽ tự động chi tiền và ghi sổ quỹ luôn.
 
 ## Notes
 
 - Chỉ Owner/Manager mới có quyền tạo/duyệt/xóa đơn ứng lương
 - Nhân viên có thể xem đơn ứng lương của mình (RLS policy)
-- Đơn ứng lương pending/rejected có thể xóa, đơn approved/paid không thể xóa
+- Đơn ứng lương pending/rejected có thể xóa, đơn paid không thể xóa
 - Hỗ trợ trả góp hàng tháng với tự động tính monthly_deduction
+- **Quy trình mới**: Khi duyệt đơn → tự động chi tiền + ghi sổ quỹ + đánh dấu "Đã chi trả"

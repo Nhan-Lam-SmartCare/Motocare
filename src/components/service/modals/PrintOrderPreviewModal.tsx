@@ -236,7 +236,7 @@ const PrintOrderPreviewModal: React.FC<PrintOrderPreviewModalProps> = ({
                                 }}
                             />
                         </div>
-                        <div style={{ padding: "16px" }}>
+                        <div style={{ padding: "3mm" }}>
                             {/* Store Info Header - Compact Layout */}
                             {/* Store Info Header - Mobile Optimized (Stacked) */}
                             {/* Store Info Header - Compact Layout (Side-by-Side) */}
@@ -244,10 +244,10 @@ const PrintOrderPreviewModal: React.FC<PrintOrderPreviewModalProps> = ({
                                 style={{
                                     display: "flex",
                                     alignItems: "flex-start",
-                                    gap: "4mm",
-                                    marginBottom: "4mm",
+                                    gap: "1.5mm",
+                                    marginBottom: "3mm",
                                     borderBottom: "2px solid #3b82f6",
-                                    paddingBottom: "3mm",
+                                    paddingBottom: "2mm",
                                 }}
                             >
                                 {/* Left: Logo */}
@@ -256,8 +256,8 @@ const PrintOrderPreviewModal: React.FC<PrintOrderPreviewModalProps> = ({
                                         src={storeSettings.logo_url}
                                         alt="Logo"
                                         style={{
-                                            height: "18mm",
-                                            width: "18mm",
+                                            height: "14mm",
+                                            width: "14mm",
                                             objectFit: "contain",
                                             flexShrink: 0,
                                         }}
@@ -266,13 +266,13 @@ const PrintOrderPreviewModal: React.FC<PrintOrderPreviewModalProps> = ({
 
                                 {/* Center: Store Info */}
                                 <div
-                                    style={{ fontSize: "8.5pt", lineHeight: "1.4", flex: 1 }}
+                                    style={{ fontSize: "8pt", lineHeight: "1.3", flex: 1 }}
                                 >
                                     <div
                                         style={{
                                             fontWeight: "bold",
-                                            fontSize: "11pt",
-                                            marginBottom: "1mm",
+                                            fontSize: "10pt",
+                                            marginBottom: "0.5mm",
                                             color: "#1e40af",
                                         }}
                                     >
@@ -283,13 +283,13 @@ const PrintOrderPreviewModal: React.FC<PrintOrderPreviewModalProps> = ({
                                             color: "#000",
                                             display: "flex",
                                             alignItems: "center",
-                                            gap: "1mm",
+                                            gap: "0.5mm",
                                         }}
                                     >
                                         <svg
                                             style={{
-                                                width: "10px",
-                                                height: "10px",
+                                                width: "8px",
+                                                height: "8px",
                                                 flexShrink: 0,
                                             }}
                                             viewBox="0 0 24 24"
@@ -307,13 +307,13 @@ const PrintOrderPreviewModal: React.FC<PrintOrderPreviewModalProps> = ({
                                             color: "#000",
                                             display: "flex",
                                             alignItems: "center",
-                                            gap: "1mm",
+                                            gap: "0.5mm",
                                         }}
                                     >
                                         <svg
                                             style={{
-                                                width: "10px",
-                                                height: "10px",
+                                                width: "8px",
+                                                height: "8px",
                                                 flexShrink: 0,
                                             }}
                                             viewBox="0 0 24 24"
@@ -329,13 +329,13 @@ const PrintOrderPreviewModal: React.FC<PrintOrderPreviewModalProps> = ({
                                                 color: "#000",
                                                 display: "flex",
                                                 alignItems: "center",
-                                                gap: "1mm",
+                                                gap: "0.5mm",
                                             }}
                                         >
                                             <svg
                                                 style={{
-                                                    width: "10px",
-                                                    height: "10px",
+                                                    width: "8px",
+                                                    height: "8px",
                                                     flexShrink: 0,
                                                     fill: "#1877F2"
                                                 }}
@@ -351,9 +351,10 @@ const PrintOrderPreviewModal: React.FC<PrintOrderPreviewModalProps> = ({
                                 {/* Right: Bank Info & QR */}
                                 <div
                                     style={{
-                                        fontSize: "8pt",
-                                        lineHeight: "1.4",
+                                        fontSize: "7.5pt",
+                                        lineHeight: "1.3",
                                         textAlign: "right",
+                                        maxWidth: "38mm",
                                         flexShrink: 0,
                                     }}
                                 >
@@ -363,30 +364,31 @@ const PrintOrderPreviewModal: React.FC<PrintOrderPreviewModalProps> = ({
                                                 display: "flex",
                                                 alignItems: "center",
                                                 justifyContent: "flex-end",
-                                                gap: "3mm",
+                                                gap: "1mm",
                                                 border: "1px solid #3b82f6",
-                                                borderRadius: "2mm",
-                                                padding: "2mm",
+                                                borderRadius: "1.5mm",
+                                                padding: "1mm",
                                                 backgroundColor: "#eff6ff",
                                             }}
                                         >
                                             {/* Bank Info */}
-                                            <div style={{ textAlign: "right", flex: 1 }}>
+                                            <div style={{ textAlign: "right", flex: 1, minWidth: 0 }}>
                                                 <div
                                                     style={{
                                                         fontWeight: "bold",
-                                                        marginBottom: "1mm",
+                                                        marginBottom: "0.5mm",
                                                         color: "#000",
                                                         display: "flex",
                                                         alignItems: "center",
                                                         justifyContent: "flex-end",
-                                                        gap: "1mm",
+                                                        gap: "0.5mm",
+                                                        fontSize: "7pt",
                                                     }}
                                                 >
                                                     <svg
                                                         style={{
-                                                            width: "10px",
-                                                            height: "10px",
+                                                            width: "8px",
+                                                            height: "8px",
                                                             flexShrink: 0,
                                                         }}
                                                         viewBox="0 0 24 24"
@@ -397,12 +399,12 @@ const PrintOrderPreviewModal: React.FC<PrintOrderPreviewModalProps> = ({
                                                     <span>{storeSettings.bank_name}</span>
                                                 </div>
                                                 {storeSettings.bank_account_number && (
-                                                    <div style={{ color: "#000" }}>
+                                                    <div style={{ color: "#000", fontSize: "7pt" }}>
                                                         STK: {storeSettings.bank_account_number}
                                                     </div>
                                                 )}
                                                 {storeSettings.bank_account_holder && (
-                                                    <div style={{ color: "#000", fontSize: "7.5pt" }}>
+                                                    <div style={{ color: "#000", fontSize: "6.5pt" }}>
                                                         {storeSettings.bank_account_holder}
                                                     </div>
                                                 )}
@@ -414,8 +416,8 @@ const PrintOrderPreviewModal: React.FC<PrintOrderPreviewModalProps> = ({
                                                         src={dynamicQRUrl}
                                                         alt="QR Banking"
                                                         style={{
-                                                            height: "25mm",
-                                                            width: "25mm",
+                                                            height: "18mm",
+                                                            width: "18mm",
                                                             objectFit: "contain",
                                                         }}
                                                     />
@@ -429,8 +431,8 @@ const PrintOrderPreviewModal: React.FC<PrintOrderPreviewModalProps> = ({
                                                         src={storeSettings.bank_qr_url}
                                                         alt="QR Banking"
                                                         style={{
-                                                            height: "25mm",
-                                                            width: "25mm",
+                                                            height: "18mm",
+                                                            width: "18mm",
                                                             objectFit: "contain",
                                                         }}
                                                     />

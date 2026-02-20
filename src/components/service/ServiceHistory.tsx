@@ -1381,8 +1381,8 @@ export const ServiceHistory: React.FC<ServiceHistoryProps> = ({
                         src={storeSettings.bank_qr_url}
                         alt="QR Banking"
                         style={{
-                          height: "25mm",
-                          width: "25mm",
+                          height: "18mm",
+                          width: "18mm",
                           objectFit: "contain",
                         }}
                       />

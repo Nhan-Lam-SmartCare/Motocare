@@ -1923,7 +1923,17 @@ export default function ServiceManager() {
                                 border: "1px solid #ddd",
                                 padding: "1.5mm",
                                 textAlign: "right",
-                                width: "28%",
+                                width: "22%",
+                              }}
+                            >
+                              Đơn giá
+                            </th>
+                            <th
+                              style={{
+                                border: "1px solid #ddd",
+                                padding: "1.5mm",
+                                textAlign: "right",
+                                width: "22%",
                               }}
                             >
                               Thành tiền
@@ -1960,6 +1970,15 @@ export default function ServiceManager() {
                                   }}
                                 >
                                   {part.quantity}
+                                </td>
+                                <td
+                                  style={{
+                                    border: "1px solid #ddd",
+                                    padding: "1.5mm",
+                                    textAlign: "right",
+                                  }}
+                                >
+                                  {formatCurrency(part.price)}
                                 </td>
                                 <td
                                   style={{
@@ -2009,11 +2028,20 @@ export default function ServiceManager() {
                                     border: "1px solid #ddd",
                                     padding: "1.5mm",
                                     textAlign: "right",
+                                  }}
+                                >
+                                  {formatCurrency(service.price || 0)}
+                                </td>
+                                <td
+                                  style={{
+                                    border: "1px solid #ddd",
+                                    padding: "1.5mm",
+                                    textAlign: "right",
                                     fontWeight: "bold",
                                   }}
                                 >
                                   {formatCurrency(
-                                    service.price * (service.quantity || 1)
+                                    (service.price || 0) * (service.quantity || 1)
                                   )}
                                 </td>
                               </tr>
@@ -2165,8 +2193,8 @@ export default function ServiceManager() {
                               src={printQRUrl}
                               alt="QR Banking"
                               style={{
-                                height: "25mm",
-                                width: "25mm",
+                                height: "18mm",
+                                width: "18mm",
                                 objectFit: "contain",
                               }}
                             />
@@ -2180,8 +2208,8 @@ export default function ServiceManager() {
                               src={storeSettings.bank_qr_url}
                               alt="QR Banking"
                               style={{
-                                height: "25mm",
-                                width: "25mm",
+                                height: "18mm",
+                                width: "18mm",
                                 objectFit: "contain",
                               }}
                             />
@@ -3546,8 +3574,8 @@ export default function ServiceManager() {
                                 src={storeSettings.bank_qr_url}
                                 alt="QR Banking"
                                 style={{
-                                  height: "25mm",
-                                  width: "25mm",
+                                  height: "18mm",
+                                  width: "18mm",
                                   objectFit: "contain",
                                 }}
                               />
@@ -4395,8 +4423,8 @@ export default function ServiceManager() {
                         src={storeSettings.bank_qr_url}
                         alt="QR Banking"
                         style={{
-                          height: "25mm",
-                          width: "25mm",
+                          height: "18mm",
+                          width: "18mm",
                           objectFit: "contain",
                         }}
                       />
@@ -4620,16 +4648,6 @@ export default function ServiceManager() {
                   {printOrder.partsUsed && printOrder.partsUsed.map(
                     (part: WorkOrderPart, idx: number) => (
                       <tr key={`part-${idx}`}>
-                        <td
-                          style={{
-                            border: "1px solid #ddd",
-                            padding: "2mm",
-                            textAlign: "center",
-                            fontSize: "10pt",
-                          }}
-                        >
-                          {idx + 1}
-                        </td>
                         <td
                           style={{
                             border: "1px solid #ddd",

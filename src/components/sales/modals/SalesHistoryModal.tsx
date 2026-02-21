@@ -4,10 +4,8 @@ import { formatCurrency, formatDate } from "../../../utils/format";
 import type { Sale } from "../../../types";
 import {
     Search,
-    Calendar,
-    Filter,
     ChevronRight,
-    MoreVertical,
+    ChevronLeft,
     Printer,
     Eye,
     Edit2,
@@ -15,20 +13,16 @@ import {
     CreditCard,
     Wallet,
     CheckCircle,
-    Clock,
     AlertCircle,
     TrendingUp,
-    Package,
-    User,
     X,
-    ChevronLeft,
-    LayoutGrid,
-    List,
-    ArrowUpRight,
     History,
+    ShoppingBag,
+    ReceiptText,
+    Ban,
+    RefreshCw,
 } from "lucide-react";
 
-// Sales History Modal Component
 export interface SalesHistoryModalProps {
     isOpen: boolean;
     onClose: () => void;
@@ -57,811 +51,529 @@ export interface SalesHistoryModalProps {
     keysetMode?: boolean;
     onToggleKeyset?: (checked: boolean) => void;
     customerDebts?: any[];
-    // Props for handling sub-modals (Detail and Edit) which are managed by parent for now
-    // or we can pass handlers to open them
     onViewDetail: (sale: Sale) => void;
     canDelete?: boolean;
 }
 
+const STATUS_CONFIG = {
+    completed: { label: "Hoàn thành", icon: CheckCircle, color: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-900/30", border: "border-emerald-200 dark:border-emerald-800" },
+    cancelled: { label: "Đã hủy", icon: Ban, color: "text-red-600 dark:text-red-400", bg: "bg-red-50 dark:bg-red-900/30", border: "border-red-200 dark:border-red-800" },
+    refunded: { label: "Hoàn tiền", icon: RefreshCw, color: "text-amber-600 dark:text-amber-400", bg: "bg-amber-50 dark:bg-amber-900/30", border: "border-amber-200 dark:border-amber-800" },
+    debt: { label: "Còn nợ", icon: AlertCircle, color: "text-orange-600 dark:text-orange-400", bg: "bg-orange-50 dark:bg-orange-900/30", border: "border-orange-200 dark:border-orange-800" },
+};
+
 export const SalesHistoryModal: React.FC<SalesHistoryModalProps> = ({
-    isOpen,
-    onClose,
-    sales,
-    currentBranchId,
-    onPrintReceipt,
-    onEditSale,
-    onDeleteSale,
-    page,
-    totalPages,
-    total,
-    hasMore,
-    pageSize,
-    onPrevPage,
-    onNextPage,
-    onPageSizeChange,
-    search,
-    onSearchChange,
-    fromDate,
-    toDate,
-    onDateRangeChange,
-    status = "all",
-    onStatusChange,
-    paymentMethodFilter = "all",
-    onPaymentMethodFilterChange,
-    keysetMode = false,
-    onToggleKeyset,
-    customerDebts = [],
-    onViewDetail,
-    canDelete = false,
+    isOpen, onClose, sales, currentBranchId, onPrintReceipt, onEditSale,
+    onDeleteSale, page, totalPages, total, hasMore, pageSize, onPrevPage,
+    onNextPage, onPageSizeChange, search, onSearchChange, fromDate, toDate,
+    onDateRangeChange, status = "all", onStatusChange, paymentMethodFilter = "all",
+    onPaymentMethodFilterChange, keysetMode = false, onToggleKeyset,
+    customerDebts = [], onViewDetail, canDelete = false,
 }) => {
     const { profile } = useAuth();
     const [activeTimeFilter, setActiveTimeFilter] = useState("7days");
     const [searchText, setSearchText] = useState("");
     const [customStartDate, setCustomStartDate] = useState("");
     const [customEndDate, setCustomEndDate] = useState("");
-    const [dropdownOpenSaleId, setDropdownOpenSaleId] = useState<string | null>(
-        null
-    );
-    const [salesDropdownPos, setSalesDropdownPos] = useState({
-        top: 0,
-        right: 0,
-    });
     const [expandedSaleIds, setExpandedSaleIds] = useState<Set<string>>(new Set());
+    const [actionSaleId, setActionSaleId] = useState<string | null>(null);
 
     const toggleExpand = (saleId: string) => {
         const newSet = new Set(expandedSaleIds);
-        if (newSet.has(saleId)) {
-            newSet.delete(saleId);
-        } else {
-            newSet.add(saleId);
-        }
+        if (newSet.has(saleId)) newSet.delete(saleId); else newSet.add(saleId);
         setExpandedSaleIds(newSet);
     };
 
-    // Compute date range when filter changes
     useEffect(() => {
         const today = new Date();
-        const startOfDay = new Date(
-            today.getFullYear(),
-            today.getMonth(),
-            today.getDate()
-        );
-        const endOfDay = new Date(
-            today.getFullYear(),
-            today.getMonth(),
-            today.getDate(),
-            23,
-            59,
-            59,
-            999
-        );
-        let from: Date | undefined;
-        let to: Date | undefined;
+        const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999);
+        let from: Date | undefined, to: Date | undefined;
         switch (activeTimeFilter) {
-            case "today":
-                from = startOfDay;
-                to = endOfDay;
-                break;
-            case "week": {
-                // Current week (Monday to Sunday)
-                const dayOfWeek = today.getDay();
-                const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek; // Monday
-                const monday = new Date(today);
-                monday.setDate(today.getDate() + diff);
-                from = new Date(
-                    monday.getFullYear(),
-                    monday.getMonth(),
-                    monday.getDate()
-                );
-                to = endOfDay;
-                break;
-            }
-            case "month": {
-                // Current month
-                from = new Date(today.getFullYear(), today.getMonth(), 1);
-                to = endOfDay;
-                break;
-            }
-            case "7days": {
-                const s = new Date(today);
-                s.setDate(s.getDate() - 6);
-                from = new Date(s.getFullYear(), s.getMonth(), s.getDate());
-                to = endOfDay;
-                break;
-            }
-            case "30days": {
-                const s = new Date(today);
-                s.setDate(s.getDate() - 29);
-                from = new Date(s.getFullYear(), s.getMonth(), s.getDate());
-                to = endOfDay;
-                break;
-            }
-            case "custom": {
-                if (customStartDate && customEndDate) {
-                    from = new Date(customStartDate);
-                    to = new Date(customEndDate + "T23:59:59");
-                }
-                break;
-            }
-            case "all":
-                from = undefined;
-                to = undefined;
-                break;
+            case "today": from = new Date(today.getFullYear(), today.getMonth(), today.getDate()); to = endOfDay; break;
+            case "week": { const d = today.getDay(); const diff = d === 0 ? -6 : 1 - d; const mon = new Date(today); mon.setDate(today.getDate() + diff); from = new Date(mon.getFullYear(), mon.getMonth(), mon.getDate()); to = endOfDay; break; }
+            case "month": from = new Date(today.getFullYear(), today.getMonth(), 1); to = endOfDay; break;
+            case "7days": { const s = new Date(today); s.setDate(s.getDate() - 6); from = new Date(s.getFullYear(), s.getMonth(), s.getDate()); to = endOfDay; break; }
+            case "30days": { const s = new Date(today); s.setDate(s.getDate() - 29); from = new Date(s.getFullYear(), s.getMonth(), s.getDate()); to = endOfDay; break; }
+            case "custom": if (customStartDate && customEndDate) { from = new Date(customStartDate); to = new Date(customEndDate + "T23:59:59"); } break;
+            case "all": from = undefined; to = undefined; break;
         }
-        onDateRangeChange(
-            from ? from.toISOString() : undefined,
-            to ? to.toISOString() : undefined
-        );
+        onDateRangeChange(from ? from.toISOString() : undefined, to ? to.toISOString() : undefined);
     }, [activeTimeFilter, customStartDate, customEndDate, onDateRangeChange]);
 
-    // Filter and sort sales
     const filteredSales = useMemo(() => {
-        let filtered = sales.filter(
-            (sale) =>
-                sale.branchId === currentBranchId ||
-                (sale as any).branchid === currentBranchId
-        );
-
-        // Search filter
+        let filtered = sales.filter(s => s.branchId === currentBranchId || (s as any).branchid === currentBranchId);
         if (searchText) {
-            filtered = filtered.filter(
-                (sale) =>
-                    sale.id.toLowerCase().includes(searchText.toLowerCase()) ||
-                    (sale.sale_code || "")
-                        .toLowerCase()
-                        .includes(searchText.toLowerCase()) ||
-                    sale.customer.name.toLowerCase().includes(searchText.toLowerCase()) ||
-                    ((sale as any).username || sale.userName || "")
-                        .toLowerCase()
-                        .includes(searchText.toLowerCase())
+            const q = searchText.toLowerCase();
+            filtered = filtered.filter(s =>
+                s.id.toLowerCase().includes(q) ||
+                (s.sale_code || "").toLowerCase().includes(q) ||
+                s.customer.name.toLowerCase().includes(q) ||
+                ((s as any).username || s.userName || "").toLowerCase().includes(q)
             );
         }
-
-        // Sort by date desc
-        filtered.sort(
-            (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-        );
-
+        filtered.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
         return filtered;
     }, [sales, currentBranchId, searchText]);
 
-    // Calculate total revenue
-    const totalRevenue = useMemo(() => {
-        return filteredSales.reduce((sum, sale) => sum + sale.total, 0);
-    }, [filteredSales]);
+    const totalRevenue = useMemo(() => filteredSales.reduce((sum, s) => sum + s.total, 0), [filteredSales]);
+    const cashTotal = useMemo(() => filteredSales.filter(s => s.paymentMethod === "cash").reduce((s, x) => s + x.total, 0), [filteredSales]);
+    const bankTotal = useMemo(() => filteredSales.filter(s => s.paymentMethod !== "cash").reduce((s, x) => s + x.total, 0), [filteredSales]);
 
-    // Close dropdown when clicking outside
     useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            const target = event.target as Element;
-            if (!target.closest(".dropdown-menu-container")) {
-                setDropdownOpenSaleId(null);
-            }
-        };
-        if (dropdownOpenSaleId) {
-            document.addEventListener("mousedown", handleClickOutside);
-            return () =>
-                document.removeEventListener("mousedown", handleClickOutside);
-        }
-    }, [dropdownOpenSaleId]);
+        const handle = (e: MouseEvent) => { if (!(e.target as Element).closest(".action-pop")) setActionSaleId(null); };
+        if (actionSaleId) { document.addEventListener("mousedown", handle); return () => document.removeEventListener("mousedown", handle); }
+    }, [actionSaleId]);
 
     if (!isOpen) return null;
 
+    const TIME_FILTERS = [
+        { id: "today", label: "Hôm nay" },
+        { id: "7days", label: "7 ngày" },
+        { id: "month", label: "Tháng này" },
+        { id: "30days", label: "30 ngày" },
+        { id: "all", label: "Tất cả" },
+        { id: "custom", label: "Tùy chọn" },
+    ];
+
+    const STATUS_FILTERS: { id: "all" | "completed" | "cancelled" | "refunded"; label: string }[] = [
+        { id: "all", label: "Tất cả" },
+        { id: "completed", label: "Hoàn thành" },
+        { id: "cancelled", label: "Đã hủy" },
+        { id: "refunded", label: "Hoàn tiền" },
+    ];
+
     return (
-        <React.Fragment>
-            <div className="fixed inset-0 bg-black/60 z-50 flex md:items-center md:justify-center items-end justify-center p-0 md:p-4">
-                <div className="bg-white dark:bg-slate-800 w-full md:max-w-7xl max-h-[95vh] md:rounded-2xl rounded-t-3xl shadow-2xl overflow-hidden flex flex-col animate-slide-up-bottom">
-                    {/* Header with time filter and stats */}
-                    {/* Header - Desktop */}
-                    <div className="hidden md:flex flex-row justify-between items-center p-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 gap-4">
-                        <div>
-                            <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                                <History className="w-5 h-5 text-blue-500" />
-                                Lịch Sử Bán Hàng
-                                <span className="text-sm font-normal text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-700 px-2 py-0.5 rounded-full border border-slate-200 dark:border-slate-600">
-                                    {total} đơn
-                                </span>
-                            </h2>
-                            <div className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-                                Tổng doanh thu:{" "}
-                                <span className="font-bold text-green-600 dark:text-green-400 text-lg">
-                                    {formatCurrency(totalRevenue)}
-                                </span>
-                            </div>
-                        </div>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end md:items-center justify-center p-0 md:p-4">
+            <div className="bg-white dark:bg-slate-800 w-full md:max-w-7xl h-[95vh] md:h-[90vh] md:rounded-2xl rounded-t-3xl shadow-2xl overflow-hidden flex flex-col">
 
-                        <div className="flex items-center gap-2">
-                            {/* Search Box */}
-                            <div className="relative w-64">
-                                <input
-                                    type="text"
-                                    placeholder="Tìm theo mã, tên KH..."
-                                    value={searchText}
-                                    onChange={(e) => setSearchText(e.target.value)}
-                                    className="w-full pl-9 pr-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                />
-                                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
-                            </div>
-
-                            {/* Time Filters */}
-                            <div className="flex bg-slate-200 dark:bg-slate-700 rounded-lg p-1">
-                                {[
-                                    { id: "today", label: "Hôm nay" },
-                                    { id: "7days", label: "7 ngày" },
-                                    { id: "month", label: "Tháng này" },
-                                    { id: "all", label: "Tất cả" },
-                                ].map((filter) => (
-                                    <button
-                                        key={filter.id}
-                                        onClick={() => setActiveTimeFilter(filter.id)}
-                                        className={`px-3 py-1.5 text-xs font-medium rounded-md whitespace-nowrap transition-all ${activeTimeFilter === filter.id
-                                            ? "bg-white dark:bg-slate-600 text-blue-600 dark:text-blue-400 shadow-sm"
-                                            : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
-                                            }`}
-                                    >
-                                        {filter.label}
-                                    </button>
-                                ))}
-                            </div>
-
-                            <button
-                                onClick={onClose}
-                                className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
-                            >
-                                <X className="w-6 h-6" />
-                            </button>
-                        </div>
-                    </div>
-
-                    {/* Header - Mobile */}
-                    <div className="flex md:hidden flex-col bg-[#1e1e2d] border-b border-slate-700/50">
-                        <div className="flex items-center justify-between p-4">
+                {/* ── HEADER ── */}
+                <div className="flex-shrink-0">
+                    {/* Desktop Header */}
+                    <div className="hidden md:block bg-gradient-to-r from-slate-900 to-slate-800 text-white px-6 pt-5 pb-0">
+                        <div className="flex items-center justify-between mb-4">
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center">
+                                <div className="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center">
                                     <History className="w-5 h-5 text-blue-400" />
                                 </div>
                                 <div>
-                                    <h2 className="text-base font-bold text-white">Lịch Sử Bán Hàng</h2>
-                                    <div className="text-[10px] text-slate-400 uppercase tracking-wider font-medium">
-                                        {total} đơn hàng
-                                    </div>
+                                    <h2 className="text-lg font-bold">Lịch Sử Bán Hàng</h2>
+                                    <p className="text-xs text-slate-400">Tổng {total} đơn hàng</p>
                                 </div>
                             </div>
-                            <button
-                                onClick={onClose}
-                                className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-800 text-slate-400 active:scale-95 transition-all"
-                            >
+                            <div className="flex items-center gap-3">
+                                {/* Search */}
+                                <div className="relative">
+                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                                    <input
+                                        type="text"
+                                        placeholder="Tìm mã, tên khách..."
+                                        value={searchText}
+                                        onChange={e => setSearchText(e.target.value)}
+                                        className="pl-9 pr-4 py-2 w-56 text-sm bg-white/10 border border-white/20 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:border-blue-400 focus:bg-white/15 transition-all"
+                                    />
+                                </div>
+                                <button onClick={onClose} className="w-9 h-9 flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 transition-colors">
+                                    <X className="w-5 h-5" />
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Stats Row */}
+                        <div className="grid grid-cols-3 gap-3 mb-4">
+                            <div className="bg-white/5 border border-white/10 rounded-xl p-3">
+                                <div className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold mb-1 flex items-center gap-1"><TrendingUp className="w-3 h-3" /> Tổng doanh thu</div>
+                                <div className="text-xl font-black text-emerald-400">{formatCurrency(totalRevenue)}</div>
+                            </div>
+                            <div className="bg-white/5 border border-white/10 rounded-xl p-3">
+                                <div className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold mb-1 flex items-center gap-1"><Wallet className="w-3 h-3" /> Tiền mặt</div>
+                                <div className="text-base font-bold text-amber-400">{formatCurrency(cashTotal)}</div>
+                            </div>
+                            <div className="bg-white/5 border border-white/10 rounded-xl p-3">
+                                <div className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold mb-1 flex items-center gap-1"><CreditCard className="w-3 h-3" /> Chuyển khoản</div>
+                                <div className="text-base font-bold text-blue-400">{formatCurrency(bankTotal)}</div>
+                            </div>
+                        </div>
+
+                        {/* Time Filter Tabs */}
+                        <div className="flex gap-1 overflow-x-auto scrollbar-hide">
+                            {TIME_FILTERS.map(f => (
+                                <button
+                                    key={f.id}
+                                    onClick={() => setActiveTimeFilter(f.id)}
+                                    className={`px-4 py-2 text-xs font-semibold rounded-t-lg whitespace-nowrap transition-all border-b-2 ${activeTimeFilter === f.id
+                                        ? "bg-white text-slate-900 border-blue-500"
+                                        : "text-slate-400 hover:text-white border-transparent hover:bg-white/5"
+                                    }`}
+                                >
+                                    {f.label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Mobile Header */}
+                    <div className="md:hidden bg-gradient-to-b from-slate-900 to-slate-800">
+                        <div className="flex items-center justify-between p-4">
+                            <div className="flex items-center gap-3">
+                                <div className="w-9 h-9 rounded-xl bg-blue-500/20 flex items-center justify-center">
+                                    <History className="w-4 h-4 text-blue-400" />
+                                </div>
+                                <div>
+                                    <h2 className="text-sm font-bold text-white">Lịch Sử Bán Hàng</h2>
+                                    <p className="text-[10px] text-slate-400">{total} đơn · {formatCurrency(totalRevenue)}</p>
+                                </div>
+                            </div>
+                            <button onClick={onClose} className="w-9 h-9 flex items-center justify-center rounded-xl bg-white/10 text-slate-300">
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
-
-                        {/* Stats Cards - Mobile */}
-                        <div className="px-4 pb-4 grid grid-cols-2 gap-3">
-                            <div className="bg-slate-800/40 border border-slate-700/50 rounded-2xl p-3">
-                                <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Doanh thu</div>
-                                <div className="text-sm font-bold text-green-400">{formatCurrency(totalRevenue)}</div>
-                            </div>
-                            <div className="bg-slate-800/40 border border-slate-700/50 rounded-2xl p-3">
-                                <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Số lượng</div>
-                                <div className="text-sm font-bold text-blue-400">{total} đơn</div>
-                            </div>
-                        </div>
-
-                        {/* Search & Time Filter - Mobile */}
-                        <div className="px-4 pb-4 space-y-3">
+                        {/* Search mobile */}
+                        <div className="px-4 pb-3">
                             <div className="relative">
-                                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
                                 <input
                                     type="text"
-                                    placeholder="Tìm theo mã, tên KH..."
+                                    placeholder="Tìm mã, tên khách..."
                                     value={searchText}
-                                    onChange={(e) => setSearchText(e.target.value)}
-                                    className="w-full pl-11 pr-4 py-3 bg-slate-800/50 border border-slate-700 rounded-xl text-white text-sm focus:border-blue-500 transition-all"
+                                    onChange={e => setSearchText(e.target.value)}
+                                    className="w-full pl-9 pr-4 py-2.5 bg-white/10 border border-white/15 rounded-xl text-white text-sm placeholder-slate-500 focus:outline-none focus:border-blue-500"
                                 />
                             </div>
-                            <div className="flex bg-slate-800/50 border border-slate-700 rounded-xl p-1 overflow-x-auto scrollbar-hide">
-                                {[
-                                    { id: "today", label: "Hôm nay" },
-                                    { id: "7days", label: "7 ngày" },
-                                    { id: "month", label: "Tháng này" },
-                                    { id: "all", label: "Tất cả" },
-                                ].map((filter) => (
-                                    <button
-                                        key={filter.id}
-                                        onClick={() => setActiveTimeFilter(filter.id)}
-                                        className={`flex-1 px-3 py-2 text-xs font-bold rounded-lg whitespace-nowrap transition-all ${activeTimeFilter === filter.id
-                                            ? "bg-blue-600 text-white shadow-lg shadow-blue-500/20"
-                                            : "text-slate-400 hover:text-slate-200"
-                                            }`}
-                                    >
-                                        {filter.label}
-                                    </button>
-                                ))}
-                            </div>
+                        </div>
+                        {/* Time filter mobile */}
+                        <div className="flex gap-1 px-4 pb-3 overflow-x-auto scrollbar-hide">
+                            {TIME_FILTERS.slice(0, 5).map(f => (
+                                <button
+                                    key={f.id}
+                                    onClick={() => setActiveTimeFilter(f.id)}
+                                    className={`px-3 py-1.5 text-[11px] font-semibold rounded-lg whitespace-nowrap transition-all ${activeTimeFilter === f.id
+                                        ? "bg-blue-600 text-white"
+                                        : "bg-white/10 text-slate-400"
+                                    }`}
+                                >{f.label}</button>
+                            ))}
                         </div>
                     </div>
 
-                    {/* Filters Row */}
-                    {/* Filters Row - Desktop */}
-                    <div className="hidden md:flex px-4 py-3 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 flex-wrap gap-3 items-center text-sm">
-                        <div className="flex items-center gap-2">
-                            <span className="text-slate-500">Trạng thái:</span>
-                            <select
-                                value={status}
-                                onChange={(e) =>
-                                    onStatusChange?.(
-                                        e.target.value as "all" | "completed" | "cancelled" | "refunded"
-                                    )
-                                }
-                                className="border border-slate-300 dark:border-slate-600 rounded px-2 py-1 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 text-xs"
-                            >
-                                <option value="all">Tất cả</option>
-                                <option value="completed">Hoàn thành</option>
-                                <option value="cancelled">Đã hủy</option>
-                                <option value="refunded">Hoàn tiền</option>
-                            </select>
+                    {/* ── FILTERS BAR ── */}
+                    <div className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700 px-4 md:px-6 py-2.5 flex flex-wrap items-center gap-2">
+                        {/* Status pills */}
+                        <div className="flex gap-1 flex-wrap">
+                            {STATUS_FILTERS.map(f => (
+                                <button
+                                    key={f.id}
+                                    onClick={() => onStatusChange?.(f.id)}
+                                    className={`px-3 py-1 text-xs font-semibold rounded-full border transition-all ${status === f.id
+                                        ? "bg-blue-600 text-white border-blue-600"
+                                        : "bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-400 border-slate-300 dark:border-slate-600 hover:border-blue-400"
+                                    }`}
+                                >{f.label}</button>
+                            ))}
                         </div>
 
-                        <div className="flex items-center gap-2">
-                            <span className="text-slate-500">Thanh toán:</span>
-                            <select
-                                value={paymentMethodFilter}
-                                onChange={(e) =>
-                                    onPaymentMethodFilterChange?.(
-                                        e.target.value as "all" | "cash" | "bank"
-                                    )
-                                }
-                                className="border border-slate-300 dark:border-slate-600 rounded px-2 py-1 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 text-xs"
-                            >
-                                <option value="all">Tất cả</option>
-                                <option value="cash">Tiền mặt</option>
-                                <option value="bank">Chuyển khoản</option>
-                            </select>
-                        </div>
+                        <div className="w-px h-5 bg-slate-200 dark:bg-slate-700 hidden md:block" />
 
+                        {/* Payment method pills */}
+                        {[
+                            { id: "all", label: "Tất cả TT" },
+                            { id: "cash", label: "💵 Tiền mặt" },
+                            { id: "bank", label: "🏦 Chuyển khoản" },
+                        ].map(f => (
+                            <button
+                                key={f.id}
+                                onClick={() => onPaymentMethodFilterChange?.(f.id as "all" | "cash" | "bank")}
+                                className={`px-3 py-1 text-xs font-semibold rounded-full border transition-all ${paymentMethodFilter === f.id
+                                    ? "bg-slate-800 dark:bg-white text-white dark:text-slate-900 border-slate-800 dark:border-white"
+                                    : "bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-400 border-slate-300 dark:border-slate-600 hover:border-slate-500"
+                                }`}
+                            >{f.label}</button>
+                        ))}
+
+                        {/* Custom date range */}
                         {activeTimeFilter === "custom" && (
-                            <div className="flex items-center gap-2">
-                                <input
-                                    type="date"
-                                    value={customStartDate}
-                                    onChange={(e) => setCustomStartDate(e.target.value)}
-                                    className="border border-slate-300 dark:border-slate-600 rounded px-2 py-1 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 text-xs"
-                                />
-                                <span>-</span>
-                                <input
-                                    type="date"
-                                    value={customEndDate}
-                                    onChange={(e) => setCustomEndDate(e.target.value)}
-                                    className="border border-slate-300 dark:border-slate-600 rounded px-2 py-1 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 text-xs"
-                                />
+                            <div className="flex items-center gap-2 ml-auto">
+                                <input type="date" value={customStartDate} onChange={e => setCustomStartDate(e.target.value)}
+                                    className="border border-slate-300 dark:border-slate-600 rounded-lg px-2 py-1 text-xs bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100" />
+                                <span className="text-slate-400 text-xs">→</span>
+                                <input type="date" value={customEndDate} onChange={e => setCustomEndDate(e.target.value)}
+                                    className="border border-slate-300 dark:border-slate-600 rounded-lg px-2 py-1 text-xs bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100" />
                             </div>
                         )}
 
-                        <div className="ml-auto flex items-center gap-2">
-                            <label className="flex items-center gap-2 cursor-pointer select-none">
-                                <input
-                                    type="checkbox"
-                                    checked={keysetMode}
-                                    onChange={(e) => onToggleKeyset?.(e.target.checked)}
-                                    className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                                />
-                                <span className="text-slate-600 dark:text-slate-400 text-xs">
-                                    Tải nhanh
-                                </span>
+                        <div className="ml-auto hidden md:flex items-center gap-2">
+                            <label className="flex items-center gap-1.5 cursor-pointer select-none text-xs text-slate-500 dark:text-slate-400">
+                                <input type="checkbox" checked={keysetMode} onChange={e => onToggleKeyset?.(e.target.checked)} className="rounded text-blue-600" />
+                                Tải nhanh
                             </label>
                         </div>
                     </div>
+                </div>
 
-                    {/* Filters Row - Mobile */}
-                    <div className="flex md:hidden px-4 py-3 bg-[#1e1e2d] border-b border-slate-700/50 flex-col gap-3">
-                        <div className="grid grid-cols-2 gap-3">
-                            <div className="space-y-1.5">
-                                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">Trạng thái</label>
-                                <select
-                                    value={status}
-                                    onChange={(e) =>
-                                        onStatusChange?.(
-                                            e.target.value as "all" | "completed" | "cancelled" | "refunded"
-                                        )
-                                    }
-                                    className="w-full px-3 py-2.5 bg-slate-800/50 border border-slate-700 rounded-xl text-white text-xs focus:border-blue-500 transition-all appearance-none"
-                                >
-                                    <option value="all">Tất cả trạng thái</option>
-                                    <option value="completed">Hoàn thành</option>
-                                    <option value="cancelled">Đã hủy</option>
-                                    <option value="refunded">Hoàn tiền</option>
-                                </select>
-                            </div>
-                            <div className="space-y-1.5">
-                                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">Thanh toán</label>
-                                <select
-                                    value={paymentMethodFilter}
-                                    onChange={(e) =>
-                                        onPaymentMethodFilterChange?.(
-                                            e.target.value as "all" | "cash" | "bank"
-                                        )
-                                    }
-                                    className="w-full px-3 py-2.5 bg-slate-800/50 border border-slate-700 rounded-xl text-white text-xs focus:border-blue-500 transition-all appearance-none"
-                                >
-                                    <option value="all">Tất cả PTTT</option>
-                                    <option value="cash">Tiền mặt</option>
-                                    <option value="bank">Chuyển khoản</option>
-                                </select>
-                            </div>
+                {/* ── CONTENT ── */}
+                <div className="flex-1 overflow-y-auto bg-slate-50 dark:bg-slate-900/50">
+                    {filteredSales.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center h-64 text-slate-400 gap-3">
+                            <ShoppingBag className="w-16 h-16 opacity-20" />
+                            <p className="text-sm font-medium">Không có đơn hàng nào</p>
                         </div>
-                        {activeTimeFilter === "custom" && (
-                            <div className="grid grid-cols-2 gap-3">
-                                <input
-                                    type="date"
-                                    value={customStartDate}
-                                    onChange={(e) => setCustomStartDate(e.target.value)}
-                                    className="w-full px-3 py-2.5 bg-slate-800/50 border border-slate-700 rounded-xl text-white text-xs"
-                                />
-                                <input
-                                    type="date"
-                                    value={customEndDate}
-                                    onChange={(e) => setCustomEndDate(e.target.value)}
-                                    className="w-full px-3 py-2.5 bg-slate-800/50 border border-slate-700 rounded-xl text-white text-xs"
-                                />
-                            </div>
-                        )}
-                    </div>
+                    ) : (
+                        <>
+                            {/* ── DESKTOP TABLE ── */}
+                            <div className="hidden md:block">
+                                <table className="w-full">
+                                    <thead className="sticky top-0 z-10">
+                                        <tr className="bg-slate-100 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
+                                            <th className="text-left pl-6 pr-3 py-3 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider w-44">Đơn hàng</th>
+                                            <th className="text-left px-3 py-3 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider w-44">Khách hàng</th>
+                                            <th className="text-left px-3 py-3 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Sản phẩm</th>
+                                            <th className="text-center px-3 py-3 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider w-28">Thanh toán</th>
+                                            <th className="text-right px-3 py-3 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider w-36">Tổng tiền</th>
+                                            <th className="text-center px-3 py-3 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider w-28">Trạng thái</th>
+                                            <th className="pr-4 py-3 w-28"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
+                                        {filteredSales.map((sale) => {
+                                            const debt = customerDebts.find(d => d.order_id === sale.id);
+                                            const hasDebt = debt && debt.remaining_amount > 0;
+                                            const remainingDebt = debt ? debt.remaining_amount : 0;
+                                            const isExpanded = expandedSaleIds.has(sale.id);
+                                            const displayItems = isExpanded ? sale.items : sale.items.slice(0, 2);
 
-                    {/* Sales List */}
-                    <div className="flex-1 overflow-y-auto p-4 bg-slate-50 dark:bg-slate-900/50">
-                        {filteredSales.length === 0 ? (
-                            <div className="flex flex-col items-center justify-center h-64 text-slate-400">
-                                <svg
-                                    className="w-16 h-16 mb-4 opacity-50"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={1.5}
-                                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-                                    />
-                                </svg>
-                                <p>Không tìm thấy đơn hàng nào</p>
-                            </div>
-                        ) : (
-                            <div className="grid grid-cols-1 gap-4">
-                                <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+                                            let statusKey: keyof typeof STATUS_CONFIG = "completed";
+                                            if (hasDebt) statusKey = "debt";
+                                            else if ((sale as any).status === "cancelled") statusKey = "cancelled";
+                                            else if ((sale as any).status === "refunded") statusKey = "refunded";
+                                            const statusCfg = STATUS_CONFIG[statusKey];
+                                            const StatusIcon = statusCfg.icon;
 
-                                    {/* Table Header - Visible on Desktop */}
-                                    <div className="hidden md:flex gap-4 px-4 py-3 bg-slate-50 dark:bg-slate-700/50 border-b border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                        <div className="w-48">Thông tin đơn hàng</div>
-                                        <div className="flex-1">Sản phẩm</div>
-                                        <div className="w-48 text-right">Thanh toán</div>
-                                        <div className="w-8"></div>
-                                    </div>
-
-                                    {filteredSales.map((sale) => {
-                                        // Check debt status
-                                        const debt = customerDebts.find(
-                                            (d) => d.order_id === sale.id
-                                        );
-                                        const hasDebt = debt && debt.remaining_amount > 0;
-                                        const paidAmount = debt ? debt.paid_amount : sale.total;
-                                        const remainingDebt = debt ? debt.remaining_amount : 0;
-
-                                        return (
-                                            <div key={sale.id} className="border-b border-slate-100 dark:border-slate-700 last:border-0">
-                                                {/* Desktop View */}
-                                                <div className="hidden md:flex p-4 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors group gap-4">
-                                                    {/* Left: Time & ID */}
-                                                    <div className="w-48 flex-shrink-0">
-                                                        <div className="flex items-center gap-2 mb-1">
-                                                            <span className="px-2 py-0.5 rounded text-sm font-extrabold bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 font-mono">
-                                                                #{sale.sale_code || sale.id.slice(0, 8)}
-                                                            </span>
-                                                            <span className="text-xs text-slate-500">
-                                                                {formatDate(new Date(sale.date))}
+                                            return (
+                                                <tr key={sale.id} className="bg-white dark:bg-slate-800 hover:bg-blue-50/40 dark:hover:bg-slate-700/30 transition-colors group">
+                                                    {/* Order info */}
+                                                    <td className="pl-6 pr-3 py-3.5 align-top">
+                                                        <div className="flex items-center gap-1.5 mb-1">
+                                                            <span className="px-2 py-0.5 rounded-md text-[11px] font-bold font-mono bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                                                                {sale.sale_code || "#" + sale.id.slice(0, 8)}
                                                             </span>
                                                         </div>
-                                                        <div className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                                                        <div className="text-[11px] text-slate-400 dark:text-slate-500">
+                                                            {formatDate(new Date(sale.date))}
+                                                        </div>
+                                                        <div className="text-[10px] text-slate-400 mt-1 truncate max-w-[140px]">
+                                                            NV: {(sale as any).username || sale.userName || "—"}
+                                                        </div>
+                                                    </td>
+
+                                                    {/* Customer */}
+                                                    <td className="px-3 py-3.5 align-top">
+                                                        <div className="text-sm font-semibold text-slate-800 dark:text-slate-100 truncate max-w-[160px]">
                                                             {sale.customer.name}
                                                         </div>
                                                         {sale.customer.phone && (
-                                                            <div className="text-xs text-slate-500">
-                                                                {sale.customer.phone}
-                                                            </div>
+                                                            <div className="text-[11px] text-slate-400 mt-0.5">{sale.customer.phone}</div>
                                                         )}
-                                                        <div className="mt-2 text-xs text-slate-400 flex items-center gap-1">
-                                                            <User className="w-3 h-3" />
-                                                            {(sale as any).username || sale.userName}
-                                                        </div>
-                                                    </div>
+                                                    </td>
 
-                                                    {/* Middle: Items */}
-                                                    <div className="flex-1">
+                                                    {/* Items */}
+                                                    <td className="px-3 py-3.5 align-top">
                                                         <div className="space-y-1">
-                                                            {sale.items.slice(0, expandedSaleIds.has(sale.id) ? undefined : 3).map((item, idx) => (
-                                                                <div key={idx} className="flex justify-between text-sm">
-                                                                    <span className="text-slate-700 dark:text-slate-300">
-                                                                        <span className="font-medium text-slate-900 dark:text-slate-100">
-                                                                            {item.quantity}x
-                                                                        </span>{" "}
-                                                                        {item.partName}
+                                                            {displayItems.map((item, idx) => (
+                                                                <div key={idx} className="flex items-center gap-2 text-sm">
+                                                                    <span className="w-5 h-5 rounded-md bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-[10px] font-bold text-slate-600 dark:text-slate-300 flex-shrink-0">
+                                                                        {item.quantity}
                                                                     </span>
-                                                                    <span className="text-slate-500 text-xs">
-                                                                        {formatCurrency(item.sellingPrice)}
-                                                                    </span>
-                                                                </div>
-                                                            ))}
-                                                            {sale.items.length > 3 && (
-                                                                <button
-                                                                    onClick={() => toggleExpand(sale.id)}
-                                                                    className="text-xs text-blue-600 dark:text-blue-400 hover:underline italic mt-1 block"
-                                                                >
-                                                                    {expandedSaleIds.has(sale.id)
-                                                                        ? "Thu gọn"
-                                                                        : `+ ${sale.items.length - 3} sản phẩm khác...`}
-                                                                </button>
-                                                            )}
-                                                        </div>
-                                                    </div>
-
-                                                    {/* Right: Total & Status */}
-                                                    <div className="w-48 flex-shrink-0 flex flex-col items-end gap-1">
-                                                        <div className="text-right">
-                                                            <div className="text-xs text-slate-500 mb-0.5">Tổng tiền</div>
-                                                            <div className="text-lg font-bold text-blue-600 dark:text-blue-400">
-                                                                {formatCurrency(sale.total)}
-                                                            </div>
-
-                                                            {/* Payment details */}
-                                                            {hasDebt ? (
-                                                                <div className="mt-2 space-y-1">
-                                                                    <div className="text-xs text-green-600 dark:text-green-400">
-                                                                        Đã trả: {formatCurrency(paidAmount)}
-                                                                    </div>
-                                                                    <div className="text-xs font-semibold text-red-600 dark:text-red-400">
-                                                                        Còn nợ: {formatCurrency(remainingDebt)}
-                                                                    </div>
-                                                                    <div className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300">
-                                                                        <AlertCircle className="w-3 h-3" /> Còn nợ
-                                                                    </div>
-                                                                </div>
-                                                            ) : (
-                                                                <div className="mt-2">
-                                                                    <div className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300">
-                                                                        <CheckCircle className="w-3 h-3" /> Đã thanh toán
-                                                                    </div>
-                                                                </div>
-                                                            )}
-
-                                                            <div className="text-xs text-slate-500 mt-1">
-                                                                {sale.paymentMethod === "cash" ? "💵 Tiền mặt" : "🏦 Chuyển khoản"}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-
-                                                    {/* Actions - Desktop */}
-                                                    <div className="flex items-start justify-end gap-1 pt-1">
-                                                        <button
-                                                            onClick={() => onEditSale(sale)}
-                                                            className="p-1.5 text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 transition-colors"
-                                                            title="Chỉnh sửa"
-                                                        >
-                                                            <Edit2 className="w-4 h-4" />
-                                                        </button>
-                                                        <div className="relative dropdown-menu-container">
-                                                            <button
-                                                                onClick={(e) => {
-                                                                    const rect = e.currentTarget.getBoundingClientRect();
-                                                                    setSalesDropdownPos({
-                                                                        top: rect.bottom + 4,
-                                                                        right: window.innerWidth - rect.right,
-                                                                    });
-                                                                    setDropdownOpenSaleId(dropdownOpenSaleId === sale.id ? null : sale.id);
-                                                                }}
-                                                                className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
-                                                            >
-                                                                <MoreVertical className="w-4 h-4" />
-                                                            </button>
-                                                            {dropdownOpenSaleId === sale.id && (
-                                                                <div
-                                                                    className="fixed w-48 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 z-[9999]"
-                                                                    style={{
-                                                                        top: salesDropdownPos.top,
-                                                                        right: salesDropdownPos.right,
-                                                                    }}
-                                                                >
-                                                                    <button
-                                                                        onClick={() => { onPrintReceipt(sale); setDropdownOpenSaleId(null); }}
-                                                                        className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2 rounded-t-lg"
-                                                                    >
-                                                                        <Printer className="w-4 h-4" /> In lại hóa đơn
-                                                                    </button>
-                                                                    <button
-                                                                        onClick={() => { onViewDetail(sale); setDropdownOpenSaleId(null); }}
-                                                                        className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2"
-                                                                    >
-                                                                        <Eye className="w-4 h-4" /> Xem chi tiết
-                                                                    </button>
-                                                                    {canDelete && (
-                                                                        <button
-                                                                            onClick={() => { onDeleteSale(sale.id); setDropdownOpenSaleId(null); }}
-                                                                            className="w-full text-left px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2 rounded-b-lg"
-                                                                        >
-                                                                            <Trash2 className="w-4 h-4" /> Xóa hóa đơn
-                                                                        </button>
-                                                                    )}
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                {/* Mobile View */}
-                                                <div className="md:hidden p-4 bg-[#1e1e2d] hover:bg-[#252538] transition-all">
-                                                    <div className="flex items-start justify-between mb-3">
-                                                        <div className="space-y-1">
-                                                            <div className="flex items-center gap-2">
-                                                                <span className="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20 font-mono">
-                                                                    #{sale.sale_code || sale.id.slice(0, 8)}
-                                                                </span>
-                                                                <span className="text-[10px] text-slate-500 flex items-center gap-1">
-                                                                    <Clock className="w-3 h-3" />
-                                                                    {formatDate(new Date(sale.date))}
-                                                                </span>
-                                                            </div>
-                                                            <div className="text-sm font-bold text-white">{sale.customer.name}</div>
-                                                            {sale.customer.phone && (
-                                                                <div className="text-xs text-slate-400">{sale.customer.phone}</div>
-                                                            )}
-                                                        </div>
-                                                        <div className="flex flex-col items-end gap-2">
-                                                            {!hasDebt ? (
-                                                                <span className="px-2 py-1 rounded-lg text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1">
-                                                                    <CheckCircle className="w-3 h-3" /> Đã xong
-                                                                </span>
-                                                            ) : (
-                                                                <span className="px-2 py-1 rounded-lg text-[10px] font-bold bg-orange-500/10 text-orange-400 border border-orange-500/20 flex items-center gap-1">
-                                                                    <AlertCircle className="w-3 h-3" /> Còn nợ
-                                                                </span>
-                                                            )}
-                                                            <div className="relative dropdown-menu-container">
-                                                                <button
-                                                                    onClick={(e) => {
-                                                                        const rect = e.currentTarget.getBoundingClientRect();
-                                                                        setSalesDropdownPos({
-                                                                            top: rect.bottom + 4,
-                                                                            right: window.innerWidth - rect.right,
-                                                                        });
-                                                                        setDropdownOpenSaleId(dropdownOpenSaleId === sale.id ? null : sale.id);
-                                                                    }}
-                                                                    className="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-800 text-slate-400 active:scale-95 transition-all"
-                                                                >
-                                                                    <MoreVertical className="w-4 h-4" />
-                                                                </button>
-                                                                {dropdownOpenSaleId === sale.id && (
-                                                                    <div
-                                                                        className="fixed w-48 bg-slate-800 rounded-xl shadow-2xl border border-slate-700 z-[9999] overflow-hidden"
-                                                                        style={{
-                                                                            top: salesDropdownPos.top,
-                                                                            right: salesDropdownPos.right,
-                                                                        }}
-                                                                    >
-                                                                        <button
-                                                                            onClick={() => { onPrintReceipt(sale); setDropdownOpenSaleId(null); }}
-                                                                            className="w-full text-left px-4 py-3 text-xs font-bold text-slate-300 hover:bg-slate-700 flex items-center gap-3 border-b border-slate-700/50"
-                                                                        >
-                                                                            <Printer className="w-4 h-4 text-blue-400" /> In lại hóa đơn
-                                                                        </button>
-                                                                        <button
-                                                                            onClick={() => { onViewDetail(sale); setDropdownOpenSaleId(null); }}
-                                                                            className="w-full text-left px-4 py-3 text-xs font-bold text-slate-300 hover:bg-slate-700 flex items-center gap-3 border-b border-slate-700/50"
-                                                                        >
-                                                                            <Eye className="w-4 h-4 text-emerald-400" /> Xem chi tiết
-                                                                        </button>
-                                                                        <button
-                                                                            onClick={() => { onEditSale(sale); setDropdownOpenSaleId(null); }}
-                                                                            className="w-full text-left px-4 py-3 text-xs font-bold text-slate-300 hover:bg-slate-700 flex items-center gap-3 border-b border-slate-700/50"
-                                                                        >
-                                                                            <Edit2 className="w-4 h-4 text-amber-400" /> Chỉnh sửa
-                                                                        </button>
-                                                                        {canDelete && (
-                                                                            <button
-                                                                                onClick={() => { onDeleteSale(sale.id); setDropdownOpenSaleId(null); }}
-                                                                                className="w-full text-left px-4 py-3 text-xs font-bold text-red-400 hover:bg-red-500/10 flex items-center gap-3"
-                                                                            >
-                                                                                <Trash2 className="w-4 h-4" /> Xóa hóa đơn
-                                                                            </button>
-                                                                        )}
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-
-                                                    {/* Items List - Mobile */}
-                                                    <div className="bg-slate-800/30 rounded-xl p-3 mb-3 border border-slate-700/30">
-                                                        <div className="space-y-2">
-                                                            {sale.items.slice(0, expandedSaleIds.has(sale.id) ? undefined : 2).map((item, idx) => (
-                                                                <div key={idx} className="flex justify-between items-center text-[11px]">
-                                                                    <div className="flex items-center gap-2 text-slate-300">
-                                                                        <span className="w-5 h-5 rounded bg-slate-700 flex items-center justify-center text-[10px] font-bold text-blue-400">{item.quantity}</span>
-                                                                        <span className="font-medium truncate max-w-[150px]">{item.partName}</span>
-                                                                    </div>
-                                                                    <span className="font-bold text-slate-400">{formatCurrency(item.sellingPrice)}</span>
+                                                                    <span className="text-slate-700 dark:text-slate-300 truncate max-w-xs">{item.partName}</span>
+                                                                    <span className="text-slate-400 text-xs ml-auto flex-shrink-0">{formatCurrency(item.sellingPrice)}</span>
                                                                 </div>
                                                             ))}
                                                             {sale.items.length > 2 && (
-                                                                <button
-                                                                    onClick={() => toggleExpand(sale.id)}
-                                                                    className="w-full pt-2 mt-2 border-t border-slate-700/50 text-[10px] font-bold text-blue-400 flex items-center justify-center gap-1"
-                                                                >
-                                                                    {expandedSaleIds.has(sale.id) ? "Thu gọn" : `Xem thêm ${sale.items.length - 2} sản phẩm...`}
-                                                                    <ChevronRight className={`w-3 h-3 transition-transform ${expandedSaleIds.has(sale.id) ? "-rotate-90" : "rotate-90"}`} />
+                                                                <button onClick={() => toggleExpand(sale.id)} className="text-[11px] text-blue-500 hover:text-blue-700 font-semibold flex items-center gap-0.5 mt-0.5">
+                                                                    {isExpanded ? "Thu gọn" : `+${sale.items.length - 2} sản phẩm khác`}
+                                                                    <ChevronRight className={`w-3 h-3 transition-transform ${isExpanded ? "rotate-90" : ""}`} />
                                                                 </button>
                                                             )}
                                                         </div>
-                                                    </div>
+                                                    </td>
 
-                                                    {/* Footer - Mobile */}
-                                                    <div className="flex items-center justify-between pt-3 border-t border-slate-700/50">
-                                                        <div className="flex items-center gap-2">
-                                                            <div className="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center">
-                                                                {sale.paymentMethod === "cash" ? <Wallet className="w-4 h-4 text-amber-400" /> : <CreditCard className="w-4 h-4 text-blue-400" />}
-                                                            </div>
-                                                            <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                                                                {sale.paymentMethod === "cash" ? "Tiền mặt" : "Chuyển khoản"}
-                                                            </div>
+                                                    {/* Payment method */}
+                                                    <td className="px-3 py-3.5 align-top text-center">
+                                                        {sale.paymentMethod === "cash" ? (
+                                                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-800">
+                                                                <Wallet className="w-3 h-3" /> Tiền mặt
+                                                            </span>
+                                                        ) : (
+                                                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800">
+                                                                <CreditCard className="w-3 h-3" /> CK
+                                                            </span>
+                                                        )}
+                                                    </td>
+
+                                                    {/* Total */}
+                                                    <td className="px-3 py-3.5 align-top text-right">
+                                                        <div className="text-base font-black text-slate-900 dark:text-slate-100">
+                                                            {formatCurrency(sale.total)}
                                                         </div>
-                                                        <div className="text-right">
-                                                            <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-0.5">Tổng tiền</div>
-                                                            <div className="text-base font-black text-blue-400">{formatCurrency(sale.total)}</div>
+                                                        {hasDebt && (
+                                                            <div className="text-[11px] text-red-500 font-semibold mt-0.5">
+                                                                Còn nợ: {formatCurrency(remainingDebt)}
+                                                            </div>
+                                                        )}
+                                                    </td>
+
+                                                    {/* Status badge */}
+                                                    <td className="px-3 py-3.5 align-top text-center">
+                                                        <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold border ${statusCfg.bg} ${statusCfg.color} ${statusCfg.border}`}>
+                                                            <StatusIcon className="w-3 h-3" />
+                                                            {statusCfg.label}
+                                                        </span>
+                                                    </td>
+
+                                                    {/* Actions */}
+                                                    <td className="pr-4 py-3.5 align-top">
+                                                        <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                            <button onClick={() => onPrintReceipt(sale)} title="In hóa đơn"
+                                                                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-all">
+                                                                <Printer className="w-4 h-4" />
+                                                            </button>
+                                                            <button onClick={() => onViewDetail(sale)} title="Xem chi tiết"
+                                                                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-all">
+                                                                <Eye className="w-4 h-4" />
+                                                            </button>
+                                                            <button onClick={() => onEditSale(sale)} title="Chỉnh sửa"
+                                                                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-amber-50 dark:hover:bg-amber-900/20 text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 transition-all">
+                                                                <Edit2 className="w-4 h-4" />
+                                                            </button>
+                                                            {canDelete && (
+                                                                <button onClick={() => onDeleteSale(sale.id)} title="Xóa"
+                                                                    className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-slate-400 hover:text-red-600 dark:hover:text-red-400 transition-all">
+                                                                    <Trash2 className="w-4 h-4" />
+                                                                </button>
+                                                            )}
                                                         </div>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            {/* ── MOBILE CARDS ── */}
+                            <div className="md:hidden p-3 space-y-2">
+                                {filteredSales.map((sale) => {
+                                    const debt = customerDebts.find(d => d.order_id === sale.id);
+                                    const hasDebt = debt && debt.remaining_amount > 0;
+                                    const remainingDebt = debt ? debt.remaining_amount : 0;
+                                    const isExpanded = expandedSaleIds.has(sale.id);
+                                    const isActionsOpen = actionSaleId === sale.id;
+
+                                    let statusKey: keyof typeof STATUS_CONFIG = "completed";
+                                    if (hasDebt) statusKey = "debt";
+                                    else if ((sale as any).status === "cancelled") statusKey = "cancelled";
+                                    else if ((sale as any).status === "refunded") statusKey = "refunded";
+                                    const statusCfg = STATUS_CONFIG[statusKey];
+                                    const StatusIcon = statusCfg.icon;
+
+                                    return (
+                                        <div key={sale.id} className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm">
+                                            {/* Card top */}
+                                            <div className="flex items-start justify-between px-4 pt-3.5 pb-2.5">
+                                                <div>
+                                                    <div className="flex items-center gap-2 mb-1">
+                                                        <span className="px-2 py-0.5 rounded-md text-[11px] font-bold font-mono bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">
+                                                            {sale.sale_code || "#" + sale.id.slice(0, 8)}
+                                                        </span>
+                                                        <span className={`inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[10px] font-semibold border ${statusCfg.bg} ${statusCfg.color} ${statusCfg.border}`}>
+                                                            <StatusIcon className="w-2.5 h-2.5" />{statusCfg.label}
+                                                        </span>
+                                                    </div>
+                                                    <div className="text-sm font-bold text-slate-900 dark:text-slate-100">{sale.customer.name}</div>
+                                                    <div className="text-[11px] text-slate-400 mt-0.5">
+                                                        {formatDate(new Date(sale.date))} · {(sale as any).username || sale.userName || ""}
+                                                    </div>
+                                                </div>
+                                                <div className="text-right flex-shrink-0 ml-2">
+                                                    <div className="text-lg font-black text-slate-900 dark:text-slate-100">{formatCurrency(sale.total)}</div>
+                                                    {hasDebt && <div className="text-[11px] text-red-500 font-semibold">Nợ: {formatCurrency(remainingDebt)}</div>}
+                                                    <div className="flex items-center justify-end gap-1 mt-1">
+                                                        {sale.paymentMethod === "cash"
+                                                            ? <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-600 dark:text-amber-400"><Wallet className="w-3 h-3" />Tiền mặt</span>
+                                                            : <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-blue-600 dark:text-blue-400"><CreditCard className="w-3 h-3" />CK</span>
+                                                        }
                                                     </div>
                                                 </div>
                                             </div>
-                                        );
-                                    })}
 
-                                </div>
+                                            {/* Items */}
+                                            <div className="mx-3 mb-2 bg-slate-50 dark:bg-slate-700/30 rounded-xl p-2.5 border border-slate-100 dark:border-slate-700">
+                                                <div className="space-y-1.5">
+                                                    {(isExpanded ? sale.items : sale.items.slice(0, 2)).map((item, idx) => (
+                                                        <div key={idx} className="flex items-center gap-2">
+                                                            <span className="w-5 h-5 rounded-md bg-white dark:bg-slate-700 flex items-center justify-center text-[10px] font-bold text-blue-600 dark:text-blue-400 border border-slate-200 dark:border-slate-600 flex-shrink-0">
+                                                                {item.quantity}
+                                                            </span>
+                                                            <span className="text-xs text-slate-700 dark:text-slate-300 flex-1 truncate">{item.partName}</span>
+                                                            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 flex-shrink-0">{formatCurrency(item.sellingPrice)}</span>
+                                                        </div>
+                                                    ))}
+                                                    {sale.items.length > 2 && (
+                                                        <button onClick={() => toggleExpand(sale.id)} className="w-full text-center text-[11px] font-semibold text-blue-500 pt-1 border-t border-slate-200 dark:border-slate-600 mt-1">
+                                                            {isExpanded ? "Thu gọn" : `+${sale.items.length - 2} sản phẩm nữa`}
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            {/* Actions bar */}
+                                            <div className="flex border-t border-slate-100 dark:border-slate-700 divide-x divide-slate-100 dark:divide-slate-700">
+                                                <button onClick={() => onPrintReceipt(sale)} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-[11px] font-semibold text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors active:scale-95">
+                                                    <Printer className="w-3.5 h-3.5" /> In
+                                                </button>
+                                                <button onClick={() => onViewDetail(sale)} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-[11px] font-semibold text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors active:scale-95">
+                                                    <Eye className="w-3.5 h-3.5" /> Chi tiết
+                                                </button>
+                                                <button onClick={() => onEditSale(sale)} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-[11px] font-semibold text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors active:scale-95">
+                                                    <Edit2 className="w-3.5 h-3.5" /> Sửa
+                                                </button>
+                                                {canDelete && (
+                                                    <button onClick={() => onDeleteSale(sale.id)} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-[11px] font-semibold text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors active:scale-95">
+                                                        <Trash2 className="w-3.5 h-3.5" /> Xóa
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
                             </div>
+                        </>
+                    )}
+                </div>
 
-                        )}
+                {/* ── FOOTER / PAGINATION ── */}
+                <div className="flex-shrink-0 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 px-4 md:px-6 py-3 flex items-center justify-between gap-4">
+                    <div className="text-xs text-slate-500 dark:text-slate-400">
+                        Hiển thị <span className="font-bold text-slate-700 dark:text-slate-200">{filteredSales.length}</span> / {total} đơn hàng
                     </div>
-
-                    {/* Footer with pagination */}
-                    <div className="p-4 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between bg-white dark:bg-slate-800 md:flex hidden">
-                        <div className="text-sm text-slate-600 dark:text-slate-400">
-                            Hiển thị {filteredSales.length} đơn hàng
-                        </div>
-                    </div>
-
-                    {/* Footer - Mobile */}
-                    <div className="md:hidden p-4 bg-[#1e1e2d] border-t border-slate-700/50 flex items-center justify-between">
-                        <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-                            {filteredSales.length} đơn hàng
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <button
-                                onClick={onPrevPage}
-                                disabled={page === 1}
-                                className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-800 text-slate-400 disabled:opacity-30 active:scale-95 transition-all"
-                            >
-                                <ChevronLeft className="w-5 h-5" />
-                            </button>
-                            <div className="px-3 py-2 rounded-xl bg-slate-800 text-xs font-bold text-white border border-slate-700">
-                                {page} / {totalPages || 1}
-                            </div>
-                            <button
-                                onClick={onNextPage}
-                                disabled={!hasMore}
-                                className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-800 text-slate-400 disabled:opacity-30 active:scale-95 transition-all"
-                            >
-                                <ChevronRight className="w-5 h-5" />
-                            </button>
-                        </div>
+                    <div className="flex items-center gap-2">
+                        <button onClick={onPrevPage} disabled={page === 1}
+                            className="w-8 h-8 rounded-lg border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed transition-all">
+                            <ChevronLeft className="w-4 h-4" />
+                        </button>
+                        <span className="text-xs font-semibold text-slate-600 dark:text-slate-300 px-2">
+                            Trang {page} / {totalPages || 1}
+                        </span>
+                        <button onClick={onNextPage} disabled={!hasMore}
+                            className="w-8 h-8 rounded-lg border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed transition-all">
+                            <ChevronRight className="w-4 h-4" />
+                        </button>
+                        <select value={pageSize} onChange={e => onPageSizeChange(Number(e.target.value))}
+                            className="hidden md:block border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1 text-xs bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-300">
+                            {[10, 20, 50, 100].map(n => <option key={n} value={n}>{n}/trang</option>)}
+                        </select>
                     </div>
                 </div>
             </div>
-        </React.Fragment >
+        </div>
     );
 };
+

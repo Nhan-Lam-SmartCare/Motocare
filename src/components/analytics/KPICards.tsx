@@ -57,8 +57,9 @@ const KPICards: React.FC<KPICardsProps> = ({
     const revenueChange = previousRevenue > 0
         ? ((currentRevenue - previousRevenue) / previousRevenue) * 100
         : currentRevenue > 0 ? 100 : 0;
-    const profitChange = previousProfit > 0
-        ? ((currentProfit - previousProfit) / previousProfit) * 100
+    // ✅ FIX: Dùng Math.abs(previousProfit) để tính đúng khi kỳ trước bị lỗ (< 0)
+    const profitChange = previousProfit !== 0
+        ? ((currentProfit - previousProfit) / Math.abs(previousProfit)) * 100
         : currentProfit > 0 ? 100 : 0;
 
     let revenueProgress = 0;

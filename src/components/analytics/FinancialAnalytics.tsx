@@ -63,7 +63,9 @@ const FinancialAnalytics: React.FC<FinancialAnalyticsProps> = ({
   const workOrderIncome = useMemo(() => {
     return workOrders
       .filter((wo) => {
-        const woDate = new Date(wo.creationDate);
+        // ✅ FIX: Dùng paymentDate (ngày thanh toán) nếu có, fallback về creationDate
+        // Đảm bảo nhất quán với dashboard KPI (financialSummary.ts)
+        const woDate = new Date(wo.paymentDate || wo.creationDate);
         // Tính đơn đã trả máy HOẶC đã thanh toán (paid/partial) trong khoảng thời gian
         // Không tính đơn đã hoàn tiền (refunded)
         const isCompleted = wo.status === "Trả máy" ||
@@ -100,7 +102,8 @@ const FinancialAnalytics: React.FC<FinancialAnalyticsProps> = ({
   const workOrderCOGS = useMemo(() => {
     return workOrders
       .filter((wo) => {
-        const woDate = new Date(wo.creationDate);
+        // ✅ FIX: Dùng paymentDate cho nhất quán với dashboard KPI
+        const woDate = new Date(wo.paymentDate || wo.creationDate);
         const isCompleted = wo.status === "Trả máy" ||
           wo.paymentStatus === "paid" ||
           wo.paymentStatus === "partial" ||
@@ -161,7 +164,8 @@ const FinancialAnalytics: React.FC<FinancialAnalyticsProps> = ({
     // Add work order income and COGS
     workOrders
       .filter((wo) => {
-        const woDate = new Date(wo.creationDate);
+        // ✅ FIX: Dùng paymentDate cho nhất quán với dashboard KPI
+        const woDate = new Date(wo.paymentDate || wo.creationDate);
         const isCompleted = wo.status === "Trả máy" ||
           wo.paymentStatus === "paid" ||
           wo.paymentStatus === "partial" ||
@@ -169,7 +173,9 @@ const FinancialAnalytics: React.FC<FinancialAnalyticsProps> = ({
         return woDate >= startDate && woDate <= endDate && isCompleted && !wo.refunded;
       })
       .forEach((wo) => {
-        const date = wo.creationDate.slice(0, 10);
+        // Dùng paymentDate để hiển thị biểu đồ theo ngày tiền vào, không phải ngày tạo phiếu
+        const dateStr = (wo.paymentDate || wo.creationDate);
+        const date = dateStr.slice(0, 10);
         const existing = financialMap.get(date) || { income: 0, expense: 0 };
         existing.income += wo.totalPaid || wo.total || 0;
 
@@ -310,7 +316,8 @@ const FinancialAnalytics: React.FC<FinancialAnalyticsProps> = ({
     // Process work orders
     workOrders
       .filter((wo) => {
-        const d = new Date(wo.creationDate);
+        // ✅ FIX: Dùng paymentDate cho nhất quán
+        const d = new Date(wo.paymentDate || wo.creationDate);
         return d >= startDate && d <= endDate && wo.status !== "Đã hủy" && !wo.refunded;
       })
       .forEach((wo: any) => {
@@ -404,7 +411,8 @@ const FinancialAnalytics: React.FC<FinancialAnalyticsProps> = ({
     // Process work orders
     workOrders
       .filter((wo) => {
-        const d = new Date(wo.creationDate);
+        // ✅ FIX: Dùng paymentDate cho nhất quán
+        const d = new Date(wo.paymentDate || wo.creationDate);
         return d >= startDate && d <= endDate && wo.status !== "Đã hủy" && !wo.refunded;
       })
       .forEach((wo: any) => {

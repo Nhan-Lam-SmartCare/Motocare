@@ -741,7 +741,12 @@ const WorkOrderModal: React.FC<{
       0
     );
     const subtotal = (formData.laborCost || 0) + partsTotal + servicesTotal;
-    const discount = formData.discount || 0;
+    // BUG fix: recompute discount from discountPercent whenever subtotal changes (like mobile useMemo)
+    // When discountType === "percent", discount must track the CURRENT subtotal, not a stale snapshot
+    const discount =
+      discountType === "percent"
+        ? Math.round((subtotal * discountPercent) / 100)
+        : (formData.discount || 0);
     const total = Math.max(0, subtotal - discount);
 
     // Calculate payment summary

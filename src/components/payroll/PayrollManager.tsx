@@ -727,7 +727,8 @@ export const GeneratePayrollModal: React.FC<{
     bonus: number,
     deduction: number
   ) => {
-    return baseSalary + allowances + bonus - deduction;
+    // BUG fix: clamp to 0 — net salary cannot be negative
+    return Math.max(0, baseSalary + allowances + bonus - deduction);
   };
 
   const handleSubmit = (e: React.FormEvent) => {

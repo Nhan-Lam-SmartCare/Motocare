@@ -151,43 +151,22 @@ export const EmployeeAdvanceManagerMobile: React.FC = () => {
         }
 
         try {
-            // 1. Duyệt đơn và đánh dấu đã chi trả luôn
+            // Chỉ duyệt đơn — KHÔNG chi tiền tự động.
+            // Tiền sẽ được chi khi nhấn "Trả tiền ứng" trong màn hình chi tiết.
             await updateAdvance({
                 id: advanceId,
                 updates: {
-                    status: "paid",
+                    status: "approved",
                     approvedBy: profile.full_name || profile.email,
                     approvedDate: new Date().toISOString(),
-                    // ✅ FIX: Cập nhật remaining_amount và paid_amount
-                    remainingAmount: 0,
-                    paidAmount: advance.advanceAmount,
+                    // Giữ nguyên remainingAmount = advanceAmount, paidAmount = 0
                 },
             });
 
-            // 2. Tạo phiếu chi trong sổ quỹ
-            const transactionId = `ADV-${advanceId}-${Date.now()}`;
-            const { error: txError } = await supabase.from("cash_transactions").insert({
-                id: transactionId,
-                type: "expense",
-                category: "employee_advance",
-                amount: advance.advanceAmount,
-                date: new Date().toISOString(),
-                description: `Ứng lương - ${advance.employeeName}${
-                    advance.reason ? ` (${advance.reason})` : ""
-                }`,
-                branchid: currentBranchId,
-                paymentsource: advance.paymentMethod === "cash" ? "cash" : "bank",
-            });
-
-            if (txError) {
-                console.error("Error creating cash transaction:", txError);
-                showToast.warning("Đã duyệt đơn nhưng chưa ghi sổ quỹ. Vui lòng kiểm tra lại.");
-            } else {
-                queryClient.invalidateQueries({ queryKey: ["cash_transactions"] });
-                showToast.success(
-                    `Đã duyệt và chi ${advance.advanceAmount.toLocaleString()}đ ứng lương cho ${advance.employeeName}`
-                );
-            }
+            queryClient.invalidateQueries({ queryKey: ["employee-advances"] });
+            showToast.success(
+                `Đã duyệt đơn ứng lương cho ${advance.employeeName}. Vui lòng chi tiền thực tế trong mục chi tiết.`
+            );
         } catch (error) {
             console.error("Error approving advance:", error);
             showToast.error("Có lỗi khi duyệt ứng lương");
@@ -202,6 +181,34 @@ export const EmployeeAdvanceManagerMobile: React.FC = () => {
             });
             showToast.info("Đã từ chối đơn ứng lương");
         } catch (error) { }
+    };
+
+    const handleDisburse = async (advance: EmployeeAdvance) => {
+        if (!confirm(`Chi ${formatCurrency(advance.advanceAmount)} ứng lương cho ${advance.employeeName}?\n\nTiền sẽ được ghi vào sổ quỹ. Nhân viên vẫn cần hoàn trả số tiền này.`)) return;
+        try {
+            const transactionId = `ADV-${advance.id}-${Date.now()}`;
+            const { error: txError } = await supabase
+                .from("cash_transactions")
+                .insert({
+                    id: transactionId,
+                    type: "expense",
+                    category: "employee_advance",
+                    amount: advance.advanceAmount,
+                    date: new Date().toISOString(),
+                    description: `Chi ứng lương - ${advance.employeeName} (${formatCurrency(advance.advanceAmount)})`,
+                    branchid: currentBranchId,
+                    paymentsource: advance.paymentMethod === "cash" ? "cash" : "bank",
+                });
+
+            if (txError) {
+                showToast.warning("Chưa ghi được sổ quỹ. Vui lòng kiểm tra lại.");
+            } else {
+                queryClient.invalidateQueries({ queryKey: ["cash_transactions"] });
+                showToast.success(`Đã ghi chi ${formatCurrency(advance.advanceAmount)} cho ${advance.employeeName}. Nhân viên sẽ hoàn trả dần.`);
+            }
+        } catch (error) {
+            showToast.error("Có lỗi khi chi tiền ứng lương");
+        }
     };
 
     const handleMakePayment = async () => {
@@ -372,6 +379,20 @@ export const EmployeeAdvanceManagerMobile: React.FC = () => {
                                         className="flex-1 py-2 bg-red-600/10 text-red-400 rounded-lg text-xs font-bold uppercase tracking-wider hover:bg-red-600/20"
                                     >
                                         Từ chối
+                                    </button>
+                                </div>
+                            )}
+
+                            {advance.status === "approved" && advance.remainingAmount > 0 && (
+                                <div className="flex gap-2 mt-3 pt-3 border-t border-slate-700/50">
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleDisburse(advance);
+                                        }}
+                                        className="flex-1 py-2 bg-green-600/10 text-green-400 rounded-lg text-xs font-bold uppercase tracking-wider hover:bg-green-600/20"
+                                    >
+                                        Chi trả
                                     </button>
                                 </div>
                             )}

@@ -9,6 +9,7 @@ export interface UseSalesCartReturn {
     discountType: "amount" | "percent";
     discountPercent: number;
     isWholesaleMode: boolean;
+    effectiveDiscount: number; // Computed discount: recalculates percent discount when subtotal changes
 
     // Actions
     addToCart: (part: Part, branchId: string) => void;
@@ -142,9 +143,19 @@ export function useSalesCart(
         [initialCartItems]
     );
 
+    // BUG fix: always recompute effectiveDiscount from discountPercent when type is "percent"
+    // Prevents stale discount when user adds/removes items after setting a % discount
+    const effectiveDiscount = useMemo(
+        () =>
+            discountType === "percent"
+                ? Math.round((subtotal * discountPercent) / 100)
+                : orderDiscount,
+        [subtotal, discountPercent, discountType, orderDiscount]
+    );
+
     const total = useMemo(
-        () => Math.max(0, subtotal - orderDiscount),
-        [subtotal, orderDiscount]
+        () => Math.max(0, subtotal - effectiveDiscount),
+        [subtotal, effectiveDiscount]
     );
 
     const cartItemById = useMemo(() => {
@@ -176,6 +187,7 @@ export function useSalesCart(
         // Computed
         subtotal,
         total,
+        effectiveDiscount,
         cartItemById,
     };
 }

@@ -78,7 +78,7 @@ export const EditSaleModal: React.FC<EditSaleModalProps> = ({
         (sum, item) => sum + item.quantity * item.sellingPrice,
         0
     );
-    const total = subtotal - editDiscount;
+    const total = Math.max(0, subtotal - editDiscount); // BUG fix: clamp to 0 (prevent negative total)
 
     // Filter parts for search
     const availableParts = repoParts.filter(

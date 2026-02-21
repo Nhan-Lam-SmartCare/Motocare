@@ -21,7 +21,17 @@ function normalizeWorkOrder(row: any): WorkOrder {
     status: row.status,
     laborCost: row.laborcost ?? row.laborCost ?? 0,
     discount: row.discount ?? 0,
-    partsUsed: row.partsused || row.partsUsed,
+    // BUG 14 fix: normalize each part inside partsUsed so consumers always get camelCase partId
+    partsUsed: (row.partsused || row.partsUsed || []).map((p: any) => ({
+      ...p,
+      partId: p.partId || p.partid || "",
+      partName: p.partName || p.partname || "",
+      sku: p.sku || "",
+      category: p.category || "",
+      quantity: typeof p.quantity === "number" ? p.quantity : 0,
+      price: p.price ?? p.sellingprice ?? p.sellingPrice ?? 0,
+      costPrice: p.costPrice ?? p.costprice ?? undefined,
+    })),
     additionalServices: row.additionalservices || row.additionalServices,
     notes: row.notes,
     total: row.total ?? 0,

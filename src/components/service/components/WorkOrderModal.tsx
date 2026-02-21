@@ -759,7 +759,8 @@ const WorkOrderModal: React.FC<{
       maxAdditionalPayment
     );
 
-    const totalAdditionalPayment = additionalPaymentCumulative;
+    // Use clamped value to prevent recording overpayment in transactions
+    const totalAdditionalPayment = additionalPaymentClamped;
 
     const totalPaid = totalDeposit + additionalPaymentClamped;
 
@@ -936,9 +937,10 @@ const WorkOrderModal: React.FC<{
       }
 
       // Determine payment status based on existing payments only (not new ones)
+      // Use state `depositAmount` (from current UI) instead of stale `order?.depositAmount` prop
       let paymentStatus: "unpaid" | "paid" | "partial" = "unpaid";
       const existingPaid =
-        (order?.depositAmount || 0) + (order?.additionalPayment || 0);
+        (depositAmount || 0) + (order?.additionalPayment || 0);
       if (existingPaid >= total) {
         paymentStatus = "paid";
       } else if (existingPaid > 0) {
@@ -969,9 +971,9 @@ const WorkOrderModal: React.FC<{
           branchid: currentBranchId,
           paymentstatus: paymentStatus,
           paymentmethod: formData.paymentMethod || null,
-          depositamount: order?.depositAmount || null,
+          depositamount: depositAmount || null, // use state value, not stale prop
           totalpaid: existingPaid > 0 ? existingPaid : null,
-          remainingamount: total - existingPaid,
+          remainingamount: Math.max(0, total - existingPaid),
           creationdate: order?.creationDate || new Date().toISOString(),
         };
 
@@ -1287,9 +1289,10 @@ const WorkOrderModal: React.FC<{
               paymentStatus: paymentStatus,
               paymentMethod: formData.paymentMethod,
               depositAmount: depositAmount > 0 ? depositAmount : undefined,
+              // Use clamped value: prevents recording additionalPayment > (total - deposit)
               additionalPayment:
-                additionalPaymentCumulative > 0
-                  ? additionalPaymentCumulative
+                additionalPaymentClamped > 0
+                  ? additionalPaymentClamped
                   : undefined,
               totalPaid: totalPaid > 0 ? totalPaid : undefined,
               remainingAmount: remainingAmount,
@@ -1325,8 +1328,8 @@ const WorkOrderModal: React.FC<{
               paymentStatus: paymentStatus,
               paymentMethod: formData.paymentMethod,
               additionalPayment:
-                additionalPaymentCumulative > 0
-                  ? additionalPaymentCumulative
+                additionalPaymentClamped > 0
+                  ? additionalPaymentClamped
                   : undefined,
               totalPaid: totalPaid > 0 ? totalPaid : undefined,
               remainingAmount: remainingAmount,
@@ -1711,9 +1714,10 @@ const WorkOrderModal: React.FC<{
               paymentStatus: paymentStatus,
               paymentMethod: formData.paymentMethod,
               depositAmount: depositAmount > 0 ? depositAmount : undefined,
+              // Use clamped value: prevents recording additionalPayment > (total - deposit)
               additionalPayment:
-                additionalPaymentCumulative > 0
-                  ? additionalPaymentCumulative
+                additionalPaymentClamped > 0
+                  ? additionalPaymentClamped
                   : undefined,
               totalPaid: totalPaid > 0 ? totalPaid : undefined,
               remainingAmount: remainingAmount,

@@ -347,6 +347,16 @@ const GoodsReceiptModal: React.FC<{
           ? partialAmount
           : 0;
 
+    // BUG 16 fix: warn (non-blocking) if any item has sellingPrice < importPrice (selling below cost)
+    const belowCostItems = receiptItems.filter(
+      (item) => item.sellingPrice > 0 && item.sellingPrice < item.importPrice
+    );
+    if (belowCostItems.length > 0) {
+      const names = belowCostItems.map((it) => it.partName).join(", ");
+      showToast.warning(`Cảnh báo: Giá bán thấp hơn giá nhập cho: ${names}`);
+      // Non-blocking: save continues but staff is notified
+    }
+
     onSave(receiptItems, selectedSupplier, totalAmount, "", {
       paymentMethod: paymentMethod || "cash",
       paymentType: effectivePaymentType,
@@ -395,7 +405,7 @@ const GoodsReceiptModal: React.FC<{
             quantity: productData.quantity,
             importPrice: productData.importPrice,
             sellingPrice: productData.retailPrice,
-            wholesalePrice: productData.wholesalePrice || 0,
+            wholesalePrice: productData.wholesalePrice || Math.round(productData.importPrice * wholesaleMarkup),
           },
         ]);
         showToast.success("Đã tạo phụ tùng mới và thêm vào phiếu nhập");

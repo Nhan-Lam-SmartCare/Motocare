@@ -219,14 +219,19 @@ const InventoryManagerNew: React.FC = () => {
   // Fetch work orders for "Reserved" stock details
   const { data: workOrders = [] } = useWorkOrdersRepo();
 
+  /**
+   * BUG 22 note: activeReservedByPartId (computed from live work orders in memory)
+   * may diverge from part.reservedstock (stored in DB). The DB field is the source of
+   * truth for stock filtering. This map is used ONLY for tooltip display (showing which
+   * WOs hold the reservation). A server-side trigger should keep reservedstock in sync.
+   */
   const activeReservedByPartId = useMemo(() => {
     const map = new Map<string, number>();
     const branchKey = currentBranchId || "";
 
     workOrders.forEach((wo: WorkOrder) => {
-      if (wo.status === "Đã hủy") return;
-      const paymentStatus = wo.paymentStatus || (wo as any).paymentstatus;
-      if (paymentStatus === "paid") return;
+      if (wo.status === "Đã hủy" || wo.status === "Trả máy") return; // delivered orders no longer reserve
+      if (wo.paymentStatus === "paid") return; // paid orders already consumed stock
       if (branchKey && wo.branchId && wo.branchId !== branchKey) return;
       if (!wo.partsUsed || wo.partsUsed.length === 0) return;
 
@@ -290,10 +295,10 @@ const InventoryManagerNew: React.FC = () => {
     allPartsData.forEach((part) => {
       const stock = part.stock?.[branchKey] || 0;
       const reserved = part.reservedstock?.[branchKey] || 0;
-      const available = stock - reserved; // ✅ Calculate available stock
+      const available = Math.max(0, stock - reserved); // ✅ Calculate available stock (clamped to 0)
 
       if (available > 0) summary.inStock += 1;
-      if (available === 0) summary.outOfStock += 1;
+      if (available === 0) summary.outOfStock += 1; // includes negative available (stock < reserved)
       if (available > 0 && available <= LOW_STOCK_THRESHOLD) summary.lowStock += 1;
     });
 
@@ -415,10 +420,11 @@ const InventoryManagerNew: React.FC = () => {
         const reserved = part.reservedstock?.[branchKey] || 0;
         const available = stock - reserved; // ✅ Calculate available stock
 
-        if (stockFilter === "in-stock") return available > 0;
+        const availableClamped = Math.max(0, available);
+        if (stockFilter === "in-stock") return availableClamped > 0;
         if (stockFilter === "low-stock")
-          return available > 0 && available <= LOW_STOCK_THRESHOLD;
-        if (stockFilter === "out-of-stock") return available === 0;
+          return availableClamped > 0 && availableClamped <= LOW_STOCK_THRESHOLD;
+        if (stockFilter === "out-of-stock") return availableClamped === 0; // includes negative available
         return true;
       });
     }
@@ -452,12 +458,15 @@ const InventoryManagerNew: React.FC = () => {
           aVal = a.wholesalePrice?.[branchKey] || 0;
           bVal = b.wholesalePrice?.[branchKey] || 0;
         } else if (sortField === "totalValue") {
-          const stockA = a.stock?.[branchKey] || 0;
-          const stockB = b.stock?.[branchKey] || 0;
+          // Sort by available (net of reserved) × costPrice — consistent with row display and footer total
+          const resA = a.reservedstock?.[branchKey] || 0;
+          const resB = b.reservedstock?.[branchKey] || 0;
+          const availA = Math.max(0, (a.stock?.[branchKey] || 0) - resA);
+          const availB = Math.max(0, (b.stock?.[branchKey] || 0) - resB);
           const costA = a.costPrice?.[branchKey] || 0;
           const costB = b.costPrice?.[branchKey] || 0;
-          aVal = stockA * costA;
-          bVal = stockB * costB;
+          aVal = availA * costA;
+          bVal = availB * costB;
         } else {
           return 0;
         }
@@ -499,7 +508,7 @@ const InventoryManagerNew: React.FC = () => {
     return allPartsData.reduce((sum, part: any) => {
       const stock = part.stock?.[currentBranchId] || 0;
       const reserved = part.reservedstock?.[currentBranchId] || 0;
-      return sum + (stock - reserved); // ✅ Use available stock
+      return sum + Math.max(0, stock - reserved); // ✅ Use available stock (floor at 0)
     }, 0);
   }, [allPartsData, currentBranchId]);
 
@@ -508,7 +517,7 @@ const InventoryManagerNew: React.FC = () => {
     return allPartsData.reduce((sum, part: any) => {
       const stock = part.stock?.[currentBranchId] || 0;
       const reserved = part.reservedstock?.[currentBranchId] || 0;
-      const available = stock - reserved; // ✅ Calculate available
+      const available = Math.max(0, stock - reserved); // ✅ Calculate available (floor at 0)
       const costPrice = part.costPrice?.[currentBranchId] || 0;
       return sum + available * costPrice; // ✅ Use available stock
     }, 0);
@@ -1819,14 +1828,16 @@ const InventoryManagerNew: React.FC = () => {
                         const stock = part.stock?.[branchKey] || 0;
                         const reserved = part.reservedstock?.[branchKey] || 0;
                         const activeReserved = activeReservedByPartId.get(part.id) || 0;
-                        const available = stock - reserved; // ✅ Calculate available stock
+                        const available = Math.max(0, stock - reserved); // ✅ Calculate available (clamped)
                         const retailPrice = part.retailPrice?.[branchKey] || 0;
                         const wholesalePrice =
                           part.wholesalePrice?.[branchKey] || 0;
                         const costPrice = part.costPrice?.[branchKey] || 0;
-                        const value = available * retailPrice; // ✅ Use available for value calculation
+                        // Use costPrice to be consistent with footer totalStockValue
+                        const value = available * costPrice; // ✅ Giá trị tồn = tồn × giá nhập (book value)
                         const isSelected = selectedItems.includes(part.id);
                         const isDuplicate = hasDuplicateSku(part.sku || "");
+                        // available is already clamped ≥ 0, so comparisons are safe
                         const stockStatusClass =
                           available === 0
                             ? "border-red-300 bg-red-50 text-red-700 dark:border-red-700 dark:bg-red-950/50 dark:text-red-300"

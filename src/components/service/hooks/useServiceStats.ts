@@ -55,8 +55,9 @@ export function useServiceStats({
     }, [parts, currentBranchId]);
 
     // Helper to get part cost with fallback
-    const getPartCost = (partId: string, sku: string, fallbackCost: number) => {
-        if (fallbackCost > 0) return fallbackCost;
+    // Uses snapshot costPrice if explicitly set (even 0), otherwise looks up from catalog
+    const getPartCost = (partId: string, sku: string, snapshotCost?: number | null) => {
+        if (snapshotCost != null) return snapshotCost; // use snapshot cost even if 0 (free/gifted part)
         return partCostMap.get(partId) || partCostMap.get(sku) || 0;
     };
 
@@ -107,24 +108,30 @@ export function useServiceStats({
             (o) => o.status === "Trả máy"
         ).length;
 
-        // Calculate revenue from paid orders
+        // Calculate revenue: fully paid orders use `total`, partial orders use `totalPaid` (actual collected)
         const filteredRevenue = dateFilteredOrders
-            .filter((o) => o.paymentStatus === "paid")
-            .reduce((sum, o) => sum + o.total, 0);
-
-        // Calculate profit = Revenue - Cost (parts + services)
-        const filteredProfit = dateFilteredOrders
-            .filter((o) => o.paymentStatus === "paid")
+            .filter((o) => o.paymentStatus === "paid" || o.paymentStatus === "partial")
             .reduce((sum, o) => {
+                if (o.paymentStatus === "paid") return sum + o.total;
+                return sum + (o.totalPaid || 0); // partial: only count money actually received
+            }, 0);
+
+        // Calculate profit = Revenue collected - Cost of parts & services delivered
+        const filteredProfit = dateFilteredOrders
+            .filter((o) => o.paymentStatus === "paid" || o.paymentStatus === "partial")
+            .reduce((sum, o) => {
+                // Revenue collected for this order
+                const revenueCollected = o.paymentStatus === "paid" ? o.total : (o.totalPaid || 0);
+
                 // Parts cost with fallback lookup
                 const partsCost = o.partsUsed?.reduce(
                     (s: number, p: WorkOrderPart) => {
                         const cost = getPartCost(
-                            p.partId || (p as any).partid,
+                            p.partId, // always camelCase after normalizeWorkOrder fix (BUG 14)
                             p.sku || "",
-                            p.costPrice || 0
+                            p.costPrice // pass raw (undefined if not set, 0 if free)
                         );
-                        return s + cost * (p.quantity || 1);
+                        return s + cost * (p.quantity || 0);
                     },
                     0
                 ) || 0;
@@ -132,11 +139,11 @@ export function useServiceStats({
                 // Services cost
                 const servicesCost = o.additionalServices?.reduce(
                     (s: number, svc: { costPrice?: number; quantity?: number }) =>
-                        s + (svc.costPrice || 0) * (svc.quantity || 1),
+                        s + (svc.costPrice || 0) * (svc.quantity || 0),
                     0
                 ) || 0;
 
-                return sum + (o.total - partsCost - servicesCost);
+                return sum + (revenueCollected - partsCost - servicesCost);
             }, 0);
 
         return {

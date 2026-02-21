@@ -213,6 +213,10 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
       setIssueDescription(workOrder.issueDescription || "");
       setLaborCost(workOrder.laborCost || 0);
       setDiscount(workOrder.discount || 0);
+      // BUG 7/10 note: discountType is NOT stored in the DB (WorkOrder type has no `discountType` field).
+      // When reloading, workOrder.discount is always the absolute computed value.
+      // We reset discountType to "amount" so the UI shows the correct absolute number.
+      // To fully fix this, add a `discountType` column to the work_orders table.
       setDiscountType("amount");
       setSelectedParts(
         workOrder.partsUsed?.map((p) => ({
@@ -638,6 +642,12 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
         costPrice: s.costPrice,
       }));
 
+      // BUG 9 fix: also validate deposit when total === 0 (no charge but deposit was set)
+      if (isDeposit && depositAmount > 0 && total === 0) {
+        showToast.error("Tổng tiền bằng 0, không cần đặt cọc");
+        setIsSubmitting(false);
+        return;
+      }
       if (isDeposit && depositAmount > total && total > 0) {
         showToast.error("Số tiền đặt cọc không được lớn hơn tổng tiền");
         setIsSubmitting(false);
@@ -645,10 +655,9 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
       }
 
       const totalDeposit = isDeposit ? depositAmount : 0;
+      // BUG 8 fix: remove auto-fill of full remaining payment when status="Trả máy".
+      // Staff must explicitly toggle payment input. Matches desktop behavior.
       let additionalPayment = showPaymentInput ? partialAmount : 0;
-      if (status === "Trả máy" && !showPaymentInput) {
-        additionalPayment = Math.max(0, total - totalDeposit);
-      }
 
       // additionalPayment is cumulative; clamp to valid range
       const maxAdditionalPayment = Math.max(0, total - totalDeposit);
@@ -919,7 +928,7 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
 
   const discountAmount = useMemo(() => {
     if (discountType === "percent") {
-      return (subtotal * discount) / 100;
+      return Math.round((subtotal * discount) / 100);
     }
     return discount;
   }, [subtotal, discount, discountType]);

@@ -1747,6 +1747,38 @@ export const ServiceHistory: React.FC<ServiceHistoryProps> = ({
           >
             <table style={{ width: "100%", borderSpacing: "0" }}>
               <tbody>
+                {/* Tổng tiền phụ tùng */}
+                {(printOrder.partsUsed?.length || 0) > 0 && (
+                  <tr>
+                    <td style={{ fontWeight: "bold", paddingBottom: "2mm", fontSize: "10pt" }}>
+                      Tổng tiền phụ tùng:
+                    </td>
+                    <td style={{ textAlign: "right", paddingBottom: "2mm", fontSize: "10pt" }}>
+                      {formatCurrency(
+                        (printOrder.partsUsed || []).reduce(
+                          (sum: number, p: any) => sum + (p.price || 0) * (p.quantity || 1),
+                          0
+                        )
+                      )}
+                    </td>
+                  </tr>
+                )}
+                {/* Tổng dịch vụ thêm */}
+                {(printOrder.additionalServices?.length || 0) > 0 && (
+                  <tr>
+                    <td style={{ fontWeight: "bold", paddingBottom: "2mm", fontSize: "10pt" }}>
+                      Tổng dịch vụ thêm:
+                    </td>
+                    <td style={{ textAlign: "right", paddingBottom: "2mm", fontSize: "10pt" }}>
+                      {formatCurrency(
+                        (printOrder.additionalServices || []).reduce(
+                          (sum: number, s: any) => sum + (s.price || 0) * (s.quantity || 1),
+                          0
+                        )
+                      )}
+                    </td>
+                  </tr>
+                )}
                 {/* Phí dịch vụ (laborCost) - chỉ hiển thị khi > 0 */}
                 {(printOrder.laborCost ?? 0) > 0 && (
                   <tr>

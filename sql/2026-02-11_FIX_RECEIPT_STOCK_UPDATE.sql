@@ -89,7 +89,7 @@ BEGIN
     -- 3. Insert lịch sử nhập kho
     INSERT INTO public.inventory_transactions (
       id, type, "partId", "partName", quantity, date,
-      "unitPrice", "totalPrice", "branchId", notes
+      "unitPrice", "totalPrice", "branchId", "supplierId", notes
     ) VALUES (
       gen_random_uuid()::text,
       'Nhập kho',
@@ -100,16 +100,9 @@ BEGIN
       v_import_price,
       v_total_price,
       p_branch_id,
+      p_supplier_id,
       p_notes
     );
-
-    -- 4. Update giá nhập, giá bán lẻ, giá sỉ
-    UPDATE public.parts
-    SET
-      "costPrice" = jsonb_set(COALESCE("costPrice", '{}'::jsonb), ARRAY[p_branch_id], to_jsonb(v_import_price)),
-      "retailPrice" = jsonb_set(COALESCE("retailPrice", '{}'::jsonb), ARRAY[p_branch_id], to_jsonb(v_selling_price)),
-      "wholesalePrice" = jsonb_set(COALESCE("wholesalePrice", '{}'::jsonb), ARRAY[p_branch_id], to_jsonb(COALESCE(v_wholesale_price, 0)))
-    WHERE id = v_part_id;
 
     v_tx_count := v_tx_count + 1;
   END LOOP;

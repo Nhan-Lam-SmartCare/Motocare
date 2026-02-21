@@ -89,6 +89,8 @@ export const PODetailView: React.FC<PODetailViewProps> = ({
   const [editingStatus, setEditingStatus] = useState(false);
   const [newStatus, setNewStatus] = useState("");
   const [paymentSource, setPaymentSource] = useState("cash");
+  const [paymentType, setPaymentType] = useState<"full" | "partial" | "note">("full");
+  const [partialAmount, setPartialAmount] = useState(0);
 
   // Initialize edit values when PO loads
   React.useEffect(() => {
@@ -183,25 +185,36 @@ export const PODetailView: React.FC<PODetailViewProps> = ({
 
     if (confirmed) {
       try {
+        if (paymentType === "partial" && partialAmount <= 0) {
+          showToast.warning("Vui lòng nhập số tiền trả trước");
+          return;
+        }
         const res = await convertMutation.mutateAsync({
           poId: po.id,
           paymentSource,
+          paymentType,
+          partialAmount,
         });
 
-        if (res?.cashTxCreated) {
-          showToast.success("Đã tạo phiếu nhập kho và phiếu chi");
+        const paidAmt =
+          paymentType === "full"
+            ? finalAmount
+            : paymentType === "partial"
+            ? Math.min(partialAmount, finalAmount)
+            : 0;
+        const debtAmt = Math.max(0, finalAmount - paidAmt);
+
+        if (paidAmt > 0 && res?.cashTxCreated) {
+          showToast.success(`Đã nhập kho và ghi chi ${formatCurrency(paidAmt)}`);
+        } else if (paidAmt > 0 && !res?.cashTxCreated) {
+          showToast.success("Đã nhập kho");
+          showToast.warning("Không ghi được sổ quỹ. Vui lòng tạo phiếu chi thủ công.");
+          if (res?.cashTxError) console.error("Cash tx error:", res.cashTxError);
         } else {
-          showToast.success("Đã tạo phiếu nhập kho");
-          const errCode = (res as any)?.cashTxError?.code;
-          const errMsg = (res as any)?.cashTxError?.message;
-          showToast.warning(
-            errMsg
-              ? `Không tạo được phiếu chi (${errCode || ""}): ${errMsg}`.trim()
-              : "Không tạo được phiếu chi trong sổ quỹ. Vui lòng kiểm tra quyền/RLS hoặc tạo phiếu chi thủ công."
-          );
-          if (res?.cashTxError) {
-            console.error("Cash transaction create error:", res.cashTxError);
-          }
+          showToast.success("Đã nhập kho (ghi nợ toàn bộ)");
+        }
+        if (debtAmt > 0) {
+          showToast.warning(`Còn nợ NCC: ${formatCurrency(debtAmt)} — đã ghi vào công nợ`);
         }
         onConverted?.();
         onClose();
@@ -841,19 +854,49 @@ export const PODetailView: React.FC<PODetailViewProps> = ({
               </button>
             )}
             {po.status === "ordered" && (
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
+                {/* Phương thức */}
                 <select
                   value={paymentSource}
                   onChange={(e) => setPaymentSource(e.target.value)}
-                  className="px-3 py-2.5 text-sm border border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-green-500"
-                  title="Phương thức thanh toán"
+                  className="px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-green-500"
                 >
                   <option value="cash">Tiền mặt</option>
                   <option value="bank">Chuyển khoản</option>
                 </select>
+                {/* Hình thức thanh toán */}
+                <div className="flex rounded-xl overflow-hidden border border-slate-300 dark:border-slate-600 text-sm font-semibold">
+                  {(["full", "partial", "note"] as const).map((t) => (
+                    <button
+                      key={t}
+                      onClick={() => setPaymentType(t)}
+                      className={`px-3 py-2 transition ${
+                        paymentType === t
+                          ? t === "note"
+                            ? "bg-orange-500 text-white"
+                            : "bg-green-600 text-white"
+                          : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800"
+                      }`}
+                    >
+                      {t === "full" ? "Đủ" : t === "partial" ? "Một phần" : "Ghi nợ"}
+                    </button>
+                  ))}
+                </div>
+                {/* Input nếu trả một phần */}
+                {paymentType === "partial" && (
+                  <input
+                    type="number"
+                    min={0}
+                    max={finalAmount}
+                    value={partialAmount || ""}
+                    onChange={(e) => setPartialAmount(Number(e.target.value))}
+                    placeholder="Số tiền trả..."
+                    className="w-36 px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-green-500"
+                  />
+                )}
                 <button
                   onClick={handleConvertToReceipt}
-                  disabled={convertMutation.isPending}
+                  disabled={convertMutation.isPending || (paymentType === "partial" && partialAmount <= 0)}
                   className="flex items-center gap-2 px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl transition-all shadow-lg shadow-green-500/20 active:scale-95 font-bold disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <FileCheck className="w-5 h-5" />
@@ -883,24 +926,57 @@ export const PODetailView: React.FC<PODetailViewProps> = ({
             </button>
           )}
           {po.status === "ordered" && (
-            <div className="flex-[2] flex items-center gap-2">
-              <select
-                value={paymentSource}
-                onChange={(e) => setPaymentSource(e.target.value)}
-                className="py-3.5 px-3 rounded-xl bg-slate-800 text-slate-200 font-bold text-sm border border-slate-700"
-                title="Phương thức thanh toán"
-              >
-                <option value="cash">Tiền mặt</option>
-                <option value="bank">Chuyển khoản</option>
-              </select>
-              <button
-                onClick={handleConvertToReceipt}
-                disabled={convertMutation.isPending}
-                className="flex-1 py-3.5 rounded-xl bg-green-600 text-white font-bold text-sm shadow-lg shadow-green-500/20 active:scale-95 transition-all flex items-center justify-center gap-2"
-              >
-                <FileCheck className="w-4 h-4" />
-                {convertMutation.isPending ? "Đang xử lý..." : "Nhập kho"}
-              </button>
+            <div className="flex-[2] flex flex-col gap-2">
+              {/* Row 1: phương thức + hình thức */}
+              <div className="flex items-center gap-2">
+                <select
+                  value={paymentSource}
+                  onChange={(e) => setPaymentSource(e.target.value)}
+                  className="py-2 px-3 rounded-xl bg-slate-800 text-slate-200 font-bold text-sm border border-slate-700"
+                >
+                  <option value="cash">Tiền mặt</option>
+                  <option value="bank">CK</option>
+                </select>
+                <div className="flex rounded-xl overflow-hidden border border-slate-700 text-xs font-bold flex-1">
+                  {(["full", "partial", "note"] as const).map((t) => (
+                    <button
+                      key={t}
+                      onClick={() => setPaymentType(t)}
+                      className={`flex-1 py-2 transition ${
+                        paymentType === t
+                          ? t === "note"
+                            ? "bg-orange-500 text-white"
+                            : "bg-green-600 text-white"
+                          : "bg-slate-800 text-slate-400"
+                      }`}
+                    >
+                      {t === "full" ? "Đủ" : t === "partial" ? "Một phần" : "Ghi nợ"}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {/* Row 2: input một phần (nếu cần) + nút Nhập kho */}
+              <div className="flex items-center gap-2">
+                {paymentType === "partial" && (
+                  <input
+                    type="number"
+                    min={0}
+                    max={finalAmount}
+                    value={partialAmount || ""}
+                    onChange={(e) => setPartialAmount(Number(e.target.value))}
+                    placeholder="Số tiền trả..."
+                    className="flex-1 py-2 px-3 rounded-xl bg-slate-800 text-slate-200 font-bold text-sm border border-slate-700"
+                  />
+                )}
+                <button
+                  onClick={handleConvertToReceipt}
+                  disabled={convertMutation.isPending || (paymentType === "partial" && partialAmount <= 0)}
+                  className="flex-1 py-3 rounded-xl bg-green-600 text-white font-bold text-sm shadow-lg shadow-green-500/20 active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  <FileCheck className="w-4 h-4" />
+                  {convertMutation.isPending ? "Đang xử lý..." : "Nhập kho"}
+                </button>
+              </div>
             </div>
           )}
         </div>

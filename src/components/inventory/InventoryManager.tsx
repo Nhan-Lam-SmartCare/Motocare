@@ -24,6 +24,9 @@ import {
   ScanLine,
   Eye,
   X,
+  AlertTriangle,
+  TrendingUp,
+  ChevronDown,
 } from "lucide-react";
 import { useAppContext } from "../../contexts/AppContext";
 import { safeAudit } from "../../lib/repository/auditLogsRepository";
@@ -58,6 +61,7 @@ import {
   useWorkOrdersRepo,
   useUpdateWorkOrderAtomicRepo,
 } from "../../hooks/useWorkOrdersRepository";
+import { useSuppliers } from "../../hooks/useSuppliers";
 import { useCategories } from "../../hooks/useCategories";
 import { useStoreSettings } from "../../hooks/useStoreSettings";
 import type { Part, WorkOrder, InventoryTransaction } from "../../types";
@@ -219,6 +223,10 @@ const InventoryManagerNew: React.FC = () => {
   // Fetch work orders for "Reserved" stock details
   const { data: workOrders = [] } = useWorkOrdersRepo();
 
+  // Fetch sales for reorder alert calculation
+  // Fetch suppliers for reorder grouping
+  const { data: suppliers = [] } = useSuppliers();
+
   /**
    * BUG 22 note: activeReservedByPartId (computed from live work orders in memory)
    * may diverge from part.reservedstock (stored in DB). The DB field is the source of
@@ -304,6 +312,103 @@ const InventoryManagerNew: React.FC = () => {
 
     return summary;
   }, [allPartsData, currentBranchId]);
+
+  // === REORDER ALERT: Sản phẩm có tồn kho ≤ 1 và đã bán ≥ 3 trong 90 ngày gần nhất ===
+  const reorderAlertItems = useMemo(() => {
+    if (!allPartsData || allPartsData.length === 0) return [];
+
+    const ninetyDaysAgo = new Date();
+    ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+    const branchKey = currentBranchId || "";
+
+    // Tính số lượng đã bán (xuất kho + work orders) trong 90 ngày
+    const soldQtyMap = new Map<string, number>();
+
+    // Từ inventory_transactions type="Xuất kho" (đơn bán hàng tạo ra)
+    invTx
+      .filter((tx) => tx.type === "Xuất kho" && new Date(tx.date) >= ninetyDaysAgo)
+      .forEach((tx) => {
+        if (!tx.partId) return;
+        soldQtyMap.set(tx.partId, (soldQtyMap.get(tx.partId) || 0) + Math.abs(tx.quantity || 0));
+      });
+
+    // Từ phiếu sửa chữa
+    workOrders.forEach((wo: any) => {
+      if (wo.status === "Đã hủy") return;
+      const woDate = new Date(wo.creationDate || wo.creationdate || wo.date);
+      if (woDate < ninetyDaysAgo) return;
+      (wo.partsUsed || wo.partsused || []).forEach((part: any) => {
+        const id = part.partId || part.partid;
+        if (!id) return;
+        soldQtyMap.set(id, (soldQtyMap.get(id) || 0) + (part.quantity || 0));
+      });
+    });
+
+    // Map: partId -> last import tx (for supplier lookup)
+    const lastImportMap = new Map<string, InventoryTransaction>();
+    invTx
+      .filter((tx) => tx.type === "Nhập kho")
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      .forEach((tx) => {
+        if (!lastImportMap.has(tx.partId)) lastImportMap.set(tx.partId, tx);
+      });
+
+    // Lọc: tồn kho ≤ 2 và đã bán ≥ 3
+    return allPartsData
+      .filter((part: any) => {
+        const stock = (part.stock?.[branchKey] || 0) - (part.reservedstock?.[branchKey] || 0);
+        const sold = soldQtyMap.get(part.id) || 0;
+        return stock <= 2 && sold >= 3;
+      })
+      .map((part: any) => {
+        const lastTx = lastImportMap.get(part.id);
+        // Lấy tên NCC từ supplier list (supplierId) hoặc từ notes
+        let supplierName = "Chưa xác định";
+        let supplierId = "";
+        if (lastTx) {
+          if (lastTx.supplierId) {
+            const found = suppliers.find((s: any) => s.id === lastTx.supplierId);
+            supplierName = found?.name || extractSupplierName(lastTx.notes) || "Chưa xác định";
+            supplierId = lastTx.supplierId;
+          } else {
+            supplierName = extractSupplierName(lastTx.notes) || "Chưa xác định";
+          }
+        }
+        return {
+          id: part.id,
+          name: part.name,
+          sku: part.sku,
+          category: part.category,
+          stock: Math.max(0, (part.stock?.[branchKey] || 0) - (part.reservedstock?.[branchKey] || 0)),
+          soldQty: soldQtyMap.get(part.id) || 0,
+          retailPrice: part.retailPrice?.[branchKey] || 0,
+          supplierName,
+          supplierId,
+          lastImportDate: lastTx?.date || "",
+        };
+      })
+      .sort((a: any, b: any) => {
+        // Sắp xếp theo NCC, rồi theo số lượng bán
+        if (a.supplierName !== b.supplierName) return a.supplierName.localeCompare(b.supplierName, "vi");
+        return b.soldQty - a.soldQty;
+      });
+  }, [allPartsData, workOrders, invTx, suppliers, currentBranchId]);
+
+  // Nhóm theo NCC
+  const reorderGroupedBySupplier = useMemo(() => {
+    const map = new Map<string, { supplierName: string; supplierId: string; items: any[] }>();
+    reorderAlertItems.forEach((item: any) => {
+      const key = item.supplierId || item.supplierName;
+      if (!map.has(key)) {
+        map.set(key, { supplierName: item.supplierName, supplierId: item.supplierId, items: [] });
+      }
+      map.get(key)!.items.push(item);
+    });
+    return Array.from(map.values());
+  }, [reorderAlertItems]);
+
+  const [showReorderAlert, setShowReorderAlert] = useState(true);
+  const [reorderSelectedIds, setReorderSelectedIds] = useState<Set<string>>(new Set());
 
   const stockQuickFilters = useMemo(
     () => [
@@ -1526,6 +1631,167 @@ const InventoryManagerNew: React.FC = () => {
       <div className="flex-1 overflow-y-auto p-2 sm:p-3">
         {activeTab === "stock" && (
           <div className="space-y-2">
+            {/* Reorder Alert Banner */}
+            {reorderGroupedBySupplier.length > 0 && (
+              <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-600 rounded-lg overflow-hidden">
+                {/* Header */}
+                <button
+                  onClick={() => setShowReorderAlert((v) => !v)}
+                  className="w-full flex items-center justify-between px-3 py-2 hover:bg-amber-100 dark:hover:bg-amber-900/30 transition"
+                >
+                  <div className="flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+                    <span className="text-xs font-semibold text-amber-800 dark:text-amber-300">
+                      Đề nghị nhập hàng: {reorderAlertItems.length} sản phẩm bán chạy còn ≤ 2 tồn — {reorderGroupedBySupplier.length} nhà cung cấp
+                    </span>
+                  </div>
+                  <ChevronDown className={`w-4 h-4 text-amber-600 dark:text-amber-400 transition-transform duration-200 ${showReorderAlert ? "rotate-180" : ""}`} />
+                </button>
+
+                {showReorderAlert && (
+                  <div className="border-t border-amber-200 dark:border-amber-700 divide-y divide-amber-100 dark:divide-amber-800/50">
+                    {reorderGroupedBySupplier.map((group) => {
+                      const groupIds = group.items.map((i: any) => i.id);
+                      const allGroupSelected = groupIds.every((id: string) => reorderSelectedIds.has(id));
+                      const someGroupSelected = groupIds.some((id: string) => reorderSelectedIds.has(id));
+
+                      return (
+                        <div key={group.supplierName} className="">
+                          {/* Group header */}
+                          <div className="flex items-center justify-between px-3 py-1.5 bg-amber-100/70 dark:bg-amber-900/30">
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="checkbox"
+                                className="rounded border-amber-400"
+                                checked={allGroupSelected}
+                                ref={(el) => { if (el) el.indeterminate = !allGroupSelected && someGroupSelected; }}
+                                onChange={(e) => {
+                                  setReorderSelectedIds(prev => {
+                                    const next = new Set(prev);
+                                    if (e.target.checked) groupIds.forEach((id: string) => next.add(id));
+                                    else groupIds.forEach((id: string) => next.delete(id));
+                                    return next;
+                                  });
+                                }}
+                              />
+                              <span className="text-xs font-bold text-amber-900 dark:text-amber-200">
+                                🏪 {group.supplierName}
+                              </span>
+                              <span className="text-[10px] text-amber-600 dark:text-amber-400">({group.items.length} sản phẩm)</span>
+                            </div>
+                            <button
+                              onClick={() => {
+                                setSelectedItems(groupIds);
+                                setShowCreatePO(true);
+                              }}
+                              className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-amber-600 hover:bg-amber-700 text-white transition"
+                            >
+                              <ShoppingCart className="w-3 h-3" />
+                              Đặt hàng NCC này
+                            </button>
+                          </div>
+
+                          {/* Desktop table */}
+                          <div className="hidden sm:block overflow-x-auto">
+                            <table className="w-full text-xs">
+                              <thead className="bg-amber-50 dark:bg-amber-900/10">
+                                <tr>
+                                  <th className="px-3 py-1.5 w-8"></th>
+                                  <th className="text-left px-3 py-1.5 font-semibold text-amber-700 dark:text-amber-400">Tên sản phẩm</th>
+                                  <th className="text-left px-3 py-1.5 font-semibold text-amber-700 dark:text-amber-400">Mã SKU</th>
+                                  <th className="text-left px-3 py-1.5 font-semibold text-amber-700 dark:text-amber-400">Danh mục</th>
+                                  <th className="text-center px-3 py-1.5 font-semibold text-amber-700 dark:text-amber-400">Tồn</th>
+                                  <th className="text-center px-3 py-1.5 font-semibold text-amber-700 dark:text-amber-400">Bán 90ng</th>
+                                  <th className="text-right px-3 py-1.5 font-semibold text-amber-700 dark:text-amber-400">Giá bán</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {group.items.map((item: any, idx: number) => {
+                                  const isChecked = reorderSelectedIds.has(item.id);
+                                  return (
+                                    <tr
+                                      key={item.id}
+                                      onClick={() => setReorderSelectedIds(prev => { const next = new Set(prev); if (next.has(item.id)) next.delete(item.id); else next.add(item.id); return next; })}
+                                      className={`border-t border-amber-100 dark:border-amber-800/30 cursor-pointer transition ${
+                                        isChecked ? "bg-amber-100 dark:bg-amber-800/40" : idx % 2 === 0 ? "bg-white dark:bg-slate-800/30 hover:bg-amber-50" : "bg-amber-50/40 dark:bg-amber-900/10 hover:bg-amber-100"
+                                      }`}
+                                    >
+                                      <td className="px-3 py-1.5" onClick={(e) => e.stopPropagation()}>
+                                        <input type="checkbox" className="rounded border-amber-400" checked={isChecked}
+                                          onChange={() => setReorderSelectedIds(prev => { const next = new Set(prev); if (next.has(item.id)) next.delete(item.id); else next.add(item.id); return next; })}
+                                        />
+                                      </td>
+                                      <td className="px-3 py-1.5 font-medium text-slate-900 dark:text-slate-100">{item.name}</td>
+                                      <td className="px-3 py-1.5 text-slate-500 dark:text-slate-400">{item.sku || "—"}</td>
+                                      <td className="px-3 py-1.5"><span className="px-1.5 py-0.5 rounded text-[10px] bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">{item.category || "Chưa phân loại"}</span></td>
+                                      <td className="px-3 py-1.5 text-center"><span className={`font-bold ${item.stock === 0 ? "text-red-600 dark:text-red-400" : "text-orange-600 dark:text-orange-400"}`}>{item.stock}</span></td>
+                                      <td className="px-3 py-1.5 text-center"><span className="inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-400 font-semibold"><TrendingUp className="w-3 h-3" />{item.soldQty}</span></td>
+                                      <td className="px-3 py-1.5 text-right text-slate-700 dark:text-slate-300">{formatCurrency(item.retailPrice)}</td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+
+                          {/* Mobile cards */}
+                          <div className="block sm:hidden p-2 space-y-2">
+                            {group.items.map((item: any) => {
+                              const isChecked = reorderSelectedIds.has(item.id);
+                              return (
+                                <div key={item.id}
+                                  onClick={() => setReorderSelectedIds(prev => { const next = new Set(prev); if (next.has(item.id)) next.delete(item.id); else next.add(item.id); return next; })}
+                                  className={`rounded-lg p-3 border cursor-pointer transition ${
+                                    isChecked ? "bg-amber-100 dark:bg-amber-800/40 border-amber-400" : "bg-white dark:bg-slate-800 border-amber-200 dark:border-amber-700"
+                                  }`}
+                                >
+                                  <div className="flex justify-between items-start">
+                                    <div className="flex items-start gap-2 flex-1 min-w-0">
+                                      <input type="checkbox" className="rounded border-amber-400 mt-0.5 flex-shrink-0" checked={isChecked} onChange={() => {}} onClick={(e) => e.stopPropagation()} />
+                                      <div className="min-w-0">
+                                        <div className="font-medium text-sm text-slate-900 dark:text-slate-100 truncate">{item.name}</div>
+                                        {item.sku && <div className="text-[10px] text-slate-400 mt-0.5">{item.sku}</div>}
+                                      </div>
+                                    </div>
+                                    <div className="flex items-center gap-2 ml-2 flex-shrink-0">
+                                      <div className="text-center"><div className="text-[10px] text-slate-400">Tồn</div><div className={`font-bold text-sm ${item.stock === 0 ? "text-red-600" : "text-orange-500"}`}>{item.stock}</div></div>
+                                      <div className="text-center"><div className="text-[10px] text-slate-400">Bán 90ng</div><div className="font-bold text-sm text-emerald-600 flex items-center gap-0.5"><TrendingUp className="w-3 h-3" />{item.soldQty}</div></div>
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })}
+
+                    {/* Footer: global order button */}
+                    <div className="px-3 py-2 flex items-center justify-between gap-3 bg-amber-50/70 dark:bg-amber-900/10">
+                      <div className="text-[10px] text-amber-700 dark:text-amber-400">
+                        * Nhóm theo NCC lần nhập cuối. Bán ≥ 3 trong 90 ngày, tồn ≤ 2.
+                      </div>
+                      <button
+                        disabled={reorderSelectedIds.size === 0}
+                        onClick={() => {
+                          setSelectedItems(Array.from(reorderSelectedIds));
+                          setShowCreatePO(true);
+                        }}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition flex-shrink-0 ${
+                          reorderSelectedIds.size > 0
+                            ? "bg-amber-600 hover:bg-amber-700 text-white shadow-sm"
+                            : "bg-slate-200 dark:bg-slate-700 text-slate-400 cursor-not-allowed"
+                        }`}
+                      >
+                        <ShoppingCart className="w-3.5 h-3.5" />
+                        Đặt hàng đã chọn {reorderSelectedIds.size > 0 ? `(${reorderSelectedIds.size})` : ""}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Duplicate Warning Banner - More compact */}
             {duplicateSkus.size > 0 && (
               <div className="bg-orange-50 dark:bg-orange-900/20 border-l-4 border-orange-500 px-3 py-2 rounded-lg flex items-center justify-between">

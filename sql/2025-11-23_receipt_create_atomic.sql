@@ -47,6 +47,7 @@ BEGIN
       "unitPrice",
       "totalPrice",
       "branchId",
+      "supplierId",
       notes
     ) VALUES (
       gen_random_uuid(),
@@ -58,6 +59,7 @@ BEGIN
       v_import_price,
       v_total_price,
       p_branch_id,
+      p_supplier_id,
       p_notes
     );
 

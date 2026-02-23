@@ -80,108 +80,99 @@ const AddProductModal: React.FC<{
 
   return (
     <div className="fixed inset-0 bg-black/70 flex items-end sm:items-center justify-center z-[9999] p-0 sm:p-4">
-      <div className="bg-white dark:bg-slate-800 w-full sm:rounded-xl sm:max-w-lg max-h-[95vh] sm:max-h-[85vh] overflow-hidden flex flex-col rounded-t-2xl">
-        {/* Header - Mobile optimized */}
-        <div className="flex justify-between items-center px-4 py-4 border-b border-slate-200 dark:border-slate-700 bg-gradient-to-r from-blue-600 to-blue-700 sm:bg-none sm:from-transparent sm:to-transparent">
-          <h2 className="text-lg font-bold text-white sm:text-slate-900 sm:dark:text-slate-100">
-            ➕ Thêm sản phẩm mới
-          </h2>
+      <div className="bg-white dark:bg-slate-800 w-full sm:rounded-2xl sm:max-w-lg max-h-[95vh] sm:max-h-[85vh] overflow-hidden flex flex-col rounded-t-2xl shadow-2xl">
+
+        {/* Header */}
+        <div className="flex justify-between items-center px-5 py-4 bg-gradient-to-r from-violet-600 to-blue-600">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
+              <Package className="w-4 h-4 text-white" />
+            </div>
+            <h2 className="text-base font-bold text-white">Thêm sản phẩm mới</h2>
+          </div>
           <button
             onClick={onClose}
-            className="w-10 h-10 flex items-center justify-center rounded-full bg-white/20 sm:bg-slate-100 sm:dark:bg-slate-700 text-white sm:text-slate-600 sm:dark:text-slate-300 text-2xl font-bold"
+            className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/20 hover:bg-white/30 text-white transition-colors"
           >
-            ×
+            <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Form Content */}
-        <div className="flex-1 overflow-y-auto px-4 py-4 bg-slate-50 dark:bg-slate-900/50">
-          <div className="space-y-4">
-            {/* Card: Thông tin sản phẩm */}
-            <div className="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm">
-              <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2">
-                📦 Thông tin sản phẩm
-              </h3>
+        <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50 dark:bg-slate-900/50">
 
-              {/* Tên sản phẩm */}
-              <div className="mb-3">
-                <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">
-                  Tên sản phẩm <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="w-full px-4 py-3 text-base border border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Nhập tên sản phẩm"
-                />
-              </div>
+          {/* Card: Thông tin sản phẩm */}
+          <div className="bg-white dark:bg-slate-800 rounded-2xl p-4 border border-slate-100 dark:border-slate-700 shadow-sm">
+            <p className="text-[11px] font-bold text-violet-500 uppercase tracking-widest mb-3">📦 Thông tin sản phẩm</p>
 
-              {/* Danh mục */}
-              <div className="mb-3">
-                <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">
-                  Danh mục sản phẩm
+            {/* Tên sản phẩm */}
+            <div className="mb-3">
+              <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">
+                Tên sản phẩm <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full px-3.5 py-2.5 text-sm border border-slate-200 dark:border-slate-600 rounded-xl bg-slate-50 dark:bg-slate-700/50 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-violet-500 focus:border-transparent placeholder:text-slate-400 transition-all"
+                placeholder="VD: Nhớt Motul 10W40, Lọc dầu Honda..."
+                autoFocus
+              />
+            </div>
+
+            {/* Danh mục + Mã vạch in 2 cols */}
+            <div className="grid grid-cols-2 gap-3 mb-3">
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">
+                  Danh mục
                 </label>
-                <div className="flex gap-2">
+                <div className="flex gap-1.5">
                   <select
                     value={category}
                     onChange={(e) => setCategory(e.target.value)}
-                    className="flex-1 px-4 py-3 text-base border border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500"
+                    className="flex-1 min-w-0 px-2.5 py-2.5 text-sm border border-slate-200 dark:border-slate-600 rounded-xl bg-slate-50 dark:bg-slate-700/50 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-violet-500"
                   >
-                    <option value="">-- Chọn danh mục --</option>
+                    <option value="">-- Chọn --</option>
                     {categories.map((c: any) => (
-                      <option key={c.id} value={c.name}>
-                        {c.name}
-                      </option>
+                      <option key={c.id} value={c.name}>{c.name}</option>
                     ))}
                   </select>
                   <button
                     type="button"
-                    onClick={() => setShowInlineCat(true)}
-                    className="w-12 h-12 flex items-center justify-center bg-blue-100 dark:bg-blue-900/30 border border-blue-300 dark:border-blue-700 rounded-xl hover:bg-blue-200 dark:hover:bg-blue-800/40 transition-colors"
-                    aria-label="Thêm danh mục mới"
+                    onClick={() => setShowInlineCat(!showInlineCat)}
+                    className={`w-9 flex-shrink-0 flex items-center justify-center rounded-xl border transition-colors ${showInlineCat ? 'bg-violet-600 border-violet-600 text-white' : 'bg-violet-50 dark:bg-violet-900/30 border-violet-200 dark:border-violet-700 text-violet-600 dark:text-violet-400 hover:bg-violet-100 dark:hover:bg-violet-900/50'}`}
+                    title="Thêm danh mục mới"
                   >
-                    <span className="text-2xl text-blue-600 dark:text-blue-400">
-                      +
-                    </span>
+                    <Plus className="w-4 h-4" />
                   </button>
                 </div>
               </div>
-
-              {/* Barcode */}
               <div>
-                <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">
+                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">
                   Mã vạch / SKU
                 </label>
                 <input
                   type="text"
                   value={barcode}
                   onChange={(e) => setBarcode(e.target.value)}
-                  className="w-full px-4 py-3 text-base border border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500"
-                  placeholder="Nhập mã vạch (nếu có)"
+                  className="w-full px-3.5 py-2.5 text-sm border border-slate-200 dark:border-slate-600 rounded-xl bg-slate-50 dark:bg-slate-700/50 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-violet-500 placeholder:text-slate-400"
+                  placeholder="Tùy chọn"
                 />
               </div>
             </div>
 
             {/* Inline category form */}
             {showInlineCat && (
-              <div className="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm">
+              <div className="mb-3 p-3 bg-violet-50 dark:bg-violet-900/20 rounded-xl border border-violet-200 dark:border-violet-700/50">
+                <p className="text-[10px] font-bold text-violet-500 uppercase tracking-wide mb-2">Tạo danh mục mới</p>
                 <form
                   onSubmit={async (e) => {
                     e.preventDefault();
                     const trimmed = inlineCatName.trim();
-                    if (!trimmed) {
-                      showToast.warning("Vui lòng nhập tên danh mục");
-                      return;
-                    }
-                    if (trimmed.length < 2) {
-                      showToast.warning("Tên quá ngắn");
-                      return;
-                    }
+                    if (!trimmed) { showToast.warning("Vui lòng nhập tên danh mục"); return; }
+                    if (trimmed.length < 2) { showToast.warning("Tên quá ngắn"); return; }
                     try {
-                      const res = await createCategory.mutateAsync({
-                        name: trimmed,
-                      });
+                      const res = await createCategory.mutateAsync({ name: trimmed });
                       setCategory(res.name);
                       setInlineCatName("");
                       setShowInlineCat(false);
@@ -189,150 +180,145 @@ const AddProductModal: React.FC<{
                       showToast.error(err?.message || "Lỗi tạo danh mục");
                     }
                   }}
-                  className="space-y-3"
+                  className="flex gap-2"
                 >
-                  <label className="block text-xs font-medium text-slate-600 dark:text-slate-400">
-                    Tạo danh mục mới
-                  </label>
                   <input
                     autoFocus
                     type="text"
                     value={inlineCatName}
                     onChange={(e) => setInlineCatName(e.target.value)}
-                    placeholder="Nhập tên danh mục mới"
-                    className="w-full px-4 py-3 text-base border border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
+                    placeholder="Tên danh mục mới..."
+                    className="flex-1 px-3 py-2 text-sm border border-violet-200 dark:border-violet-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-violet-500"
                   />
-                  <div className="flex gap-2">
-                    <button
-                      type="submit"
-                      className="flex-1 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium"
-                    >
-                      Lưu danh mục
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowInlineCat(false);
-                        setInlineCatName("");
-                      }}
-                      className="flex-1 px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-300"
-                    >
-                      Hủy
-                    </button>
-                  </div>
+                  <button type="submit" className="px-3 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-sm font-medium whitespace-nowrap">
+                    Lưu
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setShowInlineCat(false); setInlineCatName(""); }}
+                    className="px-3 py-2 border border-slate-200 dark:border-slate-600 rounded-lg text-sm text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-700"
+                  >
+                    Hủy
+                  </button>
                 </form>
               </div>
             )}
 
-            {/* Card: Mô tả */}
-            <div className="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm">
-              <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2">
-                📝 Mô tả sản phẩm
-              </h3>
+            {/* Mô tả */}
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">
+                Mô tả <span className="text-slate-400 font-normal">(tùy chọn)</span>
+              </label>
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={2}
-                className="w-full px-4 py-3 text-base border border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500"
-                placeholder="Mô tả chi tiết sản phẩm (tùy chọn)"
+                className="w-full px-3.5 py-2.5 text-sm border border-slate-200 dark:border-slate-600 rounded-xl bg-slate-50 dark:bg-slate-700/50 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-violet-500 resize-none placeholder:text-slate-400"
+                placeholder="Mô tả chi tiết sản phẩm..."
               />
             </div>
+          </div>
 
-            {/* Card: Thông tin nhập kho */}
-            <div className="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm">
-              <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2">
-                💰 Thông tin nhập kho
-              </h3>
+          {/* Card: Thông tin nhập kho */}
+          <div className="bg-white dark:bg-slate-800 rounded-2xl p-4 border border-slate-100 dark:border-slate-700 shadow-sm">
+            <p className="text-[11px] font-bold text-emerald-500 uppercase tracking-widest mb-3">💰 Thông tin nhập kho</p>
 
-              <div className="grid grid-cols-2 gap-3">
-                {/* Số lượng */}
-                <div>
-                  <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">
-                    Số lượng
-                  </label>
+            <div className="grid grid-cols-2 gap-3">
+              {/* Số lượng */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">
+                  Số lượng
+                </label>
+                <FormattedNumberInput
+                  value={quantity}
+                  onValue={(v) => {
+                    const result = validatePriceAndQty(importPrice, v);
+                    if (result.warnings.length)
+                      result.warnings.forEach((w) => showToast.warning(w));
+                    setQuantity(Math.max(1, result.clean.quantity));
+                  }}
+                  className="w-full px-3.5 py-2.5 text-sm border border-slate-200 dark:border-slate-600 rounded-xl bg-slate-50 dark:bg-slate-700/50 text-slate-900 dark:text-slate-100 text-center font-bold focus:ring-2 focus:ring-emerald-500"
+                />
+              </div>
+
+              {/* Giá nhập */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">
+                  Giá nhập (đ)
+                </label>
+                <FormattedNumberInput
+                  value={importPrice}
+                  onValue={(v) => {
+                    const result = validatePriceAndQty(v, quantity);
+                    if (result.warnings.length)
+                      result.warnings.forEach((w) => showToast.warning(w));
+                    setImportPrice(result.clean.importPrice);
+                    if (!retailOverridden) {
+                      setRetailPrice(
+                        Math.round(result.clean.importPrice * retailMarkup)
+                      );
+                    }
+                  }}
+                  className="w-full px-3.5 py-2.5 text-sm border border-slate-200 dark:border-slate-600 rounded-xl bg-slate-50 dark:bg-slate-700/50 text-slate-900 dark:text-slate-100 text-right focus:ring-2 focus:ring-emerald-500"
+                />
+              </div>
+
+              {/* Giá bán lẻ */}
+              <div>
+                <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">
+                  Giá bán lẻ (đ)
+                  {!retailOverridden && importPrice > 0 && (
+                    <span className="px-1.5 py-0.5 bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 rounded-md text-[10px] font-bold">
+                      tự động +{Math.round((retailMarkup - 1) * 100)}%
+                    </span>
+                  )}
+                </label>
+                <FormattedNumberInput
+                  value={retailPrice}
+                  onValue={(v) => {
+                    setRetailPrice(Math.max(0, Math.round(v)));
+                    setRetailOverridden(true);
+                  }}
+                  className={`w-full px-3.5 py-2.5 text-sm border rounded-xl text-slate-900 dark:text-slate-100 text-right focus:ring-2 focus:ring-emerald-500 transition-colors ${!retailOverridden && importPrice > 0
+                    ? 'border-emerald-300 dark:border-emerald-600 bg-emerald-50 dark:bg-emerald-900/20'
+                    : 'border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/50'}`}
+                />
+              </div>
+
+              {/* Bảo hành */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">
+                  Bảo hành
+                </label>
+                <div className="flex gap-2">
                   <FormattedNumberInput
-                    value={quantity}
-                    onValue={(v) => {
-                      const result = validatePriceAndQty(importPrice, v);
-                      if (result.warnings.length)
-                        result.warnings.forEach((w) => showToast.warning(w));
-                      setQuantity(Math.max(1, result.clean.quantity));
-                    }}
-                    className="w-full px-4 py-3 text-base border border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 text-center font-bold"
+                    value={warranty}
+                    onValue={(v) => setWarranty(Math.max(0, Math.floor(v)))}
+                    className="w-16 px-2 py-2.5 text-sm border border-slate-200 dark:border-slate-600 rounded-xl bg-slate-50 dark:bg-slate-700/50 text-slate-900 dark:text-slate-100 text-center focus:ring-2 focus:ring-emerald-500"
                   />
-                </div>
-
-                {/* Giá nhập */}
-                <div>
-                  <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">
-                    Giá nhập (đ)
-                  </label>
-                  <FormattedNumberInput
-                    value={importPrice}
-                    onValue={(v) => {
-                      const result = validatePriceAndQty(v, quantity);
-                      if (result.warnings.length)
-                        result.warnings.forEach((w) => showToast.warning(w));
-                      setImportPrice(result.clean.importPrice);
-                      if (!retailOverridden) {
-                        setRetailPrice(
-                          Math.round(result.clean.importPrice * retailMarkup)
-                        );
-                      }
-                    }}
-                    className="w-full px-4 py-3 text-base border border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 text-right"
-                  />
-                </div>
-
-                {/* Giá bán lẻ */}
-                <div>
-                  <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">
-                    Giá bán lẻ (đ)
-                  </label>
-                  <FormattedNumberInput
-                    value={retailPrice}
-                    onValue={(v) => {
-                      setRetailPrice(Math.max(0, Math.round(v)));
-                      setRetailOverridden(true);
-                    }}
-                    className="w-full px-4 py-3 text-base border border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 text-right"
-                  />
-                </div>
-
-                {/* Bảo hành */}
-                <div>
-                  <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">
-                    Bảo hành
-                  </label>
-                  <div className="flex gap-2">
-                    <FormattedNumberInput
-                      value={warranty}
-                      onValue={(v) => setWarranty(Math.max(0, Math.floor(v)))}
-                      className="w-16 px-2 py-3 text-base border border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 text-center"
-                    />
-                    <select
-                      value={warrantyUnit}
-                      onChange={(e) => setWarrantyUnit(e.target.value)}
-                      className="flex-1 px-3 py-3 text-base border border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
-                    >
-                      <option value="tháng">tháng</option>
-                      <option value="năm">năm</option>
-                      <option value="ngày">ngày</option>
-                    </select>
-                  </div>
+                  <select
+                    value={warrantyUnit}
+                    onChange={(e) => setWarrantyUnit(e.target.value)}
+                    className="flex-1 px-2 py-2.5 text-sm border border-slate-200 dark:border-slate-600 rounded-xl bg-slate-50 dark:bg-slate-700/50 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500"
+                  >
+                    <option value="tháng">tháng</option>
+                    <option value="năm">năm</option>
+                    <option value="ngày">ngày</option>
+                  </select>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Footer - Fixed at bottom */}
-        <div className="px-4 py-4 border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
+        {/* Footer */}
+        <div className="px-4 py-3 border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
           <button
             onClick={handleSubmit}
-            className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white px-4 py-4 rounded-xl font-bold text-lg shadow-lg active:scale-98 transition-all"
+            className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 active:scale-[0.98] text-white px-4 py-3.5 rounded-xl font-bold text-base shadow-lg transition-all flex items-center justify-center gap-2"
           >
-            ✓ Lưu và Thêm vào giỏ hàng
+            <ShoppingCart className="w-5 h-5" />
+            Lưu và Thêm vào giỏ hàng
           </button>
         </div>
       </div>

@@ -3793,7 +3793,7 @@ const WorkOrderModal: React.FC<{
                         <input
                           type="checkbox"
                           checked={showPartialPayment}
-                          onChange={(e) => { setShowPartialPayment(e.target.checked); if (!e.target.checked) setPartialPayment(0); }}
+                          onChange={(e) => { setShowPartialPayment(e.target.checked); if (e.target.checked) setPartialPayment(maxAdditionalPayment); else setPartialPayment(0); }}
                           className="w-4 h-4 rounded"
                         />
                         <span className="text-sm text-slate-700 dark:text-slate-300">Thanh toán khi trả xe</span>

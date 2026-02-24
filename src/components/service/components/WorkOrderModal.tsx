@@ -209,10 +209,36 @@ const WorkOrderModal: React.FC<{
     // This allows adding parts to a "paid" order if it's still being repaired
     const canEditPriceAndParts = (!isOrderPaid || formData.status !== "Trả máy") && !isOrderRefunded;
 
+    // Fresh customer fetched directly from Supabase when modal opens (ensures vehicles are up-to-date)
+    const [freshCustomer, setFreshCustomer] = useState<any>(null);
+
+    useEffect(() => {
+      const customerId = formData.customerId;
+      if (!customerId) {
+        setFreshCustomer(null);
+        return;
+      }
+      let cancelled = false;
+      supabase
+        .from("customers")
+        .select("*")
+        .eq("id", customerId)
+        .single()
+        .then(({ data }) => {
+          if (!cancelled && data) setFreshCustomer(data);
+        });
+      return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [formData.customerId]);
+
     const allCustomers = useMemo(() => {
-      const allCandidates = [...customers, ...serverCustomers];
+      const allCandidates = [
+        ...(freshCustomer ? [freshCustomer] : []),
+        ...customers,
+        ...serverCustomers,
+      ];
       return Array.from(new Map(allCandidates.map((c) => [c.id, c])).values());
-    }, [customers, serverCustomers]);
+    }, [freshCustomer, customers, serverCustomers]);
 
     // Get customer's vehicles
     // 🔹 FIX: Ưu tiên tìm theo customerId (unique), chỉ fallback sang phone khi không có ID
@@ -640,6 +666,9 @@ const WorkOrderModal: React.FC<{
         vehicles: updatedVehicles,
       });
 
+      // Keep freshCustomer in sync so the vehicle list refreshes immediately
+      setFreshCustomer((prev: any) => prev ? { ...prev, vehicles: updatedVehicles } : prev);
+
       // Auto-select the newly added vehicle
       setFormData({
         ...formData,
@@ -711,6 +740,9 @@ const WorkOrderModal: React.FC<{
           ...currentCustomer,
           vehicles: updatedVehicles,
         });
+
+        // Keep freshCustomer in sync
+        setFreshCustomer((prev: any) => prev ? { ...prev, vehicles: updatedVehicles } : prev);
 
         // Update formData if this is the selected vehicle
         if (formData.vehicleId === editingVehicleId) {
@@ -2251,10 +2283,12 @@ const WorkOrderModal: React.FC<{
 
           {formData.id && selectedParts.length > 0 && (
             <div className="mx-4 mt-3 md:mx-6 p-3 bg-slate-50 dark:bg-slate-700/30 border border-slate-200 dark:border-slate-600 rounded-lg">
-              <button
-                type="button"
+              <div
+                role="button"
+                tabIndex={0}
                 onClick={() => setShowInventoryCheck(!showInventoryCheck)}
-                className="w-full flex items-center justify-between gap-2 text-left hover:opacity-80 transition-opacity"
+                onKeyDown={(e) => e.key === "Enter" && setShowInventoryCheck(!showInventoryCheck)}
+                className="w-full flex items-center justify-between gap-2 text-left hover:opacity-80 transition-opacity cursor-pointer"
               >
                 <div className="flex items-center gap-2">
                   <svg
@@ -2276,6 +2310,7 @@ const WorkOrderModal: React.FC<{
                 </div>
                 <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                   <button
+                    type="button"
                     onClick={handleRefreshInventoryTxs}
                     className="text-xs px-2 py-1 rounded-lg border border-slate-200 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700"
                   >
@@ -2283,6 +2318,7 @@ const WorkOrderModal: React.FC<{
                   </button>
                   {formData.paymentStatus === "paid" && inventoryTxs.length === 0 && (
                     <button
+                      type="button"
                       onClick={handleManualDeductInventory}
                       disabled={isDeductingInventory}
                       className="text-xs px-2.5 py-1 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-60"
@@ -2304,7 +2340,7 @@ const WorkOrderModal: React.FC<{
                       : "Chưa trừ kho"}
                   </span>
                 </div>
-              </button>
+              </div>
 
               {showInventoryCheck && (
                 <>

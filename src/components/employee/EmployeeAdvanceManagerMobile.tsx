@@ -411,7 +411,7 @@ export const EmployeeAdvanceManagerMobile: React.FC = () => {
 
             {/* Create Modal */}
             {showCreateModal && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center sm:p-4 z-50">
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center sm:p-4 z-50 modal-bottom-safe">
                     <div className="bg-[#1e1e2d] rounded-t-2xl sm:rounded-2xl w-full sm:max-w-md border-t sm:border border-slate-700 p-6 max-h-[90vh] overflow-y-auto">
                         <h3 className="text-lg font-bold text-white mb-6">Tạo đơn ứng lương</h3>
 
@@ -497,7 +497,7 @@ export const EmployeeAdvanceManagerMobile: React.FC = () => {
 
             {/* Detail Modal */}
             {showDetailModal && selectedAdvance && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center sm:p-4 z-50">
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center sm:p-4 z-50 modal-bottom-safe">
                     <div className="bg-[#1e1e2d] rounded-t-2xl sm:rounded-2xl w-full sm:max-w-md border-t sm:border border-slate-700 p-6 max-h-[90vh] overflow-y-auto">
                         <div className="flex justify-between items-start mb-6">
                             <div>

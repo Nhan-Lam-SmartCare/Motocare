@@ -36,6 +36,7 @@ import type { Sale } from "../../types";
 import {
     isExcludedExpenseCategory,
     isExcludedIncomeCategory,
+    isRefundCategory,
 } from "../../lib/reports/financialSummary";
 import { formatCashTxCategory } from "../../lib/finance/cashTxCategories";
 // Exclusion logic is shared with Reports/Dashboard/Analytics.
@@ -93,6 +94,7 @@ interface ReportsManagerMobileProps {
     cashTotals: {
         totalIncome: number;
         totalExpense: number;
+        totalRefund: number;
     };
 }
 
@@ -314,7 +316,11 @@ export const ReportsManagerMobile: React.FC<ReportsManagerMobileProps> = ({
                         .filter(t => t.type === 'expense' && t.amount > 0 && !isExcludedExpenseCategory(t.category))
                         .reduce((sum, t) => sum + t.amount, 0);
 
-                    const dailyNetProfit = day.totalProfit + dailyOtherIncome - dailyOtherExpense;
+                    const dailyRefund = dailyTransactions
+                        .filter(t => t.type === 'expense' && t.amount > 0 && isRefundCategory(t.category))
+                        .reduce((sum, t) => sum + t.amount, 0);
+
+                    const dailyNetProfit = day.totalProfit + dailyOtherIncome - dailyOtherExpense - dailyRefund;
 
                     return (
                         <button

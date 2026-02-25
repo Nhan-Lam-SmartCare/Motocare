@@ -46,6 +46,7 @@ import {
   REPORTS_EXCLUDED_INCOME_CATEGORIES,
   isExcludedExpenseCategory,
   isExcludedIncomeCategory,
+  isRefundCategory,
 } from "../../lib/reports/financialSummary";
 
 import {
@@ -480,6 +481,11 @@ const ReportsManager: React.FC = () => {
       )
       .reduce((sum, t) => sum + t.amount, 0);
 
+    // Hoàn tiền (giá bán âm): trừ vào doanh thu, hiện trong Thu/Chi khác
+    const totalRefund = filteredTransactions
+      .filter((t) => t.type === "expense" && t.amount > 0 && isRefundCategory(t.category))
+      .reduce((sum, t) => sum + t.amount, 0);
+
     // Debug log
     console.log("[ReportsManager] Cash totals:", {
       totalTransactions: filteredTransactions.length,
@@ -496,7 +502,7 @@ const ReportsManager: React.FC = () => {
         }, {} as Record<string, number>),
     });
 
-    return { totalIncome, totalExpense };
+    return { totalIncome, totalExpense, totalRefund };
   }, [cashTxData, start, end]);
 
   const financialSummary = useMemo(() => {
@@ -1098,10 +1104,20 @@ const ReportsManager: React.FC = () => {
                       const chiKhac = cashTxData
                         .filter(t => t.type === "expense" && t.amount > 0 && !isExcludedExpenseCategory(t.category) && t.date.slice(0, 10) === dayDateStr)
                         .reduce((sum, t) => sum + t.amount, 0);
-                      const thuChiKhac = thuKhac - chiKhac;
-                      const laiRong = laiGop + thuKhac - chiKhac;
-                      // Chi tiết giao dịch khác cho ngày
-                      const dayCashTx = cashTxData.filter(t => !isExcludedIncomeCategory(t.category) && !isExcludedExpenseCategory(t.category) && t.date.slice(0, 10) === dayDateStr);
+                      // Hoàn tiền (giá bán âm): trừ vào doanh thu, hiện thị trong Thu/Chi khác
+                      const chiHoan = cashTxData
+                        .filter(t => t.type === "expense" && t.amount > 0 && isRefundCategory(t.category) && t.date.slice(0, 10) === dayDateStr)
+                        .reduce((sum, t) => sum + t.amount, 0);
+                      const thuChiKhac = thuKhac - chiKhac - chiHoan;
+                      const laiRong = laiGop + thuKhac - chiKhac - chiHoan;
+                      // Chi tiết giao dịch khác cho ngày (bao gồm cả hoàn tiền)
+                      const dayCashTx = cashTxData.filter(t =>
+                        t.date.slice(0, 10) === dayDateStr &&
+                        (
+                          (!isExcludedIncomeCategory(t.category) && !isExcludedExpenseCategory(t.category)) ||
+                          (t.type === "expense" && t.amount > 0 && isRefundCategory(t.category))
+                        )
+                      );
 
                       return (
                         <React.Fragment key={day.date}>
@@ -1349,7 +1365,7 @@ const ReportsManager: React.FC = () => {
                         return s + parts.reduce((c: number, p: any) => c + ((p.costPrice || p.costprice || partsCostMap.get(p.partId || p.partid) || partsCostMap.get(p.sku) || 0) * (p.quantity || 0)), 0);
                       }, 0), 0);
                       const totalLaiGop = (totalSalesRev + totalWoRev) - (totalSalesCOGS + totalWoParts);
-                      const totalThuChiKhac = cashTotals.totalIncome - cashTotals.totalExpense;
+                      const totalThuChiKhac = cashTotals.totalIncome - cashTotals.totalExpense - cashTotals.totalRefund;
                       return (
                         <tr className="border-t-2 border-slate-600 bg-slate-800/60">
                           <td colSpan={2} className="px-3 py-2.5 text-left text-xs font-black text-white uppercase tracking-wider">

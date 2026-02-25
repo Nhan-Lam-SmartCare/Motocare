@@ -118,8 +118,8 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="space-y-3 md:space-y-4">
-      <TetConfetti duration={6000} count={40} />
-      <TetBanner />
+      {/* <TetConfetti duration={6000} count={40} /> */}
+      {/* <TetBanner /> */}
       {/* Header - Lời chào người dùng - Chỉ hiện trên mobile */}
       <div className="md:hidden bg-gradient-to-r from-red-600 to-yellow-500 rounded-2xl p-4 md:p-6 text-white shadow-lg">
         <div className="flex items-start justify-between">

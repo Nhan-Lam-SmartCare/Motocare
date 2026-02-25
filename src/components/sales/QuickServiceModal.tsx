@@ -314,7 +314,7 @@ const QuickServiceModal: React.FC<QuickServiceModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-end md:items-center justify-center z-[70] md:p-4">
+    <div className="fixed inset-0 bg-black/50 flex items-end md:items-center justify-center z-[70] md:p-4 modal-bottom-safe">
       <div className="bg-white dark:bg-slate-800 rounded-t-2xl md:rounded-xl w-full max-w-4xl max-h-[95vh] md:max-h-[90vh] overflow-hidden flex flex-col shadow-2xl animate-slide-up md:animate-none">
         {/* Header - Compact on mobile */}
         <div className="flex justify-between items-center p-3 md:p-4 border-b border-slate-200 dark:border-slate-700 bg-gradient-to-r from-emerald-500 to-teal-500">
@@ -442,7 +442,7 @@ const QuickServiceModal: React.FC<QuickServiceModalProps> = ({
 
       {/* Payment Flow Modal Overlay */}
       {selectedService && (
-        <div className="fixed inset-0 bg-black/60 flex items-end md:items-center justify-center z-[80]">
+        <div className="fixed inset-0 bg-black/60 flex items-end md:items-center justify-center z-[80] modal-bottom-safe">
           <div className="bg-white dark:bg-slate-800 rounded-t-2xl md:rounded-xl w-full max-w-md max-h-[80vh] overflow-hidden flex flex-col shadow-2xl animate-slide-up md:animate-none mx-0 md:mx-4">
             {/* Payment Header */}
             <div className="p-4 border-b border-slate-200 dark:border-slate-700 bg-gradient-to-r from-emerald-500 to-teal-500">

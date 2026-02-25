@@ -634,7 +634,7 @@ export function RepairTemplatesModal({
 
       {/* Part Picker Modal */}
       {showPartPicker && (
-        <div className="fixed inset-0 bg-black/60 flex items-end md:items-center justify-center z-[70]">
+        <div className="fixed inset-0 bg-black/60 flex items-end md:items-center justify-center z-[70] modal-bottom-safe">
           <div className="bg-white dark:bg-[#1e1e2d] w-full md:max-w-lg md:rounded-xl md:mx-4 rounded-t-2xl max-h-[80vh] flex flex-col">
             {/* Header */}
             <div className="px-4 py-3 border-b border-slate-200 dark:border-gray-700 flex items-center justify-between">

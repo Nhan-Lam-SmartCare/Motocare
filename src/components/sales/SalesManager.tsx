@@ -568,7 +568,7 @@ const SalesManager: React.FC = () => {
             {/* Desktop Header */}
             <div className="hidden md:block bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-40 backdrop-blur-lg bg-white/80 dark:bg-slate-800/80">
                 <div className="mx-auto px-6 py-4 space-y-4">
-                    <TetBanner compact />
+                    {/* <TetBanner compact /> */}
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
                             <div className="flex items-center gap-3">
@@ -630,9 +630,9 @@ const SalesManager: React.FC = () => {
 
             {/* Main Content */}
             <div className="mx-auto px-4 md:px-6 py-6 space-y-4">
-                <div className="md:hidden">
+                {/* <div className="md:hidden">
                     <TetBanner compact />
-                </div>
+                </div> */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* Left: Products (Desktop) / Mobile Tab Content */}
                     <div className={`lg:col-span-2 ${mobileTab !== "products" ? "hidden md:block" : ""}`}>

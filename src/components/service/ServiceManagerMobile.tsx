@@ -844,7 +844,7 @@ export function ServiceManagerMobile({
         {/* Filter Popup (Optional) */}
         {
           showFilterPopup && (
-            <div className="fixed inset-0 bg-black/50 z-50 flex items-end md:items-center md:justify-center">
+            <div className="fixed inset-0 bg-black/50 z-50 flex items-end md:items-center md:justify-center modal-bottom-safe">
               <div className="bg-white dark:bg-[#1e1e2d] rounded-t-3xl md:rounded-2xl w-full md:max-w-md p-6 space-y-4 animate-slide-up">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-semibold text-slate-900 dark:text-white">

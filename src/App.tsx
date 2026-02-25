@@ -245,7 +245,7 @@ const MainLayout: React.FC = () => {
           />
         </div>
       )}
-      <TetTheme />
+      {/* <TetTheme /> */}
       {!isShopPage && <Nav />}
       <main
         className={`max-w-[1600px] mx-auto ${isSalesPage ? "p-0" : "p-0 md:p-6"

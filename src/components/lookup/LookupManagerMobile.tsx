@@ -256,7 +256,7 @@ const LookupManagerMobile: React.FC = () => {
 
       {/* Mobile Filter Modal */}
       {showMobileFilters && (
-        <div className="fixed inset-0 z-50 flex items-end">
+        <div className="fixed inset-0 z-50 flex items-end modal-bottom-safe">
           <div
             className="absolute inset-0 bg-black/50"
             onClick={() => setShowMobileFilters(false)}
@@ -410,7 +410,7 @@ const LookupManagerMobile: React.FC = () => {
 
       {/* Mobile Detail Modal */}
       {showMobileDetails && partDetails && (
-        <div className="fixed inset-0 z-50 flex items-end">
+        <div className="fixed inset-0 z-50 flex items-end modal-bottom-safe">
           <div
             className="absolute inset-0 bg-black/50"
             onClick={() => setShowMobileDetails(false)}

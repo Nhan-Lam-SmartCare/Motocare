@@ -418,6 +418,15 @@ body {
   padding-top: env(safe-area-inset-top);
 }
 
+/* Bottom-sheet modal safe offset: pushes the sheet panel above the mobile bottom tab bar.
+   Apply to the outer `fixed inset-0 flex items-end` container of any bottom-sheet modal.
+   Desktop (md+) resets padding to 0 so the sheet becomes a centered modal. */
+@media (max-width: 767px) {
+  .modal-bottom-safe {
+    padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
 /* Bottom nav blur effect */
 @supports (backdrop-filter: blur(10px)) or (-webkit-backdrop-filter: blur(10px)) {
   .backdrop-blur-lg {

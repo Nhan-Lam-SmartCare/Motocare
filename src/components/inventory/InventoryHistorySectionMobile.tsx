@@ -492,7 +492,7 @@ const InventoryHistorySectionMobile: React.FC<
       </div>
 
       {showFilters && (
-        <div className="fixed inset-0 z-50 flex items-end">
+        <div className="fixed inset-0 z-50 flex items-end modal-bottom-safe">
           <div
             className="absolute inset-0 bg-black/50"
             onClick={() => setShowFilters(false)}
@@ -587,7 +587,7 @@ const InventoryHistorySectionMobile: React.FC<
       )}
 
       {selectedReceipt && (
-        <div className="fixed inset-0 z-50 flex items-end">
+        <div className="fixed inset-0 z-50 flex items-end modal-bottom-safe">
           <div
             className="absolute inset-0 bg-black/50"
             onClick={() => setSelectedReceipt(null)}

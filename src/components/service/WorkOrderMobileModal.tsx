@@ -2093,7 +2093,7 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
 
       {/* Add Service Modal - Redesigned Compact Layout */}
       {showAddService && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[110] flex items-end md:items-center md:justify-center">
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[110] flex items-end md:items-center md:justify-center modal-bottom-safe">
           <div className="w-full md:max-w-md bg-white dark:bg-[#1e1e2d] rounded-t-3xl md:rounded-2xl overflow-hidden transition-colors shadow-2xl">
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700/50">

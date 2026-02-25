@@ -143,8 +143,8 @@ export const SalesHistoryModal: React.FC<SalesHistoryModalProps> = ({
     ];
 
     return (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end md:items-center justify-center p-0 md:p-4">
-            <div className="bg-white dark:bg-slate-800 w-full md:max-w-7xl h-[95vh] md:h-[90vh] md:rounded-2xl rounded-t-3xl shadow-2xl overflow-hidden flex flex-col">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end md:items-center justify-center p-0 md:p-4 modal-bottom-safe">
+            <div className="bg-white dark:bg-slate-800 w-full md:max-w-7xl h-[calc(95vh-4rem)] md:h-[90vh] md:rounded-2xl rounded-t-3xl shadow-2xl overflow-hidden flex flex-col">
 
                 {/* ── HEADER ── */}
                 <div className="flex-shrink-0">

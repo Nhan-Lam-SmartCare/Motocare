@@ -34,25 +34,19 @@ const PrintOrderPreviewModal: React.FC<PrintOrderPreviewModalProps> = ({
     storeSettings,
     onPrint,
 }) => {
-    if (!isOpen || !printOrder) return null;
+    // All hooks must be declared before any early returns (Rules of Hooks)
+    const [isSharing, setIsSharing] = React.useState(false);
 
     // Generate dynamic VietQR URL with amount and description
     const dynamicQRUrl = useMemo(() => {
-        console.log('[PrintOrderPreview] Generating dynamic QR...', {
-            bank_name: storeSettings?.bank_name,
-            bank_account_number: storeSettings?.bank_account_number,
-            bank_account_holder: storeSettings?.bank_account_holder,
-            printOrder: printOrder?.id,
-        });
+        if (!isOpen || !printOrder) return null;
 
         if (!storeSettings?.bank_name || !storeSettings?.bank_account_number || !storeSettings?.bank_account_holder) {
-            console.warn('[PrintOrderPreview] Missing bank info, using static QR');
             return null; // Return null to use static QR
         }
 
         const bankBin = findBankBin(storeSettings.bank_name);
         if (!bankBin) {
-            console.warn('[PrintOrderPreview] Bank BIN not found for:', storeSettings.bank_name);
             return null; // Return null to use static QR
         }
 
@@ -63,7 +57,7 @@ const PrintOrderPreviewModal: React.FC<PrintOrderPreviewModalProps> = ({
         const orderCode = formatWorkOrderId(printOrder.id, storeSettings.work_order_prefix);
         const description = `Thanh toan ${orderCode}`;
 
-        const qrUrl = generateVietQRUrl({
+        return generateVietQRUrl({
             bankId: bankBin,
             accountNumber: storeSettings.bank_account_number,
             accountName: storeSettings.bank_account_holder,
@@ -71,53 +65,66 @@ const PrintOrderPreviewModal: React.FC<PrintOrderPreviewModalProps> = ({
             description: description,
             template: 'compact2',
         });
+    }, [isOpen, printOrder, storeSettings]);
 
-        console.log('[PrintOrderPreview] Generated dynamic QR URL:', qrUrl);
-        console.log('[PrintOrderPreview] QR params:', { bankBin, amount, description });
-        return qrUrl;
-    }, [printOrder, storeSettings]);
+    if (!isOpen || !printOrder) return null;
 
     const handleShare = async () => {
-        try {
-            showToast.info("Đang tạo hình ảnh...");
+        if (isSharing) return;
+        setIsSharing(true);
 
-            // Import html2canvas dynamically
+        const element = document.getElementById("mobile-print-preview-content");
+        if (!element) {
+            showToast.error("Không tìm thấy nội dung phiếu!");
+            setIsSharing(false);
+            return;
+        }
+
+        showToast.info("Đang tạo hình ảnh...");
+
+        // Move element off-screen so html2canvas captures it at full 1:1 scale
+        // without being constrained by the modal's scroll container.
+        const originalParent = element.parentElement!;
+        const originalNextSibling = element.nextSibling;
+        const originalStyle = {
+            transform: element.style.transform,
+            marginBottom: element.style.marginBottom,
+            width: element.style.width,
+        };
+
+        const offscreen = document.createElement("div");
+        offscreen.style.cssText = "position:fixed;top:0;left:-9999px;z-index:-999;background:#fff;overflow:visible;";
+        document.body.appendChild(offscreen);
+
+        // Move element into off-screen container and reset any CSS transforms
+        offscreen.appendChild(element);
+        element.style.transform = "none";
+        element.style.marginBottom = "0";
+        element.style.width = "560px"; // ~148mm at 96dpi
+
+        // Wait for layout + any lazy-loaded images
+        await new Promise(resolve => setTimeout(resolve, 300));
+
+        try {
             const html2canvas = (await import("html2canvas")).default;
 
-            const element = document.getElementById("mobile-print-preview-content");
-            if (!element) {
-                showToast.error("Không tìm thấy nội dung phiếu!");
-                return;
-            }
-
-            // Remove any transform/scale from element temporarily for full capture
-            const originalTransform = (element as HTMLElement).style.transform;
-            const originalMarginBottom = (element as HTMLElement).style.marginBottom;
-            (element as HTMLElement).style.transform = "none";
-            (element as HTMLElement).style.marginBottom = "0";
-
-            // Wait for layout to settle
-            await new Promise(resolve => setTimeout(resolve, 100));
-
-            // Capture the element as canvas with full height
             const canvas = await html2canvas(element, {
-                scale: 2, // Higher quality
+                scale: 2,
                 backgroundColor: "#ffffff",
                 useCORS: true,
+                allowTaint: false,
                 logging: false,
                 width: element.scrollWidth,
                 height: element.scrollHeight,
-                windowWidth: element.scrollWidth,
-                windowHeight: element.scrollHeight,
+                windowWidth: element.scrollWidth + 40,
+                windowHeight: element.scrollHeight + 40,
             });
 
-            // Restore original styles
-            (element as HTMLElement).style.transform = originalTransform;
-            (element as HTMLElement).style.marginBottom = originalMarginBottom;
-
-            // Convert canvas to blob
-            const blob = await new Promise<Blob>((resolve) => {
-                canvas.toBlob((b) => resolve(b!), "image/png", 1.0);
+            const blob = await new Promise<Blob>((resolve, reject) => {
+                canvas.toBlob((b) => {
+                    if (b) resolve(b);
+                    else reject(new Error("Canvas toBlob returned null"));
+                }, "image/png", 1.0);
             });
 
             const fileName = `Phieu_${formatWorkOrderId(
@@ -125,11 +132,8 @@ const PrintOrderPreviewModal: React.FC<PrintOrderPreviewModalProps> = ({
                 storeSettings?.work_order_prefix
             )}.png`;
 
-            // Try to share as image file
             if (navigator.share && navigator.canShare) {
-                const file = new File([blob], fileName, {
-                    type: "image/png",
-                });
+                const file = new File([blob], fileName, { type: "image/png" });
                 const shareData = {
                     files: [file],
                     title: `Phiếu sửa chữa - ${formatWorkOrderId(
@@ -137,21 +141,33 @@ const PrintOrderPreviewModal: React.FC<PrintOrderPreviewModalProps> = ({
                         storeSettings?.work_order_prefix
                     )}`,
                 };
-
                 if (navigator.canShare(shareData)) {
                     await navigator.share(shareData);
                     showToast.success("Chia sẻ thành công!");
                 } else {
-                    // Fallback: download
                     downloadImage(blob, fileName);
                 }
             } else {
-                // Fallback: download
                 downloadImage(blob, fileName);
             }
         } catch (err) {
-            console.error("Share failed:", err);
-            showToast.error("Không thể chia sẻ. Vui lòng thử lại!");
+            if ((err as Error)?.name !== "AbortError") {
+                console.error("Share failed:", err);
+                showToast.error("Không thể tạo hình ảnh. Vui lòng thử lại!");
+            }
+        } finally {
+            // Always restore element to its original position in the DOM
+            element.style.transform = originalStyle.transform;
+            element.style.marginBottom = originalStyle.marginBottom;
+            element.style.width = originalStyle.width;
+
+            if (originalNextSibling) {
+                originalParent.insertBefore(element, originalNextSibling);
+            } else {
+                originalParent.appendChild(element);
+            }
+            document.body.removeChild(offscreen);
+            setIsSharing(false);
         }
     };
 
@@ -176,10 +192,11 @@ const PrintOrderPreviewModal: React.FC<PrintOrderPreviewModalProps> = ({
                     <div className="flex items-center gap-2">
                         <button
                             onClick={handleShare}
-                            className="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg flex items-center gap-1.5 transition text-sm"
+                            disabled={isSharing}
+                            className="px-3 py-1.5 bg-green-600 hover:bg-green-700 disabled:bg-green-400 disabled:cursor-wait text-white rounded-lg flex items-center gap-1.5 transition text-sm"
                         >
                             <Share2 className="w-4 h-4" />
-                            Chia sẻ
+                            {isSharing ? "Đang xử lý..." : "Chia sẻ"}
                         </button>
                         <button
                             onClick={onPrint}
@@ -198,12 +215,13 @@ const PrintOrderPreviewModal: React.FC<PrintOrderPreviewModalProps> = ({
                     </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-4 bg-slate-100 dark:bg-slate-900 flex justify-center">
+                {/* On mobile: horizontal scroll so the A5 invoice is fully visible, consistent with desktop */}
+                <div className="flex-1 overflow-auto p-3 md:p-4 bg-slate-100 dark:bg-slate-900">
                     <div
                         id="mobile-print-preview-content"
-                        className="bg-white shadow-lg relative !bg-white !text-black flex-shrink-0 transform origin-top scale-[0.63] mb-[-75mm] md:transform-none md:scale-100 md:mb-0"
+                        className="bg-white shadow-lg relative !bg-white !text-black mx-auto"
                         style={{
-                            width: "148mm", // Keep original A5 width
+                            width: "560px", // ~148mm at 96dpi — fixed for consistent capture
                             minHeight: "210mm",
                             color: "#000000",
                             backgroundColor: "#ffffff",

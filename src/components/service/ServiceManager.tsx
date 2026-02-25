@@ -376,12 +376,15 @@ export default function ServiceManager() {
       const canvas = await html2canvas(invoicePreviewRef.current, {
         scale: 2,
         useCORS: true,
-        allowTaint: true,
+        allowTaint: false,
         backgroundColor: "#ffffff",
       });
 
-      const blob = await new Promise<Blob>((resolve) => {
-        canvas.toBlob((b) => resolve(b!), "image/png", 1.0);
+      const blob = await new Promise<Blob>((resolve, reject) => {
+        canvas.toBlob((b) => {
+          if (b) resolve(b);
+          else reject(new Error("toBlob returned null"));
+        }, "image/png", 1.0);
       });
 
       const fileName = `phieu-sua-chua-${formatWorkOrderId(printOrder.id)}.png`;
@@ -403,7 +406,7 @@ export default function ServiceManager() {
     } catch (error) {
       if ((error as Error).name !== "AbortError") {
         console.error("Error sharing invoice:", error);
-        showToast.error("Không thể chia sẻ phiếu");
+        showToast.error("Không thể tạo hình ảnh. Vui lòng thử lại!");
       }
     } finally {
       setIsSharing(false);
@@ -1591,40 +1594,60 @@ export default function ServiceManager() {
                   {/* Share Button - Share as Image */}
                   <button
                     onClick={async () => {
-                      try {
-                        showToast.info("Đang tạo hình ảnh...");
+                      const element = document.getElementById(
+                        "mobile-print-preview-content"
+                      );
+                      if (!element) {
+                        showToast.error("Không tìm thấy nội dung phiếu!");
+                        return;
+                      }
 
-                        // Import html2canvas dynamically
+                      showToast.info("Đang tạo hình ảnh...");
+
+                      // Move element off-screen for a clean full-scale capture
+                      const originalParent = element.parentElement!;
+                      const originalNextSibling = element.nextSibling;
+                      const originalMaxWidth = element.style.maxWidth;
+
+                      const offscreen = document.createElement("div");
+                      offscreen.style.cssText =
+                        "position:fixed;top:0;left:-9999px;z-index:-999;background:#fff;overflow:visible;";
+                      document.body.appendChild(offscreen);
+                      offscreen.appendChild(element);
+                      element.style.maxWidth = "none";
+
+                      await new Promise((r) => setTimeout(r, 300));
+
+                      try {
                         const html2canvas = (await import("html2canvas"))
                           .default;
 
-                        const element = document.getElementById(
-                          "mobile-print-preview-content"
-                        );
-                        if (!element) {
-                          showToast.error("Không tìm thấy nội dung phiếu!");
-                          return;
-                        }
-
-                        // Capture the element as canvas
                         const canvas = await html2canvas(element, {
-                          scale: 2, // Higher quality
+                          scale: 2,
                           backgroundColor: "#ffffff",
                           useCORS: true,
+                          allowTaint: false,
                           logging: false,
+                          width: element.scrollWidth,
+                          height: element.scrollHeight,
+                          windowWidth: element.scrollWidth + 40,
+                          windowHeight: element.scrollHeight + 40,
                         });
 
-                        // Convert canvas to blob
-                        const blob = await new Promise<Blob>((resolve) => {
-                          canvas.toBlob((b) => resolve(b!), "image/png", 1.0);
-                        });
+                        const blob = await new Promise<Blob>(
+                          (resolve, reject) => {
+                            canvas.toBlob((b) => {
+                              if (b) resolve(b);
+                              else reject(new Error("toBlob failed"));
+                            }, "image/png", 1.0);
+                          }
+                        );
 
                         const fileName = `Phieu_${formatWorkOrderId(
                           printOrder.id,
                           storeSettings?.work_order_prefix
                         )}.png`;
 
-                        // Try to share as image file
                         if (navigator.share && navigator.canShare) {
                           const file = new File([blob], fileName, {
                             type: "image/png",
@@ -1641,7 +1664,6 @@ export default function ServiceManager() {
                             await navigator.share(shareData);
                             showToast.success("Chia sẻ thành công!");
                           } else {
-                            // Fallback: download the image
                             const url = URL.createObjectURL(blob);
                             const a = document.createElement("a");
                             a.href = url;
@@ -1651,7 +1673,6 @@ export default function ServiceManager() {
                             showToast.success("Đã tải hình ảnh!");
                           }
                         } else {
-                          // Fallback: download the image
                           const url = URL.createObjectURL(blob);
                           const a = document.createElement("a");
                           a.href = url;
@@ -1661,8 +1682,23 @@ export default function ServiceManager() {
                           showToast.success("Đã tải hình ảnh!");
                         }
                       } catch (err) {
-                        console.error("Share failed:", err);
-                        showToast.error("Không thể chia sẻ. Vui lòng thử lại!");
+                        if ((err as Error)?.name !== "AbortError") {
+                          console.error("Share failed:", err);
+                          showToast.error(
+                            "Không thể tạo hình ảnh. Vui lòng thử lại!"
+                          );
+                        }
+                      } finally {
+                        element.style.maxWidth = originalMaxWidth;
+                        if (originalNextSibling) {
+                          originalParent.insertBefore(
+                            element,
+                            originalNextSibling
+                          );
+                        } else {
+                          originalParent.appendChild(element);
+                        }
+                        document.body.removeChild(offscreen);
                       }
                     }}
                     className="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg flex items-center gap-1.5 transition text-sm"

@@ -31,6 +31,34 @@ export async function fetchParts(): Promise<RepoResult<Part[]>> {
 }
 
 // Fetch parts with pagination & optional filters
+
+// ── Vietnamese fuzzy search helpers ──────────────────────────────────────────
+// Loại bỏ tất cả dấu tiếng Việt về ASCII thuần để so sánh
+const normalizeViStr = (s: string): string =>
+  s
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/Đ/g, "D")
+    .toLowerCase()
+    .trim();
+
+// Sinh các cụm ký tự ngắn (prefix cluster) từ mỗi từ trong chuỗi tìm kiếm.
+// Mục đích: "khóa" và "khoá" đều normalize thành "khoa"
+//  → cluster 2 ký tự "kh" khớp CẢ HAI trong DB qua ilike
+//  → cluster 3 ký tự "kho" khớp "khoá" (có 'o' trần) trong DB
+const getViFuzzyClusters = (term: string): string[] => {
+  const normalized = normalizeViStr(term);
+  const clusters = new Set<string>();
+  normalized.split(/\s+/).forEach((word) => {
+    if (word.length >= 2) clusters.add(word.slice(0, 2)); // 2-char onset (hầu hết là phụ âm)
+    if (word.length >= 3) clusters.add(word.slice(0, 3)); // 3-char prefix
+    if (word.length >= 4) clusters.add(word.slice(0, 4)); // 4-char prefix
+  });
+  return Array.from(clusters);
+};
+// ─────────────────────────────────────────────────────────────────────────────
+
 export async function fetchPartsPaged(params?: {
   page?: number; // 1-based
   pageSize?: number;
@@ -52,18 +80,27 @@ export async function fetchPartsPaged(params?: {
       query = query.eq("category", params.category);
     }
     if (params?.search && params.search.trim()) {
-      const term = params.search.trim().toLowerCase();
+      const term = params.search.trim();
+      const cleanTerm = term.replace(/['"]/g, "");
 
-      // Loại bỏ ký tự đặc biệt để tìm kiếm tốt hơn
-      // VD: Tìm "NHB35P" sẽ tìm thấy 'Bộ nắp trước tay lái "NHB35P"'
-      const cleanTerm = term.replace(/['"]/g, ""); // Xóa dấu ngoặc kép/đơn
+      // Điều kiện chính: tìm chính xác theo raw input
+      const orConditions: string[] = [
+        `name.ilike.%${cleanTerm}%`,
+        `sku.ilike.%${cleanTerm}%`,
+        `category.ilike.%${cleanTerm}%`,
+        `description.ilike.%${cleanTerm}%`,
+      ];
 
-      // Tìm kiếm trong name, sku, category, description
-      // Supabase chỉ hỗ trợ OR, không hỗ trợ AND cho nhiều điều kiện phức tạp
-      // Giải pháp: Tìm với OR, sau đó filter ở client nếu cần
-      query = query.or(
-        `name.ilike.%${cleanTerm}%,sku.ilike.%${cleanTerm}%,category.ilike.%${cleanTerm}%,description.ilike.%${cleanTerm}%`
-      );
+      // Điều kiện phụ: cluster-based để chịu được sai dấu tiếng Việt
+      // VD: gõ "ổ khóa" → cluster "kh" khớp cả "khoá" lẫn "khóa" trong DB
+      const clusters = getViFuzzyClusters(term);
+      clusters.forEach((cluster) => {
+        // Chỉ thêm vào tìm trong name để tránh kết quả nhiễu
+        const cond = `name.ilike.%${cluster}%`;
+        if (!orConditions.includes(cond)) orConditions.push(cond);
+      });
+
+      query = query.or(orConditions.join(","));
     }
     const { data, error, count } = await query;
     if (error)

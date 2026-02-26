@@ -38,7 +38,7 @@ import {
   useUpdatePartRepo,
   useDeletePartRepo,
 } from "../../hooks/usePartsRepository";
-import { formatCurrency, formatDate } from "../../utils/format";
+import { formatCurrency, formatDate, normalizeSearchText } from "../../utils/format";
 import { getCategoryColor } from "../../utils/categoryColors";
 import {
   exportPartsToExcel,
@@ -501,17 +501,21 @@ const InventoryManagerNew: React.FC = () => {
       baseList = repoParts;
     }
 
-    // Client-side multi-keyword search refinement
-    // Khi người dùng nhập nhiều từ, filter thêm để chỉ hiện sản phẩm có TẤT CẢ các từ
+    // Client-side normalization filter: xử lý sai dấu tiếng Việt
+    // Server trả về kết quả rộng qua cluster, client lọc chính xác bằng cách normalize cả 2 đầu
+    // VD: gõ "ổ khóa" → normalize = "o khoa"; "o khoá" cũng normalize = "o khoa" → KHỤP ✔
     if (search && search.trim()) {
-      const keywords = search.trim().toLowerCase().split(/\s+/);
-      if (keywords.length > 1) {
-        baseList = baseList.filter((part: any) => {
-          const searchText = `${part.name || ""} ${part.sku || ""} ${part.category || ""
-            } ${part.description || ""}`.toLowerCase();
-          return keywords.every((keyword) => searchText.includes(keyword));
-        });
-      }
+      const normalizedQuery = normalizeSearchText(search.trim());
+      const queryWords = normalizedQuery.split(/\s+/).filter(Boolean);
+      baseList = baseList.filter((part: any) => {
+        const normalizedName = normalizeSearchText(part.name || "");
+        const normalizedCategory = normalizeSearchText(part.category || "");
+        const normalizedDesc = normalizeSearchText(part.description || "");
+        const skuLower = (part.sku || "").toLowerCase();
+        const combined = `${normalizedName} ${normalizedCategory} ${normalizedDesc} ${skuLower}`;
+        // Tất cả từ khoá phải đều có mặt (AND logic)
+        return queryWords.every((word) => combined.includes(word));
+      });
     }
 
     // Stock filter

@@ -736,10 +736,67 @@ const CustomerManager: React.FC = () => {
     });
   }, [customers.length]);
 
+  // Tính segment ĐỘNG từ giao dịch thực tế (không dùng giá trị lưu trong DB vì chưa được cập nhật)
+  const liveSegmentMap = useMemo(() => {
+    // Index sales theo customer id và phone để tra cứu O(1)
+    const salesById = new Map<string, typeof allSales>();
+    const salesByPhone = new Map<string, typeof allSales>();
+    allSales.forEach((s) => {
+      if (s.customer?.id) {
+        if (!salesById.has(s.customer.id)) salesById.set(s.customer.id, []);
+        salesById.get(s.customer.id)!.push(s);
+      }
+      if (s.customer?.phone) {
+        if (!salesByPhone.has(s.customer.phone)) salesByPhone.set(s.customer.phone, []);
+        salesByPhone.get(s.customer.phone)!.push(s);
+      }
+    });
+    // Index work orders theo phone
+    const woByPhone = new Map<string, typeof allWorkOrders>();
+    allWorkOrders.forEach((wo) => {
+      if (wo.customerPhone && wo.status !== "Đã hủy") {
+        if (!woByPhone.has(wo.customerPhone)) woByPhone.set(wo.customerPhone, []);
+        woByPhone.get(wo.customerPhone)!.push(wo);
+      }
+    });
+
+    const map = new Map<string, Customer["segment"]>();
+    customers.forEach((customer) => {
+      // Gộp sales theo id + phone, loại trùng
+      const seen = new Set<string>();
+      const cSales = [
+        ...(customer.id ? salesById.get(customer.id) || [] : []),
+        ...(customer.phone ? salesByPhone.get(customer.phone) || [] : []),
+      ].filter((s) => { if (seen.has(s.id)) return false; seen.add(s.id); return true; });
+      const cWOs = customer.phone ? woByPhone.get(customer.phone) || [] : [];
+
+      const totalSpent =
+        cSales.reduce((sum, s) => sum + (s.total || 0), 0) +
+        cWOs.reduce((sum, wo) => sum + (wo.total || 0), 0);
+
+      const visitCount = new Set([
+        ...cSales.map((s) => new Date(s.date).toDateString()),
+        ...cWOs.map((wo) => new Date(wo.creationDate || wo.id).toDateString()),
+      ]).size;
+
+      const allDates = [
+        ...cSales.map((s) => new Date(s.date).getTime()),
+        ...cWOs.map((wo) => new Date(wo.creationDate || wo.id).getTime()),
+      ];
+      const lastVisit = allDates.length > 0
+        ? new Date(Math.max(...allDates)).toISOString()
+        : null;
+
+      const loyaltyPoints = Math.floor(totalSpent / 10000);
+      map.set(customer.id, classifyCustomer({ ...customer, totalSpent, visitCount, loyaltyPoints, lastVisit: lastVisit ?? undefined }));
+    });
+    return map;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [customers, allSales, allWorkOrders]);
+
   const filtered = useMemo(() => {
     const searchTerm = search.trim();
     if (!searchTerm) {
-      // Không có search term, trả về tất cả (với filter segment nếu có)
       let result = allCustomers;
       if (activeFilter !== "all") {
         const segmentMap: Record<string, string> = {
@@ -751,7 +808,7 @@ const CustomerManager: React.FC = () => {
           new: "New",
         };
         const targetSegment = segmentMap[activeFilter];
-        result = result.filter((c) => c.segment === targetSegment);
+        result = result.filter((c) => liveSegmentMap.get(c.id) === targetSegment);
       }
       return result;
     }
@@ -759,52 +816,25 @@ const CustomerManager: React.FC = () => {
     // Normalize search text (bỏ dấu tiếng Việt)
     const q = normalizeSearchText(searchTerm);
     const qLower = searchTerm.toLowerCase();
-    
-    // Extract digits for phone search
     const searchDigits = searchTerm.replace(/\D/g, "");
 
     let result = allCustomers.filter((c) => {
-      // 1. Search by phone (exact digits match)
       if (searchDigits.length > 0 && c.phone) {
         const phoneDigits = c.phone.replace(/\D/g, "");
-        if (phoneDigits.includes(searchDigits) || searchDigits.includes(phoneDigits)) {
-          return true;
-        }
+        if (phoneDigits.includes(searchDigits) || searchDigits.includes(phoneDigits)) return true;
       }
-
-      // 2. Search by name (normalized - bỏ dấu)
-      if (normalizeSearchText(c.name).includes(q)) {
-        return true;
-      }
-
-      // 3. Search by email
-      if (c.email?.toLowerCase().includes(qLower)) {
-        return true;
-      }
-
-      // 4. Search by vehicle model (normalized)
-      if (normalizeSearchText(c.vehicleModel || "").includes(q)) {
-        return true;
-      }
-
-      // 5. Search by license plate
-      if (c.licensePlate?.toLowerCase().includes(qLower)) {
-        return true;
-      }
-
-      // 6. Search in vehicles array
+      if (normalizeSearchText(c.name).includes(q)) return true;
+      if (c.email?.toLowerCase().includes(qLower)) return true;
+      if (normalizeSearchText(c.vehicleModel || "").includes(q)) return true;
+      if (c.licensePlate?.toLowerCase().includes(qLower)) return true;
       if (c.vehicles && c.vehicles.some((v: any) =>
         normalizeSearchText(v.licensePlate || "").includes(q) ||
         normalizeSearchText(v.model || "").includes(q) ||
         v.licensePlate?.toLowerCase().includes(qLower)
-      )) {
-        return true;
-      }
-
+      )) return true;
       return false;
     });
 
-    // Apply segment filter
     if (activeFilter !== "all") {
       const segmentMap: Record<string, string> = {
         vip: "VIP",
@@ -815,11 +845,11 @@ const CustomerManager: React.FC = () => {
         new: "New",
       };
       const targetSegment = segmentMap[activeFilter];
-      result = result.filter((c) => c.segment === targetSegment);
+      result = result.filter((c) => liveSegmentMap.get(c.id) === targetSegment);
     }
 
     return result;
-  }, [allCustomers, search, activeFilter]);
+  }, [allCustomers, search, activeFilter, liveSegmentMap]);
 
   const displayedCustomers = useMemo(
     () => filtered.slice(0, displayCount),
@@ -854,10 +884,20 @@ const CustomerManager: React.FC = () => {
     }
   };
 
-  // Statistics calculations
+  // Statistics calculations — dùng liveSegmentMap để đếm chính xác
   const stats = useMemo(() => {
     const total = customers.length;
     const active = customers.filter((c) => c.status === "active").length;
+    let vip = 0, loyal = 0, potential = 0, atRisk = 0, lost = 0, newSeg = 0;
+    customers.forEach((c) => {
+      const seg = liveSegmentMap.get(c.id);
+      if (seg === "VIP") vip++;
+      else if (seg === "Loyal") loyal++;
+      else if (seg === "Potential") potential++;
+      else if (seg === "At Risk") atRisk++;
+      else if (seg === "Lost") lost++;
+      else newSeg++;
+    });
     return {
       total,
       active,
@@ -870,15 +910,11 @@ const CustomerManager: React.FC = () => {
           date.getFullYear() === now.getFullYear()
         );
       }).length,
-      revenue: 0, // Placeholder
-      vip: customers.filter((c) => c.segment === "VIP").length,
-      loyal: customers.filter((c) => c.segment === "Loyal").length,
-      potential: customers.filter((c) => c.segment === "Potential").length,
-      atRisk: customers.filter((c) => c.segment === "At Risk").length,
-      lost: customers.filter((c) => c.segment === "Lost").length,
-      new: customers.filter((c) => c.segment === "New").length,
+      revenue: 0,
+      vip, loyal, potential, atRisk, lost,
+      new: newSeg,
     };
-  }, [customers]);
+  }, [customers, liveSegmentMap]);
 
   // Vehicles needing maintenance for customer care team
   const vehiclesNeedingMaintenance = useMemo(() => {
@@ -1483,8 +1519,9 @@ const CustomerManager: React.FC = () => {
               {viewMode === "grid" ? (
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
                   {displayedCustomers.map((customer) => {
+                    const liveSegment = liveSegmentMap.get(customer.id);
                     const config =
-                      (customer.segment && segmentStyles[customer.segment]) ||
+                      (liveSegment && segmentStyles[liveSegment]) ||
                       segmentStyles.default;
                     // Use cached stats for performance (consistent with CustomerHistoryModal)
                     const {
@@ -1666,8 +1703,8 @@ const CustomerManager: React.FC = () => {
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
                       {displayedCustomers.map((customer) => {
                         const config =
-                          (customer.segment &&
-                            segmentStyles[customer.segment]) ||
+                          (liveSegmentMap.get(customer.id) &&
+                            segmentStyles[liveSegmentMap.get(customer.id)!]) ||
                           segmentStyles.default;
                         const vehicles =
                           (customer.vehicles as Vehicle[] | undefined) || [];

@@ -209,13 +209,19 @@ const InventoryManagerNew: React.FC = () => {
     }
   }, [searchParams, setSearchParams]); // Re-run when URL changes
 
+  // Khi đang tìm kiếm: lấy 500 kết quả từ server (page 1) để client-side
+  // normalize filter có đủ candidates. Khi không tìm kiếm: dùng pagination bình thường.
+  const isSearching = search.trim().length > 0;
+  const effectivePage = isSearching ? 1 : page;
+  const effectivePageSize = isSearching ? 500 : pageSize;
+
   const {
     data: pagedResult,
     isLoading: partsLoading,
     refetch: refetchInventory,
   } = usePartsRepoPaged({
-    page,
-    pageSize,
+    page: effectivePage,
+    pageSize: effectivePageSize,
     search,
     category: categoryFilter === "all" ? undefined : categoryFilter,
   });
@@ -256,7 +262,9 @@ const InventoryManagerNew: React.FC = () => {
 
   const repoParts = pagedResult?.data || [];
   const totalParts = pagedResult?.meta?.total || 0;
-  const totalPages = Math.max(1, Math.ceil(totalParts / pageSize));
+  // Khi đang search: effectivePageSize=500 nên mọi kết quả đã được load hết trong 1 trang.
+  // totalPages phải là 1 để không hiện nút next/prev gây nhầm lẫn.
+  const totalPages = isSearching ? 1 : Math.max(1, Math.ceil(totalParts / pageSize));
 
   // Fetch ALL parts for accurate totals calculation (stock, costPrice, retailPrice)
   // NOTE: This query does NOT depend on search - only category filter
@@ -1507,7 +1515,7 @@ const InventoryManagerNew: React.FC = () => {
                   className="w-full pl-9 pr-16 py-1.5 text-sm border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-slate-600 dark:text-slate-300">
-                  {filteredParts.length}/{totalParts}
+                  {filteredParts.length}/{isSearching ? filteredParts.length : totalParts}
                 </span>
               </div>
               {/* Filter button */}
@@ -2333,10 +2341,10 @@ const InventoryManagerNew: React.FC = () => {
               <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-3 sm:px-6 py-3 sm:py-4 border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
                 <div className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 text-center sm:text-left">
                   <span className="font-medium">
-                    Trang {page}/{totalPages}
+                    Trang {isSearching ? 1 : page}/{totalPages}
                   </span>
                   <span className="mx-1">•</span>
-                  <span>{totalParts} phụ tùng</span>
+                  <span>{isSearching ? filteredParts.length : totalParts} phụ tùng</span>
                 </div>
                 <div className="flex items-center gap-1.5 sm:gap-2">
                   <button

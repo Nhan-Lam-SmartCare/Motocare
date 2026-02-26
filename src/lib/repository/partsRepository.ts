@@ -32,32 +32,15 @@ export async function fetchParts(): Promise<RepoResult<Part[]>> {
 
 // Fetch parts with pagination & optional filters
 
-// ── Vietnamese fuzzy search helpers ──────────────────────────────────────────
-// Loại bỏ tất cả dấu tiếng Việt về ASCII thuần để so sánh
-const normalizeViStr = (s: string): string =>
+// Normalize Vietnamese diacritics to ASCII for client-side fuzzy matching
+export const normalizeViStr = (s: string): string =>
   s
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
-    .replace(/đ/g, "d")
-    .replace(/Đ/g, "D")
+    .replace(/\u0111/g, "d")
+    .replace(/\u0110/g, "D")
     .toLowerCase()
     .trim();
-
-// Sinh các cụm ký tự ngắn (prefix cluster) từ mỗi từ trong chuỗi tìm kiếm.
-// Mục đích: "khóa" và "khoá" đều normalize thành "khoa"
-//  → cluster 2 ký tự "kh" khớp CẢ HAI trong DB qua ilike
-//  → cluster 3 ký tự "kho" khớp "khoá" (có 'o' trần) trong DB
-const getViFuzzyClusters = (term: string): string[] => {
-  const normalized = normalizeViStr(term);
-  const clusters = new Set<string>();
-  normalized.split(/\s+/).forEach((word) => {
-    if (word.length >= 2) clusters.add(word.slice(0, 2)); // 2-char onset (hầu hết là phụ âm)
-    if (word.length >= 3) clusters.add(word.slice(0, 3)); // 3-char prefix
-    if (word.length >= 4) clusters.add(word.slice(0, 4)); // 4-char prefix
-  });
-  return Array.from(clusters);
-};
-// ─────────────────────────────────────────────────────────────────────────────
 
 export async function fetchPartsPaged(params?: {
   page?: number; // 1-based
@@ -80,27 +63,42 @@ export async function fetchPartsPaged(params?: {
       query = query.eq("category", params.category);
     }
     if (params?.search && params.search.trim()) {
-      const term = params.search.trim();
-      const cleanTerm = term.replace(/['"]/g, "");
+      const raw = params.search.trim().replace(/['"]/g, "");
 
-      // Điều kiện chính: tìm chính xác theo raw input
-      const orConditions: string[] = [
-        `name.ilike.%${cleanTerm}%`,
-        `sku.ilike.%${cleanTerm}%`,
-        `category.ilike.%${cleanTerm}%`,
-        `description.ilike.%${cleanTerm}%`,
+      // Điều kiện 1: khớp toàn cụm từ (chính xác nhất)
+      const orParts: string[] = [
+        `name.ilike.%${raw}%`,
+        `sku.ilike.%${raw}%`,
+        `category.ilike.%${raw}%`,
+        `description.ilike.%${raw}%`,
       ];
 
-      // Điều kiện phụ: cluster-based để chịu được sai dấu tiếng Việt
-      // VD: gõ "ổ khóa" → cluster "kh" khớp cả "khoá" lẫn "khóa" trong DB
-      const clusters = getViFuzzyClusters(term);
-      clusters.forEach((cluster) => {
-        // Chỉ thêm vào tìm trong name để tránh kết quả nhiễu
-        const cond = `name.ilike.%${cluster}%`;
-        if (!orConditions.includes(cond)) orConditions.push(cond);
+      // Điều kiện 2: khớp từng từ riêng lẻ (≥ 3 ký tự) để bắt được
+      // trường hợp từ xuất hiện không liền nhau hoặc sai dấu tiếng Việt.
+      // VD: "ổ khóa" → thêm name.ilike.%ổ% và name.ilike.%khóa%
+      // Client-side normalize filter sẽ lọc chính xác sau.
+      raw.split(/\s+/).forEach((word) => {
+        if (word.length >= 3) {
+          const cond = `name.ilike.%${word}%`;
+          if (!orParts.includes(cond)) orParts.push(cond);
+        }
+
+        // Điều kiện 3 (diacritic fallback): với từ ≥ 4 ký tự,
+        // normalize về ASCII rồi lấy 2 ký tự đầu làm prefix cluster.
+        // Mục đích: "khóa" → ASCII "khoa" → prefix "kh" → name.ilike.%kh%
+        // Điều này bắt được CẢ HAI "khoá" lẫn "khóa" trong DB (đều chứa "kh").
+        // Client-side normalize filter sẽ loại bỏ false positives.
+        if (word.length >= 4) {
+          const ascii = normalizeViStr(word);
+          const prefix = ascii.slice(0, 2);
+          if (prefix.length === 2 && /^[a-z]{2}$/.test(prefix)) {
+            const prefixCond = `name.ilike.%${prefix}%`;
+            if (!orParts.includes(prefixCond)) orParts.push(prefixCond);
+          }
+        }
       });
 
-      query = query.or(orConditions.join(","));
+      query = query.or(orParts.join(","));
     }
     const { data, error, count } = await query;
     if (error)

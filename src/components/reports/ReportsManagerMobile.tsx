@@ -90,12 +90,13 @@ interface ReportsManagerMobileProps {
     setStartDate: (date: string) => void;
     endDate: string;
     setEndDate: (date: string) => void;
-    onDateClick: (date: string) => void;
+    onDateClick: (date: string | null) => void;
     cashTotals: {
         totalIncome: number;
         totalExpense: number;
         totalRefund: number;
     };
+    selectedDate: string | null;
 }
 
 export const ReportsManagerMobile: React.FC<ReportsManagerMobileProps> = ({
@@ -117,6 +118,7 @@ export const ReportsManagerMobile: React.FC<ReportsManagerMobileProps> = ({
     setEndDate,
     onDateClick,
     cashTotals,
+    selectedDate,
 }) => {
     const [showFilters, setShowFilters] = useState(false);
     const [showReportMenu, setShowReportMenu] = useState(false);
@@ -321,56 +323,154 @@ export const ReportsManagerMobile: React.FC<ReportsManagerMobileProps> = ({
                         .reduce((sum, t) => sum + t.amount, 0);
 
                     const dailyNetProfit = day.totalProfit + dailyOtherIncome - dailyOtherExpense - dailyRefund;
+                    const isExpanded = selectedDate === day.date;
 
                     return (
                         <button
                             key={idx}
-                            onClick={() => onDateClick(day.date)}
-                            className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/50 p-4 rounded-xl flex flex-col gap-3 active:scale-[0.98] transition-transform shadow-sm dark:shadow-none"
+                            onClick={() => onDateClick(isExpanded ? null : day.date)}
+                            className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/50 p-4 rounded-xl flex flex-col gap-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 active:scale-[0.98] transition-all shadow-sm dark:shadow-none group text-left"
                         >
                             <div className="flex items-center justify-between w-full border-b border-slate-100 dark:border-slate-700/50 pb-3">
-                                <div className="text-left">
-                                    <div className="text-sm font-bold text-slate-800 dark:text-white">
+                                <div>
+                                    <div className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                                        <Calendar className="w-4 h-4 text-slate-400" />
                                         {formatDate(day.date)}
                                     </div>
-                                    <div className="text-xs text-slate-400 mt-0.5">
+                                    <div className="text-xs text-slate-500 mt-1 pl-6">
                                         {day.orderCount} đơn hàng
                                     </div>
                                 </div>
-                                <div className="text-right">
-                                    <div className="text-xs text-slate-400 mb-0.5">Lợi nhuận ròng</div>
-                                    <div className="text-sm font-bold text-purple-400">
-                                        {formatCurrency(dailyNetProfit).replace("₫", "")}đ
+                                <div className="text-right flex items-center gap-2">
+                                    <div>
+                                        <div className="text-[10px] text-slate-500 uppercase tracking-wider mb-0.5">Lợi nhuận ròng</div>
+                                        <div className="text-sm font-bold text-slate-900 dark:text-white">
+                                            {formatCurrency(dailyNetProfit)}
+                                        </div>
                                     </div>
+                                    <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${isExpanded ? '' : '-rotate-90 group-hover:translate-x-1'}`} />
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-x-4 gap-y-2 w-full">
+                            <div className="grid grid-cols-2 gap-x-6 gap-y-2 w-full px-1">
                                 <div className="flex justify-between items-center">
-                                    <span className="text-xs text-slate-400">Doanh thu</span>
-                                    <span className="text-xs font-medium text-blue-400">
-                                        {formatCurrency(day.totalRevenue).replace("₫", "")}đ
+                                    <span className="text-xs text-slate-500">Doanh thu</span>
+                                    <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                                        {formatCurrency(day.totalRevenue)}
                                     </span>
                                 </div>
                                 <div className="flex justify-between items-center">
-                                    <span className="text-xs text-slate-400">Lợi nhuận</span>
-                                    <span className="text-xs font-medium text-green-400">
-                                        {formatCurrency(day.totalProfit).replace("₫", "")}đ
+                                    <span className="text-xs text-slate-500">Lợi nhuận gộp</span>
+                                    <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                                        {formatCurrency(day.totalProfit)}
                                     </span>
                                 </div>
                                 <div className="flex justify-between items-center">
-                                    <span className="text-xs text-slate-400">Thu khác</span>
-                                    <span className="text-xs font-medium text-emerald-400">
-                                        {formatCurrency(dailyOtherIncome).replace("₫", "")}đ
+                                    <span className="text-xs text-slate-500">Thu khác</span>
+                                    <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                                        {formatCurrency(dailyOtherIncome)}
                                     </span>
                                 </div>
                                 <div className="flex justify-between items-center">
-                                    <span className="text-xs text-slate-400">Chi khác</span>
-                                    <span className="text-xs font-medium text-red-400">
-                                        {formatCurrency(dailyOtherExpense).replace("₫", "")}đ
+                                    <span className="text-xs text-slate-500">Chi khác</span>
+                                    <span className="text-xs font-semibold text-red-600 dark:text-red-400">
+                                        -{formatCurrency(dailyOtherExpense)}
                                     </span>
                                 </div>
                             </div>
+
+                            {/* Expanded Details Section */}
+                            {isExpanded && (
+                                <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-700/50 space-y-4 cursor-default" onClick={(e) => e.stopPropagation()}>
+                                    {/* Sales */}
+                                    <div className="space-y-2">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <span className="text-base">📦</span>
+                                            <h4 className="text-xs font-bold text-slate-800 dark:text-white uppercase tracking-wider">
+                                                Đơn bán hàng ({day.sales.length})
+                                            </h4>
+                                        </div>
+                                        {day.sales.length === 0 ? (
+                                            <div className="text-xs text-slate-500 italic">Không có đơn bán hàng</div>
+                                        ) : (
+                                            <div className="space-y-2">
+                                                {day.sales.map((sale: any) => (
+                                                    <div key={sale.id} className="bg-slate-50 dark:bg-slate-900/50 p-3 rounded-lg border border-slate-100 dark:border-slate-700/50">
+                                                        <div className="flex justify-between items-start mb-1">
+                                                            <div className="font-semibold text-slate-900 dark:text-white text-xs">{sale.customer.name}</div>
+                                                            <div className="font-bold text-blue-600 dark:text-blue-400 text-xs">{formatCurrency(sale.total)}</div>
+                                                        </div>
+                                                        <div className="text-[10px] text-slate-500 mb-2">
+                                                            {sale.sale_code || '---'}
+                                                        </div>
+                                                        <div className="space-y-1">
+                                                            {sale.items.map((item: any, idx: number) => (
+                                                                <div key={idx} className="flex justify-between text-[10px]">
+                                                                    <span className="text-slate-600 dark:text-slate-400 truncate mr-2">{item.partName}</span>
+                                                                    <span className="text-slate-500 whitespace-nowrap">x{item.quantity}</span>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Work Orders */}
+                                    <div className="space-y-2">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <span className="text-base">⚙️</span>
+                                            <h4 className="text-xs font-bold text-slate-800 dark:text-white uppercase tracking-wider">
+                                                Sửa chữa ({day.workOrders.length})
+                                            </h4>
+                                        </div>
+                                        {day.workOrders.length === 0 ? (
+                                            <div className="text-xs text-slate-500 italic">Không có đơn sửa chữa</div>
+                                        ) : (
+                                            <div className="space-y-2">
+                                                {day.workOrders.map((wo: any) => (
+                                                    <div key={wo.id} className="bg-slate-50 dark:bg-slate-900/50 p-3 rounded-lg border border-slate-100 dark:border-slate-700/50">
+                                                        <div className="flex justify-between items-start">
+                                                            <div>
+                                                                <div className="font-semibold text-slate-900 dark:text-white text-xs">{wo.customerName || wo.customername || 'Khách vãng lai'}</div>
+                                                                <div className="text-[10px] text-slate-500 mt-0.5">{wo.vehicleModel || wo.vehiclemodel || ''} {wo.licensePlate || wo.licenseplate || ''}</div>
+                                                            </div>
+                                                            <div className="font-bold text-purple-600 dark:text-purple-400 text-xs">
+                                                                {formatCurrency(wo.totalPaid || wo.totalpaid || wo.total || 0)}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Cash Transactions */}
+                                    {dailyTransactions.length > 0 && (
+                                        <div className="space-y-2">
+                                            <div className="flex items-center gap-2 mb-2">
+                                                <span className="text-base">💰</span>
+                                                <h4 className="text-xs font-bold text-slate-800 dark:text-white uppercase tracking-wider">
+                                                    Giao dịch khác ({dailyTransactions.length})
+                                                </h4>
+                                            </div>
+                                            <div className="space-y-2">
+                                                {dailyTransactions.map((tx) => (
+                                                    <div key={tx.id} className="flex justify-between items-center bg-slate-50 dark:bg-slate-900/50 p-2.5 rounded-lg border border-slate-100 dark:border-slate-700/50 text-xs">
+                                                        <span className="text-slate-600 dark:text-slate-300 truncate mr-2">
+                                                            {(tx as any).description || tx.notes || formatCashTxCategory(tx.category || '')}
+                                                        </span>
+                                                        <span className={`font-bold whitespace-nowrap flex-shrink-0 ${tx.type === 'income' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                                                            {tx.type === 'income' ? '+' : '-'}{formatCurrency(Math.abs(tx.amount))}
+                                                        </span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                         </button>
                     )
                 })}

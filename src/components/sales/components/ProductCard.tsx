@@ -86,7 +86,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                 {part.category && (
                     <div className="flex items-center gap-2">
                         <span
-                            className={`inline-block px-2 py-1 rounded-md text-xs font-medium ${colors.bg} ${colors.text}`}
+                            className="inline-block px-2 py-0.5 rounded border border-slate-300 dark:border-slate-600 text-[10px] font-medium text-slate-500 dark:text-slate-400"
                         >
                             {part.category}
                         </span>
@@ -95,27 +95,29 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
                 {/* Price */}
                 <div className="pt-2 border-t border-slate-100 dark:border-slate-700">
-                    <div className="flex items-baseline justify-between">
+                    <div className="flex items-end justify-between">
                         <div className="flex flex-col">
-                            <span className="text-lg font-bold text-blue-600 dark:text-blue-400">
+                            <span className="text-lg font-bold text-slate-900 dark:text-white leading-none">
                                 {formatCurrency(price)}
                             </span>
                             {wholesalePrice > 0 && wholesalePrice !== price && (
-                                <span className="text-xs text-green-600 dark:text-green-400 font-medium">
+                                <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">
                                     Sỉ: {formatCurrency(wholesalePrice)}
                                 </span>
                             )}
                         </div>
-                        <span
-                            className={`text-sm font-medium ${isOutOfStock
-                                ? "text-red-600 dark:text-red-400"
-                                : isLowStock
-                                    ? "text-amber-600 dark:text-amber-400"
-                                    : "text-green-600 dark:text-green-400"
-                                }`}
-                        >
-                            Tồn: {stock}
-                        </span>
+                        <div className="flex flex-col items-end">
+                            <span
+                                className={`text-[11px] font-medium ${isOutOfStock
+                                    ? "text-red-500"
+                                    : isLowStock
+                                        ? "text-amber-500"
+                                        : "text-slate-500 dark:text-slate-400"
+                                    }`}
+                            >
+                                Tồn: {stock}
+                            </span>
+                        </div>
                     </div>
                 </div>
             </div>

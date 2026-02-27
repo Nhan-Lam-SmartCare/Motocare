@@ -764,6 +764,7 @@ const ReportsManager: React.FC = () => {
         setEndDate={setEndDate}
         onDateClick={setSelectedDate}
         cashTotals={cashTotals}
+        selectedDate={selectedDate}
       />
 
       {/* Desktop Controls - Hidden on Mobile */}
@@ -1218,54 +1219,54 @@ const ReportsManager: React.FC = () => {
                                         <div className="text-xs text-slate-500 py-4 text-center">Không có đơn BH</div>
                                       ) : (
                                         <>
-                                        {/* Tổng bán hàng */}
-                                        <div className="flex justify-between items-center mb-3 pb-2.5 border-b border-slate-700/50">
-                                          <div className="text-[11px] text-slate-400">Tổng doanh thu</div>
-                                          <div className="text-right">
-                                            <span className="font-bold text-sky-400 text-xs">{formatCurrency(salesRevenue)}</span>
-                                            <span className={`text-[10px] ml-2 ${salesRevenue - salesCOGS >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                                              Lãi: {formatCurrency(salesRevenue - salesCOGS)}
-                                            </span>
+                                          {/* Tổng bán hàng */}
+                                          <div className="flex justify-between items-center mb-3 pb-2.5 border-b border-slate-700/50">
+                                            <div className="text-[11px] text-slate-400">Tổng doanh thu</div>
+                                            <div className="text-right">
+                                              <span className="font-bold text-sky-400 text-xs">{formatCurrency(salesRevenue)}</span>
+                                              <span className={`text-[10px] ml-2 ${salesRevenue - salesCOGS >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                                                Lãi: {formatCurrency(salesRevenue - salesCOGS)}
+                                              </span>
+                                            </div>
                                           </div>
-                                        </div>
-                                        <div className="space-y-3 max-h-64 overflow-y-auto pr-1">
-                                          {day.sales.map((sale) => {
-                                            const saleCost = sale.items.reduce((c, it: any) => {
-                                              const cost = it.costPrice || partsCostMap.get(it.partId) || partsCostMap.get(it.sku) || 0;
-                                              return c + cost * it.quantity;
-                                            }, 0);
-                                            const saleProfit = sale.total - saleCost;
-                                            return (
-                                              <div key={sale.id} className="bg-slate-900/60 rounded-lg p-3 border border-slate-700/30">
-                                                <div className="flex justify-between items-start mb-1.5">
-                                                  <div className="flex items-center gap-1.5">
-                                                    <span className="font-bold text-white text-xs">{sale.customer.name}</span>
-                                                    {saleProfit > 0 && <span className="text-amber-400 text-xs">⭐</span>}
-                                                  </div>
-                                                  <div className="text-right">
-                                                    <div className="font-bold text-sky-400 text-xs">{formatCurrency(sale.total)}</div>
-                                                    <div className={`text-[10px] mt-0.5 ${saleProfit >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                                                      Lãi: {formatCurrency(saleProfit)}
+                                          <div className="space-y-3 max-h-64 overflow-y-auto pr-1">
+                                            {day.sales.map((sale) => {
+                                              const saleCost = sale.items.reduce((c, it: any) => {
+                                                const cost = it.costPrice || partsCostMap.get(it.partId) || partsCostMap.get(it.sku) || 0;
+                                                return c + cost * it.quantity;
+                                              }, 0);
+                                              const saleProfit = sale.total - saleCost;
+                                              return (
+                                                <div key={sale.id} className="bg-slate-900/60 rounded-lg p-3 border border-slate-700/30">
+                                                  <div className="flex justify-between items-start mb-1.5">
+                                                    <div className="flex items-center gap-1.5">
+                                                      <span className="font-bold text-white text-xs">{sale.customer.name}</span>
+                                                      {saleProfit > 0 && <span className="text-amber-400 text-xs">⭐</span>}
+                                                    </div>
+                                                    <div className="text-right">
+                                                      <div className="font-bold text-sky-400 text-xs">{formatCurrency(sale.total)}</div>
+                                                      <div className={`text-[10px] mt-0.5 ${saleProfit >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                                                        Lãi: {formatCurrency(saleProfit)}
+                                                      </div>
                                                     </div>
                                                   </div>
+                                                  <div className="text-[10px] text-slate-500 mb-1.5">
+                                                    {sale.sale_code || '---'} • {sale.paymentMethod === 'bank' ? 'CK' : 'TM'}
+                                                  </div>
+                                                  <div className="space-y-0.5">
+                                                    {sale.items.map((item, idx) => (
+                                                      <div key={idx} className="flex justify-between text-[10px]">
+                                                        <span className="text-slate-400 truncate mr-2">{item.partName}</span>
+                                                        <span className="text-slate-300 whitespace-nowrap flex-shrink-0">
+                                                          x{item.quantity} = {formatCurrency(item.sellingPrice * item.quantity)}
+                                                        </span>
+                                                      </div>
+                                                    ))}
+                                                  </div>
                                                 </div>
-                                                <div className="text-[10px] text-slate-500 mb-1.5">
-                                                  {sale.sale_code || '---'} • {sale.paymentMethod === 'bank' ? 'CK' : 'TM'}
-                                                </div>
-                                                <div className="space-y-0.5">
-                                                  {sale.items.map((item, idx) => (
-                                                    <div key={idx} className="flex justify-between text-[10px]">
-                                                      <span className="text-slate-400 truncate mr-2">{item.partName}</span>
-                                                      <span className="text-slate-300 whitespace-nowrap flex-shrink-0">
-                                                        x{item.quantity} = {formatCurrency(item.sellingPrice * item.quantity)}
-                                                      </span>
-                                                    </div>
-                                                  ))}
-                                                </div>
-                                              </div>
-                                            );
-                                          })}
-                                        </div>
+                                              );
+                                            })}
+                                          </div>
                                         </>
                                       )}
                                     </div>
@@ -1282,43 +1283,43 @@ const ReportsManager: React.FC = () => {
                                           <div className="text-xs text-slate-500 py-2 text-center">Không có đơn SC</div>
                                         ) : (
                                           <>
-                                          {/* Tổng sửa chữa */}
-                                          <div className="flex justify-between items-center mb-2.5 pb-2 border-b border-slate-700/50">
-                                            <div className="text-[11px] text-slate-400">Tổng doanh thu</div>
-                                            <div className="text-right">
-                                              <span className="font-bold text-purple-400 text-xs">{formatCurrency(woRevenue)}</span>
-                                              <span className={`text-[10px] ml-2 ${woRevenue - woParts >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                                                Lãi: {formatCurrency(woRevenue - woParts)}
-                                              </span>
+                                            {/* Tổng sửa chữa */}
+                                            <div className="flex justify-between items-center mb-2.5 pb-2 border-b border-slate-700/50">
+                                              <div className="text-[11px] text-slate-400">Tổng doanh thu</div>
+                                              <div className="text-right">
+                                                <span className="font-bold text-purple-400 text-xs">{formatCurrency(woRevenue)}</span>
+                                                <span className={`text-[10px] ml-2 ${woRevenue - woParts >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                                                  Lãi: {formatCurrency(woRevenue - woParts)}
+                                                </span>
+                                              </div>
                                             </div>
-                                          </div>
-                                          <div className="space-y-2 max-h-32 overflow-y-auto pr-1">
-                                            {day.workOrders.map((wo: any) => {
-                                              const woTotal = wo.totalPaid || wo.totalpaid || wo.total || 0;
-                                              const woPartsCost = (wo.partsUsed || wo.partsused || []).reduce((c: number, p: any) => {
-                                                const partId = p.partId || p.partid;
-                                                const cost = p.costPrice || p.costprice || partsCostMap.get(partId) || partsCostMap.get(p.sku) || 0;
-                                                return c + cost * (p.quantity || 0);
-                                              }, 0);
-                                              const woProfit = woTotal - woPartsCost;
-                                              return (
-                                                <div key={wo.id} className="bg-slate-900/60 rounded-lg p-2.5 border border-slate-700/30">
-                                                  <div className="flex justify-between items-start">
-                                                    <div>
-                                                      <div className="font-semibold text-white text-[11px]">{wo.customerName || wo.customername}</div>
-                                                      <div className="text-[10px] text-slate-500">{wo.vehicleModel || wo.vehiclemodel || ''} {wo.licensePlate || wo.licenseplate || ''}</div>
-                                                    </div>
-                                                    <div className="text-right">
-                                                      <div className="font-bold text-purple-400 text-xs">{formatCurrency(woTotal)}</div>
-                                                      <div className={`text-[10px] mt-0.5 ${woProfit >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                                                        Lãi: {formatCurrency(woProfit)}
+                                            <div className="space-y-2 max-h-32 overflow-y-auto pr-1">
+                                              {day.workOrders.map((wo: any) => {
+                                                const woTotal = wo.totalPaid || wo.totalpaid || wo.total || 0;
+                                                const woPartsCost = (wo.partsUsed || wo.partsused || []).reduce((c: number, p: any) => {
+                                                  const partId = p.partId || p.partid;
+                                                  const cost = p.costPrice || p.costprice || partsCostMap.get(partId) || partsCostMap.get(p.sku) || 0;
+                                                  return c + cost * (p.quantity || 0);
+                                                }, 0);
+                                                const woProfit = woTotal - woPartsCost;
+                                                return (
+                                                  <div key={wo.id} className="bg-slate-900/60 rounded-lg p-2.5 border border-slate-700/30">
+                                                    <div className="flex justify-between items-start">
+                                                      <div>
+                                                        <div className="font-semibold text-white text-[11px]">{wo.customerName || wo.customername}</div>
+                                                        <div className="text-[10px] text-slate-500">{wo.vehicleModel || wo.vehiclemodel || ''} {wo.licensePlate || wo.licenseplate || ''}</div>
+                                                      </div>
+                                                      <div className="text-right">
+                                                        <div className="font-bold text-purple-400 text-xs">{formatCurrency(woTotal)}</div>
+                                                        <div className={`text-[10px] mt-0.5 ${woProfit >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                                                          Lãi: {formatCurrency(woProfit)}
+                                                        </div>
                                                       </div>
                                                     </div>
                                                   </div>
-                                                </div>
-                                              );
-                                            })}
-                                          </div>
+                                                );
+                                              })}
+                                            </div>
                                           </>
                                         )}
                                       </div>

@@ -90,15 +90,15 @@ const WorkOrderCard = React.memo(({
   const getStatusColor = (status: string) => {
     switch (status) {
       case "Tiếp nhận":
-        return "bg-[#009ef7]/10 text-[#009ef7] border-[#009ef7]/30";
+        return "bg-transparent text-[#009ef7] border-[#009ef7]/30";
       case "Đang sửa":
-        return "bg-[#f1416c]/10 text-[#f1416c] border-[#f1416c]/30";
+        return "bg-transparent text-[#f1416c] border-[#f1416c]/30";
       case "Đã sửa xong":
-        return "bg-[#50cd89]/10 text-[#50cd89] border-[#50cd89]/30";
+        return "bg-transparent text-[#50cd89] border-[#50cd89]/30";
       case "Trả máy":
-        return "bg-purple-500/10 text-purple-500 border-purple-500/30";
+        return "bg-transparent text-purple-500 border-purple-500/30";
       default:
-        return "bg-gray-500/10 text-gray-500 border-gray-500/30";
+        return "bg-transparent text-gray-500 border-gray-500/30";
     }
   };
 
@@ -128,7 +128,7 @@ const WorkOrderCard = React.memo(({
         {/* Header - Single row: ID + Date + Status */}
         <div className="flex items-center justify-between mb-1.5">
           <div className="flex items-center gap-2">
-            <span className="text-[#009ef7] font-mono text-xs font-semibold" title={formatWorkOrderId(workOrder.id)}>
+            <span className="text-slate-700 dark:text-gray-300 font-mono text-xs font-semibold" title={formatWorkOrderId(workOrder.id)}>
               {formatShortWorkOrderId(workOrder.id).short}
             </span>
             <span className="text-[10px] text-slate-500 dark:text-gray-500">
@@ -160,7 +160,7 @@ const WorkOrderCard = React.memo(({
           <span className="text-slate-700 dark:text-gray-300 flex-1 min-w-0 truncate">
             {workOrder.vehicleModel}
           </span>
-          <span className="text-[#009ef7] text-xs font-mono shrink-0">
+          <span className="text-slate-500 dark:text-gray-400 text-xs font-mono shrink-0">
             {workOrder.licensePlate}
           </span>
         </div>
@@ -239,10 +239,10 @@ const WorkOrderCard = React.memo(({
             e.stopPropagation();
             onCall(workOrder.customerPhone || "");
           }}
-          className="flex items-center justify-center gap-1 py-3 bg-green-500/10 hover:bg-green-500/20 transition-colors border-r border-slate-200 dark:border-gray-800"
+          className="flex items-center justify-center gap-1.5 py-3 hover:bg-slate-50 dark:hover:bg-[#2b2b40] transition-colors border-r border-slate-200 dark:border-gray-800"
         >
-          <Phone className="w-4 h-4 text-green-500" />
-          <span className="text-[11px] font-semibold text-green-500">
+          <Phone className="w-3.5 h-3.5 text-slate-500 dark:text-gray-400" />
+          <span className="text-[11px] font-medium text-slate-700 dark:text-gray-300">
             Gọi
           </span>
         </button>
@@ -251,10 +251,10 @@ const WorkOrderCard = React.memo(({
             e.stopPropagation();
             onPrint(workOrder);
           }}
-          className="flex items-center justify-center gap-1 py-3 bg-purple-500/10 hover:bg-purple-500/20 transition-colors border-r border-slate-200 dark:border-gray-800"
+          className="flex items-center justify-center gap-1.5 py-3 hover:bg-slate-50 dark:hover:bg-[#2b2b40] transition-colors border-r border-slate-200 dark:border-gray-800"
         >
-          <Printer className="w-4 h-4 text-purple-500" />
-          <span className="text-[11px] font-semibold text-purple-500">
+          <Printer className="w-3.5 h-3.5 text-slate-500 dark:text-gray-400" />
+          <span className="text-[11px] font-medium text-slate-700 dark:text-gray-300">
             In
           </span>
         </button>
@@ -263,10 +263,10 @@ const WorkOrderCard = React.memo(({
             e.stopPropagation();
             onEdit(workOrder);
           }}
-          className="flex items-center justify-center gap-1 py-3 bg-[#009ef7]/10 hover:bg-[#009ef7]/20 transition-colors border-r border-slate-200 dark:border-gray-800"
+          className="flex items-center justify-center gap-1.5 py-3 hover:bg-slate-50 dark:hover:bg-[#2b2b40] transition-colors border-r border-slate-200 dark:border-gray-800"
         >
-          <Edit2 className="w-4 h-4 text-[#009ef7]" />
-          <span className="text-[11px] font-semibold text-[#009ef7]">
+          <Edit2 className="w-3.5 h-3.5 text-slate-500 dark:text-gray-400" />
+          <span className="text-[11px] font-medium text-slate-700 dark:text-gray-300">
             Sửa
           </span>
         </button>
@@ -276,10 +276,10 @@ const WorkOrderCard = React.memo(({
               e.stopPropagation();
               onDelete(workOrder);
             }}
-            className="flex items-center justify-center gap-1 py-3 bg-[#f1416c]/10 hover:bg-[#f1416c]/20 transition-colors"
+            className="flex items-center justify-center gap-1.5 py-3 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
           >
-            <Trash2 className="w-4 h-4 text-[#f1416c]" />
-            <span className="text-[11px] font-semibold text-[#f1416c]">
+            <Trash2 className="w-3.5 h-3.5 text-[#f1416c]" />
+            <span className="text-[11px] font-medium text-[#f1416c]">
               Xóa
             </span>
           </button>
@@ -514,9 +514,9 @@ export function ServiceManagerMobile({
                     );
                     triggerHaptic("selection");
                   }}
-                  className={`p-2 rounded-lg text-center transition-all ${statusFilter === "Tiếp nhận"
-                    ? "bg-gradient-to-br from-[#009ef7]/20 to-[#009ef7]/10 border-2 border-[#009ef7]"
-                    : "bg-slate-100 dark:bg-[#2b2b40] border border-slate-300 dark:border-gray-700"
+                  className={`p-2 rounded-lg text-center transition-all border ${statusFilter === "Tiếp nhận"
+                    ? "bg-[#009ef7]/10 border-[#009ef7]"
+                    : "bg-slate-100 dark:bg-[#2b2b40] border-slate-200 dark:border-gray-700 hover:border-slate-300 dark:hover:border-gray-600"
                     }`}
                 >
                   <FileText className="w-4 h-4 text-[#009ef7] mx-auto mb-0.5" />
@@ -530,9 +530,9 @@ export function ServiceManagerMobile({
                     setStatusFilter(statusFilter === "Đang sửa" ? "all" : "Đang sửa");
                     triggerHaptic("selection");
                   }}
-                  className={`p-2 rounded-lg text-center transition-all ${statusFilter === "Đang sửa"
-                    ? "bg-gradient-to-br from-[#f1416c]/20 to-[#f1416c]/10 border-2 border-[#f1416c]"
-                    : "bg-slate-100 dark:bg-[#2b2b40] border border-slate-300 dark:border-gray-700"
+                  className={`p-2 rounded-lg text-center transition-all border ${statusFilter === "Đang sửa"
+                    ? "bg-[#009ef7]/10 border-[#009ef7]"
+                    : "bg-slate-100 dark:bg-[#2b2b40] border-slate-200 dark:border-gray-700 hover:border-slate-300 dark:hover:border-gray-600"
                     }`}
                 >
                   <Wrench className="w-4 h-4 text-[#f1416c] mx-auto mb-0.5" />
@@ -548,9 +548,9 @@ export function ServiceManagerMobile({
                     );
                     triggerHaptic("selection");
                   }}
-                  className={`p-2 rounded-lg text-center transition-all ${statusFilter === "Đã sửa xong"
-                    ? "bg-gradient-to-br from-[#50cd89]/20 to-[#50cd89]/10 border-2 border-[#50cd89]"
-                    : "bg-slate-100 dark:bg-[#2b2b40] border border-slate-300 dark:border-gray-700"
+                  className={`p-2 rounded-lg text-center transition-all border ${statusFilter === "Đã sửa xong"
+                    ? "bg-[#009ef7]/10 border-[#009ef7]"
+                    : "bg-slate-100 dark:bg-[#2b2b40] border-slate-200 dark:border-gray-700 hover:border-slate-300 dark:hover:border-gray-600"
                     }`}
                 >
                   <Check className="w-4 h-4 text-[#50cd89] mx-auto mb-0.5" />
@@ -566,9 +566,9 @@ export function ServiceManagerMobile({
                     setStatusFilter(statusFilter === "Trả máy" ? "all" : "Trả máy");
                     triggerHaptic("selection");
                   }}
-                  className={`p-2 rounded-lg text-center transition-all ${statusFilter === "Trả máy"
-                    ? "bg-gradient-to-br from-purple-500/20 to-purple-500/10 border-2 border-purple-500"
-                    : "bg-slate-100 dark:bg-[#2b2b40] border border-slate-300 dark:border-gray-700"
+                  className={`p-2 rounded-lg text-center transition-all border ${statusFilter === "Trả máy"
+                    ? "bg-[#009ef7]/10 border-[#009ef7]"
+                    : "bg-slate-100 dark:bg-[#2b2b40] border-slate-200 dark:border-gray-700 hover:border-slate-300 dark:hover:border-gray-600"
                     }`}
                 >
                   <Key className="w-4 h-4 text-purple-500 mx-auto mb-0.5" />
@@ -579,55 +579,57 @@ export function ServiceManagerMobile({
 
               {/* Doanh thu & Lợi nhuận */}
               <div className="grid grid-cols-2 gap-2 mt-2">
-                <div className="p-3 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 dark:from-emerald-600 dark:to-emerald-700 shadow-lg shadow-emerald-500/20 text-white">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-[10px] font-bold text-emerald-50 opacity-90">
+                <div className="p-3 rounded-xl bg-slate-50 dark:bg-[#2b2b40] border border-slate-200 dark:border-gray-700 shadow-sm relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-16 h-16 bg-emerald-500/5 dark:bg-emerald-500/10 rounded-bl-full pointer-events-none"></div>
+                  <div className="flex items-center justify-between mb-1 relative z-10">
+                    <span className="text-[10px] font-medium text-slate-500 dark:text-gray-400">
                       Doanh thu {getDateLabel()}
                     </span>
                     <div className="flex items-center gap-1">
                       {isOwner && (
                         <button
                           onClick={() => setShowFinancials(!showFinancials)}
-                          className="p-1 hover:bg-white/20 rounded transition-colors"
+                          className="p-1 hover:bg-slate-200 dark:hover:bg-gray-700 rounded transition-colors"
                           aria-label="Toggle revenue visibility"
                         >
                           {showFinancials ? (
-                            <Eye className="w-3.5 h-3.5 text-white" />
+                            <Eye className="w-3.5 h-3.5 text-slate-400" />
                           ) : (
-                            <EyeOff className="w-3.5 h-3.5 text-white" />
+                            <EyeOff className="w-3.5 h-3.5 text-slate-400" />
                           )}
                         </button>
                       )}
-                      <DollarSign className="w-4 h-4 text-white" />
+                      <DollarSign className="w-4 h-4 text-emerald-500" />
                     </div>
                   </div>
-                  <div className="text-base font-black text-white">
+                  <div className="text-base font-black text-slate-800 dark:text-white relative z-10">
                     {showFinancials ? formatCurrency(kpis.doanhThu) : "•••••••"}
                   </div>
                 </div>
-                <div className="p-3 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-700 shadow-lg shadow-blue-500/20 text-white">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-[10px] font-bold text-blue-50 opacity-90">
+                <div className="p-3 rounded-xl bg-slate-50 dark:bg-[#2b2b40] border border-slate-200 dark:border-gray-700 shadow-sm relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-16 h-16 bg-[#009ef7]/5 dark:bg-[#009ef7]/10 rounded-bl-full pointer-events-none"></div>
+                  <div className="flex items-center justify-between mb-1 relative z-10">
+                    <span className="text-[10px] font-medium text-slate-500 dark:text-gray-400">
                       Lợi nhuận {getDateLabel()}
                     </span>
                     <div className="flex items-center gap-1">
                       {isOwner && (
                         <button
                           onClick={() => setShowFinancials(!showFinancials)}
-                          className="p-1 hover:bg-white/20 rounded transition-colors"
+                          className="p-1 hover:bg-slate-200 dark:hover:bg-gray-700 rounded transition-colors"
                           aria-label="Toggle profit visibility"
                         >
                           {showFinancials ? (
-                            <Eye className="w-3.5 h-3.5 text-white" />
+                            <Eye className="w-3.5 h-3.5 text-slate-400" />
                           ) : (
-                            <EyeOff className="w-3.5 h-3.5 text-white" />
+                            <EyeOff className="w-3.5 h-3.5 text-slate-400" />
                           )}
                         </button>
                       )}
-                      <TrendingUp className="w-4 h-4 text-white" />
+                      <TrendingUp className="w-4 h-4 text-[#009ef7]" />
                     </div>
                   </div>
-                  <div className="text-base font-black text-white">
+                  <div className="text-base font-black text-slate-800 dark:text-white relative z-10">
                     {showFinancials ? formatCurrency(kpis.loiNhuan) : "•••••••"}
                   </div>
                 </div>

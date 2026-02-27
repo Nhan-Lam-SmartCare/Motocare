@@ -1433,17 +1433,17 @@ const InventoryManagerNew: React.FC = () => {
           {/* Barcode Scan Button */}
           <button
             onClick={() => setShowBarcodeScanner(true)}
-            className="p-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
+            className="p-2 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-lg transition-colors border border-slate-300 dark:border-slate-600"
             title="Quét mã vạch"
           >
-            <ScanLine className="w-5 h-5" />
+            <ScanLine className="w-5 h-5 text-purple-500" />
           </button>
 
           {/* Create Button */}
           {canDo(profile?.role, "inventory.import") && (
             <button
               onClick={() => setShowGoodsReceipt(true)}
-              className="flex items-center gap-1.5 px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition whitespace-nowrap"
+              className="flex items-center gap-1.5 px-3 py-2 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 rounded-lg text-sm font-semibold transition whitespace-nowrap"
             >
               <Plus className="w-4 h-4" />
               Tạo phiếu
@@ -1452,20 +1452,20 @@ const InventoryManagerNew: React.FC = () => {
         </div>
 
         {/* Inline Stats */}
-        <div className="flex items-center justify-between text-xs">
+        <div className="flex items-center justify-between text-xs mt-1">
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-1">
-              <span className="text-slate-600 dark:text-slate-400">Tổng:</span>
-              <span className="font-semibold text-blue-600 dark:text-blue-400">
+              <span className="text-slate-500 dark:text-slate-400">Tổng:</span>
+              <span className="font-semibold text-slate-800 dark:text-slate-200">
                 {totalStockQuantity.toLocaleString()} sp
               </span>
             </div>
-            <div className="h-3 w-px bg-slate-300 dark:bg-slate-600"></div>
+            <div className="h-3 w-px bg-slate-200 dark:bg-slate-700"></div>
             <div className="flex items-center gap-1">
-              <span className="text-slate-600 dark:text-slate-400">
+              <span className="text-slate-500 dark:text-slate-400">
                 Giá trị:
               </span>
-              <span className="font-semibold text-green-600 dark:text-green-400">
+              <span className="font-semibold text-slate-800 dark:text-slate-200">
                 {formatCurrency(totalStockValue)}
               </span>
             </div>
@@ -1724,9 +1724,8 @@ const InventoryManagerNew: React.FC = () => {
                                     <tr
                                       key={item.id}
                                       onClick={() => setReorderSelectedIds(prev => { const next = new Set(prev); if (next.has(item.id)) next.delete(item.id); else next.add(item.id); return next; })}
-                                      className={`border-t border-amber-100 dark:border-amber-800/30 cursor-pointer transition ${
-                                        isChecked ? "bg-amber-100 dark:bg-amber-800/40" : idx % 2 === 0 ? "bg-white dark:bg-slate-800/30 hover:bg-amber-50" : "bg-amber-50/40 dark:bg-amber-900/10 hover:bg-amber-100"
-                                      }`}
+                                      className={`border-t border-amber-100 dark:border-amber-800/30 cursor-pointer transition ${isChecked ? "bg-amber-100 dark:bg-amber-800/40" : idx % 2 === 0 ? "bg-white dark:bg-slate-800/30 hover:bg-amber-50" : "bg-amber-50/40 dark:bg-amber-900/10 hover:bg-amber-100"
+                                        }`}
                                     >
                                       <td className="px-3 py-1.5" onClick={(e) => e.stopPropagation()}>
                                         <input type="checkbox" className="rounded border-amber-400" checked={isChecked}
@@ -1753,13 +1752,12 @@ const InventoryManagerNew: React.FC = () => {
                               return (
                                 <div key={item.id}
                                   onClick={() => setReorderSelectedIds(prev => { const next = new Set(prev); if (next.has(item.id)) next.delete(item.id); else next.add(item.id); return next; })}
-                                  className={`rounded-lg p-3 border cursor-pointer transition ${
-                                    isChecked ? "bg-amber-100 dark:bg-amber-800/40 border-amber-400" : "bg-white dark:bg-slate-800 border-amber-200 dark:border-amber-700"
-                                  }`}
+                                  className={`rounded-lg p-3 border cursor-pointer transition ${isChecked ? "bg-amber-100 dark:bg-amber-800/40 border-amber-400" : "bg-white dark:bg-slate-800 border-amber-200 dark:border-amber-700"
+                                    }`}
                                 >
                                   <div className="flex justify-between items-start">
                                     <div className="flex items-start gap-2 flex-1 min-w-0">
-                                      <input type="checkbox" className="rounded border-amber-400 mt-0.5 flex-shrink-0" checked={isChecked} onChange={() => {}} onClick={(e) => e.stopPropagation()} />
+                                      <input type="checkbox" className="rounded border-amber-400 mt-0.5 flex-shrink-0" checked={isChecked} onChange={() => { }} onClick={(e) => e.stopPropagation()} />
                                       <div className="min-w-0">
                                         <div className="font-medium text-sm text-slate-900 dark:text-slate-100 truncate">{item.name}</div>
                                         {item.sku && <div className="text-[10px] text-slate-400 mt-0.5">{item.sku}</div>}
@@ -1789,11 +1787,10 @@ const InventoryManagerNew: React.FC = () => {
                           setSelectedItems(Array.from(reorderSelectedIds));
                           setShowCreatePO(true);
                         }}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition flex-shrink-0 ${
-                          reorderSelectedIds.size > 0
-                            ? "bg-amber-600 hover:bg-amber-700 text-white shadow-sm"
-                            : "bg-slate-200 dark:bg-slate-700 text-slate-400 cursor-not-allowed"
-                        }`}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition flex-shrink-0 ${reorderSelectedIds.size > 0
+                          ? "bg-amber-600 hover:bg-amber-700 text-white shadow-sm"
+                          : "bg-slate-200 dark:bg-slate-700 text-slate-400 cursor-not-allowed"
+                          }`}
                       >
                         <ShoppingCart className="w-3.5 h-3.5" />
                         Đặt hàng đã chọn {reorderSelectedIds.size > 0 ? `(${reorderSelectedIds.size})` : ""}
@@ -1885,17 +1882,16 @@ const InventoryManagerNew: React.FC = () => {
                           <div className="flex items-start justify-between gap-2">
                             <div className="flex-1 min-w-0">
                               {/* Tên sản phẩm: hiển thị đầy đủ */}
-                              <div className="text-[15px] font-medium text-white leading-tight">
+                              <div className="text-[15px] font-medium text-slate-900 dark:text-white leading-tight">
                                 {part.name}
                               </div>
-                              <div className="text-[11px] text-blue-400 mt-1 truncate font-mono">
+                              <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 truncate font-mono">
                                 SKU: {part.sku}
                               </div>
-                              {/* Danh mục với màu sắc */}
+                              {/* Danh mục với viền */}
                               {part.category && (
                                 <span
-                                  className={`inline-flex items-center px-2 py-0.5 mt-1.5 rounded-full text-[10px] font-medium ${getCategoryColor(part.category).bg
-                                    } ${getCategoryColor(part.category).text}`}
+                                  className="inline-flex items-center px-1.5 py-0.5 mt-1.5 rounded text-[10px] font-medium border border-slate-300 dark:border-slate-600 text-slate-500 dark:text-slate-400"
                                 >
                                   {part.category}
                                 </span>
@@ -1903,11 +1899,11 @@ const InventoryManagerNew: React.FC = () => {
                             </div>
                             <div className="text-right flex-shrink-0">
                               {/* Hiển thị giá bán */}
-                              <div className="text-[13px] text-emerald-400 font-semibold">
+                              <div className="text-[13px] text-slate-900 dark:text-white font-semibold">
                                 {formatCurrency(retailPrice)}
                               </div>
                               {/* Hiển thị giá nhập */}
-                              <div className="text-[10px] text-slate-400 mt-0.5">
+                              <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
                                 Vốn: {formatCurrency(costPrice)}
                               </div>
                             </div>
@@ -1916,10 +1912,10 @@ const InventoryManagerNew: React.FC = () => {
                             {/* Badge số lượng tồn kho */}
                             <span
                               className={`inline-flex items-center gap-1 px-2.5 py-1 text-sm font-bold rounded-lg ${stock === 0
-                                ? "text-red-300 bg-red-900/40 border border-red-700/50"
-                                : stock < LOW_STOCK_THRESHOLD
-                                  ? "text-yellow-300 bg-yellow-900/40 border border-yellow-700/50"
-                                  : "text-emerald-300 bg-emerald-900/40 border border-emerald-700/50"
+                                ? "text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/40 border border-red-200 dark:border-red-700/50"
+                                : stock <= LOW_STOCK_THRESHOLD
+                                  ? "text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/40 border border-amber-200 dark:border-amber-700/50"
+                                  : "text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
                                 }`}
                             >
                               <span className="text-xs opacity-80">SL:</span>

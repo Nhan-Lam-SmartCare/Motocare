@@ -121,7 +121,7 @@ const SalesManager: React.FC = () => {
     // 🔹 REALTIME SUBSCRIPTION - Auto refresh when sales change
     useEffect(() => {
         console.log("[SalesManager] Setting up realtime subscription for sales...");
-        
+
         const channel = supabase
             .channel("sales_realtime")
             .on(
@@ -331,14 +331,14 @@ const SalesManager: React.FC = () => {
         const outOfStockItems = cart.cartItems.filter(item => {
             const part = repoParts.find(p => p.id === item.partId);
             if (!part) return true; // Part not found = out of stock
-            
+
             const stock = part.stock[currentBranchId] || 0;
             const reserved = part.reserved?.[currentBranchId] || 0;
             const available = stock - reserved;
-            
+
             return item.quantity > available;
         });
-        
+
         if (outOfStockItems.length > 0) {
             const itemNames = outOfStockItems.map(i => i.partName).join(", ");
             showToast.error(`Không đủ hàng trong kho: ${itemNames}`);
@@ -660,9 +660,9 @@ const SalesManager: React.FC = () => {
                             </button>
                             <button
                                 onClick={() => barcode.setShowBarcodeInput(!barcode.showBarcodeInput)}
-                                className="flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:shadow-lg transition-all shrink-0"
+                                className="flex items-center gap-2 px-4 py-3 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition-all shrink-0 border border-slate-300 dark:border-slate-600"
                             >
-                                <ScanLine className="w-5 h-5" />
+                                <ScanLine className="w-5 h-5 text-purple-500" />
                                 <span className="font-medium hidden md:inline">Quét mã</span>
                             </button>
                         </div>
@@ -677,16 +677,16 @@ const SalesManager: React.FC = () => {
                                 <button
                                     type="button"
                                     onClick={() => inventory.setStockFilter("all")}
-                                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all whitespace-nowrap ${inventory.stockFilter === "all"
-                                        ? "bg-blue-500 text-white shadow-md"
-                                        : "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 hover:bg-blue-100 dark:hover:bg-blue-900/30"
+                                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${inventory.stockFilter === "all"
+                                        ? "bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400"
+                                        : "bg-slate-100 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800"
                                         }`}
                                 >
                                     <span>Tất cả</span>
                                     <span
-                                        className={`px-1.5 py-0.5 rounded-full text-[10px] font-black ${inventory.stockFilter === "all"
-                                            ? "bg-white/30"
-                                            : "bg-white dark:bg-slate-800"
+                                        className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${inventory.stockFilter === "all"
+                                            ? "bg-blue-100 dark:bg-blue-500/20"
+                                            : "bg-slate-200 dark:bg-slate-700"
                                             }`}
                                     >
                                         {inventory.repoParts.length}
@@ -695,16 +695,16 @@ const SalesManager: React.FC = () => {
                                 <button
                                     type="button"
                                     onClick={() => inventory.setStockFilter("low")}
-                                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all whitespace-nowrap ${inventory.stockFilter === "low"
-                                        ? "bg-amber-500 text-white shadow-md"
-                                        : "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 hover:bg-amber-100 dark:hover:bg-amber-900/30"
+                                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${inventory.stockFilter === "low"
+                                        ? "bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                                        : "bg-slate-100 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800"
                                         }`}
                                 >
-                                    <span>Tên thấp</span>
+                                    <span>Tồn thấp</span>
                                     <span
-                                        className={`px-1.5 py-0.5 rounded-full text-[10px] font-black ${inventory.stockFilter === "low"
-                                            ? "bg-white/30"
-                                            : "bg-white dark:bg-slate-800"
+                                        className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${inventory.stockFilter === "low"
+                                            ? "bg-amber-100 dark:bg-amber-500/20"
+                                            : "bg-slate-200 dark:bg-slate-700"
                                             }`}
                                     >
                                         {inventory.repoParts.filter(p => {
@@ -716,16 +716,16 @@ const SalesManager: React.FC = () => {
                                 <button
                                     type="button"
                                     onClick={() => inventory.setStockFilter("out")}
-                                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all whitespace-nowrap ${inventory.stockFilter === "out"
-                                        ? "bg-red-500 text-white shadow-md"
-                                        : "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 hover:bg-red-100 dark:hover:bg-red-900/30"
+                                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${inventory.stockFilter === "out"
+                                        ? "bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400"
+                                        : "bg-slate-100 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800"
                                         }`}
                                 >
                                     <span>Hết hàng</span>
                                     <span
-                                        className={`px-1.5 py-0.5 rounded-full text-[10px] font-black ${inventory.stockFilter === "out"
-                                            ? "bg-white/30"
-                                            : "bg-white dark:bg-slate-800"
+                                        className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${inventory.stockFilter === "out"
+                                            ? "bg-red-100 dark:bg-red-500/20"
+                                            : "bg-slate-200 dark:bg-slate-700"
                                             }`}
                                     >
                                         {inventory.repoParts.filter(p => {
@@ -736,19 +736,19 @@ const SalesManager: React.FC = () => {
                                 </button>
 
                                 {/* Wholesale Toggle */}
-                                <div className="h-6 w-px bg-slate-300 dark:bg-slate-600 mx-1"></div>
+                                <div className="hidden md:block h-6 w-px bg-slate-200 dark:bg-slate-700 mx-1"></div>
                                 <button
                                     type="button"
                                     onClick={() => cart.setIsWholesaleMode(!cart.isWholesaleMode)}
-                                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all whitespace-nowrap ${cart.isWholesaleMode
-                                        ? "bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-md"
-                                        : "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 hover:bg-green-100 dark:hover:bg-green-900/30"
+                                    className={`hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${cart.isWholesaleMode
+                                        ? "bg-green-50 dark:bg-green-500/10 text-green-600 dark:text-green-400"
+                                        : "bg-slate-100 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800"
                                         }`}
                                     title="Bật để tự động áp dụng giá sỉ khi thêm sản phẩm"
                                 >
                                     <span>💰 Giá sỉ</span>
                                     {cart.isWholesaleMode && (
-                                        <span className="px-1.5 py-0.5 rounded-full text-[10px] font-black bg-white/30">
+                                        <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-green-100 dark:bg-green-500/20">
                                             ON
                                         </span>
                                     )}

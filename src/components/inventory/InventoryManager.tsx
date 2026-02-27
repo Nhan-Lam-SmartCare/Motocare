@@ -415,7 +415,7 @@ const InventoryManagerNew: React.FC = () => {
     return Array.from(map.values());
   }, [reorderAlertItems]);
 
-  const [showReorderAlert, setShowReorderAlert] = useState(true);
+  const [showReorderAlert, setShowReorderAlert] = useState(false);
   const [reorderSelectedIds, setReorderSelectedIds] = useState<Set<string>>(new Set());
 
   const stockQuickFilters = useMemo(

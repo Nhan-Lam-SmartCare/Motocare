@@ -248,8 +248,8 @@ const QuickServiceModal: React.FC<QuickServiceModalProps> = ({
           vehicleModel: matchedVehicle?.model || "",
           licensePlate:
             matchedVehicle?.licensePlate ||
-              (matchedCustomer as any).licenseplate ||
-              (matchedCustomer as any).license_plate ||
+            (matchedCustomer as any).licenseplate ||
+            (matchedCustomer as any).license_plate ||
             licensePlate,
           loyaltyPoints: loyaltyPoints,
         } as CustomerInfo & { loyaltyPoints: number });
@@ -317,7 +317,7 @@ const QuickServiceModal: React.FC<QuickServiceModalProps> = ({
     <div className="fixed inset-0 bg-black/50 flex items-end md:items-center justify-center z-[70] md:p-4 modal-bottom-safe">
       <div className="bg-white dark:bg-slate-800 rounded-t-2xl md:rounded-xl w-full max-w-4xl max-h-[95vh] md:max-h-[90vh] overflow-hidden flex flex-col shadow-2xl animate-slide-up md:animate-none">
         {/* Header - Compact on mobile */}
-        <div className="flex justify-between items-center p-3 md:p-4 border-b border-slate-200 dark:border-slate-700 bg-gradient-to-r from-emerald-500 to-teal-500">
+        <div className="flex justify-between items-center p-3 md:p-4 border-b border-slate-200 dark:border-slate-700 bg-emerald-600">
           <div className="flex items-center gap-2 md:gap-3">
             <div className="w-8 h-8 md:w-10 md:h-10 bg-white/20 rounded-lg flex items-center justify-center">
               <Zap className="w-5 h-5 md:w-6 md:h-6 text-white" />
@@ -585,8 +585,8 @@ const QuickServiceModal: React.FC<QuickServiceModalProps> = ({
                   <button
                     onClick={() => setPaymentMethod("cash")}
                     className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${paymentMethod === "cash"
-                        ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300"
-                        : "border-slate-200 dark:border-slate-600 hover:border-emerald-300 text-slate-600 dark:text-slate-400"
+                      ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300"
+                      : "border-slate-200 dark:border-slate-600 hover:border-emerald-300 text-slate-600 dark:text-slate-400"
                       }`}
                   >
                     <Banknote className="w-8 h-8" />
@@ -595,8 +595,8 @@ const QuickServiceModal: React.FC<QuickServiceModalProps> = ({
                   <button
                     onClick={() => setPaymentMethod("bank")}
                     className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${paymentMethod === "bank"
-                        ? "border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300"
-                        : "border-slate-200 dark:border-slate-600 hover:border-blue-300 text-slate-600 dark:text-slate-400"
+                      ? "border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300"
+                      : "border-slate-200 dark:border-slate-600 hover:border-blue-300 text-slate-600 dark:text-slate-400"
                       }`}
                   >
                     <CreditCard className="w-8 h-8" />
@@ -941,8 +941,8 @@ const ServiceManagement: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             <div
               key={service.id}
               className={`flex items-center justify-between p-2 md:p-3 rounded-lg border ${service.is_active
-                  ? "bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600"
-                  : "bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700 opacity-60"
+                ? "bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600"
+                : "bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700 opacity-60"
                 }`}
             >
               <div className="flex items-center gap-2 md:gap-3 min-w-0 flex-1">
@@ -967,8 +967,8 @@ const ServiceManagement: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 <button
                   onClick={() => handleToggle(service)}
                   className={`p-1.5 md:p-2 rounded-lg ${service.is_active
-                      ? "text-green-600 hover:bg-green-100 dark:hover:bg-green-900/30"
-                      : "text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700"
+                    ? "text-green-600 hover:bg-green-100 dark:hover:bg-green-900/30"
+                    : "text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700"
                     }`}
                   title={service.is_active ? "Ẩn" : "Hiện"}
                 >

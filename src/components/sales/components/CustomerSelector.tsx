@@ -38,7 +38,7 @@ export const CustomerSelector: React.FC<CustomerSelectorProps> = ({
         <div className="relative customer-dropdown-container">
             {/* Selected Customer Display or Search Input */}
             {selectedCustomer ? (
-                <div className="flex items-center justify-between bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-300 dark:border-blue-700 rounded-lg px-4 py-3">
+                <div className="flex items-center justify-between bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-3 shadow-sm">
                     <div className="flex-1 min-w-0">
                         <p className="font-semibold text-slate-900 dark:text-white">
                             {selectedCustomer.name}
@@ -62,8 +62,8 @@ export const CustomerSelector: React.FC<CustomerSelectorProps> = ({
                                         <div
                                             key={vehicle.id || idx}
                                             className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium border ${vehicle.isPrimary
-                                                    ? 'bg-amber-100 dark:bg-amber-900/30 border-amber-300 dark:border-amber-700 text-amber-800 dark:text-amber-300'
-                                                    : 'bg-blue-100 dark:bg-blue-900/30 border-blue-300 dark:border-blue-700 text-blue-800 dark:text-blue-300'
+                                                ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400'
+                                                : 'bg-slate-100 dark:bg-slate-700 border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-300'
                                                 }`}
                                         >
                                             <Bike className="w-3 h-3" />
@@ -74,7 +74,7 @@ export const CustomerSelector: React.FC<CustomerSelectorProps> = ({
                                         </div>
                                     ))}
                                     {hasMore && (
-                                        <div className="inline-flex items-center px-2 py-1 rounded-md text-xs font-bold bg-blue-100 dark:bg-blue-900/30 border border-blue-300 dark:border-blue-700 text-blue-800 dark:text-blue-300">
+                                        <div className="inline-flex items-center px-2 py-1 rounded-md text-xs font-bold bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-400">
                                             +{vehicles.length - 3}
                                         </div>
                                     )}
@@ -102,7 +102,7 @@ export const CustomerSelector: React.FC<CustomerSelectorProps> = ({
                             }}
                             onFocus={() => onDropdownToggle(true)}
                             placeholder="Tìm khách hàng (tên, SĐT)..."
-                            className="w-full pl-10 pr-10 py-3 bg-white dark:bg-slate-800 border-2 border-slate-300 dark:border-slate-600 rounded-lg focus:border-blue-500 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                            className="w-full pl-10 pr-10 py-3 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg focus:border-blue-500 dark:focus:border-blue-400 focus:ring-1 focus:ring-blue-500 transition-all"
                         />
                         {isSearching && (
                             <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-blue-500 animate-spin" />
@@ -168,8 +168,8 @@ export const CustomerSelector: React.FC<CustomerSelectorProps> = ({
                                                     <div
                                                         key={vehicle.id || idx}
                                                         className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium border ${vehicle.isPrimary
-                                                                ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400'
-                                                                : 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-400'
+                                                            ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400'
+                                                            : 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-400'
                                                             }`}
                                                     >
                                                         <Bike className="w-3 h-3" />

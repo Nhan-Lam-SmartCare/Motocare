@@ -503,7 +503,7 @@ const SalesManager: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen max-w-full overflow-x-hidden bg-gradient-to-br from-slate-50 via-blue-50/20 to-indigo-50/30 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800 pb-16 md:pb-0">
+        <div className="min-h-screen max-w-full overflow-x-hidden bg-slate-50 dark:bg-slate-900 pb-16 md:pb-0">
             {/* Mobile Bottom Tabs */}
             <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 safe-area-bottom">
                 <div className="absolute inset-0 bg-white/80 dark:bg-slate-800/80 backdrop-blur-lg -z-10"></div>
@@ -572,8 +572,8 @@ const SalesManager: React.FC = () => {
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
                             <div className="flex items-center gap-3">
-                                <div className="p-2 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl shadow-lg">
-                                    <ShoppingCart className="w-6 h-6 text-white" />
+                                <div className="p-2 bg-blue-600 rounded-lg shadow-sm">
+                                    <ShoppingCart className="w-5 h-5 text-white" />
                                 </div>
                                 <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
                                     Quản lý bán hàng
@@ -650,7 +650,7 @@ const SalesManager: React.FC = () => {
                                 type="button"
                                 onClick={() => cart.setIsWholesaleMode(!cart.isWholesaleMode)}
                                 className={`md:hidden flex items-center gap-1 px-3 py-3 rounded-lg text-xs font-bold transition-all shrink-0 ${cart.isWholesaleMode
-                                    ? "bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-md"
+                                    ? "bg-green-600 text-white shadow-sm"
                                     : "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400"
                                     }`}
                                 title="Bật/tắt giá sỉ"
@@ -800,7 +800,7 @@ const SalesManager: React.FC = () => {
                             <div className="flex items-center justify-between mb-4">
                                 <h2 className="text-xl font-bold">Giỏ hàng</h2>
                                 {cart.isWholesaleMode && (
-                                    <span className="inline-flex items-center gap-1 px-2 py-1 bg-gradient-to-r from-green-500 to-emerald-500 text-white text-xs font-bold rounded-full shadow-sm">
+                                    <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-600 text-white text-xs font-bold rounded-full shadow-sm">
                                         💰 Giá sỉ
                                     </span>
                                 )}

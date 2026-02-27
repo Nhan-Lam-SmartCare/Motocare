@@ -188,25 +188,27 @@ export const EmployeeManagerMobile: React.FC<EmployeeManagerMobileProps> = ({
             {/* Stats Cards - Horizontal Scroll */}
             {activeTab === "list" && (
                 <div className="px-4 py-4 overflow-x-auto no-scrollbar flex gap-3 snap-x">
-                    <div className="snap-center shrink-0 w-[85%] bg-gradient-to-br from-blue-600 to-blue-800 p-4 rounded-2xl shadow-lg shadow-blue-900/20">
+                    <div className="snap-center shrink-0 w-[85%] bg-[#1e1e2d] border border-slate-700/50 p-4 rounded-xl shadow-sm relative overflow-hidden">
+                        <div className="absolute top-0 left-0 w-1 h-full bg-blue-500 rounded-l-xl"></div>
                         <div className="flex items-center justify-between mb-2">
-                            <span className="text-blue-100 text-xs font-medium">Tổng nhân viên</span>
-                            <Users className="w-5 h-5 text-blue-200" />
+                            <span className="text-slate-400 text-xs font-medium">Tổng nhân viên</span>
+                            <Users className="w-5 h-5 text-blue-500" />
                         </div>
                         <div className="text-2xl font-bold text-white">{stats.total}</div>
-                        <div className="text-blue-200 text-xs mt-1">{stats.active} đang làm việc</div>
+                        <div className="text-slate-500 text-xs mt-1">{stats.active} đang làm việc</div>
                     </div>
 
-                    <div className="snap-center shrink-0 w-[85%] bg-gradient-to-br from-purple-600 to-purple-800 p-4 rounded-2xl shadow-lg shadow-purple-900/20">
+                    <div className="snap-center shrink-0 w-[85%] bg-[#1e1e2d] border border-slate-700/50 p-4 rounded-xl shadow-sm relative overflow-hidden">
+                        <div className="absolute top-0 left-0 w-1 h-full bg-purple-500 rounded-l-xl"></div>
                         <div className="flex items-center justify-between mb-2">
-                            <span className="text-purple-100 text-xs font-medium">Tổng lương tháng</span>
-                            <DollarSign className="w-5 h-5 text-purple-200" />
+                            <span className="text-slate-400 text-xs font-medium">Tổng lương tháng</span>
+                            <DollarSign className="w-5 h-5 text-purple-500" />
                         </div>
                         <div className="text-2xl font-bold text-white">
                             {formatCurrency(stats.totalSalary).replace("₫", "")}
                             <span className="text-sm font-normal ml-1">đ</span>
                         </div>
-                        <div className="text-purple-200 text-xs mt-1">Ước tính</div>
+                        <div className="text-slate-500 text-xs mt-1">Ước tính</div>
                     </div>
                 </div>
             )}

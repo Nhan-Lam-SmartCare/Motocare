@@ -167,49 +167,54 @@ const EmployeeManager: React.FC = () => {
           </h2>
           <button
             onClick={() => setShowForm(true)}
-            className="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg text-sm font-medium shadow-md hover:shadow-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 flex items-center gap-1.5"
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 shadow-sm transition-colors flex items-center gap-1.5"
           >
             <Plus className="w-4 h-4" /> Thêm nhân viên
           </button>
         </div>
 
         {/* Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg p-4 text-white shadow-lg">
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-white/80 text-xs font-medium">
-                Tổng nhân viên
-              </span>
-              <Users className="w-6 h-6" />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700 shadow-sm relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-1 h-full bg-blue-500 rounded-l-xl"></div>
+            <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 text-sm font-medium mb-3">
+              <Users className="w-5 h-5 text-blue-500" />
+              Tổng nhân viên
             </div>
-            <div className="text-2xl font-bold">{stats.total}</div>
-            <div className="text-white/70 text-xs mt-1">
+            <div className="text-2xl font-bold text-slate-900 dark:text-white">
+              {stats.total}
+            </div>
+            <div className="text-slate-500 dark:text-slate-400 text-xs mt-1">
               {stats.active} đang làm việc
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-lg p-4 text-white shadow-lg">
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-white/80 text-xs font-medium">
-                Đang hoạt động
-              </span>
-              <UserCheck className="w-6 h-6" />
+          <div className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700 shadow-sm relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-1 h-full bg-emerald-500 rounded-l-xl"></div>
+            <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 text-sm font-medium mb-3">
+              <UserCheck className="w-5 h-5 text-emerald-500" />
+              Đang hoạt động
             </div>
-            <div className="text-2xl font-bold">{stats.active}</div>
-            <div className="text-white/70 text-xs mt-1">Nhân viên active</div>
+            <div className="text-2xl font-bold text-slate-900 dark:text-white">
+              {stats.active}
+            </div>
+            <div className="text-slate-500 dark:text-slate-400 text-xs mt-1">
+              Nhân viên active
+            </div>
           </div>
 
-          <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg p-4 text-white shadow-lg">
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-white/80 text-xs font-medium">
-                Tổng lương tháng
-              </span>
-              <DollarSign className="w-6 h-6" />
+          <div className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700 shadow-sm relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-1 h-full bg-purple-500 rounded-l-xl"></div>
+            <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 text-sm font-medium mb-3">
+              <DollarSign className="w-5 h-5 text-purple-500" />
+              Tổng lương tháng
             </div>
-            <div className="text-xl font-bold">
+            <div className="text-2xl font-bold text-slate-900 dark:text-white">
               {formatCurrency(stats.totalSalary)}
             </div>
-            <div className="text-white/70 text-xs mt-1">Ước tính</div>
+            <div className="text-slate-500 dark:text-slate-400 text-xs mt-1">
+              Ước tính
+            </div>
           </div>
         </div>
 
@@ -246,8 +251,8 @@ const EmployeeManager: React.FC = () => {
               key={tab.key}
               onClick={() => setActiveTab(tab.key as Tab)}
               className={`px-4 py-2 text-sm font-medium transition-all ${activeTab === tab.key
-                  ? "text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400"
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
+                ? "text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400"
+                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
                 }`}
             >
               <span className="inline-flex items-center gap-1">
@@ -359,10 +364,10 @@ const EmployeeManager: React.FC = () => {
                         <td className="px-6 py-4">
                           <span
                             className={`px-2.5 py-1 text-xs font-medium rounded-full ${emp.status === "active"
-                                ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400/80"
-                                : emp.status === "inactive"
-                                  ? "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400/80"
-                                  : "bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-400/80"
+                              ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400/80"
+                              : emp.status === "inactive"
+                                ? "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400/80"
+                                : "bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-400/80"
                               }`}
                           >
                             {emp.status === "active"
@@ -637,7 +642,7 @@ const EmployeeManager: React.FC = () => {
                 <div className="flex gap-3 pt-4">
                   <button
                     type="submit"
-                    className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg font-medium shadow-md hover:shadow-xl hover:from-blue-700 hover:to-indigo-700 transition-all inline-flex items-center justify-center gap-2"
+                    className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg font-medium shadow-sm hover:bg-blue-700 transition-colors inline-flex items-center justify-center gap-2"
                   >
                     {editingEmployee ? (
                       <>

@@ -121,7 +121,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
             {/* Hover Effect */}
             {!isOutOfStock && (
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+                <div className="absolute inset-0 bg-slate-500/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
             )}
         </div>
     );

@@ -195,13 +195,13 @@ const CashBook: React.FC = () => {
   // ✅ FIX: Refactored transaction type detection with clear priority
   const isIncomeTx = (tx: CashTransaction) => {
     const normalizedCategory = String(tx.category || "").trim().toLowerCase();
-    
+
     // Priority 1: Check expense categories first (more specific)
     if (EXPENSE_CATEGORIES.has(normalizedCategory)) return false;
-    
+
     // Priority 2: Check income categories
     if (INCOME_CATEGORIES.has(normalizedCategory)) return true;
-    
+
     // Priority 3: Fallback to type field only if category not recognized
     return tx.type === "income" || tx.type === "deposit";
   };
@@ -236,7 +236,7 @@ const CashBook: React.FC = () => {
         } else {
           delta = -Math.abs(tx.amount); // Expense luôn trừ (âm)
         }
-        
+
         // Log first 5 transactions for debugging
         if (allBranchTransactions.filter((t) => t.paymentSourceId === "cash").indexOf(tx) < 5) {
           console.log('[DEBUG] Cash tx:', {
@@ -392,74 +392,8 @@ const CashBook: React.FC = () => {
       <div className="block md:hidden">
         <CashBookMobile />
       </div>
-      <div className="hidden md:block h-full flex flex-col bg-slate-50 dark:bg-slate-900">
-        {/* Header */}
-        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-slate-800 dark:to-slate-800 border-b border-slate-200 dark:border-slate-700 px-4 py-4">
-          <div className="flex items-center justify-between">
-            {/* Title Section */}
-            <div>
-              <h1 className="text-lg md:text-xl font-bold text-slate-900 dark:text-white">
-                Sổ quỹ
-              </h1>
-              <p className="text-xs md:text-sm text-slate-600 dark:text-slate-400 mt-0.5">
-                Theo dõi thu chi tiền mặt và chuyển khoản
-              </p>
-            </div>
+      <div className="hidden md:block h-full flex flex-col bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700">
 
-            {/* Action Buttons */}
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setShowAddModal(true)}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium shadow-sm transition-colors flex items-center gap-2"
-              >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 4v16m8-8H4"
-                  />
-                </svg>
-                <span>Thêm giao dịch</span>
-              </button>
-
-              <button
-                onClick={() => {
-                  setInitialCashBalance(savedInitialCash.toString());
-                  setInitialBankBalance(savedInitialBank.toString());
-                  setShowInitialBalanceModal(true);
-                }}
-                className="p-2.5 bg-white dark:bg-slate-700 hover:bg-amber-50 dark:hover:bg-slate-600 text-amber-600 dark:text-amber-400 rounded-xl shadow-sm border border-amber-200 dark:border-slate-600 transition-all"
-                title="Cài đặt số dư ban đầu"
-              >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-                  />
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                  />
-                </svg>
-              </button>
-            </div>
-          </div>
-        </div>
 
         {/* Modal cài đặt số dư ban đầu */}
         {showInitialBalanceModal && (
@@ -543,33 +477,58 @@ const CashBook: React.FC = () => {
         )}
 
         {/* Actual Balance Section - Always visible */}
-        <div className="p-3 md:p-4 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-slate-800 dark:to-slate-700 border-b-2 border-blue-200 dark:border-blue-800">
-          <div className="flex items-center justify-between mb-3">
+        <div className="p-3 md:p-4 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
+          <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-              </svg>
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+              <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
                 Số dư thực tế
               </h3>
-              <span className="text-xs text-slate-500 dark:text-slate-400 font-normal">
+              <span className="text-xs text-slate-500 dark:text-slate-400 font-normal m-0" style={{ transform: "translateY(1px)" }}>
                 (Tổng cộng từ đầu)
               </span>
             </div>
+
+            <div className="flex items-center gap-2">
+              {/* Action Buttons */}
+              <button
+                onClick={() => setShowAddModal(true)}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium shadow-sm transition-colors flex items-center gap-2"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                <span>Thêm giao dịch</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  setInitialCashBalance(savedInitialCash.toString());
+                  setInitialBankBalance(savedInitialBank.toString());
+                  setShowInitialBalanceModal(true);
+                }}
+                className="p-2.5 bg-white dark:bg-slate-700 hover:bg-amber-50 dark:hover:bg-slate-600 text-amber-600 dark:text-amber-400 rounded-lg shadow-sm border border-amber-200 dark:border-slate-600 transition-all"
+                title="Cài đặt số dư ban đầu"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </button>
+            </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <div className="bg-white dark:bg-slate-800 rounded-lg p-4 border-2 border-amber-300 dark:border-amber-700 shadow-sm">
-              <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 text-sm font-semibold mb-2">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700 shadow-sm relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-1 h-full bg-amber-500 rounded-l-xl"></div>
+              <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 text-sm font-medium mb-3">
+                <svg className="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
                 </svg>
                 Tiền mặt
               </div>
-              <div className={`text-2xl font-bold ${
-                actualBalance.cashBalance >= 0 
-                  ? "text-amber-900 dark:text-amber-100" 
-                  : "text-red-600 dark:text-red-400"
-              }`}>
+              <div className={`text-2xl font-bold ${actualBalance.cashBalance >= 0
+                ? "text-slate-900 dark:text-white"
+                : "text-red-600 dark:text-red-400"
+                }`}>
                 {formatCurrency(actualBalance.cashBalance)}
               </div>
               {actualBalance.cashBalance < 0 && (
@@ -578,18 +537,18 @@ const CashBook: React.FC = () => {
                 </div>
               )}
             </div>
-            <div className="bg-white dark:bg-slate-800 rounded-lg p-4 border-2 border-purple-300 dark:border-purple-700 shadow-sm">
-              <div className="flex items-center gap-2 text-purple-600 dark:text-purple-400 text-sm font-semibold mb-2">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700 shadow-sm relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-1 h-full bg-indigo-500 rounded-l-xl"></div>
+              <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 text-sm font-medium mb-3">
+                <svg className="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
                 </svg>
                 Ngân hàng
               </div>
-              <div className={`text-2xl font-bold ${
-                actualBalance.bankBalance >= 0 
-                  ? "text-purple-900 dark:text-purple-100" 
-                  : "text-red-600 dark:text-red-400"
-              }`}>
+              <div className={`text-2xl font-bold ${actualBalance.bankBalance >= 0
+                ? "text-slate-900 dark:text-white"
+                : "text-red-600 dark:text-red-400"
+                }`}>
                 {formatCurrency(actualBalance.bankBalance)}
               </div>
               {actualBalance.bankBalance < 0 && (
@@ -598,18 +557,18 @@ const CashBook: React.FC = () => {
                 </div>
               )}
             </div>
-            <div className="bg-white dark:bg-slate-800 rounded-lg p-4 border-2 border-blue-300 dark:border-blue-700 shadow-sm">
-              <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400 text-sm font-semibold mb-2">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700 shadow-sm relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-1 h-full bg-blue-500 rounded-l-xl"></div>
+              <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 text-sm font-medium mb-3">
+                <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 Tổng cộng
               </div>
-              <div className={`text-2xl font-bold ${
-                actualBalance.totalBalance >= 0 
-                  ? "text-blue-900 dark:text-blue-100" 
-                  : "text-red-600 dark:text-red-400"
-              }`}>
+              <div className={`text-2xl font-bold ${actualBalance.totalBalance >= 0
+                ? "text-blue-600 dark:text-blue-400"
+                : "text-red-600 dark:text-red-400"
+                }`}>
                 {formatCurrency(actualBalance.totalBalance)}
               </div>
             </div>
@@ -618,74 +577,65 @@ const CashBook: React.FC = () => {
 
         {/* Filtered Summary Section - Only show when filtered */}
         {isFilteredView && (
-          <div className="p-3 md:p-4 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
+          <div className="p-3 md:p-4 bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-700">
             <div className="flex items-center gap-2 mb-3">
-              <svg className="w-4 h-4 text-slate-600 dark:text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 text-slate-500 dark:text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
               </svg>
-              <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+              <h4 className="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
                 Tóm tắt kỳ lọc
               </h4>
               <span className="text-xs text-slate-500 dark:text-slate-400">
                 ({filteredTransactions.length} giao dịch)
               </span>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
-              <div className="bg-white dark:bg-slate-800 rounded-lg p-3 border border-green-200 dark:border-green-800">
-                <div className="flex items-center gap-1.5 text-green-600 dark:text-green-400 text-xs font-medium mb-1">
-                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 11l5-5m0 0l5 5m-5-5v12" />
-                  </svg>
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+              <div className="bg-white dark:bg-slate-800 rounded-lg p-3 border border-slate-200 dark:border-slate-700 border-t-2 border-t-green-500 shadow-sm">
+                <div className="text-slate-500 dark:text-slate-400 text-xs font-medium mb-1">
                   Thu
                 </div>
-                <div className="text-green-900 dark:text-green-100 text-lg font-bold">
+                <div className="text-slate-900 dark:text-white text-lg font-bold">
                   {formatCurrency(filteredSummary.income)}
                 </div>
               </div>
-              <div className="bg-white dark:bg-slate-800 rounded-lg p-3 border border-red-200 dark:border-red-800">
-                <div className="flex items-center gap-1.5 text-red-600 dark:text-red-400 text-xs font-medium mb-1">
-                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 13l-5 5m0 0l-5-5m5 5V6" />
-                  </svg>
+              <div className="bg-white dark:bg-slate-800 rounded-lg p-3 border border-slate-200 dark:border-slate-700 border-t-2 border-t-red-500 shadow-sm">
+                <div className="text-slate-500 dark:text-slate-400 text-xs font-medium mb-1">
                   Chi
                 </div>
-                <div className="text-red-900 dark:text-red-100 text-lg font-bold">
+                <div className="text-slate-900 dark:text-white text-lg font-bold">
                   {formatCurrency(filteredSummary.expense)}
                 </div>
               </div>
-              <div className="bg-white dark:bg-slate-800 rounded-lg p-3 border border-blue-200 dark:border-blue-800">
-                <div className="text-blue-600 dark:text-blue-400 text-xs font-medium mb-1">
+              <div className="bg-white dark:bg-slate-800 rounded-lg p-3 border border-slate-200 dark:border-slate-700 border-t-2 border-t-blue-500 shadow-sm">
+                <div className="text-slate-500 dark:text-slate-400 text-xs font-medium mb-1">
                   Chênh lệch
                 </div>
-                <div className={`text-lg font-bold ${
-                  filteredSummary.balance >= 0 
-                    ? "text-blue-900 dark:text-blue-100" 
-                    : "text-red-600 dark:text-red-400"
-                }`}>
+                <div className={`text-lg font-bold ${filteredSummary.balance >= 0
+                  ? "text-blue-600 dark:text-blue-400"
+                  : "text-red-600 dark:text-red-400"
+                  }`}>
                   {formatCurrency(filteredSummary.balance)}
                 </div>
               </div>
-              <div className="bg-white dark:bg-slate-800 rounded-lg p-3 border border-amber-200 dark:border-amber-800">
-                <div className="text-amber-600 dark:text-amber-400 text-xs font-medium mb-1">
+              <div className="bg-white dark:bg-slate-800 rounded-lg p-3 border border-slate-200 dark:border-slate-700 border-t-2 border-t-amber-500 shadow-sm">
+                <div className="text-slate-500 dark:text-slate-400 text-xs font-medium mb-1">
                   TM trong kỳ
                 </div>
-                <div className={`text-lg font-bold ${
-                  filteredSummary.cashBalance >= 0 
-                    ? "text-amber-900 dark:text-amber-100" 
-                    : "text-red-600 dark:text-red-400"
-                }`}>
+                <div className={`text-lg font-bold ${filteredSummary.cashBalance >= 0
+                  ? "text-slate-900 dark:text-white"
+                  : "text-red-600 dark:text-red-400"
+                  }`}>
                   {filteredSummary.cashBalance >= 0 ? "+" : ""}{formatCurrency(filteredSummary.cashBalance)}
                 </div>
               </div>
-              <div className="bg-white dark:bg-slate-800 rounded-lg p-3 border border-purple-200 dark:border-purple-800">
-                <div className="text-purple-600 dark:text-purple-400 text-xs font-medium mb-1">
+              <div className="bg-white dark:bg-slate-800 rounded-lg p-3 border border-slate-200 dark:border-slate-700 border-t-2 border-t-indigo-500 shadow-sm">
+                <div className="text-slate-500 dark:text-slate-400 text-xs font-medium mb-1">
                   NH trong kỳ
                 </div>
-                <div className={`text-lg font-bold ${
-                  filteredSummary.bankBalance >= 0 
-                    ? "text-purple-900 dark:text-purple-100" 
-                    : "text-red-600 dark:text-red-400"
-                }`}>
+                <div className={`text-lg font-bold ${filteredSummary.bankBalance >= 0
+                  ? "text-slate-900 dark:text-white"
+                  : "text-red-600 dark:text-red-400"
+                  }`}>
                   {filteredSummary.bankBalance >= 0 ? "+" : ""}{formatCurrency(filteredSummary.bankBalance)}
                 </div>
               </div>
@@ -1012,11 +962,10 @@ const CashBook: React.FC = () => {
                     return (
                       <tr
                         key={tx.id}
-                        className={`group transition-colors duration-100 border-l-4 ${
-                          txIsIncome
-                            ? "border-l-green-400 hover:bg-green-50/50 dark:hover:bg-green-900/10"
-                            : "border-l-red-400 hover:bg-red-50/50 dark:hover:bg-red-900/10"
-                        }`}
+                        className={`group transition-colors duration-100 border-l-4 ${txIsIncome
+                          ? "border-l-green-400 hover:bg-green-50/50 dark:hover:bg-green-900/10"
+                          : "border-l-red-400 hover:bg-red-50/50 dark:hover:bg-red-900/10"
+                          }`}
                       >
                         <td className="px-4 py-4 text-sm text-slate-900 dark:text-slate-100">
                           <div className="flex flex-col">
@@ -1036,11 +985,10 @@ const CashBook: React.FC = () => {
                         </td>
                         <td className="px-4 py-4">
                           <span
-                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border ${
-                              txIsIncome
-                                ? "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 border-green-200 dark:border-green-700/50"
-                                : "bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 border-red-200 dark:border-red-700/50"
-                            }`}
+                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border ${txIsIncome
+                              ? "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 border-green-200 dark:border-green-700/50"
+                              : "bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 border-red-200 dark:border-red-700/50"
+                              }`}
                           >
                             <span className={`w-2 h-2 rounded-full ${txIsIncome ? "bg-green-500" : "bg-red-500"}`} />
                             {txIsIncome ? "↑ Thu" : "↓ Chi"}
@@ -1089,11 +1037,10 @@ const CashBook: React.FC = () => {
                           })()}
                         </td>
                         <td
-                          className={`px-4 py-4 text-right text-sm font-bold ${
-                            txIsIncome
-                              ? "text-green-600 dark:text-green-400"
-                              : "text-red-600 dark:text-red-400"
-                          }`}
+                          className={`px-4 py-4 text-right text-sm font-bold ${txIsIncome
+                            ? "text-green-600 dark:text-green-400"
+                            : "text-red-600 dark:text-red-400"
+                            }`}
                         >
                           {txIsIncome ? "+" : "-"}
                           {formatCurrency(Math.abs(tx.amount))}
@@ -1165,11 +1112,10 @@ const CashBook: React.FC = () => {
                         <div className="text-xs font-semibold text-red-600 dark:text-red-400">
                           {formatCurrency(filteredSummary.expense)}
                         </div>
-                        <div className={`text-sm font-bold pt-1 border-t border-slate-200 dark:border-slate-600 ${
-                          filteredSummary.balance >= 0
-                            ? "text-blue-700 dark:text-blue-300"
-                            : "text-red-600 dark:text-red-400"
-                        }`}>
+                        <div className={`text-sm font-bold pt-1 border-t border-slate-200 dark:border-slate-600 ${filteredSummary.balance >= 0
+                          ? "text-blue-700 dark:text-blue-300"
+                          : "text-red-600 dark:text-red-400"
+                          }`}>
                           = {formatCurrency(filteredSummary.balance)}
                         </div>
                       </div>
@@ -1181,115 +1127,115 @@ const CashBook: React.FC = () => {
             </table>
           </div>
 
-        {/* Add Transaction Modal */}
-        {showAddModal && (
-          <AddTransactionModal
-            onClose={() => setShowAddModal(false)}
-            onSave={async (transaction) => {
-              // Basic validation
-              if (!transaction.amount || transaction.amount <= 0) {
-                showToast.warning("Số tiền phải > 0");
-                return;
-              }
-              try {
-                const res = await createCashTxRepo.mutateAsync({
-                  type: transaction.type,
-                  amount: transaction.amount,
-                  branchId: currentBranchId,
-                  paymentSourceId: transaction.paymentSourceId,
-                  date: transaction.date,
-                  notes: transaction.notes,
-                  category: transaction.category,
-                  recipient: transaction.recipient,
-                });
-                if (res?.ok) {
-                  // Optimistically update local state for immediate UI feedback
-                  setCashTransactions((prev) => [
-                    res.data as CashTransaction,
-                    ...prev,
-                  ]);
-                  const delta =
-                    transaction.type === "income"
-                      ? transaction.amount
-                      : -transaction.amount;
-                  await updatePaymentSourceBalanceRepo.mutateAsync({
-                    id: transaction.paymentSourceId,
+          {/* Add Transaction Modal */}
+          {showAddModal && (
+            <AddTransactionModal
+              onClose={() => setShowAddModal(false)}
+              onSave={async (transaction) => {
+                // Basic validation
+                if (!transaction.amount || transaction.amount <= 0) {
+                  showToast.warning("Số tiền phải > 0");
+                  return;
+                }
+                try {
+                  const res = await createCashTxRepo.mutateAsync({
+                    type: transaction.type,
+                    amount: transaction.amount,
                     branchId: currentBranchId,
-                    delta,
+                    paymentSourceId: transaction.paymentSourceId,
+                    date: transaction.date,
+                    notes: transaction.notes,
+                    category: transaction.category,
+                    recipient: transaction.recipient,
                   });
-                  setPaymentSources((prev) =>
-                    prev.map((ps) =>
-                      ps.id === transaction.paymentSourceId
-                        ? {
-                          ...ps,
-                          balance: {
-                            ...ps.balance,
-                            [currentBranchId]:
-                              (ps.balance[currentBranchId] || 0) + delta,
-                          },
-                        }
-                        : ps
-                    )
+                  if (res?.ok) {
+                    // Optimistically update local state for immediate UI feedback
+                    setCashTransactions((prev) => [
+                      res.data as CashTransaction,
+                      ...prev,
+                    ]);
+                    const delta =
+                      transaction.type === "income"
+                        ? transaction.amount
+                        : -transaction.amount;
+                    await updatePaymentSourceBalanceRepo.mutateAsync({
+                      id: transaction.paymentSourceId,
+                      branchId: currentBranchId,
+                      delta,
+                    });
+                    setPaymentSources((prev) =>
+                      prev.map((ps) =>
+                        ps.id === transaction.paymentSourceId
+                          ? {
+                            ...ps,
+                            balance: {
+                              ...ps.balance,
+                              [currentBranchId]:
+                                (ps.balance[currentBranchId] || 0) + delta,
+                            },
+                          }
+                          : ps
+                      )
+                    );
+                    showToast.success("Đã thêm giao dịch sổ quỹ");
+                    setShowAddModal(false);
+                  } else if (res?.error) {
+                    showToast.error(res.error.message || "Ghi giao dịch thất bại");
+                  }
+                } catch (e: any) {
+                  showToast.error(e?.message || "Lỗi không xác định");
+                }
+              }}
+            />
+          )}
+
+          {/* Edit Transaction Modal */}
+          {editingTransaction && (
+            <EditTransactionModal
+              transaction={editingTransaction}
+              onClose={() => setEditingTransaction(null)}
+              onSave={async (updatedData) => {
+                try {
+                  const res = await updateCashTxRepo.mutateAsync({
+                    id: editingTransaction.id,
+                    ...updatedData,
+                  });
+                  if (res?.ok) {
+                    showToast.success("Đã cập nhật giao dịch");
+                    setEditingTransaction(null);
+                  } else if (res?.error) {
+                    showToast.error(res.error.message || "Cập nhật thất bại");
+                  }
+                } catch (e: any) {
+                  showToast.error(e?.message || "Lỗi không xác định");
+                }
+              }}
+            />
+          )}
+
+          {/* Delete Confirmation Modal */}
+          {deletingTransaction && (
+            <DeleteConfirmModal
+              transaction={deletingTransaction}
+              onClose={() => setDeletingTransaction(null)}
+              onConfirm={async () => {
+                try {
+                  const res = await deleteCashTxRepo.mutateAsync(
+                    deletingTransaction.id
                   );
-                  showToast.success("Đã thêm giao dịch sổ quỹ");
-                  setShowAddModal(false);
-                } else if (res?.error) {
-                  showToast.error(res.error.message || "Ghi giao dịch thất bại");
+                  if (res?.ok) {
+                    showToast.success("Đã xóa giao dịch");
+                    setDeletingTransaction(null);
+                  } else if (res?.error) {
+                    showToast.error(res.error.message || "Xóa thất bại");
+                  }
+                } catch (e: any) {
+                  showToast.error(e?.message || "Lỗi không xác định");
                 }
-              } catch (e: any) {
-                showToast.error(e?.message || "Lỗi không xác định");
-              }
-            }}
-          />
-        )}
-
-        {/* Edit Transaction Modal */}
-        {editingTransaction && (
-          <EditTransactionModal
-            transaction={editingTransaction}
-            onClose={() => setEditingTransaction(null)}
-            onSave={async (updatedData) => {
-              try {
-                const res = await updateCashTxRepo.mutateAsync({
-                  id: editingTransaction.id,
-                  ...updatedData,
-                });
-                if (res?.ok) {
-                  showToast.success("Đã cập nhật giao dịch");
-                  setEditingTransaction(null);
-                } else if (res?.error) {
-                  showToast.error(res.error.message || "Cập nhật thất bại");
-                }
-              } catch (e: any) {
-                showToast.error(e?.message || "Lỗi không xác định");
-              }
-            }}
-          />
-        )}
-
-        {/* Delete Confirmation Modal */}
-        {deletingTransaction && (
-          <DeleteConfirmModal
-            transaction={deletingTransaction}
-            onClose={() => setDeletingTransaction(null)}
-            onConfirm={async () => {
-              try {
-                const res = await deleteCashTxRepo.mutateAsync(
-                  deletingTransaction.id
-                );
-                if (res?.ok) {
-                  showToast.success("Đã xóa giao dịch");
-                  setDeletingTransaction(null);
-                } else if (res?.error) {
-                  showToast.error(res.error.message || "Xóa thất bại");
-                }
-              } catch (e: any) {
-                showToast.error(e?.message || "Lỗi không xác định");
-              }
-            }}
-          />
-        )}
-      </div>
+              }}
+            />
+          )}
+        </div>
       </div>
     </>
   );

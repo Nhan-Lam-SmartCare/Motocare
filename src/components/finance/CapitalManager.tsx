@@ -122,35 +122,35 @@ const CapitalManager: React.FC = () => {
       {/* Summary Cards */}
       <div className="p-3 md:p-4">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-          <div className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 rounded-lg border-2 border-purple-200 dark:border-purple-700 p-3">
-            <div className="text-xs text-purple-700 dark:text-purple-300 mb-1 font-medium">
+          <div className="bg-white dark:bg-slate-800 rounded-lg p-3 border border-slate-200 dark:border-slate-700 border-t-2 border-t-purple-500 shadow-sm">
+            <div className="text-xs text-slate-500 dark:text-slate-400 mb-1 font-medium">
               Tổng vốn
             </div>
-            <div className="text-xl font-bold text-purple-900 dark:text-purple-100">
+            <div className="text-xl font-bold text-slate-900 dark:text-white">
               {formatCurrency(summary.totalCapital)}
             </div>
           </div>
-          <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-3">
+          <div className="bg-white dark:bg-slate-800 rounded-lg p-3 border border-slate-200 dark:border-slate-700 border-t-2 border-t-blue-500 shadow-sm">
             <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">
               Vốn chủ
             </div>
-            <div className="text-xl font-bold text-blue-600 dark:text-blue-400">
+            <div className="text-xl font-bold text-slate-900 dark:text-white">
               {formatCurrency(summary.ownerCapital)}
             </div>
           </div>
-          <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-3">
+          <div className="bg-white dark:bg-slate-800 rounded-lg p-3 border border-slate-200 dark:border-slate-700 border-t-2 border-t-green-500 shadow-sm">
             <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">
               Vốn đầu tư
             </div>
-            <div className="text-xl font-bold text-green-600 dark:text-green-400">
+            <div className="text-xl font-bold text-slate-900 dark:text-white">
               {formatCurrency(summary.investorCapital)}
             </div>
           </div>
-          <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-3">
+          <div className="bg-white dark:bg-slate-800 rounded-lg p-3 border border-slate-200 dark:border-slate-700 border-t-2 border-t-orange-500 shadow-sm">
             <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">
               Vốn vay
             </div>
-            <div className="text-xl font-bold text-orange-600 dark:text-orange-400">
+            <div className="text-xl font-bold text-slate-900 dark:text-white">
               {formatCurrency(summary.loanCapital)}
             </div>
           </div>
@@ -172,11 +172,10 @@ const CapitalManager: React.FC = () => {
                 <button
                   key={option.value}
                   onClick={() => setFilterType(option.value)}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    filterType === option.value
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filterType === option.value
                       ? "bg-purple-600 text-white"
                       : "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600"
-                  }`}
+                    }`}
                 >
                   {option.label}
                 </button>
@@ -241,26 +240,26 @@ const CapitalCard: React.FC<{
 }> = ({ capital, onEdit, onDelete }) => {
   const getTypeInfo = (type: string) => {
     const info: Record<string, { label: string; color: string; icon: string }> =
-      {
-        owner: {
-          label: "Vốn chủ sở hữu",
-          color:
-            "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
-          icon: "👤",
-        },
-        investor: {
-          label: "Vốn đầu tư",
-          color:
-            "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
-          icon: "💼",
-        },
-        loan: {
-          label: "Vốn vay",
-          color:
-            "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400",
-          icon: "🏦",
-        },
-      };
+    {
+      owner: {
+        label: "Vốn chủ sở hữu",
+        color:
+          "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
+        icon: "👤",
+      },
+      investor: {
+        label: "Vốn đầu tư",
+        color:
+          "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
+        icon: "💼",
+      },
+      loan: {
+        label: "Vốn vay",
+        color:
+          "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400",
+        icon: "🏦",
+      },
+    };
     return info[type] || info.owner;
   };
 
@@ -347,8 +346,8 @@ const CapitalCard: React.FC<{
                 {capital.paymentFrequency === "monthly"
                   ? "Hàng tháng"
                   : capital.paymentFrequency === "quarterly"
-                  ? "Hàng quý"
-                  : "Hàng năm"}
+                    ? "Hàng quý"
+                    : "Hàng năm"}
               </div>
             </div>
             {capital.maturityDate && (
@@ -461,11 +460,10 @@ const CapitalModal: React.FC<{
                   key={option.value}
                   type="button"
                   onClick={() => setType(option.value as Capital["type"])}
-                  className={`px-4 py-3 rounded-lg border-2 font-medium transition-all ${
-                    type === option.value
+                  className={`px-4 py-3 rounded-lg border-2 font-medium transition-all ${type === option.value
                       ? `border-${option.color}-500 bg-${option.color}-50 dark:bg-${option.color}-900/20 text-${option.color}-700 dark:text-${option.color}-300`
                       : "border-slate-300 dark:border-slate-600 hover:border-slate-400 dark:hover:border-slate-500"
-                  }`}
+                    }`}
                 >
                   {option.label}
                 </button>
@@ -485,8 +483,8 @@ const CapitalModal: React.FC<{
                 type === "owner"
                   ? "VD: Vốn chủ - Nguyễn Văn A"
                   : type === "investor"
-                  ? "VD: Nhà đầu tư ABC"
-                  : "VD: Ngân hàng Vietcombank"
+                    ? "VD: Nhà đầu tư ABC"
+                    : "VD: Ngân hàng Vietcombank"
               }
               className="w-full px-4 py-2.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white"
               required

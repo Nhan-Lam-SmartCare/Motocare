@@ -120,7 +120,7 @@ const FixedAssetsManager: React.FC = () => {
       {/* Summary Cards */}
       <div className="p-3 md:p-4">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-          <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-3">
+          <div className="bg-white dark:bg-slate-800 rounded-lg p-3 border border-slate-200 dark:border-slate-700 border-t-2 border-t-slate-500 shadow-sm">
             <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">
               Tổng giá trị mua
             </div>
@@ -128,27 +128,27 @@ const FixedAssetsManager: React.FC = () => {
               {formatCurrency(summary.totalValue)}
             </div>
           </div>
-          <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-3">
+          <div className="bg-white dark:bg-slate-800 rounded-lg p-3 border border-slate-200 dark:border-slate-700 border-t-2 border-t-blue-500 shadow-sm">
             <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">
               Giá trị hiện tại
             </div>
-            <div className="text-xl font-bold text-blue-600 dark:text-blue-400">
+            <div className="text-xl font-bold text-slate-900 dark:text-white">
               {formatCurrency(summary.currentValue)}
             </div>
           </div>
-          <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-3">
+          <div className="bg-white dark:bg-slate-800 rounded-lg p-3 border border-slate-200 dark:border-slate-700 border-t-2 border-t-orange-500 shadow-sm">
             <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">
               Khấu hao lũy kế
             </div>
-            <div className="text-xl font-bold text-orange-600 dark:text-orange-400">
+            <div className="text-xl font-bold text-slate-900 dark:text-white">
               {formatCurrency(summary.totalDepreciation)}
             </div>
           </div>
-          <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-3">
+          <div className="bg-white dark:bg-slate-800 rounded-lg p-3 border border-slate-200 dark:border-slate-700 border-t-2 border-t-green-500 shadow-sm">
             <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">
               Tài sản đang dùng
             </div>
-            <div className="text-xl font-bold text-green-600 dark:text-green-400">
+            <div className="text-xl font-bold text-slate-900 dark:text-white">
               {summary.activeAssets}
             </div>
           </div>

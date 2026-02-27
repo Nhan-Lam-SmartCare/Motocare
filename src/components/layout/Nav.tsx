@@ -67,7 +67,7 @@ export function Nav() {
   } as const;
 
   return (
-    <nav className="bg-gradient-to-r from-red-600 via-red-500 to-yellow-500 border-b border-red-800/20 sticky top-0 z-50">
+    <nav className="bg-slate-900 border-b border-slate-800 sticky top-0 z-50">
       <div className="max-w-[1600px] mx-auto px-2 md:px-4 py-1 md:py-1.5">
         <div className="flex items-center justify-between">
           {/* Left: Brand and Branch Selector */}
@@ -331,7 +331,7 @@ export function Nav() {
             {/* Menu Drawer - Redesigned with modern style */}
             <div className="fixed inset-y-0 left-0 w-80 bg-gradient-to-br from-white to-slate-50 dark:from-slate-800 dark:to-slate-900 z-50 shadow-2xl md:hidden overflow-y-auto animate-slide-in-left">
               {/* Header with Profile */}
-              <div className="relative p-6 pb-8 bg-gradient-to-br from-red-600 to-yellow-500">
+              <div className="relative p-6 pb-8 bg-slate-900 border-b border-slate-800">
                 <button
                   onClick={() => setShowMobileMenu(false)}
                   className="absolute top-4 right-4 p-2 hover:bg-white/10 rounded-lg transition text-white"

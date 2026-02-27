@@ -124,32 +124,32 @@ const ServiceAnalytics: React.FC<ServiceAnalyticsProps> = ({
             {/* Time Range Selector removed */}
             {/* Summary Stats */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div className="bg-gradient-to-br from-indigo-50 to-indigo-100 dark:from-indigo-900/20 dark:to-indigo-800/20 p-4 rounded-lg border border-indigo-200 dark:border-indigo-700">
-                    <div className="text-xs font-medium text-indigo-600 dark:text-indigo-400 mb-1">
+                <div className="bg-white dark:bg-slate-800/80 p-4 rounded-lg border border-slate-200 dark:border-slate-700 border-t-2 border-t-indigo-500 shadow-sm">
+                    <div className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
                         Doanh thu Dịch vụ
                     </div>
-                    <div className="text-2xl font-bold text-indigo-900 dark:text-indigo-100">
+                    <div className="text-2xl font-bold text-slate-800 dark:text-white">
                         {formatCurrency(totalServiceRevenue)}
                     </div>
                 </div>
 
-                <div className="bg-gradient-to-br from-cyan-50 to-cyan-100 dark:from-cyan-900/20 dark:to-cyan-800/20 p-4 rounded-lg border border-cyan-200 dark:border-cyan-700">
-                    <div className="text-xs font-medium text-cyan-600 dark:text-cyan-400 mb-1">
+                <div className="bg-white dark:bg-slate-800/80 p-4 rounded-lg border border-slate-200 dark:border-slate-700 border-t-2 border-t-cyan-500 shadow-sm">
+                    <div className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
                         Số lượng xe (Phiếu)
                     </div>
-                    <div className="text-2xl font-bold text-cyan-900 dark:text-cyan-100">
+                    <div className="text-2xl font-bold text-slate-800 dark:text-white">
                         {totalServiceTickets}
                     </div>
-                    <div className="text-[10px] text-cyan-700 dark:text-cyan-300 mt-0.5">
+                    <div className="text-[10px] text-slate-500 mt-0.5">
                         {activeTechs} thợ hoạt động
                     </div>
                 </div>
 
-                <div className="bg-gradient-to-br from-violet-50 to-violet-100 dark:from-violet-900/20 dark:to-violet-800/20 p-4 rounded-lg border border-violet-200 dark:border-violet-700">
-                    <div className="text-xs font-medium text-violet-600 dark:text-violet-400 mb-1">
+                <div className="bg-white dark:bg-slate-800/80 p-4 rounded-lg border border-slate-200 dark:border-slate-700 border-t-2 border-t-violet-500 shadow-sm">
+                    <div className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
                         Giá trị trung bình/Phiếu
                     </div>
-                    <div className="text-2xl font-bold text-violet-900 dark:text-violet-100">
+                    <div className="text-2xl font-bold text-slate-800 dark:text-white">
                         {formatCurrency(avgServiceTicket)}
                     </div>
                 </div>

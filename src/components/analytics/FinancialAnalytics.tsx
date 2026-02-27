@@ -458,67 +458,64 @@ const FinancialAnalytics: React.FC<FinancialAnalyticsProps> = ({
 
       {/* Summary Stats */}
       <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3">
-        <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-900/20 dark:to-emerald-800/20 p-4 rounded-lg border border-emerald-200 dark:border-emerald-700">
-          <div className="text-xs font-medium text-emerald-600 dark:text-emerald-400 mb-1">
+        <div className="bg-white dark:bg-slate-800/80 p-4 rounded-lg border border-slate-200 dark:border-slate-700 border-t-2 border-t-emerald-500 shadow-sm">
+          <div className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
             Thu nhập
           </div>
-          <div className="text-2xl font-bold text-emerald-900 dark:text-emerald-100">
+          <div className="text-2xl font-bold text-slate-800 dark:text-white">
             {formatCurrency(totalIncome)}
           </div>
-          <div className="text-[10px] mt-1 text-emerald-600 dark:text-emerald-400">
+          <div className="text-[10px] mt-1 text-slate-500 dark:text-slate-400">
             Bán hàng: {formatCurrency(salesIncome)} | Sửa chữa: {formatCurrency(workOrderIncome)}
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 p-4 rounded-lg border border-red-200 dark:border-red-700">
-          <div className="text-xs font-medium text-red-600 dark:text-red-400 mb-1">
+        <div className="bg-white dark:bg-slate-800/80 p-4 rounded-lg border border-slate-200 dark:border-slate-700 border-t-2 border-t-red-500 shadow-sm">
+          <div className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
             Chi phí (Giá vốn)
           </div>
-          <div className="text-2xl font-bold text-red-900 dark:text-red-100">
+          <div className="text-2xl font-bold text-slate-800 dark:text-white">
             {formatCurrency(totalCOGS)}
           </div>
-          <div className="text-[10px] mt-1 text-red-600 dark:text-red-400">
+          <div className="text-[10px] mt-1 text-slate-500 dark:text-slate-400">
             Bán hàng: {formatCurrency(salesCOGS)} | Sửa chữa: {formatCurrency(workOrderCOGS)}
           </div>
         </div>
 
         <div
-          className={`bg-gradient-to-br p-4 rounded-lg border ${netProfit >= 0
-            ? "from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 border-blue-200 dark:border-blue-700"
-            : "from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 border-red-200 dark:border-red-700"
+          className={`bg-white dark:bg-slate-800/80 p-4 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm border-t-2 ${netProfit >= 0
+            ? "border-t-blue-500"
+            : "border-t-red-500"
             }`}
         >
           <div
             className={`text-xs font-medium mb-1 ${netProfit >= 0
               ? "text-blue-600 dark:text-blue-400"
-              : "text-red-600 dark:text-red-400"
+              : "text-red-500 dark:text-red-400"
               }`}
           >
             Lợi nhuận
           </div>
           <div
             className={`text-2xl font-bold ${netProfit >= 0
-              ? "text-blue-900 dark:text-blue-100"
-              : "text-red-900 dark:text-red-100"
+              ? "text-slate-800 dark:text-white"
+              : "text-red-600 dark:text-red-400"
               }`}
           >
             {formatCurrency(netProfit)}
           </div>
           <div
-            className={`text-[10px] mt-0.5 ${netProfit >= 0
-              ? "text-blue-600 dark:text-blue-400"
-              : "text-red-600 dark:text-red-400"
-              }`}
+            className={`text-[10px] mt-0.5 text-slate-500 dark:text-slate-400`}
           >
             Biên lợi nhuận: {profitMargin.toFixed(1)}%
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 p-4 rounded-lg border border-purple-200 dark:border-purple-700">
-          <div className="text-xs font-medium text-purple-600 dark:text-purple-400 mb-1">
+        <div className="bg-white dark:bg-slate-800/80 p-4 rounded-lg border border-slate-200 dark:border-slate-700 border-t-2 border-t-purple-500 shadow-sm">
+          <div className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
             Giá trị tồn kho
           </div>
-          <div className="text-2xl font-bold text-purple-900 dark:text-purple-100">
+          <div className="text-2xl font-bold text-slate-800 dark:text-white">
             {formatCurrency(inventoryValue)}
           </div>
         </div>

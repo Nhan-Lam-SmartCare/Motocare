@@ -118,20 +118,21 @@ const KPICards: React.FC<KPICardsProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
 
             {/* Revenue Goal Card */}
-            <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl p-5 text-white shadow-md relative overflow-hidden group">
-                <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+            <div className="bg-white dark:bg-slate-800/80 rounded-xl p-5 border border-slate-200 dark:border-slate-700 border-t-2 border-t-blue-500 shadow-sm relative overflow-hidden group">
+                <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity text-slate-800 dark:text-white">
                     <Target size={80} />
                 </div>
 
                 <div className="flex justify-between items-start z-10 relative">
                     <div>
-                        <div className="text-blue-100 text-sm font-medium mb-1">
+                        <div className="text-slate-500 dark:text-slate-400 text-sm font-medium mb-1 flex items-center gap-1.5">
+                            <Target size={16} className="text-blue-500" />
                             {showGoals ? "Mục tiêu Doanh thu Tháng" : `Doanh thu (${dateRange.label})`}
                         </div>
-                        <div className="text-2xl font-bold">{formatCurrency(currentRevenue)}</div>
+                        <div className="text-2xl font-bold text-slate-800 dark:text-white">{formatCurrency(currentRevenue)}</div>
 
                         {showGoals ? (
-                            <div className="text-xs text-blue-200 mt-1">
+                            <div className="text-xs text-slate-500 mt-1">
                                 /{formatCurrency(revenueGoal)}
                                 <span className="ml-1 opacity-75">({revenueProgress.toFixed(1)}%)</span>
                             </div>
@@ -144,7 +145,7 @@ const KPICards: React.FC<KPICardsProps> = ({
                     {showGoals && (
                         <button
                             onClick={() => setIsEditing(true)}
-                            className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 transition-colors text-white"
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
                         >
                             <Settings size={16} />
                         </button>
@@ -154,9 +155,9 @@ const KPICards: React.FC<KPICardsProps> = ({
                 {/* Progress Bar (Only show if showGoals) */}
                 {showGoals && (
                     <div className="mt-4 z-10 relative">
-                        <div className="h-2 bg-black/20 rounded-full overflow-hidden">
+                        <div className="h-2 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
                             <div
-                                className={`h-full rounded-full transition-all duration-1000 ${isRevenueBehind ? 'bg-amber-300' : 'bg-green-400'}`}
+                                className={`h-full rounded-full transition-all duration-1000 ${isRevenueBehind ? 'bg-amber-400' : 'bg-blue-500'}`}
                                 style={{ width: `${revenueProgress}%` }}
                             />
                         </div>
@@ -164,7 +165,7 @@ const KPICards: React.FC<KPICardsProps> = ({
                 )}
 
                 {showGoals && (
-                    <div className="mt-3 flex items-center justify-between z-10 relative text-xs text-blue-100">
+                    <div className="mt-3 flex items-center justify-between z-10 relative text-xs text-slate-500 dark:text-slate-400">
                         <div>
                             {daysLeft > 0 ? (
                                 <span>Cần {formatCurrency(dailyRevenueNeeded)}/ngày</span>
@@ -174,12 +175,12 @@ const KPICards: React.FC<KPICardsProps> = ({
                         </div>
                         <div className="flex items-center">
                             {isRevenueBehind ? (
-                                <span className="flex items-center text-amber-200 font-medium bg-amber-500/20 px-1.5 py-0.5 rounded">
+                                <span className="flex items-center text-amber-600 dark:text-amber-400 font-medium bg-amber-50 dark:bg-amber-500/10 px-1.5 py-0.5 rounded">
                                     <TrendingUp size={12} className="mr-1" />
                                     Chậm tiến độ
                                 </span>
                             ) : (
-                                <span className="text-green-300 font-medium">Đúng tiến độ</span>
+                                <span className="text-blue-600 dark:text-blue-400 font-medium">Đúng tiến độ</span>
                             )}
                         </div>
                     </div>
@@ -187,43 +188,43 @@ const KPICards: React.FC<KPICardsProps> = ({
             </div>
 
             {/* Profit Goal Card (Amount) */}
-            <div className="bg-gradient-to-br from-emerald-600 to-emerald-700 rounded-xl p-5 text-white shadow-md relative overflow-hidden group">
-                <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+            <div className="bg-white dark:bg-slate-800/80 rounded-xl p-5 border border-slate-200 dark:border-slate-700 border-t-2 border-t-emerald-500 shadow-sm relative overflow-hidden group">
+                <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity text-slate-800 dark:text-white">
                     <TrendingUp size={80} />
                 </div>
 
                 {isEditing ? (
-                    <div className="z-10 relative bg-white/10 p-4 rounded-lg backdrop-blur-sm">
-                        <h4 className="text-sm font-semibold mb-3">Thiết lập mục tiêu (Tháng)</h4>
+                    <div className="z-10 relative bg-slate-50 dark:bg-slate-900/50 p-4 rounded-lg border border-slate-200 dark:border-slate-700">
+                        <h4 className="text-sm font-semibold mb-3 text-slate-800 dark:text-white">Thiết lập mục tiêu (Tháng)</h4>
                         <div className="space-y-3">
                             <div>
-                                <label className="text-xs mb-1 block opacity-80">Doanh thu</label>
+                                <label className="text-xs mb-1 block text-slate-500">Doanh thu</label>
                                 <input
                                     type="number"
                                     value={revenueGoal}
                                     onChange={(e) => setRevenueGoal(Number(e.target.value))}
-                                    className="w-full text-slate-800 rounded px-2 py-1 text-sm font-semibold"
+                                    className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-800 dark:text-white rounded px-2 py-1.5 text-sm font-semibold"
                                 />
                             </div>
                             <div>
-                                <label className="text-xs mb-1 block opacity-80">Lợi nhuận</label>
+                                <label className="text-xs mb-1 block text-slate-500">Lợi nhuận</label>
                                 <input
                                     type="number"
                                     value={profitGoal}
                                     onChange={(e) => setProfitGoal(Number(e.target.value))}
-                                    className="w-full text-slate-800 rounded px-2 py-1 text-sm font-semibold"
+                                    className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-800 dark:text-white rounded px-2 py-1.5 text-sm font-semibold"
                                 />
                             </div>
                             <div className="flex gap-2 pt-1">
                                 <button
                                     onClick={handleSave}
-                                    className="flex-1 bg-white text-emerald-700 font-bold py-1.5 rounded text-xs hover:bg-emerald-50"
+                                    className="flex-1 bg-emerald-600 text-white font-bold py-1.5 rounded text-xs hover:bg-emerald-700 transition"
                                 >
                                     Lưu lại
                                 </button>
                                 <button
                                     onClick={() => setIsEditing(false)}
-                                    className="px-3 bg-black/20 text-white font-medium py-1.5 rounded text-xs hover:bg-black/30"
+                                    className="px-3 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-medium py-1.5 rounded text-xs hover:bg-slate-300 dark:hover:bg-slate-600 transition"
                                 >
                                     Hủy
                                 </button>
@@ -234,12 +235,13 @@ const KPICards: React.FC<KPICardsProps> = ({
                     <>
                         <div className="flex justify-between items-start z-10 relative">
                             <div>
-                                <div className="text-emerald-100 text-sm font-medium mb-1">
+                                <div className="text-slate-500 dark:text-slate-400 text-sm font-medium mb-1 flex items-center gap-1.5">
+                                    <TrendingUp size={16} className="text-emerald-500" />
                                     {showGoals ? "Mục tiêu Lợi nhuận Tháng" : `Lợi nhuận (${dateRange.label})`}
                                 </div>
-                                <div className="text-2xl font-bold">{formatCurrency(currentProfit)}</div>
+                                <div className="text-2xl font-bold text-slate-800 dark:text-white">{formatCurrency(currentProfit)}</div>
                                 {showGoals ? (
-                                    <div className="text-xs text-emerald-200 mt-1">
+                                    <div className="text-xs text-slate-500 mt-1">
                                         /{formatCurrency(profitGoal)}
                                         <span className="ml-1 opacity-75">({profitProgress.toFixed(1)}%)</span>
                                     </div>
@@ -254,9 +256,9 @@ const KPICards: React.FC<KPICardsProps> = ({
                         {/* Progress Bar */}
                         {showGoals && (
                             <div className="mt-4 z-10 relative">
-                                <div className="h-2 bg-black/20 rounded-full overflow-hidden">
+                                <div className="h-2 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
                                     <div
-                                        className={`h-full rounded-full transition-all duration-1000 ${isProfitBehind ? 'bg-amber-300' : 'bg-white'}`}
+                                        className={`h-full rounded-full transition-all duration-1000 ${isProfitBehind ? 'bg-amber-400' : 'bg-emerald-500'}`}
                                         style={{ width: `${profitProgress}%` }}
                                     />
                                 </div>
@@ -264,7 +266,7 @@ const KPICards: React.FC<KPICardsProps> = ({
                         )}
 
                         {showGoals && (
-                            <div className="mt-3 flex items-center justify-between z-10 relative text-xs text-emerald-100">
+                            <div className="mt-3 flex items-center justify-between z-10 relative text-xs text-slate-500 dark:text-slate-400">
                                 <div>
                                     {daysLeft > 0 ? (
                                         <span>Cần {formatCurrency(dailyProfitNeeded)}/ngày</span>
@@ -278,7 +280,7 @@ const KPICards: React.FC<KPICardsProps> = ({
                             </div>
                         )}
                         {!showGoals && (
-                            <div className="mt-3 flex items-center justify-between z-10 relative text-xs text-emerald-100">
+                            <div className="mt-3 flex items-center justify-between z-10 relative text-xs text-slate-500 dark:text-slate-400">
                                 <div className="flex items-center">
                                     <span>Margin: {currentMargin.toFixed(1)}%</span>
                                 </div>

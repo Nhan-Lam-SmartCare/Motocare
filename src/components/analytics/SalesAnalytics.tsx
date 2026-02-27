@@ -229,38 +229,38 @@ const SalesAnalytics: React.FC<SalesAnalyticsProps> = ({
 
       {/* Summary Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 p-4 rounded-lg border border-blue-200 dark:border-blue-700">
-          <div className="text-xs font-medium text-blue-600 dark:text-blue-400 mb-1">
+        <div className="bg-white dark:bg-slate-800/80 p-4 rounded-lg border border-slate-200 dark:border-slate-700 border-t-2 border-t-blue-500 shadow-sm">
+          <div className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
             Doanh thu
           </div>
-          <div className="text-2xl font-bold text-blue-900 dark:text-blue-100">
+          <div className="text-2xl font-bold text-slate-800 dark:text-white">
             {formatCurrency(stats.totalRevenue)}
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-900/20 dark:to-emerald-800/20 p-4 rounded-lg border border-emerald-200 dark:border-emerald-700">
-          <div className="text-xs font-medium text-emerald-600 dark:text-emerald-400 mb-1">
+        <div className="bg-white dark:bg-slate-800/80 p-4 rounded-lg border border-slate-200 dark:border-slate-700 border-t-2 border-t-emerald-500 shadow-sm">
+          <div className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
             Đơn hàng
           </div>
-          <div className="text-2xl font-bold text-emerald-900 dark:text-emerald-100">
+          <div className="text-2xl font-bold text-slate-800 dark:text-white">
             {stats.totalOrders}
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-900/20 dark:to-amber-800/20 p-4 rounded-lg border border-amber-200 dark:border-amber-700">
-          <div className="text-xs font-medium text-amber-600 dark:text-amber-400 mb-1">
+        <div className="bg-white dark:bg-slate-800/80 p-4 rounded-lg border border-slate-200 dark:border-slate-700 border-t-2 border-t-amber-500 shadow-sm">
+          <div className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
             Sản phẩm bán
           </div>
-          <div className="text-2xl font-bold text-amber-900 dark:text-amber-100">
+          <div className="text-2xl font-bold text-slate-800 dark:text-white">
             {stats.totalItems}
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 p-4 rounded-lg border border-purple-200 dark:border-purple-700">
-          <div className="text-xs font-medium text-purple-600 dark:text-purple-400 mb-1">
+        <div className="bg-white dark:bg-slate-800/80 p-4 rounded-lg border border-slate-200 dark:border-slate-700 border-t-2 border-t-purple-500 shadow-sm">
+          <div className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
             Giá trị TB/đơn
           </div>
-          <div className="text-2xl font-bold text-purple-900 dark:text-purple-100">
+          <div className="text-2xl font-bold text-slate-800 dark:text-white">
             {formatCurrency(stats.avgOrderValue)}
           </div>
         </div>

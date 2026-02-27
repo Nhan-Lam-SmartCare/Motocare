@@ -947,36 +947,36 @@ const ReportsManager: React.FC = () => {
             )}
             {/* Thống kê cards */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
-                <div className="flex items-center gap-1 text-xs font-medium text-blue-700 dark:text-blue-400 mb-1.5">
+              <div className="bg-white dark:bg-slate-800/80 rounded-lg p-4 border border-slate-200 dark:border-slate-700 border-t-2 border-t-blue-500">
+                <div className="flex items-center gap-1 text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5">
                   <DollarSign className="w-3.5 h-3.5" /> Tổng doanh thu
                 </div>
-                <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                <div className="text-2xl font-bold text-slate-800 dark:text-white">
                   {formatCurrency(combinedRevenue).replace("₫", "")}
                 </div>
-                <div className="text-[10px] text-blue-600/70 dark:text-blue-400/70 mt-0.5">
+                <div className="text-[10px] text-slate-500 dark:text-slate-500 mt-0.5">
                   đ (Bán hàng: {formatCurrency(revenueReport.totalRevenue)} +
                   Phiếu thu: {formatCurrency(cashTotals.totalIncome)})
                 </div>
               </div>
 
-              <div className="bg-gradient-to-br from-red-50 to-rose-50 dark:from-red-900/20 dark:to-rose-900/20 rounded-lg p-4 border border-red-200 dark:border-red-800">
-                <div className="flex items-center gap-1 text-xs font-medium text-red-700 dark:text-red-400 mb-1.5">
+              <div className="bg-white dark:bg-slate-800/80 rounded-lg p-4 border border-slate-200 dark:border-slate-700 border-t-2 border-t-red-500">
+                <div className="flex items-center gap-1 text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5">
                   <Wallet className="w-3.5 h-3.5" /> Tổng chi phí
                 </div>
-                <div className="text-2xl font-bold text-red-600 dark:text-red-400">
+                <div className="text-2xl font-bold text-slate-800 dark:text-white">
                   {formatCurrency(
                     revenueReport.totalCost + cashTotals.totalExpense
                   ).replace("₫", "")}
                 </div>
-                <div className="text-[10px] text-red-600/70 dark:text-red-400/70 mt-0.5">
+                <div className="text-[10px] text-slate-500 dark:text-slate-500 mt-0.5">
                   đ (Giá vốn: {formatCurrency(revenueReport.totalCost)} + Phiếu
                   chi: {formatCurrency(cashTotals.totalExpense)})
                 </div>
               </div>
 
-              <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-lg p-4 border border-green-200 dark:border-green-800">
-                <div className="flex items-center gap-1 text-xs font-medium text-green-700 dark:text-green-400 mb-1.5">
+              <div className="bg-white dark:bg-slate-800/80 rounded-lg p-4 border border-slate-200 dark:border-slate-700 border-t-2 border-t-green-500">
+                <div className="flex items-center gap-1 text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5">
                   <TrendingUp className="w-3.5 h-3.5" /> Lợi nhuận thuần
                 </div>
                 <div
@@ -987,23 +987,23 @@ const ReportsManager: React.FC = () => {
                 >
                   {formatCurrency(netProfit).replace("₫", "")}
                 </div>
-                <div className="text-[10px] text-green-600/70 dark:text-green-400/70 mt-0.5">
+                <div className="text-[10px] text-slate-500 dark:text-slate-500 mt-0.5">
                   đ (Lợi nhuận gộp: {formatCurrency(revenueReport.totalProfit)}{" "}
                   - Phiếu chi: {formatCurrency(cashTotals.totalExpense)})
                 </div>
               </div>
 
-              <div className="bg-gradient-to-br from-purple-50 to-fuchsia-50 dark:from-purple-900/20 dark:to-fuchsia-900/20 rounded-lg p-4 border border-purple-200 dark:border-purple-800">
-                <div className="flex items-center gap-1 text-xs font-medium text-purple-700 dark:text-purple-400 mb-1.5">
+              <div className="bg-white dark:bg-slate-800/80 rounded-lg p-4 border border-slate-200 dark:border-slate-700 border-t-2 border-t-purple-500">
+                <div className="flex items-center gap-1 text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5">
                   <BadgePercent className="w-3.5 h-3.5" /> Tỷ suất lợi nhuận
                   thuần
                 </div>
-                <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                <div className="text-2xl font-bold text-slate-800 dark:text-white">
                   {combinedRevenue > 0
                     ? ((netProfit / combinedRevenue) * 100).toFixed(1)
                     : 0}
                 </div>
-                <div className="text-[10px] text-purple-600/70 dark:text-purple-400/70 mt-0.5">
+                <div className="text-[10px] text-slate-500 dark:text-slate-500 mt-0.5">
                   % (Lợi nhuận thuần / Doanh thu tổng)
                 </div>
               </div>
@@ -1051,15 +1051,15 @@ const ReportsManager: React.FC = () => {
                       </th>
                       {/* DOANH THU group */}
                       <th colSpan={2} className="px-2 py-1.5 text-center text-[10px] font-bold uppercase tracking-widest bg-slate-800/30 border-l border-slate-700/50">
-                        <span className="text-emerald-400">DOANH THU</span>
+                        <span className="text-slate-300">DOANH THU</span>
                       </th>
                       {/* GIÁ VỐN HÀNG BÁN group */}
                       <th colSpan={2} className="px-2 py-1.5 text-center text-[10px] font-bold uppercase tracking-widest bg-slate-800/30 border-l border-slate-700/50">
-                        <span className="text-sky-400">GIÁ VỐN HÀNG BÁN</span>
+                        <span className="text-slate-300">GIÁ VỐN HÀNG BÁN</span>
                       </th>
                       {/* LỢI NHUẬN group */}
                       <th colSpan={3} className="px-2 py-1.5 text-center text-[10px] font-bold uppercase tracking-widest bg-slate-800/30 border-l border-slate-700/50">
-                        <span className="text-rose-400">LỢI NHUẬN</span>
+                        <span className="text-slate-300">LỢI NHUẬN</span>
                       </th>
                     </tr>
                     <tr className="border-b border-slate-700/70 bg-slate-800/40">
@@ -1138,27 +1138,27 @@ const ReportsManager: React.FC = () => {
                               {new Date(day.date).toLocaleDateString("vi-VN")}
                             </td>
                             {/* Bán hàng */}
-                            <td className={`px-2 py-2.5 text-right text-xs font-semibold border-l border-slate-800 ${salesRevenue === 0 ? 'text-slate-600' : 'text-orange-400'}`}>
+                            <td className={`px-2 py-2.5 text-right text-xs font-semibold border-l border-slate-800 ${salesRevenue === 0 ? 'text-slate-600' : 'text-slate-300'}`}>
                               {salesRevenue === 0 ? '-' : formatCurrency(salesRevenue)}
                             </td>
                             {/* Sửa chữa */}
-                            <td className={`px-2 py-2.5 text-right text-xs font-semibold ${woRevenue === 0 ? 'text-slate-600' : 'text-amber-400'}`}>
+                            <td className={`px-2 py-2.5 text-right text-xs font-semibold ${woRevenue === 0 ? 'text-slate-600' : 'text-slate-300'}`}>
                               {woRevenue === 0 ? '-' : formatCurrency(woRevenue)}
                             </td>
                             {/* COGS */}
-                            <td className={`px-2 py-2.5 text-right text-xs border-l border-slate-800 ${salesCOGS === 0 ? 'text-slate-600' : 'text-sky-400'}`}>
+                            <td className={`px-2 py-2.5 text-right text-xs border-l border-slate-800 ${salesCOGS === 0 ? 'text-slate-600' : 'text-slate-400'}`}>
                               {salesCOGS === 0 ? '-' : formatCurrency(salesCOGS)}
                             </td>
                             {/* Vật tư SC */}
-                            <td className={`px-2 py-2.5 text-right text-xs ${woParts === 0 ? 'text-slate-600' : 'text-cyan-400'}`}>
+                            <td className={`px-2 py-2.5 text-right text-xs ${woParts === 0 ? 'text-slate-600' : 'text-slate-400'}`}>
                               {woParts === 0 ? '-' : formatCurrency(woParts)}
                             </td>
                             {/* Lãi gộp */}
-                            <td className={`px-2 py-2.5 text-right text-xs font-semibold border-l border-slate-800 ${laiGop === 0 ? 'text-slate-600' : 'text-emerald-400'}`}>
+                            <td className={`px-2 py-2.5 text-right text-xs font-semibold border-l border-slate-800 ${laiGop === 0 ? 'text-slate-600' : 'text-slate-300'}`}>
                               {laiGop === 0 ? '-' : formatCurrency(laiGop)}
                             </td>
                             {/* Thu/Chi khác */}
-                            <td className={`px-2 py-2.5 text-right text-xs ${thuChiKhac === 0 ? 'text-slate-600' : thuChiKhac > 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                            <td className={`px-2 py-2.5 text-right text-xs ${thuChiKhac === 0 ? 'text-slate-600' : 'text-slate-400'}`}>
                               {thuChiKhac === 0 ? '-' : (thuChiKhac > 0 ? '+' : '') + formatCurrency(thuChiKhac)}
                             </td>
                             {/* Lãi ròng */}
@@ -1223,8 +1223,8 @@ const ReportsManager: React.FC = () => {
                                           <div className="flex justify-between items-center mb-3 pb-2.5 border-b border-slate-700/50">
                                             <div className="text-[11px] text-slate-400">Tổng doanh thu</div>
                                             <div className="text-right">
-                                              <span className="font-bold text-sky-400 text-xs">{formatCurrency(salesRevenue)}</span>
-                                              <span className={`text-[10px] ml-2 ${salesRevenue - salesCOGS >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                                              <span className="font-bold text-slate-200 text-xs">{formatCurrency(salesRevenue)}</span>
+                                              <span className={`text-[10px] ml-2 text-slate-400`}>
                                                 Lãi: {formatCurrency(salesRevenue - salesCOGS)}
                                               </span>
                                             </div>
@@ -1241,11 +1241,11 @@ const ReportsManager: React.FC = () => {
                                                   <div className="flex justify-between items-start mb-1.5">
                                                     <div className="flex items-center gap-1.5">
                                                       <span className="font-bold text-white text-xs">{sale.customer.name}</span>
-                                                      {saleProfit > 0 && <span className="text-amber-400 text-xs">⭐</span>}
+                                                      {saleProfit > 0 && <span className="text-slate-400 text-[10px]">Lãi</span>}
                                                     </div>
                                                     <div className="text-right">
-                                                      <div className="font-bold text-sky-400 text-xs">{formatCurrency(sale.total)}</div>
-                                                      <div className={`text-[10px] mt-0.5 ${saleProfit >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                                                      <div className="font-bold text-slate-200 text-xs">{formatCurrency(sale.total)}</div>
+                                                      <div className={`text-[10px] mt-0.5 text-slate-500`}>
                                                         Lãi: {formatCurrency(saleProfit)}
                                                       </div>
                                                     </div>
@@ -1287,8 +1287,8 @@ const ReportsManager: React.FC = () => {
                                             <div className="flex justify-between items-center mb-2.5 pb-2 border-b border-slate-700/50">
                                               <div className="text-[11px] text-slate-400">Tổng doanh thu</div>
                                               <div className="text-right">
-                                                <span className="font-bold text-purple-400 text-xs">{formatCurrency(woRevenue)}</span>
-                                                <span className={`text-[10px] ml-2 ${woRevenue - woParts >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                                                <span className="font-bold text-slate-200 text-xs">{formatCurrency(woRevenue)}</span>
+                                                <span className={`text-[10px] ml-2 text-slate-400`}>
                                                   Lãi: {formatCurrency(woRevenue - woParts)}
                                                 </span>
                                               </div>
@@ -1310,8 +1310,8 @@ const ReportsManager: React.FC = () => {
                                                         <div className="text-[10px] text-slate-500">{wo.vehicleModel || wo.vehiclemodel || ''} {wo.licensePlate || wo.licenseplate || ''}</div>
                                                       </div>
                                                       <div className="text-right">
-                                                        <div className="font-bold text-purple-400 text-xs">{formatCurrency(woTotal)}</div>
-                                                        <div className={`text-[10px] mt-0.5 ${woProfit >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                                                        <div className="font-bold text-slate-200 text-xs">{formatCurrency(woTotal)}</div>
+                                                        <div className={`text-[10px] mt-0.5 text-slate-500`}>
                                                           Lãi: {formatCurrency(woProfit)}
                                                         </div>
                                                       </div>
@@ -1339,7 +1339,7 @@ const ReportsManager: React.FC = () => {
                                                 <span className="text-slate-400 truncate mr-2">
                                                   {(tx as any).description || tx.notes || formatCashTxCategory(tx.category || '')}
                                                 </span>
-                                                <span className={`font-bold whitespace-nowrap flex-shrink-0 ${tx.type === 'income' ? 'text-emerald-400' : 'text-rose-400'}`}>
+                                                <span className={`font-bold whitespace-nowrap flex-shrink-0 text-slate-300`}>
                                                   {tx.type === 'income' ? '+' : '-'}{formatCurrency(Math.abs(tx.amount))}
                                                 </span>
                                               </div>
@@ -1372,22 +1372,22 @@ const ReportsManager: React.FC = () => {
                           <td colSpan={2} className="px-3 py-2.5 text-left text-xs font-black text-white uppercase tracking-wider">
                             Tổng:
                           </td>
-                          <td className={`px-2 py-2.5 text-right text-xs font-bold border-l border-slate-700/50 ${totalSalesRev === 0 ? 'text-slate-600' : 'text-orange-400'}`}>
+                          <td className={`px-2 py-2.5 text-right text-xs font-bold border-l border-slate-700/50 ${totalSalesRev === 0 ? 'text-slate-600' : 'text-slate-300'}`}>
                             {formatCurrency(totalSalesRev)}
                           </td>
-                          <td className={`px-2 py-2.5 text-right text-xs font-bold ${totalWoRev === 0 ? 'text-slate-600' : 'text-amber-400'}`}>
+                          <td className={`px-2 py-2.5 text-right text-xs font-bold ${totalWoRev === 0 ? 'text-slate-600' : 'text-slate-300'}`}>
                             {formatCurrency(totalWoRev)}
                           </td>
-                          <td className={`px-2 py-2.5 text-right text-xs font-bold border-l border-slate-700/50 ${totalSalesCOGS === 0 ? 'text-slate-600' : 'text-sky-400'}`}>
+                          <td className={`px-2 py-2.5 text-right text-xs font-bold border-l border-slate-700/50 ${totalSalesCOGS === 0 ? 'text-slate-600' : 'text-slate-400'}`}>
                             {formatCurrency(totalSalesCOGS)}
                           </td>
-                          <td className={`px-2 py-2.5 text-right text-xs font-bold ${totalWoParts === 0 ? 'text-slate-600' : 'text-cyan-400'}`}>
+                          <td className={`px-2 py-2.5 text-right text-xs font-bold ${totalWoParts === 0 ? 'text-slate-600' : 'text-slate-400'}`}>
                             {formatCurrency(totalWoParts)}
                           </td>
-                          <td className={`px-2 py-2.5 text-right text-xs font-bold border-l border-slate-700/50 ${totalLaiGop === 0 ? 'text-slate-600' : 'text-emerald-400'}`}>
+                          <td className={`px-2 py-2.5 text-right text-xs font-bold border-l border-slate-700/50 ${totalLaiGop === 0 ? 'text-slate-600' : 'text-slate-300'}`}>
                             {formatCurrency(totalLaiGop)}
                           </td>
-                          <td className={`px-2 py-2.5 text-right text-xs font-bold ${totalThuChiKhac === 0 ? 'text-slate-600' : totalThuChiKhac > 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                          <td className={`px-2 py-2.5 text-right text-xs font-bold ${totalThuChiKhac === 0 ? 'text-slate-600' : 'text-slate-400'}`}>
                             {totalThuChiKhac === 0 ? '-' : (totalThuChiKhac > 0 ? '+' : '') + formatCurrency(totalThuChiKhac)}
                           </td>
                           <td className={`px-2 py-2.5 text-right text-xs font-black ${netProfit === 0 ? 'text-slate-600' : netProfit > 0 ? 'text-green-400' : 'text-red-400'}`}>

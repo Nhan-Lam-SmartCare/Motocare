@@ -313,41 +313,41 @@ const InventoryAnalytics: React.FC<InventoryAnalyticsProps> = ({
     <div className="space-y-4">
       {/* Summary Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 p-4 rounded-lg border border-blue-200 dark:border-blue-700">
-          <div className="text-xs font-medium text-blue-600 dark:text-blue-400 mb-1">
+        <div className="bg-white dark:bg-slate-800/80 p-4 rounded-lg border border-slate-200 dark:border-slate-700 border-t-2 border-t-blue-500 shadow-sm">
+          <div className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
             Tổng giá trị tồn kho
           </div>
-          <div className="text-2xl font-bold text-blue-900 dark:text-blue-100">
+          <div className="text-2xl font-bold text-slate-800 dark:text-white">
             {formatCurrency(totalInventoryValue)}
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-900/20 dark:to-emerald-800/20 p-4 rounded-lg border border-emerald-200 dark:border-emerald-700">
-          <div className="text-xs font-medium text-emerald-600 dark:text-emerald-400 mb-1">
+        <div className="bg-white dark:bg-slate-800/80 p-4 rounded-lg border border-slate-200 dark:border-slate-700 border-t-2 border-t-emerald-500 shadow-sm">
+          <div className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
             Tổng SL tồn kho
           </div>
-          <div className="text-2xl font-bold text-emerald-900 dark:text-emerald-100">
+          <div className="text-2xl font-bold text-slate-800 dark:text-white">
             {totalInventoryQty}
           </div>
-          <div className="text-[10px] text-emerald-700 dark:text-emerald-300 mt-0.5">
+          <div className="text-[10px] text-slate-500 mt-0.5">
             {parts.length} mã sản phẩm
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-900/20 dark:to-amber-800/20 p-4 rounded-lg border border-amber-200 dark:border-amber-700">
-          <div className="text-xs font-medium text-amber-600 dark:text-amber-400 mb-1">
+        <div className="bg-white dark:bg-slate-800/80 p-4 rounded-lg border border-slate-200 dark:border-slate-700 border-t-2 border-t-amber-500 shadow-sm">
+          <div className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
             Sắp hết hàng
           </div>
-          <div className="text-2xl font-bold text-amber-900 dark:text-amber-100">
+          <div className="text-2xl font-bold text-slate-800 dark:text-white">
             {lowStockItems.length}
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 p-4 rounded-lg border border-red-200 dark:border-red-700">
-          <div className="text-xs font-medium text-red-600 dark:text-red-400 mb-1">
+        <div className="bg-white dark:bg-slate-800/80 p-4 rounded-lg border border-slate-200 dark:border-slate-700 border-t-2 border-t-red-500 shadow-sm">
+          <div className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
             Hết hàng
           </div>
-          <div className="text-2xl font-bold text-red-900 dark:text-red-100">
+          <div className="text-2xl font-bold text-slate-800 dark:text-white">
             {outOfStockCount}
           </div>
         </div>
@@ -362,53 +362,53 @@ const InventoryAnalytics: React.FC<InventoryAnalyticsProps> = ({
         {/* Metrics Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
           {/* Turnover */}
-          <div className="bg-gradient-to-br from-violet-50 to-violet-100 dark:from-violet-900/20 dark:to-violet-800/20 p-3 rounded-lg border border-violet-200 dark:border-violet-700">
-            <div className="text-xs font-medium text-violet-600 dark:text-violet-400 mb-1">
+          <div className="bg-slate-50 dark:bg-slate-800 p-3 rounded-lg border border-slate-200 dark:border-slate-700 border-l-4 border-l-violet-500">
+            <div className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
               Vòng quay tồn kho
             </div>
-            <div className="text-xl font-bold text-violet-900 dark:text-violet-100">
+            <div className="text-xl font-bold text-slate-800 dark:text-white">
               {inventoryMetrics.turnover.toFixed(1)}x/năm
             </div>
-            <div className="text-[10px] text-violet-700 dark:text-violet-300 mt-0.5">
+            <div className="text-[10px] text-slate-500 dark:text-slate-500 mt-0.5">
               {inventoryMetrics.daysToSell < 999 ? `TB ${inventoryMetrics.daysToSell} ngày bán hết` : 'Chưa đủ dữ liệu'}
             </div>
           </div>
 
           {/* Capital at Cost */}
-          <div className="bg-gradient-to-br from-indigo-50 to-indigo-100 dark:from-indigo-900/20 dark:to-indigo-800/20 p-3 rounded-lg border border-indigo-200 dark:border-indigo-700">
-            <div className="text-xs font-medium text-indigo-600 dark:text-indigo-400 mb-1">
+          <div className="bg-slate-50 dark:bg-slate-800 p-3 rounded-lg border border-slate-200 dark:border-slate-700 border-l-4 border-l-indigo-500">
+            <div className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
               Vốn kẹt tồn kho
             </div>
-            <div className="text-xl font-bold text-indigo-900 dark:text-indigo-100">
+            <div className="text-xl font-bold text-slate-800 dark:text-white">
               {formatCurrency(capitalAnalysis.totalCapital)}
             </div>
-            <div className="text-[10px] text-indigo-700 dark:text-indigo-300 mt-0.5">
+            <div className="text-[10px] text-slate-500 dark:text-slate-500 mt-0.5">
               Theo giá vốn
             </div>
           </div>
 
           {/* Slow Moving Value */}
-          <div className="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20 p-3 rounded-lg border border-orange-200 dark:border-orange-700">
-            <div className="text-xs font-medium text-orange-600 dark:text-orange-400 mb-1">
+          <div className="bg-slate-50 dark:bg-slate-800 p-3 rounded-lg border border-slate-200 dark:border-slate-700 border-l-4 border-l-orange-500">
+            <div className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
               Hàng bán chậm (60+ ngày)
             </div>
-            <div className="text-xl font-bold text-orange-900 dark:text-orange-100">
+            <div className="text-xl font-bold text-slate-800 dark:text-white">
               {formatCurrency(capitalAnalysis.slowMovingValue)}
             </div>
-            <div className="text-[10px] text-orange-700 dark:text-orange-300 mt-0.5">
+            <div className="text-[10px] text-slate-500 dark:text-slate-500 mt-0.5">
               {capitalAnalysis.slowMovingPercent.toFixed(1)}% tổng vốn
             </div>
           </div>
 
           {/* Fast Moving Value */}
-          <div className="bg-gradient-to-br from-teal-50 to-teal-100 dark:from-teal-900/20 dark:to-teal-800/20 p-3 rounded-lg border border-teal-200 dark:border-teal-700">
-            <div className="text-xs font-medium text-teal-600 dark:text-teal-400 mb-1">
+          <div className="bg-slate-50 dark:bg-slate-800 p-3 rounded-lg border border-slate-200 dark:border-slate-700 border-l-4 border-l-teal-500">
+            <div className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
               Hàng bán nhanh
             </div>
-            <div className="text-xl font-bold text-teal-900 dark:text-teal-100">
+            <div className="text-xl font-bold text-slate-800 dark:text-white">
               {formatCurrency(capitalAnalysis.fastMovingValue)}
             </div>
-            <div className="text-[10px] text-teal-700 dark:text-teal-300 mt-0.5">
+            <div className="text-[10px] text-slate-500 dark:text-slate-500 mt-0.5">
               {capitalAnalysis.fastMovingPercent.toFixed(1)}% tổng vốn
             </div>
           </div>

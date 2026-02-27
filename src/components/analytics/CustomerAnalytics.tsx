@@ -275,14 +275,14 @@ const CustomerAnalytics: React.FC<CustomerAnalyticsProps> = ({
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
 
                 {/* Active Customers */}
-                <div className="bg-white dark:bg-[#1e293b] p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                <div className="bg-white dark:bg-slate-800/80 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm border-t-2 border-t-blue-500">
                     <div className="flex items-center gap-3 mb-2">
                         <div className="p-2 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400">
                             <Users size={20} />
                         </div>
                         <div className="text-sm font-medium text-slate-500 dark:text-slate-400">Khách hàng hoạt động</div>
                     </div>
-                    <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+                    <div className="text-2xl font-bold text-slate-900 dark:text-white">
                         {metrics.activeCount}
                     </div>
                     <div className="text-xs text-slate-500 mt-1">
@@ -291,14 +291,14 @@ const CustomerAnalytics: React.FC<CustomerAnalyticsProps> = ({
                 </div>
 
                 {/* Retention Rate */}
-                <div className="bg-white dark:bg-[#1e293b] p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                <div className="bg-white dark:bg-slate-800/80 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm border-t-2 border-t-emerald-500">
                     <div className="flex items-center gap-3 mb-2">
                         <div className="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400">
                             <UserCheck size={20} />
                         </div>
                         <div className="text-sm font-medium text-slate-500 dark:text-slate-400">Tỷ lệ quay lại</div>
                     </div>
-                    <div className="text-2xl font-bold text-emerald-900 dark:text-emerald-100">
+                    <div className="text-2xl font-bold text-slate-900 dark:text-white">
                         {customerStats.returningRate.toFixed(1)}%
                     </div>
                     <div className="text-xs text-slate-500 mt-1">
@@ -307,14 +307,14 @@ const CustomerAnalytics: React.FC<CustomerAnalyticsProps> = ({
                 </div>
 
                 {/* Average Value */}
-                <div className="bg-white dark:bg-[#1e293b] p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                <div className="bg-white dark:bg-slate-800/80 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm border-t-2 border-t-purple-500">
                     <div className="flex items-center gap-3 mb-2">
                         <div className="p-2 rounded-lg bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400">
                             <Award size={20} />
                         </div>
                         <div className="text-sm font-medium text-slate-500 dark:text-slate-400">Giá trị trung bình/Khách</div>
                     </div>
-                    <div className="text-2xl font-bold text-purple-900 dark:text-purple-100">
+                    <div className="text-2xl font-bold text-slate-900 dark:text-white">
                         {formatCurrency(metrics.averageValuePerUser)}
                     </div>
                     <div className="text-xs text-slate-500 mt-1">
@@ -323,14 +323,14 @@ const CustomerAnalytics: React.FC<CustomerAnalyticsProps> = ({
                 </div>
 
                 {/* VIP Count */}
-                <div className="bg-white dark:bg-[#1e293b] p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                <div className="bg-white dark:bg-slate-800/80 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm border-t-2 border-t-amber-500">
                     <div className="flex items-center gap-3 mb-2">
                         <div className="p-2 rounded-lg bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400">
                             <UserPlus size={20} />
                         </div>
                         <div className="text-sm font-medium text-slate-500 dark:text-slate-400">Khách hàng VIP</div>
                     </div>
-                    <div className="text-2xl font-bold text-amber-900 dark:text-amber-100">
+                    <div className="text-2xl font-bold text-slate-900 dark:text-white">
                         {customerStats.vipCount}
                     </div>
                     <div className="text-xs text-slate-500 mt-1">

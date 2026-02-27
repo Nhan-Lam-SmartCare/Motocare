@@ -152,13 +152,13 @@ export const CashBookMobile: React.FC = () => {
     // ✅ FIX: Refactored transaction type detection with clear priority (consistent with CashBook.tsx)
     const isIncomeTx = (tx: CashTransaction) => {
         const normalizedCategory = String(tx.category || "").trim().toLowerCase();
-        
+
         // Priority 1: Check expense categories first (more specific)
         if (EXPENSE_CATEGORIES.has(normalizedCategory)) return false;
-        
+
         // Priority 2: Check income categories
         if (INCOME_CATEGORIES.has(normalizedCategory)) return true;
-        
+
         // Priority 3: Fallback to type field only if category not recognized
         return tx.type === "income" || tx.type === "deposit";
     };
@@ -263,22 +263,22 @@ export const CashBookMobile: React.FC = () => {
             {/* Stats Cards - Horizontal Scroll */}
             <div className="px-4 py-4 overflow-x-auto no-scrollbar flex gap-3 snap-x">
                 {/* Balance Card */}
-                <div className="snap-center shrink-0 w-[85vw] bg-gradient-to-br from-blue-600 to-blue-800 rounded-2xl p-4 shadow-lg relative overflow-hidden">
-                    <div className="absolute top-0 right-0 p-3 opacity-10">
+                <div className="snap-center shrink-0 w-[85vw] bg-slate-800/80 border border-slate-700/50 rounded-2xl p-4 shadow-sm relative overflow-hidden">
+                    <div className="absolute top-0 right-0 p-3 opacity-5">
                         <Wallet className="w-24 h-24 text-white" />
                     </div>
                     <div className="relative z-10">
-                        <p className="text-blue-100 text-sm font-medium mb-1">Tổng số dư thực tế</p>
+                        <p className="text-slate-400 text-sm font-medium mb-1">Tổng số dư thực tế</p>
                         <h3 className="text-3xl font-bold text-white mb-4">
                             {formatCurrency(actualBalance.totalBalance)}
                         </h3>
                         <div className="grid grid-cols-2 gap-4">
-                            <div className="bg-white/10 rounded-xl p-2 backdrop-blur-sm">
-                                <p className="text-blue-100 text-xs mb-1">Tiền mặt</p>
+                            <div className="bg-slate-900/50 rounded-xl p-2.5 border border-slate-700/50">
+                                <p className="text-slate-400 text-xs mb-1">Tiền mặt</p>
                                 <p className="font-semibold text-white">{formatCurrency(actualBalance.cashBalance)}</p>
                             </div>
-                            <div className="bg-white/10 rounded-xl p-2 backdrop-blur-sm">
-                                <p className="text-blue-100 text-xs mb-1">Ngân hàng</p>
+                            <div className="bg-slate-900/50 rounded-xl p-2.5 border border-slate-700/50">
+                                <p className="text-slate-400 text-xs mb-1">Ngân hàng</p>
                                 <p className="font-semibold text-white">{formatCurrency(actualBalance.bankBalance)}</p>
                             </div>
                         </div>
@@ -327,9 +327,8 @@ export const CashBookMobile: React.FC = () => {
                                 </div>
                                 <div>
                                     <p className="text-slate-400 text-xs">Chênh lệch</p>
-                                    <p className={`font-bold ${
-                                        filteredSummary.balance >= 0 ? "text-blue-500" : "text-red-500"
-                                    }`}>
+                                    <p className={`font-bold ${filteredSummary.balance >= 0 ? "text-blue-500" : "text-red-500"
+                                        }`}>
                                         {formatCurrency(filteredSummary.balance)}
                                     </p>
                                 </div>
@@ -427,13 +426,13 @@ export const CashBookMobile: React.FC = () => {
                             key={tx.id}
                             className="bg-[#1e1e2d] p-4 rounded-xl border border-slate-800 active:scale-[0.98] transition-transform"
                         >
-                            <div className="flex justify-between items-start mb-2">
+                            <div className="flex justify-between items-start mb-3">
                                 <div className="flex items-start gap-3">
-                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${isIncomeTx(tx) ? 'bg-green-500/20' : 'bg-red-500/20'}`}>
+                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 border ${isIncomeTx(tx) ? 'bg-green-500/10 border-green-500/20' : 'bg-red-500/10 border-red-500/20'}`}>
                                         {isIncomeTx(tx) ? (
-                                            <ArrowUpCircle className="w-6 h-6 text-green-500" />
+                                            <ArrowUpCircle className="w-5 h-5 text-green-500" />
                                         ) : (
-                                            <ArrowDownCircle className="w-6 h-6 text-red-500" />
+                                            <ArrowDownCircle className="w-5 h-5 text-red-500" />
                                         )}
                                     </div>
                                     <div>
@@ -458,13 +457,13 @@ export const CashBookMobile: React.FC = () => {
                                 <div className="flex gap-2 shrink-0">
                                     <button
                                         onClick={() => setEditingTransaction(tx)}
-                                        className="p-2 bg-slate-800 rounded-lg text-blue-400 hover:bg-slate-700 active:scale-95 transition-all"
+                                        className="p-2 bg-slate-800/80 rounded-lg text-slate-400 hover:text-blue-400 hover:bg-slate-700 active:scale-95 transition-all"
                                     >
                                         <Edit2 className="w-4 h-4" />
                                     </button>
                                     <button
                                         onClick={() => setDeletingTransaction(tx)}
-                                        className="p-2 bg-slate-800 rounded-lg text-red-400 hover:bg-slate-700 active:scale-95 transition-all"
+                                        className="p-2 bg-slate-800/80 rounded-lg text-slate-400 hover:text-red-400 hover:bg-slate-700 active:scale-95 transition-all"
                                     >
                                         <Trash2 className="w-4 h-4" />
                                     </button>
@@ -477,7 +476,7 @@ export const CashBookMobile: React.FC = () => {
             {/* Floating Action Button */}
             <button
                 onClick={() => setShowAddModal(true)}
-                className="fixed bottom-24 right-4 w-14 h-14 bg-blue-600 rounded-full shadow-lg flex items-center justify-center text-white z-10 active:scale-90 transition-transform"
+                className="fixed bottom-24 right-4 w-14 h-14 bg-slate-800 rounded-full shadow-lg border border-slate-700/50 flex items-center justify-center text-white z-10 hover:bg-slate-700 active:scale-90 transition-all"
             >
                 <Plus className="w-8 h-8" />
             </button>

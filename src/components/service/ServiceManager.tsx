@@ -158,7 +158,7 @@ export default function ServiceManager() {
   const [fetchedCustomers, setFetchedCustomers] = useState<any[]>([]);
   useEffect(() => {
     let isMounted = true;
-    
+
     const fetchCustomers = async () => {
       const { data, error } = await supabase
         .from("customers")
@@ -171,7 +171,7 @@ export default function ServiceManager() {
       }
     };
     fetchCustomers();
-    
+
     return () => {
       isMounted = false;
     };
@@ -689,10 +689,10 @@ export default function ServiceManager() {
       return null;
     }
 
-    const amount = printOrder.remainingAmount && printOrder.remainingAmount > 0 
-      ? printOrder.remainingAmount 
+    const amount = printOrder.remainingAmount && printOrder.remainingAmount > 0
+      ? printOrder.remainingAmount
       : printOrder.total || 0;
-    
+
     const orderCode = formatWorkOrderId(printOrder.id, storeSettings.work_order_prefix);
     const description = `Thanh toan ${orderCode}`;
 
@@ -1905,188 +1905,188 @@ export default function ServiceManager() {
                   {/* Parts and Services Table */}
                   {((printOrder.partsUsed && printOrder.partsUsed.length > 0) ||
                     (printOrder.additionalServices && printOrder.additionalServices.length > 0)) && (
-                    <div style={{ marginBottom: "2mm" }}>
-                      <p
-                        style={{
-                          fontWeight: "bold",
-                          margin: "0 0 1mm 0",
-                          fontSize: "10pt",
-                        }}
-                      >
-                        Phụ tùng và dịch vụ:
-                      </p>
-                      <table
-                        style={{
-                          width: "100%",
-                          borderCollapse: "collapse",
-                          border: "1px solid #ddd",
-                          fontSize: "9pt",
-                        }}
-                      >
-                        <thead>
-                          <tr style={{ backgroundColor: "#f5f5f5" }}>
-                            <th
-                              style={{
-                                border: "1px solid #ddd",
-                                padding: "1.5mm",
-                                textAlign: "center",
-                                width: "8%",
-                              }}
-                            >
-                              STT
-                            </th>
-                            <th
-                              style={{
-                                border: "1px solid #ddd",
-                                padding: "1.5mm",
-                                textAlign: "left",
-                              }}
-                            >
-                              Tên
-                            </th>
-                            <th
-                              style={{
-                                border: "1px solid #ddd",
-                                padding: "1.5mm",
-                                textAlign: "center",
-                                width: "12%",
-                              }}
-                            >
-                              SL
-                            </th>
-                            <th
-                              style={{
-                                border: "1px solid #ddd",
-                                padding: "1.5mm",
-                                textAlign: "right",
-                                width: "22%",
-                              }}
-                            >
-                              Đơn giá
-                            </th>
-                            <th
-                              style={{
-                                border: "1px solid #ddd",
-                                padding: "1.5mm",
-                                textAlign: "right",
-                                width: "22%",
-                              }}
-                            >
-                              Thành tiền
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {/* Parts */}
-                          {printOrder.partsUsed && printOrder.partsUsed.map(
-                            (part: WorkOrderPart, idx: number) => (
-                              <tr key={`part-${idx}`}>
-                                <td
-                                  style={{
-                                    border: "1px solid #ddd",
-                                    padding: "1.5mm",
-                                    textAlign: "center",
-                                  }}
-                                >
-                                  {idx + 1}
-                                </td>
-                                <td
-                                  style={{
-                                    border: "1px solid #ddd",
-                                    padding: "1.5mm",
-                                  }}
-                                >
-                                  {part.partName}
-                                </td>
-                                <td
-                                  style={{
-                                    border: "1px solid #ddd",
-                                    padding: "1.5mm",
-                                    textAlign: "center",
-                                  }}
-                                >
-                                  {part.quantity}
-                                </td>
-                                <td
-                                  style={{
-                                    border: "1px solid #ddd",
-                                    padding: "1.5mm",
-                                    textAlign: "right",
-                                  }}
-                                >
-                                  {formatCurrency(part.price)}
-                                </td>
-                                <td
-                                  style={{
-                                    border: "1px solid #ddd",
-                                    padding: "1.5mm",
-                                    textAlign: "right",
-                                    fontWeight: "bold",
-                                  }}
-                                >
-                                  {formatCurrency(part.price * part.quantity)}
-                                </td>
-                              </tr>
-                            )
-                          )}
-                          {/* Additional Services */}
-                          {printOrder.additionalServices && printOrder.additionalServices.map(
-                            (service: any, idx: number) => (
-                              <tr key={`service-${idx}`}>
-                                <td
-                                  style={{
-                                    border: "1px solid #ddd",
-                                    padding: "1.5mm",
-                                    textAlign: "center",
-                                  }}
-                                >
-                                  {(printOrder.partsUsed?.length || 0) + idx + 1}
-                                </td>
-                                <td
-                                  style={{
-                                    border: "1px solid #ddd",
-                                    padding: "1.5mm",
-                                  }}
-                                >
-                                  {service.description}
-                                </td>
-                                <td
-                                  style={{
-                                    border: "1px solid #ddd",
-                                    padding: "1.5mm",
-                                    textAlign: "center",
-                                  }}
-                                >
-                                  {service.quantity || 1}
-                                </td>
-                                <td
-                                  style={{
-                                    border: "1px solid #ddd",
-                                    padding: "1.5mm",
-                                    textAlign: "right",
-                                  }}
-                                >
-                                  {formatCurrency(service.price || 0)}
-                                </td>
-                                <td
-                                  style={{
-                                    border: "1px solid #ddd",
-                                    padding: "1.5mm",
-                                    textAlign: "right",
-                                    fontWeight: "bold",
-                                  }}
-                                >
-                                  {formatCurrency(
-                                    (service.price || 0) * (service.quantity || 1)
-                                  )}
-                                </td>
-                              </tr>
-                            )
-                          )}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
+                      <div style={{ marginBottom: "2mm" }}>
+                        <p
+                          style={{
+                            fontWeight: "bold",
+                            margin: "0 0 1mm 0",
+                            fontSize: "10pt",
+                          }}
+                        >
+                          Phụ tùng và dịch vụ:
+                        </p>
+                        <table
+                          style={{
+                            width: "100%",
+                            borderCollapse: "collapse",
+                            border: "1px solid #ddd",
+                            fontSize: "9pt",
+                          }}
+                        >
+                          <thead>
+                            <tr style={{ backgroundColor: "#f5f5f5" }}>
+                              <th
+                                style={{
+                                  border: "1px solid #ddd",
+                                  padding: "1.5mm",
+                                  textAlign: "center",
+                                  width: "8%",
+                                }}
+                              >
+                                STT
+                              </th>
+                              <th
+                                style={{
+                                  border: "1px solid #ddd",
+                                  padding: "1.5mm",
+                                  textAlign: "left",
+                                }}
+                              >
+                                Tên
+                              </th>
+                              <th
+                                style={{
+                                  border: "1px solid #ddd",
+                                  padding: "1.5mm",
+                                  textAlign: "center",
+                                  width: "12%",
+                                }}
+                              >
+                                SL
+                              </th>
+                              <th
+                                style={{
+                                  border: "1px solid #ddd",
+                                  padding: "1.5mm",
+                                  textAlign: "right",
+                                  width: "22%",
+                                }}
+                              >
+                                Đơn giá
+                              </th>
+                              <th
+                                style={{
+                                  border: "1px solid #ddd",
+                                  padding: "1.5mm",
+                                  textAlign: "right",
+                                  width: "22%",
+                                }}
+                              >
+                                Thành tiền
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {/* Parts */}
+                            {printOrder.partsUsed && printOrder.partsUsed.map(
+                              (part: WorkOrderPart, idx: number) => (
+                                <tr key={`part-${idx}`}>
+                                  <td
+                                    style={{
+                                      border: "1px solid #ddd",
+                                      padding: "1.5mm",
+                                      textAlign: "center",
+                                    }}
+                                  >
+                                    {idx + 1}
+                                  </td>
+                                  <td
+                                    style={{
+                                      border: "1px solid #ddd",
+                                      padding: "1.5mm",
+                                    }}
+                                  >
+                                    {part.partName}
+                                  </td>
+                                  <td
+                                    style={{
+                                      border: "1px solid #ddd",
+                                      padding: "1.5mm",
+                                      textAlign: "center",
+                                    }}
+                                  >
+                                    {part.quantity}
+                                  </td>
+                                  <td
+                                    style={{
+                                      border: "1px solid #ddd",
+                                      padding: "1.5mm",
+                                      textAlign: "right",
+                                    }}
+                                  >
+                                    {formatCurrency(part.price)}
+                                  </td>
+                                  <td
+                                    style={{
+                                      border: "1px solid #ddd",
+                                      padding: "1.5mm",
+                                      textAlign: "right",
+                                      fontWeight: "bold",
+                                    }}
+                                  >
+                                    {formatCurrency(part.price * part.quantity)}
+                                  </td>
+                                </tr>
+                              )
+                            )}
+                            {/* Additional Services */}
+                            {printOrder.additionalServices && printOrder.additionalServices.map(
+                              (service: any, idx: number) => (
+                                <tr key={`service-${idx}`}>
+                                  <td
+                                    style={{
+                                      border: "1px solid #ddd",
+                                      padding: "1.5mm",
+                                      textAlign: "center",
+                                    }}
+                                  >
+                                    {(printOrder.partsUsed?.length || 0) + idx + 1}
+                                  </td>
+                                  <td
+                                    style={{
+                                      border: "1px solid #ddd",
+                                      padding: "1.5mm",
+                                    }}
+                                  >
+                                    {service.description}
+                                  </td>
+                                  <td
+                                    style={{
+                                      border: "1px solid #ddd",
+                                      padding: "1.5mm",
+                                      textAlign: "center",
+                                    }}
+                                  >
+                                    {service.quantity || 1}
+                                  </td>
+                                  <td
+                                    style={{
+                                      border: "1px solid #ddd",
+                                      padding: "1.5mm",
+                                      textAlign: "right",
+                                    }}
+                                  >
+                                    {formatCurrency(service.price || 0)}
+                                  </td>
+                                  <td
+                                    style={{
+                                      border: "1px solid #ddd",
+                                      padding: "1.5mm",
+                                      textAlign: "right",
+                                      fontWeight: "bold",
+                                    }}
+                                  >
+                                    {formatCurrency(
+                                      (service.price || 0) * (service.quantity || 1)
+                                    )}
+                                  </td>
+                                </tr>
+                              )
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
 
                   {/* Cost Summary */}
                   <div
@@ -2404,19 +2404,19 @@ export default function ServiceManager() {
         </div>
 
         <div className="grid gap-2">
-          <div className="rounded-lg bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 p-3 text-white shadow-lg">
+          <div className="rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-3">
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-[9px] font-semibold uppercase tracking-wide text-white/80">
+                <p className="text-[9px] font-semibold uppercase tracking-wide text-slate-400">
                   Doanh thu {getDateFilterLabel(dateFilter)}
                 </p>
-                <p className="mt-1 text-xl font-semibold">
+                <p className="mt-1 text-xl font-bold text-blue-600 dark:text-blue-400">
                   {formatCurrency(stats.filteredRevenue)}
                 </p>
               </div>
-              <HandCoins className="w-6 h-6 text-white/80" />
+              <HandCoins className="w-6 h-6 text-blue-500" />
             </div>
-            <p className="mt-1.5 text-[10px] text-white/80">
+            <p className="mt-1.5 text-[10px] text-slate-500 dark:text-slate-400">
               Bao gồm các phiếu đã thanh toán {getDateFilterLabel(dateFilter)}
             </p>
           </div>
@@ -2589,14 +2589,14 @@ export default function ServiceManager() {
           )}
           <button
             onClick={() => setShowTemplateModal(true)}
-            className="px-2.5 py-1.5 bg-purple-500 hover:bg-purple-600 text-white rounded-lg text-xs font-medium flex items-center gap-1"
+            className="px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg text-xs font-medium flex items-center gap-1 transition-colors"
             aria-label="Mở danh sách mẫu sửa chữa"
           >
             <FileText className="w-3.5 h-3.5" /> Mẫu SC
           </button>
           <Link
             to="/service-history"
-            className="px-2.5 py-1.5 bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg text-xs font-medium flex items-center gap-1 transition-colors"
+            className="px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg text-xs font-medium flex items-center gap-1 transition-colors"
           >
             <History className="w-3.5 h-3.5" /> Lịch sử SC
           </Link>
@@ -2781,8 +2781,8 @@ export default function ServiceManager() {
 
                   const paymentPillClass =
                     order.paymentStatus === "paid"
-                      ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-300"
-                      : "bg-amber-50 text-amber-600 dark:bg-amber-900/30 dark:text-amber-300";
+                      ? "bg-emerald-50 text-emerald-600 border border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/30"
+                      : "bg-slate-50 text-slate-600 border border-slate-200 dark:bg-slate-500/10 dark:text-slate-400 dark:border-slate-500/30";
                   const parts = order.partsUsed || [];
                   const services = order.additionalServices || [];
 
@@ -2950,21 +2950,19 @@ export default function ServiceManager() {
                           {/* Payment pill for tablet/mobile - show when payment column hidden */}
                           <div className="lg:hidden flex flex-wrap items-center gap-1.5 pt-1">
                             <span
-                              className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-lg font-medium border ${
-                                order.paymentStatus === "paid"
-                                  ? "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700/50"
-                                  : order.paymentStatus === "partial"
-                                    ? "bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-700/50"
-                                    : "bg-slate-50 dark:bg-slate-700/50 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-600"
-                              }`}
+                              className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-lg font-medium border ${order.paymentStatus === "paid"
+                                ? "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700/50"
+                                : order.paymentStatus === "partial"
+                                  ? "bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-700/50"
+                                  : "bg-slate-50 dark:bg-slate-700/50 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-600"
+                                }`}
                             >
-                              <span className={`w-1.5 h-1.5 rounded-full ${
-                                order.paymentStatus === "paid"
-                                  ? "bg-emerald-500"
-                                  : order.paymentStatus === "partial"
-                                    ? "bg-amber-500"
-                                    : "bg-slate-400"
-                              }`} />
+                              <span className={`w-1.5 h-1.5 rounded-full ${order.paymentStatus === "paid"
+                                ? "bg-emerald-500"
+                                : order.paymentStatus === "partial"
+                                  ? "bg-amber-500"
+                                  : "bg-slate-400"
+                                }`} />
                               {order.paymentStatus === "paid"
                                 ? "Đã TT"
                                 : order.paymentStatus === "partial"
@@ -3100,21 +3098,19 @@ export default function ServiceManager() {
                           {/* Payment status pill */}
                           <div className="flex flex-wrap items-center gap-1.5">
                             <span
-                              className={`inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg font-semibold border ${
-                                order.paymentStatus === "paid"
-                                  ? "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700/50"
-                                  : order.paymentStatus === "partial"
-                                    ? "bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-700/50"
-                                    : "bg-slate-50 dark:bg-slate-700/50 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-600"
-                              }`}
+                              className={`inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg font-semibold border ${order.paymentStatus === "paid"
+                                ? "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700/50"
+                                : order.paymentStatus === "partial"
+                                  ? "bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-700/50"
+                                  : "bg-slate-50 dark:bg-slate-700/50 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-600"
+                                }`}
                             >
-                              <span className={`w-1.5 h-1.5 rounded-full ${
-                                order.paymentStatus === "paid"
-                                  ? "bg-emerald-500"
-                                  : order.paymentStatus === "partial"
-                                    ? "bg-amber-500"
-                                    : "bg-slate-400"
-                              }`} />
+                              <span className={`w-1.5 h-1.5 rounded-full ${order.paymentStatus === "paid"
+                                ? "bg-emerald-500"
+                                : order.paymentStatus === "partial"
+                                  ? "bg-amber-500"
+                                  : "bg-slate-400"
+                                }`} />
                               {order.paymentStatus === "paid"
                                 ? "Đã thanh toán"
                                 : order.paymentStatus === "partial"
@@ -3759,203 +3755,203 @@ export default function ServiceManager() {
                   {/* Parts and Services Table */}
                   {((printOrder.partsUsed && printOrder.partsUsed.length > 0) ||
                     (printOrder.additionalServices && printOrder.additionalServices.length > 0)) && (
-                    <div style={{ marginBottom: "4mm", color: "#000" }}>
-                      <p
-                        style={{
-                          fontWeight: "bold",
-                          margin: "0 0 2mm 0",
-                          fontSize: "11pt",
-                          color: "#000",
-                        }}
-                      >
-                        Phụ tùng và dịch vụ:
-                      </p>
-                      <table
-                        style={{
-                          width: "100%",
-                          borderCollapse: "collapse",
-                          border: "1px solid #ddd",
-                        }}
-                      >
-                        <thead>
-                          <tr style={{ backgroundColor: "#f5f5f5" }}>
-                            <th
-                              style={{
-                                border: "1px solid #ddd",
-                                padding: "2mm",
-                                textAlign: "center",
-                                fontSize: "10pt",
-                                width: "8%",
-                              }}
-                            >
-                              STT
-                            </th>
-                            <th
-                              style={{
-                                border: "1px solid #ddd",
-                                padding: "2mm",
-                                textAlign: "left",
-                                fontSize: "10pt",
-                              }}
-                            >
-                              Tên
-                            </th>
-                            <th
-                              style={{
-                                border: "1px solid #ddd",
-                                padding: "2mm",
-                                textAlign: "center",
-                                fontSize: "10pt",
-                                width: "15%",
-                              }}
-                            >
-                              SL
-                            </th>
-                            <th
-                              style={{
-                                border: "1px solid #ddd",
-                                padding: "2mm",
-                                textAlign: "right",
-                                fontSize: "10pt",
-                                width: "25%",
-                              }}
-                            >
-                              Đơn giá
-                            </th>
-                            <th
-                              style={{
-                                border: "1px solid #ddd",
-                                padding: "2mm",
-                                textAlign: "right",
-                                fontSize: "10pt",
-                                width: "25%",
-                              }}
-                            >
-                              Thành tiền
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {/* Parts */}
-                          {printOrder.partsUsed && printOrder.partsUsed.map(
-                            (part: WorkOrderPart, idx: number) => (
-                              <tr key={`part-${idx}`}>
-                                <td
-                                  style={{
-                                    border: "1px solid #ddd",
-                                    padding: "2mm",
-                                    textAlign: "center",
-                                    fontSize: "10pt",
-                                  }}
-                                >
-                                  {idx + 1}
-                                </td>
-                                <td
-                                  style={{
-                                    border: "1px solid #ddd",
-                                    padding: "2mm",
-                                    fontSize: "10pt",
-                                  }}
-                                >
-                                  {part.partName}
-                                </td>
-                                <td
-                                  style={{
-                                    border: "1px solid #ddd",
-                                    padding: "2mm",
-                                    textAlign: "center",
-                                    fontSize: "10pt",
-                                  }}
-                                >
-                                  {part.quantity}
-                                </td>
-                                <td
-                                  style={{
-                                    border: "1px solid #ddd",
-                                    padding: "2mm",
-                                    textAlign: "right",
-                                    fontSize: "10pt",
-                                  }}
-                                >
-                                  {formatCurrency(part.price)}
-                                </td>
-                                <td
-                                  style={{
-                                    border: "1px solid #ddd",
-                                    padding: "2mm",
-                                    textAlign: "right",
-                                    fontSize: "10pt",
-                                    fontWeight: "bold",
-                                  }}
-                                >
-                                  {formatCurrency(part.price * part.quantity)}
-                                </td>
-                              </tr>
-                            )
-                          )}
-                          {/* Additional Services */}
-                          {printOrder.additionalServices && printOrder.additionalServices.map(
-                            (service: any, idx: number) => (
-                              <tr key={`service-${idx}`}>
-                                <td
-                                  style={{
-                                    border: "1px solid #ddd",
-                                    padding: "2mm",
-                                    textAlign: "center",
-                                    fontSize: "10pt",
-                                  }}
-                                >
-                                  {(printOrder.partsUsed?.length || 0) + idx + 1}
-                                </td>
-                                <td
-                                  style={{
-                                    border: "1px solid #ddd",
-                                    padding: "2mm",
-                                    fontSize: "10pt",
-                                  }}
-                                >
-                                  {service.description}
-                                </td>
-                                <td
-                                  style={{
-                                    border: "1px solid #ddd",
-                                    padding: "2mm",
-                                    textAlign: "center",
-                                    fontSize: "10pt",
-                                  }}
-                                >
-                                  {service.quantity || 1}
-                                </td>
-                                <td
-                                  style={{
-                                    border: "1px solid #ddd",
-                                    padding: "2mm",
-                                    textAlign: "right",
-                                    fontSize: "10pt",
-                                  }}
-                                >
-                                  {formatCurrency(service.price || 0)}
-                                </td>
-                                <td
-                                  style={{
-                                    border: "1px solid #ddd",
-                                    padding: "2mm",
-                                    textAlign: "right",
-                                    fontSize: "10pt",
-                                    fontWeight: "bold",
-                                  }}
-                                >
-                                  {formatCurrency(
-                                    (service.price || 0) * (service.quantity || 1)
-                                  )}
-                                </td>
-                              </tr>
-                            )
-                          )}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
+                      <div style={{ marginBottom: "4mm", color: "#000" }}>
+                        <p
+                          style={{
+                            fontWeight: "bold",
+                            margin: "0 0 2mm 0",
+                            fontSize: "11pt",
+                            color: "#000",
+                          }}
+                        >
+                          Phụ tùng và dịch vụ:
+                        </p>
+                        <table
+                          style={{
+                            width: "100%",
+                            borderCollapse: "collapse",
+                            border: "1px solid #ddd",
+                          }}
+                        >
+                          <thead>
+                            <tr style={{ backgroundColor: "#f5f5f5" }}>
+                              <th
+                                style={{
+                                  border: "1px solid #ddd",
+                                  padding: "2mm",
+                                  textAlign: "center",
+                                  fontSize: "10pt",
+                                  width: "8%",
+                                }}
+                              >
+                                STT
+                              </th>
+                              <th
+                                style={{
+                                  border: "1px solid #ddd",
+                                  padding: "2mm",
+                                  textAlign: "left",
+                                  fontSize: "10pt",
+                                }}
+                              >
+                                Tên
+                              </th>
+                              <th
+                                style={{
+                                  border: "1px solid #ddd",
+                                  padding: "2mm",
+                                  textAlign: "center",
+                                  fontSize: "10pt",
+                                  width: "15%",
+                                }}
+                              >
+                                SL
+                              </th>
+                              <th
+                                style={{
+                                  border: "1px solid #ddd",
+                                  padding: "2mm",
+                                  textAlign: "right",
+                                  fontSize: "10pt",
+                                  width: "25%",
+                                }}
+                              >
+                                Đơn giá
+                              </th>
+                              <th
+                                style={{
+                                  border: "1px solid #ddd",
+                                  padding: "2mm",
+                                  textAlign: "right",
+                                  fontSize: "10pt",
+                                  width: "25%",
+                                }}
+                              >
+                                Thành tiền
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {/* Parts */}
+                            {printOrder.partsUsed && printOrder.partsUsed.map(
+                              (part: WorkOrderPart, idx: number) => (
+                                <tr key={`part-${idx}`}>
+                                  <td
+                                    style={{
+                                      border: "1px solid #ddd",
+                                      padding: "2mm",
+                                      textAlign: "center",
+                                      fontSize: "10pt",
+                                    }}
+                                  >
+                                    {idx + 1}
+                                  </td>
+                                  <td
+                                    style={{
+                                      border: "1px solid #ddd",
+                                      padding: "2mm",
+                                      fontSize: "10pt",
+                                    }}
+                                  >
+                                    {part.partName}
+                                  </td>
+                                  <td
+                                    style={{
+                                      border: "1px solid #ddd",
+                                      padding: "2mm",
+                                      textAlign: "center",
+                                      fontSize: "10pt",
+                                    }}
+                                  >
+                                    {part.quantity}
+                                  </td>
+                                  <td
+                                    style={{
+                                      border: "1px solid #ddd",
+                                      padding: "2mm",
+                                      textAlign: "right",
+                                      fontSize: "10pt",
+                                    }}
+                                  >
+                                    {formatCurrency(part.price)}
+                                  </td>
+                                  <td
+                                    style={{
+                                      border: "1px solid #ddd",
+                                      padding: "2mm",
+                                      textAlign: "right",
+                                      fontSize: "10pt",
+                                      fontWeight: "bold",
+                                    }}
+                                  >
+                                    {formatCurrency(part.price * part.quantity)}
+                                  </td>
+                                </tr>
+                              )
+                            )}
+                            {/* Additional Services */}
+                            {printOrder.additionalServices && printOrder.additionalServices.map(
+                              (service: any, idx: number) => (
+                                <tr key={`service-${idx}`}>
+                                  <td
+                                    style={{
+                                      border: "1px solid #ddd",
+                                      padding: "2mm",
+                                      textAlign: "center",
+                                      fontSize: "10pt",
+                                    }}
+                                  >
+                                    {(printOrder.partsUsed?.length || 0) + idx + 1}
+                                  </td>
+                                  <td
+                                    style={{
+                                      border: "1px solid #ddd",
+                                      padding: "2mm",
+                                      fontSize: "10pt",
+                                    }}
+                                  >
+                                    {service.description}
+                                  </td>
+                                  <td
+                                    style={{
+                                      border: "1px solid #ddd",
+                                      padding: "2mm",
+                                      textAlign: "center",
+                                      fontSize: "10pt",
+                                    }}
+                                  >
+                                    {service.quantity || 1}
+                                  </td>
+                                  <td
+                                    style={{
+                                      border: "1px solid #ddd",
+                                      padding: "2mm",
+                                      textAlign: "right",
+                                      fontSize: "10pt",
+                                    }}
+                                  >
+                                    {formatCurrency(service.price || 0)}
+                                  </td>
+                                  <td
+                                    style={{
+                                      border: "1px solid #ddd",
+                                      padding: "2mm",
+                                      textAlign: "right",
+                                      fontSize: "10pt",
+                                      fontWeight: "bold",
+                                    }}
+                                  >
+                                    {formatCurrency(
+                                      (service.price || 0) * (service.quantity || 1)
+                                    )}
+                                  </td>
+                                </tr>
+                              )
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
 
                   {/* Cost Summary */}
                   <div
@@ -4682,202 +4678,202 @@ export default function ServiceManager() {
           {/* Parts and Services Table */}
           {((printOrder.partsUsed && printOrder.partsUsed.length > 0) ||
             (printOrder.additionalServices && printOrder.additionalServices.length > 0)) && (
-            <div style={{ marginBottom: "4mm" }}>
-              <p
-                style={{
-                  fontWeight: "bold",
-                  margin: "0 0 2mm 0",
-                  fontSize: "11pt",
-                }}
-              >
-                Phụ tùng và dịch vụ:
-              </p>
-              <table
-                style={{
-                  width: "100%",
-                  borderCollapse: "collapse",
-                  border: "1px solid #ddd",
-                }}
-              >
-                <thead>
-                  <tr style={{ backgroundColor: "#f5f5f5" }}>
-                    <th
-                      style={{
-                        border: "1px solid #ddd",
-                        padding: "2mm",
-                        textAlign: "center",
-                        fontSize: "10pt",
-                        width: "8%",
-                      }}
-                    >
-                      STT
-                    </th>
-                    <th
-                      style={{
-                        border: "1px solid #ddd",
-                        padding: "2mm",
-                        textAlign: "left",
-                        fontSize: "10pt",
-                      }}
-                    >
-                      Tên
-                    </th>
-                    <th
-                      style={{
-                        border: "1px solid #ddd",
-                        padding: "2mm",
-                        textAlign: "center",
-                        fontSize: "10pt",
-                        width: "15%",
-                      }}
-                    >
-                      SL
-                    </th>
-                    <th
-                      style={{
-                        border: "1px solid #ddd",
-                        padding: "2mm",
-                        textAlign: "right",
-                        fontSize: "10pt",
-                        width: "25%",
-                      }}
-                    >
-                      Đơn giá
-                    </th>
-                    <th
-                      style={{
-                        border: "1px solid #ddd",
-                        padding: "2mm",
-                        textAlign: "right",
-                        fontSize: "10pt",
-                        width: "25%",
-                      }}
-                    >
-                      Thành tiền
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {/* Parts */}
-                  {printOrder.partsUsed && printOrder.partsUsed.map(
-                    (part: WorkOrderPart, idx: number) => (
-                      <tr key={`part-${idx}`}>
-                        <td
-                          style={{
-                            border: "1px solid #ddd",
-                            padding: "2mm",
-                            textAlign: "center",
-                            fontSize: "10pt",
-                          }}
-                        >
-                          {idx + 1}
-                        </td>
-                        <td
-                          style={{
-                            border: "1px solid #ddd",
-                            padding: "2mm",
-                            fontSize: "10pt",
-                          }}
-                        >
-                          {part.partName}
-                        </td>
-                        <td
-                          style={{
-                            border: "1px solid #ddd",
-                            padding: "2mm",
-                            textAlign: "center",
-                            fontSize: "10pt",
-                          }}
-                        >
-                          {part.quantity}
-                        </td>
-                        <td
-                          style={{
-                            border: "1px solid #ddd",
-                            padding: "2mm",
-                            textAlign: "right",
-                            fontSize: "10pt",
-                          }}
-                        >
-                          {formatCurrency(part.price)}
-                        </td>
-                        <td
-                          style={{
-                            border: "1px solid #ddd",
-                            padding: "2mm",
-                            textAlign: "right",
-                            fontSize: "10pt",
-                            fontWeight: "bold",
-                          }}
-                        >
-                          {formatCurrency(part.price * part.quantity)}
-                        </td>
-                      </tr>
-                    )
-                  )}
-                  {/* Additional Services */}
-                  {printOrder.additionalServices && printOrder.additionalServices.map(
-                    (service: any, idx: number) => (
-                      <tr key={`service-${idx}`}>
-                        <td
-                          style={{
-                            border: "1px solid #ddd",
-                            padding: "2mm",
-                            textAlign: "center",
-                            fontSize: "10pt",
-                          }}
-                        >
-                          {(printOrder.partsUsed?.length || 0) + idx + 1}
-                        </td>
-                        <td
-                          style={{
-                            border: "1px solid #ddd",
-                            padding: "2mm",
-                            fontSize: "10pt",
-                          }}
-                        >
-                          {service.description}
-                        </td>
-                        <td
-                          style={{
-                            border: "1px solid #ddd",
-                            padding: "2mm",
-                            textAlign: "center",
-                            fontSize: "10pt",
-                          }}
-                        >
-                          {service.quantity || 1}
-                        </td>
-                        <td
-                          style={{
-                            border: "1px solid #ddd",
-                            padding: "2mm",
-                            textAlign: "right",
-                            fontSize: "10pt",
-                          }}
-                        >
-                          {formatCurrency(service.price || 0)}
-                        </td>
-                        <td
-                          style={{
-                            border: "1px solid #ddd",
-                            padding: "2mm",
-                            textAlign: "right",
-                            fontSize: "10pt",
-                            fontWeight: "bold",
-                          }}
-                        >
-                          {formatCurrency(
-                            (service.price || 0) * (service.quantity || 1)
-                          )}
-                        </td>
-                      </tr>
-                    )
-                  )}
-                </tbody>
-              </table>
-            </div>
-          )}
+              <div style={{ marginBottom: "4mm" }}>
+                <p
+                  style={{
+                    fontWeight: "bold",
+                    margin: "0 0 2mm 0",
+                    fontSize: "11pt",
+                  }}
+                >
+                  Phụ tùng và dịch vụ:
+                </p>
+                <table
+                  style={{
+                    width: "100%",
+                    borderCollapse: "collapse",
+                    border: "1px solid #ddd",
+                  }}
+                >
+                  <thead>
+                    <tr style={{ backgroundColor: "#f5f5f5" }}>
+                      <th
+                        style={{
+                          border: "1px solid #ddd",
+                          padding: "2mm",
+                          textAlign: "center",
+                          fontSize: "10pt",
+                          width: "8%",
+                        }}
+                      >
+                        STT
+                      </th>
+                      <th
+                        style={{
+                          border: "1px solid #ddd",
+                          padding: "2mm",
+                          textAlign: "left",
+                          fontSize: "10pt",
+                        }}
+                      >
+                        Tên
+                      </th>
+                      <th
+                        style={{
+                          border: "1px solid #ddd",
+                          padding: "2mm",
+                          textAlign: "center",
+                          fontSize: "10pt",
+                          width: "15%",
+                        }}
+                      >
+                        SL
+                      </th>
+                      <th
+                        style={{
+                          border: "1px solid #ddd",
+                          padding: "2mm",
+                          textAlign: "right",
+                          fontSize: "10pt",
+                          width: "25%",
+                        }}
+                      >
+                        Đơn giá
+                      </th>
+                      <th
+                        style={{
+                          border: "1px solid #ddd",
+                          padding: "2mm",
+                          textAlign: "right",
+                          fontSize: "10pt",
+                          width: "25%",
+                        }}
+                      >
+                        Thành tiền
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {/* Parts */}
+                    {printOrder.partsUsed && printOrder.partsUsed.map(
+                      (part: WorkOrderPart, idx: number) => (
+                        <tr key={`part-${idx}`}>
+                          <td
+                            style={{
+                              border: "1px solid #ddd",
+                              padding: "2mm",
+                              textAlign: "center",
+                              fontSize: "10pt",
+                            }}
+                          >
+                            {idx + 1}
+                          </td>
+                          <td
+                            style={{
+                              border: "1px solid #ddd",
+                              padding: "2mm",
+                              fontSize: "10pt",
+                            }}
+                          >
+                            {part.partName}
+                          </td>
+                          <td
+                            style={{
+                              border: "1px solid #ddd",
+                              padding: "2mm",
+                              textAlign: "center",
+                              fontSize: "10pt",
+                            }}
+                          >
+                            {part.quantity}
+                          </td>
+                          <td
+                            style={{
+                              border: "1px solid #ddd",
+                              padding: "2mm",
+                              textAlign: "right",
+                              fontSize: "10pt",
+                            }}
+                          >
+                            {formatCurrency(part.price)}
+                          </td>
+                          <td
+                            style={{
+                              border: "1px solid #ddd",
+                              padding: "2mm",
+                              textAlign: "right",
+                              fontSize: "10pt",
+                              fontWeight: "bold",
+                            }}
+                          >
+                            {formatCurrency(part.price * part.quantity)}
+                          </td>
+                        </tr>
+                      )
+                    )}
+                    {/* Additional Services */}
+                    {printOrder.additionalServices && printOrder.additionalServices.map(
+                      (service: any, idx: number) => (
+                        <tr key={`service-${idx}`}>
+                          <td
+                            style={{
+                              border: "1px solid #ddd",
+                              padding: "2mm",
+                              textAlign: "center",
+                              fontSize: "10pt",
+                            }}
+                          >
+                            {(printOrder.partsUsed?.length || 0) + idx + 1}
+                          </td>
+                          <td
+                            style={{
+                              border: "1px solid #ddd",
+                              padding: "2mm",
+                              fontSize: "10pt",
+                            }}
+                          >
+                            {service.description}
+                          </td>
+                          <td
+                            style={{
+                              border: "1px solid #ddd",
+                              padding: "2mm",
+                              textAlign: "center",
+                              fontSize: "10pt",
+                            }}
+                          >
+                            {service.quantity || 1}
+                          </td>
+                          <td
+                            style={{
+                              border: "1px solid #ddd",
+                              padding: "2mm",
+                              textAlign: "right",
+                              fontSize: "10pt",
+                            }}
+                          >
+                            {formatCurrency(service.price || 0)}
+                          </td>
+                          <td
+                            style={{
+                              border: "1px solid #ddd",
+                              padding: "2mm",
+                              textAlign: "right",
+                              fontSize: "10pt",
+                              fontWeight: "bold",
+                            }}
+                          >
+                            {formatCurrency(
+                              (service.price || 0) * (service.quantity || 1)
+                            )}
+                          </td>
+                        </tr>
+                      )
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
 
           {/* Cost Summary */}
           <div

@@ -1329,7 +1329,7 @@ const InventoryManagerNew: React.FC = () => {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setShowBatchPrintModal(true)}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-medium hover:bg-emerald-700 transition"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-800/80 text-emerald-400 border border-slate-700/50 text-xs font-medium hover:bg-slate-700 hover:text-emerald-300 hover:border-emerald-500/30 transition"
               title="In mã vạch hàng loạt"
             >
               <svg
@@ -1351,7 +1351,7 @@ const InventoryManagerNew: React.FC = () => {
             {canDo(profile?.role, "inventory.import") && (
               <button
                 onClick={() => setShowGoodsReceipt(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-medium hover:bg-blue-700 transition"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800/80 text-blue-400 border border-slate-700/50 text-xs font-medium hover:bg-slate-700 hover:text-blue-300 hover:border-blue-500/30 transition"
               >
                 <Plus className="w-3.5 h-3.5" />
                 Tạo phiếu nhập
@@ -2117,7 +2117,7 @@ const InventoryManagerNew: React.FC = () => {
                             ? "border-red-300 bg-red-50 text-red-700 dark:border-red-700 dark:bg-red-950/50 dark:text-red-300"
                             : available <= LOW_STOCK_THRESHOLD
                               ? "border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-600 dark:bg-amber-950/50 dark:text-amber-300"
-                              : "border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-300";
+                              : "border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-700/50 dark:bg-slate-800 dark:text-slate-400";
                         const stockStatusLabel =
                           available === 0
                             ? "Hết hàng"
@@ -2129,7 +2129,7 @@ const InventoryManagerNew: React.FC = () => {
                             ? "text-red-600 dark:text-red-400"
                             : available <= LOW_STOCK_THRESHOLD
                               ? "text-amber-600 dark:text-amber-400"
-                              : "text-emerald-700 dark:text-emerald-400";
+                              : "text-slate-900 dark:text-slate-100";
                         const productInitial =
                           part.name?.charAt(0)?.toUpperCase() || "?";
                         const rowHighlight = isSelected
@@ -2155,28 +2155,15 @@ const InventoryManagerNew: React.FC = () => {
                             </td>
                             <td className="px-3 py-2">
                               <div className="flex items-center gap-2">
-                                <div
-                                  className="h-8 w-8 rounded-lg overflow-hidden flex items-center justify-center text-xs font-semibold text-white flex-shrink-0"
-                                  style={
-                                    part.imageUrl
-                                      ? undefined
-                                      : {
-                                        backgroundColor: getAvatarColor(
-                                          part.category
-                                        ),
-                                      }
-                                  }
-                                >
-                                  {part.imageUrl ? (
+                                {part.imageUrl && (
+                                  <div className="h-8 w-8 rounded-lg overflow-hidden flex items-center justify-center flex-shrink-0 border border-slate-200 dark:border-slate-700">
                                     <img
                                       src={part.imageUrl}
                                       alt={part.name}
                                       className="h-full w-full object-cover"
                                     />
-                                  ) : (
-                                    <span>{productInitial}</span>
-                                  )}
-                                </div>
+                                  </div>
+                                )}
                                 <div className="flex flex-col gap-0.5 min-w-0">
                                   <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-900 dark:text-slate-100 truncate">
                                     {part.name}
@@ -2202,9 +2189,7 @@ const InventoryManagerNew: React.FC = () => {
                                   </div>
                                   {part.category && (
                                     <span
-                                      className={`inline-flex items-center px-1.5 py-0 rounded-full text-[9px] font-medium ${getCategoryColor(part.category).bg
-                                        } ${getCategoryColor(part.category).text
-                                        }`}
+                                      className="inline-flex items-center px-1.5 py-0 rounded-full text-[9px] font-medium bg-slate-100 text-slate-600 dark:bg-slate-700/50 dark:text-slate-400 border border-slate-200 dark:border-slate-600"
                                     >
                                       {part.category}
                                     </span>
@@ -2231,31 +2216,18 @@ const InventoryManagerNew: React.FC = () => {
                                     (Đặt trước: {activeReserved})
                                   </span>
                                 )}
-                                <span
-                                  className={`inline-flex items-center gap-0.5 rounded-full border px-1.5 py-0 text-[9px] font-semibold ${stockStatusClass}`}
-                                >
-                                  <span
-                                    className={`h-1 w-1 rounded-full ${available === 0
-                                      ? "bg-red-500"
-                                      : available <= LOW_STOCK_THRESHOLD
-                                        ? "bg-amber-500"
-                                        : "bg-emerald-500"
-                                      }`}
-                                  ></span>
-                                  {stockStatusLabel}
-                                </span>
                               </div>
                             </td>
                             <td className="px-3 py-2 whitespace-nowrap text-right text-xs text-slate-600 dark:text-slate-300">
                               {formatCurrency(costPrice)}
                             </td>
-                            <td className="px-3 py-2 whitespace-nowrap text-right text-xs font-medium text-slate-900 dark:text-slate-100">
+                            <td className="px-3 py-2 whitespace-nowrap text-right text-xs font-medium text-slate-600 dark:text-slate-400">
                               {formatCurrency(retailPrice)}
                             </td>
-                            <td className="px-3 py-2 whitespace-nowrap text-right text-xs text-slate-600 dark:text-slate-300">
+                            <td className="px-3 py-2 whitespace-nowrap text-right text-xs text-slate-500 dark:text-slate-500">
                               {formatCurrency(wholesalePrice)}
                             </td>
-                            <td className="px-3 py-2 whitespace-nowrap text-right text-xs font-semibold text-slate-900 dark:text-slate-100">
+                            <td className="px-3 py-2 whitespace-nowrap text-right text-xs font-semibold text-slate-700 dark:text-slate-300">
                               {formatCurrency(value)}
                             </td>
                             <td className="px-3 py-2 whitespace-nowrap text-center">
@@ -2273,7 +2245,7 @@ const InventoryManagerNew: React.FC = () => {
                                       prev === part.id ? null : part.id
                                     );
                                   }}
-                                  className="rounded-full border border-transparent p-2 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:border-slate-600 hover:text-slate-900 dark:text-slate-100 transition"
+                                  className="p-1.5 text-slate-500 hover:text-slate-300 hover:bg-slate-700/50 rounded transition"
                                   aria-haspopup="menu"
                                   aria-expanded={openActionRow === part.id}
                                   title="Thao tác nhanh"

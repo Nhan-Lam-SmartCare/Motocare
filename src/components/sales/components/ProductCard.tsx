@@ -36,7 +36,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                 ? "border-slate-200 dark:border-slate-700 opacity-60 cursor-not-allowed"
                 : inCart
                     ? "border-blue-400 dark:border-blue-500 shadow-lg shadow-blue-500/20"
-                    : "border-slate-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-xl hover:shadow-blue-500/10 cursor-pointer active:scale-98"
+                    : "border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-500 hover:shadow-xl hover:shadow-slate-500/10 cursor-pointer active:scale-98"
                 }`}
         >
             {/* In Cart Indicator */}
@@ -67,10 +67,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             )}
 
             <div className="p-3 md:p-4 space-y-2 md:space-y-3">
-                {/* Product Icon */}
-                <div className="flex items-center justify-center w-12 h-12 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg">
-                    <Package className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-                </div>
+
 
                 {/* Product Name */}
                 <div className="min-h-[48px]">
@@ -124,7 +121,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
             {/* Hover Effect */}
             {!isOutOfStock && (
-                <div className="absolute inset-0 bg-gradient-to-t from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
             )}
         </div>
     );

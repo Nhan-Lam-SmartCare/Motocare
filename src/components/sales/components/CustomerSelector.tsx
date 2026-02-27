@@ -52,20 +52,19 @@ export const CustomerSelector: React.FC<CustomerSelectorProps> = ({
                         {(() => {
                             const vehicles = (selectedCustomer.vehicles || []).filter(v => v.model || v.licensePlate);
                             if (vehicles.length === 0) return null;
-                            
+
                             const displayVehicles = vehicles.slice(0, 3);
                             const hasMore = vehicles.length > 3;
-                            
+
                             return (
                                 <div className="flex flex-wrap gap-1.5 mt-2">
                                     {displayVehicles.map((vehicle, idx) => (
                                         <div
                                             key={vehicle.id || idx}
-                                            className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium border ${
-                                                vehicle.isPrimary 
-                                                    ? 'bg-amber-100 dark:bg-amber-900/30 border-amber-300 dark:border-amber-700 text-amber-800 dark:text-amber-300' 
+                                            className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium border ${vehicle.isPrimary
+                                                    ? 'bg-amber-100 dark:bg-amber-900/30 border-amber-300 dark:border-amber-700 text-amber-800 dark:text-amber-300'
                                                     : 'bg-blue-100 dark:bg-blue-900/30 border-blue-300 dark:border-blue-700 text-blue-800 dark:text-blue-300'
-                                            }`}
+                                                }`}
                                         >
                                             <Bike className="w-3 h-3" />
                                             <span className="font-semibold">{vehicle.model || "Không rõ"}</span>
@@ -111,7 +110,7 @@ export const CustomerSelector: React.FC<CustomerSelectorProps> = ({
                     </div>
                     <button
                         onClick={onAddNew}
-                        className="px-4 py-3 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white rounded-lg flex items-center gap-2 transition-all shadow-lg hover:shadow-xl font-semibold whitespace-nowrap"
+                        className="px-4 py-3 bg-slate-800/80 text-emerald-400 border border-slate-700/50 rounded-lg flex items-center gap-2 transition-all hover:bg-slate-700 hover:text-emerald-300 hover:border-emerald-500/30 font-semibold whitespace-nowrap"
                         title="Thêm khách hàng mới"
                     >
                         <UserPlus className="w-5 h-5" />
@@ -168,11 +167,10 @@ export const CustomerSelector: React.FC<CustomerSelectorProps> = ({
                                                 {displayVehicles.map((vehicle, idx) => (
                                                     <div
                                                         key={vehicle.id || idx}
-                                                        className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium border ${
-                                                            vehicle.isPrimary 
-                                                                ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400' 
+                                                        className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium border ${vehicle.isPrimary
+                                                                ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400'
                                                                 : 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-400'
-                                                        }`}
+                                                            }`}
                                                     >
                                                         <Bike className="w-3 h-3" />
                                                         <span className="font-semibold">{vehicle.model || "Không rõ"}</span>

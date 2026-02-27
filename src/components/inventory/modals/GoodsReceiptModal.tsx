@@ -673,75 +673,73 @@ const GoodsReceiptModal: React.FC<{
                     const stock = part.stock?.[currentBranchId] || 0;
                     const isInCart = receiptItems.some(item => item.partId === part.id);
                     return (
-                    <div
-                      key={part.id}
-                      onClick={() => addToReceipt(part)}
-                      className={`group flex items-center gap-2.5 px-3 py-2 rounded-lg cursor-pointer transition-all duration-150 ${
-                        isInCart 
-                          ? 'bg-blue-50 dark:bg-blue-900/20 border border-blue-300 dark:border-blue-700' 
+                      <div
+                        key={part.id}
+                        onClick={() => addToReceipt(part)}
+                        className={`group flex items-center gap-2.5 px-3 py-2 rounded-lg cursor-pointer transition-all duration-150 ${isInCart
+                          ? 'bg-slate-50 dark:bg-slate-800/50 border border-slate-300 dark:border-slate-600'
                           : 'hover:bg-slate-100 dark:hover:bg-slate-700/50 border border-transparent'
-                      }`}
-                    >
-                      {/* Icon */}
-                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-110 ${
-                        isInCart 
-                          ? 'bg-blue-500 text-white' 
-                          : 'bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500'
-                      }`}>
-                        {isInCart ? (
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                          </svg>
-                        ) : (
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                          </svg>
-                        )}
-                      </div>
-
-                      {/* Info */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1.5">
-                          <span className="font-semibold text-xs text-slate-900 dark:text-slate-100 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                            {part.name}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-1.5 mt-0.5">
-                          <span className="text-[9px] text-blue-600 dark:text-blue-400 font-mono bg-blue-50 dark:bg-blue-900/30 px-1 py-0 rounded">
-                            {part.sku}
-                          </span>
-                          {part.category && (
-                            <span className={`inline-flex items-center px-1 py-0 rounded text-[8px] font-medium ${getCategoryColor(part.category).bg} ${getCategoryColor(part.category).text}`}>
-                              {part.category}
-                            </span>
-                          )}
-                          <span className={`text-[9px] font-medium ${stock > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400 dark:text-slate-600'}`}>
-                            Tồn: {stock}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Prices */}
-                      <div className="flex flex-col items-end flex-shrink-0 gap-0.5">
-                        <span className="text-[10px] font-semibold text-orange-600 dark:text-orange-400">
-                          Nhập: {formatCurrency(part.costPrice?.[currentBranchId] || 0)}
-                        </span>
-                        <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
-                          Bán: {formatCurrency(part.retailPrice?.[currentBranchId] || 0)}
-                        </span>
-                      </div>
-
-                      {/* Arrow */}
-                      <svg
-                        className="w-4 h-4 text-slate-300 dark:text-slate-600 group-hover:text-blue-500 transition-colors flex-shrink-0"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
+                          }`}
                       >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
-                    </div>
-                  );
+                        {/* Icon */}
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-110 ${isInCart
+                          ? 'bg-slate-200 dark:bg-slate-600 text-slate-700 dark:text-slate-200'
+                          : 'bg-slate-50 dark:bg-slate-800 text-slate-300 dark:text-slate-600'
+                          }`}>
+                          {isInCart ? (
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                            </svg>
+                          ) : (
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                            </svg>
+                          )}
+                        </div>
+
+                        {/* Info */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-semibold text-xs text-slate-900 dark:text-slate-100 truncate group-hover:text-slate-600 dark:group-hover:text-slate-300 transition-colors">
+                              {part.name}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            <span className="text-[9px] text-slate-500 dark:text-slate-400 font-mono bg-slate-100 dark:bg-slate-800/50 px-1 py-0 rounded">
+                              {part.sku}
+                            </span>
+                            {part.category && (
+                              <span className={`inline-flex items-center px-1 py-0 rounded text-[8px] font-medium ${getCategoryColor(part.category).bg} ${getCategoryColor(part.category).text}`}>
+                                {part.category}
+                              </span>
+                            )}
+                            <span className={`text-[9px] font-medium ${stock > 0 ? 'text-slate-600 dark:text-slate-300' : 'text-slate-400 dark:text-slate-600'}`}>
+                              Tồn: {stock}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Prices */}
+                        <div className="flex flex-col items-end flex-shrink-0 gap-0.5">
+                          <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400">
+                            Nhập: {formatCurrency(part.costPrice?.[currentBranchId] || 0)}
+                          </span>
+                          <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500">
+                            Bán: {formatCurrency(part.retailPrice?.[currentBranchId] || 0)}
+                          </span>
+                        </div>
+
+                        {/* Arrow */}
+                        <svg
+                          className="w-4 h-4 text-slate-300 dark:text-slate-600 group-hover:text-slate-400 transition-colors flex-shrink-0"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </div>
+                    );
                   })}
                 </div>
               )}
@@ -842,7 +840,7 @@ const GoodsReceiptModal: React.FC<{
                     Giỏ hàng nhập
                   </h3>
                 </div>
-                <span className="text-[10px] text-white bg-gradient-to-r from-blue-600 to-indigo-600 px-2.5 py-0.5 rounded-full font-semibold shadow">
+                <span className="text-[10px] text-white bg-slate-700 dark:bg-slate-600 px-2.5 py-0.5 rounded-full font-semibold shadow">
                   {receiptItems.length} sản phẩm
                 </span>
               </div>
@@ -894,8 +892,8 @@ const GoodsReceiptModal: React.FC<{
                       >
                         {/* Row 1: Product info */}
                         <div className="flex items-center gap-2 mb-2">
-                          <div className="w-5 h-5 bg-blue-600 rounded flex items-center justify-center flex-shrink-0">
-                            <span className="text-[10px] font-bold text-white">
+                          <div className="w-5 h-5 bg-slate-200 dark:bg-slate-700 rounded flex items-center justify-center flex-shrink-0">
+                            <span className="text-[10px] font-bold text-slate-600 dark:text-slate-300">
                               {index + 1}
                             </span>
                           </div>
@@ -918,7 +916,7 @@ const GoodsReceiptModal: React.FC<{
                           </div>
                           <button
                             onClick={() => removeReceiptItem(item.partId)}
-                            className="w-5 h-5 flex items-center justify-center bg-red-100 dark:bg-red-900/30 rounded text-red-600 dark:text-red-400 hover:bg-red-200 flex-shrink-0 text-sm"
+                            className="w-5 h-5 flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded flex-shrink-0 text-sm"
                             title="Xóa"
                           >
                             ×
@@ -937,7 +935,7 @@ const GoodsReceiptModal: React.FC<{
                                   Math.max(1, item.quantity - 1)
                                 )
                               }
-                              className="w-6 h-7 flex items-center justify-center bg-slate-200 dark:bg-slate-700 rounded-l-md text-slate-600 dark:text-slate-300 hover:bg-blue-100 dark:hover:bg-blue-900/30 text-sm font-bold transition-colors"
+                              className="w-6 h-7 flex items-center justify-center bg-transparent rounded-l-md text-slate-500 hover:text-slate-700 hover:bg-slate-200 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-slate-700 text-sm font-bold transition-all"
                             >
                               −
                             </button>
@@ -952,7 +950,7 @@ const GoodsReceiptModal: React.FC<{
                                   Math.max(1, val)
                                 );
                               }}
-                              className="w-10 px-1 py-1 text-center border-y border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-xs font-bold h-7"
+                              className="w-10 px-1 py-1 text-center border-transparent bg-slate-100/50 dark:bg-slate-800/50 text-slate-900 dark:text-slate-100 text-xs font-bold h-7 focus:bg-white dark:focus:bg-slate-700 focus:ring-1 focus:ring-blue-400/30 focus:border-blue-400 rounded-none transition-all"
                               min="1"
                             />
                             <button
@@ -963,7 +961,7 @@ const GoodsReceiptModal: React.FC<{
                                   item.quantity + 1
                                 )
                               }
-                              className="w-6 h-7 flex items-center justify-center bg-slate-200 dark:bg-slate-700 rounded-r-md text-slate-600 dark:text-slate-300 hover:bg-blue-100 dark:hover:bg-blue-900/30 text-sm font-bold transition-colors"
+                              className="w-6 h-7 flex items-center justify-center bg-transparent rounded-r-md text-slate-500 hover:text-slate-700 hover:bg-slate-200 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-slate-700 text-sm font-bold transition-all"
                             >
                               +
                             </button>
@@ -999,7 +997,7 @@ const GoodsReceiptModal: React.FC<{
                                   )
                                 );
                               }}
-                              className="w-full px-2 py-1 border border-orange-300 dark:border-orange-700 rounded-md bg-orange-50/50 dark:bg-orange-900/10 text-slate-900 dark:text-slate-100 text-right text-xs font-medium focus:border-orange-500 focus:ring-1 focus:ring-orange-500/30 h-7"
+                              className="w-full px-2 py-1 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-right text-xs font-medium focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 h-7"
                               placeholder="Giá nhập"
                             />
                           </div>
@@ -1015,7 +1013,7 @@ const GoodsReceiptModal: React.FC<{
                                   Math.max(0, Math.round(val))
                                 )
                               }
-                              className="w-full px-2 py-1 border border-emerald-300 dark:border-emerald-700 rounded-md bg-emerald-50/50 dark:bg-emerald-900/10 text-slate-900 dark:text-slate-100 text-right text-xs font-medium focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/30 h-7"
+                              className="w-full px-2 py-1 border border-transparent rounded-md bg-slate-100/50 dark:bg-slate-800/50 text-slate-900 dark:text-slate-100 text-right text-xs font-medium focus:bg-white dark:focus:bg-slate-700 focus:border-blue-400 focus:ring-1 focus:ring-blue-400/30 h-7 transition-all"
                               placeholder="Giá bán"
                             />
                           </div>
@@ -1037,7 +1035,7 @@ const GoodsReceiptModal: React.FC<{
             {/* Payment Section - Compact */}
             <div className="p-3 border-t-2 border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
               {/* Total Display - Always visible */}
-              <div className="mb-3 p-3 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg shadow">
+              <div className="mb-3 p-3 bg-slate-800 dark:bg-slate-900/80 rounded-lg shadow">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-semibold text-white uppercase">
                     Tổng thanh toán
@@ -1062,7 +1060,7 @@ const GoodsReceiptModal: React.FC<{
                   <button
                     onClick={() => setPaymentMethod("cash")}
                     className={`flex items-center justify-center gap-1.5 px-3 py-2 border-2 rounded-lg text-xs font-bold transition-all ${paymentMethod === "cash"
-                      ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400"
+                      ? "border-slate-800 bg-slate-800 text-white dark:border-slate-600 dark:bg-slate-700 dark:text-white"
                       : "border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300"
                       }`}
                   >
@@ -1071,7 +1069,7 @@ const GoodsReceiptModal: React.FC<{
                   <button
                     onClick={() => setPaymentMethod("bank")}
                     className={`flex items-center justify-center gap-1.5 px-3 py-2 border-2 rounded-lg text-xs font-bold transition-all ${paymentMethod === "bank"
-                      ? "border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400"
+                      ? "border-slate-800 bg-slate-800 text-white dark:border-slate-600 dark:bg-slate-700 dark:text-white"
                       : "border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300"
                       }`}
                   >
@@ -1088,24 +1086,24 @@ const GoodsReceiptModal: React.FC<{
                     <label className="block text-[10px] font-bold text-slate-700 dark:text-slate-300 mb-1.5">
                       Hình thức thanh toán
                     </label>
-                    <div className="grid grid-cols-3 gap-1.5">
+                    <div className="flex bg-slate-200/50 dark:bg-slate-700/50 p-1 rounded-lg">
                       <button
                         onClick={() => {
                           setPaymentType("full");
                           setPartialAmount(0);
                         }}
-                        className={`px-2 py-1.5 border-2 rounded-lg text-[10px] font-bold transition-all ${paymentType === "full"
-                          ? "border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400"
-                          : "border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300"
+                        className={`flex-1 py-1.5 rounded-md text-[10px] font-bold transition-all ${paymentType === "full"
+                          ? "bg-white dark:bg-slate-600 text-slate-900 dark:text-white shadow-sm"
+                          : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
                           }`}
                       >
                         Đủ
                       </button>
                       <button
                         onClick={() => setPaymentType("partial")}
-                        className={`px-2 py-1.5 border-2 rounded-lg text-[10px] font-bold transition-all ${paymentType === "partial"
-                          ? "border-orange-500 bg-orange-50 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400"
-                          : "border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300"
+                        className={`flex-1 py-1.5 rounded-md text-[10px] font-bold transition-all ${paymentType === "partial"
+                          ? "bg-white dark:bg-slate-600 text-slate-900 dark:text-white shadow-sm"
+                          : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
                           }`}
                       >
                         1 phần
@@ -1115,9 +1113,9 @@ const GoodsReceiptModal: React.FC<{
                           setPaymentType("note");
                           setPartialAmount(0);
                         }}
-                        className={`px-2 py-1.5 border-2 rounded-lg text-[10px] font-bold transition-all ${paymentType === "note"
-                          ? "border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400"
-                          : "border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300"
+                        className={`flex-1 py-1.5 rounded-md text-[10px] font-bold transition-all ${paymentType === "note"
+                          ? "bg-white dark:bg-slate-600 text-slate-900 dark:text-white shadow-sm"
+                          : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
                           }`}
                       >
                         Công nợ

@@ -24,6 +24,7 @@ import {
 } from "../../hooks/useSalesRepository";
 import { useLowStock } from "../../hooks/useLowStock";
 import { showToast } from "../../utils/toast";
+import { getAvailableStock } from "../../lib/repository/partsRepository";
 
 import TetBanner from "../dashboard/components/TetBanner";
 import { formatCurrency } from "../../utils/format";
@@ -332,9 +333,7 @@ const SalesManager: React.FC = () => {
             const part = repoParts.find(p => p.id === item.partId);
             if (!part) return true; // Part not found = out of stock
 
-            const stock = part.stock[currentBranchId] || 0;
-            const reserved = part.reserved?.[currentBranchId] || 0;
-            const available = stock - reserved;
+            const available = getAvailableStock(part, currentBranchId);
 
             return item.quantity > available;
         });

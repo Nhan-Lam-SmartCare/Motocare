@@ -1,6 +1,7 @@
 import { useState, useCallback, useMemo } from "react";
 import type { CartItem, Part } from "../../../types";
 import { showToast } from "../../../utils/toast";
+import { getAvailableStock } from "../../../lib/repository/partsRepository";
 
 export interface UseSalesCartReturn {
     // State
@@ -52,7 +53,7 @@ export function useSalesCart(
             const wholesalePrice = part.wholesalePrice?.[branchId] ?? 0;
             // Nếu bật mode sỉ và có giá sỉ thì dùng giá sỉ, không thì dùng giá lẻ
             const price = isWholesaleMode && wholesalePrice > 0 ? wholesalePrice : retailPrice;
-            const stock = part.stock?.[branchId] ?? 0;
+            const stock = getAvailableStock(part, branchId);
             const existing = initialCartItems.find((item) => item.partId === part.id);
 
             if (existing) {

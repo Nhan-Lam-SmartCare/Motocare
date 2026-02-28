@@ -160,7 +160,7 @@ export async function createPart(
     try {
       const { data: userData } = await supabase.auth.getUser();
       userId = userData?.user?.id || null;
-    } catch {}
+    } catch { }
     await safeAudit(userId, {
       action: "part.create",
       tableName: PARTS_TABLE,
@@ -214,7 +214,7 @@ export async function updatePart(
     try {
       const { data: userData } = await supabase.auth.getUser();
       userId = userData?.user?.id || null;
-    } catch {}
+    } catch { }
     await safeAudit(userId, {
       action: "part.update",
       tableName: PARTS_TABLE,
@@ -321,7 +321,7 @@ export async function deletePartById(
     try {
       const { data: userData } = await supabase.auth.getUser();
       userId = userData?.user?.id || null;
-    } catch {}
+    } catch { }
     await safeAudit(userId, {
       action: "part.delete",
       tableName: PARTS_TABLE,
@@ -374,7 +374,7 @@ export async function fetchPartBySku(
  */
 export function getAvailableStock(part: Part, branchId: string): number {
   const stock = part.stock?.[branchId] ?? 0;
-  const reserved = part.reservedStock?.[branchId] ?? 0;
+  const reserved = part.reservedstock?.[branchId] ?? 0;
   return Math.max(0, stock - reserved);
 }
 

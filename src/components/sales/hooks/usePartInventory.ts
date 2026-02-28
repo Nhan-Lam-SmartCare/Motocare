@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import type { Part } from "../../../types";
 import { getCategoryColor } from "../utils/categoryColors";
+import { getAvailableStock } from "../../../lib/repository/partsRepository";
 
 export type StockFilter = "all" | "low" | "out";
 
@@ -57,7 +58,7 @@ export function usePartInventory(
         if (!filteredParts.length) return [];
 
         const normalized = filteredParts.filter((part) => {
-            const branchStock = Number(part.stock?.[currentBranchId] ?? 0);
+            const branchStock = getAvailableStock(part, currentBranchId);
             if (stockFilter === "low") {
                 return branchStock > 0 && branchStock <= LOW_STOCK_THRESHOLD;
             }
@@ -76,8 +77,8 @@ export function usePartInventory(
         return normalized
             .slice()
             .sort((a, b) => {
-                const aStock = Number(a.stock?.[currentBranchId] ?? 0);
-                const bStock = Number(b.stock?.[currentBranchId] ?? 0);
+                const aStock = getAvailableStock(a, currentBranchId);
+                const bStock = getAvailableStock(b, currentBranchId);
                 const weightDiff = weight(aStock) - weight(bStock);
                 if (weightDiff !== 0) return weightDiff;
                 return a.name.localeCompare(b.name);

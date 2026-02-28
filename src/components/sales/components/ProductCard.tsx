@@ -3,6 +3,7 @@ import type { Part, CartItem } from "../../../types";
 import type { CategoryColors } from "../utils/categoryColors";
 import { formatCurrency } from "../../../utils/format";
 import { ShoppingCart, Package } from "lucide-react";
+import { getAvailableStock } from "../../../lib/repository/partsRepository";
 
 interface ProductCardProps {
     part: Part;
@@ -22,7 +23,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     onAddToCart,
     getCategoryColor,
 }) => {
-    const stock = Number(part.stock?.[currentBranchId] ?? 0);
+    const stock = getAvailableStock(part, currentBranchId);
     const price = part.retailPrice?.[currentBranchId] ?? 0;
     const wholesalePrice = part.wholesalePrice?.[currentBranchId] ?? 0;
     const isOutOfStock = stock <= 0;

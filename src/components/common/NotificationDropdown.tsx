@@ -86,7 +86,19 @@ const NotificationDropdown: React.FC = () => {
     markAllAsRead,
     deleteNotification,
     clearAll,
+    requestPermission,
   } = useNotifications();
+
+  const [permissionState, setPermissionState] = useState<NotificationPermission>(
+    "Notification" in window ? Notification.permission : "denied"
+  );
+
+  const handleRequestPermission = async () => {
+    if (requestPermission) {
+      const granted = await requestPermission();
+      setPermissionState(granted ? "granted" : "denied");
+    }
+  };
 
   // Fetch data for alerts
   const { data: parts = [] } = usePartsRepo();
@@ -269,11 +281,10 @@ const NotificationDropdown: React.FC = () => {
             <div className="flex gap-1 bg-slate-100 dark:bg-slate-700 rounded-lg p-1">
               <button
                 onClick={() => setActiveTab("notifications")}
-                className={`flex-1 px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
-                  activeTab === "notifications"
+                className={`flex-1 px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${activeTab === "notifications"
                     ? "bg-white dark:bg-slate-600 text-slate-900 dark:text-white shadow-sm"
                     : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-                }`}
+                  }`}
               >
                 Hoạt động
                 {unreadCount > 0 && (
@@ -284,11 +295,10 @@ const NotificationDropdown: React.FC = () => {
               </button>
               <button
                 onClick={() => setActiveTab("alerts")}
-                className={`flex-1 px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
-                  activeTab === "alerts"
+                className={`flex-1 px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${activeTab === "alerts"
                     ? "bg-white dark:bg-slate-600 text-slate-900 dark:text-white shadow-sm"
                     : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-                }`}
+                  }`}
               >
                 Cảnh báo
                 {alertCount > 0 && (
@@ -299,6 +309,22 @@ const NotificationDropdown: React.FC = () => {
               </button>
             </div>
           </div>
+
+          {/* Permission Prompt */}
+          {permissionState === "default" && (
+            <div className="px-4 py-3 bg-blue-50 dark:bg-blue-900/20 border-b border-blue-100 dark:border-blue-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex-1">
+                <p className="text-sm font-medium text-blue-900 dark:text-blue-100">Bật thông báo</p>
+                <p className="text-xs text-blue-700 dark:text-blue-300 mt-0.5">Nhận thông báo khi có phiếu sửa chữa mới, xuất bán</p>
+              </div>
+              <button
+                onClick={handleRequestPermission}
+                className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg transition-colors whitespace-nowrap self-start sm:self-auto"
+              >
+                Cho phép
+              </button>
+            </div>
+          )}
 
           {/* Content */}
           <div className="max-h-[60vh] overflow-y-auto">
@@ -325,20 +351,18 @@ const NotificationDropdown: React.FC = () => {
                   {notifications.map((notification) => (
                     <div
                       key={notification.id}
-                      className={`group relative px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors ${
-                        !notification.is_read
+                      className={`group relative px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors ${!notification.is_read
                           ? "bg-blue-50/50 dark:bg-blue-900/10"
                           : ""
-                      }`}
+                        }`}
                     >
                       <div className="flex gap-3">
                         {/* Icon */}
                         <div
-                          className={`flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center ${
-                            !notification.is_read
+                          className={`flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center ${!notification.is_read
                               ? "bg-blue-100 dark:bg-blue-900/30"
                               : "bg-slate-100 dark:bg-slate-700"
-                          }`}
+                            }`}
                         >
                           <NotificationIcon type={notification.type} />
                         </div>
@@ -346,11 +370,10 @@ const NotificationDropdown: React.FC = () => {
                         {/* Content */}
                         <div className="flex-1 min-w-0">
                           <p
-                            className={`text-sm ${
-                              !notification.is_read
+                            className={`text-sm ${!notification.is_read
                                 ? "font-semibold text-slate-900 dark:text-white"
                                 : "font-medium text-slate-700 dark:text-slate-300"
-                            }`}
+                              }`}
                           >
                             {notification.title}
                           </p>
@@ -398,45 +421,45 @@ const NotificationDropdown: React.FC = () => {
                 </div>
               )
             ) : /* Alerts Tab */
-            alerts.length === 0 ? (
-              <div className="px-4 py-8 text-center">
-                <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-green-100 dark:bg-green-900/20 flex items-center justify-center">
-                  <Check className="w-6 h-6 text-green-500" />
+              alerts.length === 0 ? (
+                <div className="px-4 py-8 text-center">
+                  <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-green-100 dark:bg-green-900/20 flex items-center justify-center">
+                    <Check className="w-6 h-6 text-green-500" />
+                  </div>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">
+                    Không có cảnh báo
+                  </p>
+                  <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
+                    Mọi thứ đang ổn! 👍
+                  </p>
                 </div>
-                <p className="text-sm text-slate-600 dark:text-slate-400">
-                  Không có cảnh báo
-                </p>
-                <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
-                  Mọi thứ đang ổn! 👍
-                </p>
-              </div>
-            ) : (
-              <div className="divide-y divide-slate-100 dark:divide-slate-700">
-                {alerts.map((alert) => (
-                  <Link
-                    key={alert.id}
-                    to={alert.link}
-                    onClick={() => setIsOpen(false)}
-                    className="flex items-start gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors group"
-                  >
-                    <div
-                      className={`flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center ${alert.color}`}
+              ) : (
+                <div className="divide-y divide-slate-100 dark:divide-slate-700">
+                  {alerts.map((alert) => (
+                    <Link
+                      key={alert.id}
+                      to={alert.link}
+                      onClick={() => setIsOpen(false)}
+                      className="flex items-start gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors group"
                     >
-                      {alert.icon}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-slate-900 dark:text-white">
-                        {alert.title}
-                      </p>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 truncate">
-                        {alert.message}
-                      </p>
-                    </div>
-                    <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300 transition flex-shrink-0 mt-1" />
-                  </Link>
-                ))}
-              </div>
-            )}
+                      <div
+                        className={`flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center ${alert.color}`}
+                      >
+                        {alert.icon}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-slate-900 dark:text-white">
+                          {alert.title}
+                        </p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 truncate">
+                          {alert.message}
+                        </p>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300 transition flex-shrink-0 mt-1" />
+                    </Link>
+                  ))}
+                </div>
+              )}
           </div>
 
           {/* Footer */}

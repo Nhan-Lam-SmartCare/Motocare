@@ -20,7 +20,7 @@ export const FinanceManagerMobile: React.FC = () => {
 
     const tabs = [
         { key: "combined" as const, label: "Tổng hợp", icon: LayoutDashboard },
-        { key: "cashbook" as const as const, label: "Sổ quỹ", icon: Wallet },
+        { key: "cashbook" as const, label: "Sổ quỹ", icon: Wallet },
         { key: "loans" as const, label: "Vay & Nợ", icon: Banknote },
         { key: "assets" as const, label: "TSCĐ", icon: Building2 },
         { key: "capital" as const, label: "Vốn", icon: CircleDollarSign },

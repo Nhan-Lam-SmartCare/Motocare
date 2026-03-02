@@ -199,11 +199,27 @@ export function useNotifications() {
   }, [user, profile?.role, queryClient, realtimeEnabled]);
 
   // Helper to show system notification
-  const showSystemNotification = (title: string, body: string) => {
+  const showSystemNotification = async (title: string, body: string) => {
     if (!("Notification" in window)) return;
 
     if (Notification.permission === "granted") {
       try {
+        // Try using Service Worker first for mobile support
+        if ('serviceWorker' in navigator) {
+          const registration = await navigator.serviceWorker.ready;
+          if (registration && registration.showNotification) {
+            await registration.showNotification(title, {
+              body,
+              icon: "/logo-smartcare.png",
+              badge: "/logo-smartcare.png",
+              // @ts-ignore
+              vibrate: [200, 100, 200]
+            });
+            return;
+          }
+        }
+
+        // Fallback to desktop Notification API
         new Notification(title, {
           body,
           icon: "/logo-smartcare.png",
@@ -216,6 +232,11 @@ export function useNotifications() {
     }
   };
 
+  const requestPermission = useCallback(async () => {
+    if (!("Notification" in window)) return false;
+    const permission = await Notification.requestPermission();
+    return permission === "granted";
+  }, []);
 
   // Helper functions
   const markAsRead = useCallback(
@@ -247,6 +268,7 @@ export function useNotifications() {
     markAllAsRead,
     deleteNotification,
     clearAll,
+    requestPermission,
   };
 }
 

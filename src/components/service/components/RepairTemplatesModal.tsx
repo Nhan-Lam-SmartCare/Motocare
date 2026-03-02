@@ -175,9 +175,9 @@ export function RepairTemplatesModal({
 
   // Chọn phụ tùng từ danh sách
   const handleSelectPart = (part: Part) => {
-    // Kiểm tra xem phụ tùng đã tồn tại chưa
+    // Kiểm tra xem phụ tùng đã tồn tại chưa (so sánh bằng partId nếu có, fallback sang name)
     const existingIndex = templateForm.parts.findIndex(
-      (p) => p.name === part.name
+      (p) => (part.id ? p.partId === part.id : p.name === part.name)
     );
 
     if (existingIndex >= 0) {
@@ -678,7 +678,7 @@ export function RepairTemplatesModal({
                     const price =
                       part.retailPrice?.[currentBranchId || ""] || 0;
                     const isAlreadyAdded = templateForm.parts.some(
-                      (p) => p.name === part.name
+                      (p) => (part.id ? p.partId === part.id : p.name === part.name)
                     );
 
                     return (

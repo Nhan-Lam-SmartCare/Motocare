@@ -642,6 +642,10 @@ export default function ServiceManager() {
   };
 
   const handleApplyTemplate = (template: any) => {
+    const partsTotal = (template.parts || []).reduce(
+      (sum: number, p: any) => sum + (p.price || 0) * (p.quantity || 1),
+      0
+    );
     const newOrder: Partial<WorkOrder> = {
       id: "",
       customerName: "",
@@ -651,16 +655,16 @@ export default function ServiceManager() {
       issueDescription: template.description,
       laborCost: template.laborCost,
       partsUsed: template.parts.map((p: any, idx: number) => ({
-        partId: `TEMPLATE-${idx}`,
+        partId: p.partId || `TEMPLATE-${idx}`,
         partName: p.name,
-        sku: "",
+        sku: p.sku || "",
         quantity: p.quantity,
         price: p.price,
       })),
       status: "Tiếp nhận",
       paymentStatus: "unpaid",
       discount: 0,
-      total: 0,
+      total: (template.laborCost || 0) + partsTotal,
       creationDate: new Date().toISOString(),
       branchId: currentBranchId,
       technicianName: "",
@@ -2301,13 +2305,20 @@ export default function ServiceManager() {
           onClose={() => setShowTemplateModal(false)}
           onApplyTemplate={(template) => {
             // Convert and apply template to current work order for mobile
+            const partsTotal = template.parts.reduce(
+              (sum, p) => sum + (p.price || 0) * (p.quantity || 1),
+              0
+            );
             const newOrder: WorkOrder = {
               id: `WO-${Date.now()}`,
               customerName: "",
               customerPhone: "",
               vehicleModel: "",
+              licensePlate: "",
               issueDescription: template.description,
               status: "Tiếp nhận",
+              paymentStatus: "unpaid",
+              discount: 0,
               creationDate: new Date().toISOString(),
               estimatedCompletion: new Date(
                 Date.now() + template.duration * 60000
@@ -2316,14 +2327,14 @@ export default function ServiceManager() {
               branchId: currentBranchId || "",
               laborCost: template.laborCost,
               partsUsed: template.parts.map((p) => ({
-                partId: "",
+                partId: (p as any).partId || "",
                 partName: p.name,
                 sku: (p as any).sku || "",
                 quantity: p.quantity,
                 price: p.price,
               })),
               notes: "",
-              total: 0,
+              total: (template.laborCost || 0) + partsTotal,
             };
             setEditingOrder(newOrder);
             setShowTemplateModal(false);
@@ -3284,13 +3295,20 @@ export default function ServiceManager() {
         onClose={() => setShowTemplateModal(false)}
         onApplyTemplate={(template) => {
           // Convert and apply template to current work order
+          const partsTotal = template.parts.reduce(
+            (sum, p) => sum + (p.price || 0) * (p.quantity || 1),
+            0
+          );
           const newOrder: WorkOrder = {
             id: `WO-${Date.now()}`,
             customerName: "",
             customerPhone: "",
             vehicleModel: "",
+            licensePlate: "",
             issueDescription: template.description,
             status: "Tiếp nhận",
+            paymentStatus: "unpaid",
+            discount: 0,
             creationDate: new Date().toISOString(),
             estimatedCompletion: new Date(
               Date.now() + template.duration * 60000
@@ -3306,7 +3324,7 @@ export default function ServiceManager() {
               sku: p.sku || "",
             })),
             notes: "",
-            total: 0,
+            total: (template.laborCost || 0) + partsTotal,
           };
           setEditingOrder(newOrder);
           setShowTemplateModal(false);

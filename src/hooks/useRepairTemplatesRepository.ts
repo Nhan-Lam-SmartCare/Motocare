@@ -14,6 +14,8 @@ export interface RepairTemplatePart {
   quantity: number;
   price: number;
   unit: string;
+  sku?: string;
+  partId?: string;
 }
 
 export interface RepairTemplate {
@@ -73,7 +75,7 @@ export function useRepairTemplates() {
       if (isUUID) {
         query = query.or(`branch_id.is.null,branch_id.eq.${branchId}`);
       } else {
-        // Non-UUID branch_id (like "CN1") - just get global templates
+        // Non-UUID branch_id (like "CN1") - only get global templates to avoid uuid type error
         query = query.is("branch_id", null);
       }
 
@@ -112,7 +114,7 @@ export function useAllRepairTemplates() {
       if (isUUID) {
         query = query.or(`branch_id.is.null,branch_id.eq.${branchId}`);
       } else {
-        // Non-UUID branch_id (like "CN1") - just get global templates
+        // Non-UUID branch_id (like "CN1") - only get global templates to avoid uuid type error
         query = query.is("branch_id", null);
       }
 
@@ -138,10 +140,12 @@ export function useCreateRepairTemplate() {
 
   return useMutation({
     mutationFn: async (input: CreateRepairTemplateInput) => {
+      const branchId = profile?.branch_id;
+      const isUUID = branchId && branchId.includes("-");
       const { data, error } = await supabase
         .from("repair_templates")
         .insert({
-          branch_id: profile?.branch_id,
+          branch_id: isUUID ? branchId : null,
           name: input.name,
           description: input.description || null,
           duration: input.duration || 30,
@@ -317,10 +321,12 @@ export function useDuplicateRepairTemplate() {
 
   return useMutation({
     mutationFn: async (template: RepairTemplate) => {
+      const branchId = profile?.branch_id;
+      const isUUID = branchId && branchId.includes("-");
       const { data, error } = await supabase
         .from("repair_templates")
         .insert({
-          branch_id: profile?.branch_id,
+          branch_id: isUUID ? branchId : null,
           name: `${template.name} (copy)`,
           description: template.description,
           duration: template.duration,

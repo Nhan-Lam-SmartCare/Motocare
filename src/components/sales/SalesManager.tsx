@@ -72,7 +72,7 @@ import type { Sale, CartItem } from "../../types";
  * for better maintainability and code reusability.
  */
 const SalesManager: React.FC = () => {
-    const { user } = useAuth();
+    const { user, profile } = useAuth();
     const {
         cartItems,
         setCartItems,
@@ -305,6 +305,8 @@ const SalesManager: React.FC = () => {
                 paymentMethod,
                 discount: 0,
                 branchId: currentBranchId,
+                userId: user?.id || undefined,
+                userName: profile?.name || profile?.full_name || user?.email || "Unknown",
                 createdBy: user?.id || "",
                 saleTime: new Date().toISOString(),
                 paidAmount: service.price * quantity,
@@ -409,7 +411,7 @@ const SalesManager: React.FC = () => {
                 discount: cart.effectiveDiscount, // Use recomputed discount (correct when discountType=percent)
                 branchId: currentBranchId,
                 userId: user?.id || undefined,
-                userName: user?.email || "Unknown",
+                userName: profile?.name || profile?.full_name || user?.email || "Unknown",
                 createdBy: user?.id || "",
                 saleTime,
                 paidAmount,

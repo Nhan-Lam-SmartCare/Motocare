@@ -30,6 +30,7 @@ export interface UseCustomerSelectionReturn {
     customerSearch: string;
     showCustomerDropdown: boolean;
     showAddCustomerModal: boolean;
+    showEditCustomerModal: boolean;
     newCustomer: NewCustomerData;
     isSearchingCustomer: boolean;
     hasMoreCustomers: boolean;
@@ -39,6 +40,7 @@ export interface UseCustomerSelectionReturn {
     setCustomerSearch: (search: string) => void;
     setShowCustomerDropdown: (show: boolean) => void;
     setShowAddCustomerModal: (show: boolean) => void;
+    setShowEditCustomerModal: (show: boolean) => void;
     setNewCustomer: React.Dispatch<React.SetStateAction<NewCustomerData>>;
     handleSaveNewCustomer: (
         customers: Customer[],
@@ -62,6 +64,7 @@ export function useCustomerSelection(
     const [customerSearch, setCustomerSearch] = useState("");
     const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
     const [showAddCustomerModal, setShowAddCustomerModal] = useState(false);
+    const [showEditCustomerModal, setShowEditCustomerModal] = useState(false);
     const [newCustomer, setNewCustomer] = useState<NewCustomerData>({
         name: "",
         phone: "",
@@ -97,7 +100,7 @@ export function useCustomerSelection(
 
             // Extract digits for better phone search
             const searchDigits = searchTerm.replace(/\D/g, "");
-            
+
             // Build OR query - search by name, phone, vehicle model, license plate
             const orConditions = [
                 `name.ilike.%${searchTerm}%`,
@@ -171,32 +174,32 @@ export function useCustomerSelection(
         const uniqueCandidates = Array.from(new Map(allCandidates.map(c => [c.id, c])).values());
 
         if (!customerSearch) return uniqueCandidates.slice(0, 20); // Show first 20 when no search
-        
+
         const term = normalizeSearchText(customerSearch);
         const searchDigits = customerSearch.replace(/\D/g, "");
 
         return uniqueCandidates.filter((c) => {
             // Search by name (normalized - remove diacritics)
             const nameMatch = normalizeSearchText(c.name).includes(term);
-            
+
             // Search by phone
             const phoneNumbers = extractPhoneNumbers(c.phone || "");
             const phoneMatch = searchDigits.length > 0
                 ? phoneNumbers.some((num) => num.includes(searchDigits) || searchDigits.includes(num))
                 : false;
-            
+
             // Search by vehicle model
             const vehicleModelMatch = normalizeSearchText(c.vehicleModel || "").includes(term);
-            
+
             // Search by license plate  
             const licensePlateMatch = normalizeSearchText(c.licensePlate || "").includes(term);
-            
+
             // Search in vehicles array
             const vehicleMatch = c.vehicles?.some((v: any) =>
                 normalizeSearchText(v.model || "").includes(term) ||
                 normalizeSearchText(v.licensePlate || "").includes(term)
             );
-            
+
             return Boolean(nameMatch || phoneMatch || vehicleModelMatch || licensePlateMatch || vehicleMatch);
         });
     }, [allCustomers, serverCustomers, customerSearch, extractPhoneNumbers]);
@@ -311,6 +314,7 @@ export function useCustomerSelection(
         customerSearch,
         showCustomerDropdown,
         showAddCustomerModal,
+        showEditCustomerModal,
         newCustomer,
         isSearchingCustomer,
         hasMoreCustomers,
@@ -320,6 +324,7 @@ export function useCustomerSelection(
         setCustomerSearch,
         setShowCustomerDropdown,
         setShowAddCustomerModal,
+        setShowEditCustomerModal,
         setNewCustomer,
         handleSaveNewCustomer,
         handleLoadMoreCustomers,

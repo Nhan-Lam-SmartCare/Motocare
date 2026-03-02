@@ -62,6 +62,7 @@ import { CustomerSelector } from "./components/CustomerSelector";
 import { PaymentMethodSelector } from "./components/PaymentMethodSelector";
 import { BarcodeInputBar } from "./components/BarcodeInputBar";
 import AddCustomerModal from "./components/AddCustomerModal";
+import EditCustomerModal from "./components/EditCustomerModal";
 
 import type { Sale, CartItem } from "../../types";
 
@@ -817,6 +818,7 @@ const SalesManager: React.FC = () => {
                                     onSelect={(c) => customer.setSelectedCustomer(c)}
                                     onClear={() => customer.setSelectedCustomer(null)}
                                     onAddNew={() => customer.setShowAddCustomerModal(true)}
+                                    onEditCustomer={() => customer.setShowEditCustomerModal(true)}
                                     onDropdownToggle={customer.setShowCustomerDropdown}
                                     isSearching={customer.isSearchingCustomer}
                                     hasMoreCustomers={customer.hasMoreCustomers}
@@ -1126,6 +1128,22 @@ const SalesManager: React.FC = () => {
                         onCustomerChange={customer.setNewCustomer}
                         onSave={() => customer.handleSaveNewCustomer(customers, createCustomerMutation)}
                         onClose={() => customer.setShowAddCustomerModal(false)}
+                    />
+                )
+            }
+
+            {
+                customer.showEditCustomerModal && customer.selectedCustomer && (
+                    <EditCustomerModal
+                        isOpen={true}
+                        customer={customer.selectedCustomer}
+                        onClose={() => customer.setShowEditCustomerModal(false)}
+                        onSaveSuccess={(updatedCustomer) => {
+                            customer.setSelectedCustomer(updatedCustomer);
+                            customer.setShowEditCustomerModal(false);
+                            // Optionally refresh customer queries depending on how the list is re-fetched
+                            queryClient.invalidateQueries({ queryKey: ["customers"] });
+                        }}
                     />
                 )
             }

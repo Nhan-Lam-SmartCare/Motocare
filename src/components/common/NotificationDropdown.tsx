@@ -20,7 +20,7 @@ import { useLoansRepo } from "../../hooks/useLoansRepository";
 import { usePaymentSources, useWorkOrders } from "../../hooks/useSupabase";
 import { useAppContext } from "../../contexts/AppContext";
 import { formatCurrency } from "../../utils/format";
-import { useNotifications, Notification } from "../../hooks/useNotifications";
+import { useNotifications, type Notification } from "../../hooks/useNotifications";
 
 interface Alert {
   id: string;
@@ -90,7 +90,7 @@ const NotificationDropdown: React.FC = () => {
   } = useNotifications();
 
   const [permissionState, setPermissionState] = useState<NotificationPermission>(
-    "Notification" in window ? Notification.permission : "denied"
+    "Notification" in window ? window.Notification.permission : "denied"
   );
 
   const handleRequestPermission = async () => {
@@ -282,8 +282,8 @@ const NotificationDropdown: React.FC = () => {
               <button
                 onClick={() => setActiveTab("notifications")}
                 className={`flex-1 px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${activeTab === "notifications"
-                    ? "bg-white dark:bg-slate-600 text-slate-900 dark:text-white shadow-sm"
-                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                  ? "bg-white dark:bg-slate-600 text-slate-900 dark:text-white shadow-sm"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
                   }`}
               >
                 Hoạt động
@@ -296,8 +296,8 @@ const NotificationDropdown: React.FC = () => {
               <button
                 onClick={() => setActiveTab("alerts")}
                 className={`flex-1 px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${activeTab === "alerts"
-                    ? "bg-white dark:bg-slate-600 text-slate-900 dark:text-white shadow-sm"
-                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                  ? "bg-white dark:bg-slate-600 text-slate-900 dark:text-white shadow-sm"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
                   }`}
               >
                 Cảnh báo
@@ -352,16 +352,16 @@ const NotificationDropdown: React.FC = () => {
                     <div
                       key={notification.id}
                       className={`group relative px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors ${!notification.is_read
-                          ? "bg-blue-50/50 dark:bg-blue-900/10"
-                          : ""
+                        ? "bg-blue-50/50 dark:bg-blue-900/10"
+                        : ""
                         }`}
                     >
                       <div className="flex gap-3">
                         {/* Icon */}
                         <div
                           className={`flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center ${!notification.is_read
-                              ? "bg-blue-100 dark:bg-blue-900/30"
-                              : "bg-slate-100 dark:bg-slate-700"
+                            ? "bg-blue-100 dark:bg-blue-900/30"
+                            : "bg-slate-100 dark:bg-slate-700"
                             }`}
                         >
                           <NotificationIcon type={notification.type} />
@@ -371,8 +371,8 @@ const NotificationDropdown: React.FC = () => {
                         <div className="flex-1 min-w-0">
                           <p
                             className={`text-sm ${!notification.is_read
-                                ? "font-semibold text-slate-900 dark:text-white"
-                                : "font-medium text-slate-700 dark:text-slate-300"
+                              ? "font-semibold text-slate-900 dark:text-white"
+                              : "font-medium text-slate-700 dark:text-slate-300"
                               }`}
                           >
                             {notification.title}

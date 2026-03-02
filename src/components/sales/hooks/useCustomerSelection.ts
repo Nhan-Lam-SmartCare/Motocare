@@ -57,7 +57,7 @@ export interface UseCustomerSelectionReturn {
  */
 export function useCustomerSelection(
     allCustomers: Customer[]
-): UseCustomerSelectionReturn {
+) {
     const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(
         null
     );
@@ -204,6 +204,46 @@ export function useCustomerSelection(
         });
     }, [allCustomers, serverCustomers, customerSearch, extractPhoneNumbers]);
 
+    // Custom handler for showing the Add Customer Modal
+    // This allows us to auto-fill the form with the user's search query
+    const handleShowAddCustomerModal = useCallback((show: boolean) => {
+        if (show && customerSearch.trim()) {
+            const searchTerm = customerSearch.trim();
+            // Try to extract phone numbers (sequences of 8-12 digits)
+            const phoneNumbers = extractPhoneNumbers(searchTerm);
+
+            let initialName = "";
+            let initialPhone = "";
+
+            if (phoneNumbers.length > 0) {
+                initialPhone = phoneNumbers[0];
+                // Remove the phone number from the search term to guess the name
+                initialName = searchTerm.replace(initialPhone, "").trim();
+                // Clean up any trailing/leading dashes or commas
+                initialName = initialName.replace(/^[-,\s]+|[-,\s]+$/g, "");
+            } else {
+                // If no phone number resembles digits, assume it's entirely a name
+                initialName = searchTerm;
+            }
+
+            setNewCustomer(prev => ({
+                ...prev,
+                name: initialName,
+                phone: initialPhone
+            }));
+        } else if (!show) {
+            // Reset form when closing
+            setNewCustomer({
+                name: "",
+                phone: "",
+                vehicleModel: "",
+                licensePlate: "",
+            });
+        }
+
+        setShowAddCustomerModal(show);
+    }, [customerSearch, extractPhoneNumbers]);
+
     // Handle save new customer
     const handleSaveNewCustomer = useCallback(
         async (customers: Customer[], createCustomerMutation: any) => {
@@ -323,7 +363,7 @@ export function useCustomerSelection(
         setSelectedCustomer,
         setCustomerSearch,
         setShowCustomerDropdown,
-        setShowAddCustomerModal,
+        setShowAddCustomerModal: handleShowAddCustomerModal,
         setShowEditCustomerModal,
         setNewCustomer,
         handleSaveNewCustomer,

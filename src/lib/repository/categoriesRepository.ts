@@ -59,7 +59,9 @@ export async function createCategory(
     try {
       const { data: userData } = await supabase.auth.getUser();
       userId = userData?.user?.id || null;
-    } catch {}
+    } catch (_e) {
+      void _e;
+    }
     await safeAudit(userId, {
       action: "category.create",
       tableName: CATEGORIES_TABLE,
@@ -90,7 +92,9 @@ export async function updateCategory(
         .eq("id", id)
         .single();
       oldRow = resp?.data ?? null;
-    } catch {}
+    } catch (_e) {
+      void _e;
+    }
     // Không có oldRow vẫn tiếp tục (audit oldData: null)
     const { data, error } = await supabase
       .from(CATEGORIES_TABLE)
@@ -114,7 +118,9 @@ export async function updateCategory(
     try {
       const { data: userData } = await supabase.auth.getUser();
       userId = userData?.user?.id || null;
-    } catch {}
+    } catch (_e) {
+      void _e;
+    }
     await safeAudit(userId, {
       action: "category.update",
       tableName: CATEGORIES_TABLE,
@@ -144,7 +150,9 @@ export async function deleteCategoryRecord(
         .eq("id", id)
         .single();
       oldRow = resp?.data ?? null;
-    } catch {}
+    } catch (_e) {
+      void _e;
+    }
     // Không có oldRow vẫn tiếp tục xóa (audit oldData: null)
     const { error } = await supabase
       .from(CATEGORIES_TABLE)
@@ -161,7 +169,9 @@ export async function deleteCategoryRecord(
     try {
       const { data: userData } = await supabase.auth.getUser();
       userId = userData?.user?.id || null;
-    } catch {}
+    } catch (_e) {
+      void _e;
+    }
     await safeAudit(userId, {
       action: "category.delete",
       tableName: CATEGORIES_TABLE,

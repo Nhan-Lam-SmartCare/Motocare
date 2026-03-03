@@ -1,16 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
 import { supabase } from "../../supabaseClient";
 import { InstallmentSetupModal } from "./modals/InstallmentSetupModal";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../../contexts/AuthContext";
-import { canDo } from "../../utils/permissions";
 import {
-    BarChart3,
     Boxes,
     ShoppingCart,
     History,
-    Plus,
     Zap,
     Truck,
     ScanLine,
@@ -22,11 +18,9 @@ import {
     useCreateSaleAtomicRepo,
     useDeleteSaleRepo,
 } from "../../hooks/useSalesRepository";
-import { useLowStock } from "../../hooks/useLowStock";
 import { showToast } from "../../utils/toast";
 import { getAvailableStock } from "../../lib/repository/partsRepository";
 
-import TetBanner from "../dashboard/components/TetBanner";
 import { formatCurrency } from "../../utils/format";
 import { useCustomers, useCreateCustomer } from "../../hooks/useSupabase";
 import { useEmployeesRepo } from "../../hooks/useEmployeesRepository";
@@ -39,7 +33,6 @@ import {
 // Modals
 import { SaleDetailModal } from "./modals/SaleDetailModal";
 import { ReceiptTemplateModal } from "./modals/ReceiptTemplateModal";
-import { EditSaleModal } from "./modals/EditSaleModal";
 import { SalesHistoryModal } from "./modals/SalesHistoryModal";
 import QuickServiceModal from "./QuickServiceModal";
 import BarcodeScannerModal from "../common/BarcodeScannerModal";
@@ -64,7 +57,9 @@ import { BarcodeInputBar } from "./components/BarcodeInputBar";
 import AddCustomerModal from "./components/AddCustomerModal";
 import EditCustomerModal from "./components/EditCustomerModal";
 
-import type { Sale, CartItem } from "../../types";
+import type { Sale, Part } from "../../types";
+
+type DeliveryStatus = "pending" | "preparing" | "shipping" | "delivered" | "cancelled";
 
 /**
  * SalesManager - Refactored version
@@ -83,7 +78,7 @@ const SalesManager: React.FC = () => {
     const queryClient = useQueryClient();
 
     // Data fetching hooks
-    const { data: customers = [], isLoading: loadingCustomers } = useCustomers();
+    const { data: customers = [] } = useCustomers();
     const createCustomerMutation = useCreateCustomer();
     const {
         data: repoParts = [],
@@ -102,6 +97,8 @@ const SalesManager: React.FC = () => {
     const [showQuickServiceModal, setShowQuickServiceModal] = useState(false);
     const [showDeliveryModal, setShowDeliveryModal] = useState(false);
     const [showInstallmentModal, setShowInstallmentModal] = useState(false);
+    const [actionFeedback, setActionFeedback] = useState<string | null>(null);
+    const [cartPulse, setCartPulse] = useState(false);
 
     // Custom hooks
     const cart = useSalesCart(cartItems, setCartItems, clearCart);
@@ -120,10 +117,33 @@ const SalesManager: React.FC = () => {
     const history = useSalesHistory();
     const print = usePrintReceipt();
 
+    const triggerCartFeedback = (message: string) => {
+        setActionFeedback(message);
+        setCartPulse(true);
+
+        window.setTimeout(() => setCartPulse(false), 700);
+        window.setTimeout(() => {
+            setActionFeedback((current) => (current === message ? null : current));
+        }, 1800);
+    };
+
+    const handleAddToCartWithFeedback = (part: Part, source: "tap" | "scan" = "tap") => {
+        const stock = getAvailableStock(part, currentBranchId);
+        const existingItem = cart.cartItemById.get(part.id);
+
+        cart.addToCart(part, currentBranchId);
+
+        if (stock <= 0 || (existingItem && existingItem.quantity >= stock)) {
+            return;
+        }
+
+        const nextQuantity = (existingItem?.quantity ?? 0) + 1;
+        const prefix = source === "scan" ? "Quét mã" : "Đã thêm";
+        triggerCartFeedback(`${prefix}: ${part.name} x${nextQuantity}`);
+    };
+
     // 🔹 REALTIME SUBSCRIPTION - Auto refresh when sales change
     useEffect(() => {
-        console.log("[SalesManager] Setting up realtime subscription for sales...");
-
         const channel = supabase
             .channel("sales_realtime")
             .on(
@@ -133,28 +153,24 @@ const SalesManager: React.FC = () => {
                     schema: "public",
                     table: "sales",
                 },
-                (payload) => {
-                    console.log("[Realtime] Sale changed:", payload);
+                () => {
                     // Invalidate all sales queries to refetch data
                     queryClient.invalidateQueries({ queryKey: ["salesRepo"] });
                     queryClient.invalidateQueries({ queryKey: ["salesRepoPaged"] });
                     queryClient.invalidateQueries({ queryKey: ["salesRepoKeyset"] });
                 }
             )
-            .subscribe((status) => {
-                console.log("[Realtime] Sales subscription status:", status);
-            });
+            .subscribe();
 
         // Cleanup on unmount
         return () => {
-            console.log("[SalesManager] Cleaning up realtime subscription");
             supabase.removeChannel(channel);
         };
     }, [queryClient]);
 
     // Delivery wrappers
-    const handleUpdateDeliveryStatus = async (saleId: string, status: string, shipperId?: string) => {
-        await updateDeliveryStatus(saleId, status as any, shipperId);
+    const handleUpdateDeliveryStatus = async (saleId: string, status: DeliveryStatus, shipperId?: string) => {
+        await updateDeliveryStatus(saleId, status, shipperId);
         queryClient.invalidateQueries({ queryKey: ["salesRepoPaged"] });
     };
 
@@ -186,11 +202,7 @@ const SalesManager: React.FC = () => {
             history.salesPaymentMethod === "all" ? undefined : history.salesPaymentMethod,
     };
 
-    const {
-        data: pagedSalesData,
-        isLoading: loadingSales,
-        error: salesError,
-    } = useSalesPagedRepo(salesParams);
+    const { data: pagedSalesData } = useSalesPagedRepo(salesParams);
 
     const repoSales = pagedSalesData?.data || [];
     const salesMeta = pagedSalesData?.meta || {
@@ -263,8 +275,9 @@ const SalesManager: React.FC = () => {
             queryClient.invalidateQueries({ queryKey: ["cashTransactions"] });
 
             showToast.success("Đã xóa hóa đơn và hoàn kho/tiền thành công!");
-        } catch (error: any) {
-            showToast.error(`Xóa hóa đơn thất bại: ${error.message || 'Lỗi không xác định'}`);
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : "Lỗi không xác định";
+            showToast.error(`Xóa hóa đơn thất bại: ${message}`);
             console.error("Delete sale error:", error);
         }
     };
@@ -313,7 +326,7 @@ const SalesManager: React.FC = () => {
                 note: `Dịch vụ nhanh: ${service.name}`,
             };
 
-            const newSale = await createSaleAtomicAsync(saleData as any);
+            await createSaleAtomicAsync(saleData as unknown as Partial<Sale>);
             showToast.success("Tạo đơn dịch vụ nhanh thành công!");
 
             // Refresh data
@@ -392,7 +405,7 @@ const SalesManager: React.FC = () => {
             // Construct installment note
             let finalNote = finalization.orderNote || "";
             if (finalization.paymentType === "installment") {
-                const { financeCompany, term, interestRate, monthlyPayment, prepaidAmount } = finalization.installmentDetails;
+                const { financeCompany, term, interestRate } = finalization.installmentDetails;
                 const installmentText = `[TRẢ GÓP] ${financeCompany === 'Store' ? 'Cửa hàng' : financeCompany} - Trả trước: ${finalization.installmentDetails.prepaidAmount.toLocaleString()}đ - Kỳ hạn: ${term} tháng - Lãi: ${interestRate}%/tháng - Gốc+Lãi: ${finalization.installmentDetails.totalDetail.toLocaleString()}đ`;
                 finalNote = finalNote ? `${finalNote}\n${installmentText}` : installmentText;
             }
@@ -432,8 +445,8 @@ const SalesManager: React.FC = () => {
                     : undefined,
             };
 
-            const newSale = await createSaleAtomicAsync(saleData as any);
-            const saleId = (newSale as any)?.id;
+            const newSale = await createSaleAtomicAsync(saleData as unknown as Partial<Sale>);
+            const saleId = newSale?.id;
 
             // Force update note if it wasn't saved by RPC (backup)
             if (finalization.paymentType === "installment" && saleId) {
@@ -482,6 +495,7 @@ const SalesManager: React.FC = () => {
             }
 
             showToast.success("Tạo đơn hàng thành công!");
+            triggerCartFeedback("Thanh toán thành công");
 
             // Auto print if enabled
             if (finalization.autoPrintReceipt) {
@@ -620,7 +634,7 @@ const SalesManager: React.FC = () => {
                     onChange={barcode.setBarcodeInput}
                     onSubmit={(e) =>
                         barcode.handleBarcodeSubmit(e, inventory.filteredParts, (part) =>
-                            cart.addToCart(part, currentBranchId)
+                            handleAddToCartWithFeedback(part, "scan")
                         )
                     }
                     onCameraClick={() => barcode.setShowCameraScanner(true)}
@@ -645,7 +659,7 @@ const SalesManager: React.FC = () => {
                                 placeholder="Tìm sản phẩm..."
                                 value={inventory.partSearch}
                                 onChange={(e) => inventory.setPartSearch(e.target.value)}
-                                className="flex-1 px-4 py-3 bg-white dark:bg-slate-800 border-2 border-slate-300 dark:border-slate-600 rounded-lg"
+                                className="flex-1 px-4 py-3 bg-white dark:bg-slate-800 border-2 border-slate-300 dark:border-slate-600 rounded-lg text-base text-slate-900 dark:text-white placeholder:text-slate-500 dark:placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500/30"
                             />
                             {/* Mobile Wholesale Toggle */}
                             <button
@@ -669,9 +683,16 @@ const SalesManager: React.FC = () => {
                             </button>
                         </div>
 
+                        {actionFeedback && (
+                            <div className="mb-3 inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 text-sm font-semibold">
+                                <span className="text-base leading-none">✓</span>
+                                <span className="line-clamp-1">{actionFeedback}</span>
+                            </div>
+                        )}
+
                         {/* Filter Pills with Counts */}
                         <div className="bg-white/80 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-3 mb-4 flex flex-col md:flex-row md:items-center md:justify-between gap-2">
-                            <div className="text-xs md:text-sm text-slate-600 dark:text-slate-400 font-medium">
+                            <div className="text-sm text-slate-700 dark:text-slate-300 font-medium">
                                 Hiển thị {inventory.displayedParts.length} / {inventory.filteredParts.length} sản phẩm
                                 {inventory.partSearch && " theo từ khóa"}
                             </div>
@@ -766,8 +787,7 @@ const SalesManager: React.FC = () => {
                                     part={part}
                                     currentBranchId={currentBranchId}
                                     inCart={cart.cartItemById.has(part.id)}
-                                    onAddToCart={(p) => cart.addToCart(p, currentBranchId)}
-                                    getCategoryColor={inventory.getCategoryColor}
+                                    onAddToCart={(p) => handleAddToCartWithFeedback(p, "tap")}
                                 />
                             ))}
                         </div>
@@ -775,7 +795,7 @@ const SalesManager: React.FC = () => {
 
                     {/* Right: Cart (Desktop) / Mobile Tab Content */}
                     <div className={`lg:col-span-1 ${mobileTab !== "cart" ? "hidden lg:block" : ""}`}>
-                        <div className="sticky top-24">
+                        <div className={`sticky top-24 transition-all ${cartPulse ? "ring-2 ring-emerald-400/70 rounded-2xl" : ""}`}>
                             {editingSaleId && (
                                 <div className="mb-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg p-3 flex justify-between items-center animate-pulse">
                                     <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 font-bold">
@@ -1099,7 +1119,7 @@ const SalesManager: React.FC = () => {
                                     <div className="mt-4 p-3 md:p-4 pt-0 flex gap-3">
                                         <button
                                             onClick={cart.clearCart}
-                                            className="flex-1 px-4 py-3 bg-white dark:bg-slate-700 border-2 border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 font-bold rounded-xl transition-all"
+                                            className="flex-1 px-4 py-3 bg-white dark:bg-slate-700 border-2 border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 font-semibold rounded-xl transition-all"
                                         >
                                             LƯU NHÁP
                                         </button>
@@ -1107,7 +1127,7 @@ const SalesManager: React.FC = () => {
                                             onClick={handleFinalize}
                                             disabled={!finalization.paymentMethod || !finalization.paymentType}
                                             className={`flex-1 px-4 py-3 font-black rounded-xl transition-all shadow-lg ${finalization.paymentMethod && finalization.paymentType
-                                                ? "bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white shadow-orange-500/30 hover:shadow-xl hover:scale-105"
+                                                ? "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-blue-500/30 hover:shadow-xl hover:scale-[1.02] ring-1 ring-blue-300/40"
                                                 : "bg-slate-300 dark:bg-slate-700 text-slate-500 cursor-not-allowed opacity-60"
                                                 }`}
                                         >
@@ -1157,7 +1177,7 @@ const SalesManager: React.FC = () => {
                         onClose={() => barcode.setShowCameraScanner(false)}
                         onScan={(code) =>
                             barcode.handleCameraScan(code, repoParts, cart.cartItems, (part) =>
-                                cart.addToCart(part, currentBranchId)
+                                handleAddToCartWithFeedback(part, "scan")
                             )
                         }
                     />

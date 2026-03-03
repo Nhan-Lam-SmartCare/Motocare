@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useAuth } from "../../../contexts/AuthContext";
 import { useAppContext } from "../../../contexts/AppContext";
 import { usePartsRepo } from "../../../hooks/usePartsRepository";
 import { showToast } from "../../../utils/toast";
@@ -32,7 +31,6 @@ export const EditSaleModal: React.FC<EditSaleModalProps> = ({
     const { customers, upsertCustomer } = useAppContext();
     const { data: repoParts = [] } = usePartsRepo();
     const queryClient = useQueryClient();
-    const { profile } = useAuth();
 
     const [editItems, setEditItems] = useState<CartItem[]>([]);
     const [editCustomer, setEditCustomer] = useState({

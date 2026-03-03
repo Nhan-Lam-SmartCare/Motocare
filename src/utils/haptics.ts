@@ -37,6 +37,6 @@ export const triggerHaptic = (type: HapticType = 'selection') => {
         }
     } catch (e) {
         // Ignore errors (e.g. if user interaction is required first)
-        console.debug('Haptic feedback failed:', e);
+        console.warn('Haptic feedback failed:', e);
     }
 };

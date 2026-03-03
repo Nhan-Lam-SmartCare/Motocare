@@ -137,20 +137,14 @@ const QuickServiceModal: React.FC<QuickServiceModalProps> = ({
         .replace(/[-\s.]/g, "")
         .toUpperCase();
 
-      console.log("[QuickService] Searching for plate:", normalizedPlate);
-
       // Bước 1: Tìm trong licenseplate trước (DB dùng lowercase columns)
-      let { data: directMatch, error: directError } = await supabase
+      const directResult = await supabase
         .from("customers")
         .select("id, name, phone, licenseplate, totalspent, vehicles")
         .ilike("licenseplate", `%${licensePlate.trim()}%`)
         .limit(5);
-
-      console.log(
-        "[QuickService] Direct match result:",
-        directMatch,
-        directError
-      );
+      let directMatch = directResult.data;
+      const directError = directResult.error;
 
       // Bước 2: Nếu không tìm thấy, lấy tất cả customers và filter vehicles
       if (!directMatch || directMatch.length === 0 || directError) {
@@ -160,12 +154,6 @@ const QuickServiceModal: React.FC<QuickServiceModalProps> = ({
           .select("id, name, phone, licenseplate, totalspent, vehicles")
           .not("vehicles", "is", null)
           .limit(1000);
-
-        console.log(
-          "[QuickService] All customers with vehicles:",
-          allCustomers?.length,
-          allError
-        );
 
         if (allCustomers && !allError) {
           // Filter ở client side
@@ -182,10 +170,6 @@ const QuickServiceModal: React.FC<QuickServiceModalProps> = ({
               );
             });
           });
-          console.log(
-            "[QuickService] Filtered by vehicles:",
-            directMatch?.length
-          );
         }
       }
 
@@ -230,12 +214,6 @@ const QuickServiceModal: React.FC<QuickServiceModalProps> = ({
         }
         if (matchedCustomer) break;
       }
-
-      console.log(
-        "[QuickService] Matched customer:",
-        matchedCustomer?.name,
-        matchedVehicle
-      );
 
       if (matchedCustomer) {
         const loyaltyPoints = Math.floor(

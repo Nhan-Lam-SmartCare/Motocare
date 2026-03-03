@@ -1,18 +1,19 @@
 import React, { useState, useMemo } from "react";
-import { Search, Filter, Package, User, Calendar } from "lucide-react";
+import { Search, Package, User, Calendar } from "lucide-react";
 import type { Sale, Employee } from "../../types";
-import { DeliveryStatusBadge, DeliveryMethodBadge } from "./DeliveryStatusBadge";
+import { DeliveryStatusBadge } from "./DeliveryStatusBadge";
 import { formatCurrency, formatDate } from "../../utils/format";
 
 interface DeliveryOrdersViewProps {
     sales: Sale[];
     employees: Employee[];
-    onUpdateStatus: (saleId: string, status: string, shipperId?: string) => void;
+    onUpdateStatus: (saleId: string, status: DeliveryStatus, shipperId?: string) => void;
     onCompleteDelivery: (saleId: string) => void;
     onRefund?: (saleId: string) => void;
     isLoading?: boolean;
 }
 
+type DeliveryStatus = "pending" | "preparing" | "shipping" | "delivered" | "cancelled";
 type StatusFilter = "all" | "pending" | "preparing" | "shipping" | "delivered" | "cancelled";
 
 export const DeliveryOrdersView: React.FC<DeliveryOrdersViewProps> = ({

@@ -111,8 +111,7 @@ export function usePrintReceipt(): UsePrintReceiptReturn {
     };
 
     // Handle share invoice as image (placeholder - can be extended with html2canvas)
-    const handleShareInvoice = async (sale: any) => {
-        console.log("Share invoice:", sale);
+    const handleShareInvoice = async (_sale: any) => {
         // TODO: Implement html2canvas to convert receipt to image
         alert("Chức năng chia sẻ hóa đơn sẽ được thêm sau");
     };

@@ -23,7 +23,7 @@ import {
   useSupplierDebtsRepo,
 } from "../../hooks/useDebtsRepository";
 import { supabase } from "../../supabaseClient";
-import type { Sale, Part, WorkOrder } from "../../types";
+import type { Sale, Part } from "../../types";
 import { showToast } from "../../utils/toast";
 import { formatCurrency, formatDate } from "../../utils/format";
 import {
@@ -36,7 +36,6 @@ import {
   exportProductProfitReport,
   exportDetailedInventoryReport,
 } from "../../utils/excelExport";
-import { DailyDetailModal } from "../reports/DailyDetailModal";
 import { ReportsManagerMobile } from "../reports/ReportsManagerMobile";
 import TaxReportExport from "../reports/TaxReportExport";
 
@@ -140,12 +139,9 @@ const ReportsManager: React.FC = () => {
   // Repository data (Supabase-backed)
   const { data: salesData = [], isLoading: salesLoading } = useSalesRepo();
   const { data: partsData = [], isLoading: partsLoading } = usePartsRepo();
-  const { data: workOrdersData = [], isLoading: workOrdersLoading } =
-    useWorkOrders();
-  const { data: customerDebtsData = [], isLoading: customerDebtsLoading } =
-    useCustomerDebtsRepo();
-  const { data: supplierDebtsData = [], isLoading: supplierDebtsLoading } =
-    useSupplierDebtsRepo();
+  const { data: workOrdersData = [] } = useWorkOrders();
+  const { data: customerDebtsData = [] } = useCustomerDebtsRepo();
+  const { data: supplierDebtsData = [] } = useSupplierDebtsRepo();
 
   // Fetch unpaid work orders for debt calculation (same as DebtManager)
   const [unpaidWorkOrders, setUnpaidWorkOrders] = React.useState<any[]>([]);
@@ -193,6 +189,7 @@ const ReportsManager: React.FC = () => {
   ); // 1-12
   const [selectedYear] = useState<number>(new Date().getFullYear());
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [showOrderDetails] = useState(false);
 
 
   // Function to handle column sorting
@@ -264,11 +261,6 @@ const ReportsManager: React.FC = () => {
         partsCostMap.get(partId) || partsCostMap.get(sku) || 0
       );
     };
-
-    const salesRevenue = summary.salesRevenue;
-    const salesCost = summary.salesCost;
-    const woRevenue = summary.woRevenue;
-    const woCost = summary.woCost;
 
     const totalRevenue = summary.totalRevenue;
     const totalCost = summary.totalCost;
@@ -487,7 +479,7 @@ const ReportsManager: React.FC = () => {
       .reduce((sum, t) => sum + t.amount, 0);
 
     // Debug log
-    console.log("[ReportsManager] Cash totals:", {
+    console.warn("[ReportsManager] Cash totals:", {
       totalTransactions: filteredTransactions.length,
       incomeAfterFilter: totalIncome,
       expense: totalExpense,
@@ -716,11 +708,12 @@ const ReportsManager: React.FC = () => {
         case "inventory":
           exportInventoryReport(partsData, currentBranchId, startStr, endStr);
           break;
-        case "payroll":
+        case "payroll": {
           const startMonth = start.toISOString().slice(0, 7);
           const endMonth = end.toISOString().slice(0, 7);
           exportPayrollReport(payrollReport.records, startMonth, endMonth);
           break;
+        }
         case "debt":
           exportDebtReport(
             customers,
@@ -736,10 +729,6 @@ const ReportsManager: React.FC = () => {
       console.error("Export error:", error);
       showToast.error("Có lỗi khi xuất Excel. Vui lòng thử lại.");
     }
-  };
-
-  const printReport = () => {
-    window.print();
   };
 
   return (
@@ -1402,7 +1391,7 @@ const ReportsManager: React.FC = () => {
             </div>
 
             {/* Bảng chi tiết đơn hàng - Ẩn vì không cần thiết */}
-            {false && (
+            {showOrderDetails && (
               <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
                 <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
                   <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
@@ -1964,29 +1953,6 @@ const ReportsManager: React.FC = () => {
         )}
       </div>
       {/* Daily Detail - now inline in table, modal removed */}
-    </div>
-  );
-};
-
-// Stat Card Component
-const StatCard: React.FC<{
-  label: string;
-  value: string;
-  color: "blue" | "green" | "red" | "purple";
-}> = ({ label, value, color }) => {
-  const colorClasses = {
-    blue: "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400",
-    green:
-      "bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400",
-    red: "bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400",
-    purple:
-      "bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400",
-  };
-
-  return (
-    <div className={`rounded-lg p-4 ${colorClasses[color]}`}>
-      <div className="text-sm font-medium opacity-75 mb-1">{label}</div>
-      <div className="text-2xl font-bold">{value}</div>
     </div>
   );
 };

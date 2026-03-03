@@ -5,24 +5,17 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useConfirm } from '../../hooks/useConfirm';
 import { useSupplierDebtsRepo } from '../../hooks/useDebtsRepository';
 import { usePartsRepo } from '../../hooks/usePartsRepository';
-import { useInventoryTxRepo } from '../../hooks/useInventoryTransactionsRepository';
 import { useSuppliers } from '../../hooks/useSuppliers';
 import { formatCurrency, formatDate } from '../../utils/format';
 import { showToast } from '../../utils/toast';
 import { supabase } from '../../supabaseClient';
 import {
-  Boxes, Package, Search, FileText, Filter, Edit, Trash2,
-  Plus, Repeat, UploadCloud, DownloadCloud, MoreHorizontal, ShoppingCart,
-  Calendar, ArrowUpRight, ArrowDownLeft, X, Check, AlertTriangle, Printer,
-  ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Eye
+  Trash2, X, Printer, Eye
 } from 'lucide-react';
 import ConfirmModal from '../common/ConfirmModal';
-import InventoryHistoryModal from './modals/InventoryHistoryModal';
 import EditReceiptModal from './components/EditReceiptModal';
 import BatchPrintBarcodeModal from './BatchPrintBarcodeModal';
 import { InventoryTransaction, Part } from '../../types';
-import { canDo } from '../../utils/permissions';
-import { getCategoryColor } from '../../utils/categoryColors';
 
 const InventoryHistorySection: React.FC<{
   transactions: InventoryTransaction[];
@@ -67,20 +60,23 @@ const InventoryHistorySection: React.FC<{
 
     // Apply time filter
     switch (activeTimeFilter) {
-      case "7days":
+      case "7days": {
         const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
         filtered = filtered.filter((t) => new Date(t.date) >= sevenDaysAgo);
         break;
-      case "30days":
+      }
+      case "30days": {
         const thirtyDaysAgo = new Date(
           now.getTime() - 30 * 24 * 60 * 60 * 1000
         );
         filtered = filtered.filter((t) => new Date(t.date) >= thirtyDaysAgo);
         break;
-      case "thisMonth":
+      }
+      case "thisMonth": {
         const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
         filtered = filtered.filter((t) => new Date(t.date) >= startOfMonth);
         break;
+      }
       case "custom":
         filtered = filtered.filter((t) => {
           const date = new Date(t.date);
@@ -207,7 +203,7 @@ const InventoryHistorySection: React.FC<{
 
     // Convert to array and generate receipt codes
     return Array.from(groups.entries())
-      .map(([key, items], index) => {
+      .map(([_key, items], index) => {
         const firstItem = items[0];
         const date = new Date(firstItem.date);
 
@@ -390,7 +386,7 @@ const InventoryHistorySection: React.FC<{
           if (updateError) {
             console.warn(`Could not update stock for ${tx.part_id}:`, updateError);
           } else {
-            console.log(`✅ Trừ tồn kho: ${tx.part_name || tx.part_id} - Số lượng: ${tx.quantity_change} (${branchStock} → ${newBranchStock})`);
+            console.warn(`✅ Trừ tồn kho: ${tx.part_name || tx.part_id} - Số lượng: ${tx.quantity_change} (${branchStock} → ${newBranchStock})`);
           }
         }
       }
@@ -422,7 +418,7 @@ const InventoryHistorySection: React.FC<{
         if (cashError) {
           console.warn(`Could not delete cash transaction for ${receiptCode}:`, cashError);
         } else {
-          console.log(`✅ Đã xóa giao dịch sổ quỹ cho phiếu ${receiptCode}`);
+          console.warn(`✅ Đã xóa giao dịch sổ quỹ cho phiếu ${receiptCode}`);
         }
       }
 
@@ -698,7 +694,7 @@ const InventoryHistorySection: React.FC<{
 
                       return (
                         <>
-                          {displayItems.map((item, idx) => (
+                          {displayItems.map((item) => (
                             <div
                               key={item.id}
                               className="flex items-start justify-between text-sm text-slate-700 dark:text-slate-200"
@@ -864,7 +860,7 @@ const InventoryHistorySection: React.FC<{
 
                         return (
                           <>
-                            {displayItems.map((item, idx) => {
+                            {displayItems.map((item) => {
                               const part = parts.find(
                                 (p) => p.id === item.partId
                               );

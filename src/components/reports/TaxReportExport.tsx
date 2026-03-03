@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from "react";
-import { FileText, Download, Calendar, Info, FileSpreadsheet } from "lucide-react";
+import React, { useState, useMemo, useCallback } from "react";
+import { FileText, Download, Info, FileSpreadsheet } from "lucide-react";
 import { useAppContext } from "../../contexts/AppContext";
 import { useSalesRepo } from "../../hooks/useSalesRepository";
 import { useWorkOrders } from "../../hooks/useSupabase";
@@ -42,18 +42,21 @@ const TaxReportExport: React.FC = () => {
   );
 
   // Organization info (should be fetched from settings)
-  const organizationInfo: OrganizationTaxInfo = {
-    taxCode: "0123456789", // TODO: Fetch from settings
-    name: "CÔNG TY TNHH MOTOCARE",
-    address: "123 Đường ABC, Quận 1, TP.HCM",
-    phone: "028.1234.5678",
-    email: "contact@motocare.vn",
-    taxAuthority: "Cục Thuế TP. Hồ Chí Minh",
-    taxDepartment: "Chi cục Thuế Quận 1",
-    legalRepresentative: "Nguyễn Văn A",
-    accountantName: "Trần Thị B",
-    accountantPhone: "090.123.4567",
-  };
+  const organizationInfo: OrganizationTaxInfo = useMemo(
+    () => ({
+      taxCode: "0123456789", // TODO: Fetch from settings
+      name: "CÔNG TY TNHH MOTOCARE",
+      address: "123 Đường ABC, Quận 1, TP.HCM",
+      phone: "028.1234.5678",
+      email: "contact@motocare.vn",
+      taxAuthority: "Cục Thuế TP. Hồ Chí Minh",
+      taxDepartment: "Chi cục Thuế Quận 1",
+      legalRepresentative: "Nguyễn Văn A",
+      accountantName: "Trần Thị B",
+      accountantPhone: "090.123.4567",
+    }),
+    []
+  );
 
   // Business info for S1a-HKD (Hộ kinh doanh)
   const businessInfo: BusinessInfo = {
@@ -64,7 +67,7 @@ const TaxReportExport: React.FC = () => {
   };
 
   // Calculate date range
-  const getDateRange = () => {
+  const getDateRange = useCallback(() => {
     let startDate: Date;
     let endDate: Date;
 
@@ -79,11 +82,11 @@ const TaxReportExport: React.FC = () => {
     }
 
     return { startDate, endDate };
-  };
+  }, [periodType, selectedYear, selectedMonth, selectedQuarter]);
 
   // Filter data by date range
   // Chỉ lấy dữ liệu đã thanh toán/hoàn thành để tính doanh thu
-  const getFilteredData = () => {
+  const getFilteredData = useCallback(() => {
     const { startDate, endDate } = getDateRange();
 
     const filteredSales = salesData.filter((sale) => {
@@ -127,7 +130,7 @@ const TaxReportExport: React.FC = () => {
       workOrders: filteredWorkOrders,
       cashTransactions: filteredCashTx,
     };
-  };
+  }, [getDateRange, salesData, workOrdersData, cashTxData, currentBranchId]);
 
   // Calculate preview stats - dùng cùng logic với ReportsManager
   const previewStats = useMemo(() => {
@@ -170,10 +173,9 @@ const TaxReportExport: React.FC = () => {
     cashTxData,
     partsData,
     currentBranchId,
-    selectedYear,
-    selectedMonth,
-    selectedQuarter,
-    periodType,
+    getDateRange,
+    getFilteredData,
+    organizationInfo,
   ]);
 
   // Handle export

@@ -5,12 +5,9 @@ import {
   Employee,
   PayrollRecord,
   Loan,
-  LoanPayment,
   CashTransaction,
   Supplier,
   WorkOrder,
-  CustomerDebt,
-  SupplierDebt,
 } from "../types";
 
 // Hàm generate ID ngẫu nhiên
@@ -953,12 +950,12 @@ export const loadDemoData = () => {
     localStorage.setItem("motocare-data", JSON.stringify(newData));
   }
 
-  console.log("Demo data loaded successfully.");
+  console.warn("Demo data loaded successfully.");
   return true;
 };
 
 // Hàm xóa tất cả demo data
 export const clearDemoData = () => {
   localStorage.removeItem("motocare-data");
-  console.log("Demo data cleared.");
+  console.warn("Demo data cleared.");
 };

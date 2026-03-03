@@ -153,7 +153,6 @@ export const CustomerSelector: React.FC<CustomerSelectorProps> = ({
                         <>
                             {customers.map((customer) => {
                                 const vehicles = (customer.vehicles || []).filter(v => v.model || v.licensePlate);
-                                const primaryVehicle = vehicles.find(v => v.isPrimary);
                                 const displayVehicles = vehicles.slice(0, 2); // Show max 2 vehicles
                                 const hasMoreVehicles = vehicles.length > 2;
 

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X, FileText, Wallet, ArrowUpRight, ArrowDownLeft, User, Clock } from 'lucide-react';
 import { Sale, WorkOrder, CashTransaction } from '../../types';
-import { formatCurrency, formatDate } from '../../utils/format';
+import { formatCurrency } from '../../utils/format';
 import { formatCashTxCategory } from '../../lib/finance/cashTxCategories';
 
 interface DailyDetailModalProps {

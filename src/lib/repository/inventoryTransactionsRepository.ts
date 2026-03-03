@@ -1,7 +1,7 @@
 import { supabase } from "../../supabaseClient";
-import { RepoResult, success, failure, RepoSuccess, RepoError } from "./types";
+import { RepoResult, success, failure } from "./types";
 import { InventoryTransaction } from "../../types";
-import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { safeAudit } from "./auditLogsRepository";
 
 const TABLE = "inventory_transactions";
@@ -117,7 +117,9 @@ export async function createInventoryTransaction(
     try {
       const { data: userData } = await supabase.auth.getUser();
       userId = userData?.user?.id || null;
-    } catch { }
+    } catch (_e) {
+      void _e;
+    }
     await safeAudit(userId, {
       action:
         input.type === "Nhập kho" ? "inventory.receipt" : "inventory.adjust",

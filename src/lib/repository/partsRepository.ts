@@ -160,7 +160,9 @@ export async function createPart(
     try {
       const { data: userData } = await supabase.auth.getUser();
       userId = userData?.user?.id || null;
-    } catch { }
+    } catch (_e) {
+      void _e;
+    }
     await safeAudit(userId, {
       action: "part.create",
       tableName: PARTS_TABLE,
@@ -214,7 +216,9 @@ export async function updatePart(
     try {
       const { data: userData } = await supabase.auth.getUser();
       userId = userData?.user?.id || null;
-    } catch { }
+    } catch (_e) {
+      void _e;
+    }
     await safeAudit(userId, {
       action: "part.update",
       tableName: PARTS_TABLE,
@@ -321,7 +325,9 @@ export async function deletePartById(
     try {
       const { data: userData } = await supabase.auth.getUser();
       userId = userData?.user?.id || null;
-    } catch { }
+    } catch (_e) {
+      void _e;
+    }
     await safeAudit(userId, {
       action: "part.delete",
       tableName: PARTS_TABLE,

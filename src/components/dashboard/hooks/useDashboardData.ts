@@ -11,8 +11,8 @@ import { calculateFinancialSummary } from "../../../lib/reports/financialSummary
 
 export const useDashboardData = (
     reportFilter: string,
-    selectedMonth?: number,
-    selectedQuarter?: number
+    _selectedMonth?: number,
+    _selectedQuarter?: number
 ) => {
     const { data: sales = [] } = useSalesRepo();
     const { data: workOrders = [] } = useWorkOrdersRepo();
@@ -21,8 +21,6 @@ export const useDashboardData = (
     const { cashBalance, bankBalance } = useCashBalance();
     const { data: loans = [] } = useLoansRepo();
     const { currentBranchId } = useAppContext();
-
-    const today = new Date().toISOString().slice(0, 10);
 
     // Thống kê hôm nay (bao gồm cả Sales và Work Orders đã thanh toán)
     const todayStats = useMemo(() => {
@@ -111,6 +109,7 @@ export const useDashboardData = (
                     endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
                     break;
                 case "week":
+                {
                     const dayOfWeek = now.getDay();
                     const diff = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // Monday = 0
                     startDate = new Date(
@@ -120,6 +119,7 @@ export const useDashboardData = (
                     );
                     endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
                     break;
+                }
                 case "month":
                     startDate = new Date(now.getFullYear(), now.getMonth(), 1);
                     endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -133,29 +133,6 @@ export const useDashboardData = (
                     endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
             }
         }
-
-        // Sử dụng local date format YYYY-MM-DD thay vì ISO string (tránh lỗi timezone)
-        const formatLocalDate = (d: Date) => {
-            const year = d.getFullYear();
-            const month = String(d.getMonth() + 1).padStart(2, "0");
-            const day = String(d.getDate()).padStart(2, "0");
-            return `${year}-${month}-${day}`;
-        };
-
-        // Chuyển ISO string hoặc date string sang local date string YYYY-MM-DD
-        const toLocalDateStr = (
-            dateStr: string | undefined | null
-        ): string | null => {
-            if (!dateStr) return null;
-            try {
-                // Parse date string và chuyển sang local date
-                const d = new Date(dateStr);
-                if (isNaN(d.getTime())) return null;
-                return formatLocalDate(d);
-            } catch {
-                return null;
-            }
-        };
 
         startDate.setHours(0, 0, 0, 0);
         endDate.setHours(23, 59, 59, 999);
@@ -278,10 +255,12 @@ export const useDashboardData = (
                     startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
                     break;
                 case "week":
+                {
                     const dayOfWeek = now.getDay();
                     const diff = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
                     startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - diff);
                     break;
+                }
                 case "month":
                     startDate = new Date(now.getFullYear(), now.getMonth(), 1);
                     break;
@@ -365,10 +344,12 @@ export const useDashboardData = (
                     startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
                     break;
                 case "week":
+                {
                     const dayOfWeek = now.getDay();
                     const diff = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
                     startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - diff);
                     break;
+                }
                 case "month":
                     startDate = new Date(now.getFullYear(), now.getMonth(), 1);
                     break;
@@ -400,7 +381,7 @@ export const useDashboardData = (
         const startDateStr = formatLocalDate(startDate);
         const endDateStr = formatLocalDate(endDate);
 
-        console.log(`[TopProducts] Filter range: ${startDateStr} to ${endDateStr}`);
+        console.warn(`[TopProducts] Filter range: ${startDateStr} to ${endDateStr}`);
 
         const productSales: Record<string, { name: string; quantity: number }> = {};
 
@@ -416,11 +397,6 @@ export const useDashboardData = (
                 const pId = item.partId || (item as any).id;
                 const pName = item.partName || "Sản phẩm không xác định";
 
-                // DEBUG: Trace specific product
-                if (pName.toLowerCase().includes("elf")) {
-                    console.log(`[TopProducts-DEBUG] Found ELF in Sale: ${sale.id} | Date: ${sale.date} | Item: ${pName} | Qty: ${item.quantity} | ID: ${pId}`);
-                }
-
                 if (!pId) return;
 
                 if (!productSales[pId]) {
@@ -433,7 +409,7 @@ export const useDashboardData = (
             });
         });
 
-        console.log(`[TopProducts] Processed ${filteredSales.length} sales`);
+        console.warn(`[TopProducts] Processed ${filteredSales.length} sales`);
 
         // From work orders (filtered)
         const filteredWOs = workOrders.filter((wo: any) => {
@@ -455,11 +431,6 @@ export const useDashboardData = (
                     const partName = part.partName || part.partname || part.name;
                     const qty = part.quantity || part.qty || 0;
 
-                    // DEBUG: Trace specific product
-                    if (partName && partName.toLowerCase().includes("elf")) {
-                        console.log(`[TopProducts-DEBUG] Found ELF in WO: ${wo.id} | Date: ${wo.creationDate || wo.creationdate} | Item: ${partName} | Qty: ${qty} | ID: ${partId}`);
-                    }
-
                     if (partId && partName) {
                         if (!productSales[partId]) {
                             productSales[partId] = {
@@ -473,13 +444,13 @@ export const useDashboardData = (
             }
         });
 
-        console.log(`[TopProducts] Processed ${filteredWOs.length} work orders`);
+        console.warn(`[TopProducts] Processed ${filteredWOs.length} work orders`);
 
         const result = Object.values(productSales)
             .sort((a, b) => b.quantity - a.quantity)
             .slice(0, 10); // Show top 10
 
-        console.log("[TopProducts] Result:", result);
+        console.warn("[TopProducts] Result:", result);
         return result;
 
     }, [sales, workOrders, reportFilter]);
@@ -517,10 +488,12 @@ export const useDashboardData = (
                     startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
                     break;
                 case "week":
+                {
                     const dayOfWeek = now.getDay();
                     const diff = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
                     startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - diff);
                     break;
+                }
                 case "month":
                     startDate = new Date(now.getFullYear(), now.getMonth(), 1);
                     break;
@@ -712,117 +685,6 @@ export const useDashboardData = (
 
         return warnings;
     }, [parts, loans, cashBalance, bankBalance, currentBranchId]);
-
-    // Top Customers Data
-    const topCustomersData = useMemo(() => {
-        const customerSpending: Record<
-            string,
-            { name: string; phone?: string; total: number }
-        > = {};
-
-        // Tính từ Sales (bán hàng)
-        sales.forEach((sale) => {
-            const key = sale.customer.phone || sale.customer.name;
-            if (!customerSpending[key]) {
-                customerSpending[key] = {
-                    name: sale.customer.name,
-                    phone: sale.customer.phone,
-                    total: 0,
-                };
-            }
-            customerSpending[key].total += sale.total;
-        });
-
-        // Tính từ Work Orders (phiếu sửa chữa đã thanh toán)
-        workOrders.forEach((wo: any) => {
-            const isPaid =
-                wo.paymentStatus === "paid" ||
-                wo.paymentstatus === "paid" ||
-                wo.paymentStatus === "partial" ||
-                wo.paymentstatus === "partial";
-
-            if (isPaid) {
-                const customerName = wo.customerName || wo.customername || "";
-                const customerPhone = wo.customerPhone || wo.customerphone || "";
-                const key = customerPhone || customerName;
-
-                if (key) {
-                    if (!customerSpending[key]) {
-                        customerSpending[key] = {
-                            name: customerName,
-                            phone: customerPhone,
-                            total: 0,
-                        };
-                    }
-                    customerSpending[key].total +=
-                        wo.totalPaid || wo.totalpaid || wo.total || 0;
-                }
-            }
-        });
-
-        return Object.values(customerSpending)
-            .sort((a, b) => b.total - a.total)
-            .slice(0, 10);
-    }, [sales, workOrders]);
-
-    // Monthly Comparison Data
-    const monthlyComparisonData = useMemo(() => {
-        const months = [];
-        const now = new Date();
-
-        for (let i = 2; i >= 0; i--) {
-            const monthDate = new Date(now.getFullYear(), now.getMonth() - i, 1);
-            const monthStr = monthDate.toISOString().slice(0, 7); // Format: YYYY-MM
-            const monthName = monthDate.toLocaleDateString("vi-VN", {
-                month: "short",
-                year: "numeric",
-            });
-
-            // Tính doanh thu và đơn hàng từ Sales
-            const monthSales = sales.filter((s) => {
-                if (!s.date) return false;
-                const saleMonth = s.date.slice(0, 7);
-                return saleMonth === monthStr;
-            });
-            const salesRevenue = monthSales.reduce((sum, s) => sum + s.total, 0);
-            const salesOrders = monthSales.length;
-
-            // Tính doanh thu và đơn hàng từ Work Orders (đã thanh toán)
-            const monthWorkOrders = workOrders.filter((wo: any) => {
-                // Ưu tiên dùng paymentDate, nếu không có thì dùng creationDate
-                const dateRaw =
-                    wo.paymentDate ||
-                    wo.paymentdate ||
-                    wo.creationDate ||
-                    wo.creationdate;
-                if (!dateRaw) return false;
-
-                const woMonth = dateRaw.slice(0, 7);
-                const isPaid =
-                    wo.paymentStatus === "paid" ||
-                    wo.paymentstatus === "paid" ||
-                    wo.paymentStatus === "partial" ||
-                    wo.paymentstatus === "partial";
-                return woMonth === monthStr && isPaid;
-            });
-            const woRevenue = monthWorkOrders.reduce(
-                (sum, wo: any) => sum + (wo.totalPaid || wo.totalpaid || wo.total || 0),
-                0
-            );
-            const woOrders = monthWorkOrders.length;
-
-            const totalRevenue = salesRevenue + woRevenue;
-            const totalOrders = salesOrders + woOrders;
-
-            months.push({
-                month: monthName,
-                revenue: totalRevenue,
-                orders: totalOrders,
-            });
-        }
-
-        return months;
-    }, [sales, workOrders]);
 
     return {
         todayStats,

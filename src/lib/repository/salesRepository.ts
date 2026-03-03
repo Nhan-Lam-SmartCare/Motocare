@@ -227,7 +227,9 @@ export async function createSale(
     try {
       const { data: userData } = await supabase.auth.getUser();
       userId = userData?.user?.id || null;
-    } catch { }
+    } catch (_e) {
+      void _e;
+    }
     await safeAudit(userId, {
       action: "sale.create",
       tableName: SALES_TABLE,
@@ -298,7 +300,9 @@ export async function createSaleAtomic(
           const jsonStr = rawDetails.slice(colon + 1).trim();
           try {
             items = JSON.parse(jsonStr);
-          } catch { }
+          } catch (_e) {
+            void _e;
+          }
         }
         const list = Array.isArray(items)
           ? items
@@ -375,7 +379,9 @@ export async function createSaleAtomic(
     try {
       const { data: userData } = await supabase.auth.getUser();
       userId = userData?.user?.id || null;
-    } catch { }
+    } catch (_e) {
+      void _e;
+    }
     await safeAudit(userId, {
       action: "sale.create",
       tableName: SALES_TABLE,
@@ -429,7 +435,9 @@ export async function deleteSaleById(
     try {
       const { data: userData } = await supabase.auth.getUser();
       userId = userData?.user?.id || null;
-    } catch { }
+    } catch (_e) {
+      void _e;
+    }
 
     await safeAudit(userId, {
       action: "sale.delete",
@@ -497,7 +505,9 @@ export async function refundSale(
           reference: id,
         },
       ] as any);
-    } catch { }
+    } catch (_e) {
+      void _e;
+    }
     // Restock all items (nhập trả) - best effort
     try {
       const branchId = (saleRow as Sale).branchId || "CN1";
@@ -540,13 +550,17 @@ export async function refundSale(
           });
         }
       }
-    } catch { }
+    } catch (_e) {
+      void _e;
+    }
     // Audit
     let userId: string | null = null;
     try {
       const { data: userData } = await supabase.auth.getUser();
       userId = userData?.user?.id || null;
-    } catch { }
+    } catch (_e) {
+      void _e;
+    }
     await safeAudit(userId, {
       action: "sale.refund",
       tableName: SALES_TABLE,
@@ -670,13 +684,17 @@ export async function returnSaleItem(params: {
           notes: `Trả hàng SKU ${params.itemSku} từ hóa đơn ${params.saleId}`,
         });
       }
-    } catch { }
+    } catch (_e) {
+      void _e;
+    }
     // Audit
     let userId: string | null = null;
     try {
       const { data: userData } = await supabase.auth.getUser();
       userId = userData?.user?.id || null;
-    } catch { }
+    } catch (_e) {
+      void _e;
+    }
     await safeAudit(userId, {
       action: "sale.return_item",
       tableName: SALES_TABLE,

@@ -1,10 +1,7 @@
 import React, { useState } from "react";
 import {
-  Image as ImageIcon,
   Play,
   X,
-  ChevronLeft,
-  ChevronRight,
   Star,
   Award,
   CheckCircle,

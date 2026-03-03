@@ -675,8 +675,8 @@ export const exportProductProfitReport = (
 export const exportDetailedInventoryReport = (
   parts: Part[],
   branchId: string,
-  startDate: string,
-  endDate: string
+  _startDate: string,
+  _endDate: string
 ) => {
   const wb = XLSX.utils.book_new();
 

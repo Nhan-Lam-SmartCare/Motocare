@@ -69,7 +69,9 @@ export async function updatePaymentSourceBalance(
     try {
       const { data: userData } = await supabase.auth.getUser();
       userId = userData?.user?.id || null;
-    } catch {}
+    } catch (_e) {
+      void _e;
+    }
     await safeAudit(userId, {
       action: "payment_source.balance_adjust",
       tableName: TABLE,

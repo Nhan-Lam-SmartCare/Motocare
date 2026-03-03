@@ -33,10 +33,10 @@ export const CartItemRow: React.FC<CartItemRowProps> = ({
 
                 {/* Product Info */}
                 <div className="flex-1 min-w-0">
-                    <h4 className="font-bold text-sm text-slate-900 dark:text-white line-clamp-1">
+                    <h4 className="font-bold text-[15px] text-slate-900 dark:text-white line-clamp-1">
                         {item.partName}
                     </h4>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 font-mono mt-0.5">
+                    <p className="text-[12px] text-slate-600 dark:text-slate-300 font-mono mt-0.5 leading-relaxed">
                         {item.sku}
                     </p>
                 </div>
@@ -44,7 +44,7 @@ export const CartItemRow: React.FC<CartItemRowProps> = ({
                 {/* Delete Button */}
                 <button
                     onClick={() => onRemove(item.partId)}
-                    className="p-1.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                    className="p-1.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors border border-transparent hover:border-red-200 dark:hover:border-red-800"
                     title="Xóa"
                 >
                     <Trash2 className="w-4 h-4" />
@@ -57,17 +57,17 @@ export const CartItemRow: React.FC<CartItemRowProps> = ({
                 <div className="flex items-center gap-1.5">
                     <button
                         onClick={() => onUpdateQuantity(item.partId, item.quantity - 1)}
-                        className="w-7 h-7 flex items-center justify-center bg-slate-200 dark:bg-slate-700 hover:bg-red-500 hover:text-white rounded-lg transition-all font-bold text-sm"
+                        className="w-8 h-8 flex items-center justify-center bg-slate-200 dark:bg-slate-700 hover:bg-red-500 hover:text-white rounded-lg transition-all font-bold text-sm"
                         disabled={item.quantity <= 1}
                     >
                         −
                     </button>
-                    <span className="w-8 text-center font-black text-sm text-slate-900 dark:text-white px-1.5 py-1">
+                    <span className="w-9 text-center font-black text-sm text-slate-900 dark:text-white px-1.5 py-1">
                         {item.quantity}
                     </span>
                     <button
                         onClick={() => onUpdateQuantity(item.partId, item.quantity + 1)}
-                        className="w-7 h-7 flex items-center justify-center bg-slate-200 dark:bg-slate-700 hover:bg-blue-500 hover:text-white rounded-lg transition-all font-bold text-sm"
+                        className="w-8 h-8 flex items-center justify-center bg-slate-200 dark:bg-slate-700 hover:bg-blue-500 hover:text-white rounded-lg transition-all font-bold text-sm"
                         disabled={item.quantity >= item.stockSnapshot}
                     >
                         +

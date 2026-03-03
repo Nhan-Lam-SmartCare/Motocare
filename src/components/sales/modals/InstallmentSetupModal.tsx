@@ -68,6 +68,7 @@ export const InstallmentSetupModal: React.FC<InstallmentSetupModalProps> = ({
             document.body.style.overflow = '';
             document.documentElement.style.overflow = '';
         };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isOpen]); // Reduced dependencies to avoid re-locking/unlocking on unrelated changes
 
     // Update initial details when they change, separate from scroll locking

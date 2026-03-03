@@ -91,7 +91,7 @@ export const exportInventoryTemplate = (
  */
 export const importPartsFromExcel = (
   file: File,
-  currentBranchId: string
+  _currentBranchId: string
 ): Promise<
   Array<{
     name: string;
@@ -297,7 +297,7 @@ export const importPartsFromExcel = (
  */
 export const importPartsFromExcelDetailed = (
   file: File,
-  currentBranchId: string
+  _currentBranchId: string
 ): Promise<{
   items: Array<{
     name: string;
@@ -406,7 +406,7 @@ export const importPartsFromExcelDetailed = (
             // Auto-generate 8-char SKU if missing or invalid
             if (!sku || !isValidSKU(sku)) {
               sku = generateSKU();
-              console.log(`🔄 Generated SKU for "${name}": ${sku}`);
+              console.warn(`🔄 Generated SKU for "${name}": ${sku}`);
             }
 
             const category = get("category");

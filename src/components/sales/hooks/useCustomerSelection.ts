@@ -247,10 +247,8 @@ export function useCustomerSelection(
     // Handle save new customer
     const handleSaveNewCustomer = useCallback(
         async (customers: Customer[], createCustomerMutation: any) => {
-            const normalizePhone = (value: string) => value.replace(/\D/g, "");
             const trimmedName = newCustomer.name.trim();
             const trimmedPhone = newCustomer.phone.trim();
-            const normalizedPhone = normalizePhone(trimmedPhone);
             const phoneNumbers = extractPhoneNumbers(trimmedPhone);
 
             if (!trimmedName || !trimmedPhone) {
@@ -345,7 +343,7 @@ export function useCustomerSelection(
                 showToast.error("Không thể thêm khách hàng. Vui lòng thử lại.");
             }
         },
-        [newCustomer]
+        [extractPhoneNumbers, newCustomer]
     );
 
     return {

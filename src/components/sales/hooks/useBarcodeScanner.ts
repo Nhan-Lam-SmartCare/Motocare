@@ -73,8 +73,6 @@ export function useBarcodeScanner(): UseBarcodeScannerReturn {
     // Handle camera barcode scan
     const handleCameraScan = useCallback(
         (barcode: string, parts: Part[], cartItems: CartItem[], addToCart: (part: Part) => void) => {
-            console.log("📷 Camera scanned:", barcode);
-
             const normalizedBarcode = normalizeCode(barcode);
 
             // Search in ALL parts (repoParts), not filtered

@@ -66,7 +66,12 @@ export const supabaseHelpers = {
     // Filter out fields that don't exist in the customers table
     // The actual DB columns are: id, name, phone, email, address, vehicles (jsonb),
     // segment, status, loyaltyPoints, totalSpent, visitCount, notes, lastVisit, created_at
-    const { licensePlate, vehicleModel, vehicleId, ...validUpdates } = updates;
+    const {
+      licensePlate: _licensePlate,
+      vehicleModel: _vehicleModel,
+      vehicleId: _vehicleId,
+      ...validUpdates
+    } = updates;
 
     const { data, error } = await supabase
       .from("customers")
@@ -229,13 +234,13 @@ export const supabaseHelpers = {
 
     if (error) throw error;
 
-    console.log(
+    console.warn(
       "[supabase.getCashTransactions] Raw data from DB:",
       data?.length,
       "records"
     );
     if (data?.length) {
-      console.log("[supabase.getCashTransactions] Sample record:", data[0]);
+      console.warn("[supabase.getCashTransactions] Sample record:", data[0]);
     }
 
     // Map DB columns to TypeScript interface (handle both lowercase and camelCase)
@@ -258,7 +263,7 @@ export const supabaseHelpers = {
           : "expense"),
     }));
 
-    console.log(
+    console.warn(
       "[supabase.getCashTransactions] Mapped data:",
       mapped?.length,
       "records"

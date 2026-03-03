@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { useAuth } from "../../../contexts/AuthContext";
 import { formatCurrency, formatDate } from "../../../utils/format";
 import type { Sale } from "../../../types";
 import {
@@ -18,7 +17,6 @@ import {
     X,
     History,
     ShoppingBag,
-    ReceiptText,
     Ban,
     RefreshCw,
 } from "lucide-react";
@@ -65,12 +63,11 @@ const STATUS_CONFIG = {
 export const SalesHistoryModal: React.FC<SalesHistoryModalProps> = ({
     isOpen, onClose, sales, currentBranchId, onPrintReceipt, onEditSale,
     onDeleteSale, page, totalPages, total, hasMore, pageSize, onPrevPage,
-    onNextPage, onPageSizeChange, search, onSearchChange, fromDate, toDate,
+    onNextPage, onPageSizeChange, search: _search, onSearchChange: _onSearchChange, fromDate: _fromDate, toDate: _toDate,
     onDateRangeChange, status = "all", onStatusChange, paymentMethodFilter = "all",
     onPaymentMethodFilterChange, keysetMode = false, onToggleKeyset,
     customerDebts = [], onViewDetail, canDelete = false,
 }) => {
-    const { profile } = useAuth();
     const [activeTimeFilter, setActiveTimeFilter] = useState("7days");
     const [searchText, setSearchText] = useState("");
     const [customStartDate, setCustomStartDate] = useState("");
@@ -465,7 +462,6 @@ export const SalesHistoryModal: React.FC<SalesHistoryModalProps> = ({
                                     const hasDebt = debt && debt.remaining_amount > 0;
                                     const remainingDebt = debt ? debt.remaining_amount : 0;
                                     const isExpanded = expandedSaleIds.has(sale.id);
-                                    const isActionsOpen = actionSaleId === sale.id;
 
                                     let statusKey: keyof typeof STATUS_CONFIG = "completed";
                                     if (hasDebt) statusKey = "debt";

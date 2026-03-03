@@ -60,7 +60,9 @@ export async function createSupplier(
     try {
       const { data: userData } = await supabase.auth.getUser();
       userId = userData?.user?.id || null;
-    } catch {}
+    } catch (_e) {
+      void _e;
+    }
     await safeAudit(userId, {
       action: "supplier.create",
       tableName: SUPPLIERS_TABLE,
@@ -91,7 +93,9 @@ export async function updateSupplier(
         .eq("id", id)
         .single();
       oldRow = resp?.data ?? null;
-    } catch {}
+    } catch (_e) {
+      void _e;
+    }
     const { data, error } = await supabase
       .from(SUPPLIERS_TABLE)
       .update({ ...updates })
@@ -108,7 +112,9 @@ export async function updateSupplier(
     try {
       const { data: userData } = await supabase.auth.getUser();
       userId = userData?.user?.id || null;
-    } catch {}
+    } catch (_e) {
+      void _e;
+    }
     await safeAudit(userId, {
       action: "supplier.update",
       tableName: SUPPLIERS_TABLE,
@@ -138,7 +144,9 @@ export async function deleteSupplier(
         .eq("id", id)
         .single();
       oldRow = resp?.data ?? null;
-    } catch {}
+    } catch (_e) {
+      void _e;
+    }
     const { error } = await supabase
       .from(SUPPLIERS_TABLE)
       .delete()
@@ -153,7 +161,9 @@ export async function deleteSupplier(
     try {
       const { data: userData } = await supabase.auth.getUser();
       userId = userData?.user?.id || null;
-    } catch {}
+    } catch (_e) {
+      void _e;
+    }
     await safeAudit(userId, {
       action: "supplier.delete",
       tableName: SUPPLIERS_TABLE,

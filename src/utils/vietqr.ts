@@ -95,7 +95,7 @@ export function findBankBin(bankName: string): string | undefined {
   // Try exact match first
   for (const [name, bin] of Object.entries(BANK_BINS)) {
     if (name.toLowerCase() === normalized) {
-      console.log(`[VietQR] Exact match found: "${bankName}" -> ${bin}`);
+      console.warn(`[VietQR] Exact match found: "${bankName}" -> ${bin}`);
       return bin;
     }
   }
@@ -103,7 +103,7 @@ export function findBankBin(bankName: string): string | undefined {
   // Try partial match
   for (const [name, bin] of Object.entries(BANK_BINS)) {
     if (name.toLowerCase().includes(normalized) || normalized.includes(name.toLowerCase())) {
-      console.log(`[VietQR] Partial match found: "${bankName}" -> "${name}" -> ${bin}`);
+      console.warn(`[VietQR] Partial match found: "${bankName}" -> "${name}" -> ${bin}`);
       return bin;
     }
   }

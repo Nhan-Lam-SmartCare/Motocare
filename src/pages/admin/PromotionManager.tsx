@@ -67,18 +67,18 @@ export default function PromotionManager() {
   // Create/Update mutation
   const saveMutation = useMutation({
     mutationFn: async (formData: Partial<Promotion>) => {
-      console.log('💾 Saving promotion:', formData);
+      console.warn('💾 Saving promotion:', formData);
 
       let imageUrl = formData.image_url;
       let detailImageUrl = formData.detail_image_url;
 
       // Upload thumbnail image if new file selected
       if (imageFile) {
-        console.log('📷 Uploading thumbnail image...');
+        console.warn('📷 Uploading thumbnail image...');
         setUploadProgress(25);
         try {
           imageUrl = await uploadImage(imageFile);
-          console.log('✅ Thumbnail uploaded:', imageUrl);
+          console.warn('✅ Thumbnail uploaded:', imageUrl);
         } catch (uploadErr) {
           console.error('❌ Thumbnail upload failed:', uploadErr);
           throw new Error('Không thể tải hình thumbnail lên. Vui lòng thử lại.');
@@ -87,11 +87,11 @@ export default function PromotionManager() {
 
       // Upload detail image if new file selected
       if (detailImageFile) {
-        console.log('📷 Uploading detail image...');
+        console.warn('📷 Uploading detail image...');
         setUploadProgress(50);
         try {
           detailImageUrl = await uploadImage(detailImageFile);
-          console.log('✅ Detail image uploaded:', detailImageUrl);
+          console.warn('✅ Detail image uploaded:', detailImageUrl);
         } catch (uploadErr) {
           console.error('❌ Detail image upload failed:', uploadErr);
           throw new Error('Không thể tải hình chi tiết lên. Vui lòng thử lại.');
@@ -106,11 +106,11 @@ export default function PromotionManager() {
         detail_image_url: detailImageUrl
       };
 
-      console.log('📤 Sending to database:', promotionData);
+      console.warn('📤 Sending to database:', promotionData);
 
       if (editingPromotion) {
         // Update
-        console.log('🔄 Updating promotion ID:', editingPromotion.id);
+        console.warn('🔄 Updating promotion ID:', editingPromotion.id);
         const { data, error } = await supabase
           .from('promotions')
           .update(promotionData)
@@ -121,11 +121,11 @@ export default function PromotionManager() {
           console.error('❌ Update error:', error);
           throw new Error(`Lỗi cập nhật: ${error.message}`);
         }
-        console.log('✅ Update success:', data);
+        console.warn('✅ Update success:', data);
         return data;
       } else {
         // Insert
-        console.log('➕ Creating new promotion');
+        console.warn('➕ Creating new promotion');
         const { data, error } = await supabase
           .from('promotions')
           .insert([promotionData])
@@ -135,12 +135,12 @@ export default function PromotionManager() {
           console.error('❌ Insert error:', error);
           throw new Error(`Lỗi thêm mới: ${error.message}`);
         }
-        console.log('✅ Insert success:', data);
+        console.warn('✅ Insert success:', data);
         return data;
       }
     },
-    onSuccess: (data) => {
-      console.log('🎉 Mutation success, refreshing data...');
+    onSuccess: (_data) => {
+      console.warn('🎉 Mutation success, refreshing data...');
       queryClient.invalidateQueries({ queryKey: ['promotions-admin'] });
       queryClient.invalidateQueries({ queryKey: ['promotions'] });
       resetForm();

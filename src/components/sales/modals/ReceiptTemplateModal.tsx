@@ -1,6 +1,6 @@
 import React, { useRef } from "react";
 import { formatCurrency, formatDate } from "../../../utils/format";
-import { Printer, Share2, Download } from "lucide-react";
+import { Printer, Share2 } from "lucide-react";
 
 export interface StoreSettings {
     store_name?: string;

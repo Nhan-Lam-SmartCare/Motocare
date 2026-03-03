@@ -52,13 +52,13 @@ export async function createEmployee(
   employee: Omit<Employee, "id" | "created_at" | "updated_at">
 ): Promise<RepoResult<Employee>> {
   try {
-    console.log("Creating employee with data:", employee);
+    console.warn("Creating employee with data:", employee);
 
     // Get current branch
     const { data: branchData, error: branchError } = await supabase.rpc(
       "mc_current_branch"
     );
-    console.log("Branch data:", branchData, "Branch error:", branchError);
+    console.warn("Branch data:", branchData, "Branch error:", branchError);
 
     const branchId = branchData || "CN1";
 
@@ -79,7 +79,7 @@ export async function createEmployee(
       branch_id: branchId,
     };
 
-    console.log("Inserting employee:", newEmployee);
+    console.warn("Inserting employee:", newEmployee);
 
     const { data, error } = await supabase
       .from(EMPLOYEES_TABLE)
@@ -87,7 +87,7 @@ export async function createEmployee(
       .select()
       .single();
 
-    console.log("Insert result - data:", data, "error:", error);
+    console.warn("Insert result - data:", data, "error:", error);
 
     if (error || !data) {
       console.error("Insert failed - error:", error, "data:", data);

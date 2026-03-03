@@ -1,17 +1,13 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { supabase } from "../../supabaseClient";
 import {
   Search,
   Filter,
   ShoppingCart,
   Package,
-  Tag,
   Grid,
   List,
   X,
-  Phone,
-  Mail,
   MessageCircle,
 } from "lucide-react";
 import { formatCurrency } from "../../utils/format";
@@ -44,10 +40,8 @@ function getRetailPrice(part: Part): number {
 }
 
 export default function ProductCatalog() {
-  const navigate = useNavigate();
   const [parts, setParts] = useState<Part[]>([]);
   const [loading, setLoading] = useState(true);
-  const [currentBranchId, setCurrentBranchId] = useState<string>("CN1"); // Default branch key (CN1, CN2, ...)
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
@@ -59,7 +53,7 @@ export default function ProductCatalog() {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        console.log('🔍 [Shop] Bắt đầu fetch sản phẩm...');
+        console.warn('🔍 [Shop] Bắt đầu fetch sản phẩm...');
 
         // Select only existing columns: id, name, sku, category, stock, retailPrice, wholesalePrice
         const { data, error } = await supabase
@@ -67,7 +61,7 @@ export default function ProductCatalog() {
           .select('id, name, sku, category, stock, retailPrice, wholesalePrice')
           .order('name');
 
-        console.log('📦 [Shop] Kết quả fetch:', {
+        console.warn('📦 [Shop] Kết quả fetch:', {
           totalProducts: data?.length || 0,
           error: error?.message,
           sampleProduct: data?.[0],
@@ -81,9 +75,8 @@ export default function ProductCatalog() {
           throw error;
         }
 
-        console.log('✅ [Shop] Fetch thành công!', {
+        console.warn('✅ [Shop] Fetch thành công!', {
           products: data?.length,
-          currentBranchId
         });
 
         setParts(data || []);
@@ -110,14 +103,13 @@ export default function ProductCatalog() {
 
   // Filter products
   const filteredProducts = useMemo(() => {
-    console.log('🔍 [Shop] Filtering products...', {
+    console.warn('🔍 [Shop] Filtering products...', {
       totalParts: parts.length,
-      currentBranchId,
       searchQuery,
       selectedCategory
     });
 
-    let filtered = parts.filter((p) => {
+    const filtered = parts.filter((p) => {
       // Stock is JSONB: {CN1: quantity}
       // Get actual branch ID from stock keys (CN1, CN2, etc.)
       const stockKeys = p.stock && typeof p.stock === 'object' ? Object.keys(p.stock) : [];
@@ -155,13 +147,13 @@ export default function ProductCatalog() {
       return true;
     });
 
-    console.log('✅ [Shop] Filter result:', {
+    console.warn('✅ [Shop] Filter result:', {
       filteredCount: filtered.length,
       sampleProduct: filtered[0]
     });
 
     return filtered;
-  }, [parts, searchQuery, selectedCategory, currentBranchId]);
+  }, [parts, searchQuery, selectedCategory]);
 
   const addToCart = (partId: string) => {
     setCart((prev) => {
@@ -343,7 +335,6 @@ export default function ProductCatalog() {
                     product={product}
                     onAddToCart={addToCart}
                     cartQuantity={cart.get(product.id) || 0}
-                    currentBranchId={currentBranchId}
                   />
                 ))}
               </div>
@@ -355,7 +346,6 @@ export default function ProductCatalog() {
                     product={product}
                     onAddToCart={addToCart}
                     cartQuantity={cart.get(product.id) || 0}
-                    currentBranchId={currentBranchId}
                   />
                 ))}
               </div>
@@ -506,15 +496,11 @@ function ProductCard({
   product,
   onAddToCart,
   cartQuantity,
-  currentBranchId,
 }: {
   product: Part;
   onAddToCart: (id: string) => void;
   cartQuantity: number;
-  currentBranchId: string;
 }) {
-  const categoryColor = getCategoryColor(product.category || "");
-
   // Determine availability
   const stock = (product.stock && typeof product.stock === 'object')
     ? (product.stock[(product as any).actualBranchId || 'CN1'] || 0)
@@ -607,12 +593,10 @@ function ProductListItem({
   product,
   onAddToCart,
   cartQuantity,
-  currentBranchId,
 }: {
   product: Part;
   onAddToCart: (id: string) => void;
   cartQuantity: number;
-  currentBranchId: string;
 }) {
   const categoryColor = getCategoryColor(product.category || "");
 

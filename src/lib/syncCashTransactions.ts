@@ -24,7 +24,7 @@ export async function syncMotocareToPin(
     };
 
     // Insert vào Pin Factory database
-    const { data, error } = await pinSupabase
+    const { data: _data, error } = await pinSupabase
       .from("cashtransactions")
       .upsert(pinTx, { onConflict: "id" }); // Upsert để tránh duplicate
 
@@ -33,7 +33,7 @@ export async function syncMotocareToPin(
       return { success: false, error };
     }
 
-    console.log("[Sync Motocare→Pin] ✅ Synced:", pinTx.id);
+    console.warn("[Sync Motocare→Pin] ✅ Synced:", pinTx.id);
     return { success: true };
   } catch (err) {
     console.error("[Sync Motocare→Pin] Exception:", err);
@@ -68,7 +68,7 @@ export async function syncPinToMotocare(
     };
 
     // Insert vào Motocare database
-    const { data, error } = await supabase
+    const { data: _data, error } = await supabase
       .from("cash_transactions")
       .upsert(motocareTx, { onConflict: "id" }); // Upsert để tránh duplicate
 
@@ -77,7 +77,7 @@ export async function syncPinToMotocare(
       return { success: false, error };
     }
 
-    console.log("[Sync Pin→Motocare] ✅ Synced:", motocareTx.id);
+    console.warn("[Sync Pin→Motocare] ✅ Synced:", motocareTx.id);
     return { success: true };
   } catch (err) {
     console.error("[Sync Pin→Motocare] Exception:", err);
@@ -140,7 +140,7 @@ export async function syncBidirectional(
   motoToPin: { success: number; failed: number };
   pinToMoto: { success: number; failed: number };
 }> {
-  console.log("[Sync Bidirectional] Bắt đầu đồng bộ 2 chiều...");
+  console.warn("[Sync Bidirectional] Bắt đầu đồng bộ 2 chiều...");
 
   // 1. Lấy tất cả giao dịch từ cả 2 hệ thống
   const [motocareRes, pinRes] = await Promise.all([
@@ -169,7 +169,7 @@ export async function syncBidirectional(
       !existingMotoIds.has(`PIN-${tx.id}`)
   );
 
-  console.log(`[Sync] Cần đồng bộ: ${motoToSync.length} Motocare→Pin, ${pinToSync.length} Pin→Motocare`);
+  console.warn(`[Sync] Cần đồng bộ: ${motoToSync.length} Motocare→Pin, ${pinToSync.length} Pin→Motocare`);
 
   // 3. Thực hiện đồng bộ
   const [motoResult, pinResult] = await Promise.all([
@@ -177,7 +177,7 @@ export async function syncBidirectional(
     syncAllPinToMotocare(pinToSync, branchId),
   ]);
 
-  console.log(`[Sync] Kết quả:`, {
+  console.warn(`[Sync] Kết quả:`, {
     motoToPin: `${motoResult.success}/${motoToSync.length}`,
     pinToMoto: `${pinResult.success}/${pinToSync.length}`,
   });

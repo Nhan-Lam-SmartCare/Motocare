@@ -227,7 +227,9 @@ export async function createWorkOrderAtomic(input: Partial<WorkOrder>): Promise<
           const jsonStr = rawDetails.slice(colon + 1).trim();
           try {
             items = JSON.parse(jsonStr);
-          } catch {}
+          } catch (_e) {
+            void _e;
+          }
         }
         const list = Array.isArray(items)
           ? items
@@ -347,7 +349,9 @@ export async function createWorkOrderAtomic(input: Partial<WorkOrder>): Promise<
     try {
       const { data: userData } = await supabase.auth.getUser();
       userId = userData?.user?.id || null;
-    } catch {}
+    } catch (_e) {
+      void _e;
+    }
 
     await safeAudit(userId, {
       action: "work_order.create",
@@ -431,7 +435,9 @@ export async function updateWorkOrderAtomic(input: Partial<WorkOrder>): Promise<
           const jsonStr = rawDetails.slice(colon + 1).trim();
           try {
             items = JSON.parse(jsonStr);
-          } catch {}
+          } catch (_e) {
+            void _e;
+          }
         }
         const list = Array.isArray(items)
           ? items
@@ -513,7 +519,9 @@ export async function updateWorkOrderAtomic(input: Partial<WorkOrder>): Promise<
     try {
       const { data: userData } = await supabase.auth.getUser();
       userId = userData?.user?.id || null;
-    } catch {}
+    } catch (_e) {
+      void _e;
+    }
     await safeAudit(userId, {
       action: "work_order.update",
       tableName: WORK_ORDERS_TABLE,
@@ -561,7 +569,9 @@ export async function updateWorkOrder(
     try {
       const { data: userData } = await supabase.auth.getUser();
       userId = userData?.user?.id || null;
-    } catch {}
+    } catch (_e) {
+      void _e;
+    }
     await safeAudit(userId, {
       action: "work_order.update",
       tableName: WORK_ORDERS_TABLE,
@@ -599,7 +609,9 @@ export async function deleteWorkOrder(id: string): Promise<RepoResult<void>> {
     try {
       const { data: userData } = await supabase.auth.getUser();
       userId = userData?.user?.id || null;
-    } catch {}
+    } catch (_e) {
+      void _e;
+    }
     await safeAudit(userId, {
       action: "work_order.delete",
       tableName: WORK_ORDERS_TABLE,
@@ -635,7 +647,9 @@ export async function refundWorkOrder(
     try {
       const { data: userData } = await supabase.auth.getUser();
       userId = userData?.user?.id || null;
-    } catch {}
+    } catch (_e) {
+      void _e;
+    }
 
     const { data, error } = await supabase.rpc("work_order_refund_atomic", {
       p_order_id: orderId,
@@ -739,7 +753,9 @@ export async function completeWorkOrderPayment(
     try {
       const { data: userData } = await supabase.auth.getUser();
       userId = userData?.user?.id || null;
-    } catch {}
+    } catch (_e) {
+      void _e;
+    }
 
     const { data, error } = await supabase.rpc("work_order_complete_payment", {
       p_order_id: orderId,
@@ -761,7 +777,9 @@ export async function completeWorkOrderPayment(
           const jsonStr = rawDetails.slice(colon + 1).trim();
           try {
             items = JSON.parse(jsonStr);
-          } catch {}
+          } catch (_e) {
+            void _e;
+          }
         }
         const list = Array.isArray(items)
           ? items

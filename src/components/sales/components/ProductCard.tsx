@@ -1,8 +1,7 @@
 import React from "react";
-import type { Part, CartItem } from "../../../types";
-import type { CategoryColors } from "../utils/categoryColors";
+import type { Part } from "../../../types";
 import { formatCurrency } from "../../../utils/format";
-import { ShoppingCart, Package } from "lucide-react";
+import { ShoppingCart } from "lucide-react";
 import { getAvailableStock } from "../../../lib/repository/partsRepository";
 
 interface ProductCardProps {
@@ -10,7 +9,6 @@ interface ProductCardProps {
     currentBranchId: string;
     inCart: boolean;
     onAddToCart: (part: Part) => void;
-    getCategoryColor: (category: string | undefined) => CategoryColors;
 }
 
 /**
@@ -21,14 +19,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     currentBranchId,
     inCart,
     onAddToCart,
-    getCategoryColor,
 }) => {
     const stock = getAvailableStock(part, currentBranchId);
     const price = part.retailPrice?.[currentBranchId] ?? 0;
     const wholesalePrice = part.wholesalePrice?.[currentBranchId] ?? 0;
     const isOutOfStock = stock <= 0;
     const isLowStock = stock > 0 && stock <= 5;
-    const colors = getCategoryColor(part.category);
 
     return (
         <div
@@ -36,8 +32,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             className={`group relative bg-white dark:bg-slate-800 rounded-xl border-2 transition-all duration-200 overflow-hidden ${isOutOfStock
                 ? "border-slate-200 dark:border-slate-700 opacity-60 cursor-not-allowed"
                 : inCart
-                    ? "border-blue-400 dark:border-blue-500 shadow-lg shadow-blue-500/20"
-                    : "border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-500 hover:shadow-xl hover:shadow-slate-500/10 cursor-pointer active:scale-98"
+                    ? "border-blue-500 dark:border-blue-400 shadow-lg shadow-blue-500/25 ring-1 ring-blue-400/60"
+                    : "border-slate-200 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-500 hover:shadow-xl hover:shadow-slate-500/10 cursor-pointer active:scale-98"
                 }`}
         >
             {/* In Cart Indicator */}
@@ -72,10 +68,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
                 {/* Product Name */}
                 <div className="min-h-[48px]">
-                    <h3 className="font-semibold text-slate-900 dark:text-white text-sm line-clamp-2 leading-tight">
+                    <h3 className="font-semibold text-slate-900 dark:text-white text-[15px] line-clamp-2 leading-snug">
                         {part.name}
                     </h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 font-mono">
+                    <p className="text-[12px] text-slate-600 dark:text-slate-300 mt-1 font-mono leading-relaxed">
                         {part.sku}
                     </p>
                 </div>
@@ -84,7 +80,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                 {part.category && (
                     <div className="flex items-center gap-2">
                         <span
-                            className="inline-block px-2 py-0.5 rounded border border-slate-300 dark:border-slate-600 text-[10px] font-medium text-slate-500 dark:text-slate-400"
+                            className="inline-block px-2 py-0.5 rounded border border-slate-300 dark:border-slate-600 text-[11px] font-medium text-slate-600 dark:text-slate-300"
                         >
                             {part.category}
                         </span>
@@ -99,18 +95,18 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                                 {formatCurrency(price)}
                             </span>
                             {wholesalePrice > 0 && wholesalePrice !== price && (
-                                <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">
+                                <span className="text-xs text-slate-600 dark:text-slate-300 mt-1 font-medium">
                                     Sỉ: {formatCurrency(wholesalePrice)}
                                 </span>
                             )}
                         </div>
                         <div className="flex flex-col items-end">
                             <span
-                                className={`text-[11px] font-medium ${isOutOfStock
+                                className={`text-xs font-semibold ${isOutOfStock
                                     ? "text-red-500"
                                     : isLowStock
                                         ? "text-amber-500"
-                                        : "text-slate-500 dark:text-slate-400"
+                                        : "text-slate-600 dark:text-slate-300"
                                     }`}
                             >
                                 Tồn: {stock}

@@ -3483,11 +3483,15 @@ const WorkOrderModal: React.FC<{
                               value={service.costPrice ?? 0}
                               onChange={(val) =>
                                 setAdditionalServices(
-                                  additionalServices.map((s) =>
-                                    s.id === service.id
-                                      ? { ...s, costPrice: val }
-                                      : s
-                                  )
+                                  additionalServices.map((s) => {
+                                    if (s.id === service.id) {
+                                      // If cost price changes, automatically calculate price = costPrice * 1.4 (+40%)
+                                      // Only auto-update if price was 0 or user hasn't explicitly set a different price
+                                      // (For simplicity, we just overwrite it when costPrice changes like requested)
+                                      return { ...s, costPrice: val, price: val ? Math.round(val * 1.4) : s.price };
+                                    }
+                                    return s;
+                                  })
                                 )
                               }
                               // Always allow editing cost price for internal tracking
@@ -3596,12 +3600,14 @@ const WorkOrderModal: React.FC<{
                           <NumberInput
                             placeholder="Giá nhập"
                             value={newService.costPrice ?? ""}
-                            onChange={(val) =>
+                            onChange={(val) => {
+                              const newCostPrice = Math.max(0, val);
                               setNewService({
                                 ...newService,
-                                costPrice: Math.max(0, val), // Chỉ cho phép >= 0
-                              })
-                            }
+                                costPrice: newCostPrice, // Chỉ cho phép >= 0
+                                price: newCostPrice > 0 ? Math.round(newCostPrice * 1.4) : newService.price,
+                              });
+                            }}
                             className="w-full px-2 py-1 border border-orange-300 dark:border-orange-600 rounded text-right bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 text-sm"
                           />
                         </td>

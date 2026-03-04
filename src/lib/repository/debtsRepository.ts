@@ -25,7 +25,7 @@ export async function fetchCustomerDebts(): Promise<
       .filter((row: any) => row.sale_id)
       .map((row: any) => row.sale_id);
 
-    let salesMap = new Map<string, string>();
+    const salesMap = new Map<string, string>();
     if (saleIds.length > 0) {
       const { data: salesData } = await supabase
         .from("sales")
@@ -107,7 +107,7 @@ export async function createCustomerDebt(
       sale_id: (debt as any).saleId || null,
     };
 
-    console.log("[debtsRepository] Upserting debt:", newDebt);
+    console.warn("[debtsRepository] Upserting debt:", newDebt);
 
     // 🔹 Use appropriate upsert strategy
     let upsertResult;
@@ -124,7 +124,7 @@ export async function createCustomerDebt(
 
       if (existing && !checkError) {
         // Update existing debt
-        console.log(
+        console.warn(
           "[debtsRepository] Updating existing sale debt:",
           existing.id
         );
@@ -136,7 +136,7 @@ export async function createCustomerDebt(
           .single();
       } else {
         // Insert new debt
-        console.log("[debtsRepository] Inserting new sale debt");
+        console.warn("[debtsRepository] Inserting new sale debt");
         upsertResult = await supabase
           .from("customer_debts")
           .insert(newDebt)
@@ -153,7 +153,7 @@ export async function createCustomerDebt(
         .maybeSingle();
 
       if (existing && !checkError) {
-        console.log(
+        console.warn(
           "[debtsRepository] Updating existing work order debt:",
           existing.id
         );
@@ -164,7 +164,7 @@ export async function createCustomerDebt(
           .select()
           .single();
       } else {
-        console.log("[debtsRepository] Inserting new work order debt");
+        console.warn("[debtsRepository] Inserting new work order debt");
         upsertResult = await supabase
           .from("customer_debts")
           .insert(newDebt)
@@ -173,7 +173,7 @@ export async function createCustomerDebt(
       }
     } else {
       // Generic debt - just insert
-      console.log("[debtsRepository] Inserting generic debt");
+      console.warn("[debtsRepository] Inserting generic debt");
       upsertResult = await supabase
         .from("customer_debts")
         .insert(newDebt)

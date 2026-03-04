@@ -16,7 +16,7 @@ import {
   useUpdateSupplierDebtRepo,
   useDeleteSupplierDebtRepo,
 } from "../../hooks/useDebtsRepository";
-import { useInstallments, useRecordInstallmentPayment, type SalesInstallment } from "../../hooks/useInstallments";
+import { useInstallments } from "../../hooks/useInstallments";
 import { createCashTransaction } from "../../lib/repository/cashTransactionsRepository";
 import { useQueryClient } from "@tanstack/react-query";
 import InstallmentList from "./components/InstallmentList";
@@ -100,10 +100,6 @@ const DebtManager: React.FC = () => {
     customers,
     suppliers,
     currentBranchId,
-    setCashTransactions,
-    cashTransactions,
-    setPaymentSources,
-    paymentSources,
   } = useAppContext();
 
   // Fetch debts from Supabase
@@ -128,7 +124,7 @@ const DebtManager: React.FC = () => {
 
   // 🔹 Fetch unpaid sales (remainingamount > 0)
   const [unpaidSales, setUnpaidSales] = useState<any[]>([]);
-  const [loadingSales, setLoadingSales] = useState(true);
+  const [, setLoadingSales] = useState(true);
 
   useEffect(() => {
     const fetchUnpaidWorkOrders = async () => {
@@ -192,8 +188,7 @@ const DebtManager: React.FC = () => {
           table: "work_orders",
           filter: `branchid=eq.${currentBranchId}`,
         },
-        (payload) => {
-          console.log("Work order changed:", payload);
+        () => {
           fetchUnpaidWorkOrders(); // Refetch when any change happens
         }
       )
@@ -210,8 +205,7 @@ const DebtManager: React.FC = () => {
           table: "sales",
           filter: `branchid=eq.${currentBranchId}`,
         },
-        (payload) => {
-          console.log("Sale changed:", payload);
+        () => {
           fetchUnpaidSales(); // Refetch when any change happens
         }
       )
@@ -508,21 +502,6 @@ const DebtManager: React.FC = () => {
       );
     });
   }, [branchCustomerDebts, searchTerm]);
-
-  // Debug: log debts count by branch
-  useEffect(() => {
-    console.log(
-      "[DebtManager] branchCustomerDebts count:",
-      branchCustomerDebts.length,
-      "(DB:",
-      customerDebts.filter((d) => d.branchId === currentBranchId).length,
-      "+ WorkOrders:",
-      workOrderDebts.length,
-      ")",
-      "branchId:",
-      currentBranchId
-    );
-  }, [branchCustomerDebts, customerDebts, workOrderDebts, currentBranchId]);
 
   // Close dropdown menu when clicking outside
   useEffect(() => {
@@ -1575,7 +1554,6 @@ const DebtManager: React.FC = () => {
                 // Check if debt is from work order or regular debt table
                 if ((debtToUpdate as any).isFromWorkOrder && (debtToUpdate as any).workOrderId) {
                   // 🔹 Work Order debt - update work_orders table directly
-                  console.log("📦 Updating Work Order debt:", (debtToUpdate as any).workOrderId);
                   await supabase
                     .from("work_orders")
                     .update({
@@ -1585,7 +1563,6 @@ const DebtManager: React.FC = () => {
                     .eq("id", (debtToUpdate as any).workOrderId);
                 } else {
                   // 🔹 Regular debt - update customer_debts table
-                  console.log("📋 Updating Customer Debt:", debtToUpdate.id);
                   await updateCustomerDebt.mutateAsync({
                     id: debtToUpdate.id,
                     updates: {
@@ -1630,9 +1607,7 @@ const DebtManager: React.FC = () => {
                 customerId: data.customerId,
               });
 
-              if (cashTxResult.ok) {
-                console.log("✅ Đã ghi sổ quỹ thu nợ KH:", cashTxResult.data);
-              } else {
+              if (!cashTxResult.ok) {
                 console.error("❌ Lỗi ghi sổ quỹ:", cashTxResult.error);
               }
 
@@ -1902,7 +1877,6 @@ const DebtManager: React.FC = () => {
               });
 
               if (cashTxResult.ok) {
-                console.log("✅ Đã ghi sổ quỹ trả nợ NCC:", cashTxResult.data);
                 queryClient.invalidateQueries({ queryKey: ["cashTransactions"] });
                 queryClient.invalidateQueries({ queryKey: ["paymentSources"] });
               } else {
@@ -3034,7 +3008,7 @@ const EditDebtModal: React.FC<{
   suppliers: any[];
   onClose: () => void;
   onSave: (updates: any) => void;
-}> = ({ debt, activeTab, customers, suppliers, onClose, onSave }) => {
+}> = ({ debt, activeTab: _activeTab, customers: _customers, suppliers: _suppliers, onClose, onSave }) => {
   const isCustomerDebt = "customerName" in debt;
   const [formData, setFormData] = useState({
     description: debt.description,
@@ -3202,7 +3176,7 @@ const DetailDebtModal: React.FC<{
   activeTab: "customer" | "supplier";
   storeSettings: any;
   onClose: () => void;
-}> = ({ debt, activeTab, storeSettings, onClose }) => {
+}> = ({ debt, activeTab: _activeTab, storeSettings, onClose }) => {
   const isCustomerDebt = "customerName" in debt;
 
   // State for fetched receipt items
@@ -3606,7 +3580,7 @@ const DeleteConfirmDialog: React.FC<{
   activeTab: "customer" | "supplier";
   onClose: () => void;
   onConfirm: () => void;
-}> = ({ debt, activeTab, onClose, onConfirm }) => {
+}> = ({ debt, activeTab: _activeTab, onClose, onConfirm }) => {
   const isCustomerDebt = "customerName" in debt;
   const name = isCustomerDebt
     ? (debt as CustomerDebt).customerName

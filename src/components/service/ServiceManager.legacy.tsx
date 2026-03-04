@@ -1,4 +1,4 @@
-﻿import React, { useState, useMemo, useEffect, useRef } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import { Link, useLocation, useSearchParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -88,7 +88,7 @@ interface StoreSettings {
   work_order_prefix?: string;
 }
 
-type WorkOrderStatus = "Tiếp nhận" | "Đang sửa" | "Đã sửa xong" | "Trả máy";
+type WorkOrderStatus = "Ti?p nh?n" | "�ang s?a" | "�� s?a xong" | "Tr? m�y";
 type ServiceTabKey = "all" | "pending" | "inProgress" | "done" | "delivered";
 type FilterColor = "slate" | "blue" | "orange" | "green" | "purple";
 
@@ -167,8 +167,8 @@ export default function ServiceManager() {
     "VinFast Ludo",
     "VinFast Impes",
     "VinFast Theon",
-    // Khác
-    "Khác",
+    // Kh�c
+    "Kh�c",
   ];
 
   // Fetch parts from Supabase
@@ -246,7 +246,7 @@ export default function ServiceManager() {
 
   const [showModal, setShowModal] = useState(false);
   const [showMobileModal, setShowMobileModal] = useState(false);
-  const [mobileModalViewMode, setMobileModalViewMode] = useState(false); // true = xem chi tiết, false = chỉnh sửa
+  const [mobileModalViewMode, setMobileModalViewMode] = useState(false); // true = xem chi ti?t, false = ch?nh s?a
   const [showTemplateModal, setShowTemplateModal] = useState(false);
   const [editingOrder, setEditingOrder] = useState<WorkOrder | undefined>(
     undefined
@@ -309,7 +309,7 @@ export default function ServiceManager() {
   useEffect(() => {
     const statusParam = searchParams.get("status");
     if (statusParam === "pending") {
-      // Set to pending tab (Tiếp nhận + Đang sửa)
+      // Set to pending tab (Ti?p nh?n + �ang s?a)
       setActiveTab("pending");
       // Clear the query param after applying
       searchParams.delete("status");
@@ -368,9 +368,9 @@ export default function ServiceManager() {
         if (navigator.canShare({ files: [file] })) {
           await navigator.share({
             files: [file],
-            title: `Phiếu sửa chữa ${formatWorkOrderId(printOrder.id)}`,
+            title: `Phi?u s?a ch?a ${formatWorkOrderId(printOrder.id)}`,
           });
-          showToast.success("Đã chia sẻ phiếu thành công!");
+          showToast.success("�� chia s? phi?u th�nh c�ng!");
         } else {
           downloadImage(blob, fileName);
         }
@@ -380,7 +380,7 @@ export default function ServiceManager() {
     } catch (error) {
       if ((error as Error).name !== "AbortError") {
         console.error("Error sharing invoice:", error);
-        showToast.error("Không thể chia sẻ phiếu");
+        showToast.error("Kh�ng th? chia s? phi?u");
       }
     } finally {
       setIsSharing(false);
@@ -396,7 +396,7 @@ export default function ServiceManager() {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    showToast.success("Đã tải phiếu xuống!");
+    showToast.success("�� t?i phi?u xu?ng!");
   };
 
   // Open modal automatically if navigated from elsewhere with editOrder state
@@ -418,16 +418,16 @@ export default function ServiceManager() {
     let filtered = displayWorkOrders.filter((o) => !o.refunded);
 
     if (activeTab === "delivered") {
-      filtered = filtered.filter((o) => o.status === "Trả máy");
+      filtered = filtered.filter((o) => o.status === "Tr? m�y");
     } else {
-      filtered = filtered.filter((o) => o.status !== "Trả máy");
+      filtered = filtered.filter((o) => o.status !== "Tr? m�y");
 
       if (activeTab === "pending")
-        filtered = filtered.filter((o) => o.status === "Tiếp nhận");
+        filtered = filtered.filter((o) => o.status === "Ti?p nh?n");
       else if (activeTab === "inProgress")
-        filtered = filtered.filter((o) => o.status === "Đang sửa");
+        filtered = filtered.filter((o) => o.status === "�ang s?a");
       else if (activeTab === "done")
-        filtered = filtered.filter((o) => o.status === "Đã sửa xong");
+        filtered = filtered.filter((o) => o.status === "�� s?a xong");
     }
 
     // Search filter (using debounced value)
@@ -523,7 +523,7 @@ export default function ServiceManager() {
     return () => observer.disconnect();
   }, [hasMoreOrders, workOrdersFetching]);
 
-  // Tạo danh sách chỉ lọc theo ngày để tính stats (không bị ảnh hưởng bởi filter thanh toán/KTV)
+  // T?o danh s�ch ch? l?c theo ng�y d? t�nh stats (kh�ng b? ?nh hu?ng b?i filter thanh to�n/KTV)
   const dateFilteredOrders = useMemo(() => {
     let filtered = [...displayWorkOrders];
 
@@ -554,21 +554,21 @@ export default function ServiceManager() {
   }, [displayWorkOrders, dateFilter]);
 
   const stats = useMemo(() => {
-    // Sử dụng dateFilteredOrders để tính stats theo bộ lọc ngày (không bị ảnh hưởng bởi filter khác)
+    // S? d?ng dateFilteredOrders d? t�nh stats theo b? l?c ng�y (kh�ng b? ?nh hu?ng b?i filter kh�c)
     const pending = dateFilteredOrders.filter(
-      (o) => o.status === "Tiếp nhận"
+      (o) => o.status === "Ti?p nh?n"
     ).length;
     const inProgress = dateFilteredOrders.filter(
-      (o) => o.status === "Đang sửa"
+      (o) => o.status === "�ang s?a"
     ).length;
     const done = dateFilteredOrders.filter(
-      (o) => o.status === "Đã sửa xong"
+      (o) => o.status === "�� s?a xong"
     ).length;
     const delivered = dateFilteredOrders.filter(
-      (o) => o.status === "Trả máy"
+      (o) => o.status === "Tr? m�y"
     ).length;
 
-    // Tính doanh thu theo bộ lọc ngày đã chọn
+    // T�nh doanh thu theo b? l?c ng�y d� ch?n
     const filteredRevenue = dateFilteredOrders
       .filter((o) => o.paymentStatus === "paid")
       .reduce((sum, o) => sum + o.total, 0);
@@ -617,17 +617,17 @@ export default function ServiceManager() {
     ? Math.round((stats.filteredProfit / stats.filteredRevenue) * 100)
     : 0;
 
-  // Label cho doanh thu/lợi nhuận theo bộ lọc ngày
+  // Label cho doanh thu/l?i nhu?n theo b? l?c ng�y
   const getDateFilterLabel = () => {
     switch (dateFilter) {
       case "today":
-        return "hôm nay";
+        return "h�m nay";
       case "week":
-        return "7 ngày qua";
+        return "7 ng�y qua";
       case "month":
-        return "tháng này";
+        return "th�ng n�y";
       default:
-        return "tất cả";
+        return "t?t c?";
     }
   };
 
@@ -654,33 +654,33 @@ export default function ServiceManager() {
     }> => [
         {
           key: "all",
-          label: "Tất cả",
+          label: "T?t c?",
           color: "slate",
           count: dateFilteredOrders.filter(
-            (o) => o.status !== "Trả máy" && !o.refunded
+            (o) => o.status !== "Tr? m�y" && !o.refunded
           ).length,
         },
         {
           key: "pending",
-          label: "Tiếp nhận",
+          label: "Ti?p nh?n",
           color: "blue",
           count: stats.pending,
         },
         {
           key: "inProgress",
-          label: "Đang sửa",
+          label: "�ang s?a",
           color: "orange",
           count: stats.inProgress,
         },
         {
           key: "done",
-          label: "Đã sửa xong",
+          label: "�� s?a xong",
           color: "green",
           count: stats.done,
         },
         {
           key: "delivered",
-          label: "Đã trả máy",
+          label: "�� tr? m�y",
           color: "purple",
           count: stats.delivered,
         },
@@ -704,36 +704,36 @@ export default function ServiceManager() {
   }> = [
       {
         key: "pending",
-        label: "Tiếp nhận",
+        label: "Ti?p nh?n",
         value: stats.pending,
-        subtitle: "Chờ phân công",
+        subtitle: "Ch? ph�n c�ng",
         accent:
           "from-sky-50 via-sky-50 to-white dark:from-sky-900/30 dark:via-sky-900/10",
         dot: "bg-sky-500",
       },
       {
         key: "inProgress",
-        label: "Đang sửa",
+        label: "�ang s?a",
         value: stats.inProgress,
-        subtitle: "Đang thi công",
+        subtitle: "�ang thi c�ng",
         accent:
           "from-amber-50 via-amber-50 to-white dark:from-amber-900/30 dark:via-amber-900/10",
         dot: "bg-amber-500",
       },
       {
         key: "done",
-        label: "Đã sửa xong",
+        label: "�� s?a xong",
         value: stats.done,
-        subtitle: "Chờ giao khách",
+        subtitle: "Ch? giao kh�ch",
         accent:
           "from-emerald-50 via-emerald-50 to-white dark:from-emerald-900/30 dark:via-emerald-900/10",
         dot: "bg-emerald-500",
       },
       {
         key: "delivered",
-        label: "Trả máy",
+        label: "Tr? m�y",
         value: stats.delivered,
-        subtitle: "Hoàn tất",
+        subtitle: "Ho�n t?t",
         accent:
           "from-purple-50 via-purple-50 to-white dark:from-purple-900/30 dark:via-purple-900/10",
         dot: "bg-purple-500",
@@ -753,7 +753,7 @@ export default function ServiceManager() {
         licensePlate: "",
         issueDescription: "",
         technicianName: "",
-        status: "Tiếp nhận",
+        status: "Ti?p nh?n",
         laborCost: 0,
         discount: 0,
         partsUsed: [],
@@ -782,7 +782,7 @@ export default function ServiceManager() {
         quantity: p.quantity,
         price: p.price,
       })),
-      status: "Tiếp nhận",
+      status: "Ti?p nh?n",
       paymentStatus: "unpaid",
       discount: 0,
       total: 0,
@@ -824,17 +824,17 @@ export default function ServiceManager() {
     }, 500);
   };
 
-  // 🔹 Handle refund work order
+  // ?? Handle refund work order
   const { mutateAsync: refundWorkOrderAsync } = useRefundWorkOrderRepo();
 
-  // 🔹 Handle delete work order
+  // ?? Handle delete work order
   const { mutateAsync: deleteWorkOrderAsync } = useDeleteWorkOrderRepo();
 
-  // 🔹 Handle create/update customer debts
+  // ?? Handle create/update customer debts
   const createCustomerDebt = useCreateCustomerDebtRepo();
   const updateCustomerDebt = useUpdateCustomerDebtRepo();
 
-  // 🔔 Helper: Create notification when work order is created
+  // ?? Helper: Create notification when work order is created
   const createWorkOrderNotification = async (
     orderId: string,
     customerName: string,
@@ -847,8 +847,8 @@ export default function ServiceManager() {
       const { error } = await supabase.from("notifications").insert({
         id: crypto.randomUUID(),
         type: "work_order",
-        title: "Phiếu sửa chữa mới",
-        message: `${createdByName} tạo phiếu ${orderId} - ${customerName} (${licensePlate || vehicleModel
+        title: "Phi?u s?a ch?a m?i",
+        message: `${createdByName} t?o phi?u ${orderId} - ${customerName} (${licensePlate || vehicleModel
           }) - ${formatCurrency(total)}`,
         data: {
           workOrderId: orderId,
@@ -859,19 +859,19 @@ export default function ServiceManager() {
           createdBy: createdByName,
         },
         created_by: profile?.id || null,
-        recipient_role: "owner", // Gửi đến owner
+        recipient_role: "owner", // G?i d?n owner
         branch_id: currentBranchId,
         is_read: false,
         created_at: new Date().toISOString(),
       });
 
       if (error) {
-        console.error("❌ Error creating notification:", error);
+        console.error("? Error creating notification:", error);
       } else {
-        console.log("✅ Notification created for work order:", orderId);
+        console.log("? Notification created for work order:", orderId);
       }
     } catch (err) {
-      console.error("❌ Error in createWorkOrderNotification:", err);
+      console.error("? Error in createWorkOrderNotification:", err);
     }
   };
 
@@ -956,62 +956,62 @@ export default function ServiceManager() {
       const safeCustomerName =
         workOrder.customerName?.trim() ||
         workOrder.customerPhone ||
-        "Khách vãng lai";
+        "Kh�ch v�ng lai";
 
-      // Tạo nội dung chi tiết từ phiếu sửa chữa
+      // T?o n?i dung chi ti?t t? phi?u s?a ch?a
       const workOrderNumber =
         formatWorkOrderId(workOrder.id, storeSettings?.work_order_prefix)
           .split("-")
           .pop() || "";
 
       let description = `${workOrder.vehicleModel || "Xe"
-        } (Phiếu sửa chữa #${workOrderNumber})`;
+        } (Phi?u s?a ch?a #${workOrderNumber})`;
 
-      // Mô tả vấn đề
+      // M� t? v?n d?
       if (workOrder.issueDescription) {
-        description += `\nVấn đề: ${workOrder.issueDescription}`;
+        description += `\nV?n d?: ${workOrder.issueDescription}`;
       }
 
-      // Danh sách phụ tùng đã sử dụng
+      // Danh s�ch ph? t�ng d� s? d?ng
       if (workOrder.partsUsed && workOrder.partsUsed.length > 0) {
-        description += "\n\nPhụ tùng đã thay:";
+        description += "\n\nPh? t�ng d� thay:";
         workOrder.partsUsed.forEach((part) => {
-          description += `\n  • ${part.quantity} x ${part.partName
+          description += `\n  � ${part.quantity} x ${part.partName
             } - ${formatCurrency(part.price * part.quantity)}`;
         });
       }
 
-      // Danh sách dịch vụ bổ sung (gia công, đặt hàng)
+      // Danh s�ch d?ch v? b? sung (gia c�ng, d?t h�ng)
       if (
         workOrder.additionalServices &&
         workOrder.additionalServices.length > 0
       ) {
-        description += "\n\nDịch vụ:";
+        description += "\n\nD?ch v?:";
         workOrder.additionalServices.forEach((service) => {
-          description += `\n  • ${service.quantity} x ${service.description
+          description += `\n  � ${service.quantity} x ${service.description
             } - ${formatCurrency(service.price * service.quantity)}`;
         });
       }
 
-      // Công lao động
+      // C�ng lao d?ng
       if (workOrder.laborCost && workOrder.laborCost > 0) {
-        description += `\n\nCông lao động: ${formatCurrency(
+        description += `\n\nC�ng lao d?ng: ${formatCurrency(
           workOrder.laborCost
         )}`;
       }
 
-      // Giảm giá (nếu có)
+      // Gi?m gi� (n?u c�)
       if (workOrder.discount && workOrder.discount > 0) {
-        description += `\nGiảm giá: -${formatCurrency(workOrder.discount)}`;
+        description += `\nGi?m gi�: -${formatCurrency(workOrder.discount)}`;
       }
 
-      // Thông tin nhân viên tạo phiếu
+      // Th�ng tin nh�n vi�n t?o phi?u
       const createdByDisplay = profile?.name || profile?.full_name || "N/A";
       description += `\n\nNV: ${createdByDisplay}`;
 
-      // Thông tin nhân viên kỹ thuật
+      // Th�ng tin nh�n vi�n k? thu?t
       if (workOrder.technicianName) {
-        description += `\nNVKỹ thuật: ${workOrder.technicianName}`;
+        description += `\nNVK? thu?t: ${workOrder.technicianName}`;
       }
 
       const payload = {
@@ -1025,41 +1025,41 @@ export default function ServiceManager() {
         remainingAmount: remainingAmount,
         createdDate: new Date().toISOString().split("T")[0],
         branchId: currentBranchId,
-        workOrderId: workOrder.id, // 🔹 Link debt với work order
+        workOrderId: workOrder.id, // ?? Link debt v?i work order
       };
 
       console.log("[ServiceManager] createCustomerDebt payload:", payload);
       const result = await createCustomerDebt.mutateAsync(payload as any);
       showToast.success(
-        `Đã tạo/cập nhật công nợ ${remainingAmount.toLocaleString()}đ (Mã: ${result?.id || "N/A"
+        `�� t?o/c?p nh?t c�ng n? ${remainingAmount.toLocaleString()}d (M�: ${result?.id || "N/A"
         })`
       );
     } catch (error) {
       console.error("Error creating/updating customer debt:", error);
-      showToast.error("Không thể tạo/cập nhật công nợ tự động");
+      showToast.error("Kh�ng th? t?o/c?p nh?t c�ng n? t? d?ng");
     }
   };
 
-  // 🔹 Handle create/update work orders (for mobile)
+  // ?? Handle create/update work orders (for mobile)
   const { mutateAsync: createWorkOrderAtomicAsync } =
     useCreateWorkOrderAtomicRepo();
   const { mutateAsync: updateWorkOrderAtomicAsync } =
     useUpdateWorkOrderAtomicRepo();
 
-  // 🔹 Handle Mobile Save - Similar to desktop handleSave
+  // ?? Handle Mobile Save - Similar to desktop handleSave
   const handleMobileSave = async (workOrderData: any) => {
     try {
       console.log("[handleMobileSave] Mobile Work Order Data:", workOrderData);
 
       // Validate required fields
       if (!workOrderData.customer?.name) {
-        const err = new Error("Vui lòng nhập tên khách hàng");
+        const err = new Error("Vui l�ng nh?p t�n kh�ch h�ng");
         (err as any).suppressAlert = true;
         showToast.error(err.message);
         throw err;
       }
       if (!workOrderData.customer?.phone) {
-        const err = new Error("Vui lòng nhập số điện thoại");
+        const err = new Error("Vui l�ng nh?p s? di?n tho?i");
         (err as any).suppressAlert = true;
         showToast.error(err.message);
         throw err;
@@ -1085,7 +1085,7 @@ export default function ServiceManager() {
         remainingAmount = 0,
       } = workOrderData;
 
-      // 🔹 Ensure vehicle info is saved to customer record
+      // ?? Ensure vehicle info is saved to customer record
       // This handles the case when a new vehicle is added during work order creation
       if (customer && vehicle && vehicle.licensePlate) {
         const existingCustomer = displayCustomers.find(
@@ -1164,8 +1164,8 @@ export default function ServiceManager() {
 
       // Determine payment status
       let paymentStatus: "unpaid" | "paid" | "partial" = "unpaid";
-      // Fix: Chỉ coi là "paid" khi total > 0 VÀ totalPaid >= total
-      // Nếu total = 0 nhưng có deposit → vẫn là "partial" (đặt cọc trước)
+      // Fix: Ch? coi l� "paid" khi total > 0 V� totalPaid >= total
+      // N?u total = 0 nhung c� deposit ? v?n l� "partial" (d?t c?c tru?c)
       if (total > 0 && totalPaid >= total) {
         paymentStatus = "paid";
       } else if (totalPaid > 0) {
@@ -1244,7 +1244,7 @@ export default function ServiceManager() {
           creationDate: new Date().toISOString(),
         };
 
-        showToast.success("Tạo phiếu sửa chữa thành công!");
+        showToast.success("T?o phi?u s?a ch?a th�nh c�ng!");
       } else {
         // --- UPDATE ORDER ---
         finalOrderId = editingOrder.id;
@@ -1276,7 +1276,7 @@ export default function ServiceManager() {
           remainingAmount: remainingAmount,
         } as any);
 
-        // 🔹 FIX Mobile: Nếu cập nhật phiếu thành paymentStatus = 'paid', gọi complete_payment để trừ kho
+        // ?? FIX Mobile: N?u c?p nh?t phi?u th�nh paymentStatus = 'paid', g?i complete_payment d? tr? kho
         const wasUnpaidOrPartial = editingOrder.paymentStatus !== "paid";
         if (
           paymentStatus === "paid" &&
@@ -1290,13 +1290,13 @@ export default function ServiceManager() {
             await completeWorkOrderPayment(
               editingOrder.id,
               paymentMethod || "cash",
-              0 // Số tiền = 0 vì đã thanh toán hết rồi, chỉ cần trừ kho
+              0 // S? ti?n = 0 v� d� thanh to�n h?t r?i, ch? c?n tr? kho
             );
           } catch (err: any) {
             console.error("[handleMobileSave] Error deducting inventory:", err);
             showToast.warning(
-              "Đã cập nhật phiếu nhưng có lỗi khi trừ kho: " +
-              (err.message || "Lỗi không xác định")
+              "�� c?p nh?t phi?u nhung c� l?i khi tr? kho: " +
+              (err.message || "L?i kh�ng x�c d?nh")
             );
           }
         }
@@ -1324,7 +1324,7 @@ export default function ServiceManager() {
           remainingAmount: remainingAmount,
         };
 
-        showToast.success("Cập nhật phiếu sửa chữa thành công!");
+        showToast.success("C?p nh?t phi?u s?a ch?a th�nh c�ng!");
       }
 
       // 2. PARALLEL BACKGROUND TASKS (Fire and forget from user perspective)
@@ -1352,7 +1352,7 @@ export default function ServiceManager() {
 
           // Task B: Create Debt if needed
           (async () => {
-            if (status === "Trả máy" && remainingAmount > 0) {
+            if (status === "Tr? m�y" && remainingAmount > 0) {
               await createCustomerDebtIfNeeded(
                 orderForAsync,
                 remainingAmount,
@@ -1366,7 +1366,7 @@ export default function ServiceManager() {
           (async () => {
             if (isNew) {
               const createdByName =
-                profile?.name || profile?.full_name || profile?.email || "Nhân viên";
+                profile?.name || profile?.full_name || profile?.email || "Nh�n vi�n";
               await createWorkOrderNotification(
                 finalOrderId,
                 customer.name,
@@ -1428,11 +1428,11 @@ export default function ServiceManager() {
             }
           })()
         ]).catch(err => {
-          console.error("❌ Error in background parallel tasks:", err);
+          console.error("? Error in background parallel tasks:", err);
         });
       }
 
-      // 🔄 Force refresh data immediately after save
+      // ?? Force refresh data immediately after save
       queryClient.invalidateQueries({ queryKey: ["workOrdersRepo"] });
       queryClient.invalidateQueries({ queryKey: ["workOrdersFiltered"] });
 
@@ -1441,12 +1441,12 @@ export default function ServiceManager() {
     } catch (error: any) {
       console.error("[handleMobileSave] Error:", error);
       showToast.error(
-        `Lỗi: ${error.message || "Không thể lưu phiếu sửa chữa"}`
+        `L?i: ${error.message || "Kh�ng th? luu phi?u s?a ch?a"}`
       );
       const err =
         error instanceof Error
           ? error
-          : new Error(error?.message || "Không thể lưu phiếu sửa chữa");
+          : new Error(error?.message || "Kh�ng th? luu phi?u s?a ch?a");
       (err as any).suppressAlert = true;
       throw err;
     }
@@ -1462,7 +1462,7 @@ export default function ServiceManager() {
     if (!refundingOrder) return;
 
     if (!refundReason.trim()) {
-      showToast.error("Vui lòng nhập lý do hủy");
+      showToast.error("Vui l�ng nh?p l� do h?y");
       return;
     }
 
@@ -1483,7 +1483,7 @@ export default function ServiceManager() {
       // Check if mutation succeeded
       if (!result || (result as any).error) {
         console.error("[handleConfirmRefund] Refund failed:", result);
-        showToast.error("Không thể hủy đơn sửa chữa");
+        showToast.error("Kh�ng th? h?y don s?a ch?a");
         return;
       }
 
@@ -1504,7 +1504,7 @@ export default function ServiceManager() {
             category: "refund",
             amount: -refundAmount,
             date: new Date().toISOString(),
-            description: `Hoàn tiền hủy phiếu #${(
+            description: `Ho�n ti?n h?y phi?u #${(
               formatWorkOrderId(
                 refundingOrder.id,
                 storeSettings?.work_order_prefix
@@ -1541,18 +1541,18 @@ export default function ServiceManager() {
       setWorkOrders((prev) =>
         prev.map((wo) =>
           wo.id === refundingOrder.id
-            ? { ...wo, refunded: true, status: "Đã hủy" as any }
+            ? { ...wo, refunded: true, status: "�� h?y" as any }
             : wo
         )
       );
 
-      showToast.success("Đã hủy đơn sửa chữa thành công");
+      showToast.success("�� h?y don s?a ch?a th�nh c�ng");
       setShowRefundModal(false);
       setRefundingOrder(null);
       setRefundReason("");
     } catch (error) {
       console.error("Error refunding work order:", error);
-      showToast.error("Lỗi khi hủy đơn sửa chữa");
+      showToast.error("L?i khi h?y don s?a ch?a");
     }
   };
 
@@ -1589,7 +1589,7 @@ export default function ServiceManager() {
 
   // Handle delete work order - using hook for proper query invalidation
   const handleDelete = async (workOrder: WorkOrder) => {
-    if (!confirm(`Xác nhận xóa phiếu ${formatWorkOrderId(workOrder.id)}?`)) {
+    if (!confirm(`X�c nh?n x�a phi?u ${formatWorkOrderId(workOrder.id)}?`)) {
       return;
     }
     try {
@@ -1609,7 +1609,7 @@ export default function ServiceManager() {
       customerPhone: "",
       vehicleModel: "",
       issueDescription: template.description || template.name,
-      status: "Tiếp nhận",
+      status: "Ti?p nh?n",
       creationDate: new Date().toISOString(),
       estimatedCompletion: new Date(
         Date.now() + (template.duration || 30) * 60000
@@ -1647,12 +1647,12 @@ export default function ServiceManager() {
           onRefresh={async () => { await refetchWorkOrders(); }}
           onCreateWorkOrder={() => {
             setEditingOrder(undefined);
-            setMobileModalViewMode(false); // Tạo mới = edit mode
+            setMobileModalViewMode(false); // T?o m?i = edit mode
             setShowMobileModal(true);
           }}
           onEditWorkOrder={(workOrder) => {
             setEditingOrder(workOrder);
-            setMobileModalViewMode(true); // Click vào phiếu = view mode trước
+            setMobileModalViewMode(true); // Click v�o phi?u = view mode tru?c
             setShowMobileModal(true);
           }}
           onDeleteWorkOrder={handleDelete}
@@ -1694,14 +1694,14 @@ export default function ServiceManager() {
               {/* Modal Header */}
               <div className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-4 py-3 flex items-center justify-between rounded-t-xl flex-shrink-0">
                 <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">
-                  Xem trước phiếu
+                  Xem tru?c phi?u
                 </h2>
                 <div className="flex items-center gap-2">
                   {/* Share Button - Share as Image */}
                   <button
                     onClick={async () => {
                       try {
-                        showToast.info("Đang tạo hình ảnh...");
+                        showToast.info("�ang t?o h�nh ?nh...");
 
                         // Import html2canvas dynamically
                         const html2canvas = (await import("html2canvas"))
@@ -1711,7 +1711,7 @@ export default function ServiceManager() {
                           "mobile-print-preview-content"
                         );
                         if (!element) {
-                          showToast.error("Không tìm thấy nội dung phiếu!");
+                          showToast.error("Kh�ng t�m th?y n?i dung phi?u!");
                           return;
                         }
 
@@ -1740,7 +1740,7 @@ export default function ServiceManager() {
                           });
                           const shareData = {
                             files: [file],
-                            title: `Phiếu sửa chữa - ${formatWorkOrderId(
+                            title: `Phi?u s?a ch?a - ${formatWorkOrderId(
                               printOrder.id,
                               storeSettings?.work_order_prefix
                             )}`,
@@ -1748,7 +1748,7 @@ export default function ServiceManager() {
 
                           if (navigator.canShare(shareData)) {
                             await navigator.share(shareData);
-                            showToast.success("Chia sẻ thành công!");
+                            showToast.success("Chia s? th�nh c�ng!");
                           } else {
                             // Fallback: download the image
                             const url = URL.createObjectURL(blob);
@@ -1757,7 +1757,7 @@ export default function ServiceManager() {
                             a.download = fileName;
                             a.click();
                             URL.revokeObjectURL(url);
-                            showToast.success("Đã tải hình ảnh!");
+                            showToast.success("�� t?i h�nh ?nh!");
                           }
                         } else {
                           // Fallback: download the image
@@ -1767,17 +1767,17 @@ export default function ServiceManager() {
                           a.download = fileName;
                           a.click();
                           URL.revokeObjectURL(url);
-                          showToast.success("Đã tải hình ảnh!");
+                          showToast.success("�� t?i h�nh ?nh!");
                         }
                       } catch (err) {
                         console.error("Share failed:", err);
-                        showToast.error("Không thể chia sẻ. Vui lòng thử lại!");
+                        showToast.error("Kh�ng th? chia s?. Vui l�ng th? l?i!");
                       }
                     }}
                     className="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg flex items-center gap-1.5 transition text-sm"
                   >
                     <Share2 className="w-4 h-4" />
-                    Chia sẻ
+                    Chia s?
                   </button>
                   <button
                     onClick={handleDoPrint}
@@ -1792,7 +1792,7 @@ export default function ServiceManager() {
                       setPrintOrder(null);
                     }}
                     className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 bg-slate-100 dark:bg-slate-700 rounded-lg"
-                    aria-label="Đóng"
+                    aria-label="��ng"
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -1854,7 +1854,7 @@ export default function ServiceManager() {
                           marginBottom: "1mm",
                         }}
                       >
-                        {storeSettings?.store_name || "Nhạn Lâm SmartCare"}
+                        {storeSettings?.store_name || "Nh?n L�m SmartCare"}
                       </div>
                       <div
                         style={{
@@ -1877,7 +1877,7 @@ export default function ServiceManager() {
                         </svg>
                         <span>
                           {storeSettings?.address ||
-                            "Ấp Phú Lợi B, Xã Long Phú Thuận, Đông Tháp"}
+                            "?p Ph� L?i B, X� Long Ph� Thu?n, ��ng Th�p"}
                         </span>
                       </div>
                       <div
@@ -1899,7 +1899,7 @@ export default function ServiceManager() {
                         >
                           <path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z" />
                         </svg>
-                        <span>{storeSettings?.phone || "0947.747.907"}</span>
+                        <span>{storeSettings?.phone || "0907.239.337"}</span>
                       </div>
                     </div>
                   </div>
@@ -1914,7 +1914,7 @@ export default function ServiceManager() {
                         color: "#1e40af",
                       }}
                     >
-                      PHIẾU DỊCH VỤ SỬA CHỮA
+                      PHI?U D?CH V? S?A CH?A
                     </h1>
                     <div
                       style={{
@@ -1923,7 +1923,7 @@ export default function ServiceManager() {
                         marginTop: "1mm",
                       }}
                     >
-                      Mã:{" "}
+                      M�:{" "}
                       {formatWorkOrderId(
                         printOrder.id,
                         storeSettings?.work_order_prefix
@@ -1948,7 +1948,7 @@ export default function ServiceManager() {
                     }}
                   >
                     <div>
-                      <strong>Khách hàng:</strong> {printOrder.customerName} -{" "}
+                      <strong>Kh�ch h�ng:</strong> {printOrder.customerName} -{" "}
                       {printOrder.customerPhone}
                     </div>
                     <div>
@@ -1970,7 +1970,7 @@ export default function ServiceManager() {
                         fontSize: "9pt",
                       }}
                     >
-                      <strong>Mô tả sự cố:</strong>{" "}
+                      <strong>M� t? s? c?:</strong>{" "}
                       {printOrder.issueDescription}
                     </div>
                   )}
@@ -1985,7 +1985,7 @@ export default function ServiceManager() {
                           fontSize: "10pt",
                         }}
                       >
-                        Phụ tùng:
+                        Ph? t�ng:
                       </p>
                       <table
                         style={{
@@ -2004,7 +2004,7 @@ export default function ServiceManager() {
                                 textAlign: "left",
                               }}
                             >
-                              Tên
+                              T�n
                             </th>
                             <th
                               style={{
@@ -2024,7 +2024,7 @@ export default function ServiceManager() {
                                 width: "28%",
                               }}
                             >
-                              Thành tiền
+                              Th�nh ti?n
                             </th>
                           </tr>
                         </thead>
@@ -2078,7 +2078,7 @@ export default function ServiceManager() {
                             fontSize: "10pt",
                           }}
                         >
-                          Dịch vụ bổ sung:
+                          D?ch v? b? sung:
                         </p>
                         {printOrder.additionalServices.map(
                           (service: any, idx: number) => (
@@ -2118,7 +2118,7 @@ export default function ServiceManager() {
                         marginBottom: "1mm",
                       }}
                     >
-                      <span>Tiền phụ tùng:</span>
+                      <span>Ti?n ph? t�ng:</span>
                       <span>
                         {formatCurrency(
                           printOrder.partsUsed?.reduce(
@@ -2136,7 +2136,7 @@ export default function ServiceManager() {
                         marginBottom: "1mm",
                       }}
                     >
-                      <span>Phí dịch vụ:</span>
+                      <span>Ph� d?ch v?:</span>
                       <span>{formatCurrency(printOrder.laborCost || 0)}</span>
                     </div>
                     {printOrder.additionalServices &&
@@ -2148,7 +2148,7 @@ export default function ServiceManager() {
                             marginBottom: "1mm",
                           }}
                         >
-                          <span>Giá công/Đặt hàng:</span>
+                          <span>Gi� c�ng/�?t h�ng:</span>
                           <span>
                             {formatCurrency(
                               printOrder.additionalServices.reduce(
@@ -2169,7 +2169,7 @@ export default function ServiceManager() {
                           color: "#e74c3c",
                         }}
                       >
-                        <span>Giảm giá:</span>
+                        <span>Gi?m gi�:</span>
                         <span>-{formatCurrency(printOrder.discount)}</span>
                       </div>
                     )}
@@ -2184,7 +2184,7 @@ export default function ServiceManager() {
                         color: "#1e40af",
                       }}
                     >
-                      <span>TỔNG CỘNG:</span>
+                      <span>T?NG C?NG:</span>
                       <span>{formatCurrency(printOrder.total || 0)}</span>
                     </div>
                     {printOrder.depositAmount != null &&
@@ -2198,7 +2198,7 @@ export default function ServiceManager() {
                               color: "#16a34a",
                             }}
                           >
-                            <span>Đã đặt cọc:</span>
+                            <span>�� d?t c?c:</span>
                             <span>
                               {formatCurrency(printOrder.depositAmount)}
                             </span>
@@ -2211,7 +2211,7 @@ export default function ServiceManager() {
                               color: "#dc2626",
                             }}
                           >
-                            <span>Còn lại:</span>
+                            <span>C�n l?i:</span>
                             <span>
                               {formatCurrency(
                                 printOrder.remainingAmount ||
@@ -2250,10 +2250,10 @@ export default function ServiceManager() {
                               color: "#1e40af",
                             }}
                           >
-                            🏦 Thông tin thanh toán
+                            ?? Th�ng tin thanh to�n
                           </div>
                           <div style={{ color: "#000" }}>
-                            Ngân hàng: {storeSettings.bank_name}
+                            Ng�n h�ng: {storeSettings.bank_name}
                           </div>
                           {storeSettings.bank_account_number && (
                             <div style={{ color: "#000" }}>
@@ -2265,12 +2265,12 @@ export default function ServiceManager() {
                           )}
                           {storeSettings.bank_account_holder && (
                             <div style={{ color: "#000" }}>
-                              Chủ TK: {storeSettings.bank_account_holder}
+                              Ch? TK: {storeSettings.bank_account_holder}
                             </div>
                           )}
                           {storeSettings.bank_branch && (
                             <div style={{ color: "#666", fontSize: "8pt" }}>
-                              Chi nhánh: {storeSettings.bank_branch}
+                              Chi nh�nh: {storeSettings.bank_branch}
                             </div>
                           )}
                         </div>
@@ -2305,10 +2305,10 @@ export default function ServiceManager() {
                     }}
                   >
                     <p style={{ margin: "0", fontStyle: "italic" }}>
-                      Cảm ơn quý khách đã sử dụng dịch vụ!
+                      C?m on qu� kh�ch d� s? d?ng d?ch v?!
                     </p>
                     <p style={{ margin: "1mm 0 0 0", fontStyle: "italic" }}>
-                      Vui lòng giữ phiếu này để đối chiếu khi nhận xe
+                      Vui l�ng gi? phi?u n�y d? d?i chi?u khi nh?n xe
                     </p>
                   </div>
 
@@ -2321,7 +2321,7 @@ export default function ServiceManager() {
                       color: "#666",
                     }}
                   >
-                    KTV: {printOrder.technicianName || "Chưa phân công"}
+                    KTV: {printOrder.technicianName || "Chua ph�n c�ng"}
                   </div>
                 </div>
               </div>
@@ -2341,7 +2341,7 @@ export default function ServiceManager() {
               customerPhone: "",
               vehicleModel: "",
               issueDescription: template.description,
-              status: "Tiếp nhận",
+              status: "Ti?p nh?n",
               creationDate: new Date().toISOString(),
               estimatedCompletion: new Date(
                 Date.now() + template.duration * 60000
@@ -2376,26 +2376,26 @@ export default function ServiceManager() {
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
-                Phiếu cần xử lý
+                Phi?u c?n x? l�
               </p>
               <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">
                 {urgentTickets}
               </p>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Chiếm {urgentRatio}% của {totalOpenTickets || 0} phiếu đang mở
+                Chi?m {urgentRatio}% c?a {totalOpenTickets || 0} phi?u dang m?
               </p>
             </div>
             <div className="text-right">
               <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
-                Hoàn thành
+                Ho�n th�nh
               </p>
               <p className="text-xl font-semibold text-emerald-600 dark:text-emerald-400">
-                {totalOpenTickets > 0 ? `${completionRate}%` : "—"}
+                {totalOpenTickets > 0 ? `${completionRate}%` : "�"}
               </p>
               <p className="text-xs text-slate-500 dark:text-slate-400">
                 {totalOpenTickets > 0
-                  ? `${stats.done} phiếu chờ giao`
-                  : "Không có dữ liệu"}
+                  ? `${stats.done} phi?u ch? giao`
+                  : "Kh�ng c� d? li?u"}
               </p>
             </div>
           </div>
@@ -2449,7 +2449,7 @@ export default function ServiceManager() {
               <HandCoins className="w-6 h-6 text-white/80" />
             </div>
             <p className="mt-1.5 text-[10px] text-white/80">
-              Bao gồm các phiếu đã thanh toán {getDateFilterLabel()}
+              Bao g?m c�c phi?u d� thanh to�n {getDateFilterLabel()}
             </p>
           </div>
 
@@ -2457,7 +2457,7 @@ export default function ServiceManager() {
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-[9px] font-semibold uppercase tracking-wide text-slate-400">
-                  Lợi nhuận {getDateFilterLabel()}
+                  L?i nhu?n {getDateFilterLabel()}
                 </p>
                 <p className="mt-1 text-xl font-semibold text-slate-900 dark:text-slate-100">
                   {formatCurrency(stats.filteredProfit)}
@@ -2467,7 +2467,7 @@ export default function ServiceManager() {
             </div>
             <div className="mt-1.5 flex items-center justify-between text-[10px]">
               <span className="text-slate-500 dark:text-slate-400">
-                Biên lợi nhuận
+                Bi�n l?i nhu?n
               </span>
               <span className="font-semibold text-emerald-600 dark:text-emerald-400">
                 {profitMargin}%
@@ -2480,7 +2480,7 @@ export default function ServiceManager() {
       {/* Quick status filters - Hidden on desktop (lg+) since we have the stat cards above */}
       <div className="lg:hidden bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3 flex flex-wrap items-center gap-2">
         <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
-          Trạng thái nhanh
+          Tr?ng th�i nhanh
         </span>
         <div className="flex flex-wrap gap-2">
           {quickStatusFilters.map((filter) => (
@@ -2513,7 +2513,7 @@ export default function ServiceManager() {
           <div className="relative flex-1 min-w-[180px] max-w-[280px]">
             <input
               type="text"
-              placeholder="Mã phiếu, tên khách..."
+              placeholder="M� phi?u, t�n kh�ch..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-8 pr-3 py-1.5 bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400"
@@ -2530,17 +2530,17 @@ export default function ServiceManager() {
             onChange={(e) => setDateFilter(e.target.value)}
             className="px-2 py-1.5 text-xs bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg"
           >
-            <option value="today">Hôm nay</option>
-            <option value="week">7 ngày qua</option>
-            <option value="month">30 ngày qua</option>
-            <option value="all">Tất cả (chậm hơn)</option>
+            <option value="today">H�m nay</option>
+            <option value="week">7 ng�y qua</option>
+            <option value="month">30 ng�y qua</option>
+            <option value="all">T?t c? (ch?m hon)</option>
           </select>
           <select
             value={technicianFilter}
             onChange={(e) => setTechnicianFilter(e.target.value)}
             className="px-2 py-1.5 text-xs bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg"
           >
-            <option value="all">Tất cả KTV</option>
+            <option value="all">T?t c? KTV</option>
             {employees.map((emp) => (
               <option key={emp.id} value={emp.name}>
                 {emp.name}
@@ -2552,10 +2552,10 @@ export default function ServiceManager() {
             onChange={(e) => setPaymentFilter(e.target.value)}
             className="px-2 py-1.5 text-xs bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg"
           >
-            <option value="all">Thanh toán</option>
-            <option value="paid">Đã TT</option>
-            <option value="unpaid">Chưa TT</option>
-            <option value="partial">Trả trước</option>
+            <option value="all">Thanh to�n</option>
+            <option value="paid">�� TT</option>
+            <option value="unpaid">Chua TT</option>
+            <option value="partial">Tr? tru?c</option>
           </select>
 
           {/* Spacer */}
@@ -2566,8 +2566,8 @@ export default function ServiceManager() {
             onClick={() => refetchWorkOrders()}
             disabled={workOrdersFetching}
             className="px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg text-xs font-medium flex items-center gap-1 disabled:opacity-50"
-            aria-label="Làm mới dữ liệu"
-            title="Làm mới"
+            aria-label="L�m m?i d? li?u"
+            title="L�m m?i"
           >
             <RefreshCw
               className={`w-3.5 h-3.5 ${workOrdersFetching ? "animate-spin" : ""
@@ -2577,8 +2577,8 @@ export default function ServiceManager() {
           <button
             onClick={clearFilters}
             className="px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg text-xs font-medium flex items-center gap-1"
-            aria-label="Xóa bộ lọc"
-            title="Xóa bộ lọc"
+            aria-label="X�a b? l?c"
+            title="X�a b? l?c"
           >
             <Search className="w-3.5 h-3.5" /> Reset
           </button>
@@ -2589,29 +2589,29 @@ export default function ServiceManager() {
                 ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/30"
                 : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700"
                 }`}
-              aria-label={showProfit ? "Ẩn lợi nhuận" : "Hiện lợi nhuận"}
-              title={showProfit ? "Ẩn lợi nhuận" : "Hiện lợi nhuận"}
+              aria-label={showProfit ? "?n l?i nhu?n" : "Hi?n l?i nhu?n"}
+              title={showProfit ? "?n l?i nhu?n" : "Hi?n l?i nhu?n"}
             >
               {showProfit ? (
                 <Eye className="w-3.5 h-3.5" />
               ) : (
                 <EyeOff className="w-3.5 h-3.5" />
               )}
-              {showProfit ? "Ẩn LN" : "Hiện LN"}
+              {showProfit ? "?n LN" : "Hi?n LN"}
             </button>
           )}
           <button
             onClick={() => setShowTemplateModal(true)}
             className="px-2.5 py-1.5 bg-purple-500 hover:bg-purple-600 text-white rounded-lg text-xs font-medium flex items-center gap-1"
-            aria-label="Mở danh sách mẫu sửa chữa"
+            aria-label="M? danh s�ch m?u s?a ch?a"
           >
-            <FileText className="w-3.5 h-3.5" /> Mẫu SC
+            <FileText className="w-3.5 h-3.5" /> M?u SC
           </button>
           <Link
             to="/service-history"
             className="px-2.5 py-1.5 bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg text-xs font-medium flex items-center gap-1 transition-colors"
           >
-            <History className="w-3.5 h-3.5" /> Lịch sử SC
+            <History className="w-3.5 h-3.5" /> L?ch s? SC
           </Link>
           <button
             onClick={() => {
@@ -2619,9 +2619,9 @@ export default function ServiceManager() {
               handleOpenModal();
             }}
             className="px-2.5 py-1.5 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-xs font-medium flex items-center gap-1"
-            aria-label="Tạo phiếu sửa chữa mới"
+            aria-label="T?o phi?u s?a ch?a m?i"
           >
-            <Plus className="w-3.5 h-3.5" /> Thêm Phiếu
+            <Plus className="w-3.5 h-3.5" /> Th�m Phi?u
           </button>
         </div>
       </div>
@@ -2631,13 +2631,13 @@ export default function ServiceManager() {
         {workOrdersIsError && (displayWorkOrders?.length ?? 0) > 0 && (
           <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-700 bg-amber-50/60 dark:bg-amber-900/10 text-amber-800 dark:text-amber-200 flex items-center justify-between gap-3">
             <div className="text-sm">
-              Không thể tải dữ liệu mới. Bạn vẫn đang xem dữ liệu cũ.
+              Kh�ng th? t?i d? li?u m?i. B?n v?n dang xem d? li?u cu.
             </div>
             <button
               onClick={() => refetchWorkOrders()}
               className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/80 dark:bg-slate-800 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-200 hover:bg-white dark:hover:bg-slate-700"
             >
-              <RefreshCw className="w-4 h-4" /> Thử lại
+              <RefreshCw className="w-4 h-4" /> Th? l?i
             </button>
           </div>
         )}
@@ -2648,19 +2648,19 @@ export default function ServiceManager() {
             <thead className="bg-slate-50 dark:bg-slate-700/50 sticky top-0 z-10">
               <tr>
                 <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 dark:text-slate-300">
-                  Mã phiếu
+                  M� phi?u
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 dark:text-slate-300">
-                  Khách hàng
+                  Kh�ch h�ng
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 dark:text-slate-300">
-                  Chi tiết
+                  Chi ti?t
                 </th>
                 <th className="hidden lg:table-cell px-4 py-3 text-left text-xs font-medium text-slate-600 dark:text-slate-300">
-                  Thanh toán & trạng thái
+                  Thanh to�n & tr?ng th�i
                 </th>
                 <th className="px-4 py-3 text-center text-xs font-medium text-slate-600 dark:text-slate-300">
-                  Thao tác
+                  Thao t�c
                 </th>
               </tr>
             </thead>
@@ -2694,12 +2694,12 @@ export default function ServiceManager() {
                   <td colSpan={5} className="px-4 py-12">
                     <div className="max-w-xl mx-auto text-center">
                       <div className="text-slate-700 dark:text-slate-200 font-semibold">
-                        Không thể tải danh sách phiếu sửa chữa
+                        Kh�ng th? t?i danh s�ch phi?u s?a ch?a
                       </div>
                       <div className="mt-1 text-sm text-slate-500 dark:text-slate-400">
                         {String(
                           (workOrdersError as any)?.message ||
-                          "Vui lòng thử lại"
+                          "Vui l�ng th? l?i"
                         )}
                       </div>
                       <div className="mt-4 flex items-center justify-center gap-2">
@@ -2707,7 +2707,7 @@ export default function ServiceManager() {
                           onClick={() => refetchWorkOrders()}
                           className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium"
                         >
-                          <RefreshCw className="w-4 h-4" /> Thử lại
+                          <RefreshCw className="w-4 h-4" /> Th? l?i
                         </button>
                       </div>
                     </div>
@@ -2721,23 +2721,23 @@ export default function ServiceManager() {
                         <Wrench className="w-6 h-6" />
                       </div>
                       <div className="mt-4 text-slate-900 dark:text-slate-100 font-semibold">
-                        Không có phiếu sửa chữa nào
+                        Kh�ng c� phi?u s?a ch?a n�o
                       </div>
                       <div className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                        Thử đổi bộ lọc hoặc tạo phiếu mới.
+                        Th? d?i b? l?c ho?c t?o phi?u m?i.
                       </div>
                       <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
                         <button
                           onClick={() => handleOpenModal()}
                           className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium"
                         >
-                          <Plus className="w-4 h-4" /> Tạo phiếu
+                          <Plus className="w-4 h-4" /> T?o phi?u
                         </button>
                         <button
                           onClick={clearFilters}
                           className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-700"
                         >
-                          <RefreshCw className="w-4 h-4" /> Xóa bộ lọc
+                          <RefreshCw className="w-4 h-4" /> X�a b? l?c
                         </button>
                       </div>
                     </div>
@@ -2746,14 +2746,14 @@ export default function ServiceManager() {
               ) : (
                 paginatedOrders.map((order) => {
                   // Calculate costs based on actual form data structure
-                  // Tiền phụ tùng = Tổng giá phụ tùng
+                  // Ti?n ph? t�ng = T?ng gi� ph? t�ng
                   const partsCost =
                     order.partsUsed?.reduce(
                       (sum, p) => sum + p.quantity * p.price,
                       0
                     ) || 0;
 
-                  // Gia công/Đặt hàng = additionalServices total (price * qty)
+                  // Gia c�ng/�?t h�ng = additionalServices total (price * qty)
                   const servicesTotal =
                     order.additionalServices?.reduce(
                       (sum: number, s: any) =>
@@ -2761,7 +2761,7 @@ export default function ServiceManager() {
                       0
                     ) || 0;
 
-                  // Phí dịch vụ = laborCost
+                  // Ph� d?ch v? = laborCost
                   const laborCost = order.laborCost || 0;
                   const totalAmount = order.total || 0;
                   const paidAmount = totalAmount - (order.remainingAmount || 0);
@@ -2772,8 +2772,8 @@ export default function ServiceManager() {
                     )
                     : 0;
 
-                  // Tính lợi nhuận cho owner
-                  // Lợi nhuận = Tổng tiền - Giá vốn phụ tùng - Giá vốn dịch vụ gia công
+                  // T�nh l?i nhu?n cho owner
+                  // L?i nhu?n = T?ng ti?n - Gi� v?n ph? t�ng - Gi� v?n d?ch v? gia c�ng
                   const partsCostPrice =
                     order.partsUsed?.reduce(
                       (sum, p) => sum + (p.costPrice || 0) * (p.quantity || 1),
@@ -2839,7 +2839,7 @@ export default function ServiceManager() {
                       onClick={() => handleOpenModal(order)}
                       className="group bg-white dark:bg-slate-800 hover:bg-blue-50/50 dark:hover:bg-slate-700/50 cursor-pointer transition-all duration-150 hover:shadow-sm border-l-4 border-transparent hover:border-blue-500"
                     >
-                      {/* Column 1: Mã phiếu */}
+                      {/* Column 1: M� phi?u */}
                       <td className="px-4 py-4 align-top">
                         <div className="space-y-0.5">
                           <div className="font-mono font-bold text-blue-600 dark:text-blue-400 text-sm">
@@ -2849,18 +2849,18 @@ export default function ServiceManager() {
                             )}
                           </div>
                           <div className="text-xs text-slate-500">
-                            <span>Ngày: </span>
+                            <span>Ng�y: </span>
                             <span className="text-slate-600 dark:text-slate-400">
                               {formatDate(order.creationDate, true)}
                             </span>
                           </div>
                           <div className="text-xs text-cyan-600 dark:text-cyan-400">
-                            NV: {order.technicianName || "Chưa phân công"}
+                            NV: {order.technicianName || "Chua ph�n c�ng"}
                           </div>
                         </div>
                       </td>
 
-                      {/* Column 2: Khách hàng */}
+                      {/* Column 2: Kh�ch h�ng */}
                       <td className="px-4 py-4 align-top">
                         <div className="space-y-1">
                           <div className="font-bold text-lg text-slate-900 dark:text-slate-100">
@@ -2878,8 +2878,8 @@ export default function ServiceManager() {
                                   handleCallCustomer(order.customerPhone || "");
                                 }}
                                 className="ml-1 inline-flex items-center justify-center w-7 h-7 rounded-md text-blue-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20"
-                                aria-label={`Gọi khách: ${order.customerPhone}`}
-                                title={`Gọi: ${order.customerPhone}`}
+                                aria-label={`G?i kh�ch: ${order.customerPhone}`}
+                                title={`G?i: ${order.customerPhone}`}
                               >
                                 <PhoneCall className="w-3.5 h-3.5" />
                               </button>
@@ -2897,7 +2897,7 @@ export default function ServiceManager() {
                             )}
                           </div>
                           {order.issueDescription &&
-                            order.issueDescription !== "Không có mô tả" && (
+                            order.issueDescription !== "Kh�ng c� m� t?" && (
                               <div className="text-[11px] text-slate-500 dark:text-slate-400 italic line-clamp-2 mt-1.5">
                                 {order.issueDescription}
                               </div>
@@ -2905,7 +2905,7 @@ export default function ServiceManager() {
                         </div>
                       </td>
 
-                      {/* Column 3: Chi tiết - Compact format */}
+                      {/* Column 3: Chi ti?t - Compact format */}
                       <td className="px-4 py-4 align-top">
                         <div className="space-y-1.5 max-w-[220px]">
                           {servicesSummary && (
@@ -2913,8 +2913,8 @@ export default function ServiceManager() {
                               className="text-xs flex items-start gap-1.5"
                               title={
                                 servicesTitle
-                                  ? `Dịch vụ: ${servicesTitle}`
-                                  : "Dịch vụ"
+                                  ? `D?ch v?: ${servicesTitle}`
+                                  : "D?ch v?"
                               }
                             >
                               <Settings className="w-3.5 h-3.5 text-slate-400 mt-0.5 flex-shrink-0" />
@@ -2934,8 +2934,8 @@ export default function ServiceManager() {
                               className="text-xs flex items-start gap-1.5"
                               title={
                                 partsTitle
-                                  ? `Phụ tùng: ${partsTitle}`
-                                  : "Phụ tùng"
+                                  ? `Ph? t�ng: ${partsTitle}`
+                                  : "Ph? t�ng"
                               }
                             >
                               <Wrench className="w-3.5 h-3.5 text-slate-400 mt-0.5 flex-shrink-0" />
@@ -2952,7 +2952,7 @@ export default function ServiceManager() {
 
                           {!partsSummary && !servicesSummary && (
                             <div className="text-xs text-slate-400 italic">
-                              —
+                              �
                             </div>
                           )}
 
@@ -2965,30 +2965,30 @@ export default function ServiceManager() {
                               className={`text-xs px-2 py-0.5 rounded-full ${paymentPillClass}`}
                             >
                               {order.paymentStatus === "paid"
-                                ? "Đã TT"
+                                ? "�� TT"
                                 : order.paymentStatus === "partial"
-                                  ? "TT một phần"
-                                  : "Chưa TT"}
+                                  ? "TT m?t ph?n"
+                                  : "Chua TT"}
                             </span>
                           </div>
                         </div>
                       </td>
 
-                      {/* Column 4: Thanh toán & trạng thái - Clean layout - Hidden on tablet */}
+                      {/* Column 4: Thanh to�n & tr?ng th�i - Clean layout - Hidden on tablet */}
                       <td className="hidden lg:table-cell px-4 py-4 align-top">
                         <div className="space-y-2 min-w-[200px]">
-                          {/* Tổng tiền */}
+                          {/* T?ng ti?n */}
                           <div className="text-sm font-semibold text-slate-800 dark:text-slate-200">
                             {formatCurrency(totalAmount)}
                           </div>
 
-                          {/* Lợi nhuận - Chỉ hiển thị cho owner khi bật toggle */}
+                          {/* L?i nhu?n - Ch? hi?n th? cho owner khi b?t toggle */}
                           {isOwner &&
                             showProfit &&
                             order.paymentStatus === "paid" && (
                               <div
                                 className="flex items-center gap-1 text-xs"
-                                title="Lợi nhuận và biên lợi nhuận trên tổng tiền"
+                                title="L?i nhu?n v� bi�n l?i nhu?n tr�n t?ng ti?n"
                               >
                                 <span className="text-slate-500">LN</span>
                                 <span
@@ -3002,7 +3002,7 @@ export default function ServiceManager() {
                                 </span>
                                 {totalAmount > 0 && (
                                   <span className="text-slate-400">
-                                    (Biên LN{" "}
+                                    (Bi�n LN{" "}
                                     {Math.round(
                                       (orderProfit / totalAmount) * 100
                                     )}
@@ -3012,12 +3012,12 @@ export default function ServiceManager() {
                               </div>
                             )}
 
-                          {/* Progress bar + Đã thu */}
+                          {/* Progress bar + �� thu */}
                           {totalAmount > 0 && (
                             <div className="space-y-1">
                               <div
                                 className="h-2 w-full rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden"
-                                title={`Đã thanh toán ${paymentProgress}%`}
+                                title={`�� thanh to�n ${paymentProgress}%`}
                               >
                                 <div
                                   className={`h-full rounded-full transition-all duration-300 ${paymentProgress >= 100
@@ -3034,7 +3034,7 @@ export default function ServiceManager() {
                               <div className="flex justify-between items-center text-xs text-slate-500 dark:text-slate-400">
                                 <span className="flex items-center gap-1">
                                   <span className="font-medium text-slate-600 dark:text-slate-300">
-                                    Đã thu:
+                                    �� thu:
                                   </span>
                                   <span className="font-semibold text-emerald-600 dark:text-emerald-400">
                                     {formatCurrency(Math.max(0, paidAmount))}
@@ -3043,7 +3043,7 @@ export default function ServiceManager() {
                                 {order.remainingAmount !== undefined &&
                                   order.remainingAmount > 0 && (
                                     <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400 font-medium">
-                                      <span>Còn</span>
+                                      <span>C�n</span>
                                       <span className="font-bold">
                                         {formatCurrency(order.remainingAmount)}
                                       </span>
@@ -3061,7 +3061,7 @@ export default function ServiceManager() {
                                   order.depositAmount > 0 && (
                                     <div className="flex items-center justify-between text-xs">
                                       <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-purple-500/20 text-purple-600 dark:text-purple-400 rounded font-medium">
-                                        <HandCoins className="w-3 h-3" /> Đã cọc
+                                        <HandCoins className="w-3 h-3" /> �� c?c
                                       </span>
                                       <span className="text-purple-600 dark:text-purple-400 font-medium">
                                         {formatCurrency(order.depositAmount)}
@@ -3072,7 +3072,7 @@ export default function ServiceManager() {
                                   (order.remainingAmount ?? 0) > 0 && (
                                     <div className="flex items-center justify-between text-xs">
                                       <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-amber-500/20 text-amber-600 dark:text-amber-400 rounded font-medium">
-                                        <Clock className="w-3 h-3" /> Còn nợ
+                                        <Clock className="w-3 h-3" /> C�n n?
                                       </span>
                                       <span className="text-amber-600 dark:text-amber-400 font-medium">
                                         {formatCurrency(
@@ -3086,8 +3086,8 @@ export default function ServiceManager() {
                                   (order.remainingAmount ?? 0) === 0 && (
                                     <div className="flex items-center justify-between text-xs">
                                       <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-green-500/20 text-green-600 dark:text-green-400 rounded font-medium">
-                                        <Check className="w-3 h-3" /> Đã thanh
-                                        toán đủ
+                                        <Check className="w-3 h-3" /> �� thanh
+                                        to�n d?
                                       </span>
                                       <span className="text-green-600 dark:text-green-400 font-medium">
                                         {formatCurrency(order.totalPaid || 0)}
@@ -3106,10 +3106,10 @@ export default function ServiceManager() {
                               className={`text-xs px-2 py-0.5 rounded-full ${paymentPillClass}`}
                             >
                               {order.paymentStatus === "paid"
-                                ? "Đã TT"
+                                ? "�� TT"
                                 : order.paymentStatus === "partial"
-                                  ? "TT một phần"
-                                  : "Chưa TT"}
+                                  ? "TT m?t ph?n"
+                                  : "Chua TT"}
                             </span>
                           </div>
                         </div>
@@ -3159,7 +3159,7 @@ export default function ServiceManager() {
                                     <div className="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
                                       <Edit2 className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                                     </div>
-                                    <span>Xem chi tiết</span>
+                                    <span>Xem chi ti?t</span>
                                   </button>
                                   <button
                                     onClick={() => {
@@ -3171,7 +3171,7 @@ export default function ServiceManager() {
                                     <div className="w-8 h-8 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
                                       <Printer className="w-4 h-4 text-purple-600 dark:text-purple-400" />
                                     </div>
-                                    <span>In phiếu</span>
+                                    <span>In phi?u</span>
                                   </button>
                                   <button
                                     onClick={() => {
@@ -3185,7 +3185,7 @@ export default function ServiceManager() {
                                     <div className="w-8 h-8 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
                                       <Smartphone className="w-4 h-4 text-green-600 dark:text-green-400" />
                                     </div>
-                                    <span>Gọi khách hàng</span>
+                                    <span>G?i kh�ch h�ng</span>
                                   </button>
                                   {!order.refunded && (
                                     <>
@@ -3200,7 +3200,7 @@ export default function ServiceManager() {
                                         <div className="w-8 h-8 rounded-lg bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
                                           <AlertTriangle className="w-4 h-4 text-red-600 dark:text-red-400" />
                                         </div>
-                                        <span>Hủy / Hoàn tiền</span>
+                                        <span>H?y / Ho�n ti?n</span>
                                       </button>
                                     </>
                                   )}
@@ -3221,7 +3221,7 @@ export default function ServiceManager() {
         {!showTableSkeleton && !showTableError && filteredOrders.length > 0 && (
           <div className="px-4 py-3 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between gap-3">
             <div className="text-xs text-slate-500 dark:text-slate-400">
-              Hiển thị {Math.min(visibleCount, filteredOrders.length)} /{" "}
+              Hi?n th? {Math.min(visibleCount, filteredOrders.length)} /{" "}
               {filteredOrders.length}
             </div>
             {hasMoreOrders && (
@@ -3235,7 +3235,7 @@ export default function ServiceManager() {
                 ) : (
                   <ChevronDown className="w-4 h-4" />
                 )}
-                Xem thêm (còn {filteredOrders.length - visibleCount})
+                Xem th�m (c�n {filteredOrders.length - visibleCount})
               </button>
             )}
           </div>
@@ -3248,7 +3248,7 @@ export default function ServiceManager() {
         />
       </div>
 
-      {/* Repair Templates Modal - Component tách riêng */}
+      {/* Repair Templates Modal - Component t�ch ri�ng */}
       <RepairTemplatesModal
         isOpen={showTemplateModal}
         onClose={() => setShowTemplateModal(false)}
@@ -3260,7 +3260,7 @@ export default function ServiceManager() {
             customerPhone: "",
             vehicleModel: "",
             issueDescription: template.description,
-            status: "Tiếp nhận",
+            status: "Ti?p nh?n",
             creationDate: new Date().toISOString(),
             estimatedCompletion: new Date(
               Date.now() + template.duration * 60000
@@ -3339,7 +3339,7 @@ export default function ServiceManager() {
             {/* Modal Header */}
             <div className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-6 py-4 flex items-center justify-between rounded-t-xl flex-shrink-0">
               <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">
-                Xem trước phiếu in
+                Xem tru?c phi?u in
               </h2>
               <div className="flex items-center gap-3">
                 <button
@@ -3348,14 +3348,14 @@ export default function ServiceManager() {
                   className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white rounded-lg flex items-center gap-2 transition"
                 >
                   <Share2 className="w-4 h-4" />
-                  {isSharing ? "Đang xử lý..." : "Chia sẻ"}
+                  {isSharing ? "�ang x? l�..." : "Chia s?"}
                 </button>
                 <button
                   onClick={handleDoPrint}
                   className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center gap-2 transition"
                 >
                   <Printer className="w-4 h-4" />
-                  In phiếu
+                  In phi?u
                 </button>
                 <button
                   onClick={() => {
@@ -3363,7 +3363,7 @@ export default function ServiceManager() {
                     setPrintOrder(null);
                   }}
                   className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
-                  aria-label="Đóng"
+                  aria-label="��ng"
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -3428,7 +3428,7 @@ export default function ServiceManager() {
                           color: "#1e40af",
                         }}
                       >
-                        {storeSettings?.store_name || "Nhạn Lâm SmartCare"}
+                        {storeSettings?.store_name || "Nh?n L�m SmartCare"}
                       </div>
                       <div
                         style={{
@@ -3451,7 +3451,7 @@ export default function ServiceManager() {
                         </svg>
                         <span>
                           {storeSettings?.address ||
-                            "Ấp Phú Lợi B, Xã Long Phú Thuận, Đông Tháp"}
+                            "?p Ph� L?i B, X� Long Ph� Thu?n, ��ng Th�p"}
                         </span>
                       </div>
                       <div
@@ -3473,7 +3473,7 @@ export default function ServiceManager() {
                         >
                           <path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z" />
                         </svg>
-                        <span>{storeSettings?.phone || "0947.747.907"}</span>
+                        <span>{storeSettings?.phone || "0907.239.337"}</span>
                       </div>
                       {storeSettings?.email && (
                         <div
@@ -3590,7 +3590,7 @@ export default function ServiceManager() {
                           color: "#1e40af",
                         }}
                       >
-                        PHIẾU DỊCH VỤ SỬA CHỮA
+                        PHI?U D?CH V? S?A CH?A
                       </h1>
                     </div>
                     <div
@@ -3614,7 +3614,7 @@ export default function ServiceManager() {
                         )}
                       </div>
                       <div style={{ fontWeight: "bold" }}>
-                        Mã:{" "}
+                        M�:{" "}
                         {formatWorkOrderId(
                           printOrder.id,
                           storeSettings?.work_order_prefix
@@ -3643,21 +3643,21 @@ export default function ServiceManager() {
                       }}
                     >
                       <div style={{ flex: 1 }}>
-                        <span style={{ fontWeight: "bold" }}>Khách hàng:</span>{" "}
+                        <span style={{ fontWeight: "bold" }}>Kh�ch h�ng:</span>{" "}
                         {printOrder.customerName}
                       </div>
                       <div style={{ flex: "0 0 auto" }}>
-                        <span style={{ fontWeight: "bold" }}>SĐT:</span>{" "}
+                        <span style={{ fontWeight: "bold" }}>S�T:</span>{" "}
                         {printOrder.customerPhone}
                       </div>
                     </div>
                     <div style={{ display: "flex", gap: "4mm" }}>
                       <div style={{ flex: 1 }}>
-                        <span style={{ fontWeight: "bold" }}>Loại xe:</span>{" "}
+                        <span style={{ fontWeight: "bold" }}>Lo?i xe:</span>{" "}
                         {printOrder.vehicleModel}
                       </div>
                       <div style={{ flex: "0 0 auto" }}>
-                        <span style={{ fontWeight: "bold" }}>Biển số:</span>{" "}
+                        <span style={{ fontWeight: "bold" }}>Bi?n s?:</span>{" "}
                         {printOrder.licensePlate}
                       </div>
                     </div>
@@ -3681,10 +3681,10 @@ export default function ServiceManager() {
                           flexShrink: 0,
                         }}
                       >
-                        Mô tả sự cố:
+                        M� t? s? c?:
                       </div>
                       <div style={{ flex: 1, whiteSpace: "pre-wrap" }}>
-                        {printOrder.issueDescription || "Không có mô tả"}
+                        {printOrder.issueDescription || "Kh�ng c� m� t?"}
                       </div>
                     </div>
                   </div>
@@ -3699,7 +3699,7 @@ export default function ServiceManager() {
                           fontSize: "11pt",
                         }}
                       >
-                        Phụ tùng sử dụng:
+                        Ph? t�ng s? d?ng:
                       </p>
                       <table
                         style={{
@@ -3718,7 +3718,7 @@ export default function ServiceManager() {
                                 fontSize: "10pt",
                               }}
                             >
-                              Tên phụ tùng
+                              T�n ph? t�ng
                             </th>
                             <th
                               style={{
@@ -3740,7 +3740,7 @@ export default function ServiceManager() {
                                 width: "25%",
                               }}
                             >
-                              Đơn giá
+                              �on gi�
                             </th>
                             <th
                               style={{
@@ -3751,7 +3751,7 @@ export default function ServiceManager() {
                                 width: "25%",
                               }}
                             >
-                              Thành tiền
+                              Th�nh ti?n
                             </th>
                           </tr>
                         </thead>
@@ -3819,7 +3819,7 @@ export default function ServiceManager() {
                             color: "#000",
                           }}
                         >
-                          Dịch vụ bổ sung:
+                          D?ch v? b? sung:
                         </p>
                         <ul
                           style={{
@@ -3866,7 +3866,7 @@ export default function ServiceManager() {
                               fontSize: "10pt",
                             }}
                           >
-                            Tiền phụ tùng:
+                            Ti?n ph? t�ng:
                           </td>
                           <td
                             style={{
@@ -3892,7 +3892,7 @@ export default function ServiceManager() {
                               fontSize: "10pt",
                             }}
                           >
-                            Phí dịch vụ:
+                            Ph� d?ch v?:
                           </td>
                           <td
                             style={{
@@ -3912,7 +3912,7 @@ export default function ServiceManager() {
                               fontSize: "10pt",
                             }}
                           >
-                            Giá công/Đặt hàng:
+                            Gi� c�ng/�?t h�ng:
                           </td>
                           <td
                             style={{
@@ -3941,7 +3941,7 @@ export default function ServiceManager() {
                                   color: "#e74c3c",
                                 }}
                               >
-                                Giảm giá:
+                                Gi?m gi�:
                               </td>
                               <td
                                 style={{
@@ -3963,7 +3963,7 @@ export default function ServiceManager() {
                               fontSize: "12pt",
                             }}
                           >
-                            TỔNG CỘNG:
+                            T?NG C?NG:
                           </td>
                           <td
                             style={{
@@ -3974,7 +3974,7 @@ export default function ServiceManager() {
                               color: "#2563eb",
                             }}
                           >
-                            {formatCurrency(printOrder.total)} ₫
+                            {formatCurrency(printOrder.total)} ?
                           </td>
                         </tr>
                         {printOrder.totalPaid != null &&
@@ -3988,7 +3988,7 @@ export default function ServiceManager() {
                                   color: "#16a34a",
                                 }}
                               >
-                                Đã thanh toán:
+                                �� thanh to�n:
                               </td>
                               <td
                                 style={{
@@ -4012,7 +4012,7 @@ export default function ServiceManager() {
                                   color: "#dc2626",
                                 }}
                               >
-                                Còn lại:
+                                C�n l?i:
                               </td>
                               <td
                                 style={{
@@ -4035,7 +4035,7 @@ export default function ServiceManager() {
                                 color: "#666",
                               }}
                             >
-                              Hình thức thanh toán:
+                              H�nh th?c thanh to�n:
                             </td>
                             <td
                               style={{
@@ -4046,9 +4046,9 @@ export default function ServiceManager() {
                               }}
                             >
                               {printOrder.paymentMethod === "cash"
-                                ? "Tiền mặt"
+                                ? "Ti?n m?t"
                                 : printOrder.paymentMethod === "bank"
-                                  ? "Chuyển khoản"
+                                  ? "Chuy?n kho?n"
                                   : printOrder.paymentMethod}
                             </td>
                           </tr>
@@ -4081,7 +4081,7 @@ export default function ServiceManager() {
                             color: "#000",
                           }}
                         >
-                          Khách hàng
+                          Kh�ch h�ng
                         </p>
                         <p
                           style={{
@@ -4090,7 +4090,7 @@ export default function ServiceManager() {
                             color: "#666",
                           }}
                         >
-                          (Ký và ghi rõ họ tên)
+                          (K� v� ghi r� h? t�n)
                         </p>
                       </div>
                       <div style={{ textAlign: "center", width: "45%" }}>
@@ -4101,7 +4101,7 @@ export default function ServiceManager() {
                             color: "#000",
                           }}
                         >
-                          Nhân viên
+                          Nh�n vi�n
                         </p>
                         <p
                           style={{
@@ -4110,7 +4110,7 @@ export default function ServiceManager() {
                             color: "#666",
                           }}
                         >
-                          {printOrder.technicianName || "(Ký và ghi rõ họ tên)"}
+                          {printOrder.technicianName || "(K� v� ghi r� h? t�n)"}
                         </p>
                       </div>
                     </div>
@@ -4136,7 +4136,7 @@ export default function ServiceManager() {
                         color: "#000",
                       }}
                     >
-                      Cảm ơn quý khách đã sử dụng dịch vụ!
+                      C?m on qu� kh�ch d� s? d?ng d?ch v?!
                     </p>
                     <p
                       style={{
@@ -4145,7 +4145,7 @@ export default function ServiceManager() {
                         color: "#000",
                       }}
                     >
-                      Vui lòng giữ phiếu này để đối chiếu khi nhận xe
+                      Vui l�ng gi? phi?u n�y d? d?i chi?u khi nh?n xe
                     </p>
                   </div>
 
@@ -4161,7 +4161,7 @@ export default function ServiceManager() {
                     }}
                   >
                     <p style={{ margin: "0 0 1mm 0", fontWeight: "bold" }}>
-                      Chính sách bảo hành:
+                      Ch�nh s�ch b?o h�nh:
                     </p>
                     <ul
                       style={{
@@ -4171,16 +4171,16 @@ export default function ServiceManager() {
                       }}
                     >
                       <li>
-                        Bảo hành áp dụng cho phụ tùng chính hãng và lỗi kỹ thuật
-                        do thợ
+                        B?o h�nh �p d?ng cho ph? t�ng ch�nh h�ng v� l?i k? thu?t
+                        do th?
                       </li>
                       <li>
-                        Không bảo hành đối với va chạm, ngã xe, ngập nước sau
-                        khi nhận xe
+                        Kh�ng b?o h�nh d?i v?i va ch?m, ng� xe, ng?p nu?c sau
+                        khi nh?n xe
                       </li>
                       <li>
-                        Mang theo phiếu này khi đến bảo hành. Liên hệ hotline
-                        nếu có thắc mắc
+                        Mang theo phi?u n�y khi d?n b?o h�nh. Li�n h? hotline
+                        n?u c� th?c m?c
                       </li>
                     </ul>
                   </div>
@@ -4241,7 +4241,7 @@ export default function ServiceManager() {
                   color: "#1e40af",
                 }}
               >
-                {storeSettings?.store_name || "Nhạn Lâm SmartCare"}
+                {storeSettings?.store_name || "Nh?n L�m SmartCare"}
               </div>
               <div
                 style={{
@@ -4260,7 +4260,7 @@ export default function ServiceManager() {
                 </svg>
                 <span>
                   {storeSettings?.address ||
-                    "Ấp Phú Lợi B, Xã Long Phú Thuận, Đông Tháp"}
+                    "?p Ph� L?i B, X� Long Ph� Thu?n, ��ng Th�p"}
                 </span>
               </div>
               <div
@@ -4278,7 +4278,7 @@ export default function ServiceManager() {
                 >
                   <path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z" />
                 </svg>
-                <span>{storeSettings?.phone || "0947.747.907"}</span>
+                <span>{storeSettings?.phone || "0907.239.337"}</span>
               </div>
               {storeSettings?.email && (
                 <div
@@ -4387,7 +4387,7 @@ export default function ServiceManager() {
                   color: "#1e40af",
                 }}
               >
-                PHIẾU DỊCH VỤ SỬA CHỮA
+                PHI?U D?CH V? S?A CH?A
               </h1>
             </div>
             <div
@@ -4408,7 +4408,7 @@ export default function ServiceManager() {
                 })}
               </div>
               <div style={{ fontWeight: "bold" }}>
-                Mã:{" "}
+                M�:{" "}
                 {formatWorkOrderId(
                   printOrder.id,
                   storeSettings?.work_order_prefix
@@ -4436,7 +4436,7 @@ export default function ServiceManager() {
                       paddingBottom: "2mm",
                     }}
                   >
-                    Khách hàng:
+                    Kh�ch h�ng:
                   </td>
                   <td style={{ paddingBottom: "2mm", width: "30%" }}>
                     {printOrder.customerName}
@@ -4449,7 +4449,7 @@ export default function ServiceManager() {
                       paddingLeft: "3mm",
                     }}
                   >
-                    SĐT:
+                    S�T:
                   </td>
                   <td style={{ paddingBottom: "2mm" }}>
                     {printOrder.customerPhone}
@@ -4462,7 +4462,7 @@ export default function ServiceManager() {
                       paddingBottom: "2mm",
                     }}
                   >
-                    Loại xe:
+                    Lo?i xe:
                   </td>
                   <td style={{ paddingBottom: "2mm" }}>
                     {printOrder.vehicleModel}
@@ -4474,7 +4474,7 @@ export default function ServiceManager() {
                       paddingLeft: "3mm",
                     }}
                   >
-                    Biển số:
+                    Bi?n s?:
                   </td>
                   <td style={{ paddingBottom: "2mm" }}>
                     {printOrder.licensePlate}
@@ -4497,10 +4497,10 @@ export default function ServiceManager() {
               <div
                 style={{ fontWeight: "bold", minWidth: "20%", flexShrink: 0 }}
               >
-                Mô tả sự cố:
+                M� t? s? c?:
               </div>
               <div style={{ flex: 1, whiteSpace: "pre-wrap" }}>
-                {printOrder.issueDescription || "Không có mô tả"}
+                {printOrder.issueDescription || "Kh�ng c� m� t?"}
               </div>
             </div>
           </div>
@@ -4515,7 +4515,7 @@ export default function ServiceManager() {
                   fontSize: "11pt",
                 }}
               >
-                Phụ tùng sử dụng:
+                Ph? t�ng s? d?ng:
               </p>
               <table
                 style={{
@@ -4534,7 +4534,7 @@ export default function ServiceManager() {
                         fontSize: "10pt",
                       }}
                     >
-                      Tên phụ tùng
+                      T�n ph? t�ng
                     </th>
                     <th
                       style={{
@@ -4556,7 +4556,7 @@ export default function ServiceManager() {
                         width: "25%",
                       }}
                     >
-                      Đơn giá
+                      �on gi�
                     </th>
                     <th
                       style={{
@@ -4567,7 +4567,7 @@ export default function ServiceManager() {
                         width: "25%",
                       }}
                     >
-                      Thành tiền
+                      Th�nh ti?n
                     </th>
                   </tr>
                 </thead>
@@ -4634,7 +4634,7 @@ export default function ServiceManager() {
                     fontSize: "11pt",
                   }}
                 >
-                  Dịch vụ bổ sung:
+                  D?ch v? b? sung:
                 </p>
                 <ul style={{ margin: "0", paddingLeft: "5mm" }}>
                   {printOrder.additionalServices.map((service, idx) => (
@@ -4667,7 +4667,7 @@ export default function ServiceManager() {
                       fontSize: "10pt",
                     }}
                   >
-                    Tiền phụ tùng:
+                    Ti?n ph? t�ng:
                   </td>
                   <td
                     style={{
@@ -4693,7 +4693,7 @@ export default function ServiceManager() {
                       fontSize: "10pt",
                     }}
                   >
-                    Giá công/Đặt hàng:
+                    Gi� c�ng/�?t h�ng:
                   </td>
                   <td
                     style={{
@@ -4711,7 +4711,7 @@ export default function ServiceManager() {
                     )}
                   </td>
                 </tr>
-                {/* Dịch vụ bổ sung aggregated above as Giá công/Đặt hàng */}
+                {/* D?ch v? b? sung aggregated above as Gi� c�ng/�?t h�ng */}
                 {printOrder.discount != null && printOrder.discount > 0 && (
                   <tr>
                     <td
@@ -4722,7 +4722,7 @@ export default function ServiceManager() {
                         color: "#e74c3c",
                       }}
                     >
-                      Giảm giá:
+                      Gi?m gi�:
                     </td>
                     <td
                       style={{
@@ -4744,7 +4744,7 @@ export default function ServiceManager() {
                       fontSize: "12pt",
                     }}
                   >
-                    TỔNG CỘNG:
+                    T?NG C?NG:
                   </td>
                   <td
                     style={{
@@ -4755,7 +4755,7 @@ export default function ServiceManager() {
                       color: "#2563eb",
                     }}
                   >
-                    {formatCurrency(printOrder.total)} ₫
+                    {formatCurrency(printOrder.total)} ?
                   </td>
                 </tr>
                 {printOrder.totalPaid != null && printOrder.totalPaid > 0 && (
@@ -4768,7 +4768,7 @@ export default function ServiceManager() {
                         color: "#16a34a",
                       }}
                     >
-                      Đã thanh toán:
+                      �� thanh to�n:
                     </td>
                     <td
                       style={{
@@ -4792,7 +4792,7 @@ export default function ServiceManager() {
                           color: "#dc2626",
                         }}
                       >
-                        Còn lại:
+                        C�n l?i:
                       </td>
                       <td
                         style={{
@@ -4815,7 +4815,7 @@ export default function ServiceManager() {
                         color: "#666",
                       }}
                     >
-                      Hình thức thanh toán:
+                      H�nh th?c thanh to�n:
                     </td>
                     <td
                       style={{
@@ -4826,9 +4826,9 @@ export default function ServiceManager() {
                       }}
                     >
                       {printOrder.paymentMethod === "cash"
-                        ? "Tiền mặt"
+                        ? "Ti?n m?t"
                         : printOrder.paymentMethod === "bank"
-                          ? "Chuyển khoản"
+                          ? "Chuy?n kho?n"
                           : printOrder.paymentMethod}
                     </td>
                   </tr>
@@ -4854,18 +4854,18 @@ export default function ServiceManager() {
             >
               <div style={{ textAlign: "center", width: "45%" }}>
                 <p style={{ fontWeight: "bold", margin: "0 0 10mm 0" }}>
-                  Khách hàng
+                  Kh�ch h�ng
                 </p>
                 <p style={{ margin: "0", fontSize: "9pt", color: "#666" }}>
-                  (Ký và ghi rõ họ tên)
+                  (K� v� ghi r� h? t�n)
                 </p>
               </div>
               <div style={{ textAlign: "center", width: "45%" }}>
                 <p style={{ fontWeight: "bold", margin: "0 0 10mm 0" }}>
-                  Nhân viên
+                  Nh�n vi�n
                 </p>
                 <p style={{ margin: "0", fontSize: "9pt", color: "#666" }}>
-                  {printOrder.technicianName || "(Ký và ghi rõ họ tên)"}
+                  {printOrder.technicianName || "(K� v� ghi r� h? t�n)"}
                 </p>
               </div>
             </div>
@@ -4884,10 +4884,10 @@ export default function ServiceManager() {
             }}
           >
             <p style={{ margin: "0", fontStyle: "italic" }}>
-              Cảm ơn quý khách đã sử dụng dịch vụ!
+              C?m on qu� kh�ch d� s? d?ng d?ch v?!
             </p>
             <p style={{ margin: "1mm 0 0 0", fontStyle: "italic" }}>
-              Vui lòng giữ phiếu này để đối chiếu khi nhận xe
+              Vui l�ng gi? phi?u n�y d? d?i chi?u khi nh?n xe
             </p>
           </div>
 
@@ -4903,7 +4903,7 @@ export default function ServiceManager() {
             }}
           >
             <p style={{ margin: "0 0 1mm 0", fontWeight: "bold" }}>
-              Chính sách bảo hành:
+              Ch�nh s�ch b?o h�nh:
             </p>
             <ul
               style={{
@@ -4913,15 +4913,15 @@ export default function ServiceManager() {
               }}
             >
               <li>
-                Bảo hành áp dụng cho phụ tùng chính hãng và lỗi kỹ thuật do thợ
+                B?o h�nh �p d?ng cho ph? t�ng ch�nh h�ng v� l?i k? thu?t do th?
               </li>
               <li>
-                Không bảo hành đối với va chạm, ngã xe, ngập nước sau khi nhận
+                Kh�ng b?o h�nh d?i v?i va ch?m, ng� xe, ng?p nu?c sau khi nh?n
                 xe
               </li>
               <li>
-                Mang theo phiếu này khi đến bảo hành. Liên hệ hotline nếu có
-                thắc mắc
+                Mang theo phi?u n�y khi d?n b?o h�nh. Li�n h? hotline n?u c�
+                th?c m?c
               </li>
             </ul>
           </div>
@@ -4934,7 +4934,7 @@ export default function ServiceManager() {
           <div className="bg-white dark:bg-slate-800 rounded-xl w-full max-w-md">
             <div className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-6 py-4 flex items-center justify-between rounded-t-xl">
               <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">
-                Xác nhận hủy phiếu
+                X�c nh?n h?y phi?u
               </h2>
               <button
                 onClick={() => {
@@ -4942,9 +4942,9 @@ export default function ServiceManager() {
                   setRefundingOrder(null);
                 }}
                 className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
-                aria-label="Đóng"
+                aria-label="��ng"
               >
-                ✕
+                ?
               </button>
             </div>
 
@@ -4952,26 +4952,26 @@ export default function ServiceManager() {
               <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
                 <p className="text-sm text-yellow-800 dark:text-yellow-200">
                   <AlertTriangle className="w-4 h-4 inline-block mr-1 align-[-2px]" />
-                  <strong>Cảnh báo:</strong> Hành động này sẽ:
+                  <strong>C?nh b�o:</strong> H�nh d?ng n�y s?:
                 </p>
                 <ul className="mt-2 text-sm text-yellow-700 dark:text-yellow-300 list-disc list-inside space-y-1">
-                  <li>Hoàn trả tồn kho các phụ tùng đã sử dụng</li>
+                  <li>Ho�n tr? t?n kho c�c ph? t�ng d� s? d?ng</li>
                   <li>
-                    Hoàn tiền {formatCurrency(refundingOrder.totalPaid || 0)}{" "}
-                    cho khách
+                    Ho�n ti?n {formatCurrency(refundingOrder.totalPaid || 0)}{" "}
+                    cho kh�ch
                   </li>
-                  <li>Đánh dấu phiếu là "Đã hủy"</li>
+                  <li>��nh d?u phi?u l� "�� h?y"</li>
                 </ul>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                  Lý do hủy phiếu <span className="text-red-500">*</span>
+                  L� do h?y phi?u <span className="text-red-500">*</span>
                 </label>
                 <textarea
                   value={refundReason}
                   onChange={(e) => setRefundReason(e.target.value)}
-                  placeholder="Vd: Khách hàng không đồng ý chi phí, sửa nhầm xe..."
+                  placeholder="Vd: Kh�ch h�ng kh�ng d?ng � chi ph�, s?a nh?m xe..."
                   className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 resize-none"
                   rows={3}
                 />
@@ -4980,7 +4980,7 @@ export default function ServiceManager() {
               <div className="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-3 space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-slate-600 dark:text-slate-400">
-                    Phiếu:
+                    Phi?u:
                   </span>
                   <span className="font-medium text-slate-900 dark:text-slate-100">
                     #
@@ -4994,7 +4994,7 @@ export default function ServiceManager() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-600 dark:text-slate-400">
-                    Khách hàng:
+                    Kh�ch h�ng:
                   </span>
                   <span className="font-medium text-slate-900 dark:text-slate-100">
                     {refundingOrder.customerName}
@@ -5002,15 +5002,15 @@ export default function ServiceManager() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-600 dark:text-slate-400">
-                    Phụ tùng:
+                    Ph? t�ng:
                   </span>
                   <span className="font-medium text-slate-900 dark:text-slate-100">
-                    {refundingOrder.partsUsed?.length || 0} món
+                    {refundingOrder.partsUsed?.length || 0} m�n
                   </span>
                 </div>
                 <div className="flex justify-between border-t border-slate-200 dark:border-slate-600 pt-2">
                   <span className="text-slate-600 dark:text-slate-400">
-                    Số tiền hoàn:
+                    S? ti?n ho�n:
                   </span>
                   <span className="font-bold text-red-600 dark:text-red-400">
                     {formatCurrency(refundingOrder.totalPaid || 0)}
@@ -5027,14 +5027,14 @@ export default function ServiceManager() {
                 }}
                 className="px-4 py-2 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-lg font-medium"
               >
-                Hủy bỏ
+                H?y b?
               </button>
               <button
                 onClick={handleConfirmRefund}
                 disabled={!refundReason.trim()}
                 className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-300 dark:disabled:bg-red-900 text-white rounded-lg font-medium disabled:cursor-not-allowed"
               >
-                Xác nhận hủy phiếu
+                X�c nh?n h?y phi?u
               </button>
             </div>
           </div>
@@ -5046,13 +5046,13 @@ export default function ServiceManager() {
 
 const StatusBadge: React.FC<{ status: WorkOrderStatus }> = ({ status }) => {
   const styles = {
-    "Tiếp nhận":
+    "Ti?p nh?n":
       "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400",
-    "Đang sửa":
+    "�ang s?a":
       "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400",
-    "Đã sửa xong":
+    "�� s?a xong":
       "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400",
-    "Trả máy":
+    "Tr? m�y":
       "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400",
   };
 

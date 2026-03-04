@@ -1,4 +1,6 @@
-﻿// @ts-nocheck
+﻿// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-nocheck
+/* eslint-disable no-console */
 import React, { useState, useMemo, useRef, useEffect } from "react";
 import { Plus, Search, Trash2, X } from "lucide-react";
 import { useSuppliers, useCreateSupplier } from "../../../hooks/useSuppliers";

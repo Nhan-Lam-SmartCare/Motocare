@@ -216,7 +216,7 @@ export const SettingsManager = () => {
 
           // Show info toast about RPC function
           if (rpcError) {
-            console.log(
+            console.warn(
               "RPC not available, using fallback. Run sql/2025-12-02_user_management_rpc.sql to enable full user management."
             );
           }
@@ -404,8 +404,6 @@ export const SettingsManager = () => {
     try {
       const previous = { ...settings };
 
-      console.log("Saving settings:", settings);
-
       // Update settings
       const { error, data } = await supabase
         .from("store_settings")
@@ -417,8 +415,6 @@ export const SettingsManager = () => {
         console.error("Update error:", error);
         throw error;
       }
-
-      console.log("Update result:", data);
 
       // Reload settings after save to confirm changes
       await loadSettings();

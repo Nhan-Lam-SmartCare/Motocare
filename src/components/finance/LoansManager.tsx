@@ -343,9 +343,7 @@ const LoansManager: React.FC = () => {
                   recipient: selectedLoan.lenderName,
                   loanPaymentId: payment.id,
                 });
-                if (interestTxResult.ok) {
-                  console.log("✅ Đã ghi sổ quỹ trả lãi vay:", interestTxResult.data);
-                } else {
+                if (!interestTxResult.ok) {
                   console.error("❌ Lỗi ghi sổ quỹ trả lãi:", interestTxResult.error);
                   showToast.warning(
                     `Trả nợ OK nhưng chưa ghi được sổ quỹ lãi: ${interestTxResult.error?.message}`
@@ -394,7 +392,6 @@ const LoansManager: React.FC = () => {
                   branchId: currentBranchId,
                   delta: -payment.totalAmount,
                 });
-                console.log("✅ Đã cập nhật số dư nguồn tiền vào DB");
               } catch (balanceErr) {
                 console.error("❌ Lỗi cập nhật số dư nguồn tiền:", balanceErr);
               }

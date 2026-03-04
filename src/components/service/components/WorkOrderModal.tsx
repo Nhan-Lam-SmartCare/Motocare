@@ -65,7 +65,7 @@ const WorkOrderModal: React.FC<{
   storeSettings,
   invalidateWorkOrders,
 }) => {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+     
     const queryClient = useQueryClient();
     const { profile } = useAuth();
     const { mutateAsync: createWorkOrderAtomicAsync } =
@@ -228,7 +228,7 @@ const WorkOrderModal: React.FC<{
           if (!cancelled && data) setFreshCustomer(data);
         });
       return () => { cancelled = true; };
-      // eslint-disable-next-line react-hooks/exhaustive-deps
+       
     }, [formData.customerId]);
 
     const allCustomers = useMemo(() => {

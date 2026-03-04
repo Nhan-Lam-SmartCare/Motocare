@@ -61,18 +61,6 @@ const statusConfig: Record<
   },
 };
 
-/** Returns the Tailwind border-l color class for a given work order status */
-export const getStatusBorderColor = (status: WorkOrderStatus): string => {
-  const map: Record<WorkOrderStatus, string> = {
-    "Tiếp nhận": "border-l-blue-500",
-    "Đang sửa": "border-l-amber-500",
-    "Đã sửa xong": "border-l-emerald-500",
-    "Trả máy": "border-l-purple-500",
-    "Đã hủy": "border-l-red-400",
-  };
-  return map[status] || "border-l-transparent";
-};
-
 const StatusBadge: React.FC<{ status: WorkOrderStatus }> = ({ status }) => {
   const config = statusConfig[status];
   if (!config) return null;

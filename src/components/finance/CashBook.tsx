@@ -17,9 +17,9 @@ import { CashBookMobile } from "./CashBookMobile";
 import {
   AddTransactionModal,
   EditTransactionModal,
-  DeleteConfirmModal,
-  getCategoryLabel
+  DeleteConfirmModal
 } from "./CashBookModals";
+import { getCategoryLabel } from "./cashBookHelpers";
 
 const CashBook: React.FC = () => {
   const {
@@ -87,14 +87,6 @@ const CashBook: React.FC = () => {
     paymentSources.find((ps) => ps.id === "bank")?.balance[currentBranchId] ||
     0;
 
-  // DEBUG: Log payment sources
-  React.useEffect(() => {
-    console.log('[DEBUG CashBook] currentBranchId:', currentBranchId);
-    console.log('[DEBUG CashBook] paymentSources:', paymentSources);
-    console.log('[DEBUG CashBook] cash payment source:', paymentSources.find((ps) => ps.id === "cash"));
-    console.log('[DEBUG CashBook] bank payment source:', paymentSources.find((ps) => ps.id === "bank"));
-  }, [currentBranchId, paymentSources]);
-
   // Filter transactions
   const filteredTransactions = useMemo(() => {
     let filtered = cashTransactions.filter(
@@ -121,16 +113,18 @@ const CashBook: React.FC = () => {
       case "today":
         filtered = filtered.filter((tx) => new Date(tx.date) >= today);
         break;
-      case "week":
+      case "week": {
         const weekAgo = new Date(today);
         weekAgo.setDate(weekAgo.getDate() - 7);
         filtered = filtered.filter((tx) => new Date(tx.date) >= weekAgo);
         break;
-      case "month":
+      }
+      case "month": {
         const monthAgo = new Date(today);
         monthAgo.setMonth(monthAgo.getMonth() - 1);
         filtered = filtered.filter((tx) => new Date(tx.date) >= monthAgo);
         break;
+      }
       case "custom-month":
         // Filter by selected month (YYYY-MM)
         filtered = filtered.filter((tx) => {
@@ -212,17 +206,6 @@ const CashBook: React.FC = () => {
       (tx) => tx.branchId === currentBranchId
     );
 
-    console.log('[DEBUG CashBook] Total transactions:', cashTransactions.length);
-    console.log('[DEBUG CashBook] Branch transactions:', allBranchTransactions.length);
-    console.log('[DEBUG CashBook] Sample tx:', allBranchTransactions[0]);
-    console.log('[DEBUG CashBook] Payment source counts:', {
-      cash: allBranchTransactions.filter(tx => tx.paymentSourceId === 'cash').length,
-      bank: allBranchTransactions.filter(tx => tx.paymentSourceId === 'bank').length,
-      other: allBranchTransactions.filter(tx => tx.paymentSourceId !== 'cash' && tx.paymentSourceId !== 'bank').length,
-    });
-    console.log('[DEBUG CashBook] savedInitialCash:', savedInitialCash);
-    console.log('[DEBUG CashBook] savedInitialBank:', savedInitialBank);
-
     // Tính biến động tiền mặt từ TẤT CẢ giao dịch
     // FIXED: Không dùng Math.abs() vì DB có sẵn negative amounts
     const cashTransactionsDelta = allBranchTransactions
@@ -237,18 +220,6 @@ const CashBook: React.FC = () => {
           delta = -Math.abs(tx.amount); // Expense luôn trừ (âm)
         }
 
-        // Log first 5 transactions for debugging
-        if (allBranchTransactions.filter((t) => t.paymentSourceId === "cash").indexOf(tx) < 5) {
-          console.log('[DEBUG] Cash tx:', {
-            id: tx.id.slice(0, 8),
-            type: tx.type,
-            rawAmount: tx.amount,
-            absAmount: Math.abs(tx.amount),
-            isIncome: isIncomeTx(tx),
-            delta,
-            runningSum: sum + delta
-          });
-        }
         return sum + delta;
       }, 0);
 
@@ -263,15 +234,9 @@ const CashBook: React.FC = () => {
         }
       }, 0);
 
-    console.log('[DEBUG CashBook] cashTransactionsDelta:', cashTransactionsDelta);
-    console.log('[DEBUG CashBook] bankTransactionsDelta:', bankTransactionsDelta);
-
     // Số dư thực tế = Số dư ban đầu + Biến động từ giao dịch
     const cashBalance = savedInitialCash + cashTransactionsDelta;
     const bankBalance = savedInitialBank + bankTransactionsDelta;
-
-    console.log('[DEBUG CashBook] FINAL cashBalance:', cashBalance, '=', savedInitialCash, '+', cashTransactionsDelta);
-    console.log('[DEBUG CashBook] FINAL bankBalance:', bankBalance, '=', savedInitialBank, '+', bankTransactionsDelta);
 
     return {
       cashBalance,

@@ -1,8 +1,6 @@
 import React, { useMemo } from "react";
 import {
-  BarChart,
   Bar,
-  LineChart,
   Line,
   XAxis,
   YAxis,
@@ -12,14 +10,6 @@ import {
   ResponsiveContainer,
   ComposedChart,
 } from "recharts";
-import { useSalesRepo } from "../../hooks/useSalesRepository";
-import { usePartsRepo } from "../../hooks/usePartsRepository";
-import { useWorkOrdersRepo } from "../../hooks/useWorkOrdersRepository";
-import {
-  useCustomerDebtsRepo,
-  useSupplierDebtsRepo,
-} from "../../hooks/useDebtsRepository";
-import { useAppContext } from "../../contexts/AppContext";
 import { formatCurrency } from "../../utils/format";
 import { getDateRange } from "../../utils/dateUtils";
 
@@ -806,7 +796,7 @@ const FinancialAnalytics: React.FC<FinancialAnalyticsProps> = ({
             Biên lợi nhuận theo danh mục
           </h3>
           <div className="space-y-3">
-            {categoryMargin.slice(0, 8).map((cat, idx) => (
+            {categoryMargin.slice(0, 8).map((cat) => (
               <div key={cat.category} className="flex items-center gap-3">
                 <div className="w-28 text-sm text-slate-700 dark:text-slate-300 truncate">{cat.category}</div>
                 <div className="flex-1 h-5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden relative">

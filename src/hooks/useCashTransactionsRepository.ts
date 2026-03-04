@@ -20,10 +20,8 @@ export const useCashTxRepo = (params?: {
   return useQuery({
     queryKey: ["cashTxRepo", params],
     queryFn: async () => {
-      console.log('[useCashTxRepo] 🔄 Fetching transactions from DB...');
       const res = await fetchCashTransactions(params);
       if (!res.ok) throw res.error;
-      console.log('[useCashTxRepo] ✅ Loaded', res.data.length, 'transactions');
       return res.data;
     },
     staleTime: 0,

@@ -50,7 +50,9 @@ export default function RepoErrorPanel() {
     }));
     try {
       await navigator.clipboard.writeText(JSON.stringify(payload, null, 2));
-    } catch {}
+    } catch (error) {
+      console.warn("[RepoErrorPanel] Copy JSON failed:", error);
+    }
   };
 
   // Hidden entirely in production

@@ -212,6 +212,7 @@ export function useNotifications() {
               body,
               icon: "/logo-smartcare.png",
               badge: "/logo-smartcare.png",
+              // eslint-disable-next-line @typescript-eslint/ban-ts-comment
               // @ts-ignore
               vibrate: [200, 100, 200]
             });
@@ -223,6 +224,7 @@ export function useNotifications() {
         new Notification(title, {
           body,
           icon: "/logo-smartcare.png",
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
           // @ts-ignore
           vibrate: [200, 100, 200]
         });

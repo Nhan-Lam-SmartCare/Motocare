@@ -122,7 +122,7 @@ const PayrollManager: React.FC = () => {
         {activeTab === "employees" ? (
           <EmployeeList
             employees={employees}
-            onEdit={(emp) => console.log("Edit", emp)}
+            onEdit={() => undefined}
           />
         ) : (
           <>

@@ -186,8 +186,6 @@ export async function createCashTransaction(
       recipient: input.recipient || null,
     };
 
-    console.log("[CashTx] Creating transaction with payload:", payload);
-
     const { data, error } = await supabase
       .from(TABLE)
       .insert([payload])
@@ -245,7 +243,9 @@ export async function createCashTransaction(
           newData: created,
         });
       }
-    } catch {}
+    } catch (auditError) {
+      console.warn("[CashTx] Audit failed for cash.manual:", auditError);
+    }
     return success(created);
   } catch (e: any) {
     return failure({
@@ -333,7 +333,9 @@ export async function updateCashTransaction(
         oldData,
         newData: updated,
       });
-    } catch {}
+    } catch (auditError) {
+      console.warn("[CashTx] Audit failed for cash.update:", auditError);
+    }
 
     return success(updated);
   } catch (e: any) {
@@ -382,7 +384,9 @@ export async function deleteCashTransaction(
         oldData,
         newData: null,
       });
-    } catch {}
+    } catch (auditError) {
+      console.warn("[CashTx] Audit failed for cash.delete:", auditError);
+    }
 
     return success({ id });
   } catch (e: any) {

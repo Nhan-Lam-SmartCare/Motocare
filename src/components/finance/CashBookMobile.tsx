@@ -13,7 +13,8 @@ import {
 import { useUpdatePaymentSourceBalanceRepo } from "../../hooks/usePaymentSourcesRepository";
 import { supabase } from "../../supabaseClient";
 import { Plus, Search, Filter, Wallet, ArrowUpCircle, ArrowDownCircle, MoreVertical, Edit2, Trash2 } from "lucide-react";
-import { AddTransactionModal, EditTransactionModal, DeleteConfirmModal, getCategoryLabel } from "./CashBookModals";
+import { AddTransactionModal, EditTransactionModal, DeleteConfirmModal } from "./CashBookModals";
+import { getCategoryLabel } from "./cashBookHelpers";
 
 
 export const CashBookMobile: React.FC = () => {
@@ -86,16 +87,18 @@ export const CashBookMobile: React.FC = () => {
             case "today":
                 filtered = filtered.filter((tx) => new Date(tx.date) >= today);
                 break;
-            case "week":
+            case "week": {
                 const weekAgo = new Date(today);
                 weekAgo.setDate(weekAgo.getDate() - 7);
                 filtered = filtered.filter((tx) => new Date(tx.date) >= weekAgo);
                 break;
-            case "month":
+            }
+            case "month": {
                 const monthAgo = new Date(today);
                 monthAgo.setMonth(monthAgo.getMonth() - 1);
                 filtered = filtered.filter((tx) => new Date(tx.date) >= monthAgo);
                 break;
+            }
         }
 
         // Filter by search query

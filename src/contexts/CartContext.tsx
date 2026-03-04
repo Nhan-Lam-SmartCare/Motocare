@@ -84,5 +84,3 @@ export const useCart = (): CartContextType => {
   }
   return context;
 };
-
-export default CartContext;

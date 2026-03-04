@@ -1,10 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
 import {
   X,
-  Plus,
-  Minus,
   Check,
-  ChevronDown,
   Search,
   AlertTriangle,
   Printer,
@@ -16,13 +13,10 @@ import {
   CheckCircle,
   Clock,
   Edit2,
-  Trash2,
-  Smartphone,
   PhoneCall,
   ChevronRight,
   TrendingUp,
   UserPlus,
-  CreditCard,
   Banknote,
   MessageSquare,
   Package,
@@ -36,7 +30,6 @@ import type { WorkOrder, Part, Customer, Vehicle, Employee } from "../../types";
 import {
   checkVehicleMaintenance,
   formatKm,
-  getWarningBadgeColor,
   type MaintenanceWarning,
 } from "../../utils/maintenanceReminder";
 import { WORK_ORDER_STATUS, type WorkOrderStatus } from "../../constants";
@@ -67,9 +60,6 @@ interface WorkOrderMobileModalProps {
   onSwitchToEdit?: () => void; // callback khi bấm nút chỉnh sửa từ view mode
   isOwner?: boolean; // true = chủ shop, có thể xem lợi nhuận
 }
-
-// Local type for status options if needed, or just use the one from constants
-type LocalWorkOrderStatus = "Tiếp nhận" | "Đang sửa" | "Đã sửa xong" | "Trả máy";
 
 export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
   isOpen,
@@ -711,20 +701,6 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  // Helper functions for number formatting
-  const formatNumberWithDots = (value: number | string): string => {
-    if (value === 0 || value === "0") return "0";
-    if (!value) return "";
-    const numStr = value.toString().replace(/\D/g, "");
-    if (!numStr) return "";
-    return numStr.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-  };
-
-  const parseFormattedNumber = (value: string): number => {
-    const cleaned = value.replace(/\./g, "");
-    return cleaned ? Number(cleaned) : 0;
   };
 
   // Combined fetch function

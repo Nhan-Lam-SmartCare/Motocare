@@ -14,11 +14,9 @@ import {
   Phone,
   CreditCard,
   Package,
-  CheckCircle,
   Clock,
   Star,
   History,
-  ChevronRight,
   ChevronDown,
   MapPin,
   Edit2,
@@ -45,7 +43,6 @@ import { useWorkOrdersRepo } from "../../hooks/useWorkOrdersRepository";
 import { showToast } from "../../utils/toast";
 import {
   getVehiclesNeedingMaintenance,
-  MAINTENANCE_CYCLES,
 } from "../../utils/maintenanceReminder";
 import { supabase } from "../../supabaseClient";
 import { useDebounce } from "../../hooks/useDebounce";
@@ -483,7 +480,7 @@ const classifyCustomer = (customer: Customer): Customer["segment"] => {
 
 const CustomerManager: React.FC = () => {
   // Lấy danh sách khách hàng từ Supabase
-  const { data: customers = [], isLoading, refetch } = useCustomers();
+  const { data: customers = [], refetch } = useCustomers();
   const createCustomer = useCreateCustomer();
   const updateCustomer = useUpdateCustomer();
   const deleteCustomer = useDeleteCustomer();
@@ -495,7 +492,6 @@ const CustomerManager: React.FC = () => {
 
   // Lấy danh sách nhà cung cấp từ Supabase
   const { data: suppliers = [], isLoading: suppliersLoading } = useSuppliers();
-  const createSupplier = useCreateSupplier();
   const deleteSupplierMutation = useDeleteSupplier();
 
   // State cho Load More
@@ -608,20 +604,13 @@ const CustomerManager: React.FC = () => {
   // Auto-open edit form if editCustomerId is in localStorage (from SalesManager)
   useEffect(() => {
     const editCustomerId = localStorage.getItem("editCustomerId");
-    console.log("[CustomerManager] Checking editCustomerId:", editCustomerId);
-    console.log("[CustomerManager] Customers loaded:", customers.length);
 
     if (editCustomerId && customers.length > 0) {
       const customerToEdit = customers.find((c) => c.id === editCustomerId);
-      console.log("[CustomerManager] Found customer to edit:", customerToEdit);
 
       if (customerToEdit) {
         setEditCustomer(customerToEdit);
         localStorage.removeItem("editCustomerId"); // Clear after using
-        console.log(
-          "[CustomerManager] Opened edit form for:",
-          customerToEdit.name
-        );
       }
     }
   }, [customers]);
@@ -630,23 +619,14 @@ const CustomerManager: React.FC = () => {
   useEffect(() => {
     const checkAndOpenEdit = () => {
       const editCustomerId = localStorage.getItem("editCustomerId");
-      console.log(
-        "[CustomerManager MOUNT] Checking editCustomerId:",
-        editCustomerId
-      );
 
       if (editCustomerId && customers.length > 0) {
         const customerToEdit = customers.find((c) => c.id === editCustomerId);
-        console.log("[CustomerManager MOUNT] Found customer:", customerToEdit);
 
         if (customerToEdit) {
           setTimeout(() => {
             setEditCustomer(customerToEdit);
             localStorage.removeItem("editCustomerId");
-            console.log(
-              "[CustomerManager MOUNT] Opened edit form for:",
-              customerToEdit.name
-            );
           }, 100);
         }
       }
@@ -722,11 +702,9 @@ const CustomerManager: React.FC = () => {
 
   // Auto-classify customers on mount only
   useEffect(() => {
-    let hasChanges = false;
     customers.forEach((customer) => {
       if (!customer.segment) {
         const newSegment = classifyCustomer(customer);
-        hasChanges = true;
         // Cập nhật segment lên Supabase
         updateCustomer.mutate({
           id: customer.id,
@@ -791,7 +769,7 @@ const CustomerManager: React.FC = () => {
       map.set(customer.id, classifyCustomer({ ...customer, totalSpent, visitCount, loyaltyPoints, lastVisit: lastVisit ?? undefined }));
     });
     return map;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [customers, allSales, allWorkOrders]);
 
   const filtered = useMemo(() => {
@@ -863,7 +841,7 @@ const CustomerManager: React.FC = () => {
       map.set(customer.id, calculateCustomerStats(customer));
     });
     return map;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [displayedCustomers, allSales, allWorkOrders]);
 
   const handleDelete = async (id: string) => {
@@ -1539,8 +1517,6 @@ const CustomerManager: React.FC = () => {
                     const pointsPercent = Math.min((points / 10000) * 100, 100);
                     const vehicles =
                       (customer.vehicles as Vehicle[] | undefined) || [];
-                    const primaryVehicle =
-                      vehicles.find((v) => v.isPrimary) || vehicles[0];
                     const hasExtraVehicles = vehicles.length > 2;
 
                     return (
@@ -2609,8 +2585,8 @@ const SupplierModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
         address: address.trim(),
       });
       onClose();
-    } catch (err: any) {
-      // Hook đã show toast error
+    } catch {
+      return;
     } finally {
       setSaving(false);
     }

@@ -96,7 +96,7 @@ export async function fetchPinBalanceSummary(branchId: string = "CN1"): Promise<
 
   // Lấy số dư thực tế từ payment_sources (đã được app Pin reconcile/cập nhật)
   const currentBalance = await fetchPinInitialBalance(branchId);
-  console.log("[PinSupabase] Current balance from payment_sources: cash=", currentBalance.cash, "bank=", currentBalance.bank);
+  console.warn("[PinSupabase] Current balance from payment_sources: cash=", currentBalance.cash, "bank=", currentBalance.bank);
 
   return {
     totalIncome,

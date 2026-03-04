@@ -63,9 +63,6 @@ const CombinedFinance: React.FC = () => {
         fetchPinBalanceSummary(currentBranchId),
       ]);
 
-      console.log("[CombinedFinance] Pin transactions:", transactions.length);
-      console.log("[CombinedFinance] Pin balance:", balance);
-
       setPinTx(transactions);
       setPinBalance(balance);
 

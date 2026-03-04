@@ -2,16 +2,10 @@ import React, { useState, useMemo } from "react";
 import {
     DollarSign,
     Plus,
-    Check,
-    X,
     Clock,
-    Calendar,
     TrendingDown,
     Search,
-    Trash2,
     User,
-    ChevronRight,
-    Wallet
 } from "lucide-react";
 import { useAppContext } from "../../contexts/AppContext";
 import { useAuth } from "../../contexts/AuthContext";
@@ -24,7 +18,6 @@ import {
     useEmployeeAdvances,
     useCreateEmployeeAdvance,
     useUpdateEmployeeAdvance,
-    useDeleteEmployeeAdvance,
 } from "../../hooks/useEmployeeAdvanceRepository";
 
 export const EmployeeAdvanceManagerMobile: React.FC = () => {
@@ -33,10 +26,9 @@ export const EmployeeAdvanceManagerMobile: React.FC = () => {
     const queryClient = useQueryClient();
 
     // Fetch data
-    const { data: advances = [], isLoading } = useEmployeeAdvances(currentBranchId);
+    const { data: advances = [] } = useEmployeeAdvances(currentBranchId);
     const { mutateAsync: createAdvance } = useCreateEmployeeAdvance();
     const { mutateAsync: updateAdvance } = useUpdateEmployeeAdvance();
-    const { mutateAsync: deleteAdvance } = useDeleteEmployeeAdvance();
 
     // State
     const [showCreateModal, setShowCreateModal] = useState(false);
@@ -136,7 +128,7 @@ export const EmployeeAdvanceManagerMobile: React.FC = () => {
                 installmentMonths: "3",
             });
             showToast.success("Đã tạo đơn ứng lương");
-        } catch (error) {
+        } catch {
             // Error handled by mutation
         }
     };
@@ -180,7 +172,10 @@ export const EmployeeAdvanceManagerMobile: React.FC = () => {
                 updates: { status: "rejected" },
             });
             showToast.info("Đã từ chối đơn ứng lương");
-        } catch (error) { }
+        } catch (error) {
+            console.error("Error rejecting advance:", error);
+            showToast.error("Có lỗi khi từ chối đơn ứng lương");
+        }
     };
 
     const handleDisburse = async (advance: EmployeeAdvance) => {
@@ -206,7 +201,7 @@ export const EmployeeAdvanceManagerMobile: React.FC = () => {
                 queryClient.invalidateQueries({ queryKey: ["cash_transactions"] });
                 showToast.success(`Đã ghi chi ${formatCurrency(advance.advanceAmount)} cho ${advance.employeeName}. Nhân viên sẽ hoàn trả dần.`);
             }
-        } catch (error) {
+        } catch {
             showToast.error("Có lỗi khi chi tiền ứng lương");
         }
     };
@@ -244,7 +239,7 @@ export const EmployeeAdvanceManagerMobile: React.FC = () => {
             setShowDetailModal(false);
             setSelectedAdvance(null);
             showToast.success("Đã ghi nhận thanh toán");
-        } catch (error) {
+        } catch {
             showToast.error("Đã xảy ra lỗi");
         }
     };

@@ -59,14 +59,6 @@ const GoodsReceiptMobileWrapper: React.FC<{
   const { data: storeSettings } = useStoreSettings();
   const wholesaleMarkup = (storeSettings?.wholesale_markup_percent ?? 25) / 100 + 1; // VD: 25% => 1.25
 
-  // Debug logging
-  console.log(
-    "📦 GoodsReceiptMobileWrapper - parts received:",
-    parts?.length || 0,
-    parts?.slice(0, 2)
-  );
-  console.log("📦 currentBranchId:", currentBranchId);
-
   // Reset state when modal closes
   useEffect(() => {
     if (!isOpen) {

@@ -1,5 +1,4 @@
 import React, { useState, useMemo, useCallback } from "react";
-import { Link } from "react-router-dom";
 import {
   FileText,
   Wrench,
@@ -9,16 +8,10 @@ import {
   DollarSign,
   Search,
   Plus,
-  Filter,
   Phone,
   Edit2,
   Trash2,
   Printer,
-  ChevronRight,
-  MoreVertical,
-  Menu,
-  Bell,
-  Settings,
   History,
   ClipboardList,
   Package,
@@ -36,10 +29,8 @@ import { useAuth } from "../../contexts/AuthContext";
 import { canDo } from "../../utils/permissions";
 import { ServiceHistory } from "./ServiceHistory";
 import { useRepairTemplates, type RepairTemplate } from "../../hooks/useRepairTemplatesRepository";
-
-import { RepairTemplatesModal } from "./components/RepairTemplatesModal";
 import { PullToRefresh } from "../common/PullToRefresh";
-import Skeleton, { CardSkeleton } from "../common/Skeleton";
+import Skeleton from "../common/Skeleton";
 import { triggerHaptic } from "../../utils/haptics";
 
 interface ServiceManagerMobileProps {
@@ -301,8 +292,6 @@ export function ServiceManagerMobile({
   currentBranchId,
   dateFilter,
   setDateFilter,
-
-  setDateRangeDays,
   isLoading = false,
   onRefresh,
 }: ServiceManagerMobileProps) {
@@ -321,15 +310,8 @@ export function ServiceManagerMobile({
   const [showFinancials, setShowFinancials] = useState(false);
   const isOwner = profile?.role === "owner";
 
-  // Date filter state
-  const [showDateFilter, setShowDateFilter] = useState(false);
-  const [customDateStart, setCustomDateStart] = useState("");
-  const [customDateEnd, setCustomDateEnd] = useState("");
-
   // Templates data
   const { data: templates } = useRepairTemplates();
-  const [showTemplateModal, setShowTemplateModal] = useState(false);
-  const [editingTemplate, setEditingTemplate] = useState<any>(null);
 
   // Debounced create work order handler to prevent duplicate creation
   const handleCreateWorkOrder = useCallback(() => {

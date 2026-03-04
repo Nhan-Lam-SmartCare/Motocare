@@ -162,7 +162,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     const fetchPaymentSources = async () => {
       try {
-        console.log('[AppContext] 🔄 Fetching payment_sources from DB...');
         const [paymentSourcesRes, payrollRes] = await Promise.all([
           supabase.from("payment_sources").select("*"),
           supabase.from("payroll_records").select("*"),
@@ -170,13 +169,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 
         if (!paymentSourcesRes.error && Array.isArray(paymentSourcesRes.data)) {
           if (paymentSourcesRes.data.length > 0) {
-            console.log('[AppContext] ✅ Loaded payment_sources:', paymentSourcesRes.data);
             setPaymentSources(paymentSourcesRes.data);
           } else {
             console.warn('[AppContext] ⚠️ payment_sources empty on first fetch, retrying once...');
             const retryRes = await supabase.from("payment_sources").select("*");
             if (!retryRes.error && Array.isArray(retryRes.data) && retryRes.data.length > 0) {
-              console.log('[AppContext] ✅ Loaded payment_sources after retry:', retryRes.data);
               setPaymentSources(retryRes.data);
             } else {
               console.warn('[AppContext] ⚠️ Keep existing paymentSources, skip overwrite with empty data');
@@ -359,12 +356,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
             // Nếu tìm thấy khách hàng với cùng SĐT - CẬP NHẬT thay vì báo lỗi
             if (duplicates && duplicates.length > 0) {
               const existingId = duplicates[0].id;
-              console.log(
-                "Khách hàng đã tồn tại với SĐT này, chuyển sang UPDATE:",
-                customer.phone,
-                "ID:",
-                existingId
-              );
 
               // Cập nhật thông tin khách hàng hiện có (merge vehicles nếu cần)
               const existingVehicles = duplicates[0].vehicles || [];
@@ -398,8 +389,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 
               if (updateError) {
                 console.error("Lỗi cập nhật khách hàng:", updateError);
-              } else {
-                console.log("Đã cập nhật khách hàng:", existingId);
               }
 
               // Cập nhật local state với ID thực của khách hàng

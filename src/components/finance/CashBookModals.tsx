@@ -1,13 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { formatCurrency, formatDate } from "../../utils/format";
 import type { CashTransaction } from "../../types";
-import { formatCashTxCategory } from "../../lib/finance/cashTxCategories";
-
-// Helper function for category labels
-export const getCategoryLabel = (category?: string) => {
-    if (!category) return "--";
-    return formatCashTxCategory(category) || category;
-};
 
 // Add Transaction Modal Component
 export const AddTransactionModal: React.FC<{

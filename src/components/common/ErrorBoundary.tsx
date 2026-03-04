@@ -9,6 +9,22 @@ export class ErrorBoundary extends React.Component<
 > {
   state: State = { hasError: false };
 
+  private forceHardReload = () => {
+    const targetUrl = window.location.href.split("?")[0] + "?t=" + Date.now();
+
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.getRegistrations().then((registrations) => {
+        for (const registration of registrations) {
+          registration.unregister();
+        }
+        window.location.href = targetUrl;
+      });
+      return;
+    }
+
+    window.location.href = targetUrl;
+  };
+
   static getDerivedStateFromError(error: Error): State {
     return { hasError: true, error };
   }
@@ -31,7 +47,7 @@ export class ErrorBoundary extends React.Component<
       // If we haven't reloaded in the last 10 seconds for this reason
       if (now - lastReload > 10000) {
         sessionStorage.setItem('last_chunk_error_reload', now.toString());
-        window.location.reload();
+        this.forceHardReload();
         return;
       }
     }
@@ -41,20 +57,7 @@ export class ErrorBoundary extends React.Component<
 
   handleReload = () => {
     this.setState({ hasError: false, error: undefined });
-
-    // Clear Service Worker cache if exists (Force update)
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.getRegistrations().then((registrations) => {
-        for (const registration of registrations) {
-          registration.unregister();
-        }
-        // Force reload from server, ignoring cache
-        window.location.href = window.location.href.split("?")[0] + "?t=" + Date.now();
-      });
-    } else {
-      // Force reload
-      window.location.href = window.location.href.split("?")[0] + "?t=" + Date.now();
-    }
+    this.forceHardReload();
   };
 
   render() {

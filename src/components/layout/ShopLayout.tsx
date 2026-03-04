@@ -58,11 +58,11 @@ export function ShopLayout({ children }: ShopLayoutProps) {
 
             {/* Contact Button */}
             <a
-              href="tel:0907239337"
+              href="tel:0947747907"
               className="hidden sm:flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition font-medium"
             >
               <Phone className="h-4 w-4" />
-              <span className="hidden lg:inline">0907.239.337</span>
+              <span className="hidden lg:inline">0947.747.907</span>
               <span className="lg:hidden">Gọi ngay</span>
             </a>
           </div>
@@ -120,8 +120,8 @@ export function ShopLayout({ children }: ShopLayoutProps) {
                   <Phone className="h-5 w-5 text-orange-500 flex-shrink-0 mt-0.5" />
                   <div>
                     <p className="font-medium">Hotline</p>
-                    <a href="tel:0907239337" className="text-orange-400 hover:text-orange-300">
-                      0907.239.337
+                    <a href="tel:0947747907" className="text-orange-400 hover:text-orange-300">
+                      0947.747.907
                     </a>
                   </div>
                 </li>
@@ -160,7 +160,7 @@ export function ShopLayout({ children }: ShopLayoutProps) {
                   <Facebook className="h-5 w-5" />
                 </a>
                 <a
-                  href="https://zalo.me/0907239337"
+                  href="https://zalo.me/0947747907"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="p-2 bg-blue-500 hover:bg-blue-600 rounded-lg transition"

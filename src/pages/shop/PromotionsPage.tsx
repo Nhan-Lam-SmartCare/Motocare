@@ -148,14 +148,14 @@ function PromoModal({ promotion, onClose }: { promotion: any; onClose: () => voi
           {/* CTA */}
           <div className="flex flex-col sm:flex-row gap-3">
             <a
-              href="tel:0907239337"
+              href="tel:0947747907"
               className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold transition-colors"
             >
               <Phone className="w-5 h-5" />
-              Gọi ngay: 0907.239.337
+              Gọi ngay: 0947.747.907
             </a>
             <a
-              href="https://zalo.me/0907239337"
+              href="https://zalo.me/0947747907"
               target="_blank"
               rel="noopener noreferrer"
               className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold transition-colors"
@@ -272,14 +272,14 @@ export default function PromotionsPage() {
           </h3>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <a
-              href="tel:0907239337"
+              href="tel:0947747907"
               className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors"
             >
               <Phone className="w-5 h-5" />
-              0907.239.337
+              0947.747.907
             </a>
             <a
-              href="https://zalo.me/0907239337"
+              href="https://zalo.me/0947747907"
               target="_blank"
               rel="noopener noreferrer"
               className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold transition-colors"

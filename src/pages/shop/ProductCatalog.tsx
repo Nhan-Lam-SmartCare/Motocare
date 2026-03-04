@@ -218,7 +218,7 @@ export default function ProductCatalog() {
       // ignore clipboard errors (non-HTTPS or unsupported browser)
     }
 
-    window.open(`https://zalo.me/0907239337`, "_blank");
+    window.open(`https://zalo.me/0947747907`, "_blank");
   };
 
   return (

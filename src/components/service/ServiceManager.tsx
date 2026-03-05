@@ -2352,24 +2352,24 @@ export default function ServiceManager() {
         <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-300">
                 Phiếu cần xử lý
               </p>
               <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">
                 {urgentTickets}
               </p>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
+              <p className="text-xs text-slate-600 dark:text-slate-300">
                 Chiếm {urgentRatio}% của {totalOpenTickets || 0} phiếu đang mở
               </p>
             </div>
             <div className="text-right">
-              <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-300">
                 Hoàn thành
               </p>
               <p className="text-xl font-semibold text-emerald-600 dark:text-emerald-400">
                 {totalOpenTickets > 0 ? `${completionRate}%` : "—"}
               </p>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
+              <p className="text-xs text-slate-600 dark:text-slate-300">
                 {totalOpenTickets > 0
                   ? `${stats.done} phiếu chờ giao`
                   : "Không có dữ liệu"}
@@ -2394,7 +2394,7 @@ export default function ServiceManager() {
                 >
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
-                      <p className="text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                      <p className="text-[10px] uppercase tracking-wide text-slate-600 dark:text-slate-300">
                         {card.label}
                       </p>
                       <p className="text-xl font-bold text-slate-900 dark:text-slate-100">
@@ -2403,7 +2403,7 @@ export default function ServiceManager() {
                     </div>
                     <span className={`h-2 w-2 rounded-full ${card.dot}`}></span>
                   </div>
-                  <p className="mt-1 text-[10px] text-slate-500 dark:text-slate-400">
+                  <p className="mt-1 text-[10px] text-slate-600 dark:text-slate-300">
                     {card.subtitle}
                   </p>
                 </div>
@@ -2416,7 +2416,7 @@ export default function ServiceManager() {
           <div className="rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-3">
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-[9px] font-semibold uppercase tracking-wide text-slate-400">
+                <p className="text-[9px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-300">
                   Doanh thu {getDateFilterLabel(dateFilter)}
                 </p>
                 <p className="mt-1 text-xl font-bold text-blue-600 dark:text-blue-400">
@@ -2425,7 +2425,7 @@ export default function ServiceManager() {
               </div>
               <HandCoins className="w-6 h-6 text-blue-500" />
             </div>
-            <p className="mt-1.5 text-[10px] text-slate-500 dark:text-slate-400">
+            <p className="mt-1.5 text-[10px] text-slate-600 dark:text-slate-300">
               Bao gồm các phiếu đã thanh toán {getDateFilterLabel(dateFilter)}
             </p>
           </div>
@@ -2433,7 +2433,7 @@ export default function ServiceManager() {
           <div className="rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-3">
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-[9px] font-semibold uppercase tracking-wide text-slate-400">
+                <p className="text-[9px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-300">
                   Lợi nhuận {getDateFilterLabel(dateFilter)}
                 </p>
                 <p className="mt-1 text-xl font-semibold text-slate-900 dark:text-slate-100">
@@ -2443,7 +2443,7 @@ export default function ServiceManager() {
               <TrendingUp className="w-6 h-6 text-blue-500" />
             </div>
             <div className="mt-1.5 flex items-center justify-between text-[10px]">
-              <span className="text-slate-500 dark:text-slate-400">
+              <span className="text-slate-600 dark:text-slate-300">
                 Biên lợi nhuận
               </span>
               <span className="font-semibold text-emerald-600 dark:text-emerald-400">
@@ -2484,7 +2484,7 @@ export default function ServiceManager() {
       </div>
 
       {/* Action Bar - Single row on desktop */}
-      <div className="bg-white dark:bg-slate-800 rounded-lg p-2 border border-slate-200 dark:border-slate-700">
+      <div className="sticky top-2 z-20 bg-white/95 dark:bg-slate-800/95 backdrop-blur rounded-lg p-3 border border-slate-200 dark:border-slate-700 shadow-sm">
         <div className="flex flex-wrap items-center gap-2">
           {/* Search */}
           <div className="relative flex-1 min-w-[180px] max-w-[280px]">
@@ -2494,7 +2494,7 @@ export default function ServiceManager() {
               placeholder="Mã phiếu, tên khách, dòng xe..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-8 pr-3 py-1.5 bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400"
+              className="w-full pl-8 pr-3 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500"
             />
             <Search
               className="absolute left-2.5 top-2 w-3.5 h-3.5 text-slate-400"
@@ -2506,7 +2506,7 @@ export default function ServiceManager() {
           <select
             value={dateFilter}
             onChange={(e) => setDateFilter(e.target.value)}
-            className="px-2 py-1.5 text-xs bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg"
+            className="px-2.5 py-2 text-sm bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500"
           >
             <option value="today">Hôm nay</option>
             <option value="week">7 ngày qua</option>
@@ -2520,21 +2520,21 @@ export default function ServiceManager() {
                 type="date"
                 value={customDateStart}
                 onChange={(e) => setCustomDateStart(e.target.value)}
-                className="px-2 py-1.5 text-xs bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg"
+                className="px-2.5 py-2 text-sm bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500"
               />
               <span className="text-xs text-slate-500">—</span>
               <input
                 type="date"
                 value={customDateEnd}
                 onChange={(e) => setCustomDateEnd(e.target.value)}
-                className="px-2 py-1.5 text-xs bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg"
+                className="px-2.5 py-2 text-sm bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500"
               />
             </div>
           )}
           <select
             value={technicianFilter}
             onChange={(e) => setTechnicianFilter(e.target.value)}
-            className="px-2 py-1.5 text-xs bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg"
+            className="px-2.5 py-2 text-sm bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500"
           >
             <option value="all">Tất cả KTV</option>
             {employees.map((emp) => (
@@ -2546,7 +2546,7 @@ export default function ServiceManager() {
           <select
             value={paymentFilter}
             onChange={(e) => setPaymentFilter(e.target.value)}
-            className="px-2 py-1.5 text-xs bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg"
+            className="px-2.5 py-2 text-sm bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500"
           >
             <option value="all">Thanh toán</option>
             <option value="paid">Đã TT</option>
@@ -2561,7 +2561,7 @@ export default function ServiceManager() {
           <button
             onClick={() => refetchWorkOrders()}
             disabled={workOrdersFetching}
-            className="px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg text-xs font-medium flex items-center gap-1 disabled:opacity-50"
+            className="px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg text-sm font-medium flex items-center gap-1.5 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
             aria-label="Làm mới dữ liệu"
             title="Làm mới"
           >
@@ -2572,7 +2572,7 @@ export default function ServiceManager() {
           </button>
           <button
             onClick={clearFilters}
-            className="px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg text-xs font-medium flex items-center gap-1"
+            className="px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg text-sm font-medium flex items-center gap-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
             aria-label="Xóa bộ lọc"
             title="Xóa bộ lọc"
           >
@@ -2581,7 +2581,7 @@ export default function ServiceManager() {
           {isOwner && (
             <button
               onClick={() => setShowProfit(!showProfit)}
-              className={`px-2.5 py-1.5 border rounded-lg text-xs font-medium flex items-center gap-1 transition-colors ${showProfit
+              className={`px-3 py-2 border rounded-lg text-sm font-medium flex items-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500/40 ${showProfit
                 ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/30"
                 : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700"
                 }`}
@@ -2598,14 +2598,14 @@ export default function ServiceManager() {
           )}
           <button
             onClick={() => setShowTemplateModal(true)}
-            className="px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg text-xs font-medium flex items-center gap-1 transition-colors"
+            className="px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg text-sm font-medium flex items-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500/40"
             aria-label="Mở danh sách mẫu sửa chữa"
           >
             <FileText className="w-3.5 h-3.5" /> Mẫu SC
           </button>
           <Link
             to="/service-history"
-            className="px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg text-xs font-medium flex items-center gap-1 transition-colors"
+            className="px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg text-sm font-medium flex items-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500/40"
           >
             <History className="w-3.5 h-3.5" /> Lịch sử SC
           </Link>
@@ -2614,10 +2614,11 @@ export default function ServiceManager() {
               // Always use Desktop modal
               handleOpenModal();
             }}
-            className="px-2.5 py-1.5 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-xs font-medium flex items-center gap-1"
+            className="px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-semibold flex items-center gap-1.5 shadow-sm hover:shadow focus:outline-none focus:ring-2 focus:ring-blue-500/50"
             aria-label="Tạo phiếu sửa chữa mới"
           >
-            <Plus className="w-3.5 h-3.5" /> Thêm Phiếu
+            <Plus className="w-4 h-4" />
+            {filteredOrders.length === 0 ? "Tạo Phiếu đầu tiên" : "Thêm Phiếu"}
           </button>
         </div>
       </div>
@@ -2638,29 +2639,36 @@ export default function ServiceManager() {
           </div>
         )}
 
+        {showTableSkeleton && (
+          <div className="px-4 py-2 border-b border-slate-200 dark:border-slate-700 bg-blue-50/50 dark:bg-blue-900/10 text-sm text-slate-700 dark:text-slate-200 flex items-center gap-2">
+            <RefreshCw className="w-4 h-4 animate-spin text-blue-500" />
+            Đang tải danh sách phiếu sửa chữa...
+          </div>
+        )}
+
         {/* Table */}
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-slate-50 dark:bg-slate-700/50 sticky top-0 z-10">
+            <thead className="bg-slate-50 dark:bg-slate-700/70">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 dark:text-slate-300">
+                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 dark:text-slate-200">
                   Mã phiếu
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 dark:text-slate-300">
+                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 dark:text-slate-200">
                   Khách hàng
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 dark:text-slate-300">
+                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 dark:text-slate-200">
                   Chi tiết
                 </th>
-                <th className="hidden lg:table-cell px-4 py-3 text-left text-xs font-medium text-slate-600 dark:text-slate-300">
+                <th className="hidden lg:table-cell px-4 py-3 text-left text-xs font-semibold text-slate-600 dark:text-slate-200">
                   Thanh toán & trạng thái
                 </th>
-                <th className="px-4 py-3 text-center text-xs font-medium text-slate-600 dark:text-slate-300">
+                <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 dark:text-slate-200">
                   Thao tác
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60 bg-white dark:bg-slate-800" style={{ borderSpacing: '0 4px' }}>
+            <tbody className="divide-y divide-slate-200 dark:divide-slate-700/80 bg-white dark:bg-slate-800" style={{ borderSpacing: '0 6px' }}>
               {showTableSkeleton ? (
                 Array.from({ length: 6 }).map((_, idx) => (
                   <tr key={`skeleton-${idx}`} className="animate-pulse">
@@ -2837,36 +2845,36 @@ export default function ServiceManager() {
                     <tr
                       key={order.id}
                       onClick={() => handleOpenModal(order)}
-                      className={`group bg-white dark:bg-slate-800/80 hover:bg-blue-50/50 dark:hover:bg-slate-700/50 cursor-pointer transition-all duration-150 hover:shadow-md border-l-4 ${getStatusBorderColor(order.status as WorkOrderStatus)}`}
+                      className={`group bg-white dark:bg-slate-800/80 hover:bg-blue-50 dark:hover:bg-slate-700/60 cursor-pointer transition-all duration-150 hover:shadow-md border-l-4 focus-within:ring-2 focus-within:ring-blue-500/30 ${getStatusBorderColor(order.status as WorkOrderStatus)}`}
                     >
                       {/* Column 1: Mã phiếu + Status */}
-                      <td className="px-4 py-5 align-top">
-                        <div className="space-y-1.5">
+                      <td className="px-4 py-5 xl:py-6 align-top">
+                        <div className="space-y-2">
                           {/* Status badge - prominent */}
                           <StatusBadge status={order.status as WorkOrderStatus} />
                           {/* Mã phiếu - shortened */}
                           <div
-                            className="font-mono text-xs text-slate-500 dark:text-slate-400 cursor-help"
+                            className="font-mono text-xs font-medium text-slate-600 dark:text-slate-300 cursor-help"
                             title={formatWorkOrderId(order.id, storeSettings?.work_order_prefix)}
                           >
                             {formatShortWorkOrderId(order.id, storeSettings?.work_order_prefix).short}
                           </div>
-                          <div className="text-[11px] text-slate-400 dark:text-slate-500">
+                          <div className="text-xs text-slate-500 dark:text-slate-400">
                             {formatDate(order.creationDate, true)}
                           </div>
-                          <div className="text-[11px] text-cyan-600 dark:text-cyan-400 font-medium">
+                          <div className="text-xs text-cyan-600 dark:text-cyan-400 font-medium">
                             {order.technicianName || "Chưa phân công"}
                           </div>
                         </div>
                       </td>
 
                       {/* Column 2: Khách hàng */}
-                      <td className="px-4 py-5 align-top">
+                      <td className="px-4 py-5 xl:py-6 align-top">
                         <div className="space-y-1">
-                          <div className="font-bold text-lg text-slate-900 dark:text-slate-100">
+                          <div className="font-bold text-base xl:text-lg text-slate-100 dark:text-slate-100 truncate">
                             {order.customerName}
                           </div>
-                          <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+                          <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-300">
                             <Smartphone className="w-3.5 h-3.5" />
                             <span className="font-mono">
                               {formatMaskedPhone(order.customerPhone)}
@@ -2885,7 +2893,7 @@ export default function ServiceManager() {
                               </button>
                             )}
                           </div>
-                          <div className="text-xs text-slate-600 dark:text-slate-400">
+                          <div className="text-xs text-slate-600 dark:text-slate-300 truncate">
                             <Bike className="w-3.5 h-3.5 inline-block mr-1 text-slate-400" />
                             <span className="font-medium">
                               {order.vehicleModel || "N/A"}
@@ -2898,7 +2906,7 @@ export default function ServiceManager() {
                           </div>
                           {order.issueDescription &&
                             order.issueDescription !== "Không có mô tả" && (
-                              <div className="text-[11px] text-slate-500 dark:text-slate-400 italic line-clamp-2 mt-1.5">
+                              <div className="hidden xl:block text-xs text-slate-600 dark:text-slate-300 italic line-clamp-2 mt-1.5">
                                 {order.issueDescription}
                               </div>
                             )}
@@ -2906,8 +2914,8 @@ export default function ServiceManager() {
                       </td>
 
                       {/* Column 3: Chi tiết - Compact format */}
-                      <td className="px-4 py-5 align-top">
-                        <div className="space-y-1.5 max-w-[220px]">
+                      <td className="px-4 py-5 xl:py-6 align-top">
+                        <div className="space-y-2 max-w-[180px] xl:max-w-[220px]">
                           {servicesSummary && (
                             <div
                               className="text-xs flex items-start gap-1.5"
@@ -2918,7 +2926,7 @@ export default function ServiceManager() {
                               }
                             >
                               <Settings className="w-3.5 h-3.5 text-slate-400 mt-0.5 flex-shrink-0" />
-                              <span className="text-slate-700 dark:text-slate-300 line-clamp-1">
+                              <span className="text-slate-700 dark:text-slate-200 line-clamp-1">
                                 {servicesSummary}
                                 {servicesSuffix && (
                                   <span className="text-slate-400">
@@ -2939,7 +2947,7 @@ export default function ServiceManager() {
                               }
                             >
                               <Wrench className="w-3.5 h-3.5 text-slate-400 mt-0.5 flex-shrink-0" />
-                              <span className="text-slate-700 dark:text-slate-300 line-clamp-1">
+                              <span className="text-slate-700 dark:text-slate-200 line-clamp-1">
                                 {partsSummary}
                                 {partsSuffix && (
                                   <span className="text-slate-400">
@@ -2951,7 +2959,7 @@ export default function ServiceManager() {
                           )}
 
                           {!partsSummary && !servicesSummary && (
-                            <div className="text-xs text-slate-400 italic">
+                            <div className="text-xs text-slate-500 dark:text-slate-400 italic">
                               —
                             </div>
                           )}
@@ -2983,10 +2991,10 @@ export default function ServiceManager() {
                       </td>
 
                       {/* Column 4: Thanh toán & trạng thái - Clean layout - Hidden on tablet */}
-                      <td className="hidden lg:table-cell px-4 py-5 align-top">
-                        <div className="space-y-2 min-w-[200px]">
+                      <td className="hidden lg:table-cell px-4 py-5 xl:py-6 align-top">
+                        <div className="space-y-2.5 min-w-[200px]">
                           {/* Tổng tiền */}
-                          <div className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+                          <div className="text-sm font-bold text-slate-800 dark:text-slate-100">
                             {formatCurrency(totalAmount)}
                           </div>
 
@@ -3038,7 +3046,7 @@ export default function ServiceManager() {
                                   }}
                                 />
                               </div>
-                              <div className="flex justify-between items-center text-xs text-slate-500 dark:text-slate-400">
+                              <div className="flex justify-between items-center text-xs text-slate-600 dark:text-slate-300">
                                 <span className="flex items-center gap-1">
                                   <span className="font-medium text-slate-600 dark:text-slate-300">
                                     Đã thu:
@@ -3131,7 +3139,7 @@ export default function ServiceManager() {
                       </td>
 
                       <td
-                        className="px-4 py-5 align-top overflow-visible"
+                        className="px-4 py-5 xl:py-6 align-top overflow-visible"
                         onClick={(e) => e.stopPropagation()}
                       >
                         <div className="flex items-center justify-end gap-1.5">
@@ -3141,17 +3149,18 @@ export default function ServiceManager() {
                               e.stopPropagation();
                               handleOpenModal(order);
                             }}
-                            className="w-9 h-9 inline-flex items-center justify-center rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:text-blue-400 dark:hover:bg-blue-900/20 opacity-0 group-hover:opacity-100 transition-all duration-150"
+                            className="w-9 h-9 inline-flex items-center justify-center rounded-lg border border-transparent text-slate-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:text-blue-400 dark:hover:bg-blue-900/20 opacity-90 group-hover:opacity-100 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
                             title="Xem chi tiết"
                           >
                             <Eye className="w-4 h-4" />
                           </button>
+
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
                               handlePrintOrder(order);
                             }}
-                            className="w-9 h-9 inline-flex items-center justify-center rounded-lg text-slate-400 hover:text-purple-600 hover:bg-purple-50 dark:hover:text-purple-400 dark:hover:bg-purple-900/20 opacity-0 group-hover:opacity-100 transition-all duration-150"
+                            className="w-9 h-9 inline-flex items-center justify-center rounded-lg border border-transparent text-slate-500 hover:text-purple-600 hover:bg-purple-50 dark:hover:text-purple-400 dark:hover:bg-purple-900/20 opacity-90 group-hover:opacity-100 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-purple-500/40"
                             title="In phiếu"
                           >
                             <Printer className="w-4 h-4" />
@@ -3174,7 +3183,7 @@ export default function ServiceManager() {
                               }}
                               aria-haspopup="menu"
                               aria-expanded={rowActionMenuId === order.id}
-                              className="w-9 h-9 inline-flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+                                className="w-9 h-9 inline-flex items-center justify-center rounded-lg border border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
                               title="Thêm thao tác"
                             >
                               <MoreVertical className="w-4.5 h-4.5" />

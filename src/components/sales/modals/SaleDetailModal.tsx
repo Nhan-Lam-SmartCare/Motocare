@@ -23,6 +23,7 @@ export const SaleDetailModal: React.FC<SaleDetailModalProps> = ({
         0
     );
     const totalDiscount = itemsTotal - sale.total;
+    const saleNote = sale.note?.trim();
 
     return (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4">
@@ -93,6 +94,16 @@ export const SaleDetailModal: React.FC<SaleDetailModalProps> = ({
                                 {sale.paymentMethod === "cash" ? "Tiền mặt" : "Chuyển khoản"}
                             </div>
                         </div>
+                        {saleNote && (
+                            <div className="col-span-2">
+                                <label className="text-sm text-slate-500 dark:text-slate-400">
+                                    Ghi chú
+                                </label>
+                                <div className="mt-1 text-sm text-slate-700 dark:text-slate-200 bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 whitespace-pre-wrap break-words">
+                                    {saleNote}
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     {/* Items Table */}

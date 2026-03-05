@@ -72,7 +72,8 @@ interface QuickServiceModalProps {
     service: QuickService,
     quantity: number,
     paymentMethod: "cash" | "bank",
-    customer: CustomerInfo
+    customer: CustomerInfo,
+    note?: string
   ) => void;
   branchId?: string;
 }
@@ -92,29 +93,37 @@ const QuickServiceModal: React.FC<QuickServiceModalProps> = ({
     null
   );
   const [customPrice, setCustomPrice] = useState<number | null>(null); // Custom price for editing
-  const [licensePlate, setLicensePlate] = useState("");
+  const [customerSearchText, setCustomerSearchText] = useState("");
   const [foundCustomer, setFoundCustomer] = useState<CustomerInfo | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<"cash" | "bank" | null>(
     null
   );
+  const [serviceNote, setServiceNote] = useState("");
 
   if (!isOpen) return null;
 
   const resetPaymentFlow = () => {
     setSelectedService(null);
     setCustomPrice(null);
-    setLicensePlate("");
+    setCustomerSearchText("");
     setFoundCustomer(null);
     setPaymentMethod(null);
+    setServiceNote("");
   };
 
   const handleSelectService = (service: QuickService) => {
     setSelectedService(service);
     setCustomPrice(null); // Reset custom price when selecting new service
-    setLicensePlate("");
+    setCustomerSearchText("");
     setFoundCustomer(null);
     setPaymentMethod(null);
+    setServiceNote("");
+  };
+
+  const isLikelyLicensePlate = (value: string) => {
+    const normalized = value.trim().replace(/[-\s.]/g, "").toUpperCase();
+    return /[A-Z]/.test(normalized) && /\d/.test(normalized) && normalized.length >= 5;
   };
 
   // Get current price (custom or default)
@@ -124,25 +133,31 @@ const QuickServiceModal: React.FC<QuickServiceModalProps> = ({
   };
 
   const handleSearchCustomer = async () => {
-    if (!licensePlate.trim()) {
+    if (!customerSearchText.trim()) {
       setFoundCustomer(null);
       return;
     }
 
     setIsSearching(true);
     try {
+      const searchText = customerSearchText.trim();
+      const searchTextLower = searchText.toLowerCase();
+      const normalizedPhone = searchText.replace(/\D/g, "");
+
       // Chuẩn hóa biển số: loại bỏ dấu gạch, khoảng trắng, chuyển uppercase
-      const normalizedPlate = licensePlate
+      const normalizedPlate = searchText
         .trim()
         .replace(/[-\s.]/g, "")
         .toUpperCase();
 
-      // Bước 1: Tìm trong licenseplate trước (DB dùng lowercase columns)
+      // Bước 1: Tìm trực tiếp theo biển số / SĐT / tên (DB dùng lowercase columns)
       const directResult = await supabase
         .from("customers")
         .select("id, name, phone, licenseplate, totalspent, vehicles")
-        .ilike("licenseplate", `%${licensePlate.trim()}%`)
-        .limit(5);
+        .or(
+          `licenseplate.ilike.%${searchText}%,phone.ilike.%${searchText}%,name.ilike.%${searchText}%`
+        )
+        .limit(20);
       let directMatch = directResult.data;
       const directError = directResult.error;
 
@@ -158,17 +173,43 @@ const QuickServiceModal: React.FC<QuickServiceModalProps> = ({
         if (allCustomers && !allError) {
           // Filter ở client side
           directMatch = allCustomers.filter((customer) => {
+            const customerPhone = (customer.phone || "").replace(/\D/g, "");
+            const customerName = (customer.name || "").toLowerCase();
+            const customerPlate = (customer.licenseplate || "")
+              .replace(/[-\s.]/g, "")
+              .toUpperCase();
+
+            const matchedByPhone =
+              normalizedPhone.length >= 6 &&
+              customerPhone.includes(normalizedPhone);
+            const matchedByName =
+              searchTextLower.length >= 2 &&
+              customerName.includes(searchTextLower);
+            const matchedByPlate =
+              customerPlate &&
+              (customerPlate.includes(normalizedPlate) ||
+                normalizedPlate.includes(customerPlate));
+
             if (!customer.vehicles || !Array.isArray(customer.vehicles))
-              return false;
-            return customer.vehicles.some((v: any) => {
+              return matchedByPhone || matchedByName || matchedByPlate;
+
+            const matchedByVehiclePlate = customer.vehicles.some((v: any) => {
               const vPlate = (v.licensePlate || "")
                 .replace(/[-\s.]/g, "")
                 .toUpperCase();
               return (
-                vPlate.includes(normalizedPlate) ||
-                normalizedPlate.includes(vPlate)
+                vPlate &&
+                (vPlate.includes(normalizedPlate) ||
+                  normalizedPlate.includes(vPlate))
               );
             });
+
+            return (
+              matchedByPhone ||
+              matchedByName ||
+              matchedByPlate ||
+              matchedByVehiclePlate
+            );
           });
         }
       }
@@ -178,6 +219,27 @@ const QuickServiceModal: React.FC<QuickServiceModalProps> = ({
       let matchedVehicle: any = null;
 
       for (const customer of directMatch || []) {
+        const customerPhone = (customer.phone || "").replace(/\D/g, "");
+        const customerName = (customer.name || "").toLowerCase();
+
+        if (normalizedPhone.length >= 6 && customerPhone.includes(normalizedPhone)) {
+          matchedCustomer = customer;
+          matchedVehicle = {
+            model: "",
+            licensePlate: customer.licenseplate,
+          };
+          break;
+        }
+
+        if (searchTextLower.length >= 2 && customerName.includes(searchTextLower)) {
+          matchedCustomer = customer;
+          matchedVehicle = {
+            model: "",
+            licensePlate: customer.licenseplate,
+          };
+          break;
+        }
+
         // Kiểm tra licenseplate trực tiếp (DB column lowercase)
         const customerPlate = (customer.licenseplate || "")
           .replace(/[-\s.]/g, "")
@@ -228,7 +290,7 @@ const QuickServiceModal: React.FC<QuickServiceModalProps> = ({
             matchedVehicle?.licensePlate ||
             (matchedCustomer as any).licenseplate ||
             (matchedCustomer as any).license_plate ||
-            licensePlate,
+            searchText,
           loyaltyPoints: loyaltyPoints,
         } as CustomerInfo & { loyaltyPoints: number });
         showToast.success(
@@ -251,11 +313,14 @@ const QuickServiceModal: React.FC<QuickServiceModalProps> = ({
 
     const qty = quantities[selectedService.id] || 1;
     const finalPrice = getCurrentPrice();
+    const fallbackLicensePlate = isLikelyLicensePlate(customerSearchText)
+      ? customerSearchText.trim().toUpperCase()
+      : "";
     const customer: CustomerInfo = foundCustomer || {
       name: "Khách vãng lai",
       phone: "",
       vehicleModel: "",
-      licensePlate: licensePlate || "",
+      licensePlate: fallbackLicensePlate,
     };
 
     // Pass service with custom price if modified
@@ -264,7 +329,7 @@ const QuickServiceModal: React.FC<QuickServiceModalProps> = ({
       price: finalPrice,
     };
 
-    onComplete(serviceWithPrice, qty, paymentMethod, customer);
+    onComplete(serviceWithPrice, qty, paymentMethod, customer, serviceNote.trim());
     resetPaymentFlow();
     onClose();
   };
@@ -485,24 +550,24 @@ const QuickServiceModal: React.FC<QuickServiceModalProps> = ({
               {/* License Plate Search (Optional) */}
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                  🔍 Biển số xe (tùy chọn - tra khách quen)
+                  🔍 Tìm khách (biển số / SĐT / tên)
                 </label>
                 <div className="flex gap-2">
                   <input
                     type="text"
-                    value={licensePlate}
+                    value={customerSearchText}
                     onChange={(e) =>
-                      setLicensePlate(e.target.value.toUpperCase())
+                      setCustomerSearchText(e.target.value)
                     }
-                    placeholder="VD: 59A-12345"
-                    className="flex-1 px-3 py-2.5 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white uppercase"
+                    placeholder="VD: 59A-12345 / 0909123456 / Nguyễn Văn A"
+                    className="flex-1 px-3 py-2.5 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
                     onKeyDown={(e) =>
                       e.key === "Enter" && handleSearchCustomer()
                     }
                   />
                   <button
                     onClick={handleSearchCustomer}
-                    disabled={isSearching || !licensePlate.trim()}
+                    disabled={isSearching || !customerSearchText.trim()}
                     className="px-4 py-2.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                   >
                     {isSearching ? (
@@ -545,14 +610,32 @@ const QuickServiceModal: React.FC<QuickServiceModalProps> = ({
               )}
 
               {/* No Customer - Default */}
-              {!foundCustomer && licensePlate && !isSearching && (
+              {!foundCustomer && customerSearchText && !isSearching && (
                 <div className="p-3 bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-lg">
                   <p className="text-sm text-slate-600 dark:text-slate-400">
-                    Không tìm thấy khách hàng. Sẽ lưu với biển số:{" "}
-                    <strong>{licensePlate}</strong>
+                    {isLikelyLicensePlate(customerSearchText)
+                      ? "Không tìm thấy khách hàng. Sẽ lưu với biển số:"
+                      : "Không tìm thấy khách hàng phù hợp."}{" "}
+                    {isLikelyLicensePlate(customerSearchText) && (
+                      <strong>{customerSearchText.toUpperCase()}</strong>
+                    )}
                   </p>
                 </div>
               )}
+
+              {/* Payment Method Selection */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                  📝 Ghi chú (tùy chọn)
+                </label>
+                <textarea
+                  value={serviceNote}
+                  onChange={(e) => setServiceNote(e.target.value)}
+                  placeholder="Ví dụ: Khách hẹn quay lại thay lốp sau 3 ngày..."
+                  rows={2}
+                  className="w-full px-3 py-2.5 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white resize-none"
+                />
+              </div>
 
               {/* Payment Method Selection */}
               <div>
@@ -605,8 +688,8 @@ const QuickServiceModal: React.FC<QuickServiceModalProps> = ({
               <p className="text-xs text-slate-500 dark:text-slate-400 text-center mt-2">
                 {foundCustomer
                   ? `Khách: ${foundCustomer.name}`
-                  : licensePlate
-                    ? `Biển số: ${licensePlate}`
+                  : isLikelyLicensePlate(customerSearchText)
+                    ? `Biển số: ${customerSearchText.toUpperCase()}`
                     : "Khách vãng lai"}
               </p>
             </div>

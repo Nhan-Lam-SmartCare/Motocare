@@ -336,6 +336,8 @@ export const SalesHistoryModal: React.FC<SalesHistoryModalProps> = ({
                                             const remainingDebt = debt ? debt.remaining_amount : 0;
                                             const isExpanded = expandedSaleIds.has(sale.id);
                                             const displayItems = isExpanded ? sale.items : sale.items.slice(0, 2);
+                                            const saleNote = (sale.note || "").trim();
+                                            const saleNotePreview = saleNote.replace(/\s+/g, " ").slice(0, 90);
 
                                             let statusKey: keyof typeof STATUS_CONFIG = "completed";
                                             if (hasDebt) statusKey = "debt";
@@ -368,6 +370,11 @@ export const SalesHistoryModal: React.FC<SalesHistoryModalProps> = ({
                                                         </div>
                                                         {sale.customer.phone && (
                                                             <div className="text-[11px] text-slate-400 mt-0.5">{sale.customer.phone}</div>
+                                                        )}
+                                                        {saleNote && (
+                                                            <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 line-clamp-2">
+                                                                📝 {saleNotePreview}{saleNote.length > 90 ? "..." : ""}
+                                                            </div>
                                                         )}
                                                     </td>
 
@@ -462,6 +469,8 @@ export const SalesHistoryModal: React.FC<SalesHistoryModalProps> = ({
                                     const hasDebt = debt && debt.remaining_amount > 0;
                                     const remainingDebt = debt ? debt.remaining_amount : 0;
                                     const isExpanded = expandedSaleIds.has(sale.id);
+                                    const saleNote = (sale.note || "").trim();
+                                    const saleNotePreview = saleNote.replace(/\s+/g, " ").slice(0, 80);
 
                                     let statusKey: keyof typeof STATUS_CONFIG = "completed";
                                     if (hasDebt) statusKey = "debt";
@@ -487,6 +496,11 @@ export const SalesHistoryModal: React.FC<SalesHistoryModalProps> = ({
                                                     <div className="text-[11px] text-slate-400 mt-0.5">
                                                         {formatDate(new Date(sale.date))} · {(sale as any).username || sale.userName || ""}
                                                     </div>
+                                                    {saleNote && (
+                                                        <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 line-clamp-2">
+                                                            📝 {saleNotePreview}{saleNote.length > 80 ? "..." : ""}
+                                                        </div>
+                                                    )}
                                                 </div>
                                                 <div className="text-right flex-shrink-0 ml-2">
                                                     <div className="text-lg font-black text-slate-900 dark:text-slate-100">{formatCurrency(sale.total)}</div>

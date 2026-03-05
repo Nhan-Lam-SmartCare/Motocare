@@ -287,7 +287,40 @@ export async function createSaleAtomic(
       p_branch_id: input.branchId || "CN1",
     } as any;
 
-    const { data, error } = await supabase.rpc("sale_create_atomic", payload);
+    // Backward-compatible note support:
+    // - New DB function can accept p_note and persist note directly
+    // - Old DB function (without p_note) will fail signature lookup, then we retry without p_note
+    let data: any = null;
+    let error: any = null;
+    const noteValue = typeof input.note === "string" ? input.note.trim() : "";
+
+    if (noteValue) {
+      const payloadWithNote = {
+        ...payload,
+        p_note: noteValue,
+      };
+      const firstTry = await supabase.rpc("sale_create_atomic", payloadWithNote);
+      data = firstTry.data;
+      error = firstTry.error;
+
+      const message = (error?.message || "").toLowerCase();
+      const details = (error?.details || "").toLowerCase();
+      const isSignatureMismatch =
+        message.includes("could not find the function") ||
+        details.includes("schema cache") ||
+        details.includes("function public.sale_create_atomic");
+
+      if (error && isSignatureMismatch) {
+        const retry = await supabase.rpc("sale_create_atomic", payload);
+        data = retry.data;
+        error = retry.error;
+      }
+    } else {
+      const rpcRes = await supabase.rpc("sale_create_atomic", payload);
+      data = rpcRes.data;
+      error = rpcRes.error;
+    }
+
     if (error || !data) {
       // Map PostgREST function error details to usable validation messages
       const rawDetails = error?.details || error?.message || "";

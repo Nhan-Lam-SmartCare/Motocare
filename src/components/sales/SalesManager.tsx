@@ -293,9 +293,14 @@ const SalesManager: React.FC = () => {
             phone: string;
             vehicleModel: string;
             licensePlate: string;
-        }
+        },
+        quickServiceNote?: string
     ) => {
         try {
+            const finalQuickServiceNote = quickServiceNote?.trim()
+                ? `Dịch vụ nhanh: ${service.name}\nGhi chú: ${quickServiceNote.trim()}`
+                : `Dịch vụ nhanh: ${service.name}`;
+
             const saleData = {
                 id: crypto.randomUUID(), // Required by createSaleAtomic
                 items: [
@@ -323,14 +328,26 @@ const SalesManager: React.FC = () => {
                 createdBy: user?.id || "",
                 saleTime: new Date().toISOString(),
                 paidAmount: service.price * quantity,
-                note: `Dịch vụ nhanh: ${service.name}`,
+                note: finalQuickServiceNote,
             };
 
-            await createSaleAtomicAsync(saleData as unknown as Partial<Sale>);
+            const createdQuickSale = await createSaleAtomicAsync(saleData as unknown as Partial<Sale>);
+            const quickSaleId = createdQuickSale?.id || saleData.id;
+
+            // Backup update: atomic RPC may not persist note field
+            if (quickSaleId && finalQuickServiceNote) {
+                await supabase
+                    .from("sales")
+                    .update({ note: finalQuickServiceNote })
+                    .eq("id", quickSaleId);
+            }
+
             showToast.success("Tạo đơn dịch vụ nhanh thành công!");
 
             // Refresh data
             queryClient.invalidateQueries({ queryKey: ["salesRepoPaged"] });
+            queryClient.invalidateQueries({ queryKey: ["salesRepoKeyset"] });
+            queryClient.invalidateQueries({ queryKey: ["salesRepo"] });
         } catch (error) {
             console.error("Error creating quick service sale:", error);
             showToast.error("Không thể tạo đơn dịch vụ. Vui lòng thử lại.");

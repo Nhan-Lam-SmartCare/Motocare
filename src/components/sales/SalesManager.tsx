@@ -350,7 +350,8 @@ const SalesManager: React.FC = () => {
             queryClient.invalidateQueries({ queryKey: ["salesRepo"] });
         } catch (error) {
             console.error("Error creating quick service sale:", error);
-            showToast.error("Không thể tạo đơn dịch vụ. Vui lòng thử lại.");
+            const message = error instanceof Error ? error.message : "Không thể tạo đơn dịch vụ. Vui lòng thử lại.";
+            showToast.error(message);
         }
     };
 
@@ -531,7 +532,8 @@ const SalesManager: React.FC = () => {
             queryClient.invalidateQueries({ queryKey: ["parts"] });
         } catch (error) {
             console.error("Error creating sale:", error);
-            showToast.error("Không thể tạo đơn hàng. Vui lòng thử lại.");
+            const message = error instanceof Error ? error.message : "Không thể tạo đơn hàng. Vui lòng thử lại.";
+            showToast.error(message);
         }
     };
 

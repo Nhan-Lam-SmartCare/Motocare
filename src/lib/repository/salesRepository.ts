@@ -29,6 +29,7 @@ export async function fetchSales(): Promise<RepoResult<Sale[]>> {
       paymentMethod: sale.paymentmethod || sale.paymentMethod || "cash", // Map lowercase to camelCase
       userId: sale.userid || sale.userId,
       branchId: sale.branchid || sale.branchId,
+      note: sale.note ?? sale.notes ?? null,
     }));
 
     return success(salesWithUserName as Sale[]);
@@ -127,6 +128,7 @@ export async function fetchSalesPaged(
         paymentMethod: sale.paymentmethod || sale.paymentMethod || "cash",
         userId: sale.userid || sale.userId,
         branchId: sale.branchid || sale.branchId,
+        note: sale.note ?? sale.notes ?? null,
       }));
       const rows: Sale[] = rowsWithUserName as Sale[];
 
@@ -157,6 +159,7 @@ export async function fetchSalesPaged(
         paymentMethod: sale.paymentmethod || sale.paymentMethod || "cash",
         userId: sale.userid || sale.userId,
         branchId: sale.branchid || sale.branchId,
+        note: sale.note ?? sale.notes ?? null,
       }));
 
       const total = count || 0;
@@ -303,12 +306,17 @@ export async function createSaleAtomic(
       data = firstTry.data;
       error = firstTry.error;
 
+      const code = (error?.code || "").toString().toUpperCase();
       const message = (error?.message || "").toLowerCase();
       const details = (error?.details || "").toLowerCase();
+      const hint = (error?.hint || "").toLowerCase();
       const isSignatureMismatch =
+        code === "PGRST202" ||
         message.includes("could not find the function") ||
         details.includes("schema cache") ||
-        details.includes("function public.sale_create_atomic");
+        details.includes("function public.sale_create_atomic") ||
+        hint.includes("schema cache") ||
+        (message.includes("sale_create_atomic") && message.includes("function"));
 
       if (error && isSignatureMismatch) {
         const retry = await supabase.rpc("sale_create_atomic", payload);
@@ -390,9 +398,12 @@ export async function createSaleAtomic(
           message: "Chi nhánh không khớp với quyền hiện tại",
           cause: error,
         });
+
+      const rawMessage =
+        error?.message || error?.details || error?.hint || "Lỗi không xác định";
       return failure({
         code: "supabase",
-        message: "Tạo hóa đơn (atomic) thất bại",
+        message: `Tạo hóa đơn (atomic) thất bại: ${rawMessage}`,
         cause: error,
       });
     }

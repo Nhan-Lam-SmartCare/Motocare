@@ -334,6 +334,14 @@ const SalesManager: React.FC = () => {
             const createdQuickSale = await createSaleAtomicAsync(saleData as unknown as Partial<Sale>);
             const quickSaleId = createdQuickSale?.id || saleData.id;
 
+            // Backup update: ensure customer snapshot is persisted correctly
+            if (quickSaleId) {
+                await supabase
+                    .from("sales")
+                    .update({ customer: saleData.customer })
+                    .eq("id", quickSaleId);
+            }
+
             // Backup update: atomic RPC may not persist note field
             if (quickSaleId && finalQuickServiceNote) {
                 await supabase
@@ -465,6 +473,14 @@ const SalesManager: React.FC = () => {
 
             const newSale = await createSaleAtomicAsync(saleData as unknown as Partial<Sale>);
             const saleId = newSale?.id;
+
+            // Backup update: ensure customer snapshot is persisted correctly
+            if (saleId) {
+                await supabase
+                    .from("sales")
+                    .update({ customer: saleData.customer })
+                    .eq("id", saleId);
+            }
 
             // Force update note if it wasn't saved by RPC (backup)
             if (finalization.paymentType === "installment" && saleId) {

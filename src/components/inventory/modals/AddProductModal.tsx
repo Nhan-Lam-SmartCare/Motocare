@@ -17,6 +17,7 @@ const AddProductModal: React.FC<{
     quantity: number;
     importPrice: number;
     retailPrice: number;
+    wholesalePrice: number;
     warranty: number;
     warrantyUnit: string;
   }) => void;
@@ -28,12 +29,15 @@ const AddProductModal: React.FC<{
   const [quantity, setQuantity] = useState<number>(1);
   const [importPrice, setImportPrice] = useState<number>(0);
   const [retailPrice, setRetailPrice] = useState<number>(0);
+  const [wholesalePrice, setWholesalePrice] = useState<number>(0);
   const [warranty, setWarranty] = useState<number>(0);
   const [warrantyUnit, setWarrantyUnit] = useState("tháng");
   const [retailOverridden, setRetailOverridden] = useState<boolean>(false);
+  const [wholesaleOverridden, setWholesaleOverridden] = useState<boolean>(false);
   const { data: categories = [] } = useCategories();
   const { data: storeSettings } = useStoreSettings();
   const retailMarkup = (storeSettings?.retail_markup_percent ?? 40) / 100 + 1; // VD: 40% => 1.4
+  const wholesaleMarkup = (storeSettings?.wholesale_markup_percent ?? 25) / 100 + 1; // VD: 25% => 1.25
   const createCategory = useCreateCategory();
   const [showInlineCat, setShowInlineCat] = useState(false);
   const [inlineCatName, setInlineCatName] = useState("");
@@ -52,6 +56,7 @@ const AddProductModal: React.FC<{
       quantity: Number(quantity) || 1,
       importPrice: Number(importPrice) || 0,
       retailPrice: Number(retailPrice) || 0,
+      wholesalePrice: Number(wholesalePrice) || 0,
       warranty: Number(warranty) || 0,
       warrantyUnit,
     });
@@ -64,8 +69,10 @@ const AddProductModal: React.FC<{
     setQuantity(1);
     setImportPrice(0);
     setRetailPrice(0);
+    setWholesalePrice(0);
     setWarranty(0);
     setRetailOverridden(false);
+    setWholesaleOverridden(false);
     setWarrantyUnit("tháng");
   };
 
@@ -251,6 +258,11 @@ const AddProductModal: React.FC<{
                         Math.round(result.clean.importPrice * retailMarkup)
                       );
                     }
+                    if (!wholesaleOverridden) {
+                      setWholesalePrice(
+                        Math.round(result.clean.importPrice * wholesaleMarkup)
+                      );
+                    }
                   }}
                   className="w-full px-3.5 py-2.5 text-sm border border-slate-200 dark:border-slate-600 rounded-xl bg-slate-50 dark:bg-slate-700/50 text-slate-900 dark:text-slate-100 text-right focus:ring-2 focus:ring-blue-500"
                 />
@@ -258,7 +270,7 @@ const AddProductModal: React.FC<{
 
               {/* Giá bán lẻ */}
               <div>
-                <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">
+                <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5 flex-wrap">
                   Giá bán lẻ (đ)
                   {!retailOverridden && importPrice > 0 && (
                     <span className="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 rounded-md text-[10px] font-bold">
@@ -273,6 +285,28 @@ const AddProductModal: React.FC<{
                     setRetailOverridden(true);
                   }}
                   className={`w-full px-3.5 py-2.5 text-sm border rounded-xl text-slate-900 dark:text-slate-100 text-right focus:ring-2 focus:ring-blue-500 transition-colors ${!retailOverridden && importPrice > 0
+                    ? 'border-slate-300 dark:border-slate-500 bg-slate-50 dark:bg-slate-700/80'
+                    : 'border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/50'}`}
+                />
+              </div>
+
+              {/* Giá bán sỉ */}
+              <div>
+                <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5 flex-wrap">
+                  Giá bán sỉ (đ)
+                  {!wholesaleOverridden && importPrice > 0 && (
+                    <span className="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 rounded-md text-[10px] font-bold">
+                      tự động +{Math.round((wholesaleMarkup - 1) * 100)}%
+                    </span>
+                  )}
+                </label>
+                <FormattedNumberInput
+                  value={wholesalePrice}
+                  onValue={(v) => {
+                    setWholesalePrice(Math.max(0, Math.round(v)));
+                    setWholesaleOverridden(true);
+                  }}
+                  className={`w-full px-3.5 py-2.5 text-sm border rounded-xl text-slate-900 dark:text-slate-100 text-right focus:ring-2 focus:ring-blue-500 transition-colors ${!wholesaleOverridden && importPrice > 0
                     ? 'border-slate-300 dark:border-slate-500 bg-slate-50 dark:bg-slate-700/80'
                     : 'border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/50'}`}
                 />

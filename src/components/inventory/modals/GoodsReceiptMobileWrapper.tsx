@@ -102,6 +102,8 @@ const GoodsReceiptMobileWrapper: React.FC<{
           wholesalePrice:
             productData.wholesalePrice ||
             Math.round(productData.importPrice * wholesaleMarkup),
+          warranty: productData.warranty || 0,
+          warrantyUnit: productData.warrantyUnit || "tháng",
         },
       },
     ]);

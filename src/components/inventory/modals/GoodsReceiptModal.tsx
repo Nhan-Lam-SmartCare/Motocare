@@ -389,7 +389,7 @@ const GoodsReceiptModal: React.FC<{
           costPrice: { [currentBranchId]: productData.importPrice },
           retailPrice: { [currentBranchId]: productData.retailPrice },
           wholesalePrice: {
-            [currentBranchId]: Math.round(productData.importPrice * wholesaleMarkup),
+            [currentBranchId]: productData.wholesalePrice || Math.round(productData.importPrice * wholesaleMarkup),
           },
         });
 

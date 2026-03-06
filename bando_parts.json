@@ -1,0 +1,180 @@
+[
+  {
+    "id": "a3d09563-d284-4777-b6b3-dba1980b69b6",
+    "name": "Dây curoa AB125/SH Mode/ Lead 125 - Bando",
+    "sku": "PT-1764403317914",
+    "stock": {
+      "CN1": 2
+    },
+    "retailPrice": {
+      "CN1": 380000
+    },
+    "wholesalePrice": {
+      "CN1": 308750
+    },
+    "category": "Hàng Công Ty",
+    "description": "",
+    "warrantyPeriod": null,
+    "created_at": "2025-11-29T08:01:59.16616+00:00",
+    "costPrice": {
+      "CN1": 247000
+    },
+    "barcode": null,
+    "reservedstock": {
+      "CN1": 0
+    },
+    "reserved": {}
+  },
+  {
+    "id": "cc06a9da-f248-49d8-a82a-854050b5f424",
+    "name": "Bi nồi Pcx/AB125 - Bando",
+    "sku": "PT-1764402032265",
+    "stock": {
+      "CN1": 2
+    },
+    "retailPrice": {
+      "CN1": 180000
+    },
+    "wholesalePrice": {
+      "CN1": 146250
+    },
+    "category": "Hàng Công Ty",
+    "description": "",
+    "warrantyPeriod": null,
+    "created_at": "2025-11-29T07:40:32.776485+00:00",
+    "costPrice": {
+      "CN1": 117000
+    },
+    "barcode": null,
+    "reservedstock": {
+      "CN1": 0
+    },
+    "reserved": {}
+  },
+  {
+    "id": "9e863795-68aa-4064-bf59-bfc8dbc54933",
+    "name": "Bi nồi Vison K44 - Bando",
+    "sku": "PT-1764402070091",
+    "stock": {
+      "CN1": 7
+    },
+    "retailPrice": {
+      "CN1": 150000
+    },
+    "wholesalePrice": {
+      "CN1": 0
+    },
+    "category": "Hàng Công Ty",
+    "description": "",
+    "warrantyPeriod": null,
+    "created_at": "2025-11-29T07:41:10.335348+00:00",
+    "costPrice": {
+      "CN1": 97714
+    },
+    "barcode": null,
+    "reservedstock": {
+      "CN1": 0
+    },
+    "reserved": {}
+  },
+  {
+    "id": "7a894c23-3aa9-4201-af3e-ece4302ac3f2",
+    "name": "Dây curoa Hayate/Vision K44 - Bando",
+    "sku": "PT-1764403100893",
+    "stock": {
+      "CN1": 0
+    },
+    "retailPrice": {
+      "CN1": 335000
+    },
+    "wholesalePrice": {
+      "CN1": 233750
+    },
+    "category": "Hàng Công Ty",
+    "description": "",
+    "warrantyPeriod": null,
+    "created_at": "2025-11-29T07:58:21.345275+00:00",
+    "costPrice": {
+      "CN1": 187000
+    },
+    "barcode": null,
+    "reservedstock": {
+      "CN1": 0
+    },
+    "reserved": {}
+  },
+  {
+    "id": "cd2e034f-98d2-4233-b264-795dee3f6c7a",
+    "name": "Dây curoa 2 mặt răng Pcx/AB125/AV150 Japan - Bando",
+    "sku": "PT-1764403210126",
+    "stock": {
+      "CN1": 1
+    },
+    "retailPrice": {
+      "CN1": 400000
+    },
+    "wholesalePrice": {
+      "CN1": 361250
+    },
+    "category": "Hàng Công Ty",
+    "description": "",
+    "warrantyPeriod": null,
+    "created_at": "2025-11-29T08:00:11.127951+00:00",
+    "costPrice": {
+      "CN1": 289000
+    },
+    "barcode": null,
+    "reservedstock": {
+      "CN1": 0
+    },
+    "reserved": {}
+  },
+  {
+    "id": "8ca86fce-49bd-4613-b26b-aea7c0918f62",
+    "name": "Bi nồi Vision 110 K0J - Bando",
+    "sku": "PT-1764402108807",
+    "stock": {
+      "CN1": 2
+    },
+    "retailPrice": {
+      "CN1": 170000
+    },
+    "wholesalePrice": {
+      "CN1": 143750
+    },
+    "category": "Hàng Công Ty",
+    "description": "",
+    "warrantyPeriod": null,
+    "created_at": "2025-11-29T07:41:49.105631+00:00",
+    "costPrice": {
+      "CN1": 115000
+    },
+    "barcode": null,
+    "reservedstock": {},
+    "reserved": {}
+  },
+  {
+    "id": "d47d8805-44a9-46f1-b672-9cb00e0e6d82",
+    "name": "Dây curoa AB110/Click110 - Bando",
+    "sku": "PT-1764403127962",
+    "stock": {
+      "CN1": 1
+    },
+    "retailPrice": {
+      "CN1": 330000
+    },
+    "wholesalePrice": {
+      "CN1": 202500
+    },
+    "category": "Hàng Công Ty",
+    "description": "",
+    "warrantyPeriod": null,
+    "created_at": "2025-11-29T07:58:48.157837+00:00",
+    "costPrice": {
+      "CN1": 162000
+    },
+    "barcode": null,
+    "reservedstock": {},
+    "reserved": {}
+  }
+]

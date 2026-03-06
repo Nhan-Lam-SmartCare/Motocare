@@ -113,16 +113,16 @@ export const AddTransactionModal: React.FC<{
                     className="flex-1 overflow-y-auto p-3 space-y-2.5 min-h-0"
                 >
                     {/* Type Toggle */}
-                    <div className="flex bg-slate-100 dark:bg-slate-700 rounded-lg p-1">
+                    <div className="flex bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50 rounded-lg p-1">
                         <button
                             type="button"
                             onClick={() => {
                                 setType("income");
                                 setCategory("");
                             }}
-                            className={`flex-1 py-1.5 rounded-md text-xs font-semibold transition-all ${type === "income"
-                                ? "bg-emerald-500 text-white shadow-md"
-                                : "text-slate-600 dark:text-slate-300"
+                            className={`flex-1 py-1.5 rounded-md text-xs font-semibold transition-all border ${type === "income"
+                                ? "bg-white dark:bg-emerald-500/10 border-slate-200 dark:border-emerald-500/30 text-emerald-600 dark:text-emerald-400 shadow-sm"
+                                : "border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
                                 }`}
                         >
                             📥 Thu tiền
@@ -133,9 +133,9 @@ export const AddTransactionModal: React.FC<{
                                 setType("expense");
                                 setCategory("");
                             }}
-                            className={`flex-1 py-1.5 rounded-md text-xs font-semibold transition-all ${type === "expense"
-                                ? "bg-rose-500 text-white shadow-md"
-                                : "text-slate-600 dark:text-slate-300"
+                            className={`flex-1 py-1.5 rounded-md text-xs font-semibold transition-all border ${type === "expense"
+                                ? "bg-white dark:bg-rose-500/10 border-slate-200 dark:border-rose-500/30 text-rose-600 dark:text-rose-400 shadow-sm"
+                                : "border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
                                 }`}
                         >
                             📤 Chi tiền
@@ -154,10 +154,10 @@ export const AddTransactionModal: React.FC<{
                                 value={amount}
                                 onChange={(e) => setAmount(formatNumber(e.target.value))}
                                 placeholder="0"
-                                className={`w-full px-3 py-2 text-lg font-bold bg-slate-50 dark:bg-slate-700/50 border-2 rounded-lg text-right pr-8 ${type === "income"
-                                    ? "border-emerald-200 dark:border-emerald-800 focus:border-emerald-500 text-emerald-600 dark:text-emerald-400"
-                                    : "border-rose-200 dark:border-rose-800 focus:border-rose-500 text-rose-600 dark:text-rose-400"
-                                    } focus:outline-none`}
+                                className={`w-full px-3 py-2 text-lg font-bold bg-slate-50 dark:bg-slate-800/40 border border-slate-300 dark:border-slate-600 rounded-lg text-right pr-8 transition-all focus:outline-none focus:ring-2 focus:border-transparent ${type === "income"
+                                    ? "text-emerald-600 dark:text-emerald-400 focus:ring-emerald-500/50"
+                                    : "text-rose-600 dark:text-rose-400 focus:ring-rose-500/50"
+                                    }`}
                                 required
                             />
                             <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-medium text-slate-400">
@@ -177,11 +177,11 @@ export const AddTransactionModal: React.FC<{
                                     key={cat.value}
                                     type="button"
                                     onClick={() => setCategory(cat.value)}
-                                    className={`p-1.5 rounded-lg text-center transition-all ${category === cat.value
+                                    className={`p-1.5 rounded-lg text-center border transition-all ${category === cat.value
                                         ? type === "income"
-                                            ? "bg-emerald-100 dark:bg-emerald-900/30 border-2 border-emerald-500 text-emerald-700 dark:text-emerald-300"
-                                            : "bg-rose-100 dark:bg-rose-900/30 border-2 border-rose-500 text-rose-700 dark:text-rose-300"
-                                        : "bg-slate-50 dark:bg-slate-700/50 border-2 border-transparent text-slate-700 dark:text-slate-300"
+                                            ? "bg-emerald-50 dark:bg-emerald-900/30 border-emerald-500 text-emerald-700 dark:text-emerald-300 shadow-sm"
+                                            : "bg-rose-50 dark:bg-rose-900/30 border-rose-500 text-rose-700 dark:text-rose-300 shadow-sm"
+                                        : "bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-700/50 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-600"
                                         }`}
                                 >
                                     <div className="text-base leading-none">{cat.icon}</div>
@@ -202,9 +202,11 @@ export const AddTransactionModal: React.FC<{
                             <button
                                 type="button"
                                 onClick={() => setPaymentSource("cash")}
-                                className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-medium flex items-center justify-center gap-1 ${paymentSource === "cash"
-                                    ? "bg-amber-100 dark:bg-amber-900/30 border-2 border-amber-500 text-amber-700 dark:text-amber-300"
-                                    : "bg-slate-50 dark:bg-slate-700/50 border-2 border-transparent text-slate-600 dark:text-slate-400"
+                                className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-medium flex items-center justify-center gap-1 border transition-all ${paymentSource === "cash"
+                                    ? type === "income"
+                                        ? "bg-emerald-50 dark:bg-emerald-900/30 border-emerald-500 text-emerald-700 dark:text-emerald-300 shadow-sm"
+                                        : "bg-rose-50 dark:bg-rose-900/30 border-rose-500 text-rose-700 dark:text-rose-300 shadow-sm"
+                                    : "bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-700/50 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-600"
                                     }`}
                             >
                                 💵 Tiền mặt
@@ -212,9 +214,11 @@ export const AddTransactionModal: React.FC<{
                             <button
                                 type="button"
                                 onClick={() => setPaymentSource("bank")}
-                                className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-medium flex items-center justify-center gap-1 ${paymentSource === "bank"
-                                    ? "bg-blue-100 dark:bg-blue-900/30 border-2 border-blue-500 text-blue-700 dark:text-blue-300"
-                                    : "bg-slate-50 dark:bg-slate-700/50 border-2 border-transparent text-slate-600 dark:text-slate-400"
+                                className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-medium flex items-center justify-center gap-1 border transition-all ${paymentSource === "bank"
+                                    ? type === "income"
+                                        ? "bg-emerald-50 dark:bg-emerald-900/30 border-emerald-500 text-emerald-700 dark:text-emerald-300 shadow-sm"
+                                        : "bg-rose-50 dark:bg-rose-900/30 border-rose-500 text-rose-700 dark:text-rose-300 shadow-sm"
+                                    : "bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-700/50 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-600"
                                     }`}
                             >
                                 🏦 Ngân hàng
@@ -233,7 +237,7 @@ export const AddTransactionModal: React.FC<{
                                 value={recipient}
                                 onChange={(e) => setRecipient(e.target.value)}
                                 placeholder={type === "income" ? "Ai trả?" : "Trả cho ai?"}
-                                className="w-full px-2 py-1.5 bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-lg text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
+                                className="w-full px-2 py-1.5 bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/50 rounded-lg text-xs text-slate-900 dark:text-white transition-all focus:outline-none focus:ring-1 focus:ring-blue-500/50 focus:border-blue-500"
                             />
                         </div>
                         <div>
@@ -244,7 +248,7 @@ export const AddTransactionModal: React.FC<{
                                 type="date"
                                 value={date}
                                 onChange={(e) => setDate(e.target.value)}
-                                className="w-full px-2 py-1.5 bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-lg text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
+                                className="w-full px-2 py-1.5 bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/50 rounded-lg text-xs text-slate-900 dark:text-white transition-all focus:outline-none focus:ring-1 focus:ring-blue-500/50 focus:border-blue-500"
                                 required
                             />
                         </div>
@@ -259,7 +263,7 @@ export const AddTransactionModal: React.FC<{
                             type="text"
                             value={notes}
                             onChange={(e) => setNotes(e.target.value)}
-                            className="w-full px-2 py-1.5 bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-lg text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
+                            className="w-full px-2 py-1.5 bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/50 rounded-lg text-xs text-slate-900 dark:text-white transition-all focus:outline-none focus:ring-1 focus:ring-blue-500/50 focus:border-blue-500"
                             placeholder="Nội dung giao dịch..."
                         />
                     </div>
@@ -324,14 +328,14 @@ export const EditTransactionModal: React.FC<{
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        
+
         // Validate amount
         const parsedAmount = parseFloat(amount);
         if (isNaN(parsedAmount) || parsedAmount <= 0) {
             alert("Vui lòng nhập số tiền hợp lệ (lớn hơn 0)");
             return;
         }
-        
+
         onSave({
             type,
             amount: parsedAmount,
@@ -440,7 +444,7 @@ export const EditTransactionModal: React.FC<{
                             type="number"
                             value={amount}
                             onChange={(e) => setAmount(e.target.value)}
-                            className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-sm sm:text-base text-slate-900 dark:text-white"
+                            className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/50 rounded-lg text-sm sm:text-base text-slate-900 dark:text-white transition-all focus:outline-none focus:ring-1 focus:ring-blue-500/50 focus:border-blue-500"
                             required
                         />
                     </div>
@@ -453,7 +457,7 @@ export const EditTransactionModal: React.FC<{
                         <select
                             value={category}
                             onChange={(e) => setCategory(e.target.value)}
-                            className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-sm sm:text-base text-slate-900 dark:text-white"
+                            className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/50 rounded-lg text-sm sm:text-base text-slate-900 dark:text-white transition-all focus:outline-none focus:ring-1 focus:ring-blue-500/50 focus:border-blue-500"
                         >
                             <option value="">Chọn danh mục</option>
                             {(type === "income" ? incomeCategories : expenseCategories).map(
@@ -478,7 +482,7 @@ export const EditTransactionModal: React.FC<{
                             placeholder={
                                 type === "income" ? "Thu tiền từ ai?" : "Chi tiền cho ai?"
                             }
-                            className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-sm sm:text-base text-slate-900 dark:text-white"
+                            className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/50 rounded-lg text-sm sm:text-base text-slate-900 dark:text-white transition-all focus:outline-none focus:ring-1 focus:ring-blue-500/50 focus:border-blue-500"
                         />
                     </div>
 
@@ -524,7 +528,7 @@ export const EditTransactionModal: React.FC<{
                             type="date"
                             value={date}
                             onChange={(e) => setDate(e.target.value)}
-                            className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-sm sm:text-base text-slate-900 dark:text-white"
+                            className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/50 rounded-lg text-sm sm:text-base text-slate-900 dark:text-white transition-all focus:outline-none focus:ring-1 focus:ring-blue-500/50 focus:border-blue-500"
                             required
                         />
                     </div>
@@ -538,7 +542,7 @@ export const EditTransactionModal: React.FC<{
                             value={notes}
                             onChange={(e) => setNotes(e.target.value)}
                             rows={2}
-                            className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-sm sm:text-base text-slate-900 dark:text-white resize-none"
+                            className="w-full px-3 sm:px-4 py-2 sm:py-2.5 bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/50 rounded-lg text-sm sm:text-base text-slate-900 dark:text-white transition-all focus:outline-none focus:ring-1 focus:ring-blue-500/50 focus:border-blue-500 resize-none"
                             placeholder="Ghi chú về giao dịch..."
                         />
                     </div>

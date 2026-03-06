@@ -287,9 +287,14 @@ const GoodsReceiptModal: React.FC<{
     value: number
   ) => {
     setReceiptItems((items) =>
-      items.map((item) =>
-        item.partId === partId ? { ...item, [field]: value } : item
-      )
+      items.map((item) => {
+        if (item.partId !== partId) return item;
+        const newItem = { ...item, [field]: value };
+        if (field === "importPrice") {
+          newItem.wholesalePrice = Math.round(value * wholesaleMarkup);
+        }
+        return newItem;
+      })
     );
   };
 
@@ -872,11 +877,11 @@ const GoodsReceiptModal: React.FC<{
               ) : (
                 <div className="space-y-2">
                   {/* Column labels */}
-                  <div className="flex items-center gap-1.5 px-2 text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
-                    <span className="flex-1">Sản phẩm</span>
-                    <span className="w-[80px] text-center">SL</span>
-                    <span className="w-[90px] text-right">Giá nhập</span>
-                    <span className="w-[90px] text-right">Giá bán</span>
+                  <div className="flex items-center gap-1.5 px-3 mb-1 text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                    <span className="flex-1 text-left">Sản phẩm</span>
+                    <span className="w-[96px] text-center">SL</span>
+                    <span className="w-[90px] text-right pr-2">Giá nhập</span>
+                    <span className="w-[90px] text-right pr-2">Giá bán</span>
                     <span className="w-[85px] text-right">Thành tiền</span>
                     <span className="w-5"></span>
                   </div>
@@ -924,9 +929,11 @@ const GoodsReceiptModal: React.FC<{
                         </div>
 
                         {/* Row 2: Inputs aligned */}
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-1.5 mt-2">
+                          {/* Spacer to align with "Sản phẩm" header */}
+                          <div className="flex-1 min-w-0"></div>
                           {/* Quantity controls */}
-                          <div className="flex items-center gap-0.5 flex-shrink-0">
+                          <div className="w-[96px] flex items-center justify-center gap-0.5 flex-shrink-0">
                             <button
                               onClick={() =>
                                 updateReceiptItem(
@@ -950,7 +957,7 @@ const GoodsReceiptModal: React.FC<{
                                   Math.max(1, val)
                                 );
                               }}
-                              className="w-10 px-1 py-1 text-center border-transparent bg-slate-100/50 dark:bg-slate-800/50 text-slate-900 dark:text-slate-100 text-xs font-bold h-7 focus:bg-white dark:focus:bg-slate-700 focus:ring-1 focus:ring-blue-400/30 focus:border-blue-400 rounded-none transition-all"
+                              className="w-10 px-1 py-1 text-right border-transparent bg-slate-100/50 dark:bg-slate-800/50 text-slate-900 dark:text-slate-100 text-xs font-bold h-7 focus:bg-white dark:focus:bg-slate-700 focus:ring-1 focus:ring-blue-400/30 focus:border-blue-400 rounded-none transition-all"
                               min="1"
                             />
                             <button
@@ -968,7 +975,7 @@ const GoodsReceiptModal: React.FC<{
                           </div>
 
                           {/* Import price */}
-                          <div className="flex-1 min-w-0">
+                          <div className="w-[90px] flex-shrink-0">
                             <FormattedNumberInput
                               value={item.importPrice}
                               onValue={(val) => {
@@ -997,13 +1004,13 @@ const GoodsReceiptModal: React.FC<{
                                   )
                                 );
                               }}
-                              className="w-full px-2 py-1 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-right text-xs font-medium focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 h-7"
+                              className="w-full px-2 py-1 border border-transparent rounded-md bg-slate-100/50 dark:bg-slate-800/50 text-slate-900 dark:text-slate-100 text-right text-xs font-medium focus:bg-white dark:focus:bg-slate-700 focus:border-blue-400 focus:ring-1 focus:ring-blue-400/30 h-7 transition-all"
                               placeholder="Giá nhập"
                             />
                           </div>
 
                           {/* Selling price */}
-                          <div className="flex-1 min-w-0">
+                          <div className="w-[90px] flex-shrink-0">
                             <FormattedNumberInput
                               value={item.sellingPrice}
                               onValue={(val) =>
@@ -1024,6 +1031,8 @@ const GoodsReceiptModal: React.FC<{
                               {formatCurrency(item.importPrice * item.quantity)}
                             </div>
                           </div>
+                          {/* Spacer to align with delete button */}
+                          <div className="w-5 flex-shrink-0"></div>
                         </div>
                       </div>
                     );

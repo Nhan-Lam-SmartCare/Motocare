@@ -4,6 +4,7 @@ import { getCategoryColor } from "../../utils/categoryColors";
 import { SupplierSelectionModal } from "./SupplierSelectionModal";
 import { useSuppliers } from "../../hooks/useSuppliers";
 import { showToast } from "../../utils/toast";
+import { useStoreSettings } from "../../hooks/useStoreSettings";
 import BarcodeScannerModal from "../common/BarcodeScannerModal";
 import { NumberInput } from "../common/NumberInput";
 
@@ -83,6 +84,9 @@ export const GoodsReceiptMobileModal: React.FC<Props> = ({
   const [showCameraScanner, setShowCameraScanner] = useState(false);
   const [showBarcodeInput, setShowBarcodeInput] = useState(false);
   const { data: suppliers = [] } = useSuppliers();
+  const { data: storeSettings } = useStoreSettings();
+
+  const wholesaleMarkup = (storeSettings?.wholesale_markup_percent ?? 25) / 100 + 1;
 
   const filteredParts =
     parts?.filter((part) => {
@@ -502,75 +506,75 @@ export const GoodsReceiptMobileModal: React.FC<Props> = ({
                           >
                             <div className="flex items-center gap-3">
                               <div className="flex-1 min-w-0">
-                              <div className="font-bold text-slate-900 dark:text-slate-100 text-base leading-tight mb-1">
-                                {part.name}
-                              </div>
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <span className="text-xs text-blue-600 dark:text-blue-400 font-mono">
-                                  {part.sku}
-                                </span>
-                                {part.category && (
-                                  <span
-                                    className={`inline-flex items-center px-1.5 py-0 rounded-full text-[9px] font-medium ${getCategoryColor(part.category).bg
-                                      } ${getCategoryColor(part.category).text}`}
-                                  >
-                                    {part.category}
+                                <div className="font-bold text-slate-900 dark:text-slate-100 text-base leading-tight mb-1">
+                                  {part.name}
+                                </div>
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className="text-xs text-blue-600 dark:text-blue-400 font-mono">
+                                    {part.sku}
                                   </span>
+                                  {part.category && (
+                                    <span
+                                      className={`inline-flex items-center px-1.5 py-0 rounded-full text-[9px] font-medium ${getCategoryColor(part.category).bg
+                                        } ${getCategoryColor(part.category).text}`}
+                                    >
+                                      {part.category}
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="mt-2 flex gap-3 text-xs">
+                                  <div>
+                                    <span className="text-slate-500 dark:text-slate-400">
+                                      Nhập:{" "}
+                                    </span>
+                                    <span className="font-medium text-orange-600 dark:text-orange-400">
+                                      {formatCurrency(
+                                        part.costPrice?.[currentBranchId] || 0
+                                      )}
+                                    </span>
+                                  </div>
+                                  <div>
+                                    <span className="text-slate-500 dark:text-slate-400">
+                                      Bán:{" "}
+                                    </span>
+                                    <span className="font-medium text-green-600 dark:text-green-400">
+                                      {formatCurrency(
+                                        part.retailPrice?.[currentBranchId] || 0
+                                      )}
+                                    </span>
+                                  </div>
+                                </div>
+                                {inCart && (
+                                  <div className="mt-2 text-sm">
+                                    <span className="text-blue-600 dark:text-blue-400 font-medium">
+                                      Đã thêm: {inCart.quantity} ×{" "}
+                                      {formatCurrency(inCart.importPrice)}
+                                    </span>
+                                  </div>
                                 )}
                               </div>
-                              <div className="mt-2 flex gap-3 text-xs">
-                                <div>
-                                  <span className="text-slate-500 dark:text-slate-400">
-                                    Nhập:{" "}
-                                  </span>
-                                  <span className="font-medium text-orange-600 dark:text-orange-400">
-                                    {formatCurrency(
-                                      part.costPrice?.[currentBranchId] || 0
-                                    )}
-                                  </span>
-                                </div>
-                                <div>
-                                  <span className="text-slate-500 dark:text-slate-400">
-                                    Bán:{" "}
-                                  </span>
-                                  <span className="font-medium text-green-600 dark:text-green-400">
-                                    {formatCurrency(
-                                      part.retailPrice?.[currentBranchId] || 0
-                                    )}
-                                  </span>
-                                </div>
-                              </div>
-                              {inCart && (
-                                <div className="mt-2 text-sm">
-                                  <span className="text-blue-600 dark:text-blue-400 font-medium">
-                                    Đã thêm: {inCart.quantity} ×{" "}
-                                    {formatCurrency(inCart.importPrice)}
-                                  </span>
-                                </div>
-                              )}
+                              <button
+                                onClick={() => addToReceipt(part)}
+                                className="flex-shrink-0 w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center text-2xl leading-none active:scale-95 transition-transform"
+                              >
+                                +
+                              </button>
                             </div>
-                            <button
-                              onClick={() => addToReceipt(part)}
-                              className="flex-shrink-0 w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center text-2xl leading-none active:scale-95 transition-transform"
-                            >
-                              +
-                            </button>
                           </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
+                        );
+                      })}
+                    </div>
+                  )}
 
-                {/* Add New Product Button */}
-                <button
-                  onClick={() => setShowAddProductModal(true)}
-                  className="w-full mt-3 py-4 border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-xl text-slate-500 dark:text-slate-400 hover:border-blue-400 hover:text-blue-600 transition-colors flex items-center justify-center gap-2"
-                >
-                  <span className="text-2xl">+</span>
-                  <span className="font-medium">Tạo sản phẩm mới</span>
-                </button>
-              </div>
+                  {/* Add New Product Button */}
+                  <button
+                    onClick={() => setShowAddProductModal(true)}
+                    className="w-full mt-3 py-4 border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-xl text-slate-500 dark:text-slate-400 hover:border-blue-400 hover:text-blue-600 transition-colors flex items-center justify-center gap-2"
+                  >
+                    <span className="text-2xl">+</span>
+                    <span className="font-medium">Tạo sản phẩm mới</span>
+                  </button>
+                </div>
               </div>
 
               {/* Floating Cart Footer */}
@@ -663,7 +667,7 @@ export const GoodsReceiptMobileModal: React.FC<Props> = ({
                               updated[index].quantity = Math.max(1, val);
                               setReceiptItems(updated);
                             }}
-                            className="w-12 h-7 text-center font-bold text-base text-slate-900 dark:text-slate-100 border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-700"
+                            className="w-12 h-7 text-center font-bold text-base text-slate-900 border-transparent dark:text-slate-100 bg-slate-100/50 dark:bg-slate-800/50 transition-all focus:bg-white dark:focus:bg-slate-700 focus:ring-1 focus:ring-blue-400/30 focus:border-blue-400 rounded-none"
                           />
                           <button
                             onClick={() => {
@@ -685,9 +689,10 @@ export const GoodsReceiptMobileModal: React.FC<Props> = ({
                               onChange={(val) => {
                                 const updated = [...receiptItems];
                                 updated[index].importPrice = val;
+                                updated[index].wholesalePrice = Math.round(val * wholesaleMarkup);
                                 setReceiptItems(updated);
                               }}
-                              className="w-20 px-1 py-0.5 text-right text-sm border-b border-dashed border-slate-300 dark:border-slate-600 bg-transparent text-slate-700 dark:text-slate-300 focus:outline-none focus:border-blue-500"
+                              className="w-20 px-1 py-0.5 text-right text-sm border-transparent bg-slate-100/50 dark:bg-slate-800/50 text-slate-700 dark:text-slate-300 focus:outline-none focus:bg-white dark:focus:bg-slate-700 focus:border-blue-400 focus:ring-1 focus:ring-blue-400/30 rounded transition-all"
                             />
                           </div>
                           <div className="font-bold text-orange-600 dark:text-orange-400">

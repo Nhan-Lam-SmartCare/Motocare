@@ -27,9 +27,9 @@ export const CartSummary: React.FC<CartSummaryProps> = ({
     onDiscountPercentChange,
 }) => {
     return (
-        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl p-4 border-2 border-blue-200 dark:border-blue-800">
+        <div className="bg-slate-50/50 dark:bg-slate-900/50 rounded-xl p-4 border border-slate-200 dark:border-slate-800">
             <div className="flex items-center gap-2 mb-4">
-                <Receipt className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                <Receipt className="w-5 h-5 text-slate-500 dark:text-slate-400" />
                 <h3 className="font-semibold text-slate-900 dark:text-white text-[15px]">
                     Tổng kết đơn hàng
                 </h3>
@@ -105,14 +105,14 @@ export const CartSummary: React.FC<CartSummaryProps> = ({
                 </div>
 
                 {/* Divider */}
-                <div className="border-t-2 border-blue-300 dark:border-blue-700 my-3"></div>
+                <div className="border-t border-slate-200 dark:border-slate-700 my-3"></div>
 
                 {/* Total */}
                 <div className="flex justify-between items-center">
                     <span className="text-base font-semibold text-slate-900 dark:text-white">
                         Thành tiền
                     </span>
-                    <span className="text-xl font-bold text-blue-600 dark:text-blue-400">
+                    <span className="text-xl font-bold text-sky-600 dark:text-sky-400">
                         {formatCurrency(total)}
                     </span>
                 </div>

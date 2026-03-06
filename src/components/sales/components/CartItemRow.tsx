@@ -44,7 +44,7 @@ export const CartItemRow: React.FC<CartItemRowProps> = ({
                 {/* Delete Button */}
                 <button
                     onClick={() => onRemove(item.partId)}
-                    className="p-1.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors border border-transparent hover:border-red-200 dark:hover:border-red-800"
+                    className="p-1.5 text-slate-400 dark:text-slate-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors border border-transparent hover:border-red-200 dark:hover:border-red-800"
                     title="Xóa"
                 >
                     <Trash2 className="w-4 h-4" />

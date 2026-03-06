@@ -80,7 +80,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                 {part.category && (
                     <div className="flex items-center gap-2">
                         <span
-                            className="inline-block px-2 py-0.5 rounded border border-slate-300 dark:border-slate-600 text-[11px] font-medium text-slate-600 dark:text-slate-300"
+                            className="text-[11px] text-slate-500 dark:text-slate-400"
                         >
                             {part.category}
                         </span>
@@ -91,7 +91,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                 <div className="pt-2 border-t border-slate-100 dark:border-slate-700">
                     <div className="flex items-end justify-between">
                         <div className="flex flex-col">
-                            <span className="text-lg font-bold text-slate-900 dark:text-white leading-none">
+                            <span className="text-lg font-bold text-sky-600 dark:text-sky-400 leading-none">
                                 {formatCurrency(price)}
                             </span>
                             {wholesalePrice > 0 && wholesalePrice !== price && (

@@ -1086,8 +1086,8 @@ const SalesManager: React.FC = () => {
                                                         type="button"
                                                         onClick={() => finalization.setUseCurrentTime(true)}
                                                         className={`px-3 py-2 rounded-lg border transition-all font-semibold ${finalization.useCurrentTime
-                                                            ? "border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400"
-                                                            : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-300"
+                                                            ? "border-blue-500 bg-blue-50/50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400"
+                                                            : "border-slate-200 dark:border-slate-700 bg-transparent text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800"
                                                             }`}
                                                     >
                                                         <span className="text-xs">🕐 Hiện tại</span>
@@ -1096,8 +1096,8 @@ const SalesManager: React.FC = () => {
                                                         type="button"
                                                         onClick={() => finalization.setUseCurrentTime(false)}
                                                         className={`px-3 py-2 rounded-lg border transition-all font-semibold ${!finalization.useCurrentTime
-                                                            ? "border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400"
-                                                            : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-300"
+                                                            ? "border-blue-500 bg-blue-50/50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400"
+                                                            : "border-slate-200 dark:border-slate-700 bg-transparent text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800"
                                                             }`}
                                                     >
                                                         <span className="text-xs">📅 Tùy chỉnh</span>
@@ -1119,8 +1119,8 @@ const SalesManager: React.FC = () => {
                                                     type="button"
                                                     onClick={() => finalization.setShowOrderNote(!finalization.showOrderNote)}
                                                     className={`px-3 py-2 rounded-lg border transition-all font-semibold ${finalization.showOrderNote
-                                                        ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400"
-                                                        : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-300"
+                                                        ? "border-emerald-500 bg-emerald-50/50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400"
+                                                        : "border-slate-200 dark:border-slate-700 bg-transparent text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800"
                                                         }`}
                                                 >
                                                     <span className="text-xs">📝 Ghi chú</span>
@@ -1129,8 +1129,8 @@ const SalesManager: React.FC = () => {
                                                     type="button"
                                                     onClick={() => finalization.setAutoPrintReceipt(!finalization.autoPrintReceipt)}
                                                     className={`px-3 py-2 rounded-lg border transition-all font-semibold ${finalization.autoPrintReceipt
-                                                        ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400"
-                                                        : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-300"
+                                                        ? "border-emerald-500 bg-emerald-50/50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400"
+                                                        : "border-slate-200 dark:border-slate-700 bg-transparent text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800"
                                                         }`}
                                                 >
                                                     <span className="text-xs">🖨️ In hoá đơn</span>
@@ -1154,7 +1154,7 @@ const SalesManager: React.FC = () => {
                                     <div className="mt-4 p-3 md:p-4 pt-0 flex gap-3">
                                         <button
                                             onClick={cart.clearCart}
-                                            className="flex-1 px-4 py-3 bg-white dark:bg-slate-700 border-2 border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 font-semibold rounded-xl transition-all"
+                                            className="flex-1 px-4 py-3 bg-transparent border-2 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 font-semibold rounded-xl transition-all"
                                         >
                                             LƯU NHÁP
                                         </button>

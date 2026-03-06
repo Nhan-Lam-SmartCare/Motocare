@@ -2507,7 +2507,7 @@ export default function ServiceManager() {
           <select
             value={dateFilter}
             onChange={(e) => setDateFilter(e.target.value)}
-            className="px-2.5 py-2 text-sm bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500"
+            className="px-2.5 py-2 text-sm bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-500 shadow-sm rounded-lg text-slate-700 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500"
           >
             <option value="today">Hôm nay</option>
             <option value="week">7 ngày qua</option>
@@ -2521,14 +2521,14 @@ export default function ServiceManager() {
                 type="date"
                 value={customDateStart}
                 onChange={(e) => setCustomDateStart(e.target.value)}
-                className="px-2.5 py-2 text-sm bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500"
+                className="px-2.5 py-2 text-sm bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-500 shadow-sm rounded-lg text-slate-700 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500"
               />
               <span className="text-xs text-slate-500">—</span>
               <input
                 type="date"
                 value={customDateEnd}
                 onChange={(e) => setCustomDateEnd(e.target.value)}
-                className="px-2.5 py-2 text-sm bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500"
+                className="px-2.5 py-2 text-sm bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-500 shadow-sm rounded-lg text-slate-700 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500"
               />
             </div>
           )}
@@ -2537,7 +2537,7 @@ export default function ServiceManager() {
           <select
             value={technicianFilter}
             onChange={(e) => setTechnicianFilter(e.target.value)}
-            className="px-2.5 py-2 text-sm bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500"
+            className="px-2.5 py-2 text-sm bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-500 shadow-sm rounded-lg text-slate-700 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500"
           >
             <option value="all">Tất cả KTV</option>
             {employees.map((emp) => (
@@ -2551,7 +2551,7 @@ export default function ServiceManager() {
           <select
             value={paymentFilter}
             onChange={(e) => setPaymentFilter(e.target.value)}
-            className="px-2.5 py-2 text-sm bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500"
+            className="px-2.5 py-2 text-sm bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-500 shadow-sm rounded-lg text-slate-700 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500"
           >
             <option value="all">Thanh toán</option>
             <option value="paid">Đã TT</option>
@@ -2878,7 +2878,7 @@ export default function ServiceManager() {
                           <div className="text-xs text-slate-500 dark:text-slate-400">
                             {formatDate(order.creationDate, true)}
                           </div>
-                          <div className="text-xs text-cyan-600 dark:text-cyan-400 font-medium">
+                          <div className="text-xs text-sky-600 dark:text-sky-300 font-medium">
                             {order.technicianName || "Chưa phân công"}
                           </div>
                         </div>
@@ -3044,7 +3044,7 @@ export default function ServiceManager() {
                             )}
 
                           {/* Progress bar + Đã thu */}
-                          {totalAmount > 0 && (
+                          {totalAmount > 0 && order.paymentStatus !== "paid" && (
                             <div className="space-y-1">
                               <div
                                 className="h-2.5 w-full rounded-full bg-slate-200 dark:bg-slate-600 overflow-hidden"
@@ -3085,8 +3085,13 @@ export default function ServiceManager() {
                           )}
 
                           {/* Payment details - Show deposit/partial info when applicable */}
-                          {((order.depositAmount && order.depositAmount > 0) ||
-                            order.paymentStatus === "partial") && (
+                          {Boolean(
+                            (order.depositAmount && order.depositAmount > 0) ||
+                            order.paymentStatus === "partial" ||
+                            (order.paymentStatus === "paid" &&
+                              order.depositAmount &&
+                              order.depositAmount > 0)
+                          ) && (
                               <div className="space-y-1 pt-1 border-t border-slate-200 dark:border-slate-700">
                                 {order.depositAmount &&
                                   order.depositAmount > 0 && (
@@ -3115,13 +3120,12 @@ export default function ServiceManager() {
                                 {order.paymentStatus === "paid" &&
                                   totalAmount > 0 &&
                                   (order.remainingAmount ?? 0) === 0 && (
-                                    <div className="flex items-center justify-between text-xs">
-                                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-green-500/20 text-green-600 dark:text-green-400 rounded font-medium">
-                                        <Check className="w-3 h-3" /> Đã thanh
-                                        toán đủ
+                                    <div className="flex items-center justify-between text-xs font-semibold pt-1 border-t border-slate-100 dark:border-slate-700 mt-1">
+                                      <span className="inline-flex items-center gap-1.5 text-green-600 dark:text-green-400">
+                                        <Check className="w-3.5 h-3.5" /> Tổng đã thu
                                       </span>
-                                      <span className="text-green-600 dark:text-green-400 font-medium">
-                                        {formatCurrency(order.totalPaid || 0)}
+                                      <span className="text-green-600 dark:text-green-400">
+                                        {formatCurrency(totalAmount)}
                                       </span>
                                     </div>
                                   )}
@@ -3199,7 +3203,7 @@ export default function ServiceManager() {
                               }}
                               aria-haspopup="menu"
                               aria-expanded={rowActionMenuId === order.id}
-                                className="w-10 h-10 inline-flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-600 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 hover:border-slate-300 dark:hover:border-slate-500 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+                              className="w-10 h-10 inline-flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-600 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 hover:border-slate-300 dark:hover:border-slate-500 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
                               title="Thêm thao tác"
                             >
                               <MoreVertical className="w-4.5 h-4.5" />

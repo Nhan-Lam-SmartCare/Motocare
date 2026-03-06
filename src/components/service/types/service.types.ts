@@ -27,7 +27,7 @@ export interface StoreSettings {
 // ============================================
 export type WorkOrderStatus = "Tiếp nhận" | "Đang sửa" | "Đã sửa xong" | "Trả máy" | "Đã hủy";
 export type ServiceTabKey = "all" | "pending" | "inProgress" | "done" | "delivered";
-export type FilterColor = "slate" | "blue" | "orange" | "green" | "purple";
+export type FilterColor = "slate" | "blue" | "orange" | "green" | "purple" | "cyan";
 
 // ============================================
 // Service Stats
@@ -84,6 +84,7 @@ export const FILTER_BADGE_CLASSES: Record<FilterColor, string> = {
     orange: "bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-300",
     green: "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-300",
     purple: "bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-300",
+    cyan: "bg-cyan-100 text-cyan-600 dark:bg-cyan-900/30 dark:text-cyan-300",
 };
 
 // ============================================

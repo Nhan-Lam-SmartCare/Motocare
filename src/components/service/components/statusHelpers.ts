@@ -27,8 +27,8 @@ export const getStatusBorderColor = (status: WorkOrderStatus): string => {
   const map: Record<WorkOrderStatus, string> = {
     "Tiếp nhận": "border-l-blue-500",
     "Đang sửa": "border-l-amber-500",
-    "Đã sửa xong": "border-l-emerald-500",
-    "Trả máy": "border-l-teal-500",
+    "Đã sửa xong": "border-l-cyan-500",
+    "Trả máy": "border-l-emerald-500",
     "Đã hủy": "border-l-red-400",
   };
   return map[status] || "border-l-transparent";
@@ -38,75 +38,75 @@ export const getQuickStatusFilters = (
   stats: ServiceStats,
   allCount: number
 ): QuickStatusFilter[] => [
-  {
-    key: "all",
-    label: "Tất cả",
-    color: "slate",
-    count: allCount,
-  },
-  {
-    key: "pending",
-    label: "Tiếp nhận",
-    color: "blue",
-    count: stats.pending,
-  },
-  {
-    key: "inProgress",
-    label: "Đang sửa",
-    color: "orange",
-    count: stats.inProgress,
-  },
-  {
-    key: "done",
-    label: "Đã sửa xong",
-    color: "green",
-    count: stats.done,
-  },
-  {
-    key: "delivered",
-    label: "Đã trả máy",
-    color: "green",
-    count: stats.delivered,
-  },
-];
+    {
+      key: "all",
+      label: "Tất cả",
+      color: "slate",
+      count: allCount,
+    },
+    {
+      key: "pending",
+      label: "Tiếp nhận",
+      color: "blue",
+      count: stats.pending,
+    },
+    {
+      key: "inProgress",
+      label: "Đang sửa",
+      color: "orange",
+      count: stats.inProgress,
+    },
+    {
+      key: "done",
+      label: "Đã sửa xong",
+      color: "cyan",
+      count: stats.done,
+    },
+    {
+      key: "delivered",
+      label: "Đã trả máy",
+      color: "green",
+      count: stats.delivered,
+    },
+  ];
 
 export const getStatusSnapshotCards = (
   stats: ServiceStats
 ): StatusSnapshotCard[] => [
-  {
-    key: "pending",
-    label: "Tiếp nhận",
-    value: stats.pending,
-    subtitle: "Chờ phân công",
-    accent:
-      "from-sky-50 via-sky-50 to-white dark:from-sky-900/30 dark:via-sky-900/10",
-    dot: "bg-sky-500",
-  },
-  {
-    key: "inProgress",
-    label: "Đang sửa",
-    value: stats.inProgress,
-    subtitle: "Đang thi công",
-    accent:
-      "from-amber-50 via-amber-50 to-white dark:from-amber-900/30 dark:via-amber-900/10",
-    dot: "bg-amber-500",
-  },
-  {
-    key: "done",
-    label: "Đã sửa xong",
-    value: stats.done,
-    subtitle: "Chờ giao khách",
-    accent:
-      "from-emerald-50 via-emerald-50 to-white dark:from-emerald-900/30 dark:via-emerald-900/10",
-    dot: "bg-emerald-500",
-  },
-  {
-    key: "delivered",
-    label: "Trả máy",
-    value: stats.delivered,
-    subtitle: "Hoàn tất",
-    accent:
-      "from-teal-50 via-teal-50 to-white dark:from-teal-900/30 dark:via-teal-900/10",
-    dot: "bg-teal-500",
-  },
-];
+    {
+      key: "pending",
+      label: "Tiếp nhận",
+      value: stats.pending,
+      subtitle: "Chờ phân công",
+      accent:
+        "from-sky-50 via-sky-50 to-white dark:from-sky-900/30 dark:via-sky-900/10",
+      dot: "bg-sky-500",
+    },
+    {
+      key: "inProgress",
+      label: "Đang sửa",
+      value: stats.inProgress,
+      subtitle: "Đang thi công",
+      accent:
+        "from-amber-50 via-amber-50 to-white dark:from-amber-900/30 dark:via-amber-900/10",
+      dot: "bg-amber-500",
+    },
+    {
+      key: "done",
+      label: "Đã sửa xong",
+      value: stats.done,
+      subtitle: "Chờ giao khách",
+      accent:
+        "from-cyan-50 via-cyan-50 to-white dark:from-cyan-900/30 dark:via-cyan-900/10",
+      dot: "bg-cyan-500",
+    },
+    {
+      key: "delivered",
+      label: "Trả máy",
+      value: stats.delivered,
+      subtitle: "Hoàn tất",
+      accent:
+        "from-emerald-50 via-emerald-50 to-white dark:from-emerald-900/30 dark:via-emerald-900/10",
+      dot: "bg-emerald-500",
+    },
+  ];

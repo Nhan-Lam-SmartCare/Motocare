@@ -29,10 +29,13 @@ import {
   DollarSign,
   Truck,
   Tag,
+  ChevronDown,
+  MoreHorizontal,
 } from "lucide-react";
 
 export function Nav() {
   const [showSettings, setShowSettings] = useState(false);
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const { theme, toggleTheme } = useTheme();
   const { profile, user, signOut } = useAuth();
@@ -269,37 +272,76 @@ export function Nav() {
                 label="Tài chính"
               />
             )}
-            {can.viewDebt && (
-              <NavLink
-                to="/debt"
-                colorKey="orange"
-                icon={<HandCoins className="w-4 h-4" />}
-                label="Công nợ"
-              />
-            )}
-            {can.viewAnalytics && (
-              <NavLink
-                to="/analytics"
-                colorKey="teal"
-                icon={<BarChart3 className="w-4 h-4" />}
-                label="Phân tích"
-              />
-            )}
-            {can.viewReports && (
-              <NavLink
-                to="/reports"
-                colorKey="fuchsia"
-                icon={<FileText className="w-4 h-4" />}
-                label="Báo cáo"
-              />
-            )}
-            {isOwnerOrManager && (
-              <NavLink
-                to="/admin/khuyen-mai"
-                colorKey="rose"
-                icon={<Tag className="w-4 h-4" />}
-                label="Khuyến mãi"
-              />
+
+            {/* Secondary items grouped in "Ẩu tiên" dropdown */}
+            {(can.viewDebt || can.viewAnalytics || can.viewReports || isOwnerOrManager) && (
+              <div className="relative">
+                <button
+                  onClick={() => setShowMoreMenu(!showMoreMenu)}
+                  className={`flex flex-col items-center gap-0.5 px-2.5 py-1 rounded-md transition ${
+                    showMoreMenu
+                      ? "bg-white/20 text-white font-bold"
+                      : "text-white/80 hover:bg-white/10 hover:text-white"
+                  }`}
+                  aria-label="Thêm mục"
+                >
+                  <MoreHorizontal className="w-4 h-4" />
+                  <span className="text-[10px] font-medium whitespace-nowrap flex items-center gap-0.5">
+                    Thêm <ChevronDown className="w-2.5 h-2.5" />
+                  </span>
+                </button>
+
+                {showMoreMenu && (
+                  <>
+                    <div
+                      className="fixed inset-0 z-40"
+                      onClick={() => setShowMoreMenu(false)}
+                    />
+                    <div className="absolute top-full right-0 mt-1.5 w-44 bg-slate-800 border border-slate-700 rounded-xl shadow-xl py-1.5 z-50">
+                      {can.viewDebt && (
+                        <Link
+                          to="/debt"
+                          onClick={() => setShowMoreMenu(false)}
+                          className="flex items-center gap-2.5 px-3 py-2 text-sm text-white/80 hover:bg-white/10 hover:text-white rounded-lg mx-1 transition"
+                        >
+                          <HandCoins className="w-4 h-4 text-orange-400" />
+                          Công nợ
+                        </Link>
+                      )}
+                      {can.viewAnalytics && (
+                        <Link
+                          to="/analytics"
+                          onClick={() => setShowMoreMenu(false)}
+                          className="flex items-center gap-2.5 px-3 py-2 text-sm text-white/80 hover:bg-white/10 hover:text-white rounded-lg mx-1 transition"
+                        >
+                          <BarChart3 className="w-4 h-4 text-teal-400" />
+                          Phân tích
+                        </Link>
+                      )}
+                      {can.viewReports && (
+                        <Link
+                          to="/reports"
+                          onClick={() => setShowMoreMenu(false)}
+                          className="flex items-center gap-2.5 px-3 py-2 text-sm text-white/80 hover:bg-white/10 hover:text-white rounded-lg mx-1 transition"
+                        >
+                          <FileText className="w-4 h-4 text-fuchsia-400" />
+                          Báo cáo
+                        </Link>
+                      )}
+                      {isOwnerOrManager && (
+                        <Link
+                          to="/admin/khuyen-mai"
+                          onClick={() => setShowMoreMenu(false)}
+                          className="flex items-center gap-2.5 px-3 py-2 text-sm text-white/80 hover:bg-white/10 hover:text-white rounded-lg mx-1 transition"
+                        >
+                          <Tag className="w-4 h-4 text-rose-400" />
+                          Khuyến mãi
+                        </Link>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
             )}
           </div>
 

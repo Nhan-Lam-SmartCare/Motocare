@@ -46,11 +46,11 @@ const statusConfig: Record<
     dot: "bg-emerald-500",
   },
   "Trả máy": {
-    bg: "bg-purple-50 dark:bg-purple-500/10",
-    text: "text-purple-700 dark:text-purple-400",
-    border: "border-purple-200 dark:border-purple-500/30",
+    bg: "bg-teal-50 dark:bg-teal-500/10",
+    text: "text-teal-700 dark:text-teal-400",
+    border: "border-teal-200 dark:border-teal-500/30",
     icon: Truck,
-    dot: "bg-purple-500",
+    dot: "bg-teal-500",
   },
   "Đã hủy": {
     bg: "bg-red-50 dark:bg-red-500/10",

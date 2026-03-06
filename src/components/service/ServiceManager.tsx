@@ -2394,16 +2394,16 @@ export default function ServiceManager() {
                 >
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
-                      <p className="text-[10px] uppercase tracking-wide text-slate-600 dark:text-slate-300">
+                      <p className="text-[10px] uppercase tracking-wide font-semibold text-slate-500 dark:text-slate-200">
                         {card.label}
                       </p>
-                      <p className="text-xl font-bold text-slate-900 dark:text-slate-100">
+                      <p className="text-xl font-bold text-slate-900 dark:text-white">
                         {card.value}
                       </p>
                     </div>
-                    <span className={`h-2 w-2 rounded-full ${card.dot}`}></span>
+                    <span className={`h-2.5 w-2.5 rounded-full ${card.dot}`}></span>
                   </div>
-                  <p className="mt-1 text-[10px] text-slate-600 dark:text-slate-300">
+                  <p className="mt-1 text-[10px] font-medium text-slate-500 dark:text-slate-300">
                     {card.subtitle}
                   </p>
                 </div>
@@ -2483,11 +2483,12 @@ export default function ServiceManager() {
         </div>
       </div>
 
-      {/* Action Bar - Single row on desktop */}
-      <div className="sticky top-2 z-20 bg-white/95 dark:bg-slate-800/95 backdrop-blur rounded-lg p-3 border border-slate-200 dark:border-slate-700 shadow-sm">
+      {/* Action Bar - Two rows: filters on top, actions on bottom */}
+      <div className="sticky top-2 z-20 bg-white/95 dark:bg-slate-800/95 backdrop-blur rounded-lg px-3 py-2.5 border border-slate-200 dark:border-slate-700 shadow-sm space-y-2">
+        {/* Row 1: Search + Filters + Quick actions */}
         <div className="flex flex-wrap items-center gap-2">
           {/* Search */}
-          <div className="relative flex-1 min-w-[180px] max-w-[280px]">
+          <div className="relative flex-1 min-w-[200px] max-w-[320px]">
             <input
               ref={searchInputRef}
               type="text"
@@ -2502,7 +2503,7 @@ export default function ServiceManager() {
             />
           </div>
 
-          {/* Filters - inline */}
+          {/* Date filter */}
           <select
             value={dateFilter}
             onChange={(e) => setDateFilter(e.target.value)}
@@ -2531,6 +2532,8 @@ export default function ServiceManager() {
               />
             </div>
           )}
+
+          {/* KTV filter */}
           <select
             value={technicianFilter}
             onChange={(e) => setTechnicianFilter(e.target.value)}
@@ -2543,6 +2546,8 @@ export default function ServiceManager() {
               </option>
             ))}
           </select>
+
+          {/* Payment filter */}
           <select
             value={paymentFilter}
             onChange={(e) => setPaymentFilter(e.target.value)}
@@ -2554,10 +2559,7 @@ export default function ServiceManager() {
             <option value="partial">Trả trước</option>
           </select>
 
-          {/* Spacer */}
-          <div className="flex-1"></div>
-
-          {/* Action Buttons */}
+          {/* Reload + Reset */}
           <button
             onClick={() => refetchWorkOrders()}
             disabled={workOrdersFetching}
@@ -2566,8 +2568,7 @@ export default function ServiceManager() {
             title="Làm mới"
           >
             <RefreshCw
-              className={`w-3.5 h-3.5 ${workOrdersFetching ? "animate-spin" : ""
-                }`}
+              className={`w-3.5 h-3.5 ${workOrdersFetching ? "animate-spin" : ""}`}
             />
           </button>
           <button
@@ -2578,10 +2579,25 @@ export default function ServiceManager() {
           >
             <Search className="w-3.5 h-3.5" /> Reset
           </button>
+        </div>
+
+        {/* Divider */}
+        <div className="border-t border-slate-100 dark:border-slate-700/60" />
+
+        {/* Row 2: Result count + Action buttons */}
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Result count */}
+          <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+            {filteredOrders.length} phiếu
+          </span>
+
+          {/* Spacer */}
+          <div className="flex-1" />
+
           {isOwner && (
             <button
               onClick={() => setShowProfit(!showProfit)}
-              className={`px-3 py-2 border rounded-lg text-sm font-medium flex items-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500/40 ${showProfit
+              className={`px-3 py-1.5 border rounded-lg text-sm font-medium flex items-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500/40 ${showProfit
                 ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/30"
                 : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700"
                 }`}
@@ -2598,14 +2614,14 @@ export default function ServiceManager() {
           )}
           <button
             onClick={() => setShowTemplateModal(true)}
-            className="px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg text-sm font-medium flex items-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+            className="px-3 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg text-sm font-medium flex items-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500/40"
             aria-label="Mở danh sách mẫu sửa chữa"
           >
             <FileText className="w-3.5 h-3.5" /> Mẫu SC
           </button>
           <Link
             to="/service-history"
-            className="px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg text-sm font-medium flex items-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+            className="px-3 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg text-sm font-medium flex items-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500/40"
           >
             <History className="w-3.5 h-3.5" /> Lịch sử SC
           </Link>
@@ -2614,7 +2630,7 @@ export default function ServiceManager() {
               // Always use Desktop modal
               handleOpenModal();
             }}
-            className="px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-semibold flex items-center gap-1.5 shadow-sm hover:shadow focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+            className="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-semibold flex items-center gap-1.5 shadow-sm hover:shadow focus:outline-none focus:ring-2 focus:ring-blue-500/50"
             aria-label="Tạo phiếu sửa chữa mới"
           >
             <Plus className="w-4 h-4" />
@@ -2651,19 +2667,19 @@ export default function ServiceManager() {
           <table className="w-full">
             <thead className="bg-slate-50 dark:bg-slate-700/70">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 dark:text-slate-200">
+                <th className="px-4 py-3 text-left text-xs font-bold text-slate-700 dark:text-slate-100 uppercase tracking-wide">
                   Mã phiếu
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 dark:text-slate-200">
+                <th className="px-4 py-3 text-left text-xs font-bold text-slate-700 dark:text-slate-100 uppercase tracking-wide">
                   Khách hàng
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 dark:text-slate-200">
+                <th className="px-4 py-3 text-left text-xs font-bold text-slate-700 dark:text-slate-100 uppercase tracking-wide">
                   Chi tiết
                 </th>
-                <th className="hidden lg:table-cell px-4 py-3 text-left text-xs font-semibold text-slate-600 dark:text-slate-200">
-                  Thanh toán & trạng thái
+                <th className="hidden lg:table-cell px-4 py-3 text-left text-xs font-bold text-slate-700 dark:text-slate-100 uppercase tracking-wide">
+                  Thanh toán
                 </th>
-                <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 dark:text-slate-200">
+                <th className="px-4 py-3 text-center text-xs font-bold text-slate-700 dark:text-slate-100 uppercase tracking-wide">
                   Thao tác
                 </th>
               </tr>
@@ -2845,10 +2861,10 @@ export default function ServiceManager() {
                     <tr
                       key={order.id}
                       onClick={() => handleOpenModal(order)}
-                      className={`group bg-white dark:bg-slate-800/80 hover:bg-blue-50 dark:hover:bg-slate-700/60 cursor-pointer transition-all duration-150 hover:shadow-md border-l-4 focus-within:ring-2 focus-within:ring-blue-500/30 ${getStatusBorderColor(order.status as WorkOrderStatus)}`}
+                      className={`group bg-white dark:bg-slate-800/80 hover:bg-blue-50/60 dark:hover:bg-slate-700/60 cursor-pointer transition-all duration-150 hover:shadow-md border-l-4 focus-within:ring-2 focus-within:ring-blue-500/30 ${getStatusBorderColor(order.status as WorkOrderStatus)}`}
                     >
                       {/* Column 1: Mã phiếu + Status */}
-                      <td className="px-4 py-5 xl:py-6 align-top">
+                      <td className="px-4 py-6 xl:py-8 align-top">
                         <div className="space-y-2">
                           {/* Status badge - prominent */}
                           <StatusBadge status={order.status as WorkOrderStatus} />
@@ -2869,9 +2885,9 @@ export default function ServiceManager() {
                       </td>
 
                       {/* Column 2: Khách hàng */}
-                      <td className="px-4 py-5 xl:py-6 align-top">
+                      <td className="px-4 py-6 xl:py-8 align-top">
                         <div className="space-y-1">
-                          <div className="font-bold text-base xl:text-lg text-slate-100 dark:text-slate-100 truncate">
+                          <div className="font-bold text-base xl:text-lg text-slate-900 dark:text-slate-100 truncate">
                             {order.customerName}
                           </div>
                           <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-300">
@@ -2914,8 +2930,8 @@ export default function ServiceManager() {
                       </td>
 
                       {/* Column 3: Chi tiết - Compact format */}
-                      <td className="px-4 py-5 xl:py-6 align-top">
-                        <div className="space-y-2 max-w-[180px] xl:max-w-[220px]">
+                      <td className="px-4 py-6 xl:py-8 align-top">
+                        <div className="space-y-2 max-w-[220px] xl:max-w-[280px]">
                           {servicesSummary && (
                             <div
                               className="text-xs flex items-start gap-1.5"
@@ -2926,10 +2942,10 @@ export default function ServiceManager() {
                               }
                             >
                               <Settings className="w-3.5 h-3.5 text-slate-400 mt-0.5 flex-shrink-0" />
-                              <span className="text-slate-700 dark:text-slate-200 line-clamp-1">
+                              <span className="text-slate-700 dark:text-slate-200 line-clamp-2 leading-relaxed">
                                 {servicesSummary}
                                 {servicesSuffix && (
-                                  <span className="text-slate-400">
+                                  <span className="text-slate-400 ml-0.5">
                                     {servicesSuffix}
                                   </span>
                                 )}
@@ -2947,10 +2963,10 @@ export default function ServiceManager() {
                               }
                             >
                               <Wrench className="w-3.5 h-3.5 text-slate-400 mt-0.5 flex-shrink-0" />
-                              <span className="text-slate-700 dark:text-slate-200 line-clamp-1">
+                              <span className="text-slate-700 dark:text-slate-200 line-clamp-2 leading-relaxed">
                                 {partsSummary}
                                 {partsSuffix && (
-                                  <span className="text-slate-400">
+                                  <span className="text-slate-400 ml-0.5">
                                     {partsSuffix}
                                   </span>
                                 )}
@@ -2991,7 +3007,7 @@ export default function ServiceManager() {
                       </td>
 
                       {/* Column 4: Thanh toán & trạng thái - Clean layout - Hidden on tablet */}
-                      <td className="hidden lg:table-cell px-4 py-5 xl:py-6 align-top">
+                      <td className="hidden lg:table-cell px-4 py-6 xl:py-8 align-top">
                         <div className="space-y-2.5 min-w-[200px]">
                           {/* Tổng tiền */}
                           <div className="text-sm font-bold text-slate-800 dark:text-slate-100">
@@ -3031,7 +3047,7 @@ export default function ServiceManager() {
                           {totalAmount > 0 && (
                             <div className="space-y-1">
                               <div
-                                className="h-2 w-full rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden"
+                                className="h-2.5 w-full rounded-full bg-slate-200 dark:bg-slate-600 overflow-hidden"
                                 title={`Đã thanh toán ${paymentProgress}%`}
                               >
                                 <div
@@ -3142,17 +3158,17 @@ export default function ServiceManager() {
                         className="px-4 py-5 xl:py-6 align-top overflow-visible"
                         onClick={(e) => e.stopPropagation()}
                       >
-                        <div className="flex items-center justify-end gap-1.5">
-                          {/* Quick action buttons - visible on hover */}
+                        <div className="flex items-center justify-end gap-2">
+                          {/* Quick action buttons */}
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
                               handleOpenModal(order);
                             }}
-                            className="w-9 h-9 inline-flex items-center justify-center rounded-lg border border-transparent text-slate-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:text-blue-400 dark:hover:bg-blue-900/20 opacity-90 group-hover:opacity-100 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+                            className="w-10 h-10 inline-flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-600 text-slate-500 hover:text-blue-600 hover:bg-blue-50 hover:border-blue-200 dark:hover:text-blue-400 dark:hover:bg-blue-900/20 dark:hover:border-blue-700/50 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
                             title="Xem chi tiết"
                           >
-                            <Eye className="w-4 h-4" />
+                            <Eye className="w-4.5 h-4.5" />
                           </button>
 
                           <button
@@ -3160,10 +3176,10 @@ export default function ServiceManager() {
                               e.stopPropagation();
                               handlePrintOrder(order);
                             }}
-                            className="w-9 h-9 inline-flex items-center justify-center rounded-lg border border-transparent text-slate-500 hover:text-purple-600 hover:bg-purple-50 dark:hover:text-purple-400 dark:hover:bg-purple-900/20 opacity-90 group-hover:opacity-100 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-purple-500/40"
+                            className="w-10 h-10 inline-flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-600 text-slate-500 hover:text-purple-600 hover:bg-purple-50 hover:border-purple-200 dark:hover:text-purple-400 dark:hover:bg-purple-900/20 dark:hover:border-purple-700/50 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-purple-500/40"
                             title="In phiếu"
                           >
-                            <Printer className="w-4 h-4" />
+                            <Printer className="w-4.5 h-4.5" />
                           </button>
 
                           {/* More actions menu */}
@@ -3183,7 +3199,7 @@ export default function ServiceManager() {
                               }}
                               aria-haspopup="menu"
                               aria-expanded={rowActionMenuId === order.id}
-                                className="w-9 h-9 inline-flex items-center justify-center rounded-lg border border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+                                className="w-10 h-10 inline-flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-600 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 hover:border-slate-300 dark:hover:border-slate-500 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
                               title="Thêm thao tác"
                             >
                               <MoreVertical className="w-4.5 h-4.5" />

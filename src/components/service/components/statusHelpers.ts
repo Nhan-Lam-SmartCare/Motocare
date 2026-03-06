@@ -28,7 +28,7 @@ export const getStatusBorderColor = (status: WorkOrderStatus): string => {
     "Tiếp nhận": "border-l-blue-500",
     "Đang sửa": "border-l-amber-500",
     "Đã sửa xong": "border-l-emerald-500",
-    "Trả máy": "border-l-purple-500",
+    "Trả máy": "border-l-teal-500",
     "Đã hủy": "border-l-red-400",
   };
   return map[status] || "border-l-transparent";
@@ -65,7 +65,7 @@ export const getQuickStatusFilters = (
   {
     key: "delivered",
     label: "Đã trả máy",
-    color: "purple",
+    color: "green",
     count: stats.delivered,
   },
 ];
@@ -106,7 +106,7 @@ export const getStatusSnapshotCards = (
     value: stats.delivered,
     subtitle: "Hoàn tất",
     accent:
-      "from-purple-50 via-purple-50 to-white dark:from-purple-900/30 dark:via-purple-900/10",
-    dot: "bg-purple-500",
+      "from-teal-50 via-teal-50 to-white dark:from-teal-900/30 dark:via-teal-900/10",
+    dot: "bg-teal-500",
   },
 ];

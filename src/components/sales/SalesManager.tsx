@@ -1278,6 +1278,7 @@ const SalesManager: React.FC = () => {
                             history.setKeysetCursor(null);
                         }}
                         customerDebts={customerDebts}
+                        customers={customers}
                         onViewDetail={(sale) => setSelectedSale(sale)}
                         canDelete={true}
                     />

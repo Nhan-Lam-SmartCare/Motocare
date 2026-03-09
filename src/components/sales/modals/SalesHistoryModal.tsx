@@ -49,6 +49,7 @@ export interface SalesHistoryModalProps {
     keysetMode?: boolean;
     onToggleKeyset?: (checked: boolean) => void;
     customerDebts?: any[];
+    customers?: any[]; // Full customer data for checking vehicles
     onViewDetail: (sale: Sale) => void;
     canDelete?: boolean;
 }
@@ -66,7 +67,7 @@ export const SalesHistoryModal: React.FC<SalesHistoryModalProps> = ({
     onNextPage, onPageSizeChange, search: _search, onSearchChange: _onSearchChange, fromDate: _fromDate, toDate: _toDate,
     onDateRangeChange, status = "all", onStatusChange, paymentMethodFilter = "all",
     onPaymentMethodFilterChange, keysetMode = false, onToggleKeyset,
-    customerDebts = [], onViewDetail, canDelete = false,
+    customerDebts = [], customers = [], onViewDetail, canDelete = false,
 }) => {
     const [activeTimeFilter, setActiveTimeFilter] = useState("7days");
     const [searchText, setSearchText] = useState("");
@@ -371,6 +372,19 @@ export const SalesHistoryModal: React.FC<SalesHistoryModalProps> = ({
                                                         {sale.customer.phone && (
                                                             <div className="text-[11px] text-slate-400 mt-0.5">{sale.customer.phone}</div>
                                                         )}
+                                                        {(() => {
+                                                            const fullCustomer = customers.find(c => c.id === sale.customer.id);
+                                                            if (!fullCustomer) return null;
+                                                            const primaryVehicle = fullCustomer.vehicles?.find((v: any) => v.isPrimary) || fullCustomer.vehicles?.[0];
+                                                            const model = primaryVehicle?.model || fullCustomer.vehicleModel;
+                                                            const plate = primaryVehicle?.licensePlate || fullCustomer.licensePlate;
+                                                            if (!model && !plate) return null;
+                                                            return (
+                                                                <div className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-1">
+                                                                    <span>🏍️</span> {plate ? <span className="text-blue-600 dark:text-blue-400">{plate}</span> : "---"} {model ? `(${model})` : ''}
+                                                                </div>
+                                                            );
+                                                        })()}
                                                         {saleNote && (
                                                             <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 line-clamp-2">
                                                                 📝 {saleNotePreview}{saleNote.length > 90 ? "..." : ""}
@@ -496,6 +510,19 @@ export const SalesHistoryModal: React.FC<SalesHistoryModalProps> = ({
                                                     <div className="text-[11px] text-slate-400 mt-0.5">
                                                         {formatDate(new Date(sale.date))} · {(sale as any).username || sale.userName || ""}
                                                     </div>
+                                                    {(() => {
+                                                        const fullCustomer = customers.find(c => c.id === sale.customer.id);
+                                                        if (!fullCustomer) return null;
+                                                        const primaryVehicle = fullCustomer.vehicles?.find((v: any) => v.isPrimary) || fullCustomer.vehicles?.[0];
+                                                        const model = primaryVehicle?.model || fullCustomer.vehicleModel;
+                                                        const plate = primaryVehicle?.licensePlate || fullCustomer.licensePlate;
+                                                        if (!model && !plate) return null;
+                                                        return (
+                                                            <div className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-1">
+                                                                <span>🏍️</span> {plate ? <span className="text-blue-600 dark:text-blue-400">{plate}</span> : "---"} {model ? `(${model})` : ''}
+                                                            </div>
+                                                        );
+                                                    })()}
                                                     {saleNote && (
                                                         <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 line-clamp-2">
                                                             📝 {saleNotePreview}{saleNote.length > 80 ? "..." : ""}

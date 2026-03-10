@@ -2169,17 +2169,21 @@ const WorkOrderModal: React.FC<{
 
     // Filter parts based on search - show all available parts if search is empty
     const filteredParts = useMemo(() => {
-      const term = searchPart.trim().toLowerCase();
+      const normalizedQuery = normalizeSearchText(searchPart.trim());
+      const queryWords = normalizedQuery.split(/\s+/).filter(Boolean);
 
       return availableParts.filter((p) => {
         if (searchPartCategory && (p.category || "") !== searchPartCategory) {
           return false;
         }
-        if (!term) return true;
-        return (
-          p.name.toLowerCase().includes(term) ||
-          p.sku?.toLowerCase().includes(term)
-        );
+        if (queryWords.length === 0) return true;
+        const combined = [
+          normalizeSearchText(p.name),
+          normalizeSearchText(p.category),
+          normalizeSearchText((p as any).description),
+          (p.sku || "").toLowerCase(),
+        ].join(" ");
+        return queryWords.every((word) => combined.includes(word));
       });
     }, [availableParts, searchPart, searchPartCategory]);
 

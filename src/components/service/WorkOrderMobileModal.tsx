@@ -817,17 +817,21 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
   }, [parts, currentBranchId]);
 
   const filteredParts = useMemo(() => {
-    const term = partSearchTerm.trim().toLowerCase();
+    const normalizedQuery = normalizeSearchText(partSearchTerm.trim());
+    const queryWords = normalizedQuery.split(/\s+/).filter(Boolean);
 
     return availableParts.filter((p) => {
       if (partCategoryFilter && (p.category || "") !== partCategoryFilter) {
         return false;
       }
-      if (!term) return true;
-      return (
-        p.name.toLowerCase().includes(term) ||
-        p.sku?.toLowerCase().includes(term)
-      );
+      if (queryWords.length === 0) return true;
+      const combined = [
+        normalizeSearchText(p.name),
+        normalizeSearchText(p.category),
+        normalizeSearchText((p as any).description),
+        (p.sku || "").toLowerCase(),
+      ].join(" ");
+      return queryWords.every((word) => combined.includes(word));
     });
   }, [availableParts, partSearchTerm, partCategoryFilter]);
 

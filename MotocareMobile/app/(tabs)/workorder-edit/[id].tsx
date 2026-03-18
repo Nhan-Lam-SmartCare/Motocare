@@ -14,7 +14,9 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../../shared/supabaseClient';
 import { formatWorkOrderCode } from '../../../shared/workOrderCode';
-import { printWorkOrderReceipt, shareWorkOrderReceipt } from '../../../shared/workOrderReceipt';
+import WorkOrderPreviewModal from '../../../shared/WorkOrderPreviewModal';
+import { completeWorkOrderPaymentMobile } from '../../../shared/workOrderPayment';
+import { updateWorkOrderAtomicMobile } from '../../../shared/workOrderAtomic';
 import { formatCurrency } from '../../../constants';
 
 type EditTab = 'info' | 'parts' | 'payment';
@@ -37,6 +39,68 @@ type ServiceItem = {
   costPrice?: number;
 };
 
+type StoreSettingsReceipt = {
+  storeName?: string;
+  storePhone?: string;
+  storeAddress?: string;
+  logoUrl?: string;
+  bankQrUrl?: string;
+  bankName?: string;
+  bankAccountNumber?: string;
+  bankAccountHolder?: string;
+  bankBranch?: string;
+  workOrderPrefix?: string;
+};
+
+const pickStoreString = (row: Record<string, unknown>, keys: string[]): string => {
+  for (const key of keys) {
+    const value = row[key];
+    if (value == null) continue;
+    const text = String(value).trim();
+    if (text) return text;
+  }
+  return '';
+};
+
+const fetchStoreSettingsForReceipt = async (): Promise<StoreSettingsReceipt | null> => {
+  const { data, error } = await supabase.from('store_settings').select('*').limit(1);
+  if (error || !data?.length) return null;
+
+  const row = (data[0] || {}) as Record<string, unknown>;
+  return {
+    storeName: pickStoreString(row, ['storeName', 'store_name']),
+    storePhone: pickStoreString(row, ['storePhone', 'store_phone', 'phone']),
+    storeAddress: pickStoreString(row, ['storeAddress', 'store_address', 'address']),
+    logoUrl: pickStoreString(row, ['logoUrl', 'logo_url', 'logo']),
+    bankQrUrl: pickStoreString(row, ['bankQrUrl', 'bank_qr_url']),
+    bankName: pickStoreString(row, ['bankName', 'bank_name']),
+    bankAccountNumber: pickStoreString(row, ['bankAccountNumber', 'bank_account_number', 'bankAccount']),
+    bankAccountHolder: pickStoreString(row, ['bankAccountHolder', 'bank_account_holder', 'bankAccountName']),
+    bankBranch: pickStoreString(row, ['bankBranch', 'bank_branch']),
+    workOrderPrefix: pickStoreString(row, ['workOrderPrefix', 'work_order_prefix']),
+  };
+};
+
+const pickArray = (row: any, keys: string[]) => {
+  let best: any[] = [];
+  for (const key of keys) {
+    const value = row?.[key];
+    if (Array.isArray(value)) {
+      if (value.length > best.length) best = value;
+      continue;
+    }
+    if (typeof value === 'string') {
+      try {
+        const parsed = JSON.parse(value);
+        if (Array.isArray(parsed) && parsed.length > best.length) best = parsed;
+      } catch {
+        // Ignore invalid JSON payload and continue with next key.
+      }
+    }
+  }
+  return best;
+};
+
 const normalizeOrder = (row: any) => ({
   id: row.id,
   code: formatWorkOrderCode(row.id),
@@ -56,8 +120,8 @@ const normalizeOrder = (row: any) => ({
   remainingAmount: Number(row.remainingAmount ?? row.remainingamount ?? 0),
   paymentStatus: row.paymentStatus || row.paymentstatus || 'unpaid',
   paymentMethod: row.paymentMethod || row.paymentmethod || 'cash',
-  partsUsed: (row.partsUsed || row.partsused || []) as PartItem[],
-  additionalServices: (row.additionalServices || row.additionalservices || []) as ServiceItem[],
+  partsUsed: pickArray(row, ['partsUsed', 'partsused', 'parts_used']) as PartItem[],
+  additionalServices: pickArray(row, ['additionalServices', 'additionalservices', 'additional_services']) as ServiceItem[],
 });
 
 const fetchWorkOrder = async (id: string) => {
@@ -94,11 +158,18 @@ export default function WorkOrderEditScreen() {
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'bank'>('cash');
   const [partsUsed, setPartsUsed] = useState<PartItem[]>([]);
   const [additionalServices, setAdditionalServices] = useState<ServiceItem[]>([]);
+  const [showPreview, setShowPreview] = useState(false);
 
   const orderQuery = useQuery({
     queryKey: ['workorder-edit', id],
     queryFn: () => fetchWorkOrder(String(id)),
     enabled: Boolean(id),
+  });
+
+  const { data: storeSettingsForReceipt } = useQuery({
+    queryKey: ['store-settings-mobile-receipt'],
+    queryFn: fetchStoreSettingsForReceipt,
+    staleTime: 1000 * 60 * 10,
   });
 
   const order = orderQuery.data;
@@ -138,7 +209,7 @@ export default function WorkOrderEditScreen() {
     const rawDiscount = Math.max(0, Number(discount || 0));
     const subtotal = labor + partsTotal + servicesTotal;
     const discountValue = discountType === 'percent'
-      ? Math.max(0, Math.min(100, rawDiscount)) * subtotal / 100
+      ? Math.round(Math.max(0, Math.min(100, rawDiscount)) * subtotal / 100)
       : rawDiscount;
     const total = Math.max(0, labor + partsTotal + servicesTotal - discountValue);
 
@@ -173,36 +244,111 @@ export default function WorkOrderEditScreen() {
   }, [showPaymentInput, partialAmount, maxReturnCollect]);
 
   const saveMutation = useMutation({
-    mutationFn: async (payload: { paymentStatus?: 'unpaid' | 'partial' | 'paid'; totalPaid?: number; remainingAmount?: number }) => {
+    mutationFn: async (payload: {
+      submitAction?: 'save' | 'deposit' | 'pay';
+    }) => {
       if (!id) throw new Error('Thiếu mã phiếu sửa');
+      if (!order) throw new Error('Không tìm thấy dữ liệu phiếu sửa');
 
-      const updates = {
+      const submitAction = payload.submitAction ?? 'save';
+      const shouldFinalizeByRpc = submitAction === 'pay';
+      const normalizedDeposit = useDeposit ? Math.max(0, Number(depositAmount || 0)) : 0;
+      const normalizedPartial = status === 'Trả máy' && showPaymentInput ? Math.max(0, Number(partialAmount || 0)) : 0;
+
+      if (normalizedDeposit > 0 && totals.total === 0) {
+        throw new Error('Tong tien bang 0, khong can dat coc');
+      }
+      if (normalizedDeposit > totals.total) {
+        throw new Error('So tien dat coc khong duoc lon hon tong tien');
+      }
+      if (submitAction === 'deposit' && normalizedDeposit <= 0) {
+        throw new Error('Vui long nhap so tien dat coc hop le');
+      }
+
+      const maxPartial = Math.max(0, totals.total - normalizedDeposit);
+      if (normalizedPartial > maxPartial) {
+        throw new Error('So tien thanh toan tra xe khong duoc lon hon so tien con lai');
+      }
+
+      let normalizedTotalPaid = Math.min(totals.total, normalizedDeposit + normalizedPartial);
+      let normalizedPaymentStatus: 'unpaid' | 'partial' | 'paid';
+      if (submitAction === 'pay') {
+        normalizedTotalPaid = totals.total;
+        normalizedPaymentStatus = 'paid';
+      } else if (submitAction === 'deposit') {
+        normalizedTotalPaid = Math.min(totals.total, normalizedDeposit);
+        normalizedPaymentStatus = normalizedTotalPaid > 0 ? 'partial' : 'unpaid';
+      } else if (normalizedTotalPaid <= 0) {
+        normalizedPaymentStatus = 'unpaid';
+      } else if (normalizedTotalPaid >= totals.total && totals.total > 0) {
+        normalizedPaymentStatus = 'paid';
+      } else {
+        normalizedPaymentStatus = 'partial';
+      }
+
+      const additionalPayment = Math.max(0, normalizedTotalPaid - normalizedDeposit);
+      const atomicResult = await updateWorkOrderAtomicMobile({
+        id: String(id),
+        customerName: order.customerName || '',
+        customerPhone: order.customerPhone || '',
+        vehicleModel: order.vehicleModel || '',
+        licensePlate: order.licensePlate || '',
+        currentKm: currentKm ? Number(currentKm) : null,
+        issueDescription,
+        technicianName,
         status,
-        technicianname: technicianName,
-        currentkm: currentKm ? Number(currentKm) : null,
-        issuedescription: issueDescription,
-        laborcost: totals.labor,
-        discount: totals.discountValue,
-        partsused: partsUsed,
-        additionalservices: additionalServices,
+        laborCost: totals.labor,
+        discount: Math.round(totals.discountValue),
+        partsUsed: partsUsed.map((p) => ({
+          partId: p.partId || '',
+          partName: p.partName || 'Phu tung',
+          quantity: Number(p.quantity || 0),
+          price: Number(p.price || 0),
+          costPrice: Number(p.costPrice || 0),
+          sku: p.sku,
+          category: undefined,
+        })),
+        additionalServices: additionalServices.map((s) => ({
+          id: s.id || `svc-${Date.now()}`,
+          description: s.description || '',
+          quantity: Number(s.quantity || 0),
+          price: Number(s.price || 0),
+          costPrice: Number(s.costPrice || 0),
+        })),
         total: totals.total,
-        depositamount: useDeposit ? Math.max(0, Number(depositAmount || 0)) : 0,
-        paymentmethod: paymentMethod,
-        paymentstatus: payload.paymentStatus ?? order?.paymentStatus ?? 'unpaid',
-        totalpaid: payload.totalPaid ?? order?.totalPaid ?? 0,
-        remainingamount:
-          payload.remainingAmount ?? Math.max(0, totals.total - Number(payload.totalPaid ?? order?.totalPaid ?? 0)),
-      } as any;
+        paymentStatus: normalizedPaymentStatus,
+        paymentMethod,
+        depositAmount: normalizedDeposit,
+        additionalPayment,
+      });
 
-      const { error } = await supabase.from('work_orders').update(updates).eq('id', id);
-      if (error) throw error;
+      if (
+        shouldFinalizeByRpc
+        && normalizedPaymentStatus === 'paid'
+        && partsUsed.length > 0
+        && order.paymentStatus !== 'paid'
+        && !atomicResult?.inventoryDeducted
+      ) {
+        await completeWorkOrderPaymentMobile({
+          orderId: String(id),
+          paymentMethod,
+          paymentAmount: 0,
+        });
+      }
     },
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['workorders'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard-live'] });
       queryClient.invalidateQueries({ queryKey: ['workorder-detail', id] });
       queryClient.invalidateQueries({ queryKey: ['workorder-edit', id] });
-      Alert.alert('Thành công', 'Đã lưu phiếu sửa chữa');
+      if (variables?.submitAction === 'pay') {
+        Alert.alert('Thành công', 'Đã thanh toán và cập nhật tồn kho');
+      } else if (variables?.submitAction === 'deposit') {
+        Alert.alert('Thành công', 'Đã lưu đặt cọc');
+      } else {
+        Alert.alert('Thành công', 'Đã lưu phiếu sửa chữa');
+      }
+      goToWorkorders();
     },
     onError: (err: any) => {
       Alert.alert('Lỗi', err?.message || 'Không thể lưu phiếu sửa');
@@ -214,69 +360,32 @@ export default function WorkOrderEditScreen() {
     setPartialAmount(String(v));
   };
 
-  const resolvePaymentStatus = (paidAmount: number): 'unpaid' | 'partial' | 'paid' => {
-    if (paidAmount <= 0) return 'unpaid';
-    if (paidAmount >= totals.total && totals.total > 0) return 'paid';
-    return 'partial';
-  };
-
   const handleSave = () => {
-    const normalizedPaid = Math.min(totals.total, Math.max(0, depositNum + (showPaymentInput ? partialNum : 0)));
     saveMutation.mutate({
-      paymentStatus: resolvePaymentStatus(normalizedPaid),
-      totalPaid: normalizedPaid,
-      remainingAmount: Math.max(0, totals.total - normalizedPaid),
+      submitAction: 'save',
     });
   };
 
   const handlePay = () => {
     saveMutation.mutate({
-      paymentStatus: 'paid',
-      totalPaid: totals.total,
-      remainingAmount: 0,
+      submitAction: 'pay',
+    });
+  };
+
+  const handleDeposit = () => {
+    saveMutation.mutate({
+      submitAction: 'deposit',
     });
   };
 
   const handlePrint = async () => {
     if (!order) return;
-    try {
-      await printWorkOrderReceipt({
-        ...order,
-        status,
-        laborCost: totals.labor,
-        discount: Math.round(totals.discountValue),
-        total: totals.total,
-        totalPaid: totalPaidDisplay,
-        remainingAmount: remainingDisplay,
-        depositAmount: useDeposit ? depositNum : 0,
-        paymentMethod,
-        partsUsed,
-        additionalServices,
-      } as any);
-    } catch (err: any) {
-      Alert.alert('Lỗi', err?.message || 'Không thể in phiếu sửa.');
-    }
+    setShowPreview(true);
   };
 
   const handleShare = async () => {
     if (!order) return;
-    try {
-      await shareWorkOrderReceipt({
-        ...order,
-        status,
-        laborCost: totals.labor,
-        discount: Math.round(totals.discountValue),
-        total: totals.total,
-        totalPaid: totalPaidDisplay,
-        remainingAmount: remainingDisplay,
-        depositAmount: useDeposit ? depositNum : 0,
-        paymentMethod,
-        partsUsed,
-        additionalServices,
-      } as any);
-    } catch (err: any) {
-      Alert.alert('Lỗi', err?.message || 'Không thể chia sẻ phiếu sửa.');
-    }
+    setShowPreview(true);
   };
 
   const updatePart = (index: number, updates: Partial<PartItem>) => {
@@ -709,7 +818,7 @@ export default function WorkOrderEditScreen() {
           ) : useDeposit && depositNum > 0 ? (
             <TouchableOpacity
               style={styles.depositBtn}
-              onPress={handleSave}
+              onPress={handleDeposit}
             >
               <View style={styles.inlineRowCenter}>
                 <MaterialCommunityIcons name="cash-plus" size={15} color="#FFFFFF" />
@@ -719,6 +828,25 @@ export default function WorkOrderEditScreen() {
           ) : null}
         </View>
       </View>
+
+      <WorkOrderPreviewModal
+        visible={showPreview}
+        order={{
+          ...order,
+          status,
+          laborCost: totals.labor,
+          discount: Math.round(totals.discountValue),
+          total: totals.total,
+          totalPaid: totalPaidDisplay,
+          remainingAmount: remainingDisplay,
+          depositAmount: useDeposit ? depositNum : 0,
+          paymentMethod,
+          partsUsed,
+          additionalServices,
+        } as any}
+        storeSettings={(storeSettingsForReceipt || null) as any}
+        onClose={() => setShowPreview(false)}
+      />
     </View>
   );
 }
@@ -1052,6 +1180,9 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     paddingVertical: 11,
+  },
+  bottomGhostDisabled: {
+    opacity: 0.72,
   },
   bottomGhostText: { color: '#B4B8BE', fontSize: 13, fontWeight: '600' },
 

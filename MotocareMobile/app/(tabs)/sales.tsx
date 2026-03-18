@@ -12,6 +12,7 @@ import {
   Modal,
   ScrollView,
   Switch,
+  useColorScheme,
 } from 'react-native';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { CameraView, useCameraPermissions } from 'expo-camera';
@@ -443,6 +444,7 @@ const fetchSales = async (page: number, search: string, status: string) => {
 const saleCode = (sale: Sale) => sale.sale_code || `SALE-${sale.id.slice(0, 8).toUpperCase()}`;
 
 export default function SalesScreen() {
+  const isDark = useColorScheme() === 'dark';
   const queryClient = useQueryClient();
   const [cameraPermission, requestCameraPermission] = useCameraPermissions();
   const insets = useSafeAreaInsets();
@@ -1306,7 +1308,7 @@ export default function SalesScreen() {
   const totalPages = Math.max(1, Math.ceil((salesData?.total || 0) / PAGE_SIZE));
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, isDark && darkSales.container]}>
       <View style={[styles.summaryBanner, { paddingTop: Math.max(10, insets.top + 4) }]}>
         <Text style={styles.summaryLabel}>Doanh thu hôm nay</Text>
         <View style={styles.summaryCompactRow}>
@@ -1316,13 +1318,13 @@ export default function SalesScreen() {
         </View>
       </View>
 
-      <View style={styles.tabRow}>
+      <View style={[styles.tabRow, isDark && darkSales.tabRow]}>
         <TabButton label="Sản phẩm" active={tab === 'products'} onPress={() => setTab('products')} icon="box" />
         <TabButton label={`Giỏ hàng (${cartItems.length})`} active={tab === 'cart'} onPress={() => setTab('cart')} icon="shopping-cart" />
         <TabButton label="Lịch sử" active={tab === 'history'} onPress={() => setTab('history')} icon="clock" />
       </View>
 
-      <View style={styles.quickActionRow}>
+      <View style={[styles.quickActionRow, isDark && darkSales.quickActionRow]}>
         <TouchableOpacity style={styles.quickTabButton} onPress={() => setShowQuickSaleModal(true)}>
           <Feather name="zap" size={14} color="#fff" />
           <Text style={styles.quickTabText}>Bán nhanh</Text>
@@ -1330,10 +1332,10 @@ export default function SalesScreen() {
       </View>
 
       {tab === 'products' && (
-        <View style={styles.section}>
+        <View style={[styles.section, isDark && darkSales.section]}>
           <View style={styles.searchRow}>
             <TextInput
-              style={styles.searchInput}
+              style={[styles.searchInput, isDark && darkSales.searchInput]}
               placeholder="Tìm sản phẩm theo tên, SKU, barcode"
               placeholderTextColor={BRAND_COLORS.textMuted}
               value={partSearch}
@@ -1392,16 +1394,16 @@ export default function SalesScreen() {
       )}
 
       {tab === 'cart' && (
-        <ScrollView contentContainerStyle={styles.cartContent}>
+        <ScrollView contentContainerStyle={[styles.cartContent, isDark && darkSales.section]}>
           <View style={styles.cartHeaderRow}>
-            <Text style={styles.sectionTitle}>Giỏ hàng</Text>
+            <Text style={[styles.sectionTitle, isDark && darkSales.primaryText]}>Giỏ hàng</Text>
             <TouchableOpacity onPress={() => setShowCustomerModal(true)} style={styles.customerQuickButton}>
               <Feather name="users" size={14} color={BRAND_COLORS.primary} />
               <Text style={styles.customerButtonText}>Khách hàng</Text>
             </TouchableOpacity>
           </View>
 
-          <View style={styles.customerInfoCard}>
+          <View style={[styles.customerInfoCard, isDark && darkSales.card]}>
             <View style={styles.customerInfoTop}>
               <View style={{ flex: 1 }}>
                 <Text style={styles.customerInfoName}>{selectedCustomer?.name || 'Khách lẻ'}</Text>
@@ -1574,10 +1576,10 @@ export default function SalesScreen() {
       )}
 
       {tab === 'history' && (
-        <View style={styles.section}>
+        <View style={[styles.section, isDark && darkSales.section]}>
           <View style={styles.searchRow}>
             <TextInput
-              style={styles.searchInput}
+              style={[styles.searchInput, isDark && darkSales.searchInput]}
               placeholder="Tìm theo mã đơn, tên khách, SĐT"
               placeholderTextColor={BRAND_COLORS.textMuted}
               value={salesSearch}
@@ -1726,7 +1728,7 @@ export default function SalesScreen() {
       </Modal>
 
       <Modal visible={showCustomerModal} animationType="slide" onRequestClose={() => setShowCustomerModal(false)}>
-        <View style={[styles.modalContainer, { paddingTop: Math.max(12, insets.top + 8) }]}>
+        <View style={[styles.modalContainer, isDark && darkSales.modalContainer, { paddingTop: Math.max(12, insets.top + 8) }]}>
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Chọn khách hàng</Text>
             <View style={styles.modalHeaderActions}>
@@ -1740,7 +1742,7 @@ export default function SalesScreen() {
             </View>
           </View>
           <TextInput
-            style={styles.customerSearchInput}
+            style={[styles.customerSearchInput, isDark && darkSales.searchInput]}
             placeholder="Tìm tên, số điện thoại"
             placeholderTextColor={BRAND_COLORS.textMuted}
             value={customerSearch}
@@ -1786,7 +1788,7 @@ export default function SalesScreen() {
       </Modal>
 
       <Modal visible={showCustomerFormModal} animationType="slide" onRequestClose={() => setShowCustomerFormModal(false)}>
-        <ScrollView contentContainerStyle={styles.modalContainer}>
+        <ScrollView contentContainerStyle={[styles.modalContainer, isDark && darkSales.modalContainer]}>
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>{customerFormMode === 'edit' ? 'Sửa khách hàng' : 'Thêm khách hàng'}</Text>
             <TouchableOpacity onPress={() => setShowCustomerFormModal(false)}>
@@ -1836,7 +1838,7 @@ export default function SalesScreen() {
       </Modal>
 
       <Modal visible={showCheckout} animationType="slide" onRequestClose={() => setShowCheckout(false)}>
-        <ScrollView contentContainerStyle={styles.modalContainer}>
+        <ScrollView contentContainerStyle={[styles.modalContainer, isDark && darkSales.modalContainer]}>
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>{editingSale ? 'Cập nhật hóa đơn' : 'Thanh toán hóa đơn'}</Text>
             <TouchableOpacity onPress={() => setShowCheckout(false)}>
@@ -1980,7 +1982,7 @@ export default function SalesScreen() {
       </Modal>
 
       <Modal visible={showQuickSaleModal} animationType="slide" onRequestClose={() => setShowQuickSaleModal(false)}>
-        <ScrollView contentContainerStyle={[styles.modalContainer, { paddingTop: Math.max(12, insets.top + 8) }]}>
+        <ScrollView contentContainerStyle={[styles.modalContainer, isDark && darkSales.modalContainer, { paddingTop: Math.max(12, insets.top + 8) }]}>
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Bán hàng nhanh</Text>
             <TouchableOpacity onPress={() => setShowQuickSaleModal(false)}>
@@ -2130,7 +2132,7 @@ export default function SalesScreen() {
       </Modal>
 
       <Modal visible={!!selectedSale} animationType="slide" onRequestClose={() => setSelectedSale(null)}>
-        <ScrollView contentContainerStyle={styles.modalContainer}>
+        <ScrollView contentContainerStyle={[styles.modalContainer, isDark && darkSales.modalContainer]}>
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>{selectedSale ? saleCode(selectedSale) : 'Chi tiết'}</Text>
             <TouchableOpacity onPress={() => setSelectedSale(null)}>
@@ -2172,7 +2174,7 @@ export default function SalesScreen() {
       </Modal>
 
       <Modal visible={showDeliveryManager} animationType="slide" onRequestClose={() => setShowDeliveryManager(false)}>
-        <View style={styles.modalContainer}>
+        <View style={[styles.modalContainer, isDark && darkSales.modalContainer]}>
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Quản lý giao hàng</Text>
             <TouchableOpacity onPress={() => setShowDeliveryManager(false)}>
@@ -2232,33 +2234,36 @@ function TabButton({
   onPress: () => void;
   icon: keyof typeof Feather.glyphMap;
 }) {
+  const isDark = useColorScheme() === 'dark';
   return (
-    <TouchableOpacity style={[styles.tabButton, active && styles.tabButtonActive]} onPress={onPress}>
-      <Feather name={icon} size={14} color={active ? '#fff' : BRAND_COLORS.textSecondary} />
-      <Text style={[styles.tabButtonText, active && styles.tabButtonTextActive]}>{label}</Text>
+    <TouchableOpacity style={[styles.tabButton, isDark && darkSales.tabButton, active && styles.tabButtonActive]} onPress={onPress}>
+      <Feather name={icon} size={14} color={active ? '#fff' : isDark ? '#9FB0C9' : BRAND_COLORS.textSecondary} />
+      <Text style={[styles.tabButtonText, isDark && darkSales.secondaryText, active && styles.tabButtonTextActive]}>{label}</Text>
     </TouchableOpacity>
   );
 }
 
 function Chip({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
+  const isDark = useColorScheme() === 'dark';
   return (
-    <TouchableOpacity style={[styles.chip, active && styles.chipActive]} onPress={onPress}>
-      <Text style={[styles.chipText, active && styles.chipTextActive]}>{label}</Text>
+    <TouchableOpacity style={[styles.chip, isDark && darkSales.chip, active && styles.chipActive, active && isDark && darkSales.chipActive]} onPress={onPress}>
+      <Text style={[styles.chipText, isDark && darkSales.secondaryText, active && styles.chipTextActive]}>{label}</Text>
     </TouchableOpacity>
   );
 }
 
 function PartCard({ part, onAdd, inCart }: { part: Part; onAdd: () => void; inCart: boolean }) {
+  const isDark = useColorScheme() === 'dark';
   const stock = stockForPart(part);
   const retail = fromBranchValue(part.retailPrice, BRANCH_ID);
 
   return (
-    <View style={styles.partCard}>
-      <Text style={styles.partName} numberOfLines={2}>
+    <View style={[styles.partCard, isDark && darkSales.card]}>
+      <Text style={[styles.partName, isDark && darkSales.primaryText]} numberOfLines={2}>
         {part.name}
       </Text>
-      <Text style={styles.partMeta}>SKU: {part.sku || '-'}</Text>
-      <Text style={styles.partMeta}>Tồn: {stock}</Text>
+      <Text style={[styles.partMeta, isDark && darkSales.secondaryText]}>SKU: {part.sku || '-'}</Text>
+      <Text style={[styles.partMeta, isDark && darkSales.secondaryText]}>Tồn: {stock}</Text>
       <Text style={styles.partPrice}>{formatCurrency(retail)}</Text>
       <TouchableOpacity style={[styles.addButton, inCart && styles.addedButton]} onPress={onAdd}>
         <Text style={styles.addButtonText}>{inCart ? 'Thêm nữa' : 'Thêm vào giỏ'}</Text>
@@ -2278,16 +2283,17 @@ function CartRow({
   onPriceChange: (price: number) => void;
   onRemove: () => void;
 }) {
+  const isDark = useColorScheme() === 'dark';
   return (
-    <View style={styles.cartRow}>
+    <View style={[styles.cartRow, isDark && darkSales.card]}>
       <View style={{ flex: 1 }}>
-        <Text style={styles.cartName}>{item.partName}</Text>
-        <Text style={styles.cartMeta}>SKU: {item.sku || '-'} | Tồn: {item.stockSnapshot}</Text>
+        <Text style={[styles.cartName, isDark && darkSales.primaryText]}>{item.partName}</Text>
+        <Text style={[styles.cartMeta, isDark && darkSales.secondaryText]}>SKU: {item.sku || '-'} | Tồn: {item.stockSnapshot}</Text>
       </View>
 
       <View style={styles.cartControls}>
         <QtyButton icon="minus" onPress={() => onQuantityChange(item.quantity - 1)} />
-        <Text style={styles.qtyText}>{item.quantity}</Text>
+        <Text style={[styles.qtyText, isDark && darkSales.primaryText]}>{item.quantity}</Text>
         <QtyButton icon="plus" onPress={() => onQuantityChange(item.quantity + 1)} />
       </View>
 
@@ -2296,7 +2302,7 @@ function CartRow({
           value={formatMoneyInput(item.sellingPrice)}
           onChangeText={(v) => onPriceChange(parseMoneyInput(v))}
           keyboardType="numeric"
-          style={styles.priceInput}
+          style={[styles.priceInput, isDark && darkSales.searchInput]}
         />
       </View>
       <TouchableOpacity onPress={onRemove} style={{ marginLeft: 8 }}>
@@ -2329,23 +2335,24 @@ function SaleCard({
   onPrint: () => void;
   onShare: () => void;
 }) {
+  const isDark = useColorScheme() === 'dark';
   const count = Array.isArray(sale.items) ? sale.items.length : 0;
 
   return (
-    <View style={styles.saleCard}>
+    <View style={[styles.saleCard, isDark && darkSales.card]}>
       <View style={styles.saleTop}>
         <View>
           <Text style={styles.saleCode}>{saleCode(sale)}</Text>
-          <Text style={styles.saleCustomer}>{sale.customer?.name || 'Khách lẻ'}</Text>
+          <Text style={[styles.saleCustomer, isDark && darkSales.primaryText]}>{sale.customer?.name || 'Khách lẻ'}</Text>
         </View>
         <View style={[styles.statusPill, { backgroundColor: `${statusColor(sale.status)}22` }]}> 
           <Text style={[styles.statusText, { color: statusColor(sale.status) }]}>{statusLabel(sale.status)}</Text>
         </View>
       </View>
 
-      <Text style={styles.saleMeta}>📅 {formatDate(sale.date)}</Text>
-      <Text style={styles.saleMeta}>💳 {paymentMethodLabel(sale.paymentMethod)} • {paymentTypeLabel(sale.paymentType)}</Text>
-      <Text style={styles.saleMeta}>📦 {count} sản phẩm</Text>
+      <Text style={[styles.saleMeta, isDark && darkSales.secondaryText]}>📅 {formatDate(sale.date)}</Text>
+      <Text style={[styles.saleMeta, isDark && darkSales.secondaryText]}>💳 {paymentMethodLabel(sale.paymentMethod)} • {paymentTypeLabel(sale.paymentType)}</Text>
+      <Text style={[styles.saleMeta, isDark && darkSales.secondaryText]}>📦 {count} sản phẩm</Text>
       <Text style={styles.saleTotal}>{formatCurrency(sale.total)}</Text>
 
       <View style={styles.saleActions}>
@@ -2416,15 +2423,16 @@ function SelectorRow({
   value: string;
   onChange: (value: string) => void;
 }) {
+  const isDark = useColorScheme() === 'dark';
   return (
     <View style={styles.selectorRow}>
       {options.map((opt) => (
         <TouchableOpacity
           key={opt.key}
-          style={[styles.selectorButton, value === opt.key && styles.selectorButtonActive]}
+          style={[styles.selectorButton, isDark && darkSales.selectorButton, value === opt.key && styles.selectorButtonActive, value === opt.key && isDark && darkSales.selectorButtonActive]}
           onPress={() => onChange(opt.key)}
         >
-          <Text style={[styles.selectorButtonText, value === opt.key && styles.selectorButtonTextActive]}>
+          <Text style={[styles.selectorButtonText, isDark && darkSales.secondaryText, value === opt.key && styles.selectorButtonTextActive]}>
             {opt.label}
           </Text>
         </TouchableOpacity>
@@ -2446,11 +2454,12 @@ function InputField({
   keyboardType?: 'default' | 'numeric' | 'phone-pad';
   multiline?: boolean;
 }) {
+  const isDark = useColorScheme() === 'dark';
   return (
     <View style={{ marginBottom: 10 }}>
-      <Text style={styles.inputLabel}>{label}</Text>
+      <Text style={[styles.inputLabel, isDark && darkSales.secondaryText]}>{label}</Text>
       <TextInput
-        style={[styles.textInput, multiline && styles.textInputMultiline]}
+        style={[styles.textInput, isDark && darkSales.searchInput, isDark && darkSales.primaryText, multiline && styles.textInputMultiline]}
         value={value}
         onChangeText={onChange}
         keyboardType={keyboardType || 'default'}
@@ -3118,4 +3127,28 @@ const styles = StyleSheet.create({
   emptyBox: { alignItems: 'center', justifyContent: 'center', paddingTop: 50, gap: 6 },
   emptyEmoji: { fontSize: 44 },
   emptyText: { fontSize: 14, color: BRAND_COLORS.textSecondary },
+});
+
+const darkSales = StyleSheet.create({
+  container: { backgroundColor: '#0B1220' },
+  tabRow: { backgroundColor: '#0B1220' },
+  quickActionRow: { backgroundColor: '#0B1220' },
+  section: { backgroundColor: '#0B1220' },
+  modalContainer: { backgroundColor: '#0B1220' },
+  tabButton: { backgroundColor: '#16233A', borderColor: '#2B3C5A' },
+  chip: { backgroundColor: '#16233A', borderColor: '#2B3C5A' },
+  chipActive: { backgroundColor: '#1E3A8A', borderColor: '#3B82F6' },
+  selectorButton: { backgroundColor: '#16233A', borderColor: '#2B3C5A' },
+  selectorButtonActive: { backgroundColor: '#1E3A8A', borderColor: '#3B82F6' },
+  card: {
+    backgroundColor: '#152239',
+    borderColor: '#2B3C5A',
+  },
+  searchInput: {
+    backgroundColor: '#152239',
+    borderColor: '#2B3C5A',
+    color: '#E2E8F0',
+  },
+  primaryText: { color: '#E2E8F0' },
+  secondaryText: { color: '#9FB0C9' },
 });

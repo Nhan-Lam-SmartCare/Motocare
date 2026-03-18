@@ -17,6 +17,8 @@ import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BRAND_COLORS, formatCurrency } from '../../constants';
 import { supabase } from '../../shared/supabaseClient';
+import { completeWorkOrderPaymentMobile } from '../../shared/workOrderPayment';
+import { createWorkOrderAtomicMobile } from '../../shared/workOrderAtomic';
 
 type PaymentStatus = 'unpaid' | 'partial' | 'paid';
 type PaymentMethod = 'cash' | 'bank';
@@ -34,6 +36,8 @@ type CustomerOption = {
   id: string;
   name: string;
   phone?: string;
+  vehicleModel?: string;
+  licensePlate?: string;
   vehicles?: CustomerVehicle[];
 };
 
@@ -71,6 +75,8 @@ type SubmitAction = 'save' | 'deposit' | 'pay';
 
 const BRANCH_ID = 'CN1';
 const WORK_ORDER_STATUS: WorkOrderStatus[] = ['Tiếp nhận', 'Đang sửa', 'Đã sửa xong', 'Trả máy'];
+const PARTS_FETCH_LIMIT = 1200;
+const PART_SEARCH_RESULT_LIMIT = 300;
 const STATUS_COLOR: Record<WorkOrderStatus, string> = {
   'Tiếp nhận': '#5AB0FF',
   'Đang sửa': '#FFAD66',
@@ -82,6 +88,15 @@ const toNumber = (v: string) => {
   const n = Number((v || '').replace(/,/g, '').trim());
   return Number.isFinite(n) ? n : 0;
 };
+
+const toMoneyNumber = (v: string) => {
+  const digits = String(v || '').replace(/[^\d]/g, '');
+  if (!digits) return 0;
+  const n = Number(digits);
+  return Number.isFinite(n) ? n : 0;
+};
+
+const formatVndInput = (value: number) => new Intl.NumberFormat('vi-VN').format(Math.max(0, Math.round(value || 0)));
 
 const fromBranchValue = (value: unknown, branchId: string): number => {
   if (typeof value === 'number') return value;
@@ -95,29 +110,75 @@ const fromBranchValue = (value: unknown, branchId: string): number => {
   return firstNumeric == null ? 0 : Number(firstNumeric);
 };
 
+const normalizeSearchText = (value: string | null | undefined): string => {
+  if (!value) return '';
+  return String(value)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd')
+    .replace(/Đ/g, 'D')
+    .toLowerCase()
+    .trim();
+};
+
+const normalizePhoneDigits = (value: string | null | undefined): string => {
+  if (!value) return '';
+  return String(value).replace(/\D/g, '');
+};
+
+const normalizeCustomerVehicles = (value: unknown): CustomerVehicle[] => {
+  if (!Array.isArray(value)) return [];
+
+  return value.map((v: any, idx) => ({
+    id: String(v?.id || `veh-${idx}`),
+    model: String(v?.model || v?.vehicleModel || v?.vehiclemodel || '').trim(),
+    licensePlate: String(v?.licensePlate || v?.licenseplate || '').trim(),
+    isPrimary: Boolean(v?.isPrimary),
+  }));
+};
+
 const fetchCustomers = async (query?: string): Promise<CustomerOption[]> => {
   let req = supabase
     .from('customers')
-    .select('id,name,phone,vehicles')
+    .select('id,name,phone,vehiclemodel,licenseplate,vehicles')
     .order('created_at', { ascending: false });
 
   if (query && query.trim()) {
     const q = query.trim();
-    req = req.or(`name.ilike.%${q}%,phone.ilike.%${q}%`);
-    req = req.limit(30);
+    const phoneDigits = normalizePhoneDigits(q);
+    const orConditions = [
+      `name.ilike.%${q}%`,
+      `vehiclemodel.ilike.%${q}%`,
+      `licenseplate.ilike.%${q}%`,
+    ];
+    if (phoneDigits) {
+      orConditions.push(`phone.ilike.%${phoneDigits}%`);
+    } else {
+      orConditions.push(`phone.ilike.%${q}%`);
+    }
+    req = req.or(orConditions.join(','));
+    req = req.limit(50);
   } else {
     req = req.limit(200);
   }
 
   const { data, error } = await req;
   if (error) throw error;
-  return (data ?? []) as CustomerOption[];
+
+  return (data ?? []).map((row: any) => ({
+    id: String(row?.id || ''),
+    name: String(row?.name || ''),
+    phone: String(row?.phone || ''),
+    vehicleModel: String(row?.vehicleModel || row?.vehiclemodel || '').trim(),
+    licensePlate: String(row?.licensePlate || row?.licenseplate || '').trim(),
+    vehicles: normalizeCustomerVehicles(row?.vehicles),
+  }));
 };
 
 const fetchTechnicians = async (): Promise<string[]> => {
   const [empRes, orderRes] = await Promise.all([
     supabase.from('employees').select('name,status').limit(120),
-    supabase.from('work_orders').select('technicianName').not('technicianName', 'is', null).limit(200),
+    supabase.from('work_orders').select('technicianname').not('technicianname', 'is', null).limit(200),
   ]);
 
   const names = new Set<string>();
@@ -131,7 +192,7 @@ const fetchTechnicians = async (): Promise<string[]> => {
   });
 
   (orderRes.data ?? []).forEach((row: any) => {
-    const name = String(row?.technicianName || '').trim();
+    const name = String(row?.technicianname || row?.technicianName || '').trim();
     if (name) names.add(name);
   });
 
@@ -142,7 +203,7 @@ const fetchParts = async (): Promise<PartOption[]> => {
   const { data, error } = await supabase
     .from('parts')
     .select('*')
-    .limit(300);
+    .limit(PARTS_FETCH_LIMIT);
 
   if (error) throw error;
   return (data ?? []) as PartOption[];
@@ -171,9 +232,9 @@ export default function WorkOrderCreateScreen() {
   const templateNote = pickParam(params.noteTemplate);
   const templateLabor = pickParam(params.laborTemplate);
   const templateStatus = pickParam(params.statusTemplate) as WorkOrderStatus;
+  const initialStatus: WorkOrderStatus = WORK_ORDER_STATUS.includes(templateStatus) ? templateStatus : 'Tiếp nhận';
 
   const [activeTab, setActiveTab] = useState<TopTab>('info');
-  const [didAutoAdvanceInfo, setDidAutoAdvanceInfo] = useState(false);
 
   const [showCustomerSearch, setShowCustomerSearch] = useState(true);
   const [editCustomerInfo, setEditCustomerInfo] = useState(false);
@@ -189,7 +250,7 @@ export default function WorkOrderCreateScreen() {
   const [licensePlate, setLicensePlate] = useState('');
   const [currentKm, setCurrentKm] = useState('');
   const [issueDescription, setIssueDescription] = useState(templateIssue || '');
-  const [status, setStatus] = useState<WorkOrderStatus>(WORK_ORDER_STATUS.includes(templateStatus) ? templateStatus : 'Tiếp nhận');
+  const [status, setStatus] = useState<WorkOrderStatus>(initialStatus);
   const [technicianName, setTechnicianName] = useState(templateTechnician || '');
   const [notes, setNotes] = useState(templateNote || '');
 
@@ -215,11 +276,61 @@ export default function WorkOrderCreateScreen() {
   const [servicePrice, setServicePrice] = useState('0');
   const [serviceCostPrice, setServiceCostPrice] = useState('0');
   const [services, setServices] = useState<ServiceItem[]>([]);
+  const [showVehicleModelSuggestions, setShowVehicleModelSuggestions] = useState(false);
   const [showServiceModal, setShowServiceModal] = useState(false);
   const [showTechnicianModal, setShowTechnicianModal] = useState(false);
   const [technicianSearch, setTechnicianSearch] = useState('');
   const [isSavingVehicle, setIsSavingVehicle] = useState(false);
   const [cameraPermission, requestCameraPermission] = useCameraPermissions();
+
+  const resetCreateForm = () => {
+    setActiveTab('info');
+
+    setShowCustomerSearch(true);
+    setEditCustomerInfo(false);
+    setEditVehicleInfo(false);
+    setCustomerSearch('');
+    setCustomerQueryKey('');
+    setSelectedCustomer(null);
+
+    setCustomerName('');
+    setCustomerPhone('');
+    setVehicleModel('');
+    setLicensePlate('');
+    setCurrentKm('');
+    setIssueDescription(templateIssue || '');
+    setStatus(initialStatus);
+    setTechnicianName(templateTechnician || '');
+    setNotes(templateNote || '');
+
+    setLaborCost(templateLabor || '0');
+    setDiscount('0');
+    setDiscountType('amount');
+
+    setUseDeposit(false);
+    setDepositAmount('0');
+    setShowPaymentInput(false);
+    setPartialAmount('0');
+    setPaymentMethod('cash');
+
+    setPartSearch('');
+    setShowPartModal(false);
+    setShowScannerModal(false);
+    setPartCategoryFilter('');
+    setSelectedParts([]);
+    setScanLocked(false);
+
+    setServiceName('');
+    setServiceQty('1');
+    setServicePrice('0');
+    setServiceCostPrice('0');
+    setServices([]);
+    setShowVehicleModelSuggestions(false);
+    setShowServiceModal(false);
+    setShowTechnicianModal(false);
+    setTechnicianSearch('');
+    setIsSavingVehicle(false);
+  };
 
   const { data: customers = [], isLoading: customerLoading } = useQuery({
     queryKey: ['workorder-form-customers', customerQueryKey],
@@ -248,23 +359,81 @@ export default function WorkOrderCreateScreen() {
   });
 
   const filteredCustomers = useMemo(() => {
-    // Server-side search already filtered; just do local plate filtering on top
-    const q = customerSearch.trim().toLowerCase();
-    if (!q) return customers.slice(0, 15);
+    const rawQuery = customerSearch.trim();
+    const normalizedQuery = normalizeSearchText(rawQuery);
+    const phoneQueryDigits = normalizePhoneDigits(rawQuery);
+    if (!rawQuery) return customers.slice(0, 15);
+
     return customers
       .filter((c) => {
-        const matchName = c.name.toLowerCase().includes(q);
-        const matchPhone = (c.phone ?? '').toLowerCase().includes(q);
-        const matchPlate = c.vehicles?.some(v => (v.licensePlate ?? '').toLowerCase().includes(q));
-        return matchName || matchPhone || matchPlate;
+        const nameMatched = normalizeSearchText(c.name).includes(normalizedQuery);
+
+        const normalizedPhones = String(c.phone || '')
+          .split(',')
+          .map((p) => normalizePhoneDigits(p.trim()))
+          .filter(Boolean);
+        const phoneMatched = phoneQueryDigits
+          ? normalizedPhones.some((p) => p.includes(phoneQueryDigits))
+          : normalizeSearchText(String(c.phone || '')).includes(normalizedQuery);
+
+        const mainVehicleMatched =
+          normalizeSearchText(c.vehicleModel || '').includes(normalizedQuery)
+          || normalizeSearchText(c.licensePlate || '').includes(normalizedQuery);
+
+        const vehiclesMatched = (c.vehicles || []).some((v) => {
+          return (
+            normalizeSearchText(v.licensePlate || '').includes(normalizedQuery)
+            || normalizeSearchText(v.model || '').includes(normalizedQuery)
+          );
+        });
+
+        return nameMatched || phoneMatched || mainVehicleMatched || vehiclesMatched;
       })
       .slice(0, 25);
   }, [customers, customerSearch]);
 
   const customerVehicles = useMemo(() => {
-    if (!selectedCustomer?.vehicles) return [];
-    return selectedCustomer.vehicles;
+    if (!selectedCustomer) return [];
+    if (selectedCustomer.vehicles?.length) return selectedCustomer.vehicles;
+
+    if (selectedCustomer.vehicleModel || selectedCustomer.licensePlate) {
+      return [
+        {
+          id: `legacy-${selectedCustomer.id}`,
+          model: selectedCustomer.vehicleModel || '',
+          licensePlate: selectedCustomer.licensePlate || '',
+          isPrimary: true,
+        },
+      ];
+    }
+
+    return [];
   }, [selectedCustomer]);
+
+  const vehicleModelSuggestions = useMemo(() => {
+    const q = normalizeSearchText(vehicleModel);
+    const currentCustomerModels = customerVehicles
+      .map((v) => String(v.model || '').trim())
+      .filter(Boolean);
+
+    const globalModels = customers.flatMap((c) => {
+      const models: string[] = [];
+      if (c.vehicleModel) models.push(String(c.vehicleModel).trim());
+      (c.vehicles || []).forEach((v) => {
+        const model = String(v.model || '').trim();
+        if (model) models.push(model);
+      });
+      return models;
+    });
+
+    const unique = Array.from(new Set([...currentCustomerModels, ...globalModels]));
+    if (!q) return unique.slice(0, 18);
+
+    const matched = unique.filter((model) => normalizeSearchText(model).includes(q));
+    const startsWith = matched.filter((model) => normalizeSearchText(model).startsWith(q));
+    const contains = matched.filter((model) => !normalizeSearchText(model).startsWith(q));
+    return [...startsWith, ...contains].slice(0, 18);
+  }, [vehicleModel, customerVehicles, customers]);
 
   const filteredTechnicians = useMemo(() => {
     const q = technicianSearch.trim().toLowerCase();
@@ -272,27 +441,35 @@ export default function WorkOrderCreateScreen() {
     return technicians.filter((t) => t.toLowerCase().includes(q));
   }, [technicians, technicianSearch]);
 
-  const filteredParts = useMemo(() => {
-    const q = partSearch.trim().toLowerCase();
-    const currentIds = new Set(selectedParts.map((p) => p.partId));
+  const availableParts = useMemo(() => {
+    return parts.filter((part) => fromBranchValue(part.stock, BRANCH_ID) > 0);
+  }, [parts]);
 
-    return parts
+  const filteredParts = useMemo(() => {
+    const normalizedQuery = normalizeSearchText(partSearch.trim());
+    const queryWords = normalizedQuery.split(/\s+/).filter(Boolean);
+    const currentIds = new Set(selectedParts.map((p) => p.partId));
+    const resultLimit = queryWords.length === 0 ? 150 : PART_SEARCH_RESULT_LIMIT;
+
+    return availableParts
       .filter((p) => !currentIds.has(p.id))
       .filter((p) => {
         if (!partCategoryFilter) return true;
         return String(p.category || '').trim() === partCategoryFilter;
       })
       .filter((p) => {
-        if (!q) return true;
-        return (
-          p.name.toLowerCase().includes(q) ||
-          (p.sku ?? '').toLowerCase().includes(q) ||
-          (p.barcode ?? '').toLowerCase().includes(q) ||
-          (p.category ?? '').toLowerCase().includes(q)
-        );
+        if (queryWords.length === 0) return true;
+        const combined = [
+          normalizeSearchText(p.name),
+          normalizeSearchText(p.category),
+          normalizeSearchText(String((p as any).description || '')),
+          normalizeSearchText(p.sku || ''),
+          normalizeSearchText(p.barcode || ''),
+        ].join(' ');
+        return queryWords.every((word) => combined.includes(word));
       })
-      .slice(0, 25);
-  }, [parts, partSearch, selectedParts, partCategoryFilter]);
+      .slice(0, resultLimit);
+  }, [availableParts, partSearch, selectedParts, partCategoryFilter]);
 
   const partCategories = useMemo(() => {
     const set = new Set<string>();
@@ -311,7 +488,7 @@ export default function WorkOrderCreateScreen() {
   const rawDiscount = toNumber(discount);
   const discountAmount = useMemo(() => {
     if (discountType === 'percent') {
-      return Math.max(0, Math.min(100, rawDiscount)) * subtotal / 100;
+      return Math.round(Math.max(0, Math.min(100, rawDiscount)) * subtotal / 100);
     }
     return Math.max(0, rawDiscount);
   }, [discountType, rawDiscount, subtotal]);
@@ -343,20 +520,6 @@ export default function WorkOrderCreateScreen() {
       setPartialAmount(String(maxCollect));
     }
   }, [showPaymentInput, partialAmount, total, depositNum]);
-
-  useEffect(() => {
-    if (activeTab !== 'info') return;
-
-    if (!infoReady) {
-      if (didAutoAdvanceInfo) setDidAutoAdvanceInfo(false);
-      return;
-    }
-
-    if (!didAutoAdvanceInfo) {
-      setDidAutoAdvanceInfo(true);
-      setActiveTab('parts');
-    }
-  }, [activeTab, infoReady, didAutoAdvanceInfo]);
 
   const handleTabPress = (tab: TopTab) => {
     if (tab === 'info') {
@@ -407,6 +570,7 @@ export default function WorkOrderCreateScreen() {
 
       let normalizedTotalPaid = Math.min(total, normalizedDeposit + normalizedPartial);
       let normalizedPaymentStatus: PaymentStatus;
+      const shouldFinalizeByRpc = submitAction === 'pay';
       if (submitAction === 'pay') {
         normalizedTotalPaid = total;
         normalizedPaymentStatus = 'paid';
@@ -421,19 +585,16 @@ export default function WorkOrderCreateScreen() {
         normalizedPaymentStatus = 'partial';
       }
 
-      const normalizedRemaining = Math.max(0, total - normalizedTotalPaid);
-
       const id = `wo-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
-      const nowIso = new Date().toISOString();
+      const additionalPayment = Math.max(0, normalizedTotalPaid - normalizedDeposit);
 
-      const payload: Record<string, unknown> = {
+      const atomicResult = await createWorkOrderAtomicMobile({
         id,
-        creationDate: nowIso,
-        customerId: selectedCustomer?.id ?? null,
         customerName: name,
-        customerPhone: customerPhone.trim() || null,
-        vehicleModel: vehicleModel.trim() || null,
-        licensePlate: licensePlate.trim() || null,
+        customerPhone: phone,
+        vehicleModel: model,
+        licensePlate: plate,
+        vehicleId: selectedCustomer?.vehicles?.find((v) => v.licensePlate === plate)?.id ?? null,
         currentKm: currentKm.trim() ? toNumber(currentKm) : null,
         issueDescription: issue,
         technicianName: technicianName.trim(),
@@ -443,10 +604,11 @@ export default function WorkOrderCreateScreen() {
         partsUsed: selectedParts.map((p) => ({
           partId: p.partId,
           partName: p.partName,
-          sku: p.sku,
           quantity: p.quantity,
           price: p.sellingPrice,
           costPrice: p.costPrice,
+          sku: p.sku,
+          category: undefined,
         })),
         additionalServices: services.map((s) => ({
           id: s.id,
@@ -455,52 +617,35 @@ export default function WorkOrderCreateScreen() {
           price: s.sellingPrice,
           costPrice: s.costPrice,
         })),
-        notes: notes.trim() || null,
         total,
         branchId: BRANCH_ID,
-        depositAmount: normalizedDeposit > 0 ? normalizedDeposit : null,
         paymentStatus: normalizedPaymentStatus,
         paymentMethod,
-        totalPaid: normalizedTotalPaid > 0 ? normalizedTotalPaid : 0,
-        remainingAmount: normalizedRemaining,
-        paymentDate: normalizedPaymentStatus === 'paid' ? nowIso : null,
-      };
+        depositAmount: normalizedDeposit,
+        additionalPayment,
+      });
 
-      const { error } = await supabase.from('work_orders').insert(payload);
-      if (error) throw error;
-
-      try {
-        const { data: authData } = await supabase.auth.getUser();
-        await supabase.from('audit_logs').insert({
-          user_id: authData.user?.id ?? null,
-          action: 'work_order.create_mobile',
-          table_name: 'work_orders',
-          record_id: id,
-          old_data: null,
-          new_data: payload,
+      if (
+        shouldFinalizeByRpc
+        && normalizedPaymentStatus === 'paid'
+        && selectedParts.length > 0
+        && !atomicResult?.inventoryDeducted
+      ) {
+        await completeWorkOrderPaymentMobile({
+          orderId: id,
+          paymentMethod: paymentMethod || 'cash',
+          paymentAmount: 0,
         });
-      } catch {
-        // Keep creation successful even if audit logging fails.
       }
 
       return id;
     },
-    onSuccess: (newId) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['workorders'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard-live'] });
       queryClient.invalidateQueries({ queryKey: ['mobile-connection-stats'] });
-
-      Alert.alert('Thanh cong', 'Da tao phieu sua moi', [
-        {
-          text: 'Xem chi tiet',
-          onPress: () =>
-            router.replace({
-              pathname: '/(tabs)/workorder-detail/[id]',
-              params: { id: newId },
-            }),
-        },
-        { text: 'Ve danh sach', onPress: () => router.replace('/(tabs)/workorders') },
-      ]);
+      resetCreateForm();
+      router.replace('/(tabs)/workorders');
     },
     onError: (err: any) => {
       Alert.alert('Lỗi tạo phiếu', err?.message || 'Không thể tạo phiếu sửa');
@@ -509,11 +654,13 @@ export default function WorkOrderCreateScreen() {
 
   const pickCustomer = (c: CustomerOption) => {
     const mainVehicle = c.vehicles?.find((v) => v.isPrimary) || c.vehicles?.[0];
+    const resolvedVehicleModel = mainVehicle?.model || c.vehicleModel || '';
+    const resolvedLicensePlate = mainVehicle?.licensePlate || c.licensePlate || '';
     setSelectedCustomer(c);
     setCustomerName(c.name || '');
     setCustomerPhone(c.phone || '');
-    setVehicleModel(mainVehicle?.model || '');
-    setLicensePlate(mainVehicle?.licensePlate || '');
+    setVehicleModel(resolvedVehicleModel);
+    setLicensePlate(resolvedLicensePlate);
     setEditCustomerInfo(false);
     setEditVehicleInfo(false);
     setShowCustomerSearch(false);
@@ -604,16 +751,20 @@ export default function WorkOrderCreateScreen() {
     setScanLocked(true);
     setPartSearch(code);
 
-    const found = filteredParts.find(
+    const found = availableParts.find(
       (p) =>
-        String(p.sku || '').toLowerCase() === code.toLowerCase() ||
-        String(p.barcode || '').toLowerCase() === code.toLowerCase()
+        normalizeSearchText(String(p.sku || '')) === normalizeSearchText(code) ||
+        normalizeSearchText(String(p.barcode || '')) === normalizeSearchText(code)
     );
 
     if (found) {
       addPart(found);
       Alert.alert('Đã quét mã', `Đã thêm: ${found.name}`);
       setPartSearch('');
+    }
+
+    if (!found) {
+      Alert.alert('Không tìm thấy', 'Không có phụ tùng khớp mã vừa quét trong danh sách còn hàng.');
     }
 
     setShowScannerModal(false);
@@ -767,16 +918,30 @@ export default function WorkOrderCreateScreen() {
                     <View style={styles.loadingInline}><ActivityIndicator size="small" color="#63A8FF" /></View>
                   ) : (
                     <View style={styles.customerListWrap}>
-                      {filteredCustomers.map((c) => (
+                      {filteredCustomers.map((c) => {
+                        const primaryVehicle = c.vehicles?.find((v) => v.isPrimary) || c.vehicles?.[0];
+                        const vehicleModelLabel = primaryVehicle?.model || c.vehicleModel || '';
+                        const vehiclePlateLabel = primaryVehicle?.licensePlate || c.licensePlate || '';
+                        const totalVehicles = c.vehicles?.length || (vehicleModelLabel || vehiclePlateLabel ? 1 : 0);
+
+                        return (
                         <TouchableOpacity key={c.id} style={styles.customerTile} activeOpacity={0.86} onPress={() => pickCustomer(c)}>
                           <View style={styles.customerAvatarLg}><Text style={styles.customerAvatarText}>{c.name.charAt(0).toUpperCase()}</Text></View>
                           <View style={{ flex: 1 }}>
                             <Text style={styles.customerName}>{c.name}</Text>
                             <Text style={styles.customerPhone}>{c.phone || 'Không có SDT'}</Text>
+                            {(vehicleModelLabel || vehiclePlateLabel) ? (
+                              <Text style={styles.customerVehicleHint}>
+                                {vehicleModelLabel ? `${vehicleModelLabel} ` : ''}
+                                {vehiclePlateLabel ? `• ${vehiclePlateLabel}` : ''}
+                                {totalVehicles > 1 ? ` (+${totalVehicles - 1} xe)` : ''}
+                              </Text>
+                            ) : null}
                           </View>
                           <Text style={styles.customerArrow}>›</Text>
                         </TouchableOpacity>
-                      ))}
+                        );
+                      })}
                       <TouchableOpacity
                         style={styles.addNewCustomerHint}
                         onPress={() => {
@@ -794,25 +959,20 @@ export default function WorkOrderCreateScreen() {
               ) : (
                 <View style={styles.sectionInnerGroup}>
                   <View style={styles.selectedCustomerCard}>
-                    <View style={styles.customerAvatarLg}><Text style={styles.customerAvatarText}>{(customerName || 'K').charAt(0).toUpperCase()}</Text></View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.customerName}>{customerName || 'Khach moi'}</Text>
-                      <Text style={styles.customerPhone}>{customerPhone || 'Chưa có số điện thoại'}</Text>
+                    <View style={styles.selectedCustomerAvatar}><Text style={styles.selectedCustomerAvatarText}>{(customerName || 'K').charAt(0).toUpperCase()}</Text></View>
+                    <View style={styles.selectedCustomerInfoWrap}>
+                      <Text style={styles.selectedCustomerName}>{customerName || 'Khach moi'}</Text>
+                      <View style={styles.selectedCustomerPhoneRow}>
+                        <Feather name="phone-call" size={12} color="#7FB0FF" />
+                        <Text style={styles.selectedCustomerPhone}>{customerPhone || 'Chưa có số điện thoại'}</Text>
+                      </View>
                     </View>
-                    <TouchableOpacity style={styles.iconMiniBtn} onPress={() => setEditCustomerInfo((prev) => !prev)}>
+                    <View style={styles.selectedCustomerActions}>
+                    <TouchableOpacity style={styles.selectedCustomerActionBtn} onPress={() => setEditCustomerInfo((prev) => !prev)}>
                       <Feather name={editCustomerInfo ? 'check' : 'edit-2'} size={14} color="#9CC2FF" />
                     </TouchableOpacity>
                     <TouchableOpacity
-                      style={styles.iconMiniBtn}
-                      onPress={() => {
-                        setEditCustomerInfo(false);
-                        setShowCustomerSearch(true);
-                      }}
-                    >
-                      <Feather name="refresh-cw" size={14} color="#9CC2FF" />
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={styles.iconMiniBtn}
+                      style={styles.selectedCustomerActionBtn}
                       onPress={() => {
                         setSelectedCustomer(null);
                         setCustomerName('');
@@ -826,6 +986,7 @@ export default function WorkOrderCreateScreen() {
                     >
                       <Feather name="x" size={15} color="#A5B1C6" />
                     </TouchableOpacity>
+                    </View>
                   </View>
 
                   {editCustomerInfo || !selectedCustomer ? (
@@ -877,28 +1038,85 @@ export default function WorkOrderCreateScreen() {
                       <Text style={styles.selectedVehicleTitle}>{vehicleModel || 'Xe máy'}</Text>
                       <Text style={styles.selectedVehicleSub}>{licensePlate || 'Chưa có biển số'}</Text>
                     </View>
-                    <TouchableOpacity style={styles.iconMiniBtn} onPress={() => setEditVehicleInfo(true)}>
-                      <Feather name="edit-2" size={14} color="#9CC2FF" />
-                    </TouchableOpacity>
+                    <View style={styles.vehicleCardActions}>
+                      <TouchableOpacity
+                        style={styles.vehicleCardIconBtn}
+                        onPress={() => setEditVehicleInfo(true)}
+                        accessibilityLabel="Chỉnh sửa xe"
+                      >
+                        <Feather name="edit-2" size={15} color="#9CC2FF" />
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={styles.vehicleCardIconBtn}
+                        onPress={() => {
+                          setVehicleModel('');
+                          setLicensePlate('');
+                          setEditVehicleInfo(true);
+                        }}
+                        accessibilityLabel="Thêm xe mới"
+                      >
+                        <Feather name="plus" size={15} color="#61A8FF" />
+                      </TouchableOpacity>
+                    </View>
                   </View>
                 ) : null}
 
-                <TouchableOpacity
-                  style={styles.addVehicleBtn}
-                  onPress={() => {
-                    setVehicleModel('');
-                    setLicensePlate('');
-                    setEditVehicleInfo(true);
-                  }}
-                >
-                  <Feather name="plus" size={16} color="#61A8FF" />
-                  <Text style={styles.addVehicleBtnText}>Thêm xe mới</Text>
-                </TouchableOpacity>
+                {!hasVehicleInfo || editVehicleInfo ? (
+                  <TouchableOpacity
+                    style={styles.addVehicleBtn}
+                    onPress={() => {
+                      setVehicleModel('');
+                      setLicensePlate('');
+                      setEditVehicleInfo(true);
+                    }}
+                  >
+                    <Feather name="plus" size={16} color="#61A8FF" />
+                    <Text style={styles.addVehicleBtnText}>Thêm xe mới</Text>
+                  </TouchableOpacity>
+                ) : null}
 
                 {editVehicleInfo || !hasVehicleInfo ? (
                   <>
-                    <Field label="Biển số" value={licensePlate} onChangeText={setLicensePlate} placeholder="59X1-123.45" />
-                    <Field label="Dòng xe" value={vehicleModel} onChangeText={setVehicleModel} placeholder="Honda Vision" />
+                    <Field
+                      label="Biển số"
+                      value={licensePlate}
+                      onChangeText={(value) => setLicensePlate(value.toUpperCase())}
+                      placeholder="59X1-123.45"
+                    />
+                    <View style={{ marginTop: 10 }}>
+                      <Text style={styles.label}>Dòng xe</Text>
+                      <TextInput
+                        style={styles.input}
+                        value={vehicleModel}
+                        onChangeText={(value) => {
+                          setVehicleModel(value);
+                          setShowVehicleModelSuggestions(true);
+                        }}
+                        onFocus={() => setShowVehicleModelSuggestions(true)}
+                        onBlur={() => setShowVehicleModelSuggestions(false)}
+                        placeholder="Honda Vision"
+                        placeholderTextColor="#8A96AB"
+                      />
+                      {showVehicleModelSuggestions && vehicleModelSuggestions.length > 0 ? (
+                        <View style={styles.vehicleSuggestWrap}>
+                          <Text style={styles.vehicleSuggestLabel}>Gợi ý dòng xe</Text>
+                          <View style={styles.vehicleSuggestList}>
+                            {vehicleModelSuggestions.map((model) => (
+                              <TouchableOpacity
+                                key={model}
+                                style={styles.vehicleSuggestChip}
+                                onPress={() => {
+                                  setVehicleModel(model);
+                                  setShowVehicleModelSuggestions(false);
+                                }}
+                              >
+                                <Text style={styles.vehicleSuggestChipText}>{model}</Text>
+                              </TouchableOpacity>
+                            ))}
+                          </View>
+                        </View>
+                      ) : null}
+                    </View>
                     {selectedCustomer ? (
                       <TouchableOpacity
                         style={[styles.saveVehicleBtn, isSavingVehicle ? { opacity: 0.7 } : null]}
@@ -911,7 +1129,7 @@ export default function WorkOrderCreateScreen() {
                     ) : null}
                   </>
                 ) : (
-                  <Text style={styles.helperText}>Nhấn icon bút để chỉnh sửa thông tin xe đã chọn.</Text>
+                  <Text style={styles.helperText}>Dùng nút Chỉnh sửa ngay trên thẻ thông tin xe để cập nhật nhanh.</Text>
                 )}
 
                 <Field label="Số KM hiện tại" value={currentKm} onChangeText={setCurrentKm} keyboardType="numeric" placeholder="12500" />
@@ -949,88 +1167,145 @@ export default function WorkOrderCreateScreen() {
           ) : (
             <>
               <View style={styles.tabSection}>
-                <View style={styles.actionCardsRow}>
-                  <TouchableOpacity style={styles.actionCard} onPress={() => setShowPartModal(true)}>
-                    <Text style={styles.actionCardTitle}>THÊM PHỤ TÙNG</Text>
-                    <Text style={styles.actionCardSub}>Tìm kiếm theo tên/SKU hoặc quét mã</Text>
-                    <Text style={styles.actionCardCount}>{selectedParts.length} mon</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity style={styles.actionCardSecondary} onPress={addQuickService}>
-                    <Text style={styles.actionCardTitle}>THÊM DỊCH VỤ NGOÀI</Text>
-                    <Text style={styles.actionCardSub}>Nhập công việc gia công nhanh</Text>
-                    <Text style={styles.actionCardCount}>{services.length} muc</Text>
-                  </TouchableOpacity>
-                </View>
-
-                <View style={styles.blockHeader}>
+                <View style={styles.partsHeaderRow}>
                   <Text style={styles.microLabel}>PHỤ TÙNG SỬ DỤNG</Text>
-                  <Text style={styles.blockBadge}>{selectedParts.length} mon</Text>
+                  {selectedParts.length > 0 ? <Text style={styles.blockBadge}>{selectedParts.length} món</Text> : null}
                 </View>
-                <TouchableOpacity style={styles.openPartModalBtn} onPress={() => setShowPartModal(true)}>
-                  <Text style={styles.openPartModalText}>+ Thêm phụ tùng</Text>
-                </TouchableOpacity>
 
-                <View style={styles.sectionInnerGroup}>
-                  {selectedParts.map((p) => (
-                    <View key={p.partId} style={[styles.selectedLine, p.quantity > p.stockQty ? styles.selectedLineWarn : null]}>
-                      <View style={{ flex: 1 }}>
-                        <Text style={styles.selectedTitle}>{p.partName}</Text>
-                        <Text style={styles.selectedMeta}>{p.sku || 'Không SKU'} • Tồn: {p.stockQty}</Text>
+                {selectedParts.length > 0 ? (
+                  <View style={styles.partsWebList}>
+                    {selectedParts.map((p) => (
+                      <View key={p.partId} style={[styles.partsWebCard, p.quantity > p.stockQty ? styles.partsWebCardWarn : null]}>
+                        <View style={styles.partsWebTopRow}>
+                          <View style={{ flex: 1 }}>
+                            <Text style={styles.partsWebName}>{p.partName}</Text>
+                            <Text style={styles.partsWebSku}>{p.sku || 'Không SKU'} • Tồn: {p.stockQty}</Text>
+                          </View>
+                          <TouchableOpacity style={styles.partsWebDeleteBtn} onPress={() => removePart(p.partId)}>
+                            <Feather name="trash-2" size={14} color="#FCA5A5" />
+                          </TouchableOpacity>
+                        </View>
+
+                        <View style={styles.partsWebControlRow}>
+                          <View style={styles.partsWebPriceWrap}>
+                            <Text style={styles.partsWebInputLabel}>Đơn giá</Text>
+                            <View style={styles.partsWebPriceInputBox}>
+                              <TextInput
+                                style={styles.partsWebPriceInput}
+                                value={formatVndInput(p.sellingPrice)}
+                                onChangeText={(v) => updatePart(p.partId, { sellingPrice: Math.max(0, toMoneyNumber(v)) })}
+                                keyboardType="numeric"
+                                placeholder="0"
+                                placeholderTextColor="#7F93B6"
+                              />
+                              <Text style={styles.partsWebPriceSuffix}>đ</Text>
+                            </View>
+                          </View>
+
+                          <View style={styles.partsWebQtyWrap}>
+                            <TouchableOpacity style={styles.partsWebQtyBtn} onPress={() => updatePart(p.partId, { quantity: Math.max(1, p.quantity - 1) })}>
+                              <Feather name="minus" size={13} color="#B7C4DC" />
+                            </TouchableOpacity>
+                            <Text style={styles.partsWebQtyValue}>{p.quantity}</Text>
+                            <TouchableOpacity style={styles.partsWebQtyBtn} onPress={() => updatePart(p.partId, { quantity: p.quantity + 1 })}>
+                              <Feather name="plus" size={13} color="#7FB0FF" />
+                            </TouchableOpacity>
+                          </View>
+                        </View>
+
+                        <View style={styles.partsWebBottomRow}>
+                          <Text style={styles.partsWebTotalLabel}>Thành tiền</Text>
+                          <Text style={styles.partsWebTotalValue}>{formatCurrency(p.quantity * p.sellingPrice)}</Text>
+                        </View>
+
                         {p.quantity > p.stockQty ? (
                           <Text style={styles.stockWarnText}>Vượt tồn kho: đang chọn {p.quantity}, tồn còn {p.stockQty}</Text>
                         ) : null}
                       </View>
-                      <View style={styles.qtyWrap}>
-                        <TouchableOpacity style={styles.qtyBtn} onPress={() => updatePart(p.partId, { quantity: Math.max(1, p.quantity - 1) })}>
-                          <Text style={styles.qtyBtnText}>-</Text>
-                        </TouchableOpacity>
-                        <Text style={styles.qtyText}>{p.quantity}</Text>
-                        <TouchableOpacity style={styles.qtyBtn} onPress={() => updatePart(p.partId, { quantity: p.quantity + 1 })}>
-                          <Text style={styles.qtyBtnText}>+</Text>
-                        </TouchableOpacity>
-                      </View>
-                      <TextInput
-                        style={styles.priceInput}
-                        value={String(p.sellingPrice)}
-                        onChangeText={(v) => updatePart(p.partId, { sellingPrice: Math.max(0, toNumber(v)) })}
-                        keyboardType="numeric"
-                      />
-                      <TouchableOpacity style={styles.removeBtn} onPress={() => removePart(p.partId)}>
-                        <Text style={styles.removeBtnText}>x</Text>
-                      </TouchableOpacity>
-                    </View>
-                  ))}
-                </View>
+                    ))}
+                  </View>
+                ) : (
+                  <View style={styles.partsEmptyHintWrap}>
+                    <Text style={styles.partsEmptyHintText}>Chưa có phụ tùng nào trong phiếu. Thêm phụ tùng để bắt đầu.</Text>
+                  </View>
+                )}
+
+                <TouchableOpacity style={styles.partsAddPrimaryBtn} onPress={() => setShowPartModal(true)}>
+                  <View style={styles.partsAddPrimaryDot}>
+                    <Feather name="plus" size={14} color="#90C2FF" />
+                  </View>
+                  <Text style={styles.partsAddPrimaryText}>Thêm phụ tùng</Text>
+                </TouchableOpacity>
               </View>
 
               <View style={styles.tabSection}>
-                <View style={styles.blockHeader}>
+                <View style={styles.partsHeaderRow}>
                   <Text style={styles.microLabel}>DỊCH VỤ & GIA CÔNG</Text>
-                  <Text style={[styles.blockBadge, styles.blockBadgeOrange]}>{services.length} muc</Text>
+                  {services.length > 0 ? <Text style={[styles.blockBadge, styles.blockBadgeOrange]}>{services.length} mục</Text> : null}
                 </View>
-                <View style={styles.sectionInnerGroup}>
-                  <TouchableOpacity style={styles.addServiceBtn} onPress={() => setShowServiceModal(true)}>
-                    <Text style={styles.addServiceBtnText}>+ Thêm dịch vụ gia công</Text>
-                  </TouchableOpacity>
+                {services.length > 0 ? (
+                  <View style={styles.serviceWebList}>
+                    {services.map((s) => (
+                      <View key={s.id} style={styles.serviceWebCard}>
+                        <View style={styles.partsWebTopRow}>
+                          <View style={{ flex: 1 }}>
+                            <Text style={styles.partsWebName}>{s.name}</Text>
+                          </View>
+                          <TouchableOpacity style={styles.partsWebDeleteBtn} onPress={() => removeService(s.id)}>
+                            <Feather name="trash-2" size={14} color="#FCA5A5" />
+                          </TouchableOpacity>
+                        </View>
 
-                  {services.map((s) => (
-                    <View key={s.id} style={styles.selectedLine}>
-                      <View style={{ flex: 1 }}>
-                        <Text style={styles.selectedTitle}>{s.name}</Text>
-                        <Text style={styles.selectedMeta}>SL: {s.quantity} • Von: {formatCurrency(s.costPrice)}</Text>
+                        <View style={styles.serviceWebControlRow}>
+                          <View style={[styles.partsWebPriceWrap, { flex: 1.1 }]}> 
+                            <Text style={styles.partsWebInputLabel}>Giá bán</Text>
+                            <View style={styles.serviceWebPriceInputBox}>
+                              <TextInput
+                                style={styles.serviceWebPriceInput}
+                                value={formatVndInput(s.sellingPrice)}
+                                onChangeText={(v) => updateService(s.id, { sellingPrice: Math.max(0, toMoneyNumber(v)) })}
+                                keyboardType="numeric"
+                                placeholder="0"
+                                placeholderTextColor="#7F93B6"
+                              />
+                              <Text style={styles.partsWebPriceSuffix}>đ</Text>
+                            </View>
+                          </View>
+
+                          <View style={styles.serviceWebCostWrap}>
+                            <Text style={styles.partsWebInputLabel}>Giá vốn</Text>
+                            <View style={styles.serviceWebCostInputBox}>
+                              <TextInput
+                                style={styles.serviceWebCostInput}
+                                value={formatVndInput(s.costPrice || 0)}
+                                onChangeText={(v) => updateService(s.id, { costPrice: Math.max(0, toMoneyNumber(v)) })}
+                                keyboardType="numeric"
+                                placeholder="0"
+                                placeholderTextColor="#7F93B6"
+                              />
+                            </View>
+                          </View>
+                        </View>
+
+                        <View style={styles.partsWebBottomRow}>
+                          <Text style={styles.partsWebTotalLabel}>SL: {s.quantity || 1}</Text>
+                          <Text style={styles.serviceWebTotalValue}>{formatCurrency((s.quantity || 1) * s.sellingPrice)}</Text>
+                        </View>
                       </View>
-                      <TextInput
-                        style={styles.priceInput}
-                        value={String(s.sellingPrice)}
-                        onChangeText={(v) => updateService(s.id, { sellingPrice: Math.max(0, toNumber(v)) })}
-                        keyboardType="numeric"
-                      />
-                      <TouchableOpacity style={styles.removeBtn} onPress={() => removeService(s.id)}>
-                        <Text style={styles.removeBtnText}>x</Text>
-                      </TouchableOpacity>
-                    </View>
-                  ))}
-                </View>
+                    ))}
+                  </View>
+                ) : (
+                  <View style={styles.partsEmptyHintWrap}>
+                    <Text style={styles.partsEmptyHintText}>Chưa có dịch vụ gia công nào.</Text>
+                  </View>
+                )}
+
+                <TouchableOpacity style={styles.serviceAddPrimaryBtn} onPress={() => setShowServiceModal(true)}>
+                  <View style={styles.serviceAddPrimaryDot}>
+                    <Feather name="plus" size={14} color="#F7C77D" />
+                  </View>
+                  <Text style={styles.serviceAddPrimaryText}>Thêm dịch vụ ngoài</Text>
+                </TouchableOpacity>
               </View>
 
               <View style={styles.tabSectionAction}>
@@ -1332,7 +1607,7 @@ export default function WorkOrderCreateScreen() {
 
       <Modal visible={showPartModal} transparent animationType="slide" onRequestClose={() => setShowPartModal(false)}>
         <View style={styles.modalOverlay}>
-          <View style={styles.modalCard}>
+          <View style={[styles.modalCard, styles.partsModalCard]}>
             <View style={styles.modalHead}>
               <View style={styles.inlineIconTitleRow}>
                 <Feather name="search" size={16} color="#EAF2FF" />
@@ -1382,7 +1657,9 @@ export default function WorkOrderCreateScreen() {
               ))}
             </ScrollView>
 
-            <ScrollView style={{ marginTop: 10, maxHeight: 420 }}>
+            <Text style={styles.modalResultText}>Kết quả hiển thị: {filteredParts.length} phụ tùng</Text>
+
+            <ScrollView style={{ marginTop: 10, maxHeight: 560 }}>
               <View style={styles.partsList}>
                 {filteredParts.map((p) => (
                   <TouchableOpacity
@@ -1670,6 +1947,7 @@ const styles = StyleSheet.create({
   customerAvatarText: { color: '#60A5FA', fontWeight: '800' },
   customerName: { color: '#F8FAFC', fontSize: 15, fontWeight: '700' },
   customerPhone: { color: '#94A3B8', fontSize: 12, marginTop: 2 },
+  customerVehicleHint: { color: '#7FB0FF', fontSize: 11, marginTop: 3, fontWeight: '600' },
   customerArrow: { color: '#64748B', fontSize: 19 },
   addNewCustomerHint: {
     marginTop: 4,
@@ -1683,27 +1961,64 @@ const styles = StyleSheet.create({
   },
   addNewCustomerText: { color: '#60A5FA', fontWeight: '700', fontSize: 12 },
   selectedCustomerCard: {
-    padding: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: 'rgba(59, 130, 246, 0.5)',
-    backgroundColor: '#1E1E2D',
+    borderColor: '#3A6AA8',
+    backgroundColor: '#17273D',
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
   },
-  selectedVehicleCard: {
-    padding: 12,
+  selectedCustomerAvatar: {
+    width: 46,
+    height: 46,
     borderRadius: 14,
+    backgroundColor: 'rgba(59, 130, 246, 0.18)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  selectedCustomerAvatarText: { color: '#8BC2FF', fontWeight: '800', fontSize: 18 },
+  selectedCustomerInfoWrap: { flex: 1, gap: 2 },
+  selectedCustomerName: { color: '#F3F8FF', fontSize: 16, fontWeight: '800' },
+  selectedCustomerPhoneRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 1 },
+  selectedCustomerPhone: { color: '#BDD5F7', fontSize: 12, fontWeight: '600' },
+  selectedCustomerActions: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  selectedCustomerActionBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 11,
     borderWidth: 1,
-    borderColor: '#2E4D7A',
-    backgroundColor: '#1E2E46',
+    borderColor: '#3D608E',
+    backgroundColor: '#1B2D47',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  selectedVehicleCard: {
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#3668A5',
+    backgroundColor: '#16273E',
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 12,
   },
   selectedVehicleTitle: { color: '#F0F6FF', fontSize: 14, fontWeight: '700' },
   selectedVehicleSub: { color: '#C5D4EE', fontSize: 12, marginTop: 1 },
+  vehicleCardActions: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  vehicleCardIconBtn: {
+    borderWidth: 1,
+    borderColor: '#3D608E',
+    backgroundColor: '#1B2D47',
+    borderRadius: 11,
+    width: 34,
+    height: 34,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   techPickerBtn: {
     marginTop: 2,
     borderRadius: 14,
@@ -1792,6 +2107,18 @@ const styles = StyleSheet.create({
   vehicleTileTitleActive: { color: '#F0F6FF' },
   vehicleTileSub: { color: '#8EA0BF', fontSize: 11, marginTop: 1 },
   vehicleTileSubActive: { color: '#C8D9F7' },
+  vehicleSuggestWrap: { marginTop: 8, gap: 6 },
+  vehicleSuggestLabel: { color: '#8EA0BF', fontSize: 11, fontWeight: '700' },
+  vehicleSuggestList: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  vehicleSuggestChip: {
+    borderWidth: 1,
+    borderColor: '#35598A',
+    backgroundColor: '#152742',
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  vehicleSuggestChipText: { color: '#CFE2FF', fontSize: 12, fontWeight: '700' },
   helperText: { color: '#8EA0BF', fontSize: 11, marginTop: 4 },
   microLabel: {
     color: '#7F8EA8',
@@ -1972,7 +2299,229 @@ const styles = StyleSheet.create({
   actionCardTitle: { color: '#EAF2FF', fontSize: 14, fontWeight: '800' },
   actionCardSub: { color: '#A9B7D1', fontSize: 12, marginTop: 4 },
   actionCardCount: { color: '#FFFFFF', fontSize: 12, fontWeight: '800', marginTop: 6 },
-  partsList: { marginTop: 8, gap: 8, maxHeight: 220 },
+  partsHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  partsWebList: { gap: 10 },
+  partsWebCard: {
+    borderWidth: 1,
+    borderColor: '#2C3F62',
+    borderRadius: 14,
+    backgroundColor: '#151D2B',
+    paddingHorizontal: 12,
+    paddingVertical: 11,
+    gap: 10,
+  },
+  partsWebCardWarn: {
+    borderColor: '#A94A58',
+    backgroundColor: '#261720',
+  },
+  partsWebTopRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
+  partsWebName: { color: '#F1F6FF', fontSize: 15, fontWeight: '800' },
+  partsWebSku: { color: '#8FA2C2', fontSize: 11, marginTop: 2 },
+  partsWebDeleteBtn: {
+    width: 30,
+    height: 30,
+    borderRadius: 9,
+    borderWidth: 1,
+    borderColor: '#5A2B38',
+    backgroundColor: '#351D28',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  partsWebControlRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: 10,
+  },
+  partsWebPriceWrap: { flex: 1, gap: 5 },
+  partsWebInputLabel: { color: '#8194B5', fontSize: 10, fontWeight: '700' },
+  partsWebPriceInputBox: {
+    borderWidth: 1,
+    borderColor: '#3A5278',
+    borderRadius: 10,
+    backgroundColor: '#101A29',
+    minHeight: 38,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+  },
+  partsWebPriceInput: {
+    flex: 1,
+    color: '#78ACFF',
+    fontSize: 14,
+    fontWeight: '800',
+    textAlign: 'right',
+    height: 36,
+    paddingVertical: 0,
+    includeFontPadding: false,
+  },
+  partsWebPriceSuffix: { color: '#6F86AB', fontSize: 11, marginLeft: 6, fontWeight: '700' },
+  partsWebQtyWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#3A5278',
+    borderRadius: 10,
+    backgroundColor: '#101A29',
+    paddingHorizontal: 2,
+    height: 38,
+  },
+  partsWebQtyBtn: {
+    width: 30,
+    height: 30,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  partsWebQtyValue: {
+    minWidth: 28,
+    textAlign: 'center',
+    color: '#E6EFFF',
+    fontWeight: '800',
+    fontSize: 13,
+  },
+  partsWebBottomRow: {
+    borderTopWidth: 1,
+    borderTopColor: '#2A3B58',
+    borderStyle: 'dashed',
+    paddingTop: 8,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  partsWebTotalLabel: { color: '#7D90AF', fontSize: 11, fontWeight: '700' },
+  partsWebTotalValue: { color: '#71E2B0', fontSize: 13, fontWeight: '800' },
+  partsEmptyHintWrap: {
+    borderWidth: 1,
+    borderColor: '#2B3E5E',
+    borderRadius: 12,
+    backgroundColor: '#131B29',
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+  },
+  partsEmptyHintText: { color: '#8EA0BF', fontSize: 12, lineHeight: 18 },
+  partsAddPrimaryBtn: {
+    marginTop: 10,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#3A6AB4',
+    backgroundColor: '#1B2E4B',
+    minHeight: 48,
+    paddingHorizontal: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+  },
+  partsAddPrimaryDot: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#3A6AB4',
+    backgroundColor: 'rgba(74, 144, 255, 0.16)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  partsAddPrimaryText: { color: '#9BC7FF', fontSize: 14, fontWeight: '800' },
+  serviceWebList: { marginTop: 2, gap: 10 },
+  serviceWebCard: {
+    borderWidth: 1,
+    borderColor: '#5A4628',
+    borderRadius: 14,
+    backgroundColor: '#1F1B16',
+    paddingHorizontal: 12,
+    paddingVertical: 11,
+    gap: 10,
+  },
+  serviceWebControlRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: 10,
+  },
+  serviceWebPriceInputBox: {
+    borderWidth: 1,
+    borderColor: '#6C5A3E',
+    borderRadius: 10,
+    backgroundColor: '#16120E',
+    minHeight: 38,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+  },
+  serviceWebPriceInput: {
+    flex: 1,
+    color: '#F7C77D',
+    fontSize: 14,
+    fontWeight: '800',
+    textAlign: 'right',
+    height: 36,
+    paddingVertical: 0,
+    includeFontPadding: false,
+  },
+  serviceWebCostWrap: { flex: 0.8, gap: 5 },
+  serviceWebCostInputBox: {
+    borderWidth: 1,
+    borderColor: '#4F4A3F',
+    borderRadius: 10,
+    backgroundColor: '#181611',
+    minHeight: 38,
+    justifyContent: 'center',
+    paddingHorizontal: 8,
+  },
+  serviceWebCostInput: {
+    color: '#C7BAA2',
+    fontSize: 12,
+    fontWeight: '700',
+    textAlign: 'right',
+    height: 34,
+    paddingVertical: 0,
+    includeFontPadding: false,
+  },
+  serviceWebTotalValue: { color: '#F7C77D', fontSize: 13, fontWeight: '800' },
+  serviceAddPrimaryBtn: {
+    marginTop: 10,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#906B32',
+    backgroundColor: '#302514',
+    minHeight: 46,
+    paddingHorizontal: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+  },
+  serviceAddPrimaryDot: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#9A753B',
+    backgroundColor: 'rgba(245, 158, 11, 0.14)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  serviceAddPrimaryText: { color: '#F7C77D', fontSize: 14, fontWeight: '800' },
+  partsAddServiceBtn: {
+    marginTop: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#815C28',
+    backgroundColor: '#362A18',
+    minHeight: 42,
+    paddingHorizontal: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  partsAddServiceText: { color: '#F9CE86', fontSize: 12, fontWeight: '800' },
+  partsList: { marginTop: 8, gap: 8 },
   partItem: {
     borderWidth: 1,
     borderColor: '#2A3E62',
@@ -1989,10 +2538,18 @@ const styles = StyleSheet.create({
   selectedLine: {
     marginTop: 8,
     borderWidth: 1,
-    borderColor: '#425171',
+    borderColor: '#5C76A8',
     borderRadius: 10,
-    padding: 10,
-    backgroundColor: '#111722',
+    padding: 12,
+    backgroundColor: '#0F1A2E',
+    gap: 10,
+  },
+  selectedTopRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+  },
+  selectedBottomRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
@@ -2002,7 +2559,20 @@ const styles = StyleSheet.create({
     backgroundColor: '#2A1418',
   },
   selectedTitle: { color: '#EAF2FF', fontSize: 14, fontWeight: '700' },
-  selectedMeta: { color: '#8EA0BF', fontSize: 12, marginTop: 1 },
+  selectedMeta: { color: '#AFC1DD', fontSize: 12, marginTop: 1 },
+  selectedPriceMeta: { color: '#7EE2B7', fontSize: 12, marginTop: 3, fontWeight: '700' },
+  amountBadge: {
+    borderWidth: 1,
+    borderColor: '#3F5E91',
+    backgroundColor: '#122542',
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    minWidth: 108,
+    alignItems: 'flex-end',
+  },
+  amountLabel: { color: '#8EA7CC', fontSize: 11, fontWeight: '600' },
+  amountValue: { color: '#EAF2FF', fontSize: 12, fontWeight: '800', marginTop: 2 },
   stockWarnText: { color: '#FF8896', fontSize: 12, marginTop: 2, fontWeight: '700' },
   qtyWrap: {
     flexDirection: 'row',
@@ -2014,18 +2584,36 @@ const styles = StyleSheet.create({
   qtyBtn: { paddingHorizontal: 8, paddingVertical: 5 },
   qtyBtnText: { color: '#C8D6ED', fontWeight: '800', fontSize: 13 },
   qtyText: { minWidth: 20, textAlign: 'center', color: '#EAF2FF', fontWeight: '800' },
-  priceInput: {
-    width: 76,
+  qtyChip: {
     borderWidth: 1,
-    borderColor: '#425171',
+    borderColor: '#4A6086',
     borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    backgroundColor: '#14233C',
+  },
+  qtyChipText: { color: '#C8D6ED', fontSize: 12, fontWeight: '700' },
+  priceEditor: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: '#5C76A8',
+    borderRadius: 8,
+    backgroundColor: '#1A2842',
+    minHeight: 38,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingLeft: 8,
+  },
+  pricePrefix: { color: '#91AAD4', fontSize: 12, fontWeight: '700', marginRight: 4 },
+  priceInput: {
+    flex: 1,
     color: '#ECF3FF',
-    backgroundColor: '#151D2B',
+    backgroundColor: 'transparent',
     textAlign: 'right',
     paddingHorizontal: 8,
     paddingVertical: 0,
-    height: 34,
-    fontSize: 13,
+    height: 36,
+    fontSize: 14,
     fontWeight: '700',
     lineHeight: 12,
     includeFontPadding: false,
@@ -2490,6 +3078,10 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderColor: '#2A3E62',
   },
+  partsModalCard: {
+    maxHeight: '94%',
+    minHeight: '90%',
+  },
   modalHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   inlineIconTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   modalTitle: { color: '#EAF2FF', fontSize: 15, fontWeight: '800' },
@@ -2515,6 +3107,7 @@ const styles = StyleSheet.create({
     borderColor: '#3B6EDD',
   },
   modalHintText: { color: '#B6C3DA', fontSize: 11, marginTop: 8, lineHeight: 16 },
+  modalResultText: { color: '#9EC5FF', fontSize: 12, marginTop: 8, fontWeight: '700' },
   categoryChipScroll: { marginTop: 10 },
   categoryChipRow: { gap: 8, paddingRight: 8 },
   categoryChip: {

@@ -21,7 +21,7 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { supabase } from '../../shared/supabaseClient';
 import { formatWorkOrderCode } from '../../shared/workOrderCode';
-import { printWorkOrderReceipt, shareWorkOrderReceipt } from '../../shared/workOrderReceipt';
+import WorkOrderPreviewModal from '../../shared/WorkOrderPreviewModal';
 import { BRAND_COLORS, formatCurrency, formatDate } from '../../constants';
 import { useAppTheme } from '../../constants/theme';
 import type { WorkOrder } from '../../shared/types';
@@ -49,6 +49,19 @@ type WorkOrderTemplate = {
   status: string;
   useCount: number;
   updatedAt: string;
+};
+
+type StoreSettingsReceipt = {
+  storeName?: string;
+  storePhone?: string;
+  storeAddress?: string;
+  logoUrl?: string;
+  bankQrUrl?: string;
+  bankName?: string;
+  bankAccountNumber?: string;
+  bankAccountHolder?: string;
+  bankBranch?: string;
+  workOrderPrefix?: string;
 };
 
 const STATUS_ORDER = ['Tiếp nhận', 'Đang sửa', 'Đã sửa xong', 'Trả máy', 'Đã hủy'];
@@ -91,6 +104,26 @@ const SORT_LABEL: Record<SortBy, string> = {
   total_asc: 'Tổng tiền tăng dần',
 };
 
+const pickArray = (row: any, keys: string[]) => {
+  let best: any[] = [];
+  for (const key of keys) {
+    const value = row?.[key];
+    if (Array.isArray(value)) {
+      if (value.length > best.length) best = value;
+      continue;
+    }
+    if (typeof value === 'string') {
+      try {
+        const parsed = JSON.parse(value);
+        if (Array.isArray(parsed) && parsed.length > best.length) best = parsed;
+      } catch {
+        // Ignore invalid JSON payload and continue with next key.
+      }
+    }
+  }
+  return best;
+};
+
 const normalizeWorkOrder = (row: any): WorkOrder => ({
   id: row.id,
   creationDate: row.creationDate || row.creationdate || row.created_at || new Date().toISOString(),
@@ -106,7 +139,8 @@ const normalizeWorkOrder = (row: any): WorkOrder => ({
   status: row.status || 'Tiếp nhận',
   laborCost: Number(row.laborCost ?? row.laborcost ?? 0),
   discount: Number(row.discount ?? 0),
-  partsUsed: row.partsUsed || row.partsused || [],
+  partsUsed: pickArray(row, ['partsUsed', 'partsused', 'parts_used']),
+  additionalServices: pickArray(row, ['additionalServices', 'additionalservices', 'additional_services']),
   notes: row.notes || '',
   total: Number(row.total ?? 0),
   branchId: row.branchId || row.branchid || 'CN1',
@@ -117,6 +151,12 @@ const normalizeWorkOrder = (row: any): WorkOrder => ({
   remainingAmount: Number(row.remainingAmount ?? row.remainingamount ?? 0),
   paymentDate: row.paymentDate || row.paymentdate,
 });
+
+const fetchWorkOrderForReceipt = async (id: string): Promise<WorkOrder | null> => {
+  const { data, error } = await supabase.from('work_orders').select('*').eq('id', id).single();
+  if (error || !data) return null;
+  return normalizeWorkOrder(data);
+};
 
 const fetchWorkOrders = async ({ pageParam = 0 }) => {
   const pageSize = 20;
@@ -213,6 +253,35 @@ const fetchWorkOrderTemplates = async (): Promise<WorkOrderTemplate[]> => {
     .slice(0, 20);
 };
 
+const pickStoreString = (row: Record<string, unknown>, keys: string[]): string => {
+  for (const key of keys) {
+    const value = row[key];
+    if (value == null) continue;
+    const text = String(value).trim();
+    if (text) return text;
+  }
+  return '';
+};
+
+const fetchStoreSettingsForReceipt = async (): Promise<StoreSettingsReceipt | null> => {
+  const { data, error } = await supabase.from('store_settings').select('*').limit(1);
+  if (error || !data?.length) return null;
+
+  const row = (data[0] || {}) as Record<string, unknown>;
+  return {
+    storeName: pickStoreString(row, ['storeName', 'store_name']),
+    storePhone: pickStoreString(row, ['storePhone', 'store_phone', 'phone']),
+    storeAddress: pickStoreString(row, ['storeAddress', 'store_address', 'address']),
+    logoUrl: pickStoreString(row, ['logoUrl', 'logo_url', 'logo']),
+    bankQrUrl: pickStoreString(row, ['bankQrUrl', 'bank_qr_url']),
+    bankName: pickStoreString(row, ['bankName', 'bank_name']),
+    bankAccountNumber: pickStoreString(row, ['bankAccountNumber', 'bank_account_number', 'bankAccount']),
+    bankAccountHolder: pickStoreString(row, ['bankAccountHolder', 'bank_account_holder', 'bankAccountName']),
+    bankBranch: pickStoreString(row, ['bankBranch', 'bank_branch']),
+    workOrderPrefix: pickStoreString(row, ['workOrderPrefix', 'work_order_prefix']),
+  };
+};
+
 const pickDateFilterStart = (filter: DateFilter): Date | null => {
   const now = new Date();
   if (filter === 'today') {
@@ -248,6 +317,7 @@ export default function WorkOrdersScreen() {
   const [sortBy, setSortBy] = useState<SortBy>('date_desc');
   const [hideFinance, setHideFinance] = useState(true);
   const [activeTab, setActiveTab] = useState<WorkOrdersTab>('orders');
+  const [previewOrder, setPreviewOrder] = useState<WorkOrder | null>(null);
 
   const {
     data,
@@ -291,6 +361,12 @@ export default function WorkOrdersScreen() {
     queryKey: ['workorders-templates-mobile'],
     queryFn: fetchWorkOrderTemplates,
     enabled: activeTab === 'templates',
+  });
+
+  const { data: storeSettingsForReceipt } = useQuery({
+    queryKey: ['store-settings-mobile-receipt'],
+    queryFn: fetchStoreSettingsForReceipt,
+    staleTime: 1000 * 60 * 10,
   });
 
   const orders = useMemo(() => {
@@ -479,19 +555,13 @@ export default function WorkOrdersScreen() {
   };
 
   const handlePrintOrder = async (order: WorkOrder) => {
-    try {
-      await printWorkOrderReceipt(order as any);
-    } catch (err: any) {
-      Alert.alert('Lỗi', err?.message || 'Không thể in phiếu sửa từ mobile.');
-    }
+    const fullOrder = await fetchWorkOrderForReceipt(order.id);
+    setPreviewOrder((fullOrder || order) as WorkOrder);
   };
 
   const handleShareOrder = async (order: WorkOrder) => {
-    try {
-      await shareWorkOrderReceipt(order as any);
-    } catch (err: any) {
-      Alert.alert('Lỗi', err?.message || 'Không thể chia sẻ phiếu sửa.');
-    }
+    const fullOrder = await fetchWorkOrderForReceipt(order.id);
+    setPreviewOrder((fullOrder || order) as WorkOrder);
   };
 
   const historyActionLabel = (action: string) => {
@@ -827,6 +897,7 @@ export default function WorkOrdersScreen() {
               onCall={() => callCustomer(item.customerPhone)}
               onPrint={() => handlePrintOrder(item)}
               onShare={() => handleShareOrder(item)}
+              isSharing={false}
               onEdit={() =>
                 router.push({
                   pathname: '/(tabs)/workorder-edit/[id]',
@@ -842,6 +913,13 @@ export default function WorkOrdersScreen() {
       <Pressable style={({ pressed }) => [styles.fab, pressed && styles.pressableDown]} onPress={() => router.push('/(tabs)/workorder-create')}>
         <Text style={styles.fabText}>＋</Text>
       </Pressable>
+
+      <WorkOrderPreviewModal
+        visible={!!previewOrder}
+        order={previewOrder as any}
+        storeSettings={(storeSettingsForReceipt || null) as any}
+        onClose={() => setPreviewOrder(null)}
+      />
       </>
       )}
     </View>
@@ -893,6 +971,7 @@ function WorkOrderCard({
   onCall,
   onPrint,
   onShare,
+  isSharing,
   onEdit,
   onDelete,
 }: {
@@ -902,6 +981,7 @@ function WorkOrderCard({
   onCall: () => void;
   onPrint: () => void;
   onShare: () => void;
+  isSharing: boolean;
   onEdit: () => void;
   onDelete: () => void;
 }) {
@@ -985,7 +1065,7 @@ function WorkOrderCard({
       <View style={styles.actionsRow}>
         <ActionItem icon="phone-outline" label="Gọi" onPress={onCall} />
         <ActionItem icon="printer-outline" label="In" onPress={onPrint} />
-        <ActionItem icon="share-variant-outline" label="Chia sẻ" onPress={onShare} />
+        <ActionItem icon="share-variant-outline" label={isSharing ? 'Đang xử lý...' : 'Chia sẻ'} onPress={onShare} disabled={isSharing} />
         <ActionItem icon="square-edit-outline" label="Sửa" onPress={onEdit} />
         <ActionItem icon="trash-can-outline" label="Xóa" onPress={onDelete} danger />
       </View>
@@ -999,16 +1079,18 @@ function ActionItem({
   label,
   onPress,
   danger,
+  disabled,
 }: {
   icon: React.ComponentProps<typeof MaterialCommunityIcons>['name'];
   label: string;
   onPress: () => void;
   danger?: boolean;
+  disabled?: boolean;
 }) {
   const theme = useAppTheme();
   const styles = useMemo(() => getStyles(theme), [theme]);
   return (
-    <TouchableOpacity style={styles.actionItem} onPress={onPress}>
+    <TouchableOpacity style={[styles.actionItem, disabled && { opacity: 0.6 }]} onPress={onPress} disabled={disabled}>
       <MaterialCommunityIcons name={icon} size={15} color={danger ? '#FF6A7B' : '#B8C3DA'} />
       <Text style={[styles.actionBtn, danger && { color: theme.danger }]}>{label}</Text>
     </TouchableOpacity>

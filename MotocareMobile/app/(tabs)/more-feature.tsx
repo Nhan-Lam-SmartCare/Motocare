@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, TextInput } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
@@ -58,6 +58,29 @@ const toDayKey = (value: unknown): string => {
   const m = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
   return `${y}-${m}-${day}`;
+};
+
+const normalizeOrderStatus = (value: unknown): 'draft' | 'ordered' | 'received' | 'cancelled' => {
+  const text = normalizeText(value);
+  if (['draft', 'nhap', 'tao moi'].includes(text)) return 'draft';
+  if (['ordered', 'da dat', 'cho nhan', 'confirmed'].includes(text)) return 'ordered';
+  if (['received', 'da nhan', 'hoan tat', 'completed'].includes(text)) return 'received';
+  if (['cancelled', 'canceled', 'huy'].includes(text)) return 'cancelled';
+  return 'draft';
+};
+
+const orderStatusLabel = (status: 'draft' | 'ordered' | 'received' | 'cancelled') => {
+  if (status === 'ordered') return 'Da dat';
+  if (status === 'received') return 'Da nhan';
+  if (status === 'cancelled') return 'Da huy';
+  return 'Nhap';
+};
+
+const daysSince = (value: unknown): number => {
+  const date = new Date(String(value || ''));
+  if (Number.isNaN(date.getTime())) return 0;
+  const diffMs = Date.now() - date.getTime();
+  return Math.max(0, Math.floor(diffMs / (24 * 60 * 60 * 1000)));
 };
 
 const parseReceiptCode = (raw: unknown): string => {
@@ -276,8 +299,13 @@ export default function MoreFeatureScreen() {
   const [reportTab, setReportTab] = useState<'revenue' | 'cashflow' | 'inventory' | 'debt'>('revenue');
   const [selectedReportDate, setSelectedReportDate] = useState<string | null>(null);
   const [staffTab, setStaffTab] = useState<'list' | 'performance'>('list');
+  const [staffSearchTerm, setStaffSearchTerm] = useState('');
+  const [staffStatusFilter, setStaffStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
   const [debtTab, setDebtTab] = useState<'customer' | 'supplier'>('customer');
+  const [debtSearchTerm, setDebtSearchTerm] = useState('');
+  const [debtSortBy, setDebtSortBy] = useState<'amount' | 'date'>('amount');
   const [orderStatus, setOrderStatus] = useState<'all' | 'draft' | 'ordered' | 'received' | 'cancelled'>('all');
+  const [orderSearchTerm, setOrderSearchTerm] = useState('');
 
   const config = FEATURE_CONFIG[feature] || FEATURE_CONFIG.reports;
 
@@ -558,7 +586,7 @@ export default function MoreFeatureScreen() {
       }
 
       if (feature === 'staff') {
-        const [employeesRes, workRes] = await Promise.all([
+        const [employeesRes, workRes, advancesRes] = await Promise.all([
           supabase
             .from('employees')
             .select('id,name,phone,email,position,status,baseSalary,basesalary,allowances,startDate,startdate')
@@ -566,24 +594,44 @@ export default function MoreFeatureScreen() {
             .limit(1000),
           supabase
             .from('work_orders')
-            .select('id,technicianName,technicianname,creationdate')
+            .select('id,technicianName,technicianname,creationdate,total,totalPaid,totalpaid,paymentstatus,paymentStatus')
             .gte('creationdate', buildRangeStart('month'))
             .limit(1500),
+          supabase
+            .from('employee_advances')
+            .select('id,employeeName,employee_name,advanceAmount,advance_amount,remainingAmount,remaining_amount,status,advanceDate,advance_date,created_at')
+            .order('created_at', { ascending: false })
+            .limit(1000),
         ]);
 
         const employees = employeesRes.error ? [] : (employeesRes.data ?? []);
         const works = workRes.error ? [] : (workRes.data ?? []);
+        const advances = advancesRes.error
+          ? []
+          : (advancesRes.data ?? []).map((row: any) => ({
+              id: String(row.id),
+              employeeName: String(row.employeeName || row.employee_name || 'Nhan vien'),
+              amount: safeNumber(row.advanceAmount ?? row.advance_amount),
+              remaining: safeNumber(row.remainingAmount ?? row.remaining_amount),
+              status: String(row.status || 'pending'),
+              date: String(row.advanceDate || row.advance_date || row.created_at || new Date().toISOString()),
+            }));
 
-        const performance = new Map<string, number>();
+        const performance = new Map<string, { count: number; revenue: number }>();
         works.forEach((w: any) => {
           const name = String(w.technicianName || w.technicianname || 'Chua gan').trim() || 'Chua gan';
-          performance.set(name, (performance.get(name) || 0) + 1);
+          const current = performance.get(name) || { count: 0, revenue: 0 };
+          const paidAmount = safeNumber(w.totalPaid ?? w.totalpaid ?? w.total);
+          performance.set(name, {
+            count: current.count + 1,
+            revenue: current.revenue + paidAmount,
+          });
         });
 
         const topStaff = Array.from(performance.entries())
-          .sort((a, b) => b[1] - a[1])
+          .sort((a, b) => b[1].count - a[1].count)
           .slice(0, 8)
-          .map(([name, count]) => ({ name, count }));
+          .map(([name, info]) => ({ name, count: info.count, revenue: info.revenue }));
 
         return {
           employees,
@@ -591,8 +639,10 @@ export default function MoreFeatureScreen() {
             total: employees.length,
             active: employees.filter((e: any) => String(e.status || 'active').toLowerCase() === 'active').length,
             totalSalary: employees.reduce((sum: number, e: any) => sum + safeNumber(e.baseSalary ?? e.basesalary) + safeNumber(e.allowances), 0),
+            openAdvances: advances.reduce((sum: number, row: any) => sum + row.remaining, 0),
           },
           topStaff,
+          advances,
         };
       }
 
@@ -641,19 +691,53 @@ export default function MoreFeatureScreen() {
 
       const poRes = await supabase
         .from('purchase_orders')
-        .select('id,po_number,status,total_amount,final_amount,order_date,created_at')
+        .select('id,po_number,status,total_amount,final_amount,order_date,created_at,supplier_id,expected_date,received_date,notes')
         .order('created_at', { ascending: false })
         .limit(500);
 
       if (!poRes.error) {
+        const rows = poRes.data ?? [];
+        const supplierIds = Array.from(
+          new Set(rows.map((row: any) => String(row.supplier_id || '')).filter(Boolean))
+        );
+        let supplierMap = new Map<string, string>();
+
+        if (supplierIds.length > 0) {
+          const supplierRes = await supabase
+            .from('suppliers')
+            .select('id,name')
+            .in('id', supplierIds)
+            .limit(2000);
+          if (!supplierRes.error) {
+            supplierMap = new Map((supplierRes.data ?? []).map((row: any) => [String(row.id), String(row.name || 'Nha cung cap')]));
+          }
+        }
+
+        const orders = rows.map((row: any) => ({
+          id: String(row.id),
+          code: String(row.po_number || `PO-${row.id}`),
+          status: normalizeOrderStatus(row.status),
+          statusLabel: orderStatusLabel(normalizeOrderStatus(row.status)),
+          date: String(row.order_date || row.created_at || new Date().toISOString()),
+          expectedDate: String(row.expected_date || ''),
+          receivedDate: String(row.received_date || ''),
+          supplierName: supplierMap.get(String(row.supplier_id || '')) || 'Nha cung cap',
+          total: safeNumber(row.final_amount ?? row.total_amount),
+          notes: String(row.notes || ''),
+        }));
+
+        const summary = {
+          total: orders.length,
+          draft: orders.filter((row) => row.status === 'draft').length,
+          ordered: orders.filter((row) => row.status === 'ordered').length,
+          received: orders.filter((row) => row.status === 'received').length,
+          cancelled: orders.filter((row) => row.status === 'cancelled').length,
+          totalValue: orders.reduce((sum, row) => sum + row.total, 0),
+        };
+
         return {
-          orders: (poRes.data ?? []).map((row: any) => ({
-            id: String(row.id),
-            code: String(row.po_number || `PO-${row.id}`),
-            status: String(row.status || 'draft'),
-            date: String(row.order_date || row.created_at || new Date().toISOString()),
-            total: safeNumber(row.final_amount ?? row.total_amount),
-          })),
+          orders,
+          summary,
         };
       }
 
@@ -680,18 +764,75 @@ export default function MoreFeatureScreen() {
         }
       });
 
-      return {
-        orders: Array.from(grouped.values()).map((row, index) => ({
+      const fallbackOrders = Array.from(grouped.values()).map((row, index) => ({
           id: String(index + 1),
           code: row.code,
           status: 'received',
+          statusLabel: orderStatusLabel('received'),
+          supplierName: 'Nhap kho',
           date: row.date,
           total: row.total,
-        })),
+        }));
+
+      return {
+        orders: fallbackOrders,
+        summary: {
+          total: fallbackOrders.length,
+          draft: 0,
+          ordered: 0,
+          received: fallbackOrders.length,
+          cancelled: 0,
+          totalValue: fallbackOrders.reduce((sum, row) => sum + row.total, 0),
+        },
       };
     },
     staleTime: 60000,
   });
+
+  const staffEmployees = useMemo(() => {
+    if (feature !== 'staff') return [] as any[];
+    const value = data as any;
+    const q = normalizeText(staffSearchTerm).trim();
+    return (value?.employees || [])
+      .filter((row: any) => {
+        const statusText = normalizeText(row.status || 'active');
+        if (staffStatusFilter === 'active' && statusText !== 'active') return false;
+        if (staffStatusFilter === 'inactive' && statusText === 'active') return false;
+        if (!q) return true;
+        const hay = normalizeText(`${row.name || ''} ${row.phone || ''} ${row.position || ''} ${row.email || ''}`);
+        return hay.includes(q);
+      })
+      .slice(0, 50);
+  }, [data, feature, staffSearchTerm, staffStatusFilter]);
+
+  const debtRowsView = useMemo(() => {
+    if (feature !== 'debt') return [] as any[];
+    const value = data as any;
+    const rows = debtTab === 'customer' ? (value?.customerRows || []) : (value?.supplierRows || []);
+    const q = normalizeText(debtSearchTerm).trim();
+    const filtered = rows.filter((row: any) => {
+      if (!q) return true;
+      return normalizeText(`${row.name || ''} ${row.id || ''}`).includes(q);
+    });
+    const sorted = [...filtered].sort((a: any, b: any) => {
+      if (debtSortBy === 'date') return String(b.date).localeCompare(String(a.date));
+      return safeNumber(b.amount) - safeNumber(a.amount);
+    });
+    return sorted.slice(0, 50).map((row: any) => ({ ...row, overdueDays: daysSince(row.date) }));
+  }, [data, feature, debtTab, debtSearchTerm, debtSortBy]);
+
+  const orderRowsView = useMemo(() => {
+    if (feature !== 'orders') return [] as any[];
+    const value = data as any;
+    const rows = (value?.orders || []) as Array<any>;
+    const q = normalizeText(orderSearchTerm).trim();
+    const byStatus = orderStatus === 'all' ? rows : rows.filter((row) => row.status === orderStatus);
+    const bySearch = byStatus.filter((row) => {
+      if (!q) return true;
+      return normalizeText(`${row.code || ''} ${row.supplierName || ''} ${row.notes || ''}`).includes(q);
+    });
+    return bySearch.slice(0, 60);
+  }, [data, feature, orderStatus, orderSearchTerm]);
 
   const renderRangeChips = feature === 'reports' ? (
     <View style={styles.chipsRow}>
@@ -883,7 +1024,7 @@ export default function MoreFeatureScreen() {
     }
 
     if (feature === 'staff') {
-      const employees = value?.employees || [];
+      const employees = staffEmployees;
       const topStaff = value?.topStaff || [];
       return (
         <>
@@ -895,9 +1036,28 @@ export default function MoreFeatureScreen() {
               <Text style={[styles.chipText, staffTab === 'performance' && styles.chipTextActive]}>Hieu suat</Text>
             </TouchableOpacity>
           </View>
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Tim ten, SDT, vi tri"
+            placeholderTextColor="#90A4C6"
+            value={staffSearchTerm}
+            onChangeText={setStaffSearchTerm}
+          />
+          <View style={styles.chipsRow}>
+            {([
+              { key: 'all', label: 'Tat ca' },
+              { key: 'active', label: 'Dang lam' },
+              { key: 'inactive', label: 'Tam nghi' },
+            ] as const).map((chip) => (
+              <TouchableOpacity key={chip.key} style={[styles.chip, staffStatusFilter === chip.key && styles.chipActive]} onPress={() => setStaffStatusFilter(chip.key)}>
+                <Text style={[styles.chipText, staffStatusFilter === chip.key && styles.chipTextActive]}>{chip.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
           <MetricCard label="Tong nhan vien" value={String(value?.stats?.total || 0)} />
           <MetricCard label="Dang hoat dong" value={String(value?.stats?.active || 0)} />
           <MetricCard label="Tong luong uoc tinh" value={formatCurrency(value?.stats?.totalSalary || 0)} />
+          <MetricCard label="Ung luong con no" value={formatCurrency(value?.stats?.openAdvances || 0)} />
           {staffTab === 'list'
             ? employees.slice(0, 20).map((emp: any) => (
                 <MetricCard
@@ -908,15 +1068,15 @@ export default function MoreFeatureScreen() {
                   subLabel={String(emp.status || '')}
                 />
               ))
-            : topStaff.map((row: any) => <MetricCard key={row.name} label={row.name} value={`${row.count} phieu`} compact />)}
+            : topStaff.map((row: any) => (
+                <MetricCard key={row.name} label={row.name} value={`${row.count} phieu`} compact subLabel={`Doanh thu: ${formatCurrency(row.revenue || 0)}`} />
+              ))}
         </>
       );
     }
 
     if (feature === 'debt') {
-      const customerRows = value?.customerRows || [];
-      const supplierRows = value?.supplierRows || [];
-      const rows = debtTab === 'customer' ? customerRows : supplierRows;
+      const rows = debtRowsView;
 
       return (
         <>
@@ -928,6 +1088,23 @@ export default function MoreFeatureScreen() {
               <Text style={[styles.chipText, debtTab === 'supplier' && styles.chipTextActive]}>Cong no NCC</Text>
             </TouchableOpacity>
           </View>
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Tim khach hang / nha cung cap"
+            placeholderTextColor="#90A4C6"
+            value={debtSearchTerm}
+            onChangeText={setDebtSearchTerm}
+          />
+          <View style={styles.chipsRow}>
+            {([
+              { key: 'amount', label: 'Sap xep: So tien' },
+              { key: 'date', label: 'Sap xep: Ngay' },
+            ] as const).map((chip) => (
+              <TouchableOpacity key={chip.key} style={[styles.chip, debtSortBy === chip.key && styles.chipActive]} onPress={() => setDebtSortBy(chip.key)}>
+                <Text style={[styles.chipText, debtSortBy === chip.key && styles.chipTextActive]}>{chip.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
           <MetricCard label="Tong no KH" value={formatCurrency(value?.totals?.customer || 0)} />
           <MetricCard label="Tong no NCC" value={formatCurrency(value?.totals?.supplier || 0)} />
           {rows.slice(0, 25).map((row: any) => (
@@ -936,15 +1113,21 @@ export default function MoreFeatureScreen() {
               label={row.name}
               value={formatCurrency(row.amount || 0)}
               compact
-              subLabel={new Date(row.date).toLocaleDateString('vi-VN')}
+              subLabel={`${new Date(row.date).toLocaleDateString('vi-VN')} • Qua han: ${row.overdueDays} ngay`}
             />
           ))}
         </>
       );
     }
 
-    const orders = (value?.orders || []) as Array<{ id: string; code: string; status: string; date: string; total: number }>;
-    const filtered = orderStatus === 'all' ? orders : orders.filter((row) => row.status === orderStatus);
+    const orderSummary = value?.summary || {
+      total: orderRowsView.length,
+      draft: 0,
+      ordered: 0,
+      received: 0,
+      cancelled: 0,
+      totalValue: orderRowsView.reduce((sum: number, row: any) => sum + safeNumber(row.total), 0),
+    };
 
     return (
       <>
@@ -961,13 +1144,36 @@ export default function MoreFeatureScreen() {
             </TouchableOpacity>
           ))}
         </View>
-        {filtered.slice(0, 40).map((row) => (
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Tim ma don, nha cung cap"
+          placeholderTextColor="#90A4C6"
+          value={orderSearchTerm}
+          onChangeText={setOrderSearchTerm}
+        />
+        <View style={styles.summaryGrid}>
+          <View style={[styles.summaryCard, styles.summaryCardRevenue]}>
+            <Text style={styles.summaryLabel}>Tong don</Text>
+            <Text style={styles.summaryValue}>{orderSummary.total}</Text>
+          </View>
+          <View style={[styles.summaryCard, styles.summaryCardProfit]}>
+            <Text style={styles.summaryLabel}>Tong gia tri</Text>
+            <Text style={styles.summaryValue}>{formatCurrency(orderSummary.totalValue || 0)}</Text>
+          </View>
+        </View>
+        <View style={styles.chipsRow}>
+          <Text style={styles.badgeText}>Nhap: {orderSummary.draft}</Text>
+          <Text style={styles.badgeText}>Da dat: {orderSummary.ordered}</Text>
+          <Text style={styles.badgeText}>Da nhan: {orderSummary.received}</Text>
+          <Text style={styles.badgeText}>Huy: {orderSummary.cancelled}</Text>
+        </View>
+        {orderRowsView.slice(0, 40).map((row: any) => (
           <MetricCard
             key={`${row.id}-${row.code}`}
-            label={`${row.code} • ${row.status}`}
+            label={`${row.code} • ${row.statusLabel || row.status}`}
             value={formatCurrency(row.total || 0)}
             compact
-            subLabel={new Date(row.date).toLocaleDateString('vi-VN')}
+            subLabel={`${new Date(row.date).toLocaleDateString('vi-VN')} • ${row.supplierName || 'Nha cung cap'}`}
           />
         ))}
       </>
@@ -1086,6 +1292,29 @@ const styles = StyleSheet.create({
   },
   chipTextActive: {
     color: '#2A6FD7',
+  },
+  searchInput: {
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#DCE6F4',
+    backgroundColor: '#F7FAFF',
+    color: '#1F3A63',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 13,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  badgeText: {
+    color: '#556F95',
+    fontSize: 11,
+    fontWeight: '700',
+    backgroundColor: '#F3F7FF',
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: '#DCE6F4',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
   },
   loadingBox: { paddingVertical: 18, alignItems: 'center' },
   errorBox: {

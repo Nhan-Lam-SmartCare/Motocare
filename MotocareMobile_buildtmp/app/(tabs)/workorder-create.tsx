@@ -109,7 +109,7 @@ const fetchCustomers = async (): Promise<CustomerOption[]> => {
 const fetchTechnicians = async (): Promise<string[]> => {
   const [empRes, orderRes] = await Promise.all([
     supabase.from('employees').select('name,status').limit(120),
-    supabase.from('work_orders').select('technicianName').not('technicianName', 'is', null).limit(200),
+    supabase.from('work_orders').select('technicianname').not('technicianname', 'is', null).limit(200),
   ]);
 
   const names = new Set<string>();
@@ -123,7 +123,7 @@ const fetchTechnicians = async (): Promise<string[]> => {
   });
 
   (orderRes.data ?? []).forEach((row: any) => {
-    const name = String(row?.technicianName || '').trim();
+    const name = String(row?.technicianname || row?.technicianName || '').trim();
     if (name) names.add(name);
   });
 
@@ -407,7 +407,47 @@ export default function WorkOrderCreateScreen() {
       const id = `wo-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
       const nowIso = new Date().toISOString();
 
-      const payload: Record<string, unknown> = {
+      const payloadLower: Record<string, unknown> = {
+        id,
+        creationdate: nowIso,
+        customerid: selectedCustomer?.id ?? null,
+        customername: name,
+        customerphone: customerPhone.trim() || null,
+        vehiclemodel: vehicleModel.trim() || null,
+        licenseplate: licensePlate.trim() || null,
+        currentkm: currentKm.trim() ? toNumber(currentKm) : null,
+        issuedescription: issue,
+        technicianname: technicianName.trim(),
+        status,
+        laborcost: laborNum,
+        discount: Math.round(discountAmount),
+        partsused: selectedParts.map((p) => ({
+          partId: p.partId,
+          partName: p.partName,
+          sku: p.sku,
+          quantity: p.quantity,
+          price: p.sellingPrice,
+          costPrice: p.costPrice,
+        })),
+        additionalservices: services.map((s) => ({
+          id: s.id,
+          description: s.name,
+          quantity: s.quantity,
+          price: s.sellingPrice,
+          costPrice: s.costPrice,
+        })),
+        notes: notes.trim() || null,
+        total,
+        branchid: BRANCH_ID,
+        depositamount: normalizedDeposit > 0 ? normalizedDeposit : null,
+        paymentstatus: normalizedPaymentStatus,
+        paymentmethod: paymentMethod,
+        totalpaid: normalizedTotalPaid > 0 ? normalizedTotalPaid : 0,
+        remainingamount: normalizedRemaining,
+        paymentdate: normalizedPaymentStatus === 'paid' ? nowIso : null,
+      };
+
+      const payloadCamel: Record<string, unknown> = {
         id,
         creationDate: nowIso,
         customerId: selectedCustomer?.id ?? null,
@@ -441,14 +481,76 @@ export default function WorkOrderCreateScreen() {
         branchId: BRANCH_ID,
         depositAmount: normalizedDeposit > 0 ? normalizedDeposit : null,
         paymentStatus: normalizedPaymentStatus,
-        paymentMethod,
+        paymentMethod: paymentMethod,
         totalPaid: normalizedTotalPaid > 0 ? normalizedTotalPaid : 0,
         remainingAmount: normalizedRemaining,
         paymentDate: normalizedPaymentStatus === 'paid' ? nowIso : null,
       };
 
-      const { error } = await supabase.from('work_orders').insert(payload);
-      if (error) throw error;
+      const payloadSnake: Record<string, unknown> = {
+        id,
+        creation_date: nowIso,
+        customer_id: selectedCustomer?.id ?? null,
+        customer_name: name,
+        customer_phone: customerPhone.trim() || null,
+        vehicle_model: vehicleModel.trim() || null,
+        license_plate: licensePlate.trim() || null,
+        current_km: currentKm.trim() ? toNumber(currentKm) : null,
+        issue_description: issue,
+        technician_name: technicianName.trim(),
+        status,
+        labor_cost: laborNum,
+        discount: Math.round(discountAmount),
+        parts_used: selectedParts,
+        additional_services: services,
+        notes: notes.trim() || null,
+        total,
+        branch_id: BRANCH_ID,
+        deposit_amount: normalizedDeposit > 0 ? normalizedDeposit : null,
+        payment_status: normalizedPaymentStatus,
+        payment_method: paymentMethod,
+        total_paid: normalizedTotalPaid > 0 ? normalizedTotalPaid : 0,
+        remaining_amount: normalizedRemaining,
+        payment_date: normalizedPaymentStatus === 'paid' ? nowIso : null,
+      };
+
+      const payloadVariants: Record<string, unknown>[] = [payloadLower, payloadCamel, payloadSnake];
+
+      const insertAdaptive = async (basePayload: Record<string, unknown>) => {
+        const workingPayload: Record<string, unknown> = { ...basePayload };
+
+        for (let attempt = 0; attempt < 24; attempt += 1) {
+          const { error } = await supabase.from('work_orders').insert(workingPayload);
+          if (!error) return null;
+
+          const msg = String((error as any)?.message || '');
+          const missingColumnMatch = msg.match(/Could not find the '([^']+)' column of 'work_orders'/i);
+
+          if (missingColumnMatch) {
+            const missingCol = missingColumnMatch[1];
+            if (Object.prototype.hasOwnProperty.call(workingPayload, missingCol)) {
+              delete (workingPayload as any)[missingCol];
+              continue;
+            }
+          }
+
+          return error;
+        }
+
+        return { message: 'Adaptive insert exceeded retries for work_orders' } as any;
+      };
+
+      let lastInsertError: any = null;
+      for (const variant of payloadVariants) {
+        const err = await insertAdaptive(variant);
+        if (!err) {
+          lastInsertError = null;
+          break;
+        }
+        lastInsertError = err;
+      }
+
+      if (lastInsertError) throw lastInsertError;
 
       try {
         const { data: authData } = await supabase.auth.getUser();
@@ -458,7 +560,7 @@ export default function WorkOrderCreateScreen() {
           table_name: 'work_orders',
           record_id: id,
           old_data: null,
-          new_data: payload,
+          new_data: payloadLower,
         });
       } catch {
         // Keep creation successful even if audit logging fails.
@@ -484,7 +586,7 @@ export default function WorkOrderCreateScreen() {
       ]);
     },
     onError: (err: any) => {
-      Alert.alert('Lỗi tạo phiếu', err?.message || 'Không thể tạo phiếu sửa');
+      Alert.alert('Lỗi tạo phiếu [WO-20260318-BRANCH-FALLBACK]', err?.message || 'Không thể tạo phiếu sửa');
     },
   });
 

@@ -14,6 +14,7 @@ import {
   RefreshControl,
   useWindowDimensions,
   Animated,
+  useColorScheme,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { CameraView, useCameraPermissions } from 'expo-camera';
@@ -332,6 +333,7 @@ async function fetchReceiptHistory(): Promise<ReceiptRecord[]> {
 }
 
 export default function InventoryScreen() {
+  const isDark = useColorScheme() === 'dark';
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const queryClient = useQueryClient();
@@ -605,15 +607,15 @@ export default function InventoryScreen() {
   };
 
   const renderPart = ({ item }: { item: Part }) => {
-    return <InventoryPartCard item={item} />;
+    return <InventoryPartCard item={item} isDark={isDark} />;
   };
 
   return (
-    <View style={styles.container}>
-      <View style={[styles.header, { paddingTop: Math.max(12, insets.top + 6) }]}>
+    <View style={[styles.container, isDark && darkInventory.container]}>
+      <View style={[styles.header, isDark && darkInventory.header, { paddingTop: Math.max(12, insets.top + 6) }]}>
         <View>
           <Text style={[styles.headerTitle, compact && { fontSize: 20 }]}>Quản lý kho</Text>
-          <Text style={styles.headerSub}>Chi nhánh: {BRANCH_ID}</Text>
+          <Text style={[styles.headerSub, isDark && darkInventory.secondaryText]}>Chi nhánh: {BRANCH_ID}</Text>
         </View>
         <TouchableOpacity activeOpacity={0.82} style={styles.refreshButton} onPress={() => refetch()}>
           <Feather name="refresh-cw" size={14} color="#fff" />
@@ -622,13 +624,13 @@ export default function InventoryScreen() {
       </View>
 
       <View style={[styles.summaryRow, compact && { gap: 6, paddingTop: 10 }] }>
-        <View style={styles.summaryCard}>
+        <View style={[styles.summaryCard, isDark && darkInventory.card]}>
           <Text style={styles.summaryValue}>{summary.totalQty}</Text>
-          <Text style={styles.summaryLabel}>Tồn khả dụng</Text>
+          <Text style={[styles.summaryLabel, isDark && darkInventory.secondaryText]}>Tồn khả dụng</Text>
         </View>
-        <View style={styles.summaryCard}>
+        <View style={[styles.summaryCard, isDark && darkInventory.card]}>
           <Text style={styles.summaryValue}>{formatCurrency(summary.totalValue)}</Text>
-          <Text style={styles.summaryLabel}>Giá trị vốn</Text>
+          <Text style={[styles.summaryLabel, isDark && darkInventory.secondaryText]}>Giá trị vốn</Text>
         </View>
       </View>
 
@@ -660,12 +662,12 @@ export default function InventoryScreen() {
         </Pressable>
       </View>
 
-      <View style={styles.searchBox}>
+      <View style={[styles.searchBox, isDark && darkInventory.searchBox]}>
         <Feather name="search" size={16} color={BRAND_COLORS.textMuted} />
         <TextInput
-          style={styles.searchInput}
+          style={[styles.searchInput, isDark && darkInventory.searchInput]}
           placeholder="Tìm theo tên, SKU, barcode"
-          placeholderTextColor={BRAND_COLORS.textMuted}
+          placeholderTextColor={isDark ? '#7F93B5' : BRAND_COLORS.textMuted}
           value={search}
           onChangeText={setSearch}
         />
@@ -689,7 +691,7 @@ export default function InventoryScreen() {
           data={rows}
           keyExtractor={(item) => item.id}
           renderItem={renderPart}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={[styles.listContent, isDark && darkInventory.listContent]}
           refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={() => refetch()} tintColor={BRAND_COLORS.primary} />}
           ListEmptyComponent={
             <View style={styles.emptyBox}>
@@ -700,7 +702,7 @@ export default function InventoryScreen() {
       )}
 
       <Modal visible={showImportForm} animationType="slide" onRequestClose={() => setShowImportForm(false)}>
-        <View style={[styles.importScreen, { paddingTop: Math.max(4, insets.top) }]}>
+        <View style={[styles.importScreen, isDark && darkInventory.importScreen, { paddingTop: Math.max(4, insets.top) }]}>
           {receiptStep === 1 ? (
             <>
               <View style={styles.importBody}>
@@ -1059,17 +1061,24 @@ function FilterChip({
   active: boolean;
   onPress: () => void;
 }) {
+  const isDark = useColorScheme() === 'dark';
   return (
     <Pressable
       onPress={onPress}
-      style={({ pressed }) => [styles.filterChip, active && styles.filterChipActive, pressed && styles.filterChipPressed]}
+      style={({ pressed }) => [
+        styles.filterChip,
+        isDark && darkInventory.filterChip,
+        active && styles.filterChipActive,
+        active && isDark && darkInventory.filterChipActive,
+        pressed && styles.filterChipPressed,
+      ]}
     >
-      <Text style={[styles.filterChipText, active && styles.filterChipTextActive]}>{label}</Text>
+      <Text style={[styles.filterChipText, isDark && darkInventory.secondaryText, active && styles.filterChipTextActive]}>{label}</Text>
     </Pressable>
   );
 }
 
-function InventoryPartCard({ item }: { item: Part }) {
+function InventoryPartCard({ item, isDark }: { item: Part; isDark?: boolean }) {
   const scale = useRef(new Animated.Value(1)).current;
 
   const runSpring = (toValue: number) => {
@@ -1095,13 +1104,13 @@ function InventoryPartCard({ item }: { item: Part }) {
       <Pressable
         onPressIn={() => runSpring(0.985)}
         onPressOut={() => runSpring(1)}
-        style={styles.partCard}
+        style={[styles.partCard, isDark && darkInventory.card]}
       >
         <View style={styles.partTop}>
           <View style={{ flex: 1 }}>
-            <Text style={styles.partName}>{item.name}</Text>
-            <Text style={styles.partMeta}>SKU: {item.sku || '-'}</Text>
-            <Text style={styles.partMeta}>Danh mục: {item.category || 'Khác'}</Text>
+            <Text style={[styles.partName, isDark && darkInventory.primaryText]}>{item.name}</Text>
+            <Text style={[styles.partMeta, isDark && darkInventory.secondaryText]}>SKU: {item.sku || '-'}</Text>
+            <Text style={[styles.partMeta, isDark && darkInventory.secondaryText]}>Danh mục: {item.category || 'Khác'}</Text>
           </View>
 
           <View style={[styles.stockPill, stockStyle]}>
@@ -1111,8 +1120,8 @@ function InventoryPartCard({ item }: { item: Part }) {
         </View>
 
         <View style={styles.rowBetween}>
-          <Text style={styles.partMeta}>Giữ chỗ: {reserved}</Text>
-          <Text style={styles.partMeta}>Tổng tồn: {stock}</Text>
+          <Text style={[styles.partMeta, isDark && darkInventory.secondaryText]}>Giữ chỗ: {reserved}</Text>
+          <Text style={[styles.partMeta, isDark && darkInventory.secondaryText]}>Tổng tồn: {stock}</Text>
         </View>
 
         <View style={styles.priceGrid}>
@@ -1753,4 +1762,18 @@ const styles = StyleSheet.create({
     transform: [{ scale: 0.98 }],
     opacity: 0.94,
   },
+});
+
+const darkInventory = StyleSheet.create({
+  container: { backgroundColor: '#0B1220' },
+  header: { backgroundColor: '#0F1A31' },
+  card: { backgroundColor: '#152239', borderColor: '#2B3C5A' },
+  searchBox: { backgroundColor: '#152239', borderColor: '#2B3C5A' },
+  searchInput: { color: '#E2E8F0' },
+  listContent: { backgroundColor: '#0B1220' },
+  importScreen: { backgroundColor: '#0B1220' },
+  filterChip: { backgroundColor: '#152239', borderColor: '#2B3C5A' },
+  filterChipActive: { backgroundColor: '#1E3A8A', borderColor: '#3B82F6' },
+  primaryText: { color: '#E2E8F0' },
+  secondaryText: { color: '#94A3B8' },
 });

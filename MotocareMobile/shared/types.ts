@@ -120,6 +120,14 @@ export interface WorkOrderPart {
   costPrice?: number;
 }
 
+export interface WorkOrderService {
+  id?: string;
+  description?: string;
+  quantity?: number;
+  price?: number;
+  costPrice?: number;
+}
+
 export interface WorkOrder {
   id: string;
   creationDate: string;
@@ -137,6 +145,7 @@ export interface WorkOrder {
   laborCost: number;
   discount?: number;
   partsUsed?: WorkOrderPart[];
+  additionalServices?: WorkOrderService[];
   notes?: string;
   total: number;
   branchId: string;

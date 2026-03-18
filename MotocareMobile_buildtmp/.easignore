@@ -1,0 +1,20 @@
+# Exclude everything by default, then include only required mobile app files
+*
+
+# Keep app source
+!app/**
+!assets/**
+!constants/**
+!contexts/**
+!shared/**
+!types/**
+
+# Keep config and entry files
+!App.tsx
+!app.json
+!eas.json
+!expo-env.d.ts
+!index.ts
+!package.json
+!package-lock.json
+!tsconfig.json

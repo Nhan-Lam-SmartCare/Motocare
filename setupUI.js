@@ -1,0 +1,19 @@
+const fs = require('fs');
+let c = fs.readFileSync('MotocareMobile/app/(tabs)/workorders.tsx', 'utf8');
+c = c.replace(/#243A5F/g, 'theme.text');
+c = c.replace(/#7088AA/g, 'theme.textSecondary');
+c = c.replace(/#6882A8/g, 'theme.textSecondary');
+c = c.replace(/#256ED9/g, 'theme.primary');
+c = c.replace(/#637EA4/g, 'theme.textSecondary');
+c = c.replace(/#9EABC3/g, 'theme.textSecondary');
+c = c.replace(/#9BA7BD/g, 'theme.textSecondary');
+c = c.replace(/#6F86A9/g, 'theme.textSecondary');
+c = c.replace(/#6E85A8/g, 'theme.textSecondary');
+c = c.replace(/#748CAE/g, 'theme.textSecondary');
+c = c.replace(/#60799E/g, 'theme.textSecondary');
+c = c.replace(/#CEDAEB/g, 'theme.border');
+c = c.replace(/#E0E8F3/g, 'theme.border');
+c = c.replace(/#0E315F/g, 'theme.primaryBg');
+c = c.replace(/#1E90FF/g, 'theme.primary');
+c = c.replace(/#56B2FF/g, 'theme.primary');
+c = c.replace(/color: '#75EDB3'/g, 'color: theme.primary === \

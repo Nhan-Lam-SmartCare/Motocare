@@ -1,0 +1,44 @@
+{
+  "expo": {
+    "name": "Motocare",
+    "slug": "motocare-mobile",
+    "version": "1.0.0",
+    "sdkVersion": "54.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "scheme": "motocare",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#1565C0"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "vn.motocare.mobile"
+    },
+    "android": {
+      "package": "vn.motocare.mobile",
+      "adaptiveIcon": {
+        "backgroundColor": "#1565C0",
+        "foregroundImage": "./assets/android-icon-foreground.png"
+      }
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-font",
+      "expo-asset"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "03a55fcf-40eb-449a-a272-8cde871ac1c5"
+      }
+    },
+    "owner": "nhanxn"
+  }
+}

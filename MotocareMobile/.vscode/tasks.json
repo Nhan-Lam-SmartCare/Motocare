@@ -1,0 +1,16 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "install-webview",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"install",
+				"react-native-webview@13.16.0",
+				"--save-exact"
+			],
+			"isBackground": false
+		}
+	]
+}

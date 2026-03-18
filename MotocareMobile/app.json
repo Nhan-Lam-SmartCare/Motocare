@@ -11,7 +11,7 @@
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#1565C0"
+      "backgroundColor": "#EEF5FF"
     },
     "ios": {
       "supportsTablet": true,
@@ -20,7 +20,7 @@
     "android": {
       "package": "vn.motocare.mobile",
       "adaptiveIcon": {
-        "backgroundColor": "#1565C0",
+        "backgroundColor": "#EEF5FF",
         "foregroundImage": "./assets/android-icon-foreground.png"
       }
     },

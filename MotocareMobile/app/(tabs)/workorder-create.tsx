@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -95,13 +95,21 @@ const fromBranchValue = (value: unknown, branchId: string): number => {
   return firstNumeric == null ? 0 : Number(firstNumeric);
 };
 
-const fetchCustomers = async (): Promise<CustomerOption[]> => {
-  const { data, error } = await supabase
+const fetchCustomers = async (query?: string): Promise<CustomerOption[]> => {
+  let req = supabase
     .from('customers')
     .select('id,name,phone,vehicles')
-    .order('created_at', { ascending: false })
-    .limit(80);
+    .order('created_at', { ascending: false });
 
+  if (query && query.trim()) {
+    const q = query.trim();
+    req = req.or(`name.ilike.%${q}%,phone.ilike.%${q}%`);
+    req = req.limit(30);
+  } else {
+    req = req.limit(200);
+  }
+
+  const { data, error } = await req;
   if (error) throw error;
   return (data ?? []) as CustomerOption[];
 };
@@ -171,7 +179,9 @@ export default function WorkOrderCreateScreen() {
   const [editCustomerInfo, setEditCustomerInfo] = useState(false);
   const [editVehicleInfo, setEditVehicleInfo] = useState(false);
   const [customerSearch, setCustomerSearch] = useState('');
+  const [customerQueryKey, setCustomerQueryKey] = useState('');
   const [selectedCustomer, setSelectedCustomer] = useState<CustomerOption | null>(null);
+  const customerDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
@@ -212,10 +222,18 @@ export default function WorkOrderCreateScreen() {
   const [cameraPermission, requestCameraPermission] = useCameraPermissions();
 
   const { data: customers = [], isLoading: customerLoading } = useQuery({
-    queryKey: ['workorder-form-customers'],
-    queryFn: fetchCustomers,
-    staleTime: 60 * 1000,
+    queryKey: ['workorder-form-customers', customerQueryKey],
+    queryFn: () => fetchCustomers(customerQueryKey),
+    staleTime: 30 * 1000,
   });
+
+  const handleCustomerSearchChange = (text: string) => {
+    setCustomerSearch(text);
+    if (customerDebounceRef.current) clearTimeout(customerDebounceRef.current);
+    customerDebounceRef.current = setTimeout(() => {
+      setCustomerQueryKey(text.trim());
+    }, 350);
+  };
 
   const { data: technicians = [] } = useQuery({
     queryKey: ['workorder-form-technicians'],
@@ -230,8 +248,9 @@ export default function WorkOrderCreateScreen() {
   });
 
   const filteredCustomers = useMemo(() => {
+    // Server-side search already filtered; just do local plate filtering on top
     const q = customerSearch.trim().toLowerCase();
-    if (!q) return customers.slice(0, 12);
+    if (!q) return customers.slice(0, 15);
     return customers
       .filter((c) => {
         const matchName = c.name.toLowerCase().includes(q);
@@ -239,7 +258,7 @@ export default function WorkOrderCreateScreen() {
         const matchPlate = c.vehicles?.some(v => (v.licensePlate ?? '').toLowerCase().includes(q));
         return matchName || matchPhone || matchPlate;
       })
-      .slice(0, 20);
+      .slice(0, 25);
   }, [customers, customerSearch]);
 
   const customerVehicles = useMemo(() => {
@@ -738,9 +757,10 @@ export default function WorkOrderCreateScreen() {
                     <TextInput
                       style={styles.searchInput}
                       value={customerSearch}
-                      onChangeText={setCustomerSearch}
+                      onChangeText={handleCustomerSearchChange}
                       placeholder="Tìm tên, SDT hoặc biển số xe..."
                       placeholderTextColor="#8A96AB"
+                      autoCapitalize="none"
                     />
                   </View>
                   {customerLoading ? (

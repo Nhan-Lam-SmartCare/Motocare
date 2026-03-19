@@ -3,3 +3,4 @@
  */
 
 export * from "./service.utils";
+export * from "./serviceMobile.utils";

@@ -101,6 +101,7 @@ const normalizePart = (row: any): Part => ({
   stock: (row.stock ?? {}) as Record<string, number>,
   reservedstock: (row.reservedstock ?? {}) as Record<string, number>,
   retailPrice: (row.retailPrice ?? row.retailprice ?? {}) as Record<string, number>,
+  wholesalePrice: (row.wholesalePrice ?? row.wholesaleprice ?? row.wholesale_price ?? {}) as Record<string, number>,
   costPrice: (row.costPrice ?? row.costprice ?? {}) as Record<string, number>,
   imageUrl: row.imageUrl || row.imageurl || undefined,
   description: row.description || undefined,
@@ -1093,6 +1094,8 @@ function InventoryPartCard({ item, isDark }: { item: Part; isDark?: boolean }) {
   const stock = fromBranchValue(item.stock, BRANCH_ID);
   const reserved = fromBranchValue(item.reservedstock, BRANCH_ID);
   const available = Math.max(0, stock - reserved);
+  const shouldShowReserved = reserved > 0;
+  const shouldShowTotalStock = stock !== available;
   const importPrice = fromBranchValue(item.costPrice, BRANCH_ID);
   const retail = fromBranchValue(item.retailPrice, BRANCH_ID);
   const wholesale = fromBranchValue(item.wholesalePrice, BRANCH_ID);
@@ -1119,10 +1122,16 @@ function InventoryPartCard({ item, isDark }: { item: Part; isDark?: boolean }) {
           </View>
         </View>
 
-        <View style={styles.rowBetween}>
-          <Text style={[styles.partMeta, isDark && darkInventory.secondaryText]}>Giữ chỗ: {reserved}</Text>
-          <Text style={[styles.partMeta, isDark && darkInventory.secondaryText]}>Tổng tồn: {stock}</Text>
-        </View>
+        {(shouldShowReserved || shouldShowTotalStock) && (
+          <View style={styles.rowBetween}>
+            {shouldShowReserved ? (
+              <Text style={[styles.partMeta, isDark && darkInventory.secondaryText]}>Giữ chỗ: {reserved}</Text>
+            ) : (
+              <View />
+            )}
+            {shouldShowTotalStock && <Text style={[styles.partMeta, isDark && darkInventory.secondaryText]}>Tổng tồn: {stock}</Text>}
+          </View>
+        )}
 
         <View style={styles.priceGrid}>
           <View style={[styles.priceCell, styles.priceCellImport]}>

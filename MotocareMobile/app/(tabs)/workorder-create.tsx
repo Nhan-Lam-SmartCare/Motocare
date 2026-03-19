@@ -9,6 +9,8 @@ import {
   ActivityIndicator,
   Alert,
   Modal,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -77,6 +79,7 @@ const BRANCH_ID = 'CN1';
 const WORK_ORDER_STATUS: WorkOrderStatus[] = ['Tiếp nhận', 'Đang sửa', 'Đã sửa xong', 'Trả máy'];
 const PARTS_FETCH_LIMIT = 1200;
 const PART_SEARCH_RESULT_LIMIT = 300;
+const EXCLUDED_TECHNICIAN_NAMES = new Set(['Nguyễn Xuân Nhạn', 'Võ Thanh Lâm', 'Nguyễn Văn Tấn']);
 const STATUS_COLOR: Record<WorkOrderStatus, string> = {
   'Tiếp nhận': '#5AB0FF',
   'Đang sửa': '#FFAD66',
@@ -188,11 +191,13 @@ const fetchTechnicians = async (): Promise<string[]> => {
     const status = String(row?.status || '').toLowerCase();
     if (!name) return;
     if (status && status !== 'active') return;
+    if (EXCLUDED_TECHNICIAN_NAMES.has(name)) return;
     names.add(name);
   });
 
   (orderRes.data ?? []).forEach((row: any) => {
     const name = String(row?.technicianname || row?.technicianName || '').trim();
+    if (EXCLUDED_TECHNICIAN_NAMES.has(name)) return;
     if (name) names.add(name);
   });
 
@@ -278,8 +283,6 @@ export default function WorkOrderCreateScreen() {
   const [services, setServices] = useState<ServiceItem[]>([]);
   const [showVehicleModelSuggestions, setShowVehicleModelSuggestions] = useState(false);
   const [showServiceModal, setShowServiceModal] = useState(false);
-  const [showTechnicianModal, setShowTechnicianModal] = useState(false);
-  const [technicianSearch, setTechnicianSearch] = useState('');
   const [isSavingVehicle, setIsSavingVehicle] = useState(false);
   const [cameraPermission, requestCameraPermission] = useCameraPermissions();
 
@@ -327,8 +330,6 @@ export default function WorkOrderCreateScreen() {
     setServices([]);
     setShowVehicleModelSuggestions(false);
     setShowServiceModal(false);
-    setShowTechnicianModal(false);
-    setTechnicianSearch('');
     setIsSavingVehicle(false);
   };
 
@@ -435,11 +436,13 @@ export default function WorkOrderCreateScreen() {
     return [...startsWith, ...contains].slice(0, 18);
   }, [vehicleModel, customerVehicles, customers]);
 
-  const filteredTechnicians = useMemo(() => {
-    const q = technicianSearch.trim().toLowerCase();
-    if (!q) return technicians;
-    return technicians.filter((t) => t.toLowerCase().includes(q));
-  }, [technicians, technicianSearch]);
+  const quickTechnicians = useMemo(() => {
+    const selected = technicianName.trim();
+    const ordered = selected
+      ? [selected, ...technicians.filter((tech) => tech !== selected)]
+      : technicians;
+    return ordered;
+  }, [technicians, technicianName]);
 
   const availableParts = useMemo(() => {
     return parts.filter((part) => fromBranchValue(part.stock, BRANCH_ID) > 0);
@@ -500,8 +503,8 @@ export default function WorkOrderCreateScreen() {
   const returnCollectMax = Math.max(0, total - depositNum);
   const totalPaid = Math.min(total, Math.max(0, depositNum + partialNum));
   const remainingAmount = Math.max(0, total - totalPaid);
-  const hasCustomerInfo = customerName.trim().length > 0;
-  const hasVehicleInfo = vehicleModel.trim().length > 0 || licensePlate.trim().length > 0;
+  const hasCustomerInfo = customerName.trim().length > 0 && customerPhone.trim().length > 0;
+  const hasVehicleInfo = vehicleModel.trim().length > 0 && licensePlate.trim().length > 0;
   const infoReady = hasCustomerInfo && hasVehicleInfo && issueDescription.trim().length > 0 && technicianName.trim().length > 0;
 
   useEffect(() => {
@@ -521,6 +524,12 @@ export default function WorkOrderCreateScreen() {
     }
   }, [showPaymentInput, partialAmount, total, depositNum]);
 
+  useEffect(() => {
+    return () => {
+      if (customerDebounceRef.current) clearTimeout(customerDebounceRef.current);
+    };
+  }, []);
+
   const handleTabPress = (tab: TopTab) => {
     if (tab === 'info') {
       setActiveTab('info');
@@ -528,7 +537,7 @@ export default function WorkOrderCreateScreen() {
     }
 
     if (!infoReady) {
-      Alert.alert('Cần bổ sung thông tin', 'Vui lòng chọn khách/xe, mô tả tình trạng và kỹ thuật viên trước.');
+      Alert.alert('Cần bổ sung thông tin', 'Vui lòng nhập đủ tên khách, số điện thoại, dòng xe, biển số, mô tả tình trạng và kỹ thuật viên trước.');
       setActiveTab('info');
       return;
     }
@@ -634,7 +643,7 @@ export default function WorkOrderCreateScreen() {
         await completeWorkOrderPaymentMobile({
           orderId: id,
           paymentMethod: paymentMethod || 'cash',
-          paymentAmount: 0,
+          paymentAmount: additionalPayment,
         });
       }
 
@@ -668,6 +677,11 @@ export default function WorkOrderCreateScreen() {
 
   const addPart = (part: PartOption) => {
     const stockQty = fromBranchValue(part.stock, BRANCH_ID);
+    if (stockQty <= 0) {
+      Alert.alert('Hết hàng', `${part.name} hiện không còn tồn kho để thêm vào phiếu.`);
+      return;
+    }
+
     setSelectedParts((prev) => [
       ...prev,
       {
@@ -683,7 +697,28 @@ export default function WorkOrderCreateScreen() {
   };
 
   const updatePart = (partId: string, updates: Partial<SelectedPart>) => {
-    setSelectedParts((prev) => prev.map((p) => (p.partId === partId ? { ...p, ...updates } : p)));
+    setSelectedParts((prev) =>
+      prev.map((p) => {
+        if (p.partId !== partId) return p;
+
+        if (typeof updates.quantity === 'number' && Number.isFinite(updates.quantity)) {
+          const maxQty = Math.max(1, p.stockQty || 1);
+          const requestedQty = Math.max(1, Math.round(updates.quantity));
+
+          if (requestedQty > maxQty) {
+            Alert.alert('Vượt tồn kho', `${p.partName} chỉ còn ${p.stockQty} trong kho.`);
+          }
+
+          return {
+            ...p,
+            ...updates,
+            quantity: Math.min(requestedQty, maxQty),
+          };
+        }
+
+        return { ...p, ...updates };
+      })
+    );
   };
 
   const removePart = (partId: string) => {
@@ -844,21 +879,27 @@ export default function WorkOrderCreateScreen() {
         <TouchableOpacity style={[styles.topTabBtn, activeTab === 'info' && styles.topTabBtnActive]} onPress={() => handleTabPress('info')}>
           <Feather name="user" size={16} color={activeTab === 'info' ? '#4F97FF' : '#8693A8'} />
           <Text style={[styles.topTabText, activeTab === 'info' && styles.topTabTextActive]}>THÔNG TIN</Text>
-          {activeTab === 'info' ? <View style={styles.topTabUnderline} /> : null}
         </TouchableOpacity>
         <TouchableOpacity style={[styles.topTabBtn, activeTab === 'parts' && styles.topTabBtnActive]} onPress={() => handleTabPress('parts')}>
           <MaterialCommunityIcons name="cube-outline" size={17} color={activeTab === 'parts' ? '#4F97FF' : '#8693A8'} />
           <Text style={[styles.topTabText, activeTab === 'parts' && styles.topTabTextActive]}>PHỤ TÙNG</Text>
-          {activeTab === 'parts' ? <View style={styles.topTabUnderline} /> : null}
         </TouchableOpacity>
         <TouchableOpacity style={[styles.topTabBtn, activeTab === 'payment' && styles.topTabBtnActive]} onPress={() => handleTabPress('payment')}>
           <MaterialCommunityIcons name="cash-multiple" size={16} color={activeTab === 'payment' ? '#4F97FF' : '#8693A8'} />
           <Text style={[styles.topTabText, activeTab === 'payment' && styles.topTabTextActive]}>T.TOÁN</Text>
-          {activeTab === 'payment' ? <View style={styles.topTabUnderline} /> : null}
         </TouchableOpacity>
       </View>
 
-      <ScrollView style={styles.contentScroll} contentContainerStyle={styles.content}>
+      <KeyboardAvoidingView
+        style={styles.formArea}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={0}
+      >
+      <ScrollView
+        style={styles.contentScroll}
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+      >
         {activeTab === 'info' ? (
           <>
             <View style={styles.tabSection}>
@@ -880,7 +921,7 @@ export default function WorkOrderCreateScreen() {
                   >
                     <MaterialCommunityIcons
                       name={s.icon || 'check-circle-outline'}
-                      size={16}
+                      size={14}
                       color={status === s.statusKey ? '#FFFFFF' : '#64748B'}
                     />
                     <Text style={[styles.statusSegmentText, status === s.statusKey && styles.statusSegmentTextActive]}>{s.shortLabel}</Text>
@@ -889,13 +930,22 @@ export default function WorkOrderCreateScreen() {
               </View>
 
               <Text style={styles.microLabel}>KỸ THUẬT VIÊN PHỤ TRÁCH *</Text>
-              <TouchableOpacity style={styles.techPickerBtn} onPress={() => setShowTechnicianModal(true)}>
-                <View style={styles.inlineIconTitleRow}>
-                  <Feather name="users" size={15} color="#9CB4D9" />
-                  <Text style={styles.techPickerText}>{technicianName || 'Chọn kỹ thuật viên'}</Text>
-                </View>
-                <Feather name="chevron-right" size={16} color="#8EA0BF" />
-              </TouchableOpacity>
+              {quickTechnicians.length > 0 ? (
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.techRow}>
+                  {quickTechnicians.map((tech) => {
+                    const active = technicianName === tech;
+                    return (
+                      <TouchableOpacity
+                        key={tech}
+                        style={[styles.techChip, active && styles.techChipActive]}
+                        onPress={() => setTechnicianName(tech)}
+                      >
+                        <Text style={[styles.techChipText, active && styles.techChipTextActive]}>{tech}</Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </ScrollView>
+              ) : null}
               {technicians.length === 0 ? <Text style={styles.helperText}>Chưa có danh sách KTV, vui lòng tạo trong bảng employees.</Text> : null}
             </View>
 
@@ -903,10 +953,10 @@ export default function WorkOrderCreateScreen() {
               <Text style={styles.microLabel}>THÔNG TIN KHÁCH HÀNG</Text>
               {showCustomerSearch ? (
                 <View style={styles.sectionInnerGroup}>
-                  <View style={styles.searchInputWrap}>
+                  <View style={styles.primarySearchWrap}>
                     <Feather name="search" size={16} color="#8A96AB" style={styles.searchPrefixIcon} />
                     <TextInput
-                      style={styles.searchInput}
+                      style={styles.primarySearchInput}
                       value={customerSearch}
                       onChangeText={handleCustomerSearchChange}
                       placeholder="Tìm tên, SDT hoặc biển số xe..."
@@ -917,7 +967,7 @@ export default function WorkOrderCreateScreen() {
                   {customerLoading ? (
                     <View style={styles.loadingInline}><ActivityIndicator size="small" color="#63A8FF" /></View>
                   ) : (
-                    <View style={styles.customerListWrap}>
+                    <View style={styles.customerResultsWrap}>
                       {filteredCustomers.map((c) => {
                         const primaryVehicle = c.vehicles?.find((v) => v.isPrimary) || c.vehicles?.[0];
                         const vehicleModelLabel = primaryVehicle?.model || c.vehicleModel || '';
@@ -1140,7 +1190,14 @@ export default function WorkOrderCreateScreen() {
                   placeholder="Xe đề khó nổ, hao xăng, dừng đèn đỏ máy bị tắt..."
                   multiline
                 />
-                <Field label="Ghi chú" value={notes} onChangeText={setNotes} placeholder="Lưu ý linh kiện theo xe" multiline />
+                <Field
+                  label="Ghi chú"
+                  value={notes}
+                  onChangeText={setNotes}
+                  placeholder="Ghi chú thêm nếu cần"
+                  multiline
+                  isNoteField
+                />
               </View>
             </View>
 
@@ -1521,7 +1578,7 @@ export default function WorkOrderCreateScreen() {
         ) : null}
       </ScrollView>
 
-      <View style={styles.stickyFooter}>
+      <View style={[styles.stickyFooter, { paddingBottom: Math.max(insets.bottom, 10) }]}>
         <TouchableOpacity style={styles.cancelBtn} onPress={goToWorkorders}>
           <Text style={styles.cancelBtnText}>Hủy</Text>
         </TouchableOpacity>
@@ -1530,7 +1587,7 @@ export default function WorkOrderCreateScreen() {
           disabled={createMutation.isPending}
           onPress={() => createMutation.mutate('save')}
         >
-          {createMutation.isPending ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.saveBtnText}>💾 LƯU</Text>}
+          {createMutation.isPending ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.saveBtnText}>LƯU</Text>}
         </TouchableOpacity>
         {status === 'Trả máy' ? (
           <TouchableOpacity
@@ -1550,60 +1607,7 @@ export default function WorkOrderCreateScreen() {
           </TouchableOpacity>
         ) : null}
       </View>
-
-      <Modal visible={showTechnicianModal} transparent animationType="slide" onRequestClose={() => setShowTechnicianModal(false)}>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalCard}>
-            <View style={styles.modalHead}>
-              <View style={styles.inlineIconTitleRow}>
-                <Feather name="users" size={16} color="#EAF2FF" />
-                <Text style={styles.modalTitle}>Chọn kỹ thuật viên</Text>
-              </View>
-              <TouchableOpacity style={styles.modalIconCloseBtn} onPress={() => setShowTechnicianModal(false)}>
-                <Feather name="x" size={20} color="#D2DFF6" />
-              </TouchableOpacity>
-            </View>
-
-            <View style={[styles.searchInputWrap, { marginTop: 10 }]}> 
-              <Feather name="search" size={16} color="#8A96AB" style={styles.searchPrefixIcon} />
-              <TextInput
-                style={styles.searchInput}
-                value={technicianSearch}
-                onChangeText={setTechnicianSearch}
-                placeholder="Tìm kỹ thuật viên..."
-                placeholderTextColor="#8A96AB"
-              />
-            </View>
-
-            <ScrollView style={{ marginTop: 10, maxHeight: 380 }}>
-              <View style={styles.techCardList}>
-                {filteredTechnicians.map((tech) => {
-                  const active = technicianName === tech;
-                  return (
-                    <TouchableOpacity
-                      key={tech}
-                      style={[styles.techCardItem, active && styles.techCardItemActive]}
-                      onPress={() => {
-                        setTechnicianName(tech);
-                        setShowTechnicianModal(false);
-                      }}
-                    >
-                      <View style={styles.techAvatar}>
-                        <Text style={styles.techAvatarText}>{tech.charAt(0).toUpperCase()}</Text>
-                      </View>
-                      <Text style={[styles.techCardText, active && styles.techCardTextActive]}>{tech}</Text>
-                      {active ? <Feather name="check" size={16} color="#EAF2FF" /> : null}
-                    </TouchableOpacity>
-                  );
-                })}
-                {filteredTechnicians.length === 0 ? (
-                  <Text style={styles.helperText}>Không tìm thấy kỹ thuật viên.</Text>
-                ) : null}
-              </View>
-            </ScrollView>
-          </View>
-        </View>
-      </Modal>
+      </KeyboardAvoidingView>
 
       <Modal visible={showPartModal} transparent animationType="slide" onRequestClose={() => setShowPartModal(false)}>
         <View style={styles.modalOverlay}>
@@ -1781,19 +1785,24 @@ function Field(props: {
   placeholder?: string;
   keyboardType?: 'default' | 'numeric' | 'phone-pad';
   multiline?: boolean;
+  isNoteField?: boolean;
 }) {
   return (
-    <View style={{ marginTop: 10 }}>
-      <Text style={styles.label}>{props.label}</Text>
+    <View style={[{ marginTop: 10 }, props.isNoteField && styles.noteFieldWrap]}>
+      <View style={props.isNoteField ? styles.noteLabelRow : undefined}>
+        {props.isNoteField ? <Feather name="edit-3" size={12} color="#7F93B6" /> : null}
+        <Text style={[styles.label, props.isNoteField && styles.noteLabel]}>{props.label}</Text>
+      </View>
       <TextInput
-        style={[styles.input, props.multiline ? styles.inputMultiline : null]}
+        style={[styles.input, props.multiline ? styles.inputMultiline : null, props.isNoteField && styles.noteInput]}
         value={props.value}
         onChangeText={props.onChangeText}
         placeholder={props.placeholder}
-        placeholderTextColor="#8A96AB"
+        placeholderTextColor={props.isNoteField ? '#73839D' : '#8A96AB'}
         keyboardType={props.keyboardType || 'default'}
         multiline={props.multiline}
       />
+      {props.isNoteField ? <Text style={styles.noteHelper}>Thông tin bổ sung, không bắt buộc.</Text> : null}
     </View>
   );
 }
@@ -1809,10 +1818,11 @@ function SummaryRow({ label, value, valueColor }: { label: string; value: string
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#111318' },
+  formArea: { flex: 1 },
   contentScroll: { flex: 1 },
-  content: { padding: 0, paddingBottom: 118 },
-  tabSection: { padding: 16, gap: 12 },
-  sectionInnerGroup: { gap: 8 },
+  content: { padding: 0, paddingBottom: 108 },
+  tabSection: { padding: 14, gap: 10 },
+  sectionInnerGroup: { gap: 7 },
   tabSectionAction: { paddingHorizontal: 16, paddingBottom: 24 },
   mobileHeader: {
     borderBottomWidth: 1,
@@ -1840,45 +1850,36 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#2F3A50',
     backgroundColor: '#1E2432',
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    gap: 8,
   },
   topTabBtn: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 9,
-    minHeight: 46,
+    paddingVertical: 8,
+    minHeight: 42,
     position: 'relative',
+    borderRadius: 14,
+    backgroundColor: 'rgba(255,255,255,0.02)',
+    gap: 3,
   },
-  topTabIconText: {
-    marginBottom: 1,
+  topTabBtnActive: {
+    backgroundColor: 'rgba(79, 151, 255, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(79, 151, 255, 0.24)',
+  },
+  topTabText: {
     color: '#8693A8',
-    fontSize: 12,
-    fontWeight: '800',
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.3,
     lineHeight: 13,
     includeFontPadding: false,
     textAlignVertical: 'center',
   },
-  topTabIconTextActive: { color: '#4F97FF' },
-  topTabBtnActive: {},
-  topTabText: {
-    color: '#8693A8',
-    fontSize: 11,
-    fontWeight: '800',
-    letterSpacing: 0.2,
-    lineHeight: 14,
-    includeFontPadding: false,
-    textAlignVertical: 'center',
-    marginTop: 2,
-  },
   topTabTextActive: { color: '#4F97FF' },
-  topTabUnderline: {
-    position: 'absolute',
-    bottom: 0,
-    width: 32,
-    height: 2,
-    borderRadius: 999,
-    backgroundColor: '#4F97FF',
-  },
   sectionHead: {
     borderWidth: 1,
     borderColor: '#2D4368',
@@ -1917,13 +1918,17 @@ const styles = StyleSheet.create({
   },
   loadingInline: { paddingVertical: 14, alignItems: 'center' },
   customerListWrap: { marginTop: 4, gap: 8 },
+  customerResultsWrap: {
+    marginTop: 6,
+    gap: 8,
+  },
   customerTile: {
-    paddingHorizontal: 14,
-    paddingVertical: 12,
+    paddingHorizontal: 13,
+    paddingVertical: 11,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#334155',
-    backgroundColor: '#1E1E2D',
+    borderColor: '#3A465D',
+    backgroundColor: '#222636',
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
@@ -1937,17 +1942,17 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   customerAvatarLg: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
+    width: 36,
+    height: 36,
+    borderRadius: 11,
     backgroundColor: 'rgba(59, 130, 246, 0.1)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   customerAvatarText: { color: '#60A5FA', fontWeight: '800' },
-  customerName: { color: '#F8FAFC', fontSize: 15, fontWeight: '700' },
-  customerPhone: { color: '#94A3B8', fontSize: 12, marginTop: 2 },
-  customerVehicleHint: { color: '#7FB0FF', fontSize: 11, marginTop: 3, fontWeight: '600' },
+  customerName: { color: '#F8FAFC', fontSize: 14, fontWeight: '700' },
+  customerPhone: { color: '#94A3B8', fontSize: 11, marginTop: 1 },
+  customerVehicleHint: { color: '#7FB0FF', fontSize: 10, marginTop: 2, fontWeight: '600' },
   customerArrow: { color: '#64748B', fontSize: 19 },
   addNewCustomerHint: {
     marginTop: 4,
@@ -2019,19 +2024,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  techPickerBtn: {
-    marginTop: 2,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: '#334155',
-    backgroundColor: '#1E1E2D',
-    height: 44,
-    paddingHorizontal: 14,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  techPickerText: { color: '#D6E2F8', fontSize: 14, fontWeight: '700' },
   miniBtn: {
     borderRadius: 8,
     borderWidth: 1,
@@ -2121,26 +2113,26 @@ const styles = StyleSheet.create({
   vehicleSuggestChipText: { color: '#CFE2FF', fontSize: 12, fontWeight: '700' },
   helperText: { color: '#8EA0BF', fontSize: 11, marginTop: 4 },
   microLabel: {
-    color: '#7F8EA8',
-    fontSize: 11,
+    color: '#8896AF',
+    fontSize: 10,
     marginBottom: 2,
     marginLeft: 1,
-    fontWeight: '800',
-    letterSpacing: 0.7,
+    fontWeight: '700',
+    letterSpacing: 0.5,
   },
   segmentLabel: {
-    color: '#7F8EA8',
-    fontSize: 11,
-    marginBottom: 4,
+    color: '#8896AF',
+    fontSize: 10,
+    marginBottom: 6,
     marginLeft: 1,
-    fontWeight: '800',
-    letterSpacing: 0.8,
+    fontWeight: '700',
+    letterSpacing: 0.5,
   },
   statusSegmentWrap: {
     flexDirection: 'row',
     gap: 6,
-    padding: 4,
-    borderRadius: 16,
+    padding: 3,
+    borderRadius: 14,
     borderWidth: 1,
     borderColor: '#334155',
     backgroundColor: '#1E1E2D',
@@ -2148,21 +2140,42 @@ const styles = StyleSheet.create({
   },
   statusSegmentBtn: {
     flex: 1,
-    borderRadius: 12,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 3,
-    minHeight: 56,
-    paddingVertical: 7,
+    gap: 2,
+    minHeight: 48,
+    paddingVertical: 6,
   },
   statusSegmentBtnActive: {
     backgroundColor: '#2563EB',
   },
   statusSegmentIconText: { color: '#64748B', fontSize: 11, fontWeight: '800' },
   statusSegmentIconTextActive: { color: '#FFFFFF' },
-  statusSegmentText: { color: '#64748B', fontSize: 11, fontWeight: '800' },
+  statusSegmentText: { color: '#64748B', fontSize: 10, fontWeight: '800' },
   statusSegmentTextActive: { color: '#FFFFFF' },
-  techRow: { gap: 8, paddingVertical: 1 },
+  primarySearchWrap: {
+    borderWidth: 1,
+    borderColor: '#42526D',
+    borderRadius: 18,
+    backgroundColor: '#242837',
+    position: 'relative',
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 2,
+  },
+  primarySearchInput: {
+    color: '#F8FAFC',
+    fontSize: 15,
+    paddingHorizontal: 44,
+    paddingVertical: 0,
+    height: 50,
+    lineHeight: 16,
+    includeFontPadding: false,
+  },
+  techRow: { gap: 8, paddingVertical: 2, paddingRight: 12 },
   techChip: {
     borderRadius: 12,
     paddingHorizontal: 12,
@@ -2179,34 +2192,25 @@ const styles = StyleSheet.create({
   },
   techChipText: { color: '#94A3B8', fontWeight: '700', fontSize: 13 },
   techChipTextActive: { color: '#F8FAFC' },
-  techCardList: { gap: 8, paddingBottom: 8 },
-  techCardItem: {
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#334155',
-    backgroundColor: '#1E1E2D',
-    paddingHorizontal: 12,
-    height: 52,
+  label: { color: '#64748B', fontSize: 11, marginBottom: 4, marginLeft: 4, letterSpacing: 0.5, fontWeight: '800', textTransform: 'uppercase' },
+  noteFieldWrap: {
+    marginTop: 14,
+  },
+  noteLabelRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 6,
+    marginLeft: 2,
+    marginBottom: 4,
   },
-  techCardItemActive: {
-    borderColor: '#3B82F6',
-    backgroundColor: '#2563EB',
+  noteLabel: {
+    color: '#7A879D',
+    fontSize: 10,
+    marginBottom: 0,
+    marginLeft: 0,
+    fontWeight: '700',
+    letterSpacing: 0.35,
   },
-  techAvatar: {
-    width: 30,
-    height: 30,
-    borderRadius: 10,
-    backgroundColor: 'rgba(0,0,0,0.25)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  techAvatarText: { color: '#DCE8FF', fontWeight: '800', fontSize: 12 },
-  techCardText: { flex: 1, color: '#D6E2F8', fontSize: 14, fontWeight: '700' },
-  techCardTextActive: { color: '#FFFFFF' },
-  label: { color: '#64748B', fontSize: 11, marginBottom: 4, marginLeft: 4, letterSpacing: 0.5, fontWeight: '800', textTransform: 'uppercase' },
   input: {
     borderWidth: 1,
     borderColor: '#334155',
@@ -2222,9 +2226,20 @@ const styles = StyleSheet.create({
     textAlignVertical: 'center',
   },
   inputMultiline: {
-    minHeight: 78,
+    minHeight: 70,
     paddingVertical: 10,
     textAlignVertical: 'top',
+  },
+  noteInput: {
+    minHeight: 60,
+    borderRadius: 14,
+    color: '#D8E2F2',
+  },
+  noteHelper: {
+    marginTop: 6,
+    marginLeft: 4,
+    color: '#72839E',
+    fontSize: 11,
   },
   rowWrap: { flexDirection: 'row', gap: 8, flexWrap: 'wrap', marginBottom: 4 },
   blockHeader: {
@@ -3011,48 +3026,53 @@ const styles = StyleSheet.create({
   stickyFooter: {
     borderTopWidth: 1,
     borderTopColor: '#2F3A50',
-    backgroundColor: '#1E2432',
+    backgroundColor: 'rgba(24, 30, 42, 0.9)',
     paddingHorizontal: 12,
-    paddingVertical: 10,
+    paddingTop: 8,
     flexDirection: 'row',
     gap: 8,
     alignItems: 'center',
   },
   cancelBtn: {
-    minWidth: 56,
-    borderRadius: 8,
-    backgroundColor: '#2E3442',
+    minWidth: 72,
+    borderRadius: 12,
+    backgroundColor: '#2A3140',
     alignItems: 'center',
     justifyContent: 'center',
-    height: 38,
-    paddingHorizontal: 12,
+    height: 42,
+    paddingHorizontal: 14,
   },
   cancelBtnText: { color: '#E5EDF8', fontWeight: '600', fontSize: 13 },
   saveBtn: {
     flex: 1,
-    borderRadius: 8,
-    backgroundColor: '#5F697E',
+    borderRadius: 14,
+    backgroundColor: '#4F97FF',
     alignItems: 'center',
     justifyContent: 'center',
-    height: 38,
+    height: 42,
+    shadowColor: '#4F97FF',
+    shadowOpacity: 0.22,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
   },
-  saveBtnText: { color: '#FFFFFF', fontWeight: '600', fontSize: 13 },
+  saveBtnText: { color: '#FFFFFF', fontWeight: '800', fontSize: 13, letterSpacing: 0.4 },
   depositBtn: {
     flex: 1,
-    borderRadius: 8,
+    borderRadius: 12,
     backgroundColor: '#7C3AED',
     alignItems: 'center',
     justifyContent: 'center',
-    height: 38,
+    height: 42,
   },
   depositBtnText: { color: '#FFFFFF', fontWeight: '600', fontSize: 13 },
   payBtn: {
     flex: 1,
-    borderRadius: 8,
+    borderRadius: 12,
     backgroundColor: '#16A34A',
     alignItems: 'center',
     justifyContent: 'center',
-    height: 38,
+    height: 42,
   },
   payBtnText: { color: '#FFFFFF', fontWeight: '600', fontSize: 13 },
   openPartModalBtn: {

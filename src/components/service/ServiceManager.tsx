@@ -325,15 +325,45 @@ export default function ServiceManager() {
 
   // Handle navigation from ServiceHistory with editOrder state
   useEffect(() => {
+    let isMounted = true;
+
     const state = location.state as { editOrder?: WorkOrder } | null;
-    if (state?.editOrder) {
-      // Set the editing order and open modal
-      setEditingOrder(state.editOrder);
-      setShowModal(true);
+    const openOrderFromHistory = async () => {
+      if (!state?.editOrder) return;
+
+      let nextOrder = state.editOrder;
+      if (state.editOrder.id) {
+        const result = await fetchWorkOrderById(state.editOrder.id);
+        if (result.ok) {
+          nextOrder = result.data;
+        } else {
+          console.warn(
+            "[ServiceManager] Failed to fetch fresh order from history, using navigation state:",
+            result.error
+          );
+        }
+      }
+
+      if (!isMounted) return;
+
+      setEditingOrder(nextOrder);
+      if (isMobile) {
+        setMobileModalViewMode(false);
+        setShowMobileModal(true);
+      } else {
+        setShowModal(true);
+      }
+
       // Clear the navigation state to prevent re-opening on re-render
       window.history.replaceState({}, document.title);
-    }
-  }, [location.state]);
+    };
+
+    openOrderFromHistory();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [location.state, isMobile]);
 
   // State for print preview modal
   const [printOrder, setPrintOrder] = useState<WorkOrder | null>(null);
@@ -1571,6 +1601,7 @@ export default function ServiceManager() {
               setMobileModalViewMode(false);
             }}
             onSave={handleMobileSave}
+            onPrintWorkOrder={handlePrintOrder}
             workOrder={editingOrder}
             customers={displayCustomers}
             parts={fetchedParts || []}

@@ -12,6 +12,7 @@ import {
   Alert,
   Linking,
   ScrollView,
+  Modal,
   useWindowDimensions,
   Animated,
 } from 'react-native';
@@ -282,21 +283,60 @@ const fetchStoreSettingsForReceipt = async (): Promise<StoreSettingsReceipt | nu
   };
 };
 
-const pickDateFilterStart = (filter: DateFilter): Date | null => {
+const parseWorkOrderDate = (value: unknown): Date | null => {
+  if (!value) return null;
+  if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value;
+
+  const raw = String(value).trim();
+  if (!raw) return null;
+
+  const normalized = raw.includes('T') ? raw : raw.replace(' ', 'T');
+  const direct = new Date(normalized);
+  if (!Number.isNaN(direct.getTime())) return direct;
+
+  const sqlMatch = raw.match(
+    /^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2})(?::(\d{2}))?)?$/
+  );
+  if (sqlMatch) {
+    const [, year, month, day, hour = '0', minute = '0', second = '0'] = sqlMatch;
+    const parsed = new Date(
+      Number(year),
+      Number(month) - 1,
+      Number(day),
+      Number(hour),
+      Number(minute),
+      Number(second)
+    );
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  }
+
+  return null;
+};
+
+const startOfDay = (date: Date) => new Date(date.getFullYear(), date.getMonth(), date.getDate());
+
+const endOfDay = (date: Date) => new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59, 999);
+
+const pickDateFilterRange = (filter: DateFilter): { start: Date; end: Date } | null => {
   const now = new Date();
+  const todayStart = startOfDay(now);
+  const todayEnd = endOfDay(now);
+
   if (filter === 'today') {
-    return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    return { start: todayStart, end: todayEnd };
   }
+
   if (filter === '7d') {
-    const d = new Date(now);
-    d.setDate(d.getDate() - 7);
-    return d;
+    const start = new Date(todayStart);
+    start.setDate(start.getDate() - 6);
+    return { start, end: todayEnd };
   }
+
   if (filter === '30d') {
-    const d = new Date(now);
-    d.setDate(d.getDate() - 30);
-    return d;
+    const start = new Date(now.getFullYear(), now.getMonth(), 1);
+    return { start, end: todayEnd };
   }
+
   return null;
 };
 
@@ -318,6 +358,7 @@ export default function WorkOrdersScreen() {
   const [hideFinance, setHideFinance] = useState(true);
   const [activeTab, setActiveTab] = useState<WorkOrdersTab>('orders');
   const [previewOrder, setPreviewOrder] = useState<WorkOrder | null>(null);
+  const [showFilterSheet, setShowFilterSheet] = useState(false);
 
   const {
     data,
@@ -573,7 +614,7 @@ export default function WorkOrdersScreen() {
   };
 
   const filtered = useMemo(() => {
-    const start = pickDateFilterStart(dateFilter);
+    const range = pickDateFilterRange(dateFilter);
 
     const result = orders.filter((o) => {
       const keyword = search.trim().toLowerCase();
@@ -588,14 +629,17 @@ export default function WorkOrdersScreen() {
       const orderPayment = (o.paymentStatus ?? 'unpaid') as PaymentFilter;
       const matchPayment = paymentFilter === 'all' || orderPayment === paymentFilter;
       const matchTechnician = technicianFilter === 'all' || (o.technicianName ?? '') === technicianFilter;
-      const matchDate = !start || new Date(o.creationDate) >= start;
+      const createdAt = parseWorkOrderDate(o.creationDate);
+      const matchDate = !range || (createdAt ? (createdAt >= range.start && createdAt <= range.end) : false);
 
       return matchSearch && matchStatus && matchPayment && matchTechnician && matchDate;
     });
 
     result.sort((a, b) => {
-      if (sortBy === 'date_desc') return +new Date(b.creationDate) - +new Date(a.creationDate);
-      if (sortBy === 'date_asc') return +new Date(a.creationDate) - +new Date(b.creationDate);
+      const timeA = parseWorkOrderDate(a.creationDate)?.getTime() ?? 0;
+      const timeB = parseWorkOrderDate(b.creationDate)?.getTime() ?? 0;
+      if (sortBy === 'date_desc') return timeB - timeA;
+      if (sortBy === 'date_asc') return timeA - timeB;
       if (sortBy === 'total_desc') return (Number(b.total) || 0) - (Number(a.total) || 0);
       return (Number(a.total) || 0) - (Number(b.total) || 0);
     });
@@ -603,17 +647,24 @@ export default function WorkOrdersScreen() {
     return result;
   }, [orders, search, filterStatus, paymentFilter, technicianFilter, dateFilter, sortBy]);
 
+  const summaryOrders = useMemo(() => {
+    const range = pickDateFilterRange(dateFilter);
+
+    return orders.filter((o) => {
+      if (!range) return true;
+      const createdAt = parseWorkOrderDate(o.creationDate);
+      return createdAt ? (createdAt >= range.start && createdAt <= range.end) : false;
+    });
+  }, [orders, dateFilter]);
+
   const stats = STATUS_ORDER.reduce((acc, status) => {
-    acc[status] = orders.filter((o) => o.status === status).length;
+    acc[status] = summaryOrders.filter((o) => o.status === status).length;
     return acc;
   }, {} as Record<string, number>);
 
-  const finance7d = useMemo(() => {
-    const start = pickDateFilterStart('7d') ?? new Date(0);
-    const recent = orders.filter((o) => new Date(o.creationDate) >= start);
-
-    const revenue = recent.reduce((sum, o) => sum + (Number(o.total) || 0), 0);
-    const cost = recent.reduce((sum, o) => {
+  const financeSummary = useMemo(() => {
+    const revenue = summaryOrders.reduce((sum, o) => sum + (Number(o.total) || 0), 0);
+    const cost = summaryOrders.reduce((sum, o) => {
       const partCost = (o.partsUsed || []).reduce(
         (s, p: any) => s + (Number(p.costPrice ?? 0) * Number(p.quantity ?? 1)),
         0
@@ -625,7 +676,7 @@ export default function WorkOrdersScreen() {
       revenue,
       profit: Math.max(0, revenue - cost),
     };
-  }, [orders]);
+  }, [summaryOrders]);
 
   const dateQuickChips: Array<{ key: DateFilter; label: string }> = [
     { key: 'today', label: 'Hôm nay' },
@@ -633,6 +684,24 @@ export default function WorkOrdersScreen() {
     { key: '30d', label: 'Tháng' },
     { key: 'all', label: 'Tất cả' },
   ];
+  const clearFilters = () => {
+    setFilterStatus(null);
+    setPaymentFilter('all');
+    setTechnicianFilter('all');
+    setSortBy('date_desc');
+  };
+  const activeFilterCount = [
+    filterStatus ? 1 : 0,
+    paymentFilter !== 'all' ? 1 : 0,
+    technicianFilter !== 'all' ? 1 : 0,
+    sortBy !== 'date_desc' ? 1 : 0,
+  ].reduce((sum, value) => sum + value, 0);
+  const activeFilterSummary = [
+    filterStatus,
+    paymentFilter !== 'all' ? PAYMENT_LABEL[paymentFilter] : null,
+    technicianFilter !== 'all' ? technicianFilter : null,
+    sortBy !== 'date_desc' ? SORT_LABEL[sortBy] : null,
+  ].filter(Boolean) as string[];
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -764,25 +833,43 @@ export default function WorkOrdersScreen() {
       ) : (
         <>
       <View style={styles.statsRow}>
-        <StatCard icon="file-document-outline" label="Tiếp nhận" value={stats['Tiếp nhận'] ?? 0} color={STATUS_COLORS['Tiếp nhận']} />
-        <StatCard icon="wrench-outline" label="Đang sửa" value={stats['Đang sửa'] ?? 0} color={STATUS_COLORS['Đang sửa']} />
-        <StatCard icon="check-circle-outline" label="Đã sửa" value={stats['Đã sửa xong'] ?? 0} color={STATUS_COLORS['Đã sửa xong']} />
-        <StatCard icon="motorbike" label="Trả máy" value={stats['Trả máy'] ?? 0} color={STATUS_COLORS['Trả máy']} />
+        <View style={styles.summaryCell}>
+          <StatCard icon="file-document-outline" label="Tiếp nhận" value={stats['Tiếp nhận'] ?? 0} color={STATUS_COLORS['Tiếp nhận']} compact />
+        </View>
+        <View style={styles.summaryCell}>
+          <StatCard icon="wrench-outline" label="Đang sửa" value={stats['Đang sửa'] ?? 0} color={STATUS_COLORS['Đang sửa']} compact />
+        </View>
+        <View style={styles.summaryCell}>
+          <StatCard icon="check-circle-outline" label="Đã sửa" value={stats['Đã sửa xong'] ?? 0} color={STATUS_COLORS['Đã sửa xong']} compact />
+        </View>
+        <View style={styles.summaryCell}>
+          <StatCard icon="motorbike" label="Trả máy" value={stats['Trả máy'] ?? 0} color={STATUS_COLORS['Trả máy']} compact />
+        </View>
       </View>
 
       <View style={styles.financeRow}>
-        <FinanceCard
-          label="Doanh thu 7 ngày qua"
-          value={finance7d.revenue}
-          hidden={hideFinance}
-          onToggle={() => setHideFinance((v) => !v)}
-        />
-        <FinanceCard
-          label="Lợi nhuận 7 ngày qua"
-          value={finance7d.profit}
-          hidden={hideFinance}
-          onToggle={() => setHideFinance((v) => !v)}
-        />
+        <View style={styles.financeCell}>
+          <FinanceCard
+            label="Doanh thu 7 ngày qua"
+            value={financeSummary.revenue}
+            kind="revenue"
+            dateFilter={dateFilter}
+            hidden={hideFinance}
+            onToggle={() => setHideFinance((v) => !v)}
+            compact
+          />
+        </View>
+        <View style={styles.financeCell}>
+          <FinanceCard
+            label="Lợi nhuận 7 ngày qua"
+            value={financeSummary.profit}
+            kind="profit"
+            dateFilter={dateFilter}
+            hidden={hideFinance}
+            onToggle={() => setHideFinance((v) => !v)}
+            compact
+          />
+        </View>
       </View>
 
       <View style={styles.searchRow}>
@@ -810,43 +897,36 @@ export default function WorkOrdersScreen() {
         ))}
       </View>
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.controlRow}>
-        <Pressable style={({ pressed }) => [styles.controlChip, pressed && styles.pressableDown]} onPress={openStatusPicker}>
-          <MaterialCommunityIcons name="progress-wrench" size={14} color="#A9B7D0" />
-          <Text style={styles.controlChipText}>{filterStatus ?? 'Tất cả trạng thái'}</Text>
-        </Pressable>
-
-        <Pressable style={({ pressed }) => [styles.controlChip, pressed && styles.pressableDown]} onPress={openPaymentPicker}>
-          <MaterialCommunityIcons name="cash-multiple" size={14} color="#A9B7D0" />
-          <Text style={styles.controlChipText}>{PAYMENT_LABEL[paymentFilter]}</Text>
-        </Pressable>
-
-        <Pressable style={({ pressed }) => [styles.controlChip, pressed && styles.pressableDown]} onPress={openTechnicianPicker}>
-          <MaterialCommunityIcons name="account-hard-hat" size={14} color="#A9B7D0" />
-          <Text style={styles.controlChipText}>
-            {technicianFilter === 'all' ? 'Tất cả KTV' : technicianFilter}
-          </Text>
-        </Pressable>
-
-        <Pressable style={({ pressed }) => [styles.controlChip, pressed && styles.pressableDown]} onPress={openSortPicker}>
-          <MaterialCommunityIcons name="sort" size={14} color="#A9B7D0" />
-          <Text style={styles.controlChipText}>{SORT_LABEL[sortBy]}</Text>
-        </Pressable>
-
+      <View style={styles.filterBar}>
         <Pressable
-          style={({ pressed }) => [styles.controlChip, pressed && styles.pressableDown]}
-          onPress={() => {
-            setFilterStatus(null);
-            setPaymentFilter('all');
-            setTechnicianFilter('all');
-            setSortBy('date_desc');
-            setDateFilter('all');
-          }}
+          style={({ pressed }) => [styles.filterButton, pressed && styles.pressableDown]}
+          onPress={() => setShowFilterSheet(true)}
         >
-          <MaterialCommunityIcons name="filter-remove-outline" size={14} color="#FF9BA8" />
-          <Text style={[styles.controlChipText, { color: '#FFB1BB' }]}>Xóa lọc</Text>
+          <MaterialCommunityIcons name="tune-variant" size={16} color="#A9B7D0" />
+          <Text style={styles.filterButtonText}>Bộ lọc</Text>
+          {activeFilterCount > 0 ? (
+            <View style={styles.filterBadge}>
+              <Text style={styles.filterBadgeText}>{activeFilterCount}</Text>
+            </View>
+          ) : null}
         </Pressable>
-      </ScrollView>
+
+        {activeFilterCount > 0 ? (
+          <Pressable
+            style={({ pressed }) => [styles.clearFilterButton, pressed && styles.pressableDown]}
+            onPress={clearFilters}
+          >
+            <MaterialCommunityIcons name="filter-remove-outline" size={14} color="#FF9BA8" />
+            <Text style={styles.clearFilterText}>Xóa lọc</Text>
+          </Pressable>
+        ) : null}
+      </View>
+
+      {activeFilterSummary.length > 0 ? (
+        <View style={styles.filterSummaryRow}>
+          <Text style={styles.filterSummaryText}>{activeFilterSummary.join(' • ')}</Text>
+        </View>
+      ) : null}
 
       {isLoading ? (
         <View style={styles.loadingBox}>
@@ -910,7 +990,10 @@ export default function WorkOrdersScreen() {
         />
       )}
 
-      <Pressable style={({ pressed }) => [styles.fab, pressed && styles.pressableDown]} onPress={() => router.push('/(tabs)/workorder-create')}>
+      <Pressable
+        style={({ pressed }) => [styles.fab, { bottom: 96 + insets.bottom }, pressed && styles.pressableDown]}
+        onPress={() => router.push('/(tabs)/workorder-create')}
+      >
         <Text style={styles.fabText}>＋</Text>
       </Pressable>
 
@@ -920,6 +1003,116 @@ export default function WorkOrdersScreen() {
         storeSettings={(storeSettingsForReceipt || null) as any}
         onClose={() => setPreviewOrder(null)}
       />
+
+      <Modal
+        visible={showFilterSheet}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowFilterSheet(false)}
+      >
+        <Pressable style={styles.sheetBackdrop} onPress={() => setShowFilterSheet(false)}>
+          <Pressable style={styles.sheetCard} onPress={() => {}}>
+            <View style={styles.sheetHandle} />
+            <Text style={styles.sheetTitle}>Bộ lọc phiếu sửa</Text>
+            <Text style={styles.sheetSubtitle}>Chọn các điều kiện muốn áp dụng cho danh sách</Text>
+
+            <Text style={styles.filterSectionTitle}>Trạng thái</Text>
+            <View style={styles.filterOptionsWrap}>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.filterOptionChip,
+                  !filterStatus && styles.filterOptionChipActive,
+                  pressed && styles.pressableDown,
+                ]}
+                onPress={() => setFilterStatus(null)}
+              >
+                <Text style={[styles.filterOptionText, !filterStatus && styles.filterOptionTextActive]}>Tất cả</Text>
+              </Pressable>
+              {STATUS_ORDER.map((status) => (
+                <Pressable
+                  key={status}
+                  style={({ pressed }) => [
+                    styles.filterOptionChip,
+                    filterStatus === status && styles.filterOptionChipActive,
+                    pressed && styles.pressableDown,
+                  ]}
+                  onPress={() => setFilterStatus(status)}
+                >
+                  <Text style={[styles.filterOptionText, filterStatus === status && styles.filterOptionTextActive]}>{status}</Text>
+                </Pressable>
+              ))}
+            </View>
+
+            <Text style={styles.filterSectionTitle}>Thanh toán</Text>
+            <View style={styles.filterOptionsWrap}>
+              {PAYMENT_ORDER.map((key) => (
+                <Pressable
+                  key={key}
+                  style={({ pressed }) => [
+                    styles.filterOptionChip,
+                    paymentFilter === key && styles.filterOptionChipActive,
+                    pressed && styles.pressableDown,
+                  ]}
+                  onPress={() => setPaymentFilter(key)}
+                >
+                  <Text style={[styles.filterOptionText, paymentFilter === key && styles.filterOptionTextActive]}>
+                    {PAYMENT_LABEL[key]}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+
+            <Text style={styles.filterSectionTitle}>Kỹ thuật viên</Text>
+            <View style={styles.filterOptionsWrap}>
+              {technicians.map((tech) => (
+                <Pressable
+                  key={tech}
+                  style={({ pressed }) => [
+                    styles.filterOptionChip,
+                    technicianFilter === tech && styles.filterOptionChipActive,
+                    pressed && styles.pressableDown,
+                  ]}
+                  onPress={() => setTechnicianFilter(tech)}
+                >
+                  <Text style={[styles.filterOptionText, technicianFilter === tech && styles.filterOptionTextActive]}>
+                    {tech === 'all' ? 'Tất cả KTV' : tech}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+
+            <Text style={styles.filterSectionTitle}>Sắp xếp</Text>
+            <View style={styles.filterOptionsWrap}>
+              {(['date_desc', 'date_asc', 'total_desc', 'total_asc'] as SortBy[]).map((key) => (
+                <Pressable
+                  key={key}
+                  style={({ pressed }) => [
+                    styles.filterOptionChip,
+                    sortBy === key && styles.filterOptionChipActive,
+                    pressed && styles.pressableDown,
+                  ]}
+                  onPress={() => setSortBy(key)}
+                >
+                  <Text style={[styles.filterOptionText, sortBy === key && styles.filterOptionTextActive]}>
+                    {SORT_LABEL[key]}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+
+            <View style={styles.filterSheetActions}>
+              {activeFilterCount > 0 ? (
+                <TouchableOpacity style={styles.sheetSecondaryBtn} onPress={clearFilters}>
+                  <Text style={styles.sheetSecondaryText}>Xóa lọc</Text>
+                </TouchableOpacity>
+              ) : null}
+              <TouchableOpacity style={styles.sheetPrimaryBtn} onPress={() => setShowFilterSheet(false)}>
+                <Text style={styles.sheetPrimaryText}>Áp dụng</Text>
+              </TouchableOpacity>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
       </>
       )}
     </View>
@@ -929,20 +1122,40 @@ export default function WorkOrdersScreen() {
 function FinanceCard({
   label,
   value,
+  kind,
+  dateFilter = '7d',
   hidden,
   onToggle,
+  compact = false,
 }: {
   label: string;
   value: number;
+  kind: 'revenue' | 'profit';
+  dateFilter?: DateFilter;
   hidden: boolean;
   onToggle: () => void;
+  compact?: boolean;
 }) {
   const theme = useAppTheme();
   const styles = useMemo(() => getStyles(theme), [theme]);
+  const displayLabel = useMemo(() => {
+    if (kind === 'revenue') {
+      if (dateFilter === 'today') return 'Doanh thu hôm nay';
+      if (dateFilter === '30d') return 'Doanh thu tháng này';
+      if (dateFilter === 'all') return 'Doanh thu toàn bộ';
+      return 'Doanh thu 7 ngày qua';
+    }
+
+    if (dateFilter === 'today') return 'Lợi nhuận hôm nay';
+    if (dateFilter === '30d') return 'Lợi nhuận tháng này';
+    if (dateFilter === 'all') return 'Lợi nhuận toàn bộ';
+    return 'Lợi nhuận 7 ngày qua';
+  }, [dateFilter, kind]);
+
   return (
-    <View style={styles.financeCard}>
+    <View style={[styles.financeCard, compact && styles.financeCardCompact]}>
       <View style={styles.financeTopRow}>
-        <Text style={styles.financeLabel}>{label}</Text>
+        <Text style={styles.financeLabel}>{displayLabel || label}</Text>
         <TouchableOpacity onPress={onToggle}>
           <Feather name={hidden ? 'eye-off' : 'eye'} size={14} color="#8FA2C3" />
         </TouchableOpacity>
@@ -952,11 +1165,23 @@ function FinanceCard({
   );
 }
 
-function StatCard({ icon, label, value, color }: { icon: React.ComponentProps<typeof MaterialCommunityIcons>['name']; label: string; value: number; color: string }) {
+function StatCard({
+  icon,
+  label,
+  value,
+  color,
+  compact = false,
+}: {
+  icon: React.ComponentProps<typeof MaterialCommunityIcons>['name'];
+  label: string;
+  value: number;
+  color: string;
+  compact?: boolean;
+}) {
   const theme = useAppTheme();
   const styles = useMemo(() => getStyles(theme), [theme]);
   return (
-    <View style={styles.statCard}>
+    <View style={[styles.statCard, compact && styles.statCardCompact]}>
       <MaterialCommunityIcons name={icon} size={18} color={color} />
       <Text style={styles.statValue}>{value}</Text>
       <Text style={styles.statLabel}>{label}</Text>
@@ -988,6 +1213,7 @@ function WorkOrderCard({
   const theme = useAppTheme();
   const styles = useMemo(() => getStyles(theme), [theme]);
   const scale = useRef(new Animated.Value(1)).current;
+  const [showMoreActions, setShowMoreActions] = useState(false);
 
   const runSpring = (toValue: number) => {
     Animated.spring(scale, {
@@ -1004,72 +1230,111 @@ function WorkOrderCard({
     partial: BRAND_COLORS.warning,
     paid: BRAND_COLORS.success,
   };
+  const openMoreActions = () => setShowMoreActions(true);
+  const closeMoreActions = () => setShowMoreActions(false);
+  const runMoreAction = (action: () => void) => {
+    closeMoreActions();
+    action();
+  };
 
   return (
     <Animated.View style={{ transform: [{ scale }] }}>
-    <TouchableOpacity
-      style={styles.card}
-      activeOpacity={0.96}
-      onPress={onOpenDetail}
-      onPressIn={() => runSpring(0.985)}
-      onPressOut={() => runSpring(1)}
-    >
-      <View style={styles.cardTopRow}>
-        <Text style={styles.codeText}>{formatWorkOrderCode(order.id)}</Text>
-        <Text style={styles.dateText}>{formatDate(order.creationDate)}</Text>
-      </View>
-
-      <View style={styles.cardHeader}>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.customerName}>{order.customerName}</Text>
-          <View style={styles.inlineInfoRow}>
-            <MaterialCommunityIcons name="motorbike" size={14} color="#9FAECC" />
-            <Text style={styles.vehicleInfo}>{order.vehicleModel || 'Xe máy'}</Text>
+      <>
+        <TouchableOpacity
+          style={styles.card}
+          activeOpacity={0.96}
+          onPress={onOpenDetail}
+          onPressIn={() => runSpring(0.985)}
+          onPressOut={() => runSpring(1)}
+        >
+          <View style={styles.cardTopRow}>
+            <Text style={styles.codeText}>{formatWorkOrderCode(order.id)}</Text>
+            <Text style={styles.dateText}>{formatDate(order.creationDate)}</Text>
           </View>
-          <Text style={styles.vehicleInfo}>{order.licensePlate || 'Chưa có biển số'}</Text>
-        </View>
-        <View style={{ alignItems: 'flex-end', gap: 6 }}>
-          <TouchableOpacity
-            onPress={onChangeStatus}
-            style={[styles.statusBadge, { backgroundColor: theme.primary === '#3B82F6' ? (STATUS_BG[order.status] + '33') : (STATUS_BG[order.status] || '#EEF2F8') }]}
-          >
-            <Text style={[styles.statusText, { color: STATUS_COLORS[order.status] || '#D2DBEC' }]}>
-              {order.status}
-            </Text>
-          </TouchableOpacity>
-          <Text style={styles.phoneText}>{order.customerPhone || '-'}</Text>
-        </View>
-      </View>
+          <View style={styles.cardHeader}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.customerName}>{order.customerName}</Text>
+              <View style={styles.inlineInfoRow}>
+                <MaterialCommunityIcons name="motorbike" size={14} color="#9FAECC" />
+                <Text style={styles.vehicleModel}>{order.vehicleModel || 'Xe máy'}</Text>
+              </View>
+              <Text style={styles.plateText}>{order.licensePlate || 'Chưa có biển số'}</Text>
+            </View>
+            <View style={{ alignItems: 'flex-end', gap: 6 }}>
+              <TouchableOpacity
+                onPress={onChangeStatus}
+                style={[styles.statusBadge, { backgroundColor: theme.primary === '#3B82F6' ? (STATUS_BG[order.status] + '20') : (STATUS_BG[order.status] || '#EEF2F8') }]}
+              >
+                <Text style={[styles.statusText, { color: STATUS_COLORS[order.status] || '#D2DBEC' }]}>
+                  {order.status}
+                </Text>
+              </TouchableOpacity>
+              <Text style={styles.phoneText}>{order.customerPhone || '-'}</Text>
+            </View>
+          </View>
 
-      {order.issueDescription ? (
-        <View style={styles.inlineInfoRow}>
-          <MaterialCommunityIcons name="text-box-outline" size={14} color="#A9B7D0" />
-          <Text style={styles.issue} numberOfLines={2}>{order.issueDescription}</Text>
-        </View>
-      ) : null}
-
-      <View style={styles.cardFooter}>
-        <Text style={styles.date}>KTV: {order.technicianName || 'Chưa gán'}</Text>
-        <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
-          {order.paymentStatus ? (
-            <View style={styles.payPill}>
-              <Text style={[styles.payLabel, { color: payColor[order.paymentStatus] || '#555' }]}>
-                {payLabel[order.paymentStatus]}
-              </Text>
+          {order.issueDescription ? (
+            <View style={styles.inlineInfoRow}>
+              <MaterialCommunityIcons name="text-box-outline" size={14} color="#A9B7D0" />
+              <Text style={styles.issue} numberOfLines={2}>{order.issueDescription}</Text>
             </View>
           ) : null}
-          <Text style={styles.total}>{formatCurrency(order.total)}</Text>
-        </View>
-      </View>
 
-      <View style={styles.actionsRow}>
-        <ActionItem icon="phone-outline" label="Gọi" onPress={onCall} />
-        <ActionItem icon="printer-outline" label="In" onPress={onPrint} />
-        <ActionItem icon="share-variant-outline" label={isSharing ? 'Đang xử lý...' : 'Chia sẻ'} onPress={onShare} disabled={isSharing} />
-        <ActionItem icon="square-edit-outline" label="Sửa" onPress={onEdit} />
-        <ActionItem icon="trash-can-outline" label="Xóa" onPress={onDelete} danger />
-      </View>
-    </TouchableOpacity>
+          <View style={styles.cardFooter}>
+            <Text style={styles.techText}>KTV: {order.technicianName || 'Chưa gán'}</Text>
+            <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
+              {order.paymentStatus ? (
+                <View style={styles.payPill}>
+                  <Text style={[styles.payLabel, { color: payColor[order.paymentStatus] || '#555' }]}>
+                    {payLabel[order.paymentStatus]}
+                  </Text>
+                </View>
+              ) : null}
+              <Text style={styles.total}>{formatCurrency(order.total)}</Text>
+            </View>
+          </View>
+
+          <View style={styles.actionsRow}>
+            <ActionItem icon="phone-outline" label="Gọi" onPress={onCall} />
+            <ActionItem icon="square-edit-outline" label="Sửa" onPress={onEdit} />
+            <ActionItem icon="dots-horizontal" label="Thêm" onPress={openMoreActions} disabled={isSharing} />
+          </View>
+        </TouchableOpacity>
+
+        <Modal
+          visible={showMoreActions}
+          transparent
+          animationType="fade"
+          onRequestClose={closeMoreActions}
+        >
+          <Pressable style={styles.sheetBackdrop} onPress={closeMoreActions}>
+            <Pressable style={styles.sheetCard} onPress={() => {}}>
+              <View style={styles.sheetHandle} />
+              <Text style={styles.sheetTitle}>Thao tác khác</Text>
+              <Text style={styles.sheetSubtitle}>{formatWorkOrderCode(order.id)}</Text>
+
+              <TouchableOpacity style={styles.sheetAction} onPress={() => runMoreAction(onPrint)}>
+                <MaterialCommunityIcons name="printer-outline" size={18} color="#D7E0F0" />
+                <Text style={styles.sheetActionText}>In phiếu</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.sheetAction} onPress={() => runMoreAction(onShare)} disabled={isSharing}>
+                <MaterialCommunityIcons name="share-variant-outline" size={18} color="#D7E0F0" />
+                <Text style={styles.sheetActionText}>{isSharing ? 'Đang xử lý...' : 'Chia sẻ'}</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.sheetAction} onPress={() => runMoreAction(onDelete)}>
+                <MaterialCommunityIcons name="trash-can-outline" size={18} color="#FF7E90" />
+                <Text style={styles.sheetActionDanger}>Xóa phiếu</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.sheetCloseBtn} onPress={closeMoreActions}>
+                <Text style={styles.sheetCloseText}>Đóng</Text>
+              </TouchableOpacity>
+            </Pressable>
+          </Pressable>
+        </Modal>
+      </>
     </Animated.View>
   );
 }
@@ -1218,36 +1483,50 @@ const getStyles = (theme: any) => StyleSheet.create({
     flexDirection: 'row',
     gap: 8,
   },
-  statCard: {
+  summaryCell: {
     flex: 1,
+  },
+  statCard: {
     backgroundColor: theme.surface,
     borderRadius: 16,
     borderWidth: 1,
     borderColor: theme.border,
     paddingVertical: 10,
     alignItems: 'center',
-    shadowColor: '#94A3B8',
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 2,
+    minWidth: 84,
+    paddingHorizontal: 10,
+  },
+  statCardCompact: {
+    width: '100%',
+    minWidth: 0,
+    borderRadius: 14,
+    paddingVertical: 8,
   },
   statValue: { marginTop: 4, color: theme.text, fontSize: 16, fontWeight: '800' },
   statLabel: { marginTop: 2, color: theme.textSecondary, fontSize: 10 },
   financeRow: {
     paddingHorizontal: 12,
-    paddingTop: 10,
+    paddingTop: 8,
     flexDirection: 'row',
     gap: 8,
   },
-  financeCard: {
+  financeCell: {
     flex: 1,
+  },
+  financeCard: {
     backgroundColor: theme.surface,
     borderRadius: 16,
     borderWidth: 1,
     borderColor: theme.border,
     paddingHorizontal: 12,
     paddingVertical: 10,
+    minWidth: 168,
+  },
+  financeCardCompact: {
+    width: '100%',
+    minWidth: 0,
+    borderRadius: 14,
+    paddingVertical: 9,
   },
   financeTopRow: {
     flexDirection: 'row',
@@ -1262,18 +1541,18 @@ const getStyles = (theme: any) => StyleSheet.create({
     flex: 1,
   },
   financeValue: {
-    marginTop: 10,
+    marginTop: 8,
     color: theme.text,
     fontSize: 14,
     fontWeight: '800',
   },
-  searchRow: { padding: 12, paddingBottom: 2, position: 'relative' },
-  searchIcon: { position: 'absolute', left: 26, top: 23, zIndex: 1 },
+  searchRow: { paddingHorizontal: 12, paddingTop: 10, paddingBottom: 2, position: 'relative' },
+  searchIcon: { position: 'absolute', left: 26, top: 21, zIndex: 1 },
   searchInput: {
     backgroundColor: theme.surface,
     borderRadius: 16,
     paddingHorizontal: 38,
-    paddingVertical: 11,
+    paddingVertical: 10,
     fontSize: 13,
     color: theme.text,
     borderWidth: 1,
@@ -1291,7 +1570,7 @@ const getStyles = (theme: any) => StyleSheet.create({
     borderWidth: 1,
     borderColor: theme.border,
     borderRadius: 999,
-    paddingVertical: 8,
+    paddingVertical: 7,
     alignItems: 'center',
   },
   quickChipActive: {
@@ -1312,6 +1591,68 @@ const getStyles = (theme: any) => StyleSheet.create({
     paddingBottom: 4,
     gap: 8,
   },
+  filterBar: {
+    paddingHorizontal: 12,
+    paddingTop: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  filterButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: theme.surface,
+    borderWidth: 1,
+    borderColor: theme.border,
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+  },
+  filterButtonText: {
+    color: theme.text,
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  filterBadge: {
+    minWidth: 18,
+    height: 18,
+    borderRadius: 999,
+    paddingHorizontal: 5,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: theme.primary,
+  },
+  filterBadgeText: {
+    color: '#F5FAFF',
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  clearFilterButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: theme.surface,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 122, 141, 0.24)',
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+  },
+  clearFilterText: {
+    color: '#FFB1BB',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  filterSummaryRow: {
+    paddingHorizontal: 12,
+    paddingTop: 8,
+  },
+  filterSummaryText: {
+    color: '#9EB0CB',
+    fontSize: 12,
+    fontWeight: '600',
+  },
   controlChip: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1321,7 +1662,7 @@ const getStyles = (theme: any) => StyleSheet.create({
     borderColor: theme.border,
     borderRadius: 999,
     paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingVertical: 7,
   },
   controlChipText: {
     color: theme.textSecondary,
@@ -1338,7 +1679,7 @@ const getStyles = (theme: any) => StyleSheet.create({
     borderColor: theme.border,
   },
   chipText: { fontSize: 13, fontWeight: '700', color: theme.textSecondary },
-  listContent: { padding: 12, gap: 12, paddingBottom: 90 },
+  listContent: { padding: 12, gap: 10, paddingBottom: 160 },
   loadingBox: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 12, marginTop: 80 },
   emptyBox: { alignItems: 'center', paddingTop: 60, gap: 8 },
   emptyText: { fontSize: 14, color: theme.textSecondary },
@@ -1346,54 +1687,187 @@ const getStyles = (theme: any) => StyleSheet.create({
   card: {
     backgroundColor: theme.surface,
     borderRadius: 16,
-    padding: 16,
+    padding: 15,
     borderWidth: 1,
     borderColor: theme.border,
     gap: 8,
     shadowColor: '#94A3B8',
-    shadowOpacity: 0.04,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 2,
+    shadowOpacity: 0.02,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 1,
   },
   cardTopRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   codeText: { color: theme.primary, fontSize: 12, fontWeight: '700' },
   dateText: { color: theme.textSecondary, fontSize: 11 },
   cardHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
-  customerName: { fontSize: 15, fontWeight: '800', color: theme.text },
+  customerName: { fontSize: 16, lineHeight: 20, fontWeight: '800', color: theme.text },
   inlineInfoRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2 },
   vehicleInfo: { fontSize: 12, color: theme.textSecondary },
-  statusBadge: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20 },
+  vehicleModel: { fontSize: 12, color: '#C4CEE0', fontWeight: '600' },
+  plateText: { fontSize: 11, color: '#97A5BD', marginTop: 2, letterSpacing: 0.2 },
+  statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },
   statusText: { fontSize: 11, fontWeight: '700' },
-  phoneText: { color: theme.textSecondary, fontSize: 12, fontWeight: '600' },
-  issue: { fontSize: 12, color: theme.textSecondary, lineHeight: 16, flex: 1 },
+  phoneText: { color: '#97A5BD', fontSize: 11, fontWeight: '600' },
+  issue: { fontSize: 12, color: theme.textSecondary, lineHeight: 15, flex: 1 },
   cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   date: { fontSize: 11, color: theme.textSecondary },
+  techText: { fontSize: 11, color: '#97A5BD', fontWeight: '600' },
   payPill: {
-    borderRadius: 6,
-    backgroundColor: theme.primary === '#3B82F6' ? 'rgba(52, 211, 153, 0.2)' : 'rgba(16, 185, 129, 0.1)',
-    paddingHorizontal: 8,
+    borderRadius: 999,
+    backgroundColor: theme.primary === '#3B82F6' ? 'rgba(52, 211, 153, 0.14)' : 'rgba(16, 185, 129, 0.08)',
+    paddingHorizontal: 9,
     paddingVertical: 2,
   },
-  payLabel: { fontSize: 11, fontWeight: '700' },
-  total: { fontSize: 14, fontWeight: '800', color: theme.primary === '#3B82F6' ? '#34D399' : '#10B981' },
+  payLabel: { fontSize: 10, fontWeight: '700' },
+  total: { fontSize: 13, fontWeight: '800', color: theme.primary === '#3B82F6' ? '#5FE0A7' : '#10B981' },
   actionsRow: {
-    marginTop: 4,
+    marginTop: 2,
     borderTopWidth: 1,
     borderTopColor: theme.border,
-    paddingTop: 6,
+    paddingTop: 4,
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
   actionItem: {
     flex: 1,
     alignItems: 'center',
-    gap: 2,
-    paddingVertical: 8,
+    gap: 1,
+    paddingVertical: 5,
   },
   actionBtn: {
     color: theme.textSecondary,
-    fontSize: 11,
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  sheetBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(7, 11, 19, 0.58)',
+    justifyContent: 'flex-end',
+    padding: 12,
+  },
+  sheetCard: {
+    backgroundColor: '#1B2232',
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: 'rgba(98, 122, 166, 0.32)',
+    paddingHorizontal: 14,
+    paddingTop: 10,
+    paddingBottom: 14,
+    gap: 6,
+  },
+  sheetHandle: {
+    alignSelf: 'center',
+    width: 42,
+    height: 4,
+    borderRadius: 999,
+    backgroundColor: 'rgba(202, 214, 235, 0.24)',
+    marginBottom: 4,
+  },
+  sheetTitle: {
+    color: '#F4F8FF',
+    fontSize: 15,
+    fontWeight: '800',
+  },
+  sheetSubtitle: {
+    color: '#93A3BF',
+    fontSize: 12,
+    marginBottom: 4,
+  },
+  filterSectionTitle: {
+    marginTop: 8,
+    color: '#DCE6F6',
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  filterOptionsWrap: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 8,
+  },
+  filterOptionChip: {
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: 'rgba(255,255,255,0.03)',
+    borderWidth: 1,
+    borderColor: 'rgba(98, 122, 166, 0.24)',
+  },
+  filterOptionChipActive: {
+    backgroundColor: 'rgba(59, 130, 246, 0.18)',
+    borderColor: 'rgba(89, 155, 255, 0.42)',
+  },
+  filterOptionText: {
+    color: '#AEBED8',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  filterOptionTextActive: {
+    color: '#7FB6FF',
+  },
+  filterSheetActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 10,
+    marginTop: 12,
+  },
+  sheetSecondaryBtn: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 11,
+    backgroundColor: 'rgba(255,255,255,0.04)',
+  },
+  sheetSecondaryText: {
+    color: '#FFB1BB',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  sheetPrimaryBtn: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 11,
+    backgroundColor: 'rgba(59, 130, 246, 0.22)',
+  },
+  sheetPrimaryText: {
+    color: '#8BC0FF',
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  sheetAction: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    backgroundColor: 'rgba(255,255,255,0.03)',
+  },
+  sheetActionText: {
+    color: '#E7EEF9',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  sheetActionDanger: {
+    color: '#FF7E90',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  sheetCloseBtn: {
+    marginTop: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 14,
+    paddingVertical: 11,
+    backgroundColor: 'rgba(98, 130, 188, 0.16)',
+  },
+  sheetCloseText: {
+    color: '#BFD0EA',
+    fontSize: 13,
     fontWeight: '700',
   },
   pressableDown: {
@@ -1402,26 +1876,25 @@ const getStyles = (theme: any) => StyleSheet.create({
   },
   fab: {
     position: 'absolute',
-    right: 18,
-    bottom: 18,
-    width: 54,
-    height: 54,
-    borderRadius: 27,
+    right: 16,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: theme.primary,
     borderWidth: 1,
     borderColor: theme.primary,
     shadowColor: theme.primary === '#3B82F6' ? '#000' : theme.textSecondary,
-    shadowOpacity: 0.24,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 6,
+    shadowOpacity: 0.16,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 4,
   },
   fabText: {
     color: '#F5FAFF',
-    fontSize: 28,
-    lineHeight: 30,
+    fontSize: 24,
+    lineHeight: 24,
     fontWeight: '500',
   },
 });

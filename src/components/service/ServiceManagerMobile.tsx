@@ -32,6 +32,11 @@ import { useRepairTemplates, type RepairTemplate } from "../../hooks/useRepairTe
 import { PullToRefresh } from "../common/PullToRefresh";
 import Skeleton from "../common/Skeleton";
 import { triggerHaptic } from "../../utils/haptics";
+import {
+  calculateMobileServiceKpis,
+  filterMobileWorkOrdersByDate,
+  type MobileDateFilter,
+} from "./utils";
 
 interface ServiceManagerMobileProps {
   workOrders: WorkOrder[];
@@ -329,82 +334,15 @@ export function ServiceManagerMobile({
 
   // Filter work orders by date first
   const dateFilteredWorkOrders = useMemo(() => {
-    const NOW = new Date();
-    const startOfToday = new Date(NOW.getFullYear(), NOW.getMonth(), NOW.getDate());
-
-    return workOrders.filter(w => {
-      if (!w.creationDate) return false;
-      const date = new Date(w.creationDate);
-
-      switch (dateFilter) {
-        case "today":
-          return date >= startOfToday;
-        case "week": {
-          const sevenDaysAgo = new Date(NOW);
-          sevenDaysAgo.setDate(NOW.getDate() - 7);
-          return date >= sevenDaysAgo;
-        }
-        case "month": {
-          const thirtyDaysAgo = new Date(NOW);
-          thirtyDaysAgo.setDate(NOW.getDate() - 30);
-          return date >= thirtyDaysAgo;
-        }
-        case "all":
-        default:
-          return true;
-      }
-    });
+    return filterMobileWorkOrdersByDate(
+      workOrders,
+      dateFilter as MobileDateFilter
+    );
   }, [workOrders, dateFilter]);
 
   // Optimized KPI Calculation - Single pass
   const kpis = useMemo(() => {
-    let tiepNhan = 0;
-    let dangSua = 0;
-    let daHoanThanh = 0;
-    let traMay = 0;
-    let doanhThu = 0;
-    let loiNhuan = 0;
-
-    dateFilteredWorkOrders.forEach(w => {
-      // Count status
-      switch (w.status) {
-        case "Tiếp nhận": tiepNhan++; break;
-        case "Đang sửa": dangSua++; break;
-        case "Đã sửa xong": daHoanThanh++; break;
-        case "Trả máy": traMay++; break;
-      }
-
-      // Calculate Revenue & Profit for paid orders
-      if (w.paymentStatus === "paid" || (w.paymentStatus === "partial" && (w.totalPaid || 0) > 0)) {
-        // Fix: Use totalPaid for partial payments, total for fully paid
-        // Actually for revenue typically we want realized revenue (cash in)
-        // But the previous code used w.total. Let's stick to w.total for consistency with desktop 
-        // if desktop uses total. But wait, previous mobile code used w.total ONLY if paid.
-        // Let's stick to previous logic: only count if "paid".
-        // MODIFY: Also count if partial? The user screenshot shows "paid" icon.
-
-        // Reverting to previous logic strictly but ensuring we use the date filtered list
-        if (w.paymentStatus === "paid") {
-          const total = w.total || 0;
-          doanhThu += total;
-
-          // Calculate costs
-          const partsCost = w.partsUsed?.reduce(
-            (s, p) => s + (p.costPrice || 0) * (p.quantity || 1),
-            0
-          ) || 0;
-
-          const servicesCost = w.additionalServices?.reduce(
-            (s, svc) => s + (svc.costPrice || 0) * (svc.quantity || 1),
-            0
-          ) || 0;
-
-          loiNhuan += (total - partsCost - servicesCost);
-        }
-      }
-    });
-
-    return { tiepNhan, dangSua, daHoanThanh, traMay, doanhThu, loiNhuan };
+    return calculateMobileServiceKpis(dateFilteredWorkOrders);
   }, [dateFilteredWorkOrders]);
 
   // Get date label

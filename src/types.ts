@@ -121,6 +121,8 @@ export interface Sale {
   userName: string;
   branchId: string;
   cashTransactionId?: string; // link to recorded cash transaction
+  note?: string; // Legacy/new sale note field used by sales screens & RPC
+  notes?: string; // Backward-compatible alias from older rows
 
   // Delivery & COD fields
   delivery_method?: "pickup" | "delivery"; // Tự lấy hoặc giao hàng

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -13,6 +13,8 @@ import {
   ScrollView,
   Switch,
   useColorScheme,
+  Animated,
+  Easing,
 } from 'react-native';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { CameraView, useCameraPermissions } from 'expo-camera';
@@ -73,6 +75,16 @@ const QUICK_SERVICE_CATEGORY_COLORS: Record<string, string> = {
   maintenance: '#2F8F5B',
   other: '#4D6A88',
 };
+const VEHICLE_MODEL_SUGGESTIONS = [
+  'Honda Wave',
+  'Honda Future',
+  'Honda Air Blade',
+  'Honda Vision',
+  'Honda SH',
+  'Yamaha Sirius',
+  'Yamaha Exciter',
+  'Yamaha Janus',
+];
 
 const SALES_COLUMN_CANDIDATES: Record<string, string[]> = {
   sale_code: ['sale_code'],
@@ -509,6 +521,8 @@ export default function SalesScreen() {
   const [quickPaymentMethod, setQuickPaymentMethod] = useState<'cash' | 'bank'>('cash');
   const [quickCustomerSearch, setQuickCustomerSearch] = useState('');
   const [quickFoundCustomer, setQuickFoundCustomer] = useState<Customer | null>(null);
+  const [showQuickAdvanced, setShowQuickAdvanced] = useState(false);
+  const [showQuickCheckoutModal, setShowQuickCheckoutModal] = useState(false);
 
   const { data: parts = [], isLoading: loadingParts } = useQuery({
     queryKey: ['sales-parts'],
@@ -586,6 +600,36 @@ export default function SalesScreen() {
       items: groups[key],
     }));
   }, [filteredQuickServices]);
+
+  const quickResolvedName = useMemo(() => {
+    if (showQuickAdvanced && quickServiceName.trim()) return quickServiceName.trim();
+    if (selectedQuickService) return selectedQuickService.name;
+    return quickServiceName.trim();
+  }, [quickServiceName, selectedQuickService, showQuickAdvanced]);
+
+  const quickResolvedUnitPrice = useMemo(() => {
+    if (showQuickAdvanced) {
+      const manual = parseMoneyInput(quickServicePrice);
+      if (manual > 0) return manual;
+    }
+    if (selectedQuickService) return Math.max(0, Math.round(selectedQuickService.price));
+    return parseMoneyInput(quickServicePrice);
+  }, [quickServicePrice, selectedQuickService, showQuickAdvanced]);
+
+  const quickResolvedQty = useMemo(() => {
+    if (showQuickAdvanced) {
+      return Math.max(1, parseMoneyInput(quickServiceQty));
+    }
+    if (selectedQuickService) {
+      return Math.max(1, quickServiceQuantities[selectedQuickService.id] || parseMoneyInput(quickServiceQty));
+    }
+    return Math.max(1, parseMoneyInput(quickServiceQty));
+  }, [quickServiceQuantities, quickServiceQty, selectedQuickService, showQuickAdvanced]);
+
+  const quickResolvedTotal = useMemo(
+    () => Math.max(0, quickResolvedUnitPrice * quickResolvedQty),
+    [quickResolvedQty, quickResolvedUnitPrice]
+  );
 
   const filteredParts = useMemo(() => {
     const q = normalizeText(partSearch.trim());
@@ -759,19 +803,36 @@ export default function SalesScreen() {
 
   const handleSelectQuickService = (service: QuickService) => {
     setSelectedQuickService(service);
-    const qty = quickServiceQuantities[service.id] || 1;
     setQuickServiceName(service.name);
     setQuickServicePrice(String(Math.max(0, Math.round(service.price))));
-    setQuickServiceQty(String(qty));
+    setQuickServiceQuantities((prev) => {
+      const nextQty = Math.max(1, (prev[service.id] || 0) + 1);
+      setQuickServiceQty(String(nextQty));
+      return { ...prev, [service.id]: nextQty };
+    });
+    setShowQuickCheckoutModal(true);
   };
 
   const updateQuickServiceQuantity = (serviceId: string, delta: number) => {
     setQuickServiceQuantities((prev) => {
-      const nextQty = Math.max(1, (prev[serviceId] || 1) + delta);
-      if (selectedQuickService?.id === serviceId) {
-        setQuickServiceQty(String(nextQty));
+      const currentQty = prev[serviceId] || 0;
+      const nextQty = Math.max(0, currentQty + delta);
+      const next = { ...prev };
+
+      if (nextQty === 0) {
+        delete next[serviceId];
+        if (selectedQuickService?.id === serviceId) {
+          setSelectedQuickService(null);
+          setQuickServiceQty('1');
+        }
+      } else {
+        next[serviceId] = nextQty;
+        if (selectedQuickService?.id === serviceId) {
+          setQuickServiceQty(String(nextQty));
+        }
       }
-      return { ...prev, [serviceId]: nextQty };
+
+      return next;
     });
   };
 
@@ -1067,11 +1128,9 @@ export default function SalesScreen() {
 
   const createQuickSaleMutation = useMutation({
     mutationFn: async () => {
-      const serviceName = quickServiceName.trim();
-      const unitPrice = parseMoneyInput(quickServicePrice);
-      const quantity = selectedQuickService
-        ? Math.max(1, quickServiceQuantities[selectedQuickService.id] || parseMoneyInput(quickServiceQty))
-        : Math.max(1, parseMoneyInput(quickServiceQty));
+      const serviceName = quickResolvedName;
+      const unitPrice = quickResolvedUnitPrice;
+      const quantity = quickResolvedQty;
 
       if (!serviceName) {
         throw new Error('Vui lòng nhập tên dịch vụ.');
@@ -1080,7 +1139,7 @@ export default function SalesScreen() {
         throw new Error('Giá dịch vụ phải lớn hơn 0.');
       }
 
-      const sub = unitPrice * quantity;
+      const sub = quickResolvedTotal;
       const paid = sub;
 
       const customerFromSearch = quickFoundCustomer
@@ -1159,6 +1218,7 @@ export default function SalesScreen() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sales-history'] });
       setShowQuickSaleModal(false);
+      setShowQuickCheckoutModal(false);
       setTab('history');
       setQuickServiceSearch('');
       setQuickServiceQuantities({});
@@ -1170,6 +1230,7 @@ export default function SalesScreen() {
       setQuickPaymentMethod('cash');
       setQuickCustomerSearch('');
       setQuickFoundCustomer(null);
+      setShowQuickAdvanced(false);
       Alert.alert('Thành công', 'Đã tạo hóa đơn bán nhanh.');
     },
     onError: (error: any) => {
@@ -1320,15 +1381,18 @@ export default function SalesScreen() {
 
       <View style={[styles.tabRow, isDark && darkSales.tabRow]}>
         <TabButton label="Sản phẩm" active={tab === 'products'} onPress={() => setTab('products')} icon="box" />
-        <TabButton label={`Giỏ hàng (${cartItems.length})`} active={tab === 'cart'} onPress={() => setTab('cart')} icon="shopping-cart" />
-        <TabButton label="Lịch sử" active={tab === 'history'} onPress={() => setTab('history')} icon="clock" />
-      </View>
-
-      <View style={[styles.quickActionRow, isDark && darkSales.quickActionRow]}>
-        <TouchableOpacity style={styles.quickTabButton} onPress={() => setShowQuickSaleModal(true)}>
+        <TouchableOpacity
+          style={[styles.tabButton, isDark && darkSales.tabButton, styles.quickTabInRowButton]}
+          onPress={() => {
+            setShowQuickAdvanced(false);
+            setShowQuickCheckoutModal(false);
+            setShowQuickSaleModal(true);
+          }}
+        >
           <Feather name="zap" size={14} color="#fff" />
-          <Text style={styles.quickTabText}>Bán nhanh</Text>
+          <Text style={[styles.tabButtonText, styles.quickTabInRowText]}>Bán nhanh</Text>
         </TouchableOpacity>
+        <TabButton label="Lịch sử" active={tab === 'history'} onPress={() => setTab('history')} icon="clock" />
       </View>
 
       {tab === 'products' && (
@@ -1380,7 +1444,11 @@ export default function SalesScreen() {
               columnWrapperStyle={styles.gridRow}
               contentContainerStyle={styles.gridContent}
               renderItem={({ item }) => (
-                <PartCard part={item} onAdd={() => addToCart(item)} inCart={cartItems.some((it) => it.partId === item.id)} />
+                <PartCard
+                  part={item}
+                  onAdd={() => addToCart(item)}
+                  cartQuantity={cartItems.find((it) => it.partId === item.id)?.quantity || 0}
+                />
               )}
               ListEmptyComponent={
                 <View style={styles.emptyBox}>
@@ -1390,6 +1458,15 @@ export default function SalesScreen() {
               }
             />
           )}
+
+          {cartItems.length > 0 && (
+            <View style={styles.continueCartBar}>
+              <TouchableOpacity style={styles.continueCartButton} onPress={() => setTab('cart')}>
+                <Text style={styles.continueCartText}>Tiếp tục ({cartItems.length}) vào giỏ hàng</Text>
+                <Feather name="arrow-right" size={16} color="#fff" />
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
       )}
 
@@ -1397,33 +1474,32 @@ export default function SalesScreen() {
         <ScrollView contentContainerStyle={[styles.cartContent, isDark && darkSales.section]}>
           <View style={styles.cartHeaderRow}>
             <Text style={[styles.sectionTitle, isDark && darkSales.primaryText]}>Giỏ hàng</Text>
-            <TouchableOpacity onPress={() => setShowCustomerModal(true)} style={styles.customerQuickButton}>
-              <Feather name="users" size={14} color={BRAND_COLORS.primary} />
-              <Text style={styles.customerButtonText}>Khách hàng</Text>
+            <TouchableOpacity onPress={resetOrderState}>
+              <Text style={styles.resetOrderText}>Làm mới</Text>
             </TouchableOpacity>
           </View>
 
-          <View style={[styles.customerInfoCard, isDark && darkSales.card]}>
-            <View style={styles.customerInfoTop}>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.customerInfoName}>{selectedCustomer?.name || 'Khách lẻ'}</Text>
-                <Text style={styles.customerInfoMeta}>SĐT: {selectedCustomer?.phone || '-'}</Text>
-                <Text style={styles.customerInfoMeta}>Xe: {customerVehiclesLabel(selectedCustomer)}</Text>
-              </View>
-            </View>
-            <View style={styles.customerInfoActions}>
-              <TouchableOpacity style={styles.customerActionBtn} onPress={() => setShowCustomerModal(true)}>
-                <Feather name="search" size={14} color={BRAND_COLORS.primary} />
-                <Text style={styles.customerActionText}>Chọn</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.customerActionBtn} onPress={openEditCustomer}>
-                <Feather name="edit-2" size={14} color={BRAND_COLORS.primary} />
-                <Text style={styles.customerActionText}>Sửa</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.customerActionBtn} onPress={openCreateCustomer}>
-                <Feather name="user-plus" size={14} color={BRAND_COLORS.primary} />
-                <Text style={styles.customerActionText}>Thêm mới</Text>
-              </TouchableOpacity>
+          <View style={styles.customerActionStrip}>
+            <TouchableOpacity style={styles.customerActionStripBtn} onPress={() => setShowCustomerModal(true)}>
+              <Feather name="search" size={13} color={BRAND_COLORS.primary} />
+              <Text style={styles.customerActionStripText} allowFontScaling={false}>Chọn</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.customerActionStripBtn} onPress={openEditCustomer}>
+              <Feather name="edit-2" size={13} color={BRAND_COLORS.primary} />
+              <Text style={styles.customerActionStripText} allowFontScaling={false}>Sửa</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.customerActionStripBtn} onPress={openCreateCustomer}>
+              <Feather name="user-plus" size={13} color={BRAND_COLORS.primary} />
+              <Text style={styles.customerActionStripText} allowFontScaling={false}>Thêm mới</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={[styles.customerInlineCard, isDark && darkSales.card]}>
+            <Feather name="user" size={16} color={BRAND_COLORS.primaryLight} />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.customerInlineName} allowFontScaling={false}>{selectedCustomer?.name || 'Khách lẻ'}</Text>
+              <Text style={styles.customerInlineMeta} allowFontScaling={false}>SĐT: {selectedCustomer?.phone || '-'}</Text>
+              <Text style={styles.customerInlineMeta} allowFontScaling={false}>Xe: {customerVehiclesLabel(selectedCustomer)}</Text>
             </View>
           </View>
 
@@ -1442,47 +1518,52 @@ export default function SalesScreen() {
               <Text style={styles.emptyText}>Giỏ hàng trống</Text>
             </View>
           ) : (
-            cartItems.map((item) => (
-              <CartRow
-                key={item.partId}
-                item={item}
-                onQuantityChange={(qty) => {
-                  if (qty <= 0) {
-                    setCartItems((prev) => prev.filter((it) => it.partId !== item.partId));
-                    return;
-                  }
-                  if (qty > item.stockSnapshot) {
-                    Alert.alert('Không đủ tồn kho', `Tồn khả dụng ${item.stockSnapshot}`);
-                    return;
-                  }
-                  setCartItems((prev) => prev.map((it) => (it.partId === item.partId ? { ...it, quantity: qty } : it)));
-                }}
-                onPriceChange={(price) => {
-                  setCartItems((prev) => prev.map((it) => (it.partId === item.partId ? { ...it, sellingPrice: Math.max(0, price) } : it)));
-                }}
-                onRemove={() => setCartItems((prev) => prev.filter((it) => it.partId !== item.partId))}
-              />
-            ))
+            <View style={styles.cartItemsStack}>
+              {cartItems.map((item) => (
+                <CartRow
+                  key={item.partId}
+                  item={item}
+                  onQuantityChange={(qty) => {
+                    if (qty <= 0) {
+                      setCartItems((prev) => prev.filter((it) => it.partId !== item.partId));
+                      return;
+                    }
+                    if (qty > item.stockSnapshot) {
+                      Alert.alert('Không đủ tồn kho', `Tồn khả dụng ${item.stockSnapshot}`);
+                      return;
+                    }
+                    setCartItems((prev) => prev.map((it) => (it.partId === item.partId ? { ...it, quantity: qty } : it)));
+                  }}
+                  onPriceChange={(price) => {
+                    setCartItems((prev) => prev.map((it) => (it.partId === item.partId ? { ...it, sellingPrice: Math.max(0, price) } : it)));
+                  }}
+                  onRemove={() => setCartItems((prev) => prev.filter((it) => it.partId !== item.partId))}
+                />
+              ))}
+            </View>
           )}
 
           <View style={styles.summaryCard}>
-            <Text style={styles.summaryItem}>Tạm tính: {formatCurrency(subtotal)}</Text>
+            <View style={styles.checkoutHeaderRow}>
+              <Text style={styles.checkoutHeaderLabel} allowFontScaling={false}>CHỐT ĐƠN</Text>
+              <Text style={styles.checkoutHeaderTotal} allowFontScaling={false}>{formatCurrency(total)}</Text>
+            </View>
 
             <View style={styles.discountCompactBox}>
-              <Text style={styles.discountCompactLabel}>Giảm giá</Text>
+              <Text style={styles.discountCompactLabel} allowFontScaling={false}>Giảm giá</Text>
               <View style={styles.discountCompactControls}>
                 <View style={styles.discountSegmentRow}>
                   <TouchableOpacity
                     style={[styles.discountSegmentBtn, discountType === 'amount' && styles.discountSegmentBtnActive]}
                     onPress={() => setDiscountType('amount')}
                   >
-                    <Text style={[styles.discountSegmentText, discountType === 'amount' && styles.discountSegmentTextActive]}>Theo tiền</Text>
+                    <Text style={[styles.discountSegmentText, discountType === 'amount' && styles.discountSegmentTextActive]} allowFontScaling={false}>Theo tiền</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={[styles.discountSegmentBtn, discountType === 'percent' && styles.discountSegmentBtnActive]}
                     onPress={() => setDiscountType('percent')}
                   >
-                    <Text style={[styles.discountSegmentText, discountType === 'percent' && styles.discountSegmentTextActive]}>Theo %</Text>
+                    <Text style={[styles.discountSegmentText, discountType === 'percent' && styles.discountSegmentTextActive]} allowFontScaling={false}>Theo %</Text>
                   </TouchableOpacity>
                 </View>
                 <View style={styles.discountValueBox}>
@@ -1503,15 +1584,14 @@ export default function SalesScreen() {
                     }}
                     keyboardType="numeric"
                   />
-                  <Text style={styles.discountValueSuffix}>{discountType === 'amount' ? '₫' : '%'}</Text>
+                  <Text style={styles.discountValueSuffix} allowFontScaling={false}>{discountType === 'amount' ? '₫' : '%'}</Text>
                 </View>
               </View>
             </View>
 
-            <Text style={styles.summaryItem}>Tổng cộng: {formatCurrency(total)}</Text>
-
             <Text style={styles.inputLabel}>Phương thức thanh toán</Text>
             <SelectorRow
+              variant="payment"
               options={[
                 { key: 'cash', label: 'Tiền mặt' },
                 { key: 'bank', label: 'Chuyển khoản' },
@@ -1530,6 +1610,7 @@ export default function SalesScreen() {
               <>
                 <Text style={styles.inputLabel}>Hình thức thanh toán</Text>
                 <SelectorRow
+                  variant="payment"
                   options={[
                     { key: 'full', label: 'Đủ' },
                     { key: 'partial', label: 'Một phần' },
@@ -1788,50 +1869,83 @@ export default function SalesScreen() {
       </Modal>
 
       <Modal visible={showCustomerFormModal} animationType="slide" onRequestClose={() => setShowCustomerFormModal(false)}>
-        <ScrollView contentContainerStyle={[styles.modalContainer, isDark && darkSales.modalContainer]}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>{customerFormMode === 'edit' ? 'Sửa khách hàng' : 'Thêm khách hàng'}</Text>
-            <TouchableOpacity onPress={() => setShowCustomerFormModal(false)}>
-              <Feather name="x" size={20} color={BRAND_COLORS.textPrimary} />
+        <ScrollView contentContainerStyle={styles.customerFormContainer}>
+          <View style={styles.customerFormHeader}>
+            <Text style={styles.customerFormTitle}>{customerFormMode === 'edit' ? 'Sửa khách hàng' : 'Thêm khách hàng'}</Text>
+            <TouchableOpacity onPress={() => setShowCustomerFormModal(false)} style={styles.customerFormCloseButton}>
+              <Feather name="x" size={24} color="#1F3A7A" />
             </TouchableOpacity>
           </View>
 
-          <InputField
-            label="Tên khách hàng"
-            value={customerDraft.name}
-            onChange={(v) => setCustomerDraft((prev) => ({ ...prev, name: v }))}
-          />
-          <InputField
-            label="Số điện thoại"
-            value={customerDraft.phone}
-            onChange={(v) => setCustomerDraft((prev) => ({ ...prev, phone: v }))}
-            keyboardType="phone-pad"
-          />
-          <InputField
-            label="Email"
-            value={customerDraft.email}
-            onChange={(v) => setCustomerDraft((prev) => ({ ...prev, email: v }))}
-          />
-          <InputField
-            label="Dòng xe"
-            value={customerDraft.vehicleModel}
-            onChange={(v) => setCustomerDraft((prev) => ({ ...prev, vehicleModel: v }))}
-          />
-          <InputField
-            label="Biển số"
-            value={customerDraft.licensePlate}
-            onChange={(v) => setCustomerDraft((prev) => ({ ...prev, licensePlate: v }))}
-          />
+          <View style={styles.customerFormGroup}>
+            <Text style={styles.customerFormLabel}>Tên khách hàng</Text>
+            <TextInput
+              style={styles.customerFormInput}
+              value={customerDraft.name}
+              onChangeText={(v) => setCustomerDraft((prev) => ({ ...prev, name: v }))}
+              placeholder="Nhập tên khách hàng"
+              placeholderTextColor="#8FA1C6"
+            />
+          </View>
+
+          <View style={styles.customerFormGroup}>
+            <Text style={styles.customerFormLabel}>Số điện thoại</Text>
+            <TextInput
+              style={styles.customerFormInput}
+              value={customerDraft.phone}
+              onChangeText={(v) => setCustomerDraft((prev) => ({ ...prev, phone: v }))}
+              keyboardType="phone-pad"
+              placeholder="Nhập số điện thoại"
+              placeholderTextColor="#8FA1C6"
+            />
+          </View>
+
+          <View style={styles.customerFormGroup}>
+            <Text style={styles.customerFormLabel}>Dòng xe</Text>
+            <TextInput
+              style={styles.customerFormInput}
+              value={customerDraft.vehicleModel}
+              onChangeText={(v) => setCustomerDraft((prev) => ({ ...prev, vehicleModel: v }))}
+              placeholder="Nhập dòng xe"
+              placeholderTextColor="#8FA1C6"
+            />
+          </View>
+
+          <View style={styles.customerVehicleChipWrap}>
+            {VEHICLE_MODEL_SUGGESTIONS.map((model) => {
+              const active = normalizeText(customerDraft.vehicleModel) === normalizeText(model);
+              return (
+                <TouchableOpacity
+                  key={model}
+                  style={[styles.customerVehicleChip, active && styles.customerVehicleChipActive]}
+                  onPress={() => setCustomerDraft((prev) => ({ ...prev, vehicleModel: model }))}
+                >
+                  <Text style={[styles.customerVehicleChipText, active && styles.customerVehicleChipTextActive]}>{model}</Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+
+          <View style={styles.customerFormGroup}>
+            <Text style={styles.customerFormLabel}>Biển số</Text>
+            <TextInput
+              style={styles.customerFormInput}
+              value={customerDraft.licensePlate}
+              onChangeText={(v) => setCustomerDraft((prev) => ({ ...prev, licensePlate: v }))}
+              placeholder="Nhập biển số"
+              placeholderTextColor="#8FA1C6"
+            />
+          </View>
 
           <TouchableOpacity
-            style={[styles.checkoutButton, saveCustomerMutation.isPending && styles.checkoutButtonDisabled]}
+            style={[styles.customerFormSubmitButton, saveCustomerMutation.isPending && styles.checkoutButtonDisabled]}
             disabled={saveCustomerMutation.isPending}
             onPress={() => saveCustomerMutation.mutate()}
           >
             {saveCustomerMutation.isPending ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <Text style={styles.checkoutText}>{customerFormMode === 'edit' ? 'Lưu thay đổi' : 'Tạo khách hàng'}</Text>
+              <Text style={styles.customerFormSubmitText}>{customerFormMode === 'edit' ? 'Lưu thay đổi' : 'Tạo khách hàng'}</Text>
             )}
           </TouchableOpacity>
         </ScrollView>
@@ -1848,6 +1962,7 @@ export default function SalesScreen() {
 
           <Text style={styles.inputLabel}>Phương thức thanh toán</Text>
           <SelectorRow
+            variant="payment"
             options={[
               { key: 'cash', label: 'Tiền mặt' },
               { key: 'bank', label: 'Chuyển khoản' },
@@ -1866,6 +1981,7 @@ export default function SalesScreen() {
             <>
               <Text style={styles.inputLabel}>Hình thức thanh toán</Text>
               <SelectorRow
+                variant="payment"
                 options={[
                   { key: 'full', label: 'Đủ' },
                   { key: 'partial', label: 'Một phần' },
@@ -1981,154 +2097,213 @@ export default function SalesScreen() {
         </ScrollView>
       </Modal>
 
-      <Modal visible={showQuickSaleModal} animationType="slide" onRequestClose={() => setShowQuickSaleModal(false)}>
-        <ScrollView contentContainerStyle={[styles.modalContainer, isDark && darkSales.modalContainer, { paddingTop: Math.max(12, insets.top + 8) }]}>
+      <Modal
+        visible={showQuickSaleModal}
+        animationType="slide"
+        onRequestClose={() => {
+          setShowQuickAdvanced(false);
+          setShowQuickCheckoutModal(false);
+          setShowQuickSaleModal(false);
+        }}
+      >
+        <View style={[styles.quickModalRoot, isDark && darkSales.modalContainer, { paddingTop: Math.max(12, insets.top + 8) }]}>
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Bán hàng nhanh</Text>
-            <TouchableOpacity onPress={() => setShowQuickSaleModal(false)}>
+            <TouchableOpacity
+              onPress={() => {
+                setShowQuickAdvanced(false);
+                setShowQuickCheckoutModal(false);
+                setShowQuickSaleModal(false);
+              }}
+            >
               <Feather name="x" size={20} color={BRAND_COLORS.textPrimary} />
             </TouchableOpacity>
           </View>
 
-          <InputField
-            label="Tìm dịch vụ nhanh"
-            value={quickServiceSearch}
-            onChange={setQuickServiceSearch}
-          />
+          <ScrollView contentContainerStyle={styles.quickModalScrollContent}>
+            <InputField
+              label="Tìm dịch vụ nhanh"
+              value={quickServiceSearch}
+              onChange={setQuickServiceSearch}
+            />
 
-          <View style={styles.quickServiceGroupWrap}>
-            {groupedQuickServices.map((group) => (
-              <View key={group.key} style={styles.quickServiceSection}>
-                <Text style={styles.quickServiceSectionTitle}>{group.label}</Text>
-                <View style={styles.quickServiceGrid}>
-                  {group.items.map((service) => {
-                    const active = selectedQuickService?.id === service.id;
-                    const qty = quickServiceQuantities[service.id] || 1;
-                    const tone = QUICK_SERVICE_CATEGORY_COLORS[group.key] || QUICK_SERVICE_CATEGORY_COLORS.other;
-                    return (
-                      <View key={service.id} style={styles.quickServiceCard}>
-                        <TouchableOpacity
-                          style={[
-                            styles.quickServiceSelectButton,
-                            { backgroundColor: tone },
-                            active && styles.quickServiceSelectButtonActive,
-                          ]}
-                          onPress={() => handleSelectQuickService(service)}
-                        >
-                          <View style={styles.quickServiceCardTopRow}>
-                            <Feather name="zap" size={12} color="#fff" />
-                            {active && <Feather name="check-circle" size={13} color="#fff" />}
+            <Text style={styles.quickHintText}>Chạm dịch vụ để thêm nhanh vào đơn, mỗi lần chạm tăng +1.</Text>
+
+            <View style={styles.quickServiceGroupWrap}>
+              {groupedQuickServices.map((group) => (
+                <View key={group.key} style={styles.quickServiceSection}>
+                  <Text style={styles.quickServiceSectionTitle}>{group.label}</Text>
+                  <View style={styles.quickServiceGrid}>
+                    {group.items.map((service) => {
+                      const active = selectedQuickService?.id === service.id;
+                      const qty = quickServiceQuantities[service.id] || 0;
+                      const tone = QUICK_SERVICE_CATEGORY_COLORS[group.key] || QUICK_SERVICE_CATEGORY_COLORS.other;
+                      return (
+                        <View key={service.id} style={styles.quickServiceCard}>
+                          <TouchableOpacity
+                            style={[
+                              styles.quickServiceSelectButton,
+                              { backgroundColor: tone },
+                              active && styles.quickServiceSelectButtonActive,
+                            ]}
+                            onPress={() => handleSelectQuickService(service)}
+                          >
+                            <View style={styles.quickServiceCardTopRow}>
+                              <Feather name="zap" size={12} color="#fff" />
+                              {qty > 0 && (
+                                <View style={styles.quickServiceQtyBadge}>
+                                  <Text style={styles.quickServiceQtyBadgeText}>{qty}</Text>
+                                </View>
+                              )}
+                            </View>
+                            <Text style={styles.quickServiceCardName} numberOfLines={1}>
+                              {service.name}
+                            </Text>
+                            <Text style={styles.quickServiceCardPrice}>{formatCurrency(service.price)}</Text>
+                          </TouchableOpacity>
+
+                          <View style={styles.quickServiceQtyRow}>
+                            <TouchableOpacity
+                              style={styles.quickServiceQtyButton}
+                              onPress={() => updateQuickServiceQuantity(service.id, -1)}
+                            >
+                              <Feather name="minus" size={13} color={BRAND_COLORS.textPrimary} />
+                            </TouchableOpacity>
+                            <Text style={styles.quickServiceQtyValue}>{qty}</Text>
+                            <TouchableOpacity
+                              style={styles.quickServiceQtyButton}
+                              onPress={() => updateQuickServiceQuantity(service.id, 1)}
+                            >
+                              <Feather name="plus" size={13} color={BRAND_COLORS.textPrimary} />
+                            </TouchableOpacity>
                           </View>
-                          <Text style={styles.quickServiceCardName} numberOfLines={1}>
-                            {service.name}
-                          </Text>
-                          <Text style={styles.quickServiceCardPrice}>{formatCurrency(service.price)}</Text>
-                        </TouchableOpacity>
-
-                        <View style={styles.quickServiceQtyRow}>
-                          <TouchableOpacity
-                            style={styles.quickServiceQtyButton}
-                            onPress={() => updateQuickServiceQuantity(service.id, -1)}
-                          >
-                            <Feather name="minus" size={13} color={BRAND_COLORS.textPrimary} />
-                          </TouchableOpacity>
-                          <Text style={styles.quickServiceQtyValue}>{qty}</Text>
-                          <TouchableOpacity
-                            style={styles.quickServiceQtyButton}
-                            onPress={() => updateQuickServiceQuantity(service.id, 1)}
-                          >
-                            <Feather name="plus" size={13} color={BRAND_COLORS.textPrimary} />
-                          </TouchableOpacity>
                         </View>
-                      </View>
-                    );
-                  })}
+                      );
+                    })}
+                  </View>
                 </View>
-              </View>
-            ))}
-          </View>
-
-          {filteredQuickServices.length === 0 && (
-            <Text style={styles.quickHintText}>Không có dịch vụ phù hợp. Bạn có thể nhập tay tên dịch vụ bên dưới.</Text>
-          )}
-
-          <InputField label="Tên dịch vụ" value={quickServiceName} onChange={setQuickServiceName} />
-          <InputField
-            label="Số lượng"
-            value={quickServiceQty}
-            onChange={(v) => {
-              const nextQty = Math.max(1, parseMoneyInput(v));
-              setQuickServiceQty(String(nextQty));
-              if (selectedQuickService?.id) {
-                setQuickServiceQuantities((prev) => ({ ...prev, [selectedQuickService.id]: nextQty }));
-              }
-            }}
-            keyboardType="numeric"
-          />
-          <InputField
-            label="Đơn giá"
-            value={formatMoneyInput(parseMoneyInput(quickServicePrice))}
-            onChange={(v) => setQuickServicePrice(String(parseMoneyInput(v)))}
-            keyboardType="numeric"
-          />
-
-          <View style={styles.quickCustomerRow}>
-            <View style={{ flex: 1 }}>
-              <InputField
-                label="Tìm khách (biển số / SĐT / tên)"
-                value={quickCustomerSearch}
-                onChange={setQuickCustomerSearch}
-              />
+              ))}
             </View>
-            <TouchableOpacity style={styles.quickCustomerSearchButton} onPress={handleSearchQuickCustomer}>
-              <Feather name="search" size={16} color="#fff" />
-            </TouchableOpacity>
-          </View>
 
-          {quickFoundCustomer ? (
-            <View style={styles.quickCustomerFoundBox}>
-              <Text style={styles.quickCustomerFoundTitle}>Khách quen</Text>
-              <Text style={styles.quickCustomerFoundName}>{quickFoundCustomer.name}</Text>
-              <Text style={styles.quickCustomerFoundMeta}>{quickFoundCustomer.phone || '-'}</Text>
-            </View>
-          ) : (
-            <Text style={styles.quickHintText}>
-              {isLikelyLicensePlate(quickCustomerSearch)
-                ? `Không thấy khách, sẽ lưu biển số: ${quickCustomerSearch.toUpperCase()}`
-                : 'Mặc định tạo đơn cho khách vãng lai nếu không tìm thấy.'}
-            </Text>
-          )}
-
-          <Text style={styles.inputLabel}>Phương thức thanh toán</Text>
-          <SelectorRow
-            options={[
-              { key: 'cash', label: 'Tiền mặt' },
-              { key: 'bank', label: 'Chuyển khoản' },
-            ]}
-            value={quickPaymentMethod}
-            onChange={(v) => setQuickPaymentMethod(v as 'cash' | 'bank')}
-          />
-
-          <InputField label="Ghi chú" value={quickServiceNote} onChange={setQuickServiceNote} multiline />
-
-          <View style={styles.checkoutSummary}>
-            <Text style={styles.summaryItem}>
-              Tổng: {formatCurrency(parseMoneyInput(quickServicePrice) * Math.max(1, parseMoneyInput(quickServiceQty)))}
-            </Text>
-          </View>
-
-          <TouchableOpacity
-            style={[styles.checkoutButton, createQuickSaleMutation.isPending && styles.checkoutButtonDisabled]}
-            disabled={createQuickSaleMutation.isPending}
-            onPress={() => createQuickSaleMutation.mutate()}
-          >
-            {createQuickSaleMutation.isPending ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={styles.checkoutText}>Tạo đơn bán nhanh</Text>
+            {filteredQuickServices.length === 0 && (
+              <Text style={styles.quickHintText}>Không có dịch vụ phù hợp. Mở phần nâng cao để nhập tay.</Text>
             )}
-          </TouchableOpacity>
-        </ScrollView>
+
+            <TouchableOpacity style={styles.quickAdvancedToggle} onPress={() => setShowQuickAdvanced((prev) => !prev)}>
+              <Text style={styles.quickAdvancedToggleText}>{showQuickAdvanced ? 'Ẩn tùy chỉnh nâng cao' : 'Mở tùy chỉnh nâng cao'}</Text>
+              <Feather name={showQuickAdvanced ? 'chevron-up' : 'chevron-down'} size={15} color="#9FB8E4" />
+            </TouchableOpacity>
+
+            {showQuickAdvanced && (
+              <View style={styles.quickAdvancedPanel}>
+                <InputField label="Tên dịch vụ" value={quickServiceName} onChange={setQuickServiceName} />
+                <InputField
+                  label="Số lượng"
+                  value={quickServiceQty}
+                  onChange={(v) => {
+                    const nextQty = Math.max(1, parseMoneyInput(v));
+                    setQuickServiceQty(String(nextQty));
+                    if (selectedQuickService?.id) {
+                      setQuickServiceQuantities((prev) => ({ ...prev, [selectedQuickService.id]: nextQty }));
+                    }
+                  }}
+                  keyboardType="numeric"
+                />
+                <InputField
+                  label="Đơn giá"
+                  value={formatMoneyInput(parseMoneyInput(quickServicePrice))}
+                  onChange={(v) => setQuickServicePrice(String(parseMoneyInput(v)))}
+                  keyboardType="numeric"
+                />
+
+                <View style={styles.quickCustomerRow}>
+                  <View style={{ flex: 1 }}>
+                    <InputField
+                      label="Tìm khách (biển số / SĐT / tên)"
+                      value={quickCustomerSearch}
+                      onChange={setQuickCustomerSearch}
+                    />
+                  </View>
+                  <TouchableOpacity style={styles.quickCustomerSearchButton} onPress={handleSearchQuickCustomer}>
+                    <Feather name="search" size={16} color="#fff" />
+                  </TouchableOpacity>
+                </View>
+
+                {quickFoundCustomer ? (
+                  <View style={styles.quickCustomerFoundBox}>
+                    <Text style={styles.quickCustomerFoundTitle}>Khách quen</Text>
+                    <Text style={styles.quickCustomerFoundName}>{quickFoundCustomer.name}</Text>
+                    <Text style={styles.quickCustomerFoundMeta}>{quickFoundCustomer.phone || '-'}</Text>
+                  </View>
+                ) : (
+                  <Text style={styles.quickHintText}>
+                    {isLikelyLicensePlate(quickCustomerSearch)
+                      ? `Không thấy khách, sẽ lưu biển số: ${quickCustomerSearch.toUpperCase()}`
+                      : 'Mặc định tạo đơn cho khách vãng lai nếu không tìm thấy.'}
+                  </Text>
+                )}
+
+                <InputField label="Ghi chú" value={quickServiceNote} onChange={setQuickServiceNote} multiline />
+              </View>
+            )}
+
+            <View style={{ height: 16 }} />
+          </ScrollView>
+        </View>
+      </Modal>
+
+      <Modal
+        visible={showQuickCheckoutModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowQuickCheckoutModal(false)}
+      >
+        <View style={styles.quickCheckoutOverlay}>
+          <View style={styles.quickCheckoutCard}>
+            <View style={styles.quickCheckoutHeader}>
+              <Text style={styles.quickCheckoutTitle}>Thanh toán nhanh</Text>
+              <TouchableOpacity onPress={() => setShowQuickCheckoutModal(false)}>
+                <Feather name="x" size={18} color="#AFC2E4" />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.quickCheckoutSummaryBox}>
+              <Text style={styles.quickCheckoutServiceName}>{quickResolvedName || 'Chưa chọn dịch vụ'}</Text>
+              <Text style={styles.quickCheckoutServiceMeta}>
+                {quickResolvedQty} x {formatCurrency(quickResolvedUnitPrice)}
+              </Text>
+              <Text style={styles.quickCheckoutTotal}>{formatCurrency(quickResolvedTotal)}</Text>
+            </View>
+
+            <Text style={styles.inputLabel}>Phương thức thanh toán</Text>
+            <SelectorRow
+              variant="payment"
+              options={[
+                { key: 'cash', label: 'Tiền mặt' },
+                { key: 'bank', label: 'Chuyển khoản' },
+              ]}
+              value={quickPaymentMethod}
+              onChange={(v) => setQuickPaymentMethod(v as 'cash' | 'bank')}
+            />
+
+            <View style={styles.quickCheckoutActions}>
+              <TouchableOpacity style={styles.quickCheckoutBackButton} onPress={() => setShowQuickCheckoutModal(false)}>
+                <Text style={styles.quickCheckoutBackText}>Chọn thêm</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.quickCheckoutPayButton, createQuickSaleMutation.isPending && styles.checkoutButtonDisabled]}
+                disabled={createQuickSaleMutation.isPending || !quickResolvedName || quickResolvedUnitPrice <= 0}
+                onPress={() => createQuickSaleMutation.mutate()}
+              >
+                {createQuickSaleMutation.isPending ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.quickCheckoutPayText}>Tạo đơn</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
       </Modal>
 
       <Modal visible={!!selectedSale} animationType="slide" onRequestClose={() => setSelectedSale(null)}>
@@ -2252,23 +2427,39 @@ function Chip({ label, active, onPress }: { label: string; active: boolean; onPr
   );
 }
 
-function PartCard({ part, onAdd, inCart }: { part: Part; onAdd: () => void; inCart: boolean }) {
+function PartCard({ part, onAdd, cartQuantity }: { part: Part; onAdd: () => void; cartQuantity: number }) {
   const isDark = useColorScheme() === 'dark';
   const stock = stockForPart(part);
   const retail = fromBranchValue(part.retailPrice, BRANCH_ID);
+  const inCart = cartQuantity > 0;
 
   return (
-    <View style={[styles.partCard, isDark && darkSales.card]}>
+    <TouchableOpacity
+      style={[styles.partCard, isDark && darkSales.card, inCart && styles.partCardSelected]}
+      onPress={onAdd}
+      activeOpacity={0.88}
+    >
+      {inCart && (
+        <View style={styles.partBadgeWrap}>
+          <View style={styles.partBadgeGlow} />
+          <View style={styles.partBadge}>
+            <Text style={styles.partBadgeText}>{cartQuantity}</Text>
+          </View>
+        </View>
+      )}
       <Text style={[styles.partName, isDark && darkSales.primaryText]} numberOfLines={2}>
         {part.name}
       </Text>
       <Text style={[styles.partMeta, isDark && darkSales.secondaryText]}>SKU: {part.sku || '-'}</Text>
       <Text style={[styles.partMeta, isDark && darkSales.secondaryText]}>Tồn: {stock}</Text>
       <Text style={styles.partPrice}>{formatCurrency(retail)}</Text>
-      <TouchableOpacity style={[styles.addButton, inCart && styles.addedButton]} onPress={onAdd}>
-        <Text style={styles.addButtonText}>{inCart ? 'Thêm nữa' : 'Thêm vào giỏ'}</Text>
-      </TouchableOpacity>
-    </View>
+      {inCart && (
+        <View style={styles.partSelectedPill}>
+          <Feather name="check" size={12} color="#1F5FBF" />
+          <Text style={styles.partSelectedPillText}>Đã chọn</Text>
+        </View>
+      )}
+    </TouchableOpacity>
   );
 }
 
@@ -2283,31 +2474,33 @@ function CartRow({
   onPriceChange: (price: number) => void;
   onRemove: () => void;
 }) {
-  const isDark = useColorScheme() === 'dark';
   return (
-    <View style={[styles.cartRow, isDark && darkSales.card]}>
-      <View style={{ flex: 1 }}>
-        <Text style={[styles.cartName, isDark && darkSales.primaryText]}>{item.partName}</Text>
-        <Text style={[styles.cartMeta, isDark && darkSales.secondaryText]}>SKU: {item.sku || '-'} | Tồn: {item.stockSnapshot}</Text>
+    <View style={styles.cartRow}>
+      <View style={styles.cartRowTop}>
+        <Text style={styles.cartName} allowFontScaling={false}>{item.partName}</Text>
+        <TouchableOpacity onPress={onRemove} style={styles.cartDeleteBtn}>
+          <Feather name="trash-2" size={18} color="#E35656" />
+        </TouchableOpacity>
       </View>
 
-      <View style={styles.cartControls}>
-        <QtyButton icon="minus" onPress={() => onQuantityChange(item.quantity - 1)} />
-        <Text style={[styles.qtyText, isDark && darkSales.primaryText]}>{item.quantity}</Text>
-        <QtyButton icon="plus" onPress={() => onQuantityChange(item.quantity + 1)} />
-      </View>
+      <Text style={styles.cartMeta} allowFontScaling={false}>SKU: {item.sku || '-'} | Tồn: {item.stockSnapshot}</Text>
 
-      <View style={{ width: 100, marginLeft: 8 }}>
-        <TextInput
-          value={formatMoneyInput(item.sellingPrice)}
-          onChangeText={(v) => onPriceChange(parseMoneyInput(v))}
-          keyboardType="numeric"
-          style={[styles.priceInput, isDark && darkSales.searchInput]}
-        />
+      <View style={styles.cartRowBottom}>
+        <View style={styles.cartControls}>
+          <QtyButton icon="minus" onPress={() => onQuantityChange(item.quantity - 1)} />
+          <Text style={styles.qtyText} allowFontScaling={false}>{item.quantity}</Text>
+          <QtyButton icon="plus" onPress={() => onQuantityChange(item.quantity + 1)} />
+        </View>
+
+        <View style={styles.cartPriceBox}>
+          <TextInput
+            value={formatMoneyInput(item.sellingPrice)}
+            onChangeText={(v) => onPriceChange(parseMoneyInput(v))}
+            keyboardType="numeric"
+            style={styles.priceInput}
+          />
+        </View>
       </View>
-      <TouchableOpacity onPress={onRemove} style={{ marginLeft: 8 }}>
-        <Feather name="trash-2" size={18} color={BRAND_COLORS.error} />
-      </TouchableOpacity>
     </View>
   );
 }
@@ -2418,12 +2611,48 @@ function SelectorRow({
   options,
   value,
   onChange,
+  variant,
 }: {
   options: { key: string; label: string }[];
   value: string;
   onChange: (value: string) => void;
+  variant?: 'default' | 'payment';
 }) {
   const isDark = useColorScheme() === 'dark';
+
+  if (variant === 'payment') {
+    const optionMeta: Record<string, { icon: keyof typeof Feather.glyphMap }> = {
+      cash: { icon: 'dollar-sign' },
+      bank: { icon: 'repeat' },
+      card: { icon: 'credit-card' },
+      full: { icon: 'check-circle' },
+      partial: { icon: 'pie-chart' },
+      note: { icon: 'file-text' },
+      installment: { icon: 'calendar' },
+    };
+
+    return (
+      <View style={styles.paymentSelectorGrid}>
+        {options.map((opt) => {
+          const active = value === opt.key;
+          const meta = optionMeta[opt.key] || { icon: 'circle' as keyof typeof Feather.glyphMap };
+          const methodMode = options.length < 4;
+
+          return (
+            <PaymentOptionCard
+              key={opt.key}
+              label={opt.label}
+              icon={meta.icon}
+              active={active}
+              methodMode={methodMode}
+              onPress={() => onChange(opt.key)}
+            />
+          );
+        })}
+      </View>
+    );
+  }
+
   return (
     <View style={styles.selectorRow}>
       {options.map((opt) => (
@@ -2438,6 +2667,88 @@ function SelectorRow({
         </TouchableOpacity>
       ))}
     </View>
+  );
+}
+
+function PaymentOptionCard({
+  label,
+  icon,
+  active,
+  methodMode,
+  onPress,
+}: {
+  label: string;
+  icon: keyof typeof Feather.glyphMap;
+  active: boolean;
+  methodMode: boolean;
+  onPress: () => void;
+}) {
+  const progress = useRef(new Animated.Value(active ? 1 : 0)).current;
+
+  useEffect(() => {
+    Animated.timing(progress, {
+      toValue: active ? 1 : 0,
+      duration: 220,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    }).start();
+  }, [active, progress]);
+
+  const glowOpacity = progress.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 1],
+  });
+
+  const cardScale = progress.interpolate({
+    inputRange: [0, 1],
+    outputRange: [1, 1.02],
+  });
+
+  const checkOpacity = progress.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 1],
+  });
+
+  return (
+    <Animated.View
+      style={[
+        methodMode ? styles.paymentOptionWrapMethod : styles.paymentOptionWrapHalf,
+        { transform: [{ scale: cardScale }] },
+      ]}
+    >
+      <TouchableOpacity
+        style={[
+          styles.paymentOption,
+          methodMode ? styles.paymentOptionMethod : styles.paymentOptionType,
+          active && styles.paymentOptionActive,
+        ]}
+        onPress={onPress}
+        activeOpacity={0.9}
+      >
+        <Animated.View pointerEvents="none" style={[styles.paymentOptionGlow, { opacity: glowOpacity }]} />
+        <Animated.View pointerEvents="none" style={[styles.paymentOptionGradientTop, { opacity: glowOpacity }]} />
+
+        <View style={[styles.paymentOptionIcon, methodMode && styles.paymentOptionIconMethod, !methodMode && styles.paymentOptionIconType, active && styles.paymentOptionIconActive]}>
+          <Feather name={icon} size={14} color={active ? '#325FAF' : '#9CB2D8'} />
+        </View>
+
+        <Text
+          style={[
+            styles.paymentOptionLabel,
+            methodMode ? styles.paymentOptionLabelMethod : styles.paymentOptionLabelType,
+            active && styles.paymentOptionLabelActive,
+          ]}
+          allowFontScaling={false}
+          numberOfLines={methodMode ? 2 : 1}
+        >
+          {label}
+        </Text>
+
+        <Animated.View pointerEvents="none" style={[styles.paymentCheckBadge, { opacity: checkOpacity }]}> 
+          <Feather name="check" size={9} color="#4C77CE" />
+        </Animated.View>
+      </TouchableOpacity>
+    </Animated.View>
   );
 }
 
@@ -2499,24 +2810,8 @@ const styles = StyleSheet.create({
   tabButtonActive: { backgroundColor: BRAND_COLORS.primary, borderColor: BRAND_COLORS.primary },
   tabButtonText: { fontSize: 12, fontWeight: '700', color: BRAND_COLORS.textSecondary },
   tabButtonTextActive: { color: '#fff' },
-  quickActionRow: {
-    paddingHorizontal: 12,
-    paddingBottom: 8,
-    alignItems: 'flex-end',
-  },
-  quickTabButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 5,
-    borderRadius: 10,
-    backgroundColor: '#E37D3F',
-    borderWidth: 1,
-    borderColor: '#CD6B2F',
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-  },
-  quickTabText: { color: '#fff', fontSize: 11, fontWeight: '800' },
+  quickTabInRowButton: { backgroundColor: '#E37D3F', borderColor: '#CD6B2F' },
+  quickTabInRowText: { color: '#fff' },
 
   section: { flex: 1 },
   searchRow: { flexDirection: 'row', gap: 8, paddingHorizontal: 12, paddingBottom: 10 },
@@ -2541,6 +2836,14 @@ const styles = StyleSheet.create({
     color: BRAND_COLORS.textPrimary,
     fontSize: 14,
     marginBottom: 8,
+  },
+  quickModalRoot: {
+    flex: 1,
+    backgroundColor: BRAND_COLORS.background,
+    paddingHorizontal: 12,
+  },
+  quickModalScrollContent: {
+    paddingBottom: 12,
   },
   scanButton: {
     width: 44,
@@ -2583,6 +2886,7 @@ const styles = StyleSheet.create({
   gridContent: { paddingHorizontal: 12, paddingBottom: 28, gap: 10 },
   gridRow: { gap: 10 },
   partCard: {
+    position: 'relative',
     flex: 1,
     minWidth: 0,
     backgroundColor: '#fff',
@@ -2592,59 +2896,126 @@ const styles = StyleSheet.create({
     borderColor: BRAND_COLORS.border,
     gap: 4,
   },
+  partCardSelected: {
+    borderColor: '#5E8FE4',
+    backgroundColor: '#EDF4FF',
+  },
+  partBadgeWrap: {
+    position: 'absolute',
+    top: 7,
+    right: 7,
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 22,
+    height: 22,
+    zIndex: 2,
+  },
+  partBadgeGlow: {
+    position: 'absolute',
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: 'rgba(255, 61, 61, 0.35)',
+    transform: [{ scale: 1.45 }],
+  },
+  partBadge: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: '#FF2F2F',
+    borderWidth: 1,
+    borderColor: '#FFE4E4',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  partBadgeText: {
+    color: '#fff',
+    fontSize: 11,
+    fontWeight: '900',
+    lineHeight: 13,
+  },
   partName: { fontSize: 13, fontWeight: '700', color: BRAND_COLORS.textPrimary, minHeight: 34 },
   partMeta: { fontSize: 11, color: BRAND_COLORS.textMuted },
   partPrice: { fontSize: 14, color: BRAND_COLORS.primary, fontWeight: '800' },
-  addButton: {
+  partSelectedPill: {
     marginTop: 4,
-    backgroundColor: BRAND_COLORS.primary,
-    borderRadius: 8,
-    paddingVertical: 7,
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
     alignItems: 'center',
+    gap: 4,
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    backgroundColor: '#DCEAFF',
   },
-  addedButton: { backgroundColor: '#2E7D32' },
-  addButtonText: { color: '#fff', fontSize: 12, fontWeight: '700' },
+  partSelectedPillText: {
+    color: '#1F5FBF',
+    fontSize: 11,
+    fontWeight: '800',
+  },
+
+  continueCartBar: {
+    paddingHorizontal: 12,
+    paddingBottom: 10,
+    paddingTop: 4,
+  },
+  continueCartButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    borderRadius: 12,
+    backgroundColor: BRAND_COLORS.primary,
+    paddingVertical: 12,
+  },
+  continueCartText: { color: '#fff', fontSize: 14, fontWeight: '800' },
 
   cartContent: { paddingHorizontal: 12, paddingBottom: 34, gap: 10 },
   cartHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  resetOrderText: { color: '#F87171', fontSize: 12, fontWeight: '800' },
   sectionTitle: { fontSize: 18, color: BRAND_COLORS.textPrimary, fontWeight: '800' },
-  customerQuickButton: {
+  customerActionStrip: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  customerActionStripBtn: {
+    flex: 1,
+    minHeight: 44,
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: 6,
+    borderRadius: 999,
     borderWidth: 1,
     borderColor: BRAND_COLORS.primary,
-    backgroundColor: '#E3F2FD',
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 7,
-    maxWidth: '55%',
+    backgroundColor: '#F1F5FF',
+    paddingHorizontal: 8,
   },
-  customerButtonText: { color: BRAND_COLORS.primary, fontWeight: '700', fontSize: 12 },
-  customerInfoCard: {
-    backgroundColor: '#fff',
+  customerActionStripText: { color: BRAND_COLORS.primary, fontWeight: '800', fontSize: 12 },
+  customerInlineCard: {
+    borderRadius: 12,
     borderWidth: 1,
     borderColor: BRAND_COLORS.border,
-    borderRadius: 12,
-    padding: 10,
+    backgroundColor: '#18233F',
+    paddingHorizontal: 11,
+    paddingVertical: 10,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
     gap: 8,
   },
-  customerInfoTop: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
-  customerInfoName: { color: BRAND_COLORS.textPrimary, fontSize: 15, fontWeight: '800' },
-  customerInfoMeta: { color: BRAND_COLORS.textSecondary, fontSize: 12, marginTop: 2 },
-  customerInfoActions: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
-  customerActionBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: BRAND_COLORS.primary,
-    backgroundColor: '#E3F2FD',
-    paddingHorizontal: 9,
-    paddingVertical: 6,
+  customerInlineName: {
+    color: '#E9EFFD',
+    fontSize: 14,
+    fontWeight: '800',
   },
-  customerActionText: { color: BRAND_COLORS.primary, fontWeight: '700', fontSize: 12 },
+  customerInlineMeta: {
+    color: '#A5B7DA',
+    fontSize: 12,
+    marginTop: 2,
+  },
+  cartItemsStack: {
+    gap: 10,
+  },
 
   editingBanner: {
     borderWidth: 1,
@@ -2660,86 +3031,137 @@ const styles = StyleSheet.create({
   cancelEditText: { color: '#D84315', fontWeight: '700', fontSize: 12 },
 
   cartRow: {
-    backgroundColor: '#fff',
-    borderRadius: 10,
+    backgroundColor: '#1A2442',
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: BRAND_COLORS.border,
+    borderColor: '#324A77',
     padding: 10,
+    gap: 6,
+  },
+  cartRowTop: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  cartDeleteBtn: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(227, 86, 86, 0.12)',
+  },
+  cartName: {
+    flex: 1,
+    fontSize: 14,
+    lineHeight: 18,
+    fontWeight: '800',
+    color: '#EAF0FF',
+  },
+  cartMeta: { fontSize: 12, color: '#9BB0D7', marginTop: -2 },
+  cartRowBottom: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 10,
   },
-  cartName: { fontSize: 13, fontWeight: '700', color: BRAND_COLORS.textPrimary },
-  cartMeta: { fontSize: 11, color: BRAND_COLORS.textMuted, marginTop: 2 },
-  cartControls: { flexDirection: 'row', alignItems: 'center', marginLeft: 8 },
+  cartControls: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   qtyButton: {
-    width: 22,
-    height: 22,
-    borderRadius: 6,
+    width: 32,
+    height: 32,
+    borderRadius: 10,
     borderWidth: 1,
-    borderColor: BRAND_COLORS.primary,
+    borderColor: '#4E7DCD',
+    backgroundColor: '#22345D',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  qtyText: { minWidth: 24, textAlign: 'center', fontWeight: '700', color: BRAND_COLORS.textPrimary },
-  priceInput: {
-    height: 36,
-    borderRadius: 8,
+  qtyText: { minWidth: 24, textAlign: 'center', fontWeight: '800', fontSize: 16, color: '#EAF0FF' },
+  cartPriceBox: {
+    width: 130,
+    backgroundColor: '#152846',
     borderWidth: 1,
-    borderColor: BRAND_COLORS.border,
-    paddingHorizontal: 8,
-    fontSize: 12,
-    color: BRAND_COLORS.textPrimary,
-    backgroundColor: '#fff',
+    borderColor: '#2E4A7B',
+    borderRadius: 12,
+  },
+  priceInput: {
+    height: 40,
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    fontSize: 16,
+    color: '#EAF0FF',
+    fontWeight: '700',
+    backgroundColor: 'transparent',
   },
 
   summaryCard: {
-    backgroundColor: '#fff',
+    backgroundColor: '#1A2442',
     borderWidth: 1,
-    borderColor: BRAND_COLORS.border,
-    borderRadius: 12,
-    padding: 12,
+    borderColor: '#324A77',
+    borderRadius: 14,
+    padding: 10,
     gap: 8,
     marginTop: 2,
   },
-  summaryItem: { fontSize: 14, color: BRAND_COLORS.textPrimary, fontWeight: '700' },
+  checkoutHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  checkoutHeaderLabel: {
+    color: '#A9B8D8',
+    fontSize: 15,
+    fontWeight: '900',
+  },
+  checkoutHeaderTotal: {
+    color: '#F0F4FF',
+    fontSize: 28,
+    fontWeight: '900',
+  },
+  summaryItem: { fontSize: 14, color: '#B7C6E6', fontWeight: '800' },
   discountCompactBox: {
     borderWidth: 1,
-    borderColor: BRAND_COLORS.border,
-    borderRadius: 10,
+    borderColor: '#2B456F',
+    borderRadius: 14,
     padding: 8,
     gap: 6,
-    backgroundColor: '#FAFCFF',
+    backgroundColor: '#0F1F3B',
   },
-  discountCompactLabel: { color: BRAND_COLORS.textSecondary, fontSize: 12, fontWeight: '700' },
+  discountCompactLabel: { color: '#DCE8FF', fontSize: 13, fontWeight: '800' },
   discountCompactControls: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   discountSegmentRow: {
     flex: 1,
     flexDirection: 'row',
-    backgroundColor: '#EEF2F8',
-    borderRadius: 8,
+    backgroundColor: '#0E1A32',
+    borderRadius: 12,
     padding: 2,
     gap: 2,
   },
   discountSegmentBtn: {
     flex: 1,
-    borderRadius: 6,
-    paddingVertical: 7,
+    borderRadius: 10,
+    paddingVertical: 8,
     alignItems: 'center',
   },
   discountSegmentBtnActive: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F1F4FA',
     borderWidth: 1,
-    borderColor: '#C6D6EE',
+    borderColor: '#D4DDED',
   },
-  discountSegmentText: { color: BRAND_COLORS.textSecondary, fontSize: 11, fontWeight: '700' },
-  discountSegmentTextActive: { color: BRAND_COLORS.primary },
+  discountSegmentText: { color: '#9EAFD0', fontSize: 12, fontWeight: '800' },
+  discountSegmentTextActive: { color: '#325BA6' },
   discountValueBox: {
-    width: 112,
-    height: 36,
-    borderRadius: 8,
+    width: 132,
+    height: 42,
+    borderRadius: 10,
     borderWidth: 1,
-    borderColor: BRAND_COLORS.border,
-    backgroundColor: '#fff',
+    borderColor: '#2B456F',
+    backgroundColor: '#1A2E50',
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 8,
@@ -2747,12 +3169,12 @@ const styles = StyleSheet.create({
   },
   discountValueInput: {
     flex: 1,
-    color: BRAND_COLORS.textPrimary,
-    fontSize: 13,
+    color: '#F0F4FF',
+    fontSize: 16,
     fontWeight: '700',
     paddingVertical: 0,
   },
-  discountValueSuffix: { color: BRAND_COLORS.textMuted, fontSize: 12, fontWeight: '700' },
+  discountValueSuffix: { color: '#9BB0D7', fontSize: 13, fontWeight: '800' },
 
   numberRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   numberLabel: { minWidth: 70, color: BRAND_COLORS.textSecondary, fontSize: 12, fontWeight: '700' },
@@ -2772,14 +3194,14 @@ const styles = StyleSheet.create({
 
   checkoutButton: {
     marginTop: 4,
-    borderRadius: 10,
-    backgroundColor: BRAND_COLORS.primary,
+    borderRadius: 12,
+    backgroundColor: '#4A77D6',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 12,
+    paddingVertical: 13,
   },
   checkoutButtonDisabled: { opacity: 0.6 },
-  checkoutText: { color: '#fff', fontWeight: '800', fontSize: 14 },
+  checkoutText: { color: '#fff', fontWeight: '900', fontSize: 15 },
 
   listContent: { paddingHorizontal: 12, gap: 10, paddingBottom: 26 },
   saleCard: {
@@ -2855,6 +3277,87 @@ const styles = StyleSheet.create({
   },
   modalHeaderAddText: { color: '#fff', fontSize: 12, fontWeight: '700' },
   modalTitle: { fontSize: 18, fontWeight: '800', color: BRAND_COLORS.textPrimary },
+  customerFormContainer: {
+    flexGrow: 1,
+    backgroundColor: '#061337',
+    paddingHorizontal: 16,
+    paddingTop: 22,
+    paddingBottom: 32,
+  },
+  customerFormHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  customerFormTitle: {
+    color: '#E6EEFF',
+    fontSize: 22,
+    fontWeight: '900',
+  },
+  customerFormCloseButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  customerFormGroup: { marginBottom: 14 },
+  customerFormLabel: {
+    color: '#C8D6F4',
+    fontSize: 12,
+    fontWeight: '800',
+    marginBottom: 7,
+  },
+  customerFormInput: {
+    height: 56,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#2E4E85',
+    backgroundColor: '#1B2952',
+    color: '#EAF1FF',
+    fontSize: 20,
+    fontWeight: '600',
+    paddingHorizontal: 14,
+  },
+  customerVehicleChipWrap: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    marginTop: -2,
+    marginBottom: 14,
+  },
+  customerVehicleChip: {
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: '#C9D8F8',
+    backgroundColor: '#F3F7FF',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
+  customerVehicleChipActive: {
+    backgroundColor: '#DCEAFF',
+    borderColor: '#5A85D9',
+  },
+  customerVehicleChipText: {
+    color: '#3562B6',
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  customerVehicleChipTextActive: { color: '#234A94' },
+  customerFormSubmitButton: {
+    marginTop: 16,
+    height: 58,
+    borderRadius: 18,
+    backgroundColor: '#4A77D6',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  customerFormSubmitText: {
+    color: '#F6FAFF',
+    fontSize: 18,
+    fontWeight: '900',
+  },
   customerItem: {
     backgroundColor: '#fff',
     borderRadius: 10,
@@ -2918,6 +3421,20 @@ const styles = StyleSheet.create({
     transform: [{ scale: 1.01 }],
     borderWidth: 2,
     borderColor: '#fff',
+  },
+  quickServiceQtyBadge: {
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#E7F0FF',
+    paddingHorizontal: 4,
+  },
+  quickServiceQtyBadgeText: {
+    color: '#2A4F95',
+    fontSize: 10,
+    fontWeight: '900',
   },
   quickServiceCardTopRow: {
     width: '100%',
@@ -3008,6 +3525,169 @@ const styles = StyleSheet.create({
     color: BRAND_COLORS.textMuted,
     fontSize: 12,
   },
+  quickSelectionSummary: {
+    borderWidth: 1,
+    borderColor: '#2B456F',
+    backgroundColor: '#102345',
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 9,
+    marginBottom: 10,
+  },
+  quickSelectionTitle: {
+    color: '#E7F0FF',
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  quickSelectionMeta: {
+    color: '#9BB0D7',
+    fontSize: 11,
+    marginTop: 2,
+    fontWeight: '700',
+  },
+  quickAdvancedToggle: {
+    marginTop: 2,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#2B456F',
+    borderRadius: 10,
+    backgroundColor: '#102345',
+    paddingHorizontal: 10,
+    paddingVertical: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  quickAdvancedToggleText: {
+    color: '#AFC2E4',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  quickAdvancedPanel: {
+    borderWidth: 1,
+    borderColor: '#2B456F',
+    borderRadius: 12,
+    backgroundColor: '#102345',
+    padding: 10,
+    marginBottom: 8,
+  },
+  quickBottomDock: {
+    borderTopWidth: 1,
+    borderColor: '#2B456F',
+    backgroundColor: '#0B1A36',
+    paddingTop: 10,
+    paddingBottom: 12,
+    paddingHorizontal: 2,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  quickBottomLabel: {
+    color: '#9FB4D9',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  quickBottomTotal: {
+    color: '#F0F4FF',
+    fontSize: 20,
+    fontWeight: '900',
+    marginTop: 1,
+  },
+  quickBottomButton: {
+    marginLeft: 'auto',
+    minWidth: 124,
+    borderRadius: 12,
+    backgroundColor: '#4A77D6',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+  },
+  quickBottomButtonText: {
+    color: '#fff',
+    fontWeight: '900',
+    fontSize: 16,
+  },
+  quickCheckoutOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(2, 10, 24, 0.72)',
+    justifyContent: 'center',
+    paddingHorizontal: 14,
+  },
+  quickCheckoutCard: {
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#2B456F',
+    backgroundColor: '#102345',
+    padding: 12,
+    gap: 10,
+  },
+  quickCheckoutHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  quickCheckoutTitle: {
+    color: '#F0F5FF',
+    fontSize: 16,
+    fontWeight: '900',
+  },
+  quickCheckoutSummaryBox: {
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#365889',
+    backgroundColor: '#152B4F',
+    padding: 10,
+  },
+  quickCheckoutServiceName: {
+    color: '#E9F1FF',
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  quickCheckoutServiceMeta: {
+    color: '#9FB5DA',
+    fontSize: 12,
+    marginTop: 2,
+    fontWeight: '700',
+  },
+  quickCheckoutTotal: {
+    color: '#F0F4FF',
+    fontSize: 28,
+    fontWeight: '900',
+    marginTop: 5,
+  },
+  quickCheckoutActions: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  quickCheckoutBackButton: {
+    flex: 1,
+    borderRadius: 11,
+    borderWidth: 1,
+    borderColor: '#365889',
+    backgroundColor: '#163159',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 45,
+  },
+  quickCheckoutBackText: {
+    color: '#C8D7F2',
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  quickCheckoutPayButton: {
+    flex: 1,
+    borderRadius: 11,
+    backgroundColor: '#4A77D6',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 45,
+  },
+  quickCheckoutPayText: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: '900',
+  },
 
   selectorRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 4 },
   selectorButton: {
@@ -3021,6 +3701,116 @@ const styles = StyleSheet.create({
   selectorButtonActive: { borderColor: BRAND_COLORS.primary, backgroundColor: '#E3F2FD' },
   selectorButtonText: { fontSize: 12, fontWeight: '700', color: BRAND_COLORS.textSecondary },
   selectorButtonTextActive: { color: BRAND_COLORS.primary },
+
+  paymentSelectorGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 6,
+  },
+  paymentOptionWrapMethod: {
+    width: '31.5%',
+  },
+  paymentOptionWrapHalf: {
+    width: '48.5%',
+  },
+  paymentOption: {
+    position: 'relative',
+    overflow: 'hidden',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#2E4A7B',
+    backgroundColor: '#132548',
+    minHeight: 56,
+    paddingHorizontal: 9,
+    paddingVertical: 8,
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+  },
+  paymentOptionMethod: {
+    minHeight: 72,
+    paddingHorizontal: 6,
+  },
+  paymentOptionType: {
+    minHeight: 56,
+    flexDirection: 'row',
+    justifyContent: 'flex-start',
+    paddingHorizontal: 9,
+    paddingVertical: 6,
+    gap: 8,
+  },
+  paymentOptionActive: {
+    borderColor: '#67A0FF',
+    backgroundColor: '#1A2E56',
+    shadowColor: '#7BA6F7',
+    shadowOpacity: 0.28,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 3,
+  },
+  paymentOptionGlow: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(139, 182, 255, 0.12)',
+  },
+  paymentOptionGradientTop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: '62%',
+    backgroundColor: 'rgba(255,255,255,0.12)',
+  },
+  paymentOptionIcon: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#1E3766',
+  },
+  paymentOptionIconMethod: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+  },
+  paymentOptionIconType: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+  },
+  paymentOptionIconActive: {
+    backgroundColor: '#DCEAFF',
+  },
+  paymentOptionLabel: {
+    color: '#D4E1F8',
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  paymentOptionLabelMethod: {
+    textAlign: 'center',
+    lineHeight: 15,
+  },
+  paymentOptionLabelType: {
+    textAlign: 'center',
+    lineHeight: 14,
+    fontSize: 11,
+  },
+  paymentOptionLabelActive: {
+    color: '#EAF2FF',
+  },
+  paymentCheckBadge: {
+    position: 'absolute',
+    top: 5,
+    right: 5,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#E7F0FF',
+  },
 
   subCard: {
     borderRadius: 10,
@@ -3132,7 +3922,6 @@ const styles = StyleSheet.create({
 const darkSales = StyleSheet.create({
   container: { backgroundColor: '#0B1220' },
   tabRow: { backgroundColor: '#0B1220' },
-  quickActionRow: { backgroundColor: '#0B1220' },
   section: { backgroundColor: '#0B1220' },
   modalContainer: { backgroundColor: '#0B1220' },
   tabButton: { backgroundColor: '#16233A', borderColor: '#2B3C5A' },

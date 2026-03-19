@@ -50,6 +50,7 @@ interface WorkOrderMobileModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (workOrderData: any) => Promise<void> | void;
+  onPrintWorkOrder?: (workOrder: WorkOrder) => void;
   workOrder?: WorkOrder | null;
   customers: Customer[];
   parts: Part[];
@@ -65,6 +66,7 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
   isOpen,
   onClose,
   onSave,
+  onPrintWorkOrder,
   workOrder,
   customers,
   parts,
@@ -1803,9 +1805,11 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
             <div className="flex gap-2 mb-2">
               <button
                 onClick={() => {
-                  // Trigger print functionality
-                  window.print();
+                  if (workOrder && onPrintWorkOrder) {
+                    onPrintWorkOrder(workOrder);
+                  }
                 }}
+                disabled={!workOrder || !onPrintWorkOrder}
                 className="flex-1 py-2 bg-slate-100 dark:bg-[#2b2b40] text-slate-500 dark:text-slate-300 rounded-lg font-medium hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors text-xs flex items-center justify-center gap-1.5"
               >
                 <Printer className="w-3.5 h-3.5" />

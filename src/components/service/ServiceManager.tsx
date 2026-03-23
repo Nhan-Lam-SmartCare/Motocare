@@ -259,6 +259,7 @@ export default function ServiceManager() {
     setSearchParams(newParams, { replace: true });
   }, [debouncedSearchQuery]);
   const [showProfit, setShowProfit] = useState(false); // Toggle profit visibility
+  const [showFinancialOverview, setShowFinancialOverview] = useState(false); // Toggle revenue/profit cards visibility
   const [rowActionMenuId, setRowActionMenuId] = useState<string | null>(null);
   const [dropdownPosition, setDropdownPosition] = useState({
     top: 0,
@@ -2459,10 +2460,27 @@ export default function ServiceManager() {
                   Doanh thu {getDateFilterLabel(dateFilter)}
                 </p>
                 <p className="mt-1 text-xl font-bold text-blue-600 dark:text-blue-400">
-                  {formatCurrency(stats.filteredRevenue)}
+                  {showFinancialOverview
+                    ? formatCurrency(stats.filteredRevenue)
+                    : "•••••••"}
                 </p>
               </div>
-              <HandCoins className="w-6 h-6 text-blue-500" />
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setShowFinancialOverview((prev) => !prev)}
+                  className="p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                  aria-label={showFinancialOverview ? "Ẩn số liệu tài chính" : "Hiện số liệu tài chính"}
+                  title={showFinancialOverview ? "Ẩn số liệu tài chính" : "Hiện số liệu tài chính"}
+                >
+                  {showFinancialOverview ? (
+                    <Eye className="w-4 h-4 text-slate-500" />
+                  ) : (
+                    <EyeOff className="w-4 h-4 text-slate-500" />
+                  )}
+                </button>
+                <HandCoins className="w-6 h-6 text-blue-500" />
+              </div>
             </div>
             <p className="mt-1.5 text-[10px] text-slate-600 dark:text-slate-300">
               Bao gồm các phiếu đã thanh toán {getDateFilterLabel(dateFilter)}
@@ -2476,17 +2494,34 @@ export default function ServiceManager() {
                   Lợi nhuận {getDateFilterLabel(dateFilter)}
                 </p>
                 <p className="mt-1 text-xl font-semibold text-slate-900 dark:text-slate-100">
-                  {formatCurrency(stats.filteredProfit)}
+                  {showFinancialOverview
+                    ? formatCurrency(stats.filteredProfit)
+                    : "•••••••"}
                 </p>
               </div>
-              <TrendingUp className="w-6 h-6 text-blue-500" />
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setShowFinancialOverview((prev) => !prev)}
+                  className="p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                  aria-label={showFinancialOverview ? "Ẩn số liệu tài chính" : "Hiện số liệu tài chính"}
+                  title={showFinancialOverview ? "Ẩn số liệu tài chính" : "Hiện số liệu tài chính"}
+                >
+                  {showFinancialOverview ? (
+                    <Eye className="w-4 h-4 text-slate-500" />
+                  ) : (
+                    <EyeOff className="w-4 h-4 text-slate-500" />
+                  )}
+                </button>
+                <TrendingUp className="w-6 h-6 text-blue-500" />
+              </div>
             </div>
             <div className="mt-1.5 flex items-center justify-between text-[10px]">
               <span className="text-slate-600 dark:text-slate-300">
                 Biên lợi nhuận
               </span>
               <span className="font-semibold text-emerald-600 dark:text-emerald-400">
-                {profitMargin}%
+                {showFinancialOverview ? `${profitMargin}%` : "•••"}
               </span>
             </div>
           </div>

@@ -565,6 +565,7 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
 
   // State for preventing duplicate submissions
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const submittingRef = useRef(false);
 
   // Input history for auto-complete
   const customerNameHistory = useInputHistory('customer_name');
@@ -607,6 +608,11 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
 
   // Handle Save with Haptics and Validation
   const handleSaveInternal = async () => {
+    // Prevent duplicate taps before React state is flushed
+    if (submittingRef.current || isSubmitting) {
+      return;
+    }
+
     // Basic validation
     if (!selectedVehicle && !newVehiclePlate) {
       showToast.error("Vui lòng chọn hoặc thêm xe");
@@ -615,6 +621,7 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
     }
 
     try {
+      submittingRef.current = true;
       setIsSubmitting(true);
       const transformedParts = selectedParts.map((p) => ({
         partId: p.partId,
@@ -702,6 +709,7 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
       triggerHaptic("error");
     } finally {
       setIsSubmitting(false);
+      submittingRef.current = false;
     }
   };
 

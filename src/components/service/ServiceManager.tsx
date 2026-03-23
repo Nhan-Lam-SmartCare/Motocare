@@ -949,9 +949,15 @@ export default function ServiceManager() {
     useCreateWorkOrderAtomicRepo();
   const { mutateAsync: updateWorkOrderAtomicAsync } =
     useUpdateWorkOrderAtomicRepo();
+  const mobileSaveInFlightRef = useRef(false);
 
   // 🔹 Handle Mobile Save - Similar to desktop handleSave
   const handleMobileSave = async (workOrderData: any) => {
+    if (mobileSaveInFlightRef.current) {
+      return;
+    }
+    mobileSaveInFlightRef.current = true;
+
     try {
       // Validate required fields
       if (!workOrderData.customer?.name) {
@@ -1378,6 +1384,8 @@ export default function ServiceManager() {
           : new Error(error?.message || "Không thể lưu phiếu sửa chữa");
       (err as any).suppressAlert = true;
       throw err;
+    } finally {
+      mobileSaveInFlightRef.current = false;
     }
   };
 

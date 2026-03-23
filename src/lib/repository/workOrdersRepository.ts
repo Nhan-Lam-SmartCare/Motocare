@@ -811,6 +811,18 @@ export async function completeWorkOrderPayment(
           message: "Phiếu này đã được hoàn tiền",
           cause: error,
         });
+      if (upper.includes("PAYMENT_EXCEEDS_REMAINING"))
+        return failure({
+          code: "validation",
+          message: "Số tiền thanh toán vượt quá số còn phải thu",
+          cause: error,
+        });
+      if (upper.includes("INVALID_PAYMENT_AMOUNT"))
+        return failure({
+          code: "validation",
+          message: "Số tiền thanh toán không hợp lệ",
+          cause: error,
+        });
       if (upper.includes("UNAUTHORIZED"))
         return failure({
           code: "supabase",

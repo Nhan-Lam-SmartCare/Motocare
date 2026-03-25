@@ -105,6 +105,9 @@ import {
 
 // Local types removed - now imported from ./types/service.types
 
+const normalizePlateSearch = (value?: string | null) =>
+  (value || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+
 export default function ServiceManager() {
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -502,13 +505,22 @@ export default function ServiceManager() {
     // Search filter (using debounced value)
     if (debouncedSearchQuery) {
       const query = debouncedSearchQuery.toLowerCase();
+      const normalizedQuery = normalizePlateSearch(debouncedSearchQuery);
       filtered = filtered.filter(
-        (o) =>
-          o.id.toLowerCase().includes(query) || // Original ID
-          formatWorkOrderId(o.id).toLowerCase().includes(query) || // Formatted ID
-          o.customerName.toLowerCase().includes(query) ||
-          o.vehicleModel?.toLowerCase().includes(query) ||
-          o.licensePlate?.toLowerCase().includes(query)
+        (o) => {
+          const normalizedPlate = normalizePlateSearch(o.licensePlate);
+          const plateMatched =
+            o.licensePlate?.toLowerCase().includes(query) ||
+            (!!normalizedQuery && normalizedPlate.includes(normalizedQuery));
+
+          return (
+            o.id.toLowerCase().includes(query) || // Original ID
+            formatWorkOrderId(o.id).toLowerCase().includes(query) || // Formatted ID
+            o.customerName.toLowerCase().includes(query) ||
+            o.vehicleModel?.toLowerCase().includes(query) ||
+            plateMatched
+          );
+        }
       );
     }
 
@@ -2566,7 +2578,7 @@ export default function ServiceManager() {
             <input
               ref={searchInputRef}
               type="text"
-              placeholder="Mã phiếu, tên khách, dòng xe..."
+              placeholder="Mã phiếu, tên khách, biển số, dòng xe..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-8 pr-3 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500"

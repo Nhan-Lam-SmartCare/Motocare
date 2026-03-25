@@ -38,6 +38,9 @@ import {
   type MobileDateFilter,
 } from "./utils";
 
+const normalizePlateSearch = (value?: string | null) =>
+  (value || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+
 interface ServiceManagerMobileProps {
   workOrders: WorkOrder[];
   onCreateWorkOrder: () => void;
@@ -373,6 +376,7 @@ export function ServiceManagerMobile({
     // Search filter
     if (searchQuery.trim()) {
       const query = searchQuery.trim().toLowerCase();
+      const normalizedQuery = normalizePlateSearch(searchQuery);
       filtered = filtered.filter((w) => {
         const partsText = (w.partsUsed || [])
           .map((p) => [p.partName, p.sku, p.category].filter(Boolean).join(" "))
@@ -404,7 +408,12 @@ export function ServiceManagerMobile({
           .join(" ")
           .toLowerCase();
 
-        return text.includes(query);
+        const normalizedPlate = normalizePlateSearch(w.licensePlate);
+        const plateMatched =
+          w.licensePlate?.toLowerCase().includes(query) ||
+          (!!normalizedQuery && normalizedPlate.includes(normalizedQuery));
+
+        return text.includes(query) || plateMatched;
       });
     }
 

@@ -2593,7 +2593,7 @@ export default function ServiceManager() {
           <select
             value={dateFilter}
             onChange={(e) => setDateFilter(e.target.value)}
-            className="px-2.5 py-2 text-sm bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-500 shadow-sm rounded-lg text-slate-700 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500"
+            className="px-3 py-2 text-sm bg-slate-50 hover:bg-slate-100 dark:bg-slate-800/50 dark:hover:bg-slate-800 border border-transparent rounded-lg text-slate-700 dark:text-slate-300 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:bg-white dark:focus:bg-slate-800 transition-colors"
           >
             <option value="today">Hôm nay</option>
             <option value="week">7 ngày qua</option>
@@ -2607,14 +2607,14 @@ export default function ServiceManager() {
                 type="date"
                 value={customDateStart}
                 onChange={(e) => setCustomDateStart(e.target.value)}
-                className="px-2.5 py-2 text-sm bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-500 shadow-sm rounded-lg text-slate-700 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500"
+                className="px-3 py-2 text-sm bg-slate-50 hover:bg-slate-100 dark:bg-slate-800/50 dark:hover:bg-slate-800 border border-transparent rounded-lg text-slate-700 dark:text-slate-300 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:bg-white dark:focus:bg-slate-800 transition-colors"
               />
               <span className="text-xs text-slate-500">—</span>
               <input
                 type="date"
                 value={customDateEnd}
                 onChange={(e) => setCustomDateEnd(e.target.value)}
-                className="px-2.5 py-2 text-sm bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-500 shadow-sm rounded-lg text-slate-700 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500"
+                className="px-3 py-2 text-sm bg-slate-50 hover:bg-slate-100 dark:bg-slate-800/50 dark:hover:bg-slate-800 border border-transparent rounded-lg text-slate-700 dark:text-slate-300 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:bg-white dark:focus:bg-slate-800 transition-colors"
               />
             </div>
           )}
@@ -2623,7 +2623,7 @@ export default function ServiceManager() {
           <select
             value={technicianFilter}
             onChange={(e) => setTechnicianFilter(e.target.value)}
-            className="px-2.5 py-2 text-sm bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-500 shadow-sm rounded-lg text-slate-700 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500"
+            className="px-3 py-2 text-sm bg-slate-50 hover:bg-slate-100 dark:bg-slate-800/50 dark:hover:bg-slate-800 border border-transparent rounded-lg text-slate-700 dark:text-slate-300 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:bg-white dark:focus:bg-slate-800 transition-colors"
           >
             <option value="all">Tất cả KTV</option>
             {employees.map((emp) => (
@@ -2637,7 +2637,7 @@ export default function ServiceManager() {
           <select
             value={paymentFilter}
             onChange={(e) => setPaymentFilter(e.target.value)}
-            className="px-2.5 py-2 text-sm bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-500 shadow-sm rounded-lg text-slate-700 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500"
+            className="px-3 py-2 text-sm bg-slate-50 hover:bg-slate-100 dark:bg-slate-800/50 dark:hover:bg-slate-800 border border-transparent rounded-lg text-slate-700 dark:text-slate-300 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:bg-white dark:focus:bg-slate-800 transition-colors"
           >
             <option value="all">Thanh toán</option>
             <option value="paid">Đã TT</option>
@@ -2947,7 +2947,7 @@ export default function ServiceManager() {
                     <tr
                       key={order.id}
                       onClick={() => handleOpenModal(order)}
-                      className={`group bg-white dark:bg-slate-800/80 hover:bg-blue-50/60 dark:hover:bg-slate-700/60 cursor-pointer transition-all duration-150 hover:shadow-md border-l-4 focus-within:ring-2 focus-within:ring-blue-500/30 ${getStatusBorderColor(order.status as WorkOrderStatus)}`}
+                      className={`group bg-white dark:bg-slate-800/80 hover:bg-blue-50/60 dark:hover:bg-slate-700/60 cursor-pointer transition-all duration-150 hover:shadow-md focus-within:ring-2 focus-within:ring-blue-500/30`}
                     >
                       {/* Column 1: Mã phiếu + Status */}
                       <td className="px-4 py-6 xl:py-8 align-top">
@@ -3133,7 +3133,7 @@ export default function ServiceManager() {
                           {totalAmount > 0 && order.paymentStatus !== "paid" && (
                             <div className="space-y-1">
                               <div
-                                className="h-2.5 w-full rounded-full bg-slate-200 dark:bg-slate-600 overflow-hidden"
+                                className="h-1.5 w-full rounded-full bg-slate-200 dark:bg-slate-600 overflow-hidden"
                                 title={`Đã thanh toán ${paymentProgress}%`}
                               >
                                 <div

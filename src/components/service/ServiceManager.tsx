@@ -1,4 +1,4 @@
-﻿import React, { useState, useMemo, useEffect, useRef } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import { Link, useLocation, useSearchParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -2397,35 +2397,77 @@ export default function ServiceManager() {
     );
   }
 
+  // Mini chart data calculation for the last 7 days
+  const chartData = useMemo(() => {
+    if (dateFilter !== "week") return null;
+    const days = 7;
+    const data = Array.from({ length: days }).map((_, i) => {
+      const d = new Date();
+      d.setDate(d.getDate() - (days - 1 - i));
+      return { date: d.toISOString().split('T')[0], rev: 0, prof: 0 };
+    });
+    
+    dateFilteredOrders.forEach(o => {
+      if (o.paymentStatus !== "paid" && o.paymentStatus !== "partial") return;
+      const oDate = new Date(o.creationDate || (o as any).creationdate).toISOString().split('T')[0];
+      const match = data.find(d => d.date === oDate);
+      if (match) {
+        const rev = o.paymentStatus === "paid" ? (o.total || 0) : (o.totalPaid || 0);
+        // Cost of parts used
+        const partsCost = o.partsUsed?.reduce(
+            (s, p) => s + (p.costPrice || 0) * (p.quantity || 1),
+            0
+        ) || 0;
+        // Cost of additional services
+        const servCost = o.additionalServices?.reduce(
+            (s: any, svc: any) => s + (svc.costPrice || 0) * (svc.quantity || 1),
+            0
+        ) || 0;
+        const prof = rev - partsCost - servCost;
+        
+        match.rev += rev;
+        match.prof += prof;
+      }
+    });
+    
+    const maxRev = Math.max(...data.map(d => d.rev), 1);
+    const maxProf = Math.max(...data.map(d => Math.abs(d.prof)), 1);
+    return { data, maxRev, maxProf };
+  }, [dateFilteredOrders, dateFilter]);
+
   return (
     <div className="space-y-3">
       {/* Desktop insight cards */}
       <div className="grid gap-3 lg:grid-cols-[2fr,1fr]">
         <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
-          <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-50 dark:bg-slate-900/50 p-3 rounded-lg border border-slate-100 dark:border-slate-700/50">
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-300">
                 Phiếu cần xử lý
               </p>
-              <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-                {urgentTickets}
-              </p>
-              <p className="text-xs text-slate-600 dark:text-slate-300">
-                Chiếm {urgentRatio}% của {totalOpenTickets || 0} phiếu đang mở
-              </p>
+              <div className="flex items-baseline gap-2">
+                <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+                  {urgentTickets}
+                </p>
+                <p className="text-xs text-slate-600 dark:text-slate-200 font-medium">
+                  Chiếm {urgentRatio}% của {totalOpenTickets || 0} phiếu đang mở
+                </p>
+              </div>
             </div>
             <div className="text-right">
               <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-300">
                 Hoàn thành
               </p>
-              <p className="text-xl font-semibold text-emerald-600 dark:text-emerald-400">
-                {totalOpenTickets > 0 ? `${completionRate}%` : "—"}
-              </p>
-              <p className="text-xs text-slate-600 dark:text-slate-300">
-                {totalOpenTickets > 0
-                  ? `${stats.done} phiếu chờ giao`
-                  : "Không có dữ liệu"}
-              </p>
+              <div className="flex items-baseline justify-end gap-2">
+                <p className="text-xs text-slate-600 dark:text-slate-300">
+                  {totalOpenTickets > 0
+                    ? `${stats.done} phiếu chờ giao`
+                    : "Chưa có"}
+                </p>
+                <p className="text-xl font-bold text-emerald-600 dark:text-emerald-400">
+                  {totalOpenTickets > 0 ? `${completionRate}%` : "—"}
+                </p>
+              </div>
             </div>
           </div>
 
@@ -2465,7 +2507,7 @@ export default function ServiceManager() {
         </div>
 
         <div className="grid gap-2">
-          <div className="rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-3">
+          <div className="rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-3 flex flex-col justify-between">
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-[9px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-300">
@@ -2494,22 +2536,42 @@ export default function ServiceManager() {
                 <HandCoins className="w-6 h-6 text-blue-500" />
               </div>
             </div>
-            <p className="mt-1.5 text-[10px] text-slate-600 dark:text-slate-300">
-              Bao gồm các phiếu đã thanh toán {getDateFilterLabel(dateFilter)}
+            
+            {/* Added Mini Bar Chart */}
+            {chartData && (
+              <div className="mt-2 flex items-end gap-1 h-7 opacity-80" aria-hidden="true">
+                 {chartData.data.map((d, i) => (
+                   <div key={i} className="flex-1 bg-blue-50 dark:bg-blue-900/20 rounded-t-[3px] relative group h-full transition-colors hover:bg-blue-100 dark:hover:bg-blue-900/40">
+                      <div className="absolute bottom-0 left-0 right-0 bg-blue-500 dark:bg-blue-400 rounded-t-[3px] transition-all duration-300" style={{ height: `${Math.max((d.rev / chartData.maxRev) * 100, 4)}%` }} />
+                      <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 hidden group-hover:block bg-slate-800 dark:bg-slate-700 text-white text-[9px] px-1.5 py-0.5 rounded shadow whitespace-nowrap z-10">
+                         {showFinancialOverview ? formatCurrency(d.rev) : '••••••'}
+                      </div>
+                   </div>
+                 ))}
+              </div>
+            )}
+            
+            <p className="mt-1 text-[9px] text-slate-500 dark:text-slate-400">
+              Bao gồm các phiếu đã thanh toán {getDateFilterLabel(dateFilter).toLowerCase()}
             </p>
           </div>
 
-          <div className="rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-3">
+          <div className="rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-3 flex flex-col justify-between">
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-[9px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-300">
                   Lợi nhuận {getDateFilterLabel(dateFilter)}
                 </p>
-                <p className="mt-1 text-xl font-semibold text-slate-900 dark:text-slate-100">
-                  {showFinancialOverview
-                    ? formatCurrency(stats.filteredProfit)
-                    : "•••••••"}
-                </p>
+                <div className="flex items-baseline gap-2 mt-1">
+                  <p className="text-xl font-bold text-emerald-600 dark:text-emerald-400">
+                    {showFinancialOverview
+                      ? formatCurrency(stats.filteredProfit)
+                      : "•••••••"}
+                  </p>
+                  <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-500 bg-emerald-50 dark:bg-emerald-900/30 px-1.5 py-0.5 rounded">
+                    {showFinancialOverview ? `${profitMargin}%` : "••%"}
+                  </span>
+                </div>
               </div>
               <div className="flex items-center gap-1.5">
                 <button
@@ -2525,17 +2587,27 @@ export default function ServiceManager() {
                     <EyeOff className="w-4 h-4 text-slate-500" />
                   )}
                 </button>
-                <TrendingUp className="w-6 h-6 text-blue-500" />
+                <TrendingUp className="w-6 h-6 text-emerald-500" />
               </div>
             </div>
-            <div className="mt-1.5 flex items-center justify-between text-[10px]">
-              <span className="text-slate-600 dark:text-slate-300">
-                Biên lợi nhuận
-              </span>
-              <span className="font-semibold text-emerald-600 dark:text-emerald-400">
-                {showFinancialOverview ? `${profitMargin}%` : "•••"}
-              </span>
-            </div>
+            
+            {/* Added Mini Bar Chart */}
+            {chartData && (
+              <div className="mt-2 flex items-end gap-1 h-7 opacity-80" aria-hidden="true">
+                 {chartData.data.map((d, i) => (
+                   <div key={i} className="flex-1 bg-emerald-50 dark:bg-emerald-900/20 rounded-t-[3px] relative group h-full transition-colors hover:bg-emerald-100 dark:hover:bg-emerald-900/40">
+                      <div className="absolute bottom-0 left-0 right-0 bg-emerald-500 dark:bg-emerald-400 rounded-t-[3px] transition-all duration-300" style={{ height: `${Math.max((Math.abs(d.prof) / chartData.maxProf) * 100, 4)}%` }} />
+                      <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 hidden group-hover:block bg-slate-800 dark:bg-slate-700 text-white text-[9px] px-1.5 py-0.5 rounded shadow whitespace-nowrap z-10">
+                         {showFinancialOverview ? formatCurrency(d.prof) : '••••••'}
+                      </div>
+                   </div>
+                 ))}
+              </div>
+            )}
+            
+            <p className="mt-1 text-[9px] text-slate-500 dark:text-slate-400">
+              Biên lợi nhuận gộp {getDateFilterLabel(dateFilter).toLowerCase()}
+            </p>
           </div>
         </div>
       </div>
@@ -2995,13 +3067,13 @@ export default function ServiceManager() {
                               </button>
                             )}
                           </div>
-                          <div className="text-xs text-slate-600 dark:text-slate-300 truncate">
+                          <div className="text-xs text-slate-600 dark:text-slate-200 truncate font-medium">
                             <Bike className="w-3.5 h-3.5 inline-block mr-1 text-slate-400" />
-                            <span className="font-medium">
+                            <span>
                               {order.vehicleModel || "N/A"}
                             </span>
                             {order.licensePlate && (
-                              <span className="ml-1.5 px-1.5 py-0.5 bg-slate-100 dark:bg-slate-700 rounded text-slate-700 dark:text-slate-300 font-mono text-[10px]">
+                              <span className="ml-1.5 px-1.5 py-0.5 bg-slate-100 dark:bg-slate-700 rounded text-slate-800 dark:text-slate-100 font-mono text-[10px]">
                                 {order.licensePlate}
                               </span>
                             )}
@@ -3249,13 +3321,13 @@ export default function ServiceManager() {
                         onClick={(e) => e.stopPropagation()}
                       >
                         <div className="flex items-center justify-end gap-2">
-                          {/* Quick action buttons */}
+                          {/* Quick action buttons - Ghost style */}
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
                               handleOpenModal(order);
                             }}
-                            className="w-10 h-10 inline-flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-600 text-slate-500 hover:text-blue-600 hover:bg-blue-50 hover:border-blue-200 dark:hover:text-blue-400 dark:hover:bg-blue-900/20 dark:hover:border-blue-700/50 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+                            className="w-9 h-9 inline-flex items-center justify-center rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:text-blue-400 dark:hover:bg-blue-900/30 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
                             title="Xem chi tiết"
                           >
                             <Eye className="w-4.5 h-4.5" />
@@ -3266,7 +3338,7 @@ export default function ServiceManager() {
                               e.stopPropagation();
                               handlePrintOrder(order);
                             }}
-                            className="w-10 h-10 inline-flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-600 text-slate-500 hover:text-purple-600 hover:bg-purple-50 hover:border-purple-200 dark:hover:text-purple-400 dark:hover:bg-purple-900/20 dark:hover:border-purple-700/50 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-purple-500/40"
+                            className="w-9 h-9 inline-flex items-center justify-center rounded-lg text-slate-400 hover:text-purple-600 hover:bg-purple-50 dark:hover:text-purple-400 dark:hover:bg-purple-900/30 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-purple-500/40"
                             title="In phiếu"
                           >
                             <Printer className="w-4.5 h-4.5" />
@@ -3289,7 +3361,7 @@ export default function ServiceManager() {
                               }}
                               aria-haspopup="menu"
                               aria-expanded={rowActionMenuId === order.id}
-                              className="w-10 h-10 inline-flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-600 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 hover:border-slate-300 dark:hover:border-slate-500 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+                              className="w-9 h-9 inline-flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
                               title="Thêm thao tác"
                             >
                               <MoreVertical className="w-4.5 h-4.5" />

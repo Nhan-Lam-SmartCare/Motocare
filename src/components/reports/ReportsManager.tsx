@@ -78,7 +78,7 @@ const REPORT_TAB_CONFIGS: Array<{
       activeClass:
         "bg-gradient-to-r from-blue-600 to-sky-500 text-white border-transparent shadow-lg shadow-blue-500/30",
       inactiveClass:
-        "bg-white dark:bg-slate-900/60 text-blue-700 dark:text-blue-200 border-blue-200 dark:border-blue-700 hover:bg-blue-50/80 dark:hover:bg-blue-900/20",
+        "bg-transparent dark:bg-transparent text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50 border border-slate-200 dark:border-slate-700",
       dotClass: "bg-blue-400",
     },
     {
@@ -88,7 +88,7 @@ const REPORT_TAB_CONFIGS: Array<{
       activeClass:
         "bg-gradient-to-r from-emerald-500 to-lime-500 text-white border-transparent shadow-lg shadow-emerald-500/30",
       inactiveClass:
-        "bg-white dark:bg-slate-900/60 text-emerald-700 dark:text-emerald-200 border-emerald-200 dark:border-emerald-800 hover:bg-emerald-50/70 dark:hover:bg-emerald-900/20",
+        "bg-transparent dark:bg-transparent text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50 border border-slate-200 dark:border-slate-700",
       dotClass: "bg-emerald-400",
     },
     {
@@ -98,7 +98,7 @@ const REPORT_TAB_CONFIGS: Array<{
       activeClass:
         "bg-gradient-to-r from-amber-500 to-orange-500 text-white border-transparent shadow-lg shadow-orange-500/30",
       inactiveClass:
-        "bg-white dark:bg-slate-900/60 text-amber-700 dark:text-amber-200 border-amber-200 dark:border-amber-800 hover:bg-amber-50/70 dark:hover:bg-amber-900/20",
+        "bg-transparent dark:bg-transparent text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50 border border-slate-200 dark:border-slate-700",
       dotClass: "bg-amber-400",
     },
     {
@@ -108,7 +108,7 @@ const REPORT_TAB_CONFIGS: Array<{
       activeClass:
         "bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white border-transparent shadow-lg shadow-violet-500/30",
       inactiveClass:
-        "bg-white dark:bg-slate-900/60 text-violet-700 dark:text-violet-200 border-violet-200 dark:border-violet-800 hover:bg-violet-50/70 dark:hover:bg-violet-900/20",
+        "bg-transparent dark:bg-transparent text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50 border border-slate-200 dark:border-slate-700",
       dotClass: "bg-violet-400",
     },
     {
@@ -118,7 +118,7 @@ const REPORT_TAB_CONFIGS: Array<{
       activeClass:
         "bg-gradient-to-r from-rose-500 to-red-500 text-white border-transparent shadow-lg shadow-rose-500/30",
       inactiveClass:
-        "bg-white dark:bg-slate-900/60 text-rose-700 dark:text-rose-200 border-rose-200 dark:border-rose-800 hover:bg-rose-50/70 dark:hover:bg-rose-900/20",
+        "bg-transparent dark:bg-transparent text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50 border border-slate-200 dark:border-slate-700",
       dotClass: "bg-rose-400",
     },
     {
@@ -128,7 +128,7 @@ const REPORT_TAB_CONFIGS: Array<{
       activeClass:
         "bg-gradient-to-r from-indigo-500 to-purple-500 text-white border-transparent shadow-lg shadow-indigo-500/30",
       inactiveClass:
-        "bg-white dark:bg-slate-900/60 text-indigo-700 dark:text-indigo-200 border-indigo-200 dark:border-indigo-800 hover:bg-indigo-50/70 dark:hover:bg-indigo-900/20",
+        "bg-transparent dark:bg-transparent text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50 border border-slate-200 dark:border-slate-700",
       dotClass: "bg-indigo-400",
     },
   ];
@@ -943,7 +943,7 @@ const ReportsManager: React.FC = () => {
                 <div className="text-2xl font-bold text-slate-800 dark:text-white">
                   {formatCurrency(combinedRevenue).replace("₫", "")}
                 </div>
-                <div className="text-[10px] text-slate-500 dark:text-slate-500 mt-0.5">
+                <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
                   đ (Bán hàng: {formatCurrency(revenueReport.totalRevenue)} +
                   Phiếu thu: {formatCurrency(cashTotals.totalIncome)})
                 </div>
@@ -958,7 +958,7 @@ const ReportsManager: React.FC = () => {
                     revenueReport.totalCost + cashTotals.totalExpense
                   ).replace("₫", "")}
                 </div>
-                <div className="text-[10px] text-slate-500 dark:text-slate-500 mt-0.5">
+                <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
                   đ (Giá vốn: {formatCurrency(revenueReport.totalCost)} + Phiếu
                   chi: {formatCurrency(cashTotals.totalExpense)})
                 </div>
@@ -976,7 +976,7 @@ const ReportsManager: React.FC = () => {
                 >
                   {formatCurrency(netProfit).replace("₫", "")}
                 </div>
-                <div className="text-[10px] text-slate-500 dark:text-slate-500 mt-0.5">
+                <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
                   đ (Lợi nhuận gộp: {formatCurrency(revenueReport.totalProfit)}{" "}
                   - Phiếu chi: {formatCurrency(cashTotals.totalExpense)})
                 </div>
@@ -992,7 +992,7 @@ const ReportsManager: React.FC = () => {
                     ? ((netProfit / combinedRevenue) * 100).toFixed(1)
                     : 0}
                 </div>
-                <div className="text-[10px] text-slate-500 dark:text-slate-500 mt-0.5">
+                <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
                   % (Lợi nhuận thuần / Doanh thu tổng)
                 </div>
               </div>
@@ -1127,7 +1127,7 @@ const ReportsManager: React.FC = () => {
                               {new Date(day.date).toLocaleDateString("vi-VN")}
                             </td>
                             {/* Bán hàng */}
-                            <td className={`px-2 py-2.5 text-right text-xs font-semibold border-l border-slate-800 ${salesRevenue === 0 ? 'text-slate-600' : 'text-slate-300'}`}>
+                            <td className={`px-2 py-2.5 text-right text-xs font-semibold border-l border-slate-700/50 ${salesRevenue === 0 ? 'text-slate-600' : 'text-slate-300'}`}>
                               {salesRevenue === 0 ? '-' : formatCurrency(salesRevenue)}
                             </td>
                             {/* Sửa chữa */}
@@ -1135,7 +1135,7 @@ const ReportsManager: React.FC = () => {
                               {woRevenue === 0 ? '-' : formatCurrency(woRevenue)}
                             </td>
                             {/* COGS */}
-                            <td className={`px-2 py-2.5 text-right text-xs border-l border-slate-800 ${salesCOGS === 0 ? 'text-slate-600' : 'text-slate-400'}`}>
+                            <td className={`px-2 py-2.5 text-right text-xs border-l border-slate-700/50 ${salesCOGS === 0 ? 'text-slate-600' : 'text-slate-400'}`}>
                               {salesCOGS === 0 ? '-' : formatCurrency(salesCOGS)}
                             </td>
                             {/* Vật tư SC */}
@@ -1143,7 +1143,7 @@ const ReportsManager: React.FC = () => {
                               {woParts === 0 ? '-' : formatCurrency(woParts)}
                             </td>
                             {/* Lãi gộp */}
-                            <td className={`px-2 py-2.5 text-right text-xs font-semibold border-l border-slate-800 ${laiGop === 0 ? 'text-slate-600' : 'text-slate-300'}`}>
+                            <td className={`px-2 py-2.5 text-right text-xs font-semibold border-l border-slate-700/50 ${laiGop === 0 ? 'text-slate-600' : 'text-slate-300'}`}>
                               {laiGop === 0 ? '-' : formatCurrency(laiGop)}
                             </td>
                             {/* Thu/Chi khác */}
@@ -1163,7 +1163,7 @@ const ReportsManager: React.FC = () => {
                                 <div className="bg-slate-850 border-t border-b border-slate-700/50 px-4 py-4" style={{ backgroundColor: 'rgb(17 24 39)' }}>
                                   <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                                     {/* CÁCH TÍNH LỢI NHUẬN */}
-                                    <div className="bg-slate-800/80 rounded-xl border border-slate-700/50 p-4">
+                                    <div className="bg-slate-900/60 shadow-lg rounded-xl border border-slate-700/50 p-4">
                                       <h4 className="text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-3 flex items-center gap-2">
                                         <span className="text-base">📊</span>
                                         CÁCH TÍNH LỢI NHUẬN NGÀY {new Date(day.date).toLocaleDateString('vi-VN')}
@@ -1199,7 +1199,7 @@ const ReportsManager: React.FC = () => {
                                     </div>
 
                                     {/* ĐƠN BÁN HÀNG */}
-                                    <div className="bg-slate-800/80 rounded-xl border border-slate-700/50 p-4">
+                                    <div className="bg-slate-900/60 shadow-lg rounded-xl border border-slate-700/50 p-4">
                                       <h4 className="text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-3 flex items-center gap-2">
                                         <span className="text-base">📦</span>
                                         ĐƠN BÁN HÀNG ({day.sales.length})
@@ -1263,7 +1263,7 @@ const ReportsManager: React.FC = () => {
                                     {/* SỬA CHỮA + GIAO DỊCH KHÁC */}
                                     <div className="space-y-4">
                                       {/* SỬA CHỮA */}
-                                      <div className="bg-slate-800/80 rounded-xl border border-slate-700/50 p-4">
+                                      <div className="bg-slate-900/60 shadow-lg rounded-xl border border-slate-700/50 p-4">
                                         <h4 className="text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-3 flex items-center gap-2">
                                           <span className="text-base">⚙️</span>
                                           SỬA CHỮA ({day.workOrders.length})
@@ -1314,7 +1314,7 @@ const ReportsManager: React.FC = () => {
                                       </div>
 
                                       {/* GIAO DỊCH KHÁC */}
-                                      <div className="bg-slate-800/80 rounded-xl border border-slate-700/50 p-4">
+                                      <div className="bg-slate-900/60 shadow-lg rounded-xl border border-slate-700/50 p-4">
                                         <h4 className="text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-3 flex items-center gap-2">
                                           <span className="text-base">💰</span>
                                           GIAO DỊCH KHÁC ({dayCashTx.length})
@@ -1324,11 +1324,11 @@ const ReportsManager: React.FC = () => {
                                         ) : (
                                           <div className="space-y-1.5 max-h-32 overflow-y-auto pr-1">
                                             {dayCashTx.map((tx) => (
-                                              <div key={tx.id} className="flex justify-between items-center text-[11px]">
-                                                <span className="text-slate-400 truncate mr-2">
+                                              <div key={tx.id} className="flex justify-between items-center text-[11px] py-2 border-b border-slate-700/30 last:border-0">
+                                                <span className="text-slate-300 truncate mr-2">
                                                   {(tx as any).description || tx.notes || formatCashTxCategory(tx.category || '')}
                                                 </span>
-                                                <span className={`font-bold whitespace-nowrap flex-shrink-0 text-slate-300`}>
+                                                <span className={`font-mono text-white text-[10px] font-bold whitespace-nowrap flex-shrink-0`}>
                                                   {tx.type === 'income' ? '+' : '-'}{formatCurrency(Math.abs(tx.amount))}
                                                 </span>
                                               </div>

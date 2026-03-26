@@ -1,0 +1,1 @@
+const fs = require('fs'); let c = fs.readFileSync('g:/Motocare/src/components/service/ServiceManager.tsx', 'utf8'); c = c.replaceAll('className=\"h-2.5 w-full rounded-full\"', 'className=\"h-1.5 w-full rounded-full\"'); fs.writeFileSync('g:/Motocare/src/components/service/ServiceManager.tsx', c);

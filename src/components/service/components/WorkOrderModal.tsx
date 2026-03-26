@@ -2411,8 +2411,8 @@ const WorkOrderModal: React.FC<{
               <div className="grid gap-5 lg:grid-cols-2">
                 <div className="space-y-4">
                   <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-md bg-slate-100 dark:bg-slate-800 flex items-center justify-center flex-shrink-0">
-                      <span className="text-xs font-bold text-slate-500 dark:text-slate-400">1</span>
+                    <div className="w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center flex-shrink-0 shadow-sm">
+                      <span className="text-xs font-bold">1</span>
                     </div>
                     <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">
                       Khách hàng & Xe
@@ -3050,7 +3050,7 @@ const WorkOrderModal: React.FC<{
                       Mô tả sự cố
                     </label>
                     <textarea
-                      rows={4}
+                      rows={2}
                       placeholder="Bảo dưỡng định kỳ, thay nhớt..."
                       value={formData.issueDescription || ""}
                       onChange={(e) =>
@@ -3066,8 +3066,8 @@ const WorkOrderModal: React.FC<{
 
                 <div className="space-y-4">
                   <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-md bg-slate-100 dark:bg-slate-800 flex items-center justify-center flex-shrink-0">
-                      <span className="text-xs font-bold text-slate-500 dark:text-slate-400">2</span>
+                    <div className="w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center flex-shrink-0 shadow-sm">
+                      <span className="text-xs font-bold">2</span>
                     </div>
                     <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">
                       Chi tiết Dịch vụ
@@ -3133,7 +3133,7 @@ const WorkOrderModal: React.FC<{
                       Ghi chú nội bộ
                     </label>
                     <textarea
-                      rows={4}
+                      rows={2}
                       placeholder="VD: Khách yêu cầu kiểm tra thêm hệ thống điện"
                       className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 resize-none"
                     />
@@ -3145,8 +3145,8 @@ const WorkOrderModal: React.FC<{
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-md bg-slate-100 dark:bg-slate-800 flex items-center justify-center flex-shrink-0">
-                      <span className="text-xs font-bold text-slate-500 dark:text-slate-400">3</span>
+                    <div className="w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center flex-shrink-0 shadow-sm">
+                      <span className="text-xs font-bold">3</span>
                     </div>
                     <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">
                       Phụ tùng sử dụng
@@ -3401,8 +3401,8 @@ const WorkOrderModal: React.FC<{
               {/* Quote/Estimate Section */}
               <div className="border-t border-slate-200 dark:border-slate-700 pt-4">
                 <div className="flex items-center gap-2 mb-3">
-                  <div className="w-6 h-6 rounded-md bg-slate-100 dark:bg-slate-800 flex items-center justify-center flex-shrink-0">
-                    <span className="text-xs font-bold text-slate-500 dark:text-slate-400">4</span>
+                  <div className="w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center flex-shrink-0 shadow-sm">
+                    <span className="text-xs font-bold">4</span>
                   </div>
                   <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">
                     Báo giá (Gia công, Đặt hàng)
@@ -3602,7 +3602,7 @@ const WorkOrderModal: React.FC<{
                         </td>
                         <td className="px-4 py-2">
                           <NumberInput
-                            placeholder="Giá nhập"
+                            placeholder="0"
                             value={newService.costPrice ?? ""}
                             onChange={(val) => {
                               const newCostPrice = Math.max(0, val);
@@ -3617,7 +3617,7 @@ const WorkOrderModal: React.FC<{
                         </td>
                         <td className="px-4 py-2">
                           <NumberInput
-                            placeholder="Đơn giá"
+                            placeholder="0"
                             value={newService.price ?? ""}
                             onChange={(val) =>
                               setNewService({
@@ -3646,7 +3646,7 @@ const WorkOrderModal: React.FC<{
             </div>
 
             {/* Right Panel - Sticky Sidebar */}
-            <div className="hidden lg:flex lg:flex-col lg:w-80 xl:w-96 border-l border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 overflow-y-auto flex-shrink-0">
+            <div className="hidden lg:flex lg:flex-col lg:w-80 xl:w-96 border-l border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-900/50 overflow-y-auto flex-shrink-0">
               <div className="p-4 space-y-4 flex flex-col h-full">
                 {/* Summary Card */}
                 <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4 space-y-3">
@@ -3874,7 +3874,7 @@ const WorkOrderModal: React.FC<{
                   <button
                     onClick={handleSaveOnly}
                     disabled={isSubmitting}
-                    className={`w-full px-4 py-2.5 rounded-xl font-medium text-sm flex items-center justify-center gap-2 transition-all ${isSubmitting ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed border border-slate-200 dark:border-slate-700' : 'bg-transparent border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50'}`}
+                    className={`w-full px-4 py-2.5 rounded-xl font-medium text-sm flex items-center justify-center gap-2 transition-all ${isSubmitting ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed border border-slate-200 dark:border-slate-700' : 'bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-500/20 w-full'}`}
                   >
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
@@ -3953,7 +3953,7 @@ const WorkOrderModal: React.FC<{
             <button
               onClick={handleSaveOnly}
               disabled={isSubmitting}
-              className={`px-5 py-2 rounded-lg font-medium text-sm transition-all ${isSubmitting ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed border border-slate-200 dark:border-slate-700' : 'bg-transparent border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50'}`}
+              className={`px-5 py-2 rounded-lg font-medium text-sm transition-all ${isSubmitting ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed border border-slate-200 dark:border-slate-700' : 'bg-blue-600 hover:bg-blue-700 text-white shadow-sm'}`}
             >
               {isSubmitting ? 'Đang lưu...' : 'Lưu Phiếu'}
             </button>

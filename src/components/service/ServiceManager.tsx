@@ -281,7 +281,11 @@ export default function ServiceManager() {
     } else if (dateFilter === "week") {
       setDateRangeDays(7);
     } else if (dateFilter === "month") {
-      setDateRangeDays(30);
+      const now = new Date();
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const elapsedDays =
+        Math.floor((now.getTime() - startOfMonth.getTime()) / 86_400_000) + 1;
+      setDateRangeDays(Math.max(elapsedDays, 1));
     } else if (dateFilter === "custom") {
       setDateRangeDays(0);
     }
@@ -544,9 +548,8 @@ export default function ServiceManager() {
           weekAgo.setDate(weekAgo.getDate() - 7);
           return orderDate >= weekAgo;
         } else if (dateFilter === "month") {
-          const monthAgo = new Date(today);
-          monthAgo.setMonth(monthAgo.getMonth() - 1);
-          return orderDate >= monthAgo;
+          const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+          return orderDate >= startOfMonth;
         } else if (dateFilter === "custom") {
           if (!customDateStart || !customDateEnd) return true;
           const start = new Date(customDateStart);
@@ -2669,7 +2672,7 @@ export default function ServiceManager() {
           >
             <option value="today">Hôm nay</option>
             <option value="week">7 ngày qua</option>
-            <option value="month">30 ngày qua</option>
+            <option value="month">Tháng này (từ đầu tháng)</option>
             <option value="custom">Tùy chọn</option>
             <option value="all">Tất cả (chậm hơn)</option>
           </select>

@@ -583,7 +583,7 @@ export function ServiceManagerMobile({
                 {[
                   { label: "Hôm nay", value: "today" },
                   { label: "7 ngày", value: "week" },
-                  { label: "Tháng", value: "month" },
+                  { label: "Tháng này", value: "month" },
                   { label: "Tất cả", value: "all" },
                 ].map((option) => (
                   <button

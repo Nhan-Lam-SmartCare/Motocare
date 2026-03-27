@@ -42,9 +42,12 @@ export function filterMobileWorkOrdersByDate(
         return orderDate >= sevenDaysAgo;
       }
       case "month": {
-        const thirtyDaysAgo = new Date(now);
-        thirtyDaysAgo.setDate(now.getDate() - 30);
-        return orderDate >= thirtyDaysAgo;
+        const startOfMonth = new Date(
+          now.getFullYear(),
+          now.getMonth(),
+          1
+        );
+        return orderDate >= startOfMonth;
       }
       case "all":
       default:

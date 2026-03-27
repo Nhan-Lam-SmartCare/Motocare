@@ -65,6 +65,28 @@ describe("filterMobileWorkOrdersByDate", () => {
 
     expect(filtered.map((order) => order.id)).toEqual(["WO-recent"]);
   });
+
+  it("uses month-to-date boundary for month filter", () => {
+    const now = new Date("2026-03-27T10:00:00.000Z");
+    const inCurrentMonth = makeWorkOrder({
+      id: "WO-current-month",
+      status: "Trả máy",
+      creationDate: "2026-03-05T09:00:00.000Z",
+    });
+    const inPreviousMonth = makeWorkOrder({
+      id: "WO-previous-month",
+      status: "Trả máy",
+      creationDate: "2026-02-28T09:00:00.000Z",
+    });
+
+    const filtered = filterMobileWorkOrdersByDate(
+      [inCurrentMonth, inPreviousMonth],
+      "month",
+      now
+    );
+
+    expect(filtered.map((order) => order.id)).toEqual(["WO-current-month"]);
+  });
 });
 
 describe("calculateMobileServiceKpis", () => {

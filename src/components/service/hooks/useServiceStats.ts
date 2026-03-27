@@ -79,9 +79,8 @@ export function useServiceStats({
                     weekAgo.setDate(weekAgo.getDate() - 7);
                     return orderDate >= weekAgo;
                 } else if (dateFilter === "month") {
-                    const monthAgo = new Date(today);
-                    monthAgo.setMonth(monthAgo.getMonth() - 1);
-                    return orderDate >= monthAgo;
+                    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+                    return orderDate >= startOfMonth;
                 }
                 return true;
             });

@@ -4,6 +4,7 @@ import { useAuth } from "../../../contexts/AuthContext";
 import type { WorkOrder, Part, WorkOrderPart, Vehicle, InventoryTransaction } from "../../../types";
 import { formatCurrency, formatWorkOrderId, normalizeSearchText } from "../../../utils/format";
 import { NumberInput } from "../../common/NumberInput";
+import { USER_ROLES } from "../../../constants";
 import { getCategoryColor } from "../../../utils/categoryColors";
 import {
   useCreateWorkOrderAtomicRepo,
@@ -68,6 +69,7 @@ const WorkOrderModal: React.FC<{
      
     const queryClient = useQueryClient();
     const { profile } = useAuth();
+    const isOwner = profile?.role === USER_ROLES.OWNER;
     const { mutateAsync: createWorkOrderAtomicAsync } =
       useCreateWorkOrderAtomicRepo();
     const { mutateAsync: updateWorkOrderAtomicAsync } =
@@ -3295,8 +3297,29 @@ const WorkOrderModal: React.FC<{
                         selectedParts.map((part, idx) => (
                           <tr key={idx} className="bg-white dark:bg-slate-800">
                             <td className="px-4 py-2">
-                              <div className="text-sm text-slate-900 dark:text-slate-100 font-medium">
-                                {part.partName}
+                              <div className="relative group/part">
+                                <div className="text-sm text-slate-900 dark:text-slate-100 font-medium cursor-default">
+                                  {part.partName}
+                                </div>
+                                {isOwner && (() => {
+                                  // Lookup cost price: snapshot on part first, then from parts catalog
+                                  const snapshotCost = (part as any).costPrice ?? (part as any).costprice;
+                                  let costPrice = snapshotCost;
+                                  if (costPrice == null || costPrice === undefined) {
+                                    const catalogPart = parts.find(p => p.id === part.partId || (part.sku && p.sku === part.sku));
+                                    if (catalogPart) {
+                                      costPrice = catalogPart.costPrice?.[currentBranchId] ?? 0;
+                                    }
+                                  }
+                                  return costPrice != null ? (
+                                    <div className="absolute left-0 bottom-full mb-1 hidden group-hover/part:block z-20 pointer-events-none">
+                                      <div className="bg-slate-800 dark:bg-slate-600 text-white text-[10px] px-2.5 py-1.5 rounded-lg shadow-lg whitespace-nowrap border border-slate-700 dark:border-slate-500">
+                                        <span className="text-slate-300">Giá nhập:</span>{" "}
+                                        <span className="font-semibold text-amber-300">{formatCurrency(costPrice)}</span>
+                                      </div>
+                                    </div>
+                                  ) : null;
+                                })()}
                               </div>
                               <div className="flex items-center gap-2 mt-0.5">
                                 {part.sku && (

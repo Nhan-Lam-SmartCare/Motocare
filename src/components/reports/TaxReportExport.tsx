@@ -147,6 +147,74 @@ const TaxReportExport: React.FC = () => {
       end: endDate,
     });
 
+    if (reportType === "s1a-hkd") {
+      // Hộ kinh doanh 2026 (Thông tư 40/2021/TT-BTC, Nghị định 68/2026/NĐ-CP)
+      // Phân biệt thuế suất theo loại doanh thu:
+      // - Bán phụ tùng / hàng hóa: 1% GTGT + 0.5% TNCN = 1.5%
+      // - Dịch vụ sửa chữa (có tiền công): 3% GTGT + 1.5% TNCN = 4.5%
+      //
+      // Phiếu sửa chữa (Work Order) cần phân biệt:
+      //   + Có tiền công (laborCost > 0) → thuế dịch vụ 4.5%
+      //   + Chỉ bán phụ tùng (laborCost = 0) → thuế hàng hóa 1.5%
+
+      const totalRevenue = financialSummary.totalRevenue;
+      const transactionCount = financialSummary.salesCount + financialSummary.workOrdersCount;
+
+      // Tách Work Orders thành 2 nhóm dựa trên tiền công
+      const filteredWOs = financialSummary.filteredWorkOrders as any[];
+      let woServiceRevenue = 0; // WO có tiền công → dịch vụ
+      let woServiceCount = 0;
+      let woGoodsRevenue = 0;  // WO chỉ bán phụ tùng → hàng hóa
+      let woGoodsCount = 0;
+
+      filteredWOs.forEach((wo: any) => {
+        const laborCost = Number(wo.laborCost ?? wo.laborcost ?? wo.labor_cost ?? 0);
+        const woTotal = Number(wo.totalPaid ?? wo.totalpaid ?? wo.total ?? 0);
+        if (laborCost > 0) {
+          woServiceRevenue += woTotal;
+          woServiceCount++;
+        } else {
+          woGoodsRevenue += woTotal;
+          woGoodsCount++;
+        }
+      });
+
+      // Tổng doanh thu hàng hóa = Sales + WO chỉ bán phụ tùng
+      const goodsRevenue = financialSummary.salesRevenue + woGoodsRevenue;
+      const goodsCount = financialSummary.salesCount + woGoodsCount;
+
+      // Thuế hàng hóa: 1% GTGT + 0.5% TNCN
+      const goodsGTGT = Math.round(goodsRevenue * 1 / 100);
+      const goodsTNCN = Math.round(goodsRevenue * 0.5 / 100);
+      const goodsTax = goodsGTGT + goodsTNCN;
+
+      // Thuế dịch vụ sửa chữa (có tiền công): 3% GTGT + 1.5% TNCN
+      const serviceGTGT = Math.round(woServiceRevenue * 3 / 100);
+      const serviceTNCN = Math.round(woServiceRevenue * 1.5 / 100);
+      const serviceTax = serviceGTGT + serviceTNCN;
+
+      const totalTax = goodsTax + serviceTax;
+
+      return {
+        totalRevenue,
+        totalVAT: totalTax,
+        transactionCount,
+        taxRate: 0, // mixed rates
+        financialSummary,
+        // Chi tiết tách riêng
+        goodsRevenue,
+        goodsTax,
+        goodsGTGT,
+        goodsTNCN,
+        goodsCount,
+        woServiceRevenue,
+        serviceTax,
+        serviceGTGT,
+        serviceTNCN,
+        woServiceCount,
+      };
+    }
+
     const vatData = prepareVATReportData(
       financialSummary.filteredSales,
       financialSummary.filteredWorkOrders,
@@ -164,6 +232,7 @@ const TaxReportExport: React.FC = () => {
       totalRevenue: totalRevenueBeforeVAT, 
       totalVAT, 
       transactionCount,
+      taxRate: 10,
       // Lưu thêm để export
       financialSummary,
     };
@@ -176,6 +245,7 @@ const TaxReportExport: React.FC = () => {
     getDateRange,
     getFilteredData,
     organizationInfo,
+    reportType,
   ]);
 
   // Handle export
@@ -433,34 +503,87 @@ const TaxReportExport: React.FC = () => {
           Tổng quan dữ liệu
         </h2>
 
-        <div className="grid grid-cols-3 gap-4">
-          <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-            <div className="text-sm text-blue-700 dark:text-blue-400 mb-1">
-              Số giao dịch
+        {reportType === "s1a-hkd" ? (
+          /* === S1a-HKD: Bảng chi tiết thuế tách theo loại doanh thu === */
+          <>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                <div className="text-sm text-blue-700 dark:text-blue-400 mb-1">Số giao dịch</div>
+                <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{previewStats.transactionCount}</div>
+              </div>
+              <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                <div className="text-sm text-green-700 dark:text-green-400 mb-1">Tổng doanh thu</div>
+                <div className="text-2xl font-bold text-green-600 dark:text-green-400">{formatCurrency(previewStats.totalRevenue)}</div>
+              </div>
+              <div className="p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
+                <div className="text-sm text-orange-700 dark:text-orange-400 mb-1">Tổng thuế phải nộp</div>
+                <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">{formatCurrency(previewStats.totalVAT)}</div>
+              </div>
             </div>
-            <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-              {previewStats.transactionCount}
-            </div>
-          </div>
 
-          <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
-            <div className="text-sm text-green-700 dark:text-green-400 mb-1">
-              Doanh thu chưa VAT
+            {/* Chi tiết thuế theo loại doanh thu */}
+            <div className="mt-4 border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden">
+              <table className="w-full text-sm">
+                <thead className="bg-slate-50 dark:bg-slate-700">
+                  <tr>
+                    <th className="px-4 py-2.5 text-left font-medium text-slate-600 dark:text-slate-300">Loại doanh thu</th>
+                    <th className="px-4 py-2.5 text-right font-medium text-slate-600 dark:text-slate-300">Doanh thu</th>
+                    <th className="px-4 py-2.5 text-right font-medium text-slate-600 dark:text-slate-300">GTGT</th>
+                    <th className="px-4 py-2.5 text-right font-medium text-slate-600 dark:text-slate-300">TNCN</th>
+                    <th className="px-4 py-2.5 text-right font-medium text-slate-600 dark:text-slate-300">Tổng thuế</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
+                  <tr className="bg-white dark:bg-slate-800">
+                    <td className="px-4 py-2.5 text-slate-900 dark:text-slate-100">
+                      <div className="font-medium">Bán hàng / Phụ tùng</div>
+                      <div className="text-[10px] text-slate-500 dark:text-slate-400">{(previewStats as any).goodsCount || 0} đơn • 1% + 0.5%</div>
+                    </td>
+                    <td className="px-4 py-2.5 text-right text-slate-900 dark:text-slate-100">{formatCurrency((previewStats as any).goodsRevenue || 0)}</td>
+                    <td className="px-4 py-2.5 text-right text-orange-600 dark:text-orange-400">{formatCurrency((previewStats as any).goodsGTGT || 0)}</td>
+                    <td className="px-4 py-2.5 text-right text-purple-600 dark:text-purple-400">{formatCurrency((previewStats as any).goodsTNCN || 0)}</td>
+                    <td className="px-4 py-2.5 text-right font-semibold text-slate-900 dark:text-slate-100">{formatCurrency((previewStats as any).goodsTax || 0)}</td>
+                  </tr>
+                  <tr className="bg-white dark:bg-slate-800">
+                    <td className="px-4 py-2.5 text-slate-900 dark:text-slate-100">
+                      <div className="font-medium">Dịch vụ sửa chữa</div>
+                      <div className="text-[10px] text-slate-500 dark:text-slate-400">{(previewStats as any).woServiceCount || 0} phiếu có tiền công • 3% + 1.5%</div>
+                    </td>
+                    <td className="px-4 py-2.5 text-right text-slate-900 dark:text-slate-100">{formatCurrency((previewStats as any).woServiceRevenue || 0)}</td>
+                    <td className="px-4 py-2.5 text-right text-orange-600 dark:text-orange-400">{formatCurrency((previewStats as any).serviceGTGT || 0)}</td>
+                    <td className="px-4 py-2.5 text-right text-purple-600 dark:text-purple-400">{formatCurrency((previewStats as any).serviceTNCN || 0)}</td>
+                    <td className="px-4 py-2.5 text-right font-semibold text-slate-900 dark:text-slate-100">{formatCurrency((previewStats as any).serviceTax || 0)}</td>
+                  </tr>
+                </tbody>
+                <tfoot className="bg-slate-50 dark:bg-slate-700/50">
+                  <tr>
+                    <td className="px-4 py-2.5 font-semibold text-slate-900 dark:text-white">Tổng cộng</td>
+                    <td className="px-4 py-2.5 text-right font-semibold text-slate-900 dark:text-white">{formatCurrency(previewStats.totalRevenue)}</td>
+                    <td className="px-4 py-2.5 text-right font-semibold text-orange-600 dark:text-orange-400">{formatCurrency(((previewStats as any).goodsGTGT || 0) + ((previewStats as any).serviceGTGT || 0))}</td>
+                    <td className="px-4 py-2.5 text-right font-semibold text-purple-600 dark:text-purple-400">{formatCurrency(((previewStats as any).goodsTNCN || 0) + ((previewStats as any).serviceTNCN || 0))}</td>
+                    <td className="px-4 py-2.5 text-right font-bold text-orange-600 dark:text-orange-400">{formatCurrency(previewStats.totalVAT)}</td>
+                  </tr>
+                </tfoot>
+              </table>
             </div>
-            <div className="text-2xl font-bold text-green-600 dark:text-green-400">
-              {formatCurrency(previewStats.totalRevenue)}
+          </>
+        ) : (
+          /* === VAT / Revenue report: Giữ nguyên layout cũ === */
+          <div className="grid grid-cols-3 gap-4">
+            <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+              <div className="text-sm text-blue-700 dark:text-blue-400 mb-1">Số giao dịch</div>
+              <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{previewStats.transactionCount}</div>
+            </div>
+            <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
+              <div className="text-sm text-green-700 dark:text-green-400 mb-1">Doanh thu chưa VAT</div>
+              <div className="text-2xl font-bold text-green-600 dark:text-green-400">{formatCurrency(previewStats.totalRevenue)}</div>
+            </div>
+            <div className="p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
+              <div className="text-sm text-orange-700 dark:text-orange-400 mb-1">Thuế VAT</div>
+              <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">{formatCurrency(previewStats.totalVAT)}</div>
             </div>
           </div>
-
-          <div className="p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
-            <div className="text-sm text-orange-700 dark:text-orange-400 mb-1">
-              Thuế VAT
-            </div>
-            <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
-              {formatCurrency(previewStats.totalVAT)}
-            </div>
-          </div>
-        </div>
+        )}
 
         <div className="mt-4 p-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
           <div className="flex items-center justify-between text-sm">

@@ -150,47 +150,51 @@ const TaxReportExport: React.FC = () => {
     if (reportType === "s1a-hkd") {
       // Hộ kinh doanh 2026 (Thông tư 40/2021/TT-BTC, Nghị định 68/2026/NĐ-CP)
       // Phân biệt thuế suất theo loại doanh thu:
-      // - Bán phụ tùng / hàng hóa: 1% GTGT + 0.5% TNCN = 1.5%
-      // - Dịch vụ sửa chữa (có tiền công): 3% GTGT + 1.5% TNCN = 4.5%
+      // - Hàng hóa / phụ tùng: 1% GTGT + 0.5% TNCN = 1.5%
+      // - Tiền công sửa chữa (dịch vụ): 3% GTGT + 1.5% TNCN = 4.5%
       //
-      // Phiếu sửa chữa (Work Order) cần phân biệt:
-      //   + Có tiền công (laborCost > 0) → thuế dịch vụ 4.5%
-      //   + Chỉ bán phụ tùng (laborCost = 0) → thuế hàng hóa 1.5%
+      // Trong mỗi phiếu sửa chữa (Work Order):
+      //   + laborCost → phần tiền công → thuế dịch vụ 4.5%
+      //   + Phần còn lại (phụ tùng) → thuế hàng hóa 1.5%
 
       const totalRevenue = financialSummary.totalRevenue;
       const transactionCount = financialSummary.salesCount + financialSummary.workOrdersCount;
 
-      // Tách Work Orders thành 2 nhóm dựa trên tiền công
+      // Tách từng Work Order: tiền công vs phụ tùng
       const filteredWOs = financialSummary.filteredWorkOrders as any[];
-      let woServiceRevenue = 0; // WO có tiền công → dịch vụ
-      let woServiceCount = 0;
-      let woGoodsRevenue = 0;  // WO chỉ bán phụ tùng → hàng hóa
-      let woGoodsCount = 0;
+      let totalLaborRevenue = 0;  // Tổng tiền công → dịch vụ 4.5%
+      let totalWoPartsRevenue = 0; // Tổng phụ tùng trong WO → hàng hóa 1.5%
 
       filteredWOs.forEach((wo: any) => {
         const laborCost = Number(wo.laborCost ?? wo.laborcost ?? wo.labor_cost ?? 0);
         const woTotal = Number(wo.totalPaid ?? wo.totalpaid ?? wo.total ?? 0);
-        if (laborCost > 0) {
-          woServiceRevenue += woTotal;
-          woServiceCount++;
-        } else {
-          woGoodsRevenue += woTotal;
-          woGoodsCount++;
-        }
+        // Tiền công = laborCost (cap tại woTotal để tránh âm)
+        const labor = Math.min(laborCost, woTotal);
+        // Phần còn lại = phụ tùng
+        const parts = Math.max(0, woTotal - labor);
+        totalLaborRevenue += labor;
+        totalWoPartsRevenue += parts;
       });
 
-      // Tổng doanh thu hàng hóa = Sales + WO chỉ bán phụ tùng
-      const goodsRevenue = financialSummary.salesRevenue + woGoodsRevenue;
-      const goodsCount = financialSummary.salesCount + woGoodsCount;
+      // Tổng doanh thu hàng hóa = Sales + phụ tùng trong WO
+      const goodsRevenue = financialSummary.salesRevenue + totalWoPartsRevenue;
+      const goodsCount = financialSummary.salesCount + financialSummary.workOrdersCount;
+
+      // Doanh thu dịch vụ = tiền công từ WO
+      const serviceRevenue = totalLaborRevenue;
+      const serviceWoCount = filteredWOs.filter((wo: any) => {
+        const lc = Number(wo.laborCost ?? wo.laborcost ?? wo.labor_cost ?? 0);
+        return lc > 0;
+      }).length;
 
       // Thuế hàng hóa: 1% GTGT + 0.5% TNCN
       const goodsGTGT = Math.round(goodsRevenue * 1 / 100);
       const goodsTNCN = Math.round(goodsRevenue * 0.5 / 100);
       const goodsTax = goodsGTGT + goodsTNCN;
 
-      // Thuế dịch vụ sửa chữa (có tiền công): 3% GTGT + 1.5% TNCN
-      const serviceGTGT = Math.round(woServiceRevenue * 3 / 100);
-      const serviceTNCN = Math.round(woServiceRevenue * 1.5 / 100);
+      // Thuế dịch vụ (tiền công): 3% GTGT + 1.5% TNCN
+      const serviceGTGT = Math.round(serviceRevenue * 3 / 100);
+      const serviceTNCN = Math.round(serviceRevenue * 1.5 / 100);
       const serviceTax = serviceGTGT + serviceTNCN;
 
       const totalTax = goodsTax + serviceTax;
@@ -199,7 +203,7 @@ const TaxReportExport: React.FC = () => {
         totalRevenue,
         totalVAT: totalTax,
         transactionCount,
-        taxRate: 0, // mixed rates
+        taxRate: 0,
         financialSummary,
         // Chi tiết tách riêng
         goodsRevenue,
@@ -207,11 +211,11 @@ const TaxReportExport: React.FC = () => {
         goodsGTGT,
         goodsTNCN,
         goodsCount,
-        woServiceRevenue,
+        woServiceRevenue: serviceRevenue,
         serviceTax,
         serviceGTGT,
         serviceTNCN,
-        woServiceCount,
+        woServiceCount: serviceWoCount,
       };
     }
 
@@ -546,7 +550,7 @@ const TaxReportExport: React.FC = () => {
                   </tr>
                   <tr className="bg-white dark:bg-slate-800">
                     <td className="px-4 py-2.5 text-slate-900 dark:text-slate-100">
-                      <div className="font-medium">Dịch vụ sửa chữa</div>
+                      <div className="font-medium">Tiền công sửa chữa</div>
                       <div className="text-[10px] text-slate-500 dark:text-slate-400">{(previewStats as any).woServiceCount || 0} phiếu có tiền công • 3% + 1.5%</div>
                     </td>
                     <td className="px-4 py-2.5 text-right text-slate-900 dark:text-slate-100">{formatCurrency((previewStats as any).woServiceRevenue || 0)}</td>

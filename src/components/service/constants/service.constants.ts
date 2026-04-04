@@ -21,6 +21,11 @@ export const POPULAR_MOTORCYCLES = [
   "Honda Blade 110",
   "Honda Future 125",
   "Honda Future Neo",
+  // Nhập khẩu Thái Lan
+  "Honda Wave i",
+  "Honda Wave 110i",
+  "Honda Wave 125i",
+  "Honda Dream 125",
   // Xe côn tay
   "Honda Winner X",
   "Honda Winner 150",
@@ -63,6 +68,10 @@ export const POPULAR_MOTORCYCLES = [
   "Honda Forza 350",
   "Honda Giorno",
   "Honda Stylo 160",
+  "Honda Scoopy i",
+  "Honda Click 125i",
+  "Honda Click 150i",
+  "Honda Click 160i",
   // Xe cũ/ngưng sản xuất
   "Honda @",
   "Honda Click",
@@ -234,6 +243,17 @@ export const POPULAR_MOTORCYCLES = [
   "Kymco X-Town 300",
   "Kymco Downtown",
   "Kymco Visar",
+
+  // === ESPERO (50cc) ===
+  "Espero 50cc",
+  "Espero Classic 50cc",
+  "Espero Crea 50cc",
+  "Espero Diamond Pro 50cc",
+  "Espero Gogo 50cc",
+  "Espero Monza 50cc",
+  "Espero Sirius 50cc",
+  "Espero Velia 50cc",
+  "Espero Wave 50cc",
 
   // === VINFAST (Xe điện) ===
   "VinFast Klara",

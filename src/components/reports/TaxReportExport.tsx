@@ -21,6 +21,194 @@ import { calculateFinancialSummary, getWorkOrderAccountingDate } from "../../lib
  * Component để xuất báo cáo thuế theo định dạng XML chuẩn Tổng cục Thuế
  */
 
+type TrackedTaxProduct = {
+  label: string;
+  aliases: string[];
+};
+
+const TRACKED_TAX_PRODUCTS: TrackedTaxProduct[] = [
+  {
+    label: "Bình pin khởi động NL5A 12v6Ah - Cao",
+    aliases: ["binh pin khoi dong nl5a 12v6ah cao", "nl5a 12v6ah"],
+  },
+  {
+    label: "Bình pin khởi động NL5S 12v6Ah - Lùn",
+    aliases: ["binh pin khoi dong nl5s 12v6ah lun", "nl5s 12v6ah"],
+  },
+  {
+    label: "Bình pin khởi động NL6V 12v6Ah - Lỡ",
+    aliases: ["binh pin khoi dong nl6v 12v6ah lo", "nl6v 12v6ah"],
+  },
+  {
+    label: "Khối pin 48V15Ah",
+    aliases: ["khoi pin 48v15ah", "48v15ah"],
+  },
+  {
+    label: "Khối pin 24v15Ah",
+    aliases: ["khoi pin 24v15ah", "24v15ah"],
+  },
+  {
+    label: "Sạc pin 24v3a",
+    aliases: ["sac pin 24v3a", "24v3a"],
+  },
+  {
+    label: "Sạc pin 48V3A - 54,4V",
+    aliases: ["sac pin 48v3a 54 4v", "48v3a 54 4v", "48v3a"],
+  },
+];
+
+function normalizeForTaxProduct(value: string): string {
+  return String(value || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+function getTrackedProductIndexByName(name: string): number {
+  const normalized = normalizeForTaxProduct(name);
+  if (!normalized) return -1;
+
+  return TRACKED_TAX_PRODUCTS.findIndex((product) =>
+    product.aliases.some((alias) => normalized.includes(alias))
+  );
+}
+
+function getLineAmount(line: any): number {
+  const quantity = Number(line?.quantity ?? 0) || 0;
+  const unitPrice = Number(
+    line?.sellingPrice ?? line?.price ?? line?.unitPrice ?? line?.unitprice ?? 0
+  ) || 0;
+  return quantity * unitPrice;
+}
+
+function removeTrackedProductsFromTaxData(
+  sales: any[],
+  workOrders: any[]
+): { sales: any[]; workOrders: any[]; excludedRevenue: number } {
+  let excludedRevenue = 0;
+
+  const adjustedSales = (sales || [])
+    .map((sale: any) => {
+      const items = Array.isArray(sale?.items) ? sale.items : [];
+      const subtotal = items.reduce((sum: number, item: any) => sum + getLineAmount(item), 0);
+      const saleTotal = Number(sale?.total ?? subtotal) || 0;
+      const ratio = subtotal > 0 ? saleTotal / subtotal : 1;
+
+      const keptItems = items.filter((item: any) => {
+        const productName = item?.partName || item?.partname || item?.name || "";
+        return getTrackedProductIndexByName(productName) < 0;
+      });
+      const keptSubtotal = keptItems.reduce((sum: number, item: any) => sum + getLineAmount(item), 0);
+      const excludedSubtotal = Math.max(0, subtotal - keptSubtotal);
+      const excludedAmount = excludedSubtotal * ratio;
+      const adjustedTotal = Math.max(0, saleTotal - excludedAmount);
+
+      excludedRevenue += excludedAmount;
+
+      return {
+        ...sale,
+        items: keptItems,
+        subtotal: keptSubtotal,
+        total: adjustedTotal,
+      };
+    })
+    .filter((sale: any) => Number(sale?.total ?? 0) > 0);
+
+  const adjustedWorkOrders = (workOrders || [])
+    .map((wo: any) => {
+      const partsUsed = Array.isArray(wo?.partsUsed)
+        ? wo.partsUsed
+        : Array.isArray(wo?.partsused)
+          ? wo.partsused
+          : [];
+      const additionalServices = Array.isArray(wo?.additionalServices)
+        ? wo.additionalServices
+        : Array.isArray(wo?.additionalservices)
+          ? wo.additionalservices
+          : [];
+
+      const partsTotal = partsUsed.reduce((sum: number, p: any) => sum + getLineAmount(p), 0);
+      const servicesTotal = additionalServices.reduce(
+        (sum: number, s: any) => sum + getLineAmount(s),
+        0
+      );
+      const laborCost = Number(wo?.laborCost ?? wo?.laborcost ?? wo?.labor_cost ?? 0) || 0;
+      const discount = Number(wo?.discount ?? 0) || 0;
+
+      const theoreticalTotal = partsTotal + laborCost + servicesTotal - discount;
+      const totalPaid =
+        Number(wo?.totalPaid ?? wo?.totalpaid ?? wo?.total ?? theoreticalTotal) || 0;
+      const ratio = theoreticalTotal > 0 ? totalPaid / theoreticalTotal : 1;
+
+      const keptParts = partsUsed.filter((part: any) => {
+        const productName = part?.partName || part?.partname || part?.name || "";
+        return getTrackedProductIndexByName(productName) < 0;
+      });
+      const keptPartsTotal = keptParts.reduce((sum: number, p: any) => sum + getLineAmount(p), 0);
+      const excludedPartsTotal = Math.max(0, partsTotal - keptPartsTotal);
+      const excludedAmount = excludedPartsTotal * ratio;
+      const adjustedTotalPaid = Math.max(0, totalPaid - excludedAmount);
+
+      excludedRevenue += excludedAmount;
+
+      return {
+        ...wo,
+        partsUsed: keptParts,
+        partsused: keptParts,
+        totalPaid: adjustedTotalPaid,
+        totalpaid: adjustedTotalPaid,
+        total: adjustedTotalPaid,
+      };
+    })
+    .filter((wo: any) => Number(wo?.totalPaid ?? wo?.totalpaid ?? wo?.total ?? 0) > 0);
+
+  return {
+    sales: adjustedSales,
+    workOrders: adjustedWorkOrders,
+    excludedRevenue: Math.round(excludedRevenue),
+  };
+}
+
+function getTotalSalesRevenue(sales: any[]): number {
+  return (sales || []).reduce((sum: number, sale: any) => {
+    return sum + (Number(sale?.total) || 0);
+  }, 0);
+}
+
+function getTotalWorkOrderRevenue(workOrders: any[]): number {
+  return (workOrders || []).reduce((sum: number, wo: any) => {
+    return sum + (Number(wo?.totalPaid ?? wo?.totalpaid ?? wo?.total) || 0);
+  }, 0);
+}
+
+function getGoodsAndServiceRevenueFromWorkOrders(workOrders: any[]): {
+  woPartsRevenue: number;
+  woLaborRevenue: number;
+  serviceWoCount: number;
+} {
+  let woPartsRevenue = 0;
+  let woLaborRevenue = 0;
+  let serviceWoCount = 0;
+
+  (workOrders || []).forEach((wo: any) => {
+    const laborCost = Number(wo?.laborCost ?? wo?.laborcost ?? wo?.labor_cost ?? 0);
+    const woTotal = Number(wo?.totalPaid ?? wo?.totalpaid ?? wo?.total ?? 0);
+    const labor = Math.min(laborCost, woTotal);
+    const parts = Math.max(0, woTotal - labor);
+
+    woLaborRevenue += labor;
+    woPartsRevenue += parts;
+
+    if (laborCost > 0) {
+      serviceWoCount += 1;
+    }
+  });
+
+  return { woPartsRevenue, woLaborRevenue, serviceWoCount };
+}
+
 const TaxReportExport: React.FC = () => {
   const { currentBranchId } = useAppContext();
 
@@ -157,35 +345,26 @@ const TaxReportExport: React.FC = () => {
       //   + laborCost → phần tiền công → thuế dịch vụ 4.5%
       //   + Phần còn lại (phụ tùng) → thuế hàng hóa 1.5%
 
-      const totalRevenue = financialSummary.totalRevenue;
-      const transactionCount = financialSummary.salesCount + financialSummary.workOrdersCount;
-
-      // Tách từng Work Order: tiền công vs phụ tùng
       const filteredWOs = financialSummary.filteredWorkOrders as any[];
-      let totalLaborRevenue = 0;  // Tổng tiền công → dịch vụ 4.5%
-      let totalWoPartsRevenue = 0; // Tổng phụ tùng trong WO → hàng hóa 1.5%
+      const sanitized = removeTrackedProductsFromTaxData(
+        financialSummary.filteredSales,
+        filteredWOs
+      );
 
-      filteredWOs.forEach((wo: any) => {
-        const laborCost = Number(wo.laborCost ?? wo.laborcost ?? wo.labor_cost ?? 0);
-        const woTotal = Number(wo.totalPaid ?? wo.totalpaid ?? wo.total ?? 0);
-        // Tiền công = laborCost (cap tại woTotal để tránh âm)
-        const labor = Math.min(laborCost, woTotal);
-        // Phần còn lại = phụ tùng
-        const parts = Math.max(0, woTotal - labor);
-        totalLaborRevenue += labor;
-        totalWoPartsRevenue += parts;
-      });
+      const totalSalesRevenue = getTotalSalesRevenue(sanitized.sales);
+      const totalWorkOrderRevenue = getTotalWorkOrderRevenue(sanitized.workOrders);
+      const totalRevenue = totalSalesRevenue + totalWorkOrderRevenue;
+      const transactionCount = sanitized.sales.length + sanitized.workOrders.length;
+
+      const woSplit = getGoodsAndServiceRevenueFromWorkOrders(sanitized.workOrders);
 
       // Tổng doanh thu hàng hóa = Sales + phụ tùng trong WO
-      const goodsRevenue = financialSummary.salesRevenue + totalWoPartsRevenue;
-      const goodsCount = financialSummary.salesCount + financialSummary.workOrdersCount;
+      const goodsRevenue = totalSalesRevenue + woSplit.woPartsRevenue;
+      const goodsCount = sanitized.sales.length + sanitized.workOrders.length;
 
       // Doanh thu dịch vụ = tiền công từ WO
-      const serviceRevenue = totalLaborRevenue;
-      const serviceWoCount = filteredWOs.filter((wo: any) => {
-        const lc = Number(wo.laborCost ?? wo.laborcost ?? wo.labor_cost ?? 0);
-        return lc > 0;
-      }).length;
+      const serviceRevenue = woSplit.woLaborRevenue;
+      const serviceWoCount = woSplit.serviceWoCount;
 
       // Thuế hàng hóa: 1% GTGT + 0.5% TNCN
       const goodsGTGT = Math.round(goodsRevenue * 1 / 100);
@@ -205,6 +384,9 @@ const TaxReportExport: React.FC = () => {
         transactionCount,
         taxRate: 0,
         financialSummary,
+        taxSales: sanitized.sales,
+        taxWorkOrders: sanitized.workOrders,
+        excludedTrackedRevenue: sanitized.excludedRevenue,
         // Chi tiết tách riêng
         goodsRevenue,
         goodsTax,
@@ -259,8 +441,12 @@ const TaxReportExport: React.FC = () => {
       
       // Sử dụng dữ liệu đã lọc đúng từ financialSummary
       const { financialSummary } = previewStats;
-      const sales = financialSummary.filteredSales;
-      const workOrders = financialSummary.filteredWorkOrders;
+      const sales = reportType === "s1a-hkd"
+        ? ((previewStats as any).taxSales || financialSummary.filteredSales)
+        : financialSummary.filteredSales;
+      const workOrders = reportType === "s1a-hkd"
+        ? ((previewStats as any).taxWorkOrders || financialSummary.filteredWorkOrders)
+        : financialSummary.filteredWorkOrders;
       const { cashTransactions } = getFilteredData();
 
       if (sales.length === 0 && workOrders.length === 0) {
@@ -313,313 +499,259 @@ const TaxReportExport: React.FC = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
+    <div className="max-w-5xl mx-auto p-4 md:p-6 space-y-5">
       {/* Header */}
-      <div className="mb-6">
-        <div className="flex items-center gap-3 mb-2">
-          <FileText className="w-8 h-8 text-blue-600" />
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-            Xuất báo cáo thuế
-          </h1>
-        </div>
-        <p className="text-sm text-slate-600 dark:text-slate-400">
-          Xuất file XML theo định dạng chuẩn Tổng cục Thuế để nhập vào phần mềm
-          kê khai thuế
-        </p>
-      </div>
-
-      {/* Info Banner */}
-      <div className="mb-6 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
-        <div className="flex gap-3">
-          <Info className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
-          <div className="text-sm text-amber-900 dark:text-amber-100">
-            <p className="font-semibold mb-1">💡 Hộ kinh doanh dưới 500 triệu/năm:</p>
-            <p>Chỉ cần xuất <strong>Sổ doanh thu S1a-HKD</strong> (file Excel) - không cần kê khai VAT.</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <div className="flex items-center gap-2.5 mb-1">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
+              <FileText className="w-5 h-5 text-white" />
+            </div>
+            <h1 className="text-xl font-bold text-slate-900 dark:text-white">
+              Xuất báo cáo thuế
+            </h1>
           </div>
+          <p className="text-xs text-slate-500 dark:text-slate-400 ml-[46px]">
+            Xuất file theo định dạng chuẩn Tổng cục Thuế
+          </p>
+        </div>
+        {/* Period Badge */}
+        <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-slate-100 dark:bg-slate-700/50 rounded-full">
+          <span className="text-xs text-slate-500 dark:text-slate-400">Kỳ:</span>
+          <span className="text-xs font-semibold text-slate-800 dark:text-white">
+            {periodType === "month"
+              ? `T${selectedMonth}/${selectedYear}`
+              : `Q${selectedQuarter}/${selectedYear}`}
+          </span>
+          <span className="text-[10px] text-slate-400 dark:text-slate-500">
+            ({formatDate(getDateRange().startDate)} - {formatDate(getDateRange().endDate)})
+          </span>
         </div>
       </div>
 
-      {/* Configuration */}
-      <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-6 mb-6">
-        <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
-          Cấu hình báo cáo
-        </h2>
+      {/* Info Banner - compact */}
+      {reportType === "s1a-hkd" && (
+        <div className="flex items-center gap-2.5 px-4 py-2.5 bg-amber-50 dark:bg-amber-900/15 border border-amber-200/60 dark:border-amber-800/40 rounded-lg">
+          <Info className="w-4 h-4 text-amber-500 flex-shrink-0" />
+          <p className="text-xs text-amber-800 dark:text-amber-200">
+            <strong>Hộ kinh doanh:</strong> Chỉ cần xuất <strong>Sổ S1a-HKD</strong> (Excel) — không cần kê khai VAT.
+          </p>
+        </div>
+      )}
 
-        <div className="space-y-4">
-          {/* Report Type */}
+      {/* Configuration - 2 column layout */}
+      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-5">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-5">
+          {/* Left: Report Type */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+            <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2.5">
               Loại báo cáo
             </label>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              {/* S1a-HKD - Recommended for small businesses */}
+            <div className="grid grid-cols-3 gap-2.5">
               <button
                 onClick={() => setReportType("s1a-hkd")}
                 className={`p-3 rounded-lg border-2 transition-all text-left ${
                   reportType === "s1a-hkd"
-                    ? "border-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 ring-2 ring-emerald-200"
-                    : "border-slate-300 dark:border-slate-600 hover:border-slate-400"
+                    ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20 ring-1 ring-emerald-200 dark:ring-emerald-800"
+                    : "border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500"
                 }`}
               >
-                <div className="flex items-center gap-2">
-                  <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
-                  <span className="text-sm font-semibold text-slate-900 dark:text-white">
-                    Sổ S1a-HKD
-                  </span>
-                  <span className="text-[10px] px-1.5 py-0.5 bg-emerald-100 text-emerald-700 rounded-full font-medium">
-                    Đề xuất
-                  </span>
+                <div className="flex items-center gap-1.5">
+                  <FileSpreadsheet className={`w-4 h-4 ${reportType === "s1a-hkd" ? "text-emerald-600" : "text-slate-400"}`} />
+                  <span className="text-sm font-semibold text-slate-900 dark:text-white">S1a-HKD</span>
                 </div>
-                <div className="text-xs text-slate-600 dark:text-slate-400 mt-1">
-                  Doanh thu &lt; 500tr/năm (Excel)
-                </div>
+                <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">Hộ kinh doanh (Excel)</div>
               </button>
 
               <button
                 onClick={() => setReportType("vat")}
                 className={`p-3 rounded-lg border-2 transition-all text-left ${
                   reportType === "vat"
-                    ? "border-blue-600 bg-blue-50 dark:bg-blue-900/20"
-                    : "border-slate-300 dark:border-slate-600 hover:border-slate-400"
+                    ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20 ring-1 ring-blue-200 dark:ring-blue-800"
+                    : "border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500"
                 }`}
               >
-                <div className="flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-blue-600" />
-                  <span className="text-sm font-semibold text-slate-900 dark:text-white">
-                    Tờ khai VAT
-                  </span>
+                <div className="flex items-center gap-1.5">
+                  <FileText className={`w-4 h-4 ${reportType === "vat" ? "text-blue-600" : "text-slate-400"}`} />
+                  <span className="text-sm font-semibold text-slate-900 dark:text-white">Tờ khai VAT</span>
                 </div>
-                <div className="text-xs text-slate-600 dark:text-slate-400 mt-1">
-                  01/GTGT (XML)
-                </div>
+                <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">01/GTGT (XML)</div>
               </button>
 
               <button
                 onClick={() => setReportType("revenue")}
                 className={`p-3 rounded-lg border-2 transition-all text-left ${
                   reportType === "revenue"
-                    ? "border-blue-600 bg-blue-50 dark:bg-blue-900/20"
-                    : "border-slate-300 dark:border-slate-600 hover:border-slate-400"
+                    ? "border-purple-500 bg-purple-50 dark:bg-purple-900/20 ring-1 ring-purple-200 dark:ring-purple-800"
+                    : "border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500"
                 }`}
               >
-                <div className="flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-purple-600" />
-                  <span className="text-sm font-semibold text-slate-900 dark:text-white">
-                    Báo cáo doanh thu
-                  </span>
+                <div className="flex items-center gap-1.5">
+                  <FileText className={`w-4 h-4 ${reportType === "revenue" ? "text-purple-600" : "text-slate-400"}`} />
+                  <span className="text-sm font-semibold text-slate-900 dark:text-white">Doanh thu</span>
                 </div>
-                <div className="text-xs text-slate-600 dark:text-slate-400 mt-1">
-                  Chi tiết theo kỳ (XML)
-                </div>
+                <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">Chi tiết (XML)</div>
               </button>
             </div>
           </div>
 
-          {/* Period Type */}
-          <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-              Kỳ báo cáo
-            </label>
-            <div className="grid grid-cols-2 gap-3">
+          {/* Right: Period Selectors - compact vertical stack */}
+          <div className="lg:w-56 lg:border-l lg:border-slate-200 lg:dark:border-slate-700 lg:pl-5 space-y-3">
+            {/* Period Toggle */}
+            <div className="flex rounded-lg border border-slate-200 dark:border-slate-600 overflow-hidden">
               <button
                 onClick={() => setPeriodType("month")}
-                className={`px-4 py-2 rounded-lg border-2 transition-all ${
+                className={`flex-1 px-3 py-1.5 text-xs font-medium transition-colors ${
                   periodType === "month"
-                    ? "border-blue-600 bg-blue-50 dark:bg-blue-900/20 text-blue-600 font-semibold"
-                    : "border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300"
+                    ? "bg-blue-600 text-white"
+                    : "bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-600"
                 }`}
               >
-                Theo tháng
+                Tháng
               </button>
               <button
                 onClick={() => setPeriodType("quarter")}
-                className={`px-4 py-2 rounded-lg border-2 transition-all ${
+                className={`flex-1 px-3 py-1.5 text-xs font-medium transition-colors ${
                   periodType === "quarter"
-                    ? "border-blue-600 bg-blue-50 dark:bg-blue-900/20 text-blue-600 font-semibold"
-                    : "border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300"
+                    ? "bg-blue-600 text-white"
+                    : "bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-600"
                 }`}
               >
-                Theo quý
+                Quý
               </button>
             </div>
-          </div>
 
-          {/* Year Selection */}
-          <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-              Năm
-            </label>
-            <select
-              value={selectedYear}
-              onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-            >
-              {[2023, 2024, 2025, 2026].map((year) => (
-                <option key={year} value={year}>
-                  {year}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Month/Quarter Selection */}
-          {periodType === "month" ? (
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                Tháng
-              </label>
+            {/* Year & Month/Quarter in a row */}
+            <div className="grid grid-cols-2 gap-2">
               <select
-                value={selectedMonth}
-                onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
-                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                value={selectedYear}
+                onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+                className="px-2.5 py-1.5 text-sm border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
               >
-                {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => (
-                  <option key={month} value={month}>
-                    Tháng {month}
-                  </option>
+                {[2023, 2024, 2025, 2026].map((year) => (
+                  <option key={year} value={year}>{year}</option>
                 ))}
               </select>
+
+              {periodType === "month" ? (
+                <select
+                  value={selectedMonth}
+                  onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
+                  className="px-2.5 py-1.5 text-sm border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                >
+                  {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => (
+                    <option key={month} value={month}>Tháng {month}</option>
+                  ))}
+                </select>
+              ) : (
+                <select
+                  value={selectedQuarter}
+                  onChange={(e) => setSelectedQuarter(parseInt(e.target.value))}
+                  className="px-2.5 py-1.5 text-sm border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                >
+                  {[1, 2, 3, 4].map((q) => (
+                    <option key={q} value={q}>Quý {q}</option>
+                  ))}
+                </select>
+              )}
             </div>
-          ) : (
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                Quý
-              </label>
-              <select
-                value={selectedQuarter}
-                onChange={(e) => setSelectedQuarter(parseInt(e.target.value))}
-                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-              >
-                {[1, 2, 3, 4].map((quarter) => (
-                  <option key={quarter} value={quarter}>
-                    Quý {quarter}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
+          </div>
         </div>
       </div>
 
-      {/* Preview Stats */}
-      <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-6 mb-6">
-        <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
-          Tổng quan dữ liệu
-        </h2>
-
-        {reportType === "s1a-hkd" ? (
-          /* === S1a-HKD: Bảng chi tiết thuế tách theo loại doanh thu === */
-          <>
-            <div className="grid grid-cols-3 gap-4">
-              <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                <div className="text-sm text-blue-700 dark:text-blue-400 mb-1">Số giao dịch</div>
-                <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{previewStats.transactionCount}</div>
-              </div>
-              <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                <div className="text-sm text-green-700 dark:text-green-400 mb-1">Tổng doanh thu</div>
-                <div className="text-2xl font-bold text-green-600 dark:text-green-400">{formatCurrency(previewStats.totalRevenue)}</div>
-              </div>
-              <div className="p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
-                <div className="text-sm text-orange-700 dark:text-orange-400 mb-1">Tổng thuế phải nộp</div>
-                <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">{formatCurrency(previewStats.totalVAT)}</div>
-              </div>
-            </div>
-
-            {/* Chi tiết thuế theo loại doanh thu */}
-            <div className="mt-4 border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden">
-              <table className="w-full text-sm">
-                <thead className="bg-slate-50 dark:bg-slate-700">
-                  <tr>
-                    <th className="px-4 py-2.5 text-left font-medium text-slate-600 dark:text-slate-300">Loại doanh thu</th>
-                    <th className="px-4 py-2.5 text-right font-medium text-slate-600 dark:text-slate-300">Doanh thu</th>
-                    <th className="px-4 py-2.5 text-right font-medium text-slate-600 dark:text-slate-300">GTGT</th>
-                    <th className="px-4 py-2.5 text-right font-medium text-slate-600 dark:text-slate-300">TNCN</th>
-                    <th className="px-4 py-2.5 text-right font-medium text-slate-600 dark:text-slate-300">Tổng thuế</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
-                  <tr className="bg-white dark:bg-slate-800">
-                    <td className="px-4 py-2.5 text-slate-900 dark:text-slate-100">
-                      <div className="font-medium">Bán hàng / Phụ tùng</div>
-                      <div className="text-[10px] text-slate-500 dark:text-slate-400">{(previewStats as any).goodsCount || 0} đơn • 1% + 0.5%</div>
-                    </td>
-                    <td className="px-4 py-2.5 text-right text-slate-900 dark:text-slate-100">{formatCurrency((previewStats as any).goodsRevenue || 0)}</td>
-                    <td className="px-4 py-2.5 text-right text-orange-600 dark:text-orange-400">{formatCurrency((previewStats as any).goodsGTGT || 0)}</td>
-                    <td className="px-4 py-2.5 text-right text-purple-600 dark:text-purple-400">{formatCurrency((previewStats as any).goodsTNCN || 0)}</td>
-                    <td className="px-4 py-2.5 text-right font-semibold text-slate-900 dark:text-slate-100">{formatCurrency((previewStats as any).goodsTax || 0)}</td>
-                  </tr>
-                  <tr className="bg-white dark:bg-slate-800">
-                    <td className="px-4 py-2.5 text-slate-900 dark:text-slate-100">
-                      <div className="font-medium">Tiền công sửa chữa</div>
-                      <div className="text-[10px] text-slate-500 dark:text-slate-400">{(previewStats as any).woServiceCount || 0} phiếu có tiền công • 3% + 1.5%</div>
-                    </td>
-                    <td className="px-4 py-2.5 text-right text-slate-900 dark:text-slate-100">{formatCurrency((previewStats as any).woServiceRevenue || 0)}</td>
-                    <td className="px-4 py-2.5 text-right text-orange-600 dark:text-orange-400">{formatCurrency((previewStats as any).serviceGTGT || 0)}</td>
-                    <td className="px-4 py-2.5 text-right text-purple-600 dark:text-purple-400">{formatCurrency((previewStats as any).serviceTNCN || 0)}</td>
-                    <td className="px-4 py-2.5 text-right font-semibold text-slate-900 dark:text-slate-100">{formatCurrency((previewStats as any).serviceTax || 0)}</td>
-                  </tr>
-                </tbody>
-                <tfoot className="bg-slate-50 dark:bg-slate-700/50">
-                  <tr>
-                    <td className="px-4 py-2.5 font-semibold text-slate-900 dark:text-white">Tổng cộng</td>
-                    <td className="px-4 py-2.5 text-right font-semibold text-slate-900 dark:text-white">{formatCurrency(previewStats.totalRevenue)}</td>
-                    <td className="px-4 py-2.5 text-right font-semibold text-orange-600 dark:text-orange-400">{formatCurrency(((previewStats as any).goodsGTGT || 0) + ((previewStats as any).serviceGTGT || 0))}</td>
-                    <td className="px-4 py-2.5 text-right font-semibold text-purple-600 dark:text-purple-400">{formatCurrency(((previewStats as any).goodsTNCN || 0) + ((previewStats as any).serviceTNCN || 0))}</td>
-                    <td className="px-4 py-2.5 text-right font-bold text-orange-600 dark:text-orange-400">{formatCurrency(previewStats.totalVAT)}</td>
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
-          </>
-        ) : (
-          /* === VAT / Revenue report: Giữ nguyên layout cũ === */
-          <div className="grid grid-cols-3 gap-4">
-            <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-              <div className="text-sm text-blue-700 dark:text-blue-400 mb-1">Số giao dịch</div>
-              <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{previewStats.transactionCount}</div>
-            </div>
-            <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
-              <div className="text-sm text-green-700 dark:text-green-400 mb-1">Doanh thu chưa VAT</div>
-              <div className="text-2xl font-bold text-green-600 dark:text-green-400">{formatCurrency(previewStats.totalRevenue)}</div>
-            </div>
-            <div className="p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
-              <div className="text-sm text-orange-700 dark:text-orange-400 mb-1">Thuế VAT</div>
-              <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">{formatCurrency(previewStats.totalVAT)}</div>
-            </div>
+      {/* Stats Overview */}
+      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+        {/* Summary Cards */}
+        <div className="grid grid-cols-3 divide-x divide-slate-200 dark:divide-slate-700">
+          <div className="p-4 md:p-5">
+            <div className="text-[11px] font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1">Giao dịch</div>
+            <div className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white">{previewStats.transactionCount}</div>
           </div>
-        )}
-
-        <div className="mt-4 p-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-slate-600 dark:text-slate-400">
-              Kỳ báo cáo:
-            </span>
-            <span className="font-semibold text-slate-900 dark:text-white">
-              {periodType === "month"
-                ? `Tháng ${selectedMonth}/${selectedYear}`
-                : `Quý ${selectedQuarter}/${selectedYear}`}
-            </span>
+          <div className="p-4 md:p-5">
+            <div className="text-[11px] font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1">
+              {reportType === "s1a-hkd" ? "Tổng doanh thu" : "Doanh thu chưa VAT"}
+            </div>
+            <div className="text-2xl md:text-3xl font-bold text-emerald-600 dark:text-emerald-400">{formatCurrency(previewStats.totalRevenue)}</div>
           </div>
-          <div className="flex items-center justify-between text-sm mt-2">
-            <span className="text-slate-600 dark:text-slate-400">Từ ngày:</span>
-            <span className="font-semibold text-slate-900 dark:text-white">
-              {formatDate(getDateRange().startDate)} -{" "}
-              {formatDate(getDateRange().endDate)}
-            </span>
+          <div className="p-4 md:p-5">
+            <div className="text-[11px] font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1">
+              {reportType === "s1a-hkd" ? "Thuế phải nộp" : "Thuế VAT"}
+            </div>
+            <div className="text-2xl md:text-3xl font-bold text-orange-500 dark:text-orange-400">{formatCurrency(previewStats.totalVAT)}</div>
           </div>
         </div>
+
+        {/* Tax Breakdown Table - only for S1a-HKD */}
+        {reportType === "s1a-hkd" && (
+          <div className="border-t border-slate-200 dark:border-slate-700">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-slate-50/80 dark:bg-slate-700/50">
+                  <th className="px-4 md:px-5 py-2.5 text-left text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Phân loại</th>
+                  <th className="px-4 md:px-5 py-2.5 text-right text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Doanh thu</th>
+                  <th className="px-4 md:px-5 py-2.5 text-right text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">GTGT</th>
+                  <th className="px-4 md:px-5 py-2.5 text-right text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">TNCN</th>
+                  <th className="px-4 md:px-5 py-2.5 text-right text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Tổng thuế</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
+                {/* Hàng hóa / Phụ tùng */}
+                <tr className="hover:bg-slate-50/50 dark:hover:bg-slate-700/20 transition-colors">
+                  <td className="px-4 md:px-5 py-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0"></div>
+                      <div>
+                        <div className="font-medium text-slate-900 dark:text-slate-100">Hàng hóa / Phụ tùng</div>
+                        <div className="text-[10px] text-slate-400 dark:text-slate-500">{(previewStats as any).goodsCount || 0} đơn • Thuế suất 1% + 0.5%</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-4 md:px-5 py-3 text-right font-medium text-slate-900 dark:text-slate-100">{formatCurrency((previewStats as any).goodsRevenue || 0)}</td>
+                  <td className="px-4 md:px-5 py-3 text-right text-orange-600 dark:text-orange-400">{formatCurrency((previewStats as any).goodsGTGT || 0)}</td>
+                  <td className="px-4 md:px-5 py-3 text-right text-purple-600 dark:text-purple-400">{formatCurrency((previewStats as any).goodsTNCN || 0)}</td>
+                  <td className="px-4 md:px-5 py-3 text-right font-semibold text-slate-900 dark:text-slate-100">{formatCurrency((previewStats as any).goodsTax || 0)}</td>
+                </tr>
+                {/* Tiền công sửa chữa */}
+                <tr className="hover:bg-slate-50/50 dark:hover:bg-slate-700/20 transition-colors">
+                  <td className="px-4 md:px-5 py-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0"></div>
+                      <div>
+                        <div className="font-medium text-slate-900 dark:text-slate-100">Tiền công sửa chữa</div>
+                        <div className="text-[10px] text-slate-400 dark:text-slate-500">{(previewStats as any).woServiceCount || 0} phiếu • Thuế suất 3% + 1.5%</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-4 md:px-5 py-3 text-right font-medium text-slate-900 dark:text-slate-100">{formatCurrency((previewStats as any).woServiceRevenue || 0)}</td>
+                  <td className="px-4 md:px-5 py-3 text-right text-orange-600 dark:text-orange-400">{formatCurrency((previewStats as any).serviceGTGT || 0)}</td>
+                  <td className="px-4 md:px-5 py-3 text-right text-purple-600 dark:text-purple-400">{formatCurrency((previewStats as any).serviceTNCN || 0)}</td>
+                  <td className="px-4 md:px-5 py-3 text-right font-semibold text-slate-900 dark:text-slate-100">{formatCurrency((previewStats as any).serviceTax || 0)}</td>
+                </tr>
+              </tbody>
+              <tfoot>
+                <tr className="bg-slate-50 dark:bg-slate-700/40 border-t-2 border-slate-200 dark:border-slate-600">
+                  <td className="px-4 md:px-5 py-3 font-bold text-slate-900 dark:text-white">Tổng</td>
+                  <td className="px-4 md:px-5 py-3 text-right font-bold text-slate-900 dark:text-white">{formatCurrency(previewStats.totalRevenue)}</td>
+                  <td className="px-4 md:px-5 py-3 text-right font-bold text-orange-600 dark:text-orange-400">{formatCurrency(((previewStats as any).goodsGTGT || 0) + ((previewStats as any).serviceGTGT || 0))}</td>
+                  <td className="px-4 md:px-5 py-3 text-right font-bold text-purple-600 dark:text-purple-400">{formatCurrency(((previewStats as any).goodsTNCN || 0) + ((previewStats as any).serviceTNCN || 0))}</td>
+                  <td className="px-4 md:px-5 py-3 text-right font-bold text-orange-600 dark:text-orange-400 text-base">{formatCurrency(previewStats.totalVAT)}</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        )}
       </div>
 
       {/* Export Button */}
       <button
         onClick={handleExport}
         disabled={previewStats.transactionCount === 0}
-        className={`w-full py-3 rounded-lg font-semibold transition-all flex items-center justify-center gap-2 ${
+        className={`w-full py-3.5 rounded-xl font-semibold transition-all flex items-center justify-center gap-2 text-sm ${
           previewStats.transactionCount === 0
-            ? "bg-slate-300 dark:bg-slate-700 text-slate-500 cursor-not-allowed"
+            ? "bg-slate-200 dark:bg-slate-700 text-slate-400 dark:text-slate-500 cursor-not-allowed"
             : reportType === "s1a-hkd"
-              ? "bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white shadow-lg hover:shadow-xl"
-              : "bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg hover:shadow-xl"
+              ? "bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-lg shadow-emerald-500/25 hover:shadow-xl hover:shadow-emerald-500/30"
+              : "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/30"
         }`}
       >
         {reportType === "s1a-hkd" ? (
@@ -636,7 +768,7 @@ const TaxReportExport: React.FC = () => {
       </button>
 
       {previewStats.transactionCount === 0 && (
-        <p className="text-center text-sm text-slate-500 dark:text-slate-400 mt-2">
+        <p className="text-center text-xs text-slate-400 dark:text-slate-500">
           Không có dữ liệu trong kỳ này
         </p>
       )}

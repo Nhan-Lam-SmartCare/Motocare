@@ -5,6 +5,7 @@ import { useSalesRepo } from "../../hooks/useSalesRepository";
 import { useWorkOrders } from "../../hooks/useSupabase";
 import { useCashTxRepo } from "../../hooks/useCashTransactionsRepository";
 import { useParts } from "../../hooks/useSupabase";
+import { useStoreSettings } from "../../hooks/useStoreSettings";
 import { showToast } from "../../utils/toast";
 import { formatCurrency, formatDate } from "../../utils/format";
 import {
@@ -219,6 +220,7 @@ const TaxReportExport: React.FC = () => {
     branchId: currentBranchId,
   });
   const { data: partsData = [] } = useParts();
+  const { data: storeSettings } = useStoreSettings();
 
   // State
   const [reportType, setReportType] = useState<"vat" | "revenue" | "s1a-hkd">("s1a-hkd");
@@ -229,30 +231,43 @@ const TaxReportExport: React.FC = () => {
     Math.floor(new Date().getMonth() / 3) + 1
   );
 
-  // Organization info (should be fetched from settings)
+  const storeName = (storeSettings?.store_name || "MOTOCARE").trim();
+  const storeAddress = (storeSettings?.address || "123 Đường ABC, Quận 1, TP.HCM").trim();
+  const storePhone = (storeSettings?.phone || "028.1234.5678").trim();
+  const storeEmail = (storeSettings?.email || "contact@motocare.vn").trim();
+  const storeTaxCode = (storeSettings?.tax_code || "0123456789").trim();
+
+  const businessName = /^h[oộ]\s*kinh\s*doanh/i.test(storeName)
+    ? storeName
+    : `Hộ kinh doanh ${storeName}`;
+
+  // Organization info (from store settings with safe fallback)
   const organizationInfo: OrganizationTaxInfo = useMemo(
     () => ({
-      taxCode: "0123456789", // TODO: Fetch from settings
-      name: "CÔNG TY TNHH MOTOCARE",
-      address: "123 Đường ABC, Quận 1, TP.HCM",
-      phone: "028.1234.5678",
-      email: "contact@motocare.vn",
+      taxCode: storeTaxCode,
+      name: storeName,
+      address: storeAddress,
+      phone: storePhone,
+      email: storeEmail,
       taxAuthority: "Cục Thuế TP. Hồ Chí Minh",
       taxDepartment: "Chi cục Thuế Quận 1",
-      legalRepresentative: "Nguyễn Văn A",
-      accountantName: "Trần Thị B",
-      accountantPhone: "090.123.4567",
+      legalRepresentative: "Chủ hộ kinh doanh",
+      accountantName: "",
+      accountantPhone: storePhone,
     }),
-    []
+    [storeAddress, storeEmail, storeName, storePhone, storeTaxCode]
   );
 
-  // Business info for S1a-HKD (Hộ kinh doanh)
-  const businessInfo: BusinessInfo = {
-    businessName: "Hộ kinh doanh MOTOCARE", // TODO: Fetch from settings
-    taxCode: "0123456789",
-    address: "123 Đường ABC, Quận 1, TP.HCM",
-    businessLocation: "123 Đường ABC, Quận 1, TP.HCM",
-  };
+  // Business info for S1a-HKD (from store settings)
+  const businessInfo: BusinessInfo = useMemo(
+    () => ({
+      businessName,
+      taxCode: storeTaxCode,
+      address: storeAddress,
+      businessLocation: storeAddress,
+    }),
+    [businessName, storeAddress, storeTaxCode]
+  );
 
   // Calculate date range
   const getDateRange = useCallback(() => {

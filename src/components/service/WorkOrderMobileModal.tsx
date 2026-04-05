@@ -79,6 +79,33 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
 }) => {
   const { profile } = useAuth();
   const profileId = (profile as any)?.id || (profile as any)?.user_id || "anon";
+  const currentTechnicianId = useMemo(() => {
+    if (profile?.role !== "staff") return "";
+
+    const profileAny = profile as any;
+    const profileUserId = profileAny?.id;
+    const profileEmail = String(profileAny?.email || "").toLowerCase();
+    const profileName = profileAny?.name || profileAny?.full_name || "";
+
+    if (profileUserId) {
+      const byId = employees.find((e: any) => e?.id === profileUserId)?.id;
+      if (byId) return byId;
+    }
+
+    if (profileEmail) {
+      const byEmail = employees.find(
+        (e: any) => String(e?.email || "").toLowerCase() === profileEmail
+      )?.id;
+      if (byEmail) return byEmail;
+    }
+
+    if (profileName) {
+      const byName = employees.find((e: any) => e?.name === profileName)?.id;
+      if (byName) return byName;
+    }
+
+    return "";
+  }, [profile, employees]);
   
   const WORK_ORDER_DRAFT_VERSION = 1 as const;
   const WORK_ORDER_DRAFT_TTL_MS = 24 * 60 * 60 * 1000; // 24h
@@ -188,7 +215,7 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
     (workOrder?.status as WorkOrderStatus) || WORK_ORDER_STATUS.RECEIVED
   );
   const [selectedTechnicianId, setSelectedTechnicianId] = useState(
-    employees.find((e) => e.name === workOrder?.technicianName)?.id || ""
+    employees.find((e) => e.name === workOrder?.technicianName)?.id || currentTechnicianId
   );
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(
     null
@@ -262,7 +289,7 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
       }
     } else {
       setStatus(WORK_ORDER_STATUS.RECEIVED);
-      setSelectedTechnicianId("");
+      setSelectedTechnicianId(currentTechnicianId);
       setIssueDescription("");
       setLaborCost(0);
       setDiscount(0);
@@ -278,7 +305,17 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
       setPartialAmount(0);
       setShowPaymentInput(false);
     }
-  }, [workOrder, initialCustomer, initialVehicle, employees]);
+  }, [workOrder, initialCustomer, initialVehicle, employees, currentTechnicianId]);
+
+  // Keep default technician applied for new order if employees/profile loads after modal opened.
+  useEffect(() => {
+    if (!isOpen) return;
+    if (workOrder) return;
+    if (!currentTechnicianId) return;
+    if (selectedTechnicianId) return;
+
+    setSelectedTechnicianId(currentTechnicianId);
+  }, [isOpen, workOrder, currentTechnicianId, selectedTechnicianId]);
 
   const draftKey = useMemo(() => {
     const orderKey = workOrder?.id || "new";

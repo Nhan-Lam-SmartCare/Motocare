@@ -660,6 +660,16 @@ export default function ServiceManager() {
   );
   const statusSnapshotCards = getStatusSnapshotCards(stats);
 
+  const currentStaffTechnicianName = useMemo(() => {
+    if (profile?.role !== USER_ROLES.STAFF) return "";
+    const profileId = (profile as any)?.id;
+    if (profileId) {
+      const matchedEmployee = displayEmployees.find((emp: any) => emp?.id === profileId);
+      if (matchedEmployee?.name) return matchedEmployee.name;
+    }
+    return profile?.name || profile?.full_name || "";
+  }, [profile, displayEmployees]);
+
   const handleOpenModal = async (order?: WorkOrder) => {
     if (order?.id && !canUpdateWorkOrder) {
       showToast.error("Bạn không có quyền sửa phiếu sửa chữa");
@@ -689,7 +699,7 @@ export default function ServiceManager() {
         vehicleModel: "",
         licensePlate: "",
         issueDescription: "",
-        technicianName: "",
+        technicianName: currentStaffTechnicianName,
         status: "Tiếp nhận",
         laborCost: 0,
         discount: 0,
@@ -729,7 +739,7 @@ export default function ServiceManager() {
       total: (template.laborCost || 0) + partsTotal,
       creationDate: new Date().toISOString(),
       branchId: currentBranchId,
-      technicianName: "",
+      technicianName: currentStaffTechnicianName,
     };
     setEditingOrder(newOrder as WorkOrder);
     setShowTemplateModal(false);

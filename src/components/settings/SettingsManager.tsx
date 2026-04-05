@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 // Dùng supabaseClient thống nhất để tránh nhiều phiên GoTrue
 import { supabase } from "../../supabaseClient";
@@ -7,6 +7,13 @@ import { showToast } from "../../utils/toast";
 import { safeAudit } from "../../lib/repository/auditLogsRepository";
 import LoadingSpinner from "../common/LoadingSpinner";
 import { MFASetup } from "../auth/MFASetup";
+import {
+  ACTION_LABELS,
+  AppAction,
+  getRoleDefaultPermissions,
+  normalizePermissionOverrides,
+  PermissionOverrides,
+} from "../../utils/permissions";
 import {
   Lock,
   Settings as SettingsIcon,
@@ -95,6 +102,92 @@ export const SettingsManager = () => {
   const [showAddStaff, setShowAddStaff] = useState(false);
   const [newStaffEmail, setNewStaffEmail] = useState("");
   const [newStaffName, setNewStaffName] = useState("");
+  const [newStaffPassword, setNewStaffPassword] = useState("");
+  const [newStaffPhone, setNewStaffPhone] = useState("");
+  const [newStaffPosition, setNewStaffPosition] = useState("");
+  const [newStaffDepartment, setNewStaffDepartment] = useState("");
+  const [newStaffBaseSalary, setNewStaffBaseSalary] = useState<number>(0);
+  const [newStaffAllowances, setNewStaffAllowances] = useState<number>(0);
+  const [newStaffStartDate, setNewStaffStartDate] = useState(
+    new Date().toISOString().split("T")[0]
+  );
+  const [newStaffStatus, setNewStaffStatus] = useState<
+    "active" | "inactive" | "terminated"
+  >("active");
+  const [newStaffBankAccount, setNewStaffBankAccount] = useState("");
+  const [newStaffBankName, setNewStaffBankName] = useState("");
+  const [newStaffTaxCode, setNewStaffTaxCode] = useState("");
+  const [newBranchCode, setNewBranchCode] = useState("");
+  const [newBranchName, setNewBranchName] = useState("");
+  const [showAddBranch, setShowAddBranch] = useState(false);
+  const [selectedPermissionStaffId, setSelectedPermissionStaffId] = useState<
+    string | null
+  >(null);
+  const [staffPermissionsMap, setStaffPermissionsMap] = useState<
+    Record<string, PermissionOverrides>
+  >({});
+  const [newStaffPermissionMode, setNewStaffPermissionMode] = useState<
+    "role-default" | "allow-all" | "custom"
+  >("role-default");
+  const [newStaffPermissions, setNewStaffPermissions] =
+    useState<PermissionOverrides>({});
+  const [resetPasswordStaff, setResetPasswordStaff] = useState<StaffMember | null>(
+    null
+  );
+  const [resetPasswordValue, setResetPasswordValue] = useState("");
+  const [resetPasswordConfirm, setResetPasswordConfirm] = useState("");
+  const [resettingPassword, setResettingPassword] = useState(false);
+
+  const permissionGroups = useMemo(
+    () => [
+      {
+        key: "sales",
+        label: "Bán hàng",
+        actions: ["sale.create", "sale.update", "sale.delete"] as AppAction[],
+      },
+      {
+        key: "service",
+        label: "Sửa chữa",
+        actions: [
+          "work_order.create",
+          "work_order.update",
+          "work_order.delete",
+          "work_order.status.update",
+          "work_order.collect_payment",
+        ] as AppAction[],
+      },
+      {
+        key: "inventory",
+        label: "Kho & Phụ tùng",
+        actions: [
+          "inventory.import",
+          "inventory.adjust",
+          "part.create",
+          "part.update",
+          "part.update_price",
+          "part.delete",
+        ] as AppAction[],
+      },
+      {
+        key: "finance",
+        label: "Tài chính & Báo cáo",
+        actions: [
+          "finance.view",
+          "finance.collect_payment",
+          "reports.view",
+          "analytics.view",
+          "payroll.view",
+          "debt.view",
+        ] as AppAction[],
+      },
+      {
+        key: "admin",
+        label: "Quản trị",
+        actions: ["employees.view", "employees.manage", "settings.update", "branches.manage"] as AppAction[],
+      },
+    ],
+    []
+  );
 
   const themePresets = [
     {
@@ -189,7 +282,9 @@ export const SettingsManager = () => {
       );
 
       if (!rpcError && rpcData && rpcData.length > 0) {
-        setStaffList(rpcData as StaffMember[]);
+        const normalized = rpcData as StaffMember[];
+        setStaffList(normalized);
+        await loadStaffPermissions(normalized.map((s) => s.id));
       } else {
         // Fallback: Try to get from profiles table
         const { data: profilesData, error: profilesError } = await supabase
@@ -198,11 +293,13 @@ export const SettingsManager = () => {
           .order("created_at", { ascending: false });
 
         if (!profilesError && profilesData && profilesData.length > 0) {
-          setStaffList(profilesData as StaffMember[]);
+          const normalized = profilesData as StaffMember[];
+          setStaffList(normalized);
+          await loadStaffPermissions(normalized.map((s) => s.id));
         } else {
           // Last fallback: Show current user profile
           if (profile) {
-            setStaffList([
+            const fallbackData = [
               {
                 id: profile.id,
                 email: profile.email,
@@ -211,7 +308,9 @@ export const SettingsManager = () => {
                 branch_id: "CN1",
                 created_at: profile.created_at,
               },
-            ]);
+            ];
+            setStaffList(fallbackData);
+            await loadStaffPermissions(fallbackData.map((s) => s.id));
           }
 
           // Show info toast about RPC function
@@ -226,7 +325,7 @@ export const SettingsManager = () => {
       console.error("Error loading staff:", error);
       // Show current user as fallback
       if (profile) {
-        setStaffList([
+        const fallbackData = [
           {
             id: profile.id,
             email: profile.email,
@@ -235,11 +334,153 @@ export const SettingsManager = () => {
             branch_id: "CN1",
             created_at: profile.created_at,
           },
-        ]);
+        ];
+        setStaffList(fallbackData);
+        await loadStaffPermissions(fallbackData.map((s) => s.id));
       }
     } finally {
       setLoadingStaff(false);
     }
+  };
+
+  const isMissingRelationError = (error: any) => {
+    const code = error?.code;
+    if (["PGRST116", "PGRST205", "42P01"].includes(code)) return true;
+    const message = String(error?.message || "").toLowerCase();
+    return (
+      message.includes("could not find") ||
+      message.includes("relation") ||
+      message.includes("does not exist")
+    );
+  };
+
+  const isAuthAdminPermissionError = (error: any) => {
+    const status = Number(error?.status || error?.statusCode || 0);
+    const code = String(error?.code || "").toLowerCase();
+    const message = String(error?.message || "").toLowerCase();
+
+    if (status === 401 || status === 403) return true;
+    if (code.includes("forbidden") || code.includes("unauthorized")) return true;
+
+    return (
+      message.includes("not authorized") ||
+      message.includes("user not allowed") ||
+      message.includes("forbidden") ||
+      message.includes("insufficient") ||
+      message.includes("permission") ||
+      message.includes("admin")
+    );
+  };
+
+  const loadStaffPermissions = async (staffIds: string[]) => {
+    if (!staffIds.length) {
+      setStaffPermissionsMap({});
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from("staff_permissions")
+        .select("user_id, permissions")
+        .in("user_id", staffIds);
+
+      if (error) {
+        if (!isMissingRelationError(error)) {
+          console.warn("Error loading staff permissions:", error);
+        }
+        setStaffPermissionsMap({});
+        return;
+      }
+
+      const map: Record<string, PermissionOverrides> = {};
+      for (const row of data || []) {
+        if (row?.user_id) {
+          map[row.user_id] = normalizePermissionOverrides(row.permissions);
+        }
+      }
+      setStaffPermissionsMap(map);
+    } catch (error) {
+      console.warn("Unable to load staff permissions:", error);
+      setStaffPermissionsMap({});
+    }
+  };
+
+  const saveStaffPermissions = async (
+    staffId: string,
+    permissions: PermissionOverrides
+  ) => {
+    const cleaned = normalizePermissionOverrides(permissions);
+    const hasCustomPermissions = Object.keys(cleaned).length > 0;
+
+    try {
+      if (!hasCustomPermissions) {
+        const { error } = await supabase
+          .from("staff_permissions")
+          .delete()
+          .eq("user_id", staffId);
+        if (error && !isMissingRelationError(error)) throw error;
+      } else {
+        const { error } = await supabase.from("staff_permissions").upsert(
+          {
+            user_id: staffId,
+            permissions: cleaned,
+            updated_by: profile?.id || null,
+          },
+          { onConflict: "user_id" }
+        );
+        if (error) throw error;
+      }
+
+      setStaffPermissionsMap((prev) => {
+        const next = { ...prev };
+        if (hasCustomPermissions) {
+          next[staffId] = cleaned;
+        } else {
+          delete next[staffId];
+        }
+        return next;
+      });
+    } catch (error: any) {
+      if (isMissingRelationError(error)) {
+        showToast.error(
+          "Chưa có bảng staff_permissions. Hãy chạy script SQL nâng cấp quyền trước."
+        );
+        return;
+      }
+      throw error;
+    }
+  };
+
+  const resolvePermissionMatrix = (
+    role: "owner" | "manager" | "staff",
+    overrides?: PermissionOverrides
+  ) => {
+    const defaults = getRoleDefaultPermissions(role);
+    return { ...defaults, ...(overrides || {}) };
+  };
+
+  const buildPermissionsByMode = (
+    role: "owner" | "manager" | "staff",
+    mode: "role-default" | "allow-all" | "custom",
+    custom: PermissionOverrides
+  ) => {
+    if (mode === "role-default") return {};
+    if (mode === "allow-all") {
+      const all: PermissionOverrides = {};
+      for (const action of Object.keys(ACTION_LABELS) as AppAction[]) {
+        all[action] = true;
+      }
+      return all;
+    }
+
+    const defaults = getRoleDefaultPermissions(role);
+    const result: PermissionOverrides = {};
+    for (const action of Object.keys(ACTION_LABELS) as AppAction[]) {
+      if (typeof custom[action] === "boolean" && custom[action] !== defaults[action]) {
+        result[action] = !!custom[action];
+      }
+    }
+    return result;
   };
 
   const handleUpdateStaffRole = async (
@@ -275,9 +516,187 @@ export const SettingsManager = () => {
     }
   };
 
+  const closeResetPasswordModal = () => {
+    setResetPasswordStaff(null);
+    setResetPasswordValue("");
+    setResetPasswordConfirm("");
+  };
+
+  const handleResetStaffPassword = async () => {
+    if (!resetPasswordStaff) return;
+
+    const nextPassword = resetPasswordValue.trim();
+    const confirmPassword = resetPasswordConfirm.trim();
+
+    if (nextPassword.length < 6) {
+      showToast.error("Mật khẩu mới phải có ít nhất 6 ký tự");
+      return;
+    }
+
+    if (nextPassword !== confirmPassword) {
+      showToast.error("Mật khẩu xác nhận không khớp");
+      return;
+    }
+
+    setResettingPassword(true);
+    try {
+      const { error } = await supabase.auth.admin.updateUserById(
+        resetPasswordStaff.id,
+        { password: nextPassword }
+      );
+
+      if (error) {
+        if (!isAuthAdminPermissionError(error)) {
+          throw error;
+        }
+
+        const redirectTo =
+          typeof window !== "undefined"
+            ? `${window.location.origin}/reset-password`
+            : undefined;
+
+        const { error: resetLinkError } = await supabase.auth.resetPasswordForEmail(
+          resetPasswordStaff.email,
+          redirectTo ? { redirectTo } : undefined
+        );
+
+        if (resetLinkError) {
+          throw resetLinkError;
+        }
+
+        showToast.info(
+          `Không thể đổi trực tiếp. Đã gửi link đặt lại mật khẩu đến ${resetPasswordStaff.email}`
+        );
+        closeResetPasswordModal();
+        return;
+      }
+
+      showToast.success(
+        `Đã đặt lại mật khẩu cho ${resetPasswordStaff.email} thành công`
+      );
+      void safeAudit(profile?.id || null, {
+        action: "staff.reset_password",
+        tableName: "profiles",
+        recordId: resetPasswordStaff.id,
+        newData: { email: resetPasswordStaff.email },
+      });
+      closeResetPasswordModal();
+    } catch (error: any) {
+      console.error("Error resetting staff password:", error);
+      showToast.error(error?.message || "Không thể đặt lại mật khẩu");
+    } finally {
+      setResettingPassword(false);
+    }
+  };
+
+  const syncEmployeeRecordForStaff = async (input: {
+    email: string;
+    name: string;
+    role: "owner" | "manager" | "staff";
+    branchId: string;
+    phone?: string;
+    position?: string;
+    department?: string;
+    baseSalary?: number;
+    allowances?: number;
+    startDate?: string;
+    status?: "active" | "inactive" | "terminated";
+    bankAccount?: string;
+    bankName?: string;
+    taxCode?: string;
+  }) => {
+    const {
+      email,
+      name,
+      role,
+      branchId,
+      phone,
+      position,
+      department,
+      baseSalary,
+      allowances,
+      startDate,
+      status,
+      bankAccount,
+      bankName,
+      taxCode,
+    } = input;
+
+    try {
+      const { data: existingEmployee, error: findError } = await supabase
+        .from("employees")
+        .select("id")
+        .eq("email", email)
+        .maybeSingle();
+
+      if (findError && !isMissingRelationError(findError)) {
+        console.warn("Unable to check employees table:", findError);
+        return;
+      }
+
+      const defaultPosition = role === "manager" ? "Quản lý" : "Nhân viên";
+      const today = new Date().toISOString().split("T")[0];
+
+      const employeePayload = {
+        name: name || email.split("@")[0],
+        email,
+        phone: phone?.trim() || null,
+        position: position?.trim() || defaultPosition,
+        department:
+          department?.trim() || (role === "manager" ? "Quản lý" : "Vận hành"),
+        base_salary: Math.max(0, Number(baseSalary || 0)),
+        allowances: Math.max(0, Number(allowances || 0)),
+        start_date: startDate || today,
+        status: status || "active",
+        branch_id: branchId,
+        bank_account: bankAccount?.trim() || null,
+        bank_name: bankName?.trim() || null,
+        tax_code: taxCode?.trim() || null,
+      };
+
+      if (existingEmployee?.id) {
+        const { error: updateEmployeeError } = await supabase
+          .from("employees")
+          .update(employeePayload)
+          .eq("id", existingEmployee.id);
+
+        if (updateEmployeeError) {
+          if (!isMissingRelationError(updateEmployeeError)) {
+            console.warn("Unable to update employee record from staff:", updateEmployeeError);
+          }
+          return;
+        }
+
+        await queryClient.invalidateQueries({ queryKey: ["employees"] });
+        return;
+      }
+
+      const { error: insertEmployeeError } = await supabase.from("employees").insert({
+        id: `EMP-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        ...employeePayload,
+      });
+
+      if (insertEmployeeError) {
+        if (!isMissingRelationError(insertEmployeeError)) {
+          console.warn("Unable to create employee record from staff:", insertEmployeeError);
+        }
+        return;
+      }
+
+      await queryClient.invalidateQueries({ queryKey: ["employees"] });
+    } catch (error) {
+      console.warn("Failed to sync staff account to employees:", error);
+    }
+  };
+
   const handleInviteStaff = async () => {
     if (!newStaffEmail.trim()) {
       showToast.error("Vui lòng nhập email");
+      return;
+    }
+
+    if (newStaffPassword.trim().length < 6) {
+      showToast.error("Vui lòng nhập mật khẩu tạm ít nhất 6 ký tự để tạo tài khoản dùng ngay");
       return;
     }
 
@@ -296,38 +715,123 @@ export const SettingsManager = () => {
         return;
       }
 
-      // Use Supabase admin invite (requires service role or invite enabled)
-      // For now, we'll create a placeholder profile that will be linked when user signs up
-      const { data, error } = await supabase.auth.admin.inviteUserByEmail(
-        newStaffEmail.trim(),
-        {
-          data: {
-            name: newStaffName.trim() || newStaffEmail.split("@")[0],
-            role: newStaffRole,
-            branch_id: newStaffBranch,
-          },
-        }
+      const email = newStaffEmail.trim().toLowerCase();
+      const metadata = {
+        name: newStaffName.trim() || email.split("@")[0],
+        role: newStaffRole,
+        branch_id: newStaffBranch,
+      };
+
+      const hrName = newStaffName.trim() || email.split("@")[0];
+      const hrPosition = newStaffPosition.trim() || (newStaffRole === "manager" ? "Quản lý" : "Nhân viên");
+      const hrDepartment = newStaffDepartment.trim() || (newStaffRole === "manager" ? "Quản lý" : "Vận hành");
+
+      const desiredOverrides = buildPermissionsByMode(
+        newStaffRole,
+        newStaffPermissionMode,
+        newStaffPermissions
       );
 
+      let createdUserId: string | null = null;
+      let error: any = null;
+
+      const createPayload = {
+        email,
+        password: newStaffPassword.trim(),
+        name: metadata.name,
+        role: newStaffRole,
+        branch_id: newStaffBranch,
+        permissions: desiredOverrides,
+      };
+
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+
+        const token = session?.access_token;
+        if (token) {
+          const response = await fetch("/api/staff-create", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify(createPayload),
+          });
+
+          if (response.ok) {
+            const payload = await response.json();
+            createdUserId = payload?.userId || null;
+          } else {
+            const payload = await response.json().catch(() => null);
+            const message = payload?.error || `HTTP ${response.status}`;
+            error = new Error(message);
+          }
+        }
+      } catch (serverCreateError: any) {
+        error = serverCreateError;
+      }
+
+      if (!createdUserId) {
+        const createResult = await supabase.auth.admin.createUser({
+          email,
+          password: newStaffPassword.trim(),
+          email_confirm: true,
+          user_metadata: metadata,
+        });
+
+        error = createResult.error || error;
+        createdUserId = createResult.data.user?.id || null;
+      }
+
       if (error) {
-        // If admin invite fails, try alternative approach
-        if (
-          error.message.includes("not authorized") ||
-          error.message.includes("admin")
-        ) {
-          // Fallback: Just show instructions
-          showToast.info(
-            `Để thêm nhân viên mới:\n1. Nhân viên đăng ký tài khoản với email: ${newStaffEmail}\n2. Quay lại đây để cập nhật quyền`,
-            { duration: 8000 } as any
+        if (isAuthAdminPermissionError(error)) {
+          showToast.error(
+            "Chưa có quyền tạo tài khoản trực tiếp. Cần cấu hình API server với SUPABASE_SERVICE_ROLE_KEY để owner tạo xong dùng ngay."
           );
-          setShowAddStaff(false);
-          resetNewStaffForm();
           return;
         }
         throw error;
       }
 
-      showToast.success(`Đã gửi lời mời đến ${newStaffEmail}`);
+      if (createdUserId) {
+        await saveStaffPermissions(createdUserId, desiredOverrides);
+
+        // Ensure profile reflects role/branch if project uses profiles table.
+        await supabase
+          .from("profiles")
+          .upsert(
+            {
+              id: createdUserId,
+              email,
+              name: metadata.name,
+              role: newStaffRole,
+              branch_id: newStaffBranch,
+            },
+            { onConflict: "id" }
+          );
+
+      }
+
+      await syncEmployeeRecordForStaff({
+        email,
+        name: hrName,
+        role: newStaffRole,
+        branchId: newStaffBranch,
+        phone: newStaffPhone,
+        position: hrPosition,
+        department: hrDepartment,
+        baseSalary: newStaffBaseSalary,
+        allowances: newStaffAllowances,
+        startDate: newStaffStartDate,
+        status: newStaffStatus,
+        bankAccount: newStaffBankAccount,
+        bankName: newStaffBankName,
+        taxCode: newStaffTaxCode,
+      });
+
+      showToast.success(`Đã tạo tài khoản cho ${email}. Nhân viên có thể đăng nhập ngay.`);
       setShowAddStaff(false);
       resetNewStaffForm();
       await loadStaff();
@@ -339,11 +843,12 @@ export const SettingsManager = () => {
           email: newStaffEmail,
           role: newStaffRole,
           branch_id: newStaffBranch,
+          permission_mode: newStaffPermissionMode,
         },
       });
     } catch (error: any) {
       console.error("Error inviting staff:", error);
-      showToast.error(error.message || "Không thể mời nhân viên");
+      showToast.error(error.message || "Không thể tạo tài khoản nhân viên");
     } finally {
       setSavingStaff(false);
     }
@@ -352,8 +857,60 @@ export const SettingsManager = () => {
   const resetNewStaffForm = () => {
     setNewStaffEmail("");
     setNewStaffName("");
+    setNewStaffPassword("");
+    setNewStaffPhone("");
+    setNewStaffPosition("");
+    setNewStaffDepartment("");
+    setNewStaffBaseSalary(0);
+    setNewStaffAllowances(0);
+    setNewStaffStartDate(new Date().toISOString().split("T")[0]);
+    setNewStaffStatus("active");
+    setNewStaffBankAccount("");
+    setNewStaffBankName("");
+    setNewStaffTaxCode("");
     setNewStaffRole("staff");
     setNewStaffBranch(branches[0]?.id || "");
+    setNewStaffPermissionMode("role-default");
+    setNewStaffPermissions({});
+  };
+
+  const handleCreateBranch = async () => {
+    if (!newBranchCode.trim() || !newBranchName.trim()) {
+      showToast.error("Vui lòng nhập mã chi nhánh và tên chi nhánh");
+      return;
+    }
+
+    const branchId = newBranchCode.trim().toUpperCase();
+
+    if (branches.some((branch) => branch.id === branchId)) {
+      showToast.error("Mã chi nhánh đã tồn tại");
+      return;
+    }
+
+    setSavingStaff(true);
+    try {
+      const { error } = await supabase.from("branches").insert({
+        id: branchId,
+        name: newBranchName.trim(),
+      });
+
+      if (error) throw error;
+
+      await loadBranches();
+      setNewStaffBranch(branchId);
+      setShowAddBranch(false);
+      setNewBranchCode("");
+      setNewBranchName("");
+      showToast.success("Đã thêm chi nhánh mới");
+    } catch (error: any) {
+      if (isMissingRelationError(error)) {
+        showToast.error("Không tìm thấy bảng branches. Hãy tạo bảng chi nhánh trước.");
+      } else {
+        showToast.error(error?.message || "Không thể thêm chi nhánh");
+      }
+    } finally {
+      setSavingStaff(false);
+    }
   };
 
   const getRoleBadgeColor = (role: string) => {
@@ -556,6 +1113,17 @@ export const SettingsManager = () => {
   }
 
   const isOwner = hasRole(["owner"]);
+  const selectedPermissionStaff = staffList.find(
+    (staff) => staff.id === selectedPermissionStaffId
+  );
+  const branchSet = new Set(
+    staffList.map((staff) => staff.branch_id).filter(Boolean)
+  );
+  const staffStats = {
+    total: staffList.length,
+    managers: staffList.filter((staff) => staff.role === "manager").length,
+    branches: branchSet.size,
+  };
 
   return (
     <div className="space-y-4 md:space-y-6">
@@ -1443,31 +2011,98 @@ export const SettingsManager = () => {
               </button>
             </div>
 
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="rounded-xl border border-blue-200/70 dark:border-blue-800/60 bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-950/30 dark:to-cyan-950/20 px-4 py-3">
+                <p className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400 font-semibold">
+                  Nhân sự
+                </p>
+                <p className="text-xl font-bold text-slate-900 dark:text-white mt-1">
+                  {staffStats.total}
+                </p>
+              </div>
+              <div className="rounded-xl border border-emerald-200/70 dark:border-emerald-800/60 bg-gradient-to-r from-emerald-50 to-lime-50 dark:from-emerald-950/30 dark:to-lime-950/20 px-4 py-3">
+                <p className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400 font-semibold">
+                  Quản lý
+                </p>
+                <p className="text-xl font-bold text-slate-900 dark:text-white mt-1">
+                  {staffStats.managers}
+                </p>
+              </div>
+              <div className="rounded-xl border border-violet-200/70 dark:border-violet-800/60 bg-gradient-to-r from-violet-50 to-fuchsia-50 dark:from-violet-950/30 dark:to-fuchsia-950/20 px-4 py-3">
+                <p className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400 font-semibold">
+                  Chi nhánh
+                </p>
+                <p className="text-xl font-bold text-slate-900 dark:text-white mt-1">
+                  {staffStats.branches}
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-slate-50 dark:bg-slate-900/30 border border-slate-200 dark:border-slate-700 rounded-xl p-4">
+              <div className="flex flex-col lg:flex-row gap-3 lg:items-center">
+                <button
+                  onClick={() => setShowAddBranch((prev) => !prev)}
+                  className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium"
+                >
+                  {showAddBranch ? "Ẩn thêm chi nhánh" : "Thêm chi nhánh"}
+                </button>
+                <p className="text-xs md:text-sm text-slate-600 dark:text-slate-400">
+                  Quản lý mã CN ngay tại đây để gán cho tài khoản nhân viên.
+                </p>
+              </div>
+
+              {showAddBranch && (
+                <div className="mt-3 grid grid-cols-1 md:grid-cols-[180px_1fr_auto] gap-3">
+                  <input
+                    type="text"
+                    value={newBranchCode}
+                    onChange={(e) => setNewBranchCode(e.target.value)}
+                    placeholder="Mã CN (vd: CN2)"
+                    className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                  />
+                  <input
+                    type="text"
+                    value={newBranchName}
+                    onChange={(e) => setNewBranchName(e.target.value)}
+                    placeholder="Tên chi nhánh"
+                    className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                  />
+                  <button
+                    onClick={handleCreateBranch}
+                    disabled={savingStaff}
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-400 text-white rounded-lg text-sm font-medium"
+                  >
+                    {savingStaff ? "Đang thêm..." : "Thêm"}
+                  </button>
+                </div>
+              )}
+            </div>
+
             {/* Add Staff Form */}
             {showAddStaff && (
-              <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl p-4 md:p-6">
-                <h3 className="text-sm md:text-base font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+              <div className="rounded-xl border border-cyan-200 dark:border-cyan-800 bg-gradient-to-br from-slate-900 via-slate-900 to-cyan-950 p-4 md:p-6 text-white">
+                <h3 className="text-sm md:text-base font-semibold text-slate-100 mb-4 flex items-center gap-2">
                   <UserPlus className="w-4 h-4 text-green-600" />
                   Thêm nhân viên mới
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs md:text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                    <label className="block text-xs md:text-sm font-medium text-slate-200 mb-1.5">
                       Email *
                     </label>
                     <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
                       <input
                         type="email"
                         value={newStaffEmail}
                         onChange={(e) => setNewStaffEmail(e.target.value)}
                         placeholder="email@example.com"
-                        className="w-full pl-10 pr-4 py-2.5 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                        className="w-full pl-10 pr-4 py-2.5 text-sm border border-slate-700 rounded-lg bg-slate-800 text-slate-100"
                       />
                     </div>
                   </div>
                   <div>
-                    <label className="block text-xs md:text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                    <label className="block text-xs md:text-sm font-medium text-slate-200 mb-1.5">
                       Họ tên
                     </label>
                     <input
@@ -1475,11 +2110,150 @@ export const SettingsManager = () => {
                       value={newStaffName}
                       onChange={(e) => setNewStaffName(e.target.value)}
                       placeholder="Nguyễn Văn A"
-                      className="w-full px-4 py-2.5 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                      className="w-full px-4 py-2.5 text-sm border border-slate-700 rounded-lg bg-slate-800 text-slate-100"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs md:text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                    <label className="block text-xs md:text-sm font-medium text-slate-200 mb-1.5">
+                      Số điện thoại
+                    </label>
+                    <input
+                      type="text"
+                      value={newStaffPhone}
+                      onChange={(e) => setNewStaffPhone(e.target.value)}
+                      placeholder="0909xxxxxx"
+                      className="w-full px-4 py-2.5 text-sm border border-slate-700 rounded-lg bg-slate-800 text-slate-100"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs md:text-sm font-medium text-slate-200 mb-1.5">
+                      Mật khẩu tạm
+                    </label>
+                    <input
+                      type="password"
+                      value={newStaffPassword}
+                      onChange={(e) => setNewStaffPassword(e.target.value)}
+                      placeholder="Nhập mật khẩu tạm ít nhất 6 ký tự"
+                      className="w-full px-4 py-2.5 text-sm border border-slate-700 rounded-lg bg-slate-800 text-slate-100"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs md:text-sm font-medium text-slate-200 mb-1.5">
+                      Chức vụ
+                    </label>
+                    <input
+                      type="text"
+                      value={newStaffPosition}
+                      onChange={(e) => setNewStaffPosition(e.target.value)}
+                      placeholder="Kỹ thuật viên / Thu ngân / Quản lý"
+                      className="w-full px-4 py-2.5 text-sm border border-slate-700 rounded-lg bg-slate-800 text-slate-100"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs md:text-sm font-medium text-slate-200 mb-1.5">
+                      Phòng ban
+                    </label>
+                    <input
+                      type="text"
+                      value={newStaffDepartment}
+                      onChange={(e) => setNewStaffDepartment(e.target.value)}
+                      placeholder="Vận hành / Dịch vụ / Kế toán"
+                      className="w-full px-4 py-2.5 text-sm border border-slate-700 rounded-lg bg-slate-800 text-slate-100"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs md:text-sm font-medium text-slate-200 mb-1.5">
+                      Lương cơ bản
+                    </label>
+                    <input
+                      type="number"
+                      min={0}
+                      value={newStaffBaseSalary}
+                      onChange={(e) => setNewStaffBaseSalary(Math.max(0, Number(e.target.value || 0)))}
+                      placeholder="0"
+                      className="w-full px-4 py-2.5 text-sm border border-slate-700 rounded-lg bg-slate-800 text-slate-100"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs md:text-sm font-medium text-slate-200 mb-1.5">
+                      Phụ cấp
+                    </label>
+                    <input
+                      type="number"
+                      min={0}
+                      value={newStaffAllowances}
+                      onChange={(e) => setNewStaffAllowances(Math.max(0, Number(e.target.value || 0)))}
+                      placeholder="0"
+                      className="w-full px-4 py-2.5 text-sm border border-slate-700 rounded-lg bg-slate-800 text-slate-100"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs md:text-sm font-medium text-slate-200 mb-1.5">
+                      Ngày vào làm
+                    </label>
+                    <input
+                      type="date"
+                      value={newStaffStartDate}
+                      onChange={(e) => setNewStaffStartDate(e.target.value)}
+                      className="w-full px-4 py-2.5 text-sm border border-slate-700 rounded-lg bg-slate-800 text-slate-100"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs md:text-sm font-medium text-slate-200 mb-1.5">
+                      Trạng thái
+                    </label>
+                    <select
+                      value={newStaffStatus}
+                      onChange={(e) =>
+                        setNewStaffStatus(
+                          e.target.value as "active" | "inactive" | "terminated"
+                        )
+                      }
+                      className="w-full px-4 py-2.5 text-sm border border-slate-700 rounded-lg bg-slate-800 text-slate-100"
+                    >
+                      <option value="active">Đang làm việc</option>
+                      <option value="inactive">Tạm nghỉ</option>
+                      <option value="terminated">Đã nghỉ việc</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs md:text-sm font-medium text-slate-200 mb-1.5">
+                      Số tài khoản
+                    </label>
+                    <input
+                      type="text"
+                      value={newStaffBankAccount}
+                      onChange={(e) => setNewStaffBankAccount(e.target.value)}
+                      placeholder="0123456789"
+                      className="w-full px-4 py-2.5 text-sm border border-slate-700 rounded-lg bg-slate-800 text-slate-100"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs md:text-sm font-medium text-slate-200 mb-1.5">
+                      Ngân hàng
+                    </label>
+                    <input
+                      type="text"
+                      value={newStaffBankName}
+                      onChange={(e) => setNewStaffBankName(e.target.value)}
+                      placeholder="Vietcombank"
+                      className="w-full px-4 py-2.5 text-sm border border-slate-700 rounded-lg bg-slate-800 text-slate-100"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs md:text-sm font-medium text-slate-200 mb-1.5">
+                      Mã số thuế
+                    </label>
+                    <input
+                      type="text"
+                      value={newStaffTaxCode}
+                      onChange={(e) => setNewStaffTaxCode(e.target.value)}
+                      placeholder="MST cá nhân"
+                      className="w-full px-4 py-2.5 text-sm border border-slate-700 rounded-lg bg-slate-800 text-slate-100"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs md:text-sm font-medium text-slate-200 mb-1.5">
                       Vai trò
                     </label>
                     <select
@@ -1487,22 +2261,22 @@ export const SettingsManager = () => {
                       onChange={(e) =>
                         setNewStaffRole(e.target.value as "manager" | "staff")
                       }
-                      className="w-full px-4 py-2.5 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                      className="w-full px-4 py-2.5 text-sm border border-slate-700 rounded-lg bg-slate-800 text-slate-100"
                     >
                       <option value="staff">Nhân viên</option>
                       <option value="manager">Quản lý</option>
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs md:text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                    <label className="block text-xs md:text-sm font-medium text-slate-200 mb-1.5">
                       Chi nhánh
                     </label>
                     <div className="relative">
-                      <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                      <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
                       <select
                         value={newStaffBranch}
                         onChange={(e) => setNewStaffBranch(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2.5 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                        className="w-full pl-10 pr-4 py-2.5 text-sm border border-slate-700 rounded-lg bg-slate-800 text-slate-100"
                       >
                         {branches.map((branch) => (
                           <option key={branch.id} value={branch.id}>
@@ -1513,13 +2287,93 @@ export const SettingsManager = () => {
                     </div>
                   </div>
                 </div>
+
+                <div className="mt-4 bg-slate-800/70 border border-slate-700 rounded-xl p-4 space-y-3">
+                  <div className="flex flex-wrap gap-2 items-center justify-between">
+                    <h4 className="text-sm font-semibold text-slate-100">
+                      Phân quyền chi tiết
+                    </h4>
+                    <div className="inline-flex rounded-lg border border-slate-300 dark:border-slate-600 overflow-hidden">
+                      <button
+                        type="button"
+                        onClick={() => setNewStaffPermissionMode("role-default")}
+                        className={`px-3 py-1.5 text-xs font-medium ${newStaffPermissionMode === "role-default"
+                          ? "bg-blue-600 text-white"
+                          : "bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-300"
+                          }`}
+                      >
+                        Theo vai trò mặc định
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setNewStaffPermissionMode("allow-all")}
+                        className={`px-3 py-1.5 text-xs font-medium border-l border-slate-300 dark:border-slate-600 ${newStaffPermissionMode === "allow-all"
+                          ? "bg-emerald-600 text-white"
+                          : "bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-300"
+                          }`}
+                      >
+                        Cho phép tất cả
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setNewStaffPermissionMode("custom");
+                          setNewStaffPermissions(getRoleDefaultPermissions(newStaffRole));
+                        }}
+                        className={`px-3 py-1.5 text-xs font-medium border-l border-slate-300 dark:border-slate-600 ${newStaffPermissionMode === "custom"
+                          ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900"
+                          : "bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-300"
+                          }`}
+                      >
+                        Tùy chỉnh
+                      </button>
+                    </div>
+                  </div>
+
+                  {newStaffPermissionMode === "custom" && (
+                    <div className="space-y-3">
+                      {permissionGroups.map((group) => (
+                        <div
+                          key={group.key}
+                          className="rounded-lg border border-slate-700 overflow-hidden"
+                        >
+                          <div className="px-3 py-2 bg-slate-900 text-xs font-semibold uppercase tracking-wide text-slate-300">
+                            {group.label}
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 p-3">
+                            {group.actions.map((action) => (
+                              <label
+                                key={action}
+                                className="inline-flex items-center gap-2 text-sm text-slate-200"
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={!!newStaffPermissions[action]}
+                                  onChange={(e) =>
+                                    setNewStaffPermissions((prev) => ({
+                                      ...prev,
+                                      [action]: e.target.checked,
+                                    }))
+                                  }
+                                  className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                                />
+                                <span>{ACTION_LABELS[action]}</span>
+                              </label>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
                 <div className="flex justify-end gap-2 mt-4">
                   <button
                     onClick={() => {
                       setShowAddStaff(false);
                       resetNewStaffForm();
                     }}
-                    className="px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                    className="px-4 py-2 text-sm font-medium text-slate-300 hover:text-white"
                   >
                     Hủy
                   </button>
@@ -1528,12 +2382,11 @@ export const SettingsManager = () => {
                     disabled={savingStaff || !newStaffEmail.trim()}
                     className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-slate-400 text-white rounded-lg text-sm font-medium inline-flex items-center gap-2"
                   >
-                    {savingStaff ? "Đang xử lý..." : "Mời nhân viên"}
+                    {savingStaff ? "Đang xử lý..." : "Tạo nhân viên"}
                   </button>
                 </div>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-3">
-                  💡 Nhân viên sẽ nhận email mời và tự đăng ký tài khoản. Sau đó
-                  bạn có thể cập nhật quyền tại đây.
+                <p className="text-xs text-slate-300 mt-3">
+                  💡 Nhập mật khẩu tạm để tạo tài khoản dùng ngay. Nhân viên có thể đăng nhập trực tiếp sau khi bạn bấm tạo.
                 </p>
               </div>
             )}
@@ -1687,6 +2540,26 @@ export const SettingsManager = () => {
                                     <Edit2 className="w-4 h-4" />
                                   </button>
                                 )}
+                                {staff.role !== "owner" && (
+                                  <button
+                                    onClick={() => setResetPasswordStaff(staff)}
+                                    className="p-1.5 text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded"
+                                    title="Đặt lại mật khẩu"
+                                  >
+                                    <Lock className="w-4 h-4" />
+                                  </button>
+                                )}
+                                <button
+                                  onClick={() =>
+                                    setSelectedPermissionStaffId((prev) =>
+                                      prev === staff.id ? null : staff.id
+                                    )
+                                  }
+                                  className="p-1.5 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded"
+                                  title="Phân quyền chi tiết"
+                                >
+                                  <Shield className="w-4 h-4" />
+                                </button>
                               </>
                             )}
                           </div>
@@ -1695,6 +2568,151 @@ export const SettingsManager = () => {
                     ))}
                   </tbody>
                 </table>
+              </div>
+            )}
+
+            {selectedPermissionStaff && (
+              <div className="mt-4 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+                <div className="px-4 py-3 bg-slate-100 dark:bg-slate-800 flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+                  <div>
+                    <h4 className="text-sm font-semibold text-slate-900 dark:text-white">
+                      Phân quyền chi tiết: {selectedPermissionStaff.name || selectedPermissionStaff.email}
+                    </h4>
+                    <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
+                      Mặc định theo vai trò: {getRoleLabel(selectedPermissionStaff.role)}. Các mục bạn tick/untick sẽ ghi đè.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setSelectedPermissionStaffId(null)}
+                    className="px-3 py-1.5 text-xs md:text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
+                  >
+                    Đóng
+                  </button>
+                </div>
+
+                <div className="p-4 space-y-3 bg-white dark:bg-slate-900/30">
+                  {permissionGroups.map((group) => {
+                    const effectiveMatrix = resolvePermissionMatrix(
+                      selectedPermissionStaff.role,
+                      staffPermissionsMap[selectedPermissionStaff.id]
+                    );
+
+                    return (
+                      <div
+                        key={group.key}
+                        className="rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden"
+                      >
+                        <div className="px-3 py-2 bg-slate-50 dark:bg-slate-800 text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300">
+                          {group.label}
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 p-3">
+                          {group.actions.map((action) => (
+                            <label
+                              key={action}
+                              className="inline-flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300"
+                            >
+                              <input
+                                type="checkbox"
+                                checked={!!effectiveMatrix[action]}
+                                onChange={async (e) => {
+                                  const roleDefaults = getRoleDefaultPermissions(
+                                    selectedPermissionStaff.role
+                                  );
+                                  const currentOverrides =
+                                    staffPermissionsMap[selectedPermissionStaff.id] || {};
+                                  const nextOverrides = { ...currentOverrides };
+
+                                  if (e.target.checked === roleDefaults[action]) {
+                                    delete nextOverrides[action];
+                                  } else {
+                                    nextOverrides[action] = e.target.checked;
+                                  }
+
+                                  try {
+                                    await saveStaffPermissions(
+                                      selectedPermissionStaff.id,
+                                      nextOverrides
+                                    );
+                                  } catch (error: any) {
+                                    showToast.error(
+                                      error?.message || "Không thể cập nhật phân quyền"
+                                    );
+                                  }
+                                }}
+                                className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                              />
+                              <span>{ACTION_LABELS[action]}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {resetPasswordStaff && (
+              <div className="fixed inset-0 z-50 bg-black/50 p-4 flex items-center justify-center">
+                <div className="w-full max-w-md rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-2xl">
+                  <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-700">
+                    <h4 className="text-sm md:text-base font-semibold text-slate-900 dark:text-white">
+                      Đặt lại mật khẩu nhân viên
+                    </h4>
+                    <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
+                      Tài khoản: {resetPasswordStaff.email}
+                    </p>
+                  </div>
+
+                  <div className="p-4 space-y-3">
+                    <div>
+                      <label className="block text-xs md:text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                        Mật khẩu mới
+                      </label>
+                      <input
+                        type="password"
+                        value={resetPasswordValue}
+                        onChange={(e) => setResetPasswordValue(e.target.value)}
+                        placeholder="Ít nhất 6 ký tự"
+                        className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs md:text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                        Xác nhận mật khẩu mới
+                      </label>
+                      <input
+                        type="password"
+                        value={resetPasswordConfirm}
+                        onChange={(e) => setResetPasswordConfirm(e.target.value)}
+                        placeholder="Nhập lại mật khẩu"
+                        className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                      />
+                    </div>
+
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                      Nếu hệ thống không có quyền đổi trực tiếp, hệ thống sẽ tự gửi email reset cho nhân viên.
+                    </p>
+                  </div>
+
+                  <div className="px-4 py-3 border-t border-slate-200 dark:border-slate-700 flex items-center justify-end gap-2">
+                    <button
+                      onClick={closeResetPasswordModal}
+                      disabled={resettingPassword}
+                      className="px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
+                    >
+                      Hủy
+                    </button>
+                    <button
+                      onClick={handleResetStaffPassword}
+                      disabled={resettingPassword}
+                      className="px-3 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 disabled:bg-slate-400 text-white text-sm font-medium inline-flex items-center gap-2"
+                    >
+                      {resettingPassword ? "Đang xử lý..." : "Đặt lại mật khẩu"}
+                    </button>
+                  </div>
+                </div>
               </div>
             )}
 

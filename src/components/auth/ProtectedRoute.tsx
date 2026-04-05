@@ -33,7 +33,9 @@ export const ProtectedRoute = ({
     return <Navigate to="/login" replace />;
   }
 
-  if (requiredRoles && profile && !requiredRoles.includes(profile.role)) {
+  const isOwner = profile?.role === "owner";
+
+  if (requiredRoles && profile && !isOwner && !requiredRoles.includes(profile.role)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
         <div className="text-center">

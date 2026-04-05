@@ -9,6 +9,10 @@ import type {
 } from "@supabase/supabase-js";
 import { safeAudit } from "../lib/repository/auditLogsRepository";
 import { showToast } from "../utils/toast";
+import {
+  normalizePermissionOverrides,
+  setCurrentPermissionOverrides,
+} from "../utils/permissions";
 
 export type UserRole = "owner" | "manager" | "staff";
 
@@ -150,8 +154,26 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           created_at: new Date().toISOString(),
         };
         setProfile(defaultProfile);
+        setCurrentPermissionOverrides(null);
       } else {
         setProfile(data as any);
+
+        // Load fine-grained permission overrides if table exists.
+        const { data: permissionData, error: permissionError } = await supabase
+          .from("staff_permissions")
+          .select("permissions")
+          .eq("user_id", userId)
+          .maybeSingle();
+
+        const missingTableCodes = new Set(["PGRST116", "PGRST205", "42P01"]);
+        if (permissionError && !missingTableCodes.has((permissionError as any).code)) {
+          console.warn("Unable to load staff permissions:", permissionError);
+          setCurrentPermissionOverrides(null);
+        } else {
+          setCurrentPermissionOverrides(
+            normalizePermissionOverrides(permissionData?.permissions)
+          );
+        }
       }
     } catch (error) {
       console.error("Error loading user profile:", error);
@@ -163,6 +185,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         created_at: new Date().toISOString(),
       };
       setProfile(defaultProfile);
+      setCurrentPermissionOverrides(null);
       setError("Không thể tải hồ sơ người dùng");
     } finally {
       setLoading(false);
@@ -241,6 +264,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
     setError(null);
+    setCurrentPermissionOverrides(null);
     // Audit logout (best-effort)
     void safeAudit(currentUserId, { action: "auth.logout" });
   };

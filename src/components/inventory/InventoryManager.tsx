@@ -647,6 +647,9 @@ const InventoryManagerNew: React.FC = () => {
   const { data: allCategories = [] } = useCategories();
 
   const { profile } = useAuth();
+  const canImportInventory = canDo(profile?.role, "inventory.import");
+  const canUpdatePart = canDo(profile?.role, "part.update");
+  const canDeletePart = canDo(profile?.role, "part.delete");
   const handleSaveGoodsReceipt = useCallback(
     async (
       items: Array<{
@@ -677,6 +680,11 @@ const InventoryManagerNew: React.FC = () => {
         paidAmount: number;
       }
     ) => {
+      if (!canImportInventory) {
+        showToast.error("Bạn không có quyền nhập kho");
+        return;
+      }
+
       if (!supplierId) {
         showToast.warning("Vui lòng chọn nhà cung cấp");
         return;
@@ -942,6 +950,7 @@ const InventoryManagerNew: React.FC = () => {
       createInventoryTxAsync,
       createReceiptAtomicMutation,
       profile?.id,
+      canImportInventory,
     ]
   );
 
@@ -965,6 +974,11 @@ const InventoryManagerNew: React.FC = () => {
 
   // Handle delete single item
   const handleDeleteItem = async (id: string) => {
+    if (!canDeletePart) {
+      showToast.error("Bạn không có quyền xóa phụ tùng");
+      return;
+    }
+
     const part = repoParts.find((p) => p.id === id);
     if (!part) return;
 
@@ -998,6 +1012,11 @@ const InventoryManagerNew: React.FC = () => {
 
   // Handle bulk delete
   const handleBulkDelete = async () => {
+    if (!canDeletePart) {
+      showToast.error("Bạn không có quyền xóa phụ tùng");
+      return;
+    }
+
     if (selectedItems.length === 0) {
       showToast.warning("Vui lòng chọn ít nhất một sản phẩm");
       return;
@@ -1952,6 +1971,10 @@ const InventoryManagerNew: React.FC = () => {
                                   </button>
                                   <button
                                     onClick={() => {
+                                      if (!canUpdatePart) {
+                                        showToast.error("Bạn không có quyền sửa phụ tùng");
+                                        return;
+                                      }
                                       setEditingPart(part);
                                       setMobileMenuOpenIndex(null);
                                     }}
@@ -2273,6 +2296,10 @@ const InventoryManagerNew: React.FC = () => {
                                     <button
                                       onClick={(event) => {
                                         event.stopPropagation();
+                                        if (!canUpdatePart) {
+                                          showToast.error("Bạn không có quyền sửa phụ tùng");
+                                          return;
+                                        }
                                         setEditingPart(part);
                                         setOpenActionRow(null);
                                       }}
@@ -2705,6 +2732,11 @@ const InventoryManagerNew: React.FC = () => {
           part={editingPart}
           onClose={() => setEditingPart(null)}
           onSave={(updatedPart) => {
+            if (!canUpdatePart) {
+              showToast.error("Bạn không có quyền sửa phụ tùng");
+              return;
+            }
+
             // Only send fields that are allowed in database schema
             const updates: Partial<Part> = {
               name: updatedPart.name,

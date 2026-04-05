@@ -14,6 +14,8 @@ import FixedAssetsManager from "./FixedAssetsManager";
 import CapitalManager from "./CapitalManager";
 import CombinedFinance from "./CombinedFinance";
 import { FinanceManagerMobile } from "./FinanceManagerMobile";
+import { useAuth } from "../../contexts/AuthContext";
+import { canDo } from "../../utils/permissions";
 
 type Tab = "combined" | "cashbook" | "loans" | "assets" | "capital";
 
@@ -75,6 +77,15 @@ const TAB_CONFIGS: Record<Tab, TabConfig> = {
 
 const FinanceManager: React.FC = () => {
   const [activeTab, setActiveTab] = useState<Tab>("combined");
+  const { profile } = useAuth();
+
+  if (!canDo(profile?.role, "finance.view")) {
+    return (
+      <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-8 text-center text-slate-600 dark:text-slate-300">
+        Bạn không có quyền xem tài chính.
+      </div>
+    );
+  }
 
   return (
     <>

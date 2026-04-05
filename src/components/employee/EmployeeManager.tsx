@@ -7,7 +7,6 @@ import {
   Clock,
   History,
   Search,
-  Plus,
   Pencil,
   Save,
   X,
@@ -24,7 +23,6 @@ import EmployeeAdvanceManager from "./EmployeeAdvanceManager";
 import { showToast } from "../../utils/toast";
 import {
   useEmployeesRepo,
-  useCreateEmployeeRepo,
   useUpdateEmployeeRepo,
   useDeleteEmployeeRepo,
 } from "../../hooks/useEmployeesRepository";
@@ -37,7 +35,6 @@ const EmployeeManager: React.FC = () => {
 
   // Fetch employees from Supabase
   const { data: fetchedEmployees, isLoading } = useEmployeesRepo();
-  const { mutateAsync: createEmployeeAsync } = useCreateEmployeeRepo();
   const { mutateAsync: updateEmployeeAsync } = useUpdateEmployeeRepo();
   const { mutateAsync: deleteEmployeeAsync } = useDeleteEmployeeRepo();
 
@@ -81,22 +78,22 @@ const EmployeeManager: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!editingEmployee) {
+      showToast.error("Màn này chỉ cho phép sửa nhân viên. Hãy tạo mới trong Cài đặt.");
+      setShowForm(false);
+      return;
+    }
+
     if (!formData.name || !formData.position || !formData.baseSalary) {
       showToast.error("Vui lòng điền đầy đủ thông tin bắt buộc!");
       return;
     }
 
     try {
-      if (editingEmployee) {
-        await updateEmployeeAsync({
-          id: editingEmployee.id,
-          updates: formData,
-        });
-      } else {
-        await createEmployeeAsync(
-          formData as Omit<Employee, "id" | "created_at" | "updated_at">
-        );
-      }
+      await updateEmployeeAsync({
+        id: editingEmployee.id,
+        updates: formData,
+      });
       resetForm();
     } catch (error) {
       // Error already handled by mutation
@@ -156,21 +153,17 @@ const EmployeeManager: React.FC = () => {
         setSearchTerm={setSearchTerm}
         onEdit={handleEdit}
         onDelete={handleDelete}
-        onAdd={() => setShowForm(true)}
       />
       <div className="hidden md:block space-y-4">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="space-y-1">
           <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
             <Users className="w-6 h-6 text-blue-600 dark:text-blue-400" />
             Quản lý nhân viên
           </h2>
-          <button
-            onClick={() => setShowForm(true)}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 shadow-sm transition-colors flex items-center gap-1.5"
-          >
-            <Plus className="w-4 h-4" /> Thêm nhân viên
-          </button>
+          <p className="text-sm text-slate-500 dark:text-slate-400">
+            Tạo mới nhân viên tại mục Cài đặt. Màn này chỉ dùng để chỉnh sửa và theo dõi.
+          </p>
         </div>
 
         {/* Statistics Cards */}
@@ -429,20 +422,14 @@ const EmployeeManager: React.FC = () => {
         )}
 
         {/* Form Modal */}
-        {showForm && (
+        {showForm && editingEmployee && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
             <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
               <div className="sticky top-0 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-6 py-4 flex items-center justify-between">
                 <h3 className="text-xl font-bold text-slate-900 dark:text-white">
-                  {editingEmployee ? (
-                    <span className="inline-flex items-center gap-2">
-                      <Pencil className="w-5 h-5" /> Sửa nhân viên
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-2">
-                      <Plus className="w-5 h-5" /> Thêm nhân viên mới
-                    </span>
-                  )}
+                  <span className="inline-flex items-center gap-2">
+                    <Pencil className="w-5 h-5" /> Sửa nhân viên
+                  </span>
                 </h3>
                 <button
                   onClick={resetForm}
@@ -644,15 +631,9 @@ const EmployeeManager: React.FC = () => {
                     type="submit"
                     className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg font-medium shadow-sm hover:bg-blue-700 transition-colors inline-flex items-center justify-center gap-2"
                   >
-                    {editingEmployee ? (
-                      <>
-                        <Save className="w-5 h-5" /> Lưu thay đổi
-                      </>
-                    ) : (
-                      <>
-                        <Plus className="w-5 h-5" /> Thêm nhân viên
-                      </>
-                    )}
+                    <>
+                      <Save className="w-5 h-5" /> Lưu thay đổi
+                    </>
                   </button>
                   <button
                     type="button"

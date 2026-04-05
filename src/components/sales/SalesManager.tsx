@@ -19,6 +19,7 @@ import {
     useDeleteSaleRepo,
 } from "../../hooks/useSalesRepository";
 import { showToast } from "../../utils/toast";
+import { canDo } from "../../utils/permissions";
 import { getAvailableStock } from "../../lib/repository/partsRepository";
 
 import { formatCurrency } from "../../utils/format";
@@ -116,6 +117,17 @@ const SalesManager: React.FC = () => {
     const { data: employees = [] } = useEmployeesRepo();
     const history = useSalesHistory();
     const print = usePrintReceipt();
+    const canCreateSale = canDo(profile?.role, "sale.create");
+    const canUpdateSale = canDo(profile?.role, "sale.update");
+    const canDeleteSale = canDo(profile?.role, "sale.delete");
+
+    const openQuickServiceModal = () => {
+        if (!canCreateSale) {
+            showToast.error("Bạn không có quyền tạo đơn bán hàng");
+            return;
+        }
+        setShowQuickServiceModal(true);
+    };
 
     const triggerCartFeedback = (message: string) => {
         setActionFeedback(message);
@@ -214,6 +226,11 @@ const SalesManager: React.FC = () => {
 
     // Handle edit sale (reopen in cart)
     const handleEditSale = (sale: Sale) => {
+        if (!canUpdateSale) {
+            showToast.error("Bạn không có quyền sửa đơn bán hàng");
+            return;
+        }
+
         if (
             !confirm("Mở lại hóa đơn này để chỉnh sửa? Giỏ hàng hiện tại sẽ bị xóa.")
         ) {
@@ -258,6 +275,11 @@ const SalesManager: React.FC = () => {
 
     // Handle delete sale - Using atomic RPC for safety
     const handleDeleteSale = async (saleId: string) => {
+        if (!canDeleteSale) {
+            showToast.error("Bạn không có quyền xóa đơn bán hàng");
+            return;
+        }
+
         if (!confirm("Xác nhận xóa hóa đơn này? Hành động này không thể hoàn tác.")) {
             return;
         }
@@ -296,6 +318,11 @@ const SalesManager: React.FC = () => {
         },
         quickServiceNote?: string
     ) => {
+        if (!canCreateSale) {
+            showToast.error("Bạn không có quyền tạo đơn bán hàng");
+            return;
+        }
+
         try {
             const finalQuickServiceNote = quickServiceNote?.trim()
                 ? `Dịch vụ nhanh: ${service.name}\nGhi chú: ${quickServiceNote.trim()}`
@@ -365,6 +392,16 @@ const SalesManager: React.FC = () => {
 
     // Handle finalize sale
     const handleFinalize = async () => {
+        const isUpdatingSale = !!editingSaleId;
+        if (isUpdatingSale && !canUpdateSale) {
+            showToast.error("Bạn không có quyền cập nhật đơn bán hàng");
+            return;
+        }
+        if (!isUpdatingSale && !canCreateSale) {
+            showToast.error("Bạn không có quyền tạo đơn bán hàng");
+            return;
+        }
+
         if (cart.cartItems.length === 0) {
             showToast.error("Giỏ hàng trống!");
             return;
@@ -591,7 +628,7 @@ const SalesManager: React.FC = () => {
                     </button>
 
                     <button
-                        onClick={() => setShowQuickServiceModal(true)}
+                        onClick={openQuickServiceModal}
                         className="flex flex-col items-center gap-1 px-1 py-1.5 rounded-lg text-amber-600 dark:text-amber-400 active:scale-95"
                     >
                         <Zap className="w-6 h-6" />
@@ -635,7 +672,7 @@ const SalesManager: React.FC = () => {
                         <div className="flex items-center gap-3">
 
                             <button
-                                onClick={() => setShowQuickServiceModal(true)}
+                                onClick={openQuickServiceModal}
                                 className="flex items-center gap-2 px-4 py-2 bg-slate-800/80 text-slate-300 border border-slate-700/50 rounded-lg hover:text-amber-400 hover:bg-slate-700 hover:border-amber-500/30 transition-all"
                             >
                                 <Zap className="w-5 h-5" />
@@ -1160,7 +1197,7 @@ const SalesManager: React.FC = () => {
                                         </button>
                                         <button
                                             onClick={handleFinalize}
-                                            disabled={!finalization.paymentMethod || !finalization.paymentType}
+                                            disabled={!finalization.paymentMethod || !finalization.paymentType || (editingSaleId ? !canUpdateSale : !canCreateSale)}
                                             className={`flex-1 px-4 py-3 font-black rounded-xl transition-all shadow-lg ${finalization.paymentMethod && finalization.paymentType
                                                 ? "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-blue-500/30 hover:shadow-xl hover:scale-[1.02] ring-1 ring-blue-300/40"
                                                 : "bg-slate-300 dark:bg-slate-700 text-slate-500 cursor-not-allowed opacity-60"
@@ -1280,7 +1317,8 @@ const SalesManager: React.FC = () => {
                         customerDebts={customerDebts}
                         customers={customers}
                         onViewDetail={(sale) => setSelectedSale(sale)}
-                        canDelete={true}
+                        canDelete={canDeleteSale}
+                        canEdit={canUpdateSale}
                     />
                 )
             }

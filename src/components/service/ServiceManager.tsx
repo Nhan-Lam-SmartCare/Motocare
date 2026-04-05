@@ -102,6 +102,7 @@ import {
   formatMaskedPhone,
   handleCallCustomer as callCustomer,
 } from "./utils/service.utils";
+import { canDo } from "../../utils/permissions";
 
 // Local types removed - now imported from ./types/service.types
 
@@ -113,6 +114,14 @@ export default function ServiceManager() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { profile } = useAuth(); // Get user profile early for createCustomerDebtIfNeeded
   const isOwner = profile?.role === USER_ROLES.OWNER; // Check if user is owner
+  const canCreateWorkOrder = canDo(profile?.role, "work_order.create");
+  const canUpdateWorkOrder = canDo(profile?.role, "work_order.update");
+  const canDeleteWorkOrder = canDo(profile?.role, "work_order.delete");
+  const canCollectWorkOrderPayment = canDo(
+    profile?.role,
+    "work_order.collect_payment"
+  );
+  const canViewServiceFinancial = canDo(profile?.role, "finance.view");
 
   const {
     parts: contextParts,
@@ -652,6 +661,15 @@ export default function ServiceManager() {
   const statusSnapshotCards = getStatusSnapshotCards(stats);
 
   const handleOpenModal = async (order?: WorkOrder) => {
+    if (order?.id && !canUpdateWorkOrder) {
+      showToast.error("Bạn không có quyền sửa phiếu sửa chữa");
+      return;
+    }
+    if (!order?.id && !canCreateWorkOrder) {
+      showToast.error("Bạn không có quyền tạo phiếu sửa chữa");
+      return;
+    }
+
     if (order && order.id) {
       // 🔹 FIX: Load fresh data from database to avoid stale data issues
       const result = await fetchWorkOrderById(order.id);
@@ -969,6 +987,16 @@ export default function ServiceManager() {
 
   // 🔹 Handle Mobile Save - Similar to desktop handleSave
   const handleMobileSave = async (workOrderData: any) => {
+    const isUpdateMode = !!editingOrder?.id;
+    if (isUpdateMode && !canUpdateWorkOrder) {
+      showToast.error("Bạn không có quyền cập nhật phiếu sửa chữa");
+      throw new Error("NO_PERMISSION_WORK_ORDER_UPDATE");
+    }
+    if (!isUpdateMode && !canCreateWorkOrder) {
+      showToast.error("Bạn không có quyền tạo phiếu sửa chữa");
+      throw new Error("NO_PERMISSION_WORK_ORDER_CREATE");
+    }
+
     if (mobileSaveInFlightRef.current) {
       return;
     }
@@ -1082,6 +1110,16 @@ export default function ServiceManager() {
         paymentStatus = "paid";
       } else if (totalPaid > 0) {
         paymentStatus = "partial";
+      }
+
+      if (
+        !canCollectWorkOrderPayment &&
+        (paymentStatus === "paid" || paymentStatus === "partial" || totalPaid > 0)
+      ) {
+        const err = new Error("NO_PERMISSION_WORK_ORDER_PAYMENT");
+        (err as any).suppressAlert = true;
+        showToast.error("Bạn không có quyền thu tiền phiếu sửa chữa");
+        throw err;
       }
 
       // Find technician name
@@ -1391,6 +1429,9 @@ export default function ServiceManager() {
       setEditingOrder(undefined);
     } catch (error: any) {
       console.error("[handleMobileSave] Error:", error);
+      if (String(error?.message || "").startsWith("NO_PERMISSION_")) {
+        return;
+      }
       showToast.error(
         `Lỗi: ${error.message || "Không thể lưu phiếu sửa chữa"}`
       );
@@ -1413,6 +1454,11 @@ export default function ServiceManager() {
 
   const handleConfirmRefund = async () => {
     if (!refundingOrder) return;
+
+    if (!canCollectWorkOrderPayment) {
+      showToast.error("Bạn không có quyền hoàn tiền phiếu sửa chữa");
+      return;
+    }
 
     if (!refundReason.trim()) {
       showToast.error("Vui lòng nhập lý do hủy");
@@ -1527,6 +1573,11 @@ export default function ServiceManager() {
 
   // Handle delete work order - using hook for proper query invalidation
   const handleDelete = async (workOrder: WorkOrder) => {
+    if (!canDeleteWorkOrder) {
+      showToast.error("Bạn không có quyền xóa phiếu sửa chữa");
+      return;
+    }
+
     if (!confirm(`Xác nhận xóa phiếu ${formatWorkOrderId(workOrder.id)}?`)) {
       return;
     }
@@ -1584,11 +1635,19 @@ export default function ServiceManager() {
           isLoading={workOrdersLoading || workOrdersFetching}
           onRefresh={async () => { await refetchWorkOrders(); }}
           onCreateWorkOrder={() => {
+            if (!canCreateWorkOrder) {
+              showToast.error("Bạn không có quyền tạo phiếu sửa chữa");
+              return;
+            }
             setEditingOrder(undefined);
             setMobileModalViewMode(false); // Tạo mới = edit mode
             setShowMobileModal(true);
           }}
           onEditWorkOrder={async (workOrder) => {
+            if (!canUpdateWorkOrder) {
+              showToast.error("Bạn không có quyền sửa phiếu sửa chữa");
+              return;
+            }
             // 🔹 FIX: Load fresh data from database to avoid stale data issues
             if (workOrder.id) {
               const result = await fetchWorkOrderById(workOrder.id);
@@ -2509,110 +2568,114 @@ export default function ServiceManager() {
           </div>
         </div>
 
-        <div className="grid gap-2">
-          <div className="rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-3 flex flex-col justify-between">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-[9px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-300">
-                  Doanh thu {getDateFilterLabel(dateFilter)}
-                </p>
-                <p className="mt-1 text-xl font-bold text-blue-600 dark:text-blue-400">
-                  {showFinancialOverview
-                    ? formatCurrency(stats.filteredRevenue)
-                    : "•••••••"}
-                </p>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => setShowFinancialOverview((prev) => !prev)}
-                  className="p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
-                  aria-label={showFinancialOverview ? "Ẩn số liệu tài chính" : "Hiện số liệu tài chính"}
-                  title={showFinancialOverview ? "Ẩn số liệu tài chính" : "Hiện số liệu tài chính"}
-                >
-                  {showFinancialOverview ? (
-                    <Eye className="w-4 h-4 text-slate-500" />
-                  ) : (
-                    <EyeOff className="w-4 h-4 text-slate-500" />
-                  )}
-                </button>
-                <HandCoins className="w-6 h-6 text-blue-500" />
-              </div>
-            </div>
-            
-            {/* Added Mini Bar Chart */}
-            {chartData && (
-              <div className="mt-2 flex items-end gap-1 h-7 opacity-80" aria-hidden="true">
-                 {chartData.data.map((d, i) => (
-                   <div key={i} className="flex-1 bg-blue-50 dark:bg-blue-900/20 rounded-t-[3px] relative group h-full transition-colors hover:bg-blue-100 dark:hover:bg-blue-900/40">
-                      <div className="absolute bottom-0 left-0 right-0 bg-blue-500 dark:bg-blue-400 rounded-t-[3px] transition-all duration-300" style={{ height: `${Math.max((d.rev / chartData.maxRev) * 100, 4)}%` }} />
-                      <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 hidden group-hover:block bg-slate-800 dark:bg-slate-700 text-white text-[9px] px-1.5 py-0.5 rounded shadow whitespace-nowrap z-10">
-                         {showFinancialOverview ? formatCurrency(d.rev) : '••••••'}
-                      </div>
-                   </div>
-                 ))}
-              </div>
-            )}
-            
-            <p className="mt-1 text-[9px] text-slate-500 dark:text-slate-400">
-              Bao gồm các phiếu đã thanh toán {getDateFilterLabel(dateFilter).toLowerCase()}
-            </p>
-          </div>
-
-          <div className="rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-3 flex flex-col justify-between">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-[9px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-300">
-                  Lợi nhuận {getDateFilterLabel(dateFilter)}
-                </p>
-                <div className="flex items-baseline gap-2 mt-1">
-                  <p className="text-xl font-bold text-emerald-600 dark:text-emerald-400">
+        {canViewServiceFinancial ? (
+          <div className="grid gap-2">
+            <div className="rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-3 flex flex-col justify-between">
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-[9px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-300">
+                    Doanh thu {getDateFilterLabel(dateFilter)}
+                  </p>
+                  <p className="mt-1 text-xl font-bold text-blue-600 dark:text-blue-400">
                     {showFinancialOverview
-                      ? formatCurrency(stats.filteredProfit)
+                      ? formatCurrency(stats.filteredRevenue)
                       : "•••••••"}
                   </p>
-                  <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-500 bg-emerald-50 dark:bg-emerald-900/30 px-1.5 py-0.5 rounded">
-                    {showFinancialOverview ? `${profitMargin}%` : "••%"}
-                  </span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setShowFinancialOverview((prev) => !prev)}
+                    className="p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                    aria-label={showFinancialOverview ? "Ẩn số liệu tài chính" : "Hiện số liệu tài chính"}
+                    title={showFinancialOverview ? "Ẩn số liệu tài chính" : "Hiện số liệu tài chính"}
+                  >
+                    {showFinancialOverview ? (
+                      <Eye className="w-4 h-4 text-slate-500" />
+                    ) : (
+                      <EyeOff className="w-4 h-4 text-slate-500" />
+                    )}
+                  </button>
+                  <HandCoins className="w-6 h-6 text-blue-500" />
                 </div>
               </div>
-              <div className="flex items-center gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => setShowFinancialOverview((prev) => !prev)}
-                  className="p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
-                  aria-label={showFinancialOverview ? "Ẩn số liệu tài chính" : "Hiện số liệu tài chính"}
-                  title={showFinancialOverview ? "Ẩn số liệu tài chính" : "Hiện số liệu tài chính"}
-                >
-                  {showFinancialOverview ? (
-                    <Eye className="w-4 h-4 text-slate-500" />
-                  ) : (
-                    <EyeOff className="w-4 h-4 text-slate-500" />
-                  )}
-                </button>
-                <TrendingUp className="w-6 h-6 text-emerald-500" />
-              </div>
+
+              {chartData && (
+                <div className="mt-2 flex items-end gap-1 h-7 opacity-80" aria-hidden="true">
+                  {chartData.data.map((d, i) => (
+                    <div key={i} className="flex-1 bg-blue-50 dark:bg-blue-900/20 rounded-t-[3px] relative group h-full transition-colors hover:bg-blue-100 dark:hover:bg-blue-900/40">
+                      <div className="absolute bottom-0 left-0 right-0 bg-blue-500 dark:bg-blue-400 rounded-t-[3px] transition-all duration-300" style={{ height: `${Math.max((d.rev / chartData.maxRev) * 100, 4)}%` }} />
+                      <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 hidden group-hover:block bg-slate-800 dark:bg-slate-700 text-white text-[9px] px-1.5 py-0.5 rounded shadow whitespace-nowrap z-10">
+                        {showFinancialOverview ? formatCurrency(d.rev) : "••••••"}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <p className="mt-1 text-[9px] text-slate-500 dark:text-slate-400">
+                Bao gồm các phiếu đã thanh toán {getDateFilterLabel(dateFilter).toLowerCase()}
+              </p>
             </div>
-            
-            {/* Added Mini Bar Chart */}
-            {chartData && (
-              <div className="mt-2 flex items-end gap-1 h-7 opacity-80" aria-hidden="true">
-                 {chartData.data.map((d, i) => (
-                   <div key={i} className="flex-1 bg-emerald-50 dark:bg-emerald-900/20 rounded-t-[3px] relative group h-full transition-colors hover:bg-emerald-100 dark:hover:bg-emerald-900/40">
+
+            <div className="rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-3 flex flex-col justify-between">
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-[9px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-300">
+                    Lợi nhuận {getDateFilterLabel(dateFilter)}
+                  </p>
+                  <div className="flex items-baseline gap-2 mt-1">
+                    <p className="text-xl font-bold text-emerald-600 dark:text-emerald-400">
+                      {showFinancialOverview
+                        ? formatCurrency(stats.filteredProfit)
+                        : "•••••••"}
+                    </p>
+                    <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-500 bg-emerald-50 dark:bg-emerald-900/30 px-1.5 py-0.5 rounded">
+                      {showFinancialOverview ? `${profitMargin}%` : "••%"}
+                    </span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setShowFinancialOverview((prev) => !prev)}
+                    className="p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                    aria-label={showFinancialOverview ? "Ẩn số liệu tài chính" : "Hiện số liệu tài chính"}
+                    title={showFinancialOverview ? "Ẩn số liệu tài chính" : "Hiện số liệu tài chính"}
+                  >
+                    {showFinancialOverview ? (
+                      <Eye className="w-4 h-4 text-slate-500" />
+                    ) : (
+                      <EyeOff className="w-4 h-4 text-slate-500" />
+                    )}
+                  </button>
+                  <TrendingUp className="w-6 h-6 text-emerald-500" />
+                </div>
+              </div>
+
+              {chartData && (
+                <div className="mt-2 flex items-end gap-1 h-7 opacity-80" aria-hidden="true">
+                  {chartData.data.map((d, i) => (
+                    <div key={i} className="flex-1 bg-emerald-50 dark:bg-emerald-900/20 rounded-t-[3px] relative group h-full transition-colors hover:bg-emerald-100 dark:hover:bg-emerald-900/40">
                       <div className="absolute bottom-0 left-0 right-0 bg-emerald-500 dark:bg-emerald-400 rounded-t-[3px] transition-all duration-300" style={{ height: `${Math.max((Math.abs(d.prof) / chartData.maxProf) * 100, 4)}%` }} />
                       <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 hidden group-hover:block bg-slate-800 dark:bg-slate-700 text-white text-[9px] px-1.5 py-0.5 rounded shadow whitespace-nowrap z-10">
-                         {showFinancialOverview ? formatCurrency(d.prof) : '••••••'}
+                        {showFinancialOverview ? formatCurrency(d.prof) : "••••••"}
                       </div>
-                   </div>
-                 ))}
-              </div>
-            )}
-            
-            <p className="mt-1 text-[9px] text-slate-500 dark:text-slate-400">
-              Biên lợi nhuận gộp {getDateFilterLabel(dateFilter).toLowerCase()}
-            </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <p className="mt-1 text-[9px] text-slate-500 dark:text-slate-400">
+                Biên lợi nhuận gộp {getDateFilterLabel(dateFilter).toLowerCase()}
+              </p>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 p-3 text-xs text-slate-600 dark:text-slate-300">
+            Số liệu doanh thu và lợi nhuận chỉ hiển thị cho tài khoản có quyền tài chính.
+          </div>
+        )}
       </div>
 
       {/* Quick status filters - Hidden on desktop (lg+) since we have the stat cards above */}

@@ -73,7 +73,7 @@ const WorkOrderCard = React.memo(({
   onPrint,
   onDelete,
   canDelete,
-  isOwner = false,
+  canViewFinancials = false,
   showFinancials = false
 }: {
   workOrder: WorkOrder;
@@ -82,7 +82,7 @@ const WorkOrderCard = React.memo(({
   onPrint: (wo: WorkOrder) => void;
   onDelete: (wo: WorkOrder) => void;
   canDelete: boolean;
-  isOwner?: boolean;
+  canViewFinancials?: boolean;
   showFinancials?: boolean;
 }) => {
   // Get status badge color
@@ -213,8 +213,8 @@ const WorkOrderCard = React.memo(({
               }`}>
               {formatCurrency(workOrder.total || 0)}
             </div>
-            {/* Profit display - only for owner when showFinancials is on */}
-            {isOwner && showFinancials && (() => {
+            {/* Profit display - only for users with finance.view when showFinancials is on */}
+            {canViewFinancials && showFinancials && (() => {
               // Calculate total cost from parts and services
               const partsCost = workOrder.partsUsed?.reduce((sum, p) => sum + ((p.costPrice || 0) * p.quantity), 0) || 0;
               const servicesCost = workOrder.additionalServices?.reduce((sum, s) => sum + ((s.costPrice || 0) * (s.quantity || 1)), 0) || 0;
@@ -314,9 +314,9 @@ export function ServiceManagerMobile({
     setActiveTabRaw(tab);
   };
 
-  // Financial data visibility state (owner-only feature)
+  // Financial data visibility state (permission-based feature)
   const [showFinancials, setShowFinancials] = useState(false);
-  const isOwner = profile?.role === "owner";
+  const canViewFinancials = canDo(profile?.role, "finance.view");
 
   // Templates data
   const { data: templates } = useRepairTemplates();
@@ -507,7 +507,8 @@ export function ServiceManagerMobile({
               </div>
 
               {/* Doanh thu & Lợi nhuận */}
-              <div className="grid grid-cols-2 gap-2 mt-2">
+              {canViewFinancials && (
+                <div className="grid grid-cols-2 gap-2 mt-2">
                 <div className="p-3 rounded-xl bg-slate-50 dark:bg-[#2b2b40] border border-slate-200 dark:border-gray-700 shadow-sm relative overflow-hidden">
                   <div className="absolute top-0 right-0 w-16 h-16 bg-emerald-500/5 dark:bg-emerald-500/10 rounded-bl-full pointer-events-none"></div>
                   <div className="flex items-center justify-between mb-1 relative z-10">
@@ -515,19 +516,17 @@ export function ServiceManagerMobile({
                       Doanh thu {getDateLabel()}
                     </span>
                     <div className="flex items-center gap-1">
-                      {isOwner && (
-                        <button
-                          onClick={() => setShowFinancials(!showFinancials)}
-                          className="p-1 hover:bg-slate-200 dark:hover:bg-gray-700 rounded transition-colors"
-                          aria-label="Toggle revenue visibility"
-                        >
-                          {showFinancials ? (
-                            <Eye className="w-3.5 h-3.5 text-slate-400" />
-                          ) : (
-                            <EyeOff className="w-3.5 h-3.5 text-slate-400" />
-                          )}
-                        </button>
-                      )}
+                      <button
+                        onClick={() => setShowFinancials(!showFinancials)}
+                        className="p-1 hover:bg-slate-200 dark:hover:bg-gray-700 rounded transition-colors"
+                        aria-label="Toggle revenue visibility"
+                      >
+                        {showFinancials ? (
+                          <Eye className="w-3.5 h-3.5 text-slate-400" />
+                        ) : (
+                          <EyeOff className="w-3.5 h-3.5 text-slate-400" />
+                        )}
+                      </button>
                       <DollarSign className="w-4 h-4 text-emerald-500" />
                     </div>
                   </div>
@@ -542,19 +541,17 @@ export function ServiceManagerMobile({
                       Lợi nhuận {getDateLabel()}
                     </span>
                     <div className="flex items-center gap-1">
-                      {isOwner && (
-                        <button
-                          onClick={() => setShowFinancials(!showFinancials)}
-                          className="p-1 hover:bg-slate-200 dark:hover:bg-gray-700 rounded transition-colors"
-                          aria-label="Toggle profit visibility"
-                        >
-                          {showFinancials ? (
-                            <Eye className="w-3.5 h-3.5 text-slate-400" />
-                          ) : (
-                            <EyeOff className="w-3.5 h-3.5 text-slate-400" />
-                          )}
-                        </button>
-                      )}
+                      <button
+                        onClick={() => setShowFinancials(!showFinancials)}
+                        className="p-1 hover:bg-slate-200 dark:hover:bg-gray-700 rounded transition-colors"
+                        aria-label="Toggle profit visibility"
+                      >
+                        {showFinancials ? (
+                          <Eye className="w-3.5 h-3.5 text-slate-400" />
+                        ) : (
+                          <EyeOff className="w-3.5 h-3.5 text-slate-400" />
+                        )}
+                      </button>
                       <TrendingUp className="w-4 h-4 text-[#009ef7]" />
                     </div>
                   </div>
@@ -562,7 +559,8 @@ export function ServiceManagerMobile({
                     {showFinancials ? formatCurrency(kpis.loiNhuan) : "•••••••"}
                   </div>
                 </div>
-              </div>
+                </div>
+              )}
             </div>
 
             {/* SEARCH BAR & DATE FILTER */}
@@ -676,7 +674,7 @@ export function ServiceManagerMobile({
                       onPrint={onPrintWorkOrder}
                       onDelete={onDeleteWorkOrder}
                       canDelete={canDeleteWorkOrder}
-                      isOwner={isOwner}
+                      canViewFinancials={canViewFinancials}
                       showFinancials={showFinancials}
                     />
                   ))

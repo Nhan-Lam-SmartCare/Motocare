@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect } from "react";
 import { useAppContext } from "../../contexts/AppContext";
 import { useAuth } from "../../contexts/AuthContext";
 import { showToast } from "../../utils/toast";
+import { canDo } from "../../utils/permissions";
 import { formatCurrency, formatDate, formatShortWorkOrderId } from "../../utils/format";
 import type { CashTransaction } from "../../types";
 import { PlusIcon } from "../Icons";
@@ -37,6 +38,7 @@ const CashBook: React.FC = () => {
   const updateCashTxRepo = useUpdateCashTxRepo();
   const deleteCashTxRepo = useDeleteCashTxRepo();
   const updatePaymentSourceBalanceRepo = useUpdatePaymentSourceBalanceRepo();
+  const canManageFinance = canDo(authCtx.profile?.role, "finance.collect_payment");
 
   // Fetch profiles for user names
   const [profilesMap, setProfilesMap] = useState<Record<string, string>>({});
@@ -297,6 +299,11 @@ const CashBook: React.FC = () => {
 
   // Hàm lưu số dư ban đầu
   const handleSaveInitialBalance = async () => {
+    if (!canManageFinance) {
+      showToast.error("Bạn không có quyền cập nhật số dư ban đầu");
+      return;
+    }
+
     try {
       const parseSignedAmount = (value: string) => {
         const normalized = String(value || "")
@@ -456,7 +463,13 @@ const CashBook: React.FC = () => {
             <div className="flex items-center gap-2">
               {/* Action Buttons */}
               <button
-                onClick={() => setShowAddModal(true)}
+                onClick={() => {
+                  if (!canManageFinance) {
+                    showToast.error("Bạn không có quyền thêm giao dịch");
+                    return;
+                  }
+                  setShowAddModal(true);
+                }}
                 className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium shadow-sm transition-colors flex items-center gap-2"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -467,6 +480,10 @@ const CashBook: React.FC = () => {
 
               <button
                 onClick={() => {
+                  if (!canManageFinance) {
+                    showToast.error("Bạn không có quyền cập nhật số dư ban đầu");
+                    return;
+                  }
                   setInitialCashBalance(savedInitialCash.toString());
                   setInitialBankBalance(savedInitialBank.toString());
                   setShowInitialBalanceModal(true);
@@ -819,7 +836,13 @@ const CashBook: React.FC = () => {
                         })()}
                       </span>
                       <button
-                        onClick={() => setEditingTransaction(tx)}
+                        onClick={() => {
+                          if (!canManageFinance) {
+                            showToast.error("Bạn không có quyền sửa giao dịch");
+                            return;
+                          }
+                          setEditingTransaction(tx);
+                        }}
                         className="p-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg"
                       >
                         <svg
@@ -837,7 +860,13 @@ const CashBook: React.FC = () => {
                         </svg>
                       </button>
                       <button
-                        onClick={() => setDeletingTransaction(tx)}
+                        onClick={() => {
+                          if (!canManageFinance) {
+                            showToast.error("Bạn không có quyền xóa giao dịch");
+                            return;
+                          }
+                          setDeletingTransaction(tx);
+                        }}
                         className="p-1.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"
                       >
                         <svg
@@ -1013,7 +1042,13 @@ const CashBook: React.FC = () => {
                         <td className="px-4 py-4 text-center">
                           <div className="flex items-center justify-center gap-1">
                             <button
-                              onClick={() => setEditingTransaction(tx)}
+                              onClick={() => {
+                                if (!canManageFinance) {
+                                  showToast.error("Bạn không có quyền sửa giao dịch");
+                                  return;
+                                }
+                                setEditingTransaction(tx);
+                              }}
                               className="w-8 h-8 inline-flex items-center justify-center rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:text-blue-400 dark:hover:bg-blue-900/20 opacity-60 group-hover:opacity-100 transition-all"
                               title="Chỉnh sửa giao dịch"
                             >
@@ -1032,7 +1067,13 @@ const CashBook: React.FC = () => {
                               </svg>
                             </button>
                             <button
-                              onClick={() => setDeletingTransaction(tx)}
+                              onClick={() => {
+                                if (!canManageFinance) {
+                                  showToast.error("Bạn không có quyền xóa giao dịch");
+                                  return;
+                                }
+                                setDeletingTransaction(tx);
+                              }}
                               className="w-8 h-8 inline-flex items-center justify-center rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:text-red-400 dark:hover:bg-red-900/20 opacity-0 group-hover:opacity-100 transition-all"
                               title="Xóa giao dịch"
                             >
@@ -1097,6 +1138,10 @@ const CashBook: React.FC = () => {
             <AddTransactionModal
               onClose={() => setShowAddModal(false)}
               onSave={async (transaction) => {
+                if (!canManageFinance) {
+                  showToast.error("Bạn không có quyền thêm giao dịch");
+                  return;
+                }
                 // Basic validation
                 if (!transaction.amount || transaction.amount <= 0) {
                   showToast.warning("Số tiền phải > 0");
@@ -1160,6 +1205,10 @@ const CashBook: React.FC = () => {
               transaction={editingTransaction}
               onClose={() => setEditingTransaction(null)}
               onSave={async (updatedData) => {
+                if (!canManageFinance) {
+                  showToast.error("Bạn không có quyền sửa giao dịch");
+                  return;
+                }
                 try {
                   const res = await updateCashTxRepo.mutateAsync({
                     id: editingTransaction.id,
@@ -1184,6 +1233,10 @@ const CashBook: React.FC = () => {
               transaction={deletingTransaction}
               onClose={() => setDeletingTransaction(null)}
               onConfirm={async () => {
+                if (!canManageFinance) {
+                  showToast.error("Bạn không có quyền xóa giao dịch");
+                  return;
+                }
                 try {
                   const res = await deleteCashTxRepo.mutateAsync(
                     deletingTransaction.id

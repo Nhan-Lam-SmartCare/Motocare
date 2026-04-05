@@ -7,7 +7,6 @@ import {
     Clock,
     History,
     Search,
-    Plus,
     Pencil,
     Trash2,
     Phone,
@@ -35,7 +34,6 @@ interface EmployeeManagerMobileProps {
     setSearchTerm: (term: string) => void;
     onEdit: (emp: Employee) => void;
     onDelete: (emp: Employee) => void;
-    onAdd: () => void;
 }
 
 export const EmployeeManagerMobile: React.FC<EmployeeManagerMobileProps> = ({
@@ -47,7 +45,6 @@ export const EmployeeManagerMobile: React.FC<EmployeeManagerMobileProps> = ({
     setSearchTerm,
     onEdit,
     onDelete,
-    onAdd,
 }) => {
     // Filter employees based on search term
     const filteredEmployees = employees.filter(
@@ -177,12 +174,9 @@ export const EmployeeManagerMobile: React.FC<EmployeeManagerMobileProps> = ({
                     <Users className="w-5 h-5 text-blue-500" />
                     Nhân viên
                 </h2>
-                <button
-                    onClick={onAdd}
-                    className="p-2 bg-blue-600 text-white rounded-lg shadow-lg shadow-blue-600/20 active:scale-95 transition-transform"
-                >
-                    <Plus className="w-5 h-5" />
-                </button>
+                <span className="text-[11px] text-slate-400">
+                    Thêm mới tại Cài đặt
+                </span>
             </div>
 
             {/* Stats Cards - Horizontal Scroll */}

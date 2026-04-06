@@ -1636,6 +1636,48 @@ export default function ServiceManager() {
     }
   };
 
+  // Mini chart data calculation for the last 7 days
+  const chartData = useMemo(() => {
+    if (dateFilter !== "week") return null;
+    const days = 7;
+    const data = Array.from({ length: days }).map((_, i) => {
+      const d = new Date();
+      d.setDate(d.getDate() - (days - 1 - i));
+      return { date: d.toISOString().split("T")[0], rev: 0, prof: 0 };
+    });
+
+    dateFilteredOrders.forEach((o) => {
+      if (o.paymentStatus !== "paid" && o.paymentStatus !== "partial") return;
+      const oDate = new Date(o.creationDate || (o as any).creationdate)
+        .toISOString()
+        .split("T")[0];
+      const match = data.find((d) => d.date === oDate);
+      if (match) {
+        const rev = o.paymentStatus === "paid" ? (o.total || 0) : (o.totalPaid || 0);
+        // Cost of parts used
+        const partsCost =
+          o.partsUsed?.reduce(
+            (s, p) => s + (p.costPrice || 0) * (p.quantity || 1),
+            0
+          ) || 0;
+        // Cost of additional services
+        const servCost =
+          o.additionalServices?.reduce(
+            (s: any, svc: any) => s + (svc.costPrice || 0) * (svc.quantity || 1),
+            0
+          ) || 0;
+        const prof = rev - partsCost - servCost;
+
+        match.rev += rev;
+        match.prof += prof;
+      }
+    });
+
+    const maxRev = Math.max(...data.map((d) => d.rev), 1);
+    const maxProf = Math.max(...data.map((d) => Math.abs(d.prof)), 1);
+    return { data, maxRev, maxProf };
+  }, [dateFilteredOrders, dateFilter]);
+
   // Mobile view - Check screen width
   if (isMobile) {
     return (
@@ -2468,44 +2510,6 @@ export default function ServiceManager() {
       </>
     );
   }
-
-  // Mini chart data calculation for the last 7 days
-  const chartData = useMemo(() => {
-    if (dateFilter !== "week") return null;
-    const days = 7;
-    const data = Array.from({ length: days }).map((_, i) => {
-      const d = new Date();
-      d.setDate(d.getDate() - (days - 1 - i));
-      return { date: d.toISOString().split('T')[0], rev: 0, prof: 0 };
-    });
-    
-    dateFilteredOrders.forEach(o => {
-      if (o.paymentStatus !== "paid" && o.paymentStatus !== "partial") return;
-      const oDate = new Date(o.creationDate || (o as any).creationdate).toISOString().split('T')[0];
-      const match = data.find(d => d.date === oDate);
-      if (match) {
-        const rev = o.paymentStatus === "paid" ? (o.total || 0) : (o.totalPaid || 0);
-        // Cost of parts used
-        const partsCost = o.partsUsed?.reduce(
-            (s, p) => s + (p.costPrice || 0) * (p.quantity || 1),
-            0
-        ) || 0;
-        // Cost of additional services
-        const servCost = o.additionalServices?.reduce(
-            (s: any, svc: any) => s + (svc.costPrice || 0) * (svc.quantity || 1),
-            0
-        ) || 0;
-        const prof = rev - partsCost - servCost;
-        
-        match.rev += rev;
-        match.prof += prof;
-      }
-    });
-    
-    const maxRev = Math.max(...data.map(d => d.rev), 1);
-    const maxProf = Math.max(...data.map(d => Math.abs(d.prof)), 1);
-    return { data, maxRev, maxProf };
-  }, [dateFilteredOrders, dateFilter]);
 
   return (
     <div className="space-y-3">

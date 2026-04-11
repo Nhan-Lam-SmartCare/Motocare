@@ -35,24 +35,41 @@ const SEGMENT_EMOJI: Record<string, string> = {
 export default function CustomersScreen() {
   const [search, setSearch] = useState('');
 
+  const normalizePlate = (value: string) =>
+    value
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, '');
+
   const { data: customers = [], isLoading, refetch, isRefetching } = useQuery({
     queryKey: ['customers'],
     queryFn: fetchCustomers,
   });
 
-  const filtered = customers.filter(c =>
-    !search
-      ? true
-      : c.name.toLowerCase().includes(search.toLowerCase()) ||
-        (c.phone ?? '').includes(search)
-  );
+  const normalizedSearch = search.toLowerCase().trim();
+  const normalizedPlateSearch = normalizePlate(search);
+
+  const filtered = customers.filter(c => {
+    if (!normalizedSearch) return true;
+
+    const nameMatch = c.name.toLowerCase().includes(normalizedSearch);
+    const phoneMatch = (c.phone ?? '').includes(search);
+    const vehiclePlateMatch = (c.vehicles ?? []).some(v => {
+      const plate = v.licensePlate ?? '';
+      return (
+        plate.toLowerCase().includes(normalizedSearch) ||
+        (normalizedPlateSearch.length > 0 && normalizePlate(plate).includes(normalizedPlateSearch))
+      );
+    });
+
+    return nameMatch || phoneMatch || vehiclePlateMatch;
+  });
 
   return (
     <View style={styles.container}>
       <View style={styles.searchRow}>
         <TextInput
           style={styles.searchInput}
-          placeholder="🔍 Tìm theo tên, số điện thoại..."
+          placeholder="🔍 Tìm theo tên, số điện thoại, biển số..."
           placeholderTextColor={BRAND_COLORS.textMuted}
           value={search}
           onChangeText={setSearch}

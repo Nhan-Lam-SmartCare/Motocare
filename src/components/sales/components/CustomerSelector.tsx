@@ -115,7 +115,7 @@ export const CustomerSelector: React.FC<CustomerSelectorProps> = ({
                                 onDropdownToggle(true);
                             }}
                             onFocus={() => onDropdownToggle(true)}
-                            placeholder="Tìm khách hàng (tên, SĐT)..."
+                            placeholder="Tìm khách hàng (tên, SĐT, biển số)..."
                             className="w-full pl-10 pr-10 py-3 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg focus:border-blue-500 dark:focus:border-blue-400 focus:ring-1 focus:ring-blue-500 transition-all"
                         />
                         {isSearching && (

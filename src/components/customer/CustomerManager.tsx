@@ -46,6 +46,7 @@ import {
 } from "../../utils/maintenanceReminder";
 import { supabase } from "../../supabaseClient";
 import { useDebounce } from "../../hooks/useDebounce";
+import { POPULAR_MOTORCYCLES } from "../../constants/vehicleModels";
 
 // --- COMPONENTS ---
 
@@ -480,30 +481,31 @@ const classifyCustomer = (customer: Customer): Customer["segment"] => {
 
 const CustomerManager: React.FC = () => {
   // Lấy danh sách khách hàng từ Supabase
-  const { data: customers = [], refetch } = useCustomers();
+  const { data: customers = [], isLoading, refetch } = useCustomers();
   const createCustomer = useCreateCustomer();
   const updateCustomer = useUpdateCustomer();
   const deleteCustomer = useDeleteCustomer();
 
-  // Refetch customers khi component mount để đảm bảo data mới nhất
-  useEffect(() => {
-    refetch();
-  }, [refetch]);
-
   // Lấy danh sách nhà cung cấp từ Supabase
   const { data: suppliers = [], isLoading: suppliersLoading } = useSuppliers();
+  const createSupplier = useCreateSupplier();
   const deleteSupplierMutation = useDeleteSupplier();
 
   // State cho Load More
   const [displayCount, setDisplayCount] = useState(20);
+  const [search, setSearch] = useState("");
+  const [editCustomer, setEditCustomer] = useState<Customer | null>(null);
+
+  // Debounce search để tránh query liên tục
+  const debouncedSearch = useDebounce(search, 300);
+  const [serverCustomers, setServerCustomers] = useState<Customer[]>([]);
+  const [isSearchingServer, setIsSearchingServer] = useState(false);
 
   // Hàm lưu khách hàng (tạo mới hoặc cập nhật)
   const handleSaveCustomer = async (c: Partial<Customer> & { id?: string }) => {
     if (c.id) {
-      // Cập nhật
       await updateCustomer.mutateAsync({ id: c.id, updates: c });
     } else {
-      // Tạo mới, sinh id nếu chưa có
       const newCustomer = {
         ...c,
         id: `CUS-${Date.now()}-${Math.random().toString(16).slice(2)}`,
@@ -513,19 +515,12 @@ const CustomerManager: React.FC = () => {
     refetch();
     setEditCustomer(null);
   };
-  const [search, setSearch] = useState("");
-  const [editCustomer, setEditCustomer] = useState<Customer | null>(null);
 
-  // Server search state - để tìm khách hàng từ database khi có search term
-  const [serverCustomers, setServerCustomers] = useState<Customer[]>([]);
-  const [isSearchingServer, setIsSearchingServer] = useState(false);
-  const debouncedSearch = useDebounce(search, 300);
-
-  // Fetch customers từ server khi có search term
+  // Search từ server khi có từ khóa (để tìm khách hàng không nằm trong page hiện tại)
   useEffect(() => {
     const searchFromServer = async () => {
-      const searchTerm = debouncedSearch.trim();
-      if (!searchTerm) {
+      const keyword = debouncedSearch.trim();
+      if (!keyword) {
         setServerCustomers([]);
         return;
       }
@@ -536,13 +531,13 @@ const CustomerManager: React.FC = () => {
           .from("customers")
           .select("*")
           .or(
-            `name.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%,vehiclemodel.ilike.%${searchTerm}%,licenseplate.ilike.%${searchTerm}%`
+            `name.ilike.%${keyword}%,phone.ilike.%${keyword}%,vehiclemodel.ilike.%${keyword}%,licenseplate.ilike.%${keyword}%`
           )
-          .order("created_at", { ascending: false })
-          .limit(100);
+          .limit(120);
 
-        if (!error && data) {
-          // Map database columns to camelCase
+        if (error) throw error;
+
+        if (Array.isArray(data)) {
           const mappedData = data.map((c: any) => ({
             ...c,
             totalSpent: c.totalSpent ?? c.totalspent ?? 0,
@@ -569,12 +564,10 @@ const CustomerManager: React.FC = () => {
     if (!debouncedSearch.trim()) {
       return customers;
     }
-    // Khi có search, ưu tiên dùng kết quả từ server
+
     const customerMap = new Map<string, Customer>();
-    // Thêm customers từ context trước
-    customers.forEach(c => customerMap.set(c.id, c));
-    // Server customers sẽ override (có thể mới hơn)
-    serverCustomers.forEach(c => customerMap.set(c.id, c));
+    customers.forEach((c) => customerMap.set(c.id, c));
+    serverCustomers.forEach((c) => customerMap.set(c.id, c));
     return Array.from(customerMap.values());
   }, [customers, serverCustomers, debouncedSearch]);
 
@@ -1949,110 +1942,6 @@ const CustomerModal: React.FC<{
   onSave: (c: Partial<Customer> & { id?: string }) => void;
   onClose: () => void;
 }> = ({ customer, onSave, onClose }) => {
-  // Danh sách dòng xe phổ biến tại Việt Nam
-  const POPULAR_MOTORCYCLES = [
-    // === HONDA ===
-    "Honda Wave Alpha",
-    "Honda Wave RSX",
-    "Honda Wave RSX FI",
-    "Honda Wave 110",
-    "Honda Super Dream",
-    "Honda Dream",
-    "Honda Dream II",
-    "Honda Dream Thái",
-    "Honda Blade 110",
-    "Honda Future 125",
-    "Honda Future Neo",
-    "Honda Winner X",
-    "Honda Winner 150",
-    "Honda CB150R",
-    "Honda CBR150R",
-    "Honda Vision",
-    "Honda Air Blade 125",
-    "Honda Air Blade 150",
-    "Honda Air Blade 160",
-    "Honda SH Mode 125",
-    "Honda SH 125i",
-    "Honda SH 150i",
-    "Honda SH 160i",
-    "Honda SH 350i",
-    "Honda Lead 125",
-    "Honda PCX 125",
-    "Honda PCX 160",
-    "Honda Vario 125",
-    "Honda Vario 150",
-    "Honda Vario 160",
-    "Honda ADV 150",
-    "Honda ADV 160",
-    "Honda Forza 350",
-    "Honda Giorno",
-    "Honda Stylo 160",
-    "Honda Cub 50",
-    "Honda Cub 81",
-    "Honda Super Cub",
-    // === YAMAHA ===
-    "Yamaha Sirius",
-    "Yamaha Sirius FI",
-    "Yamaha Jupiter",
-    "Yamaha Jupiter FI",
-    "Yamaha Jupiter Finn",
-    "Yamaha Exciter 135",
-    "Yamaha Exciter 150",
-    "Yamaha Exciter 155",
-    "Yamaha MT-15",
-    "Yamaha R15",
-    "Yamaha FZ150i",
-    "Yamaha TFX 150",
-    "Yamaha XSR155",
-    "Yamaha Grande",
-    "Yamaha Grande Hybrid",
-    "Yamaha Janus",
-    "Yamaha FreeGo",
-    "Yamaha Latte",
-    "Yamaha NVX 125",
-    "Yamaha NVX 155",
-    "Yamaha NMAX 155",
-    "Yamaha XMAX 300",
-    "Yamaha Nouvo",
-    "Yamaha Mio",
-    // === SUZUKI ===
-    "Suzuki Raider 150",
-    "Suzuki Satria F150",
-    "Suzuki GSX-R150",
-    "Suzuki GSX-S150",
-    "Suzuki Axelo",
-    "Suzuki Revo",
-    "Suzuki Address",
-    "Suzuki Burgman",
-    // === SYM ===
-    "SYM Elegant",
-    "SYM Attila",
-    "SYM Angela",
-    "SYM Galaxy",
-    "SYM Star SR",
-    "SYM Shark",
-    // === PIAGGIO & VESPA ===
-    "Piaggio Liberty",
-    "Piaggio Medley",
-    "Vespa Sprint",
-    "Vespa Primavera",
-    "Vespa LX",
-    "Vespa GTS",
-    // === KYMCO ===
-    "Kymco Like",
-    "Kymco Many",
-    "Kymco Jockey",
-    // === VINFAST ===
-    "VinFast Klara",
-    "VinFast Ludo",
-    "VinFast Feliz",
-    "VinFast Theon",
-    "VinFast Evo200",
-    // === Khác ===
-    "Xe điện khác",
-    "Khác",
-  ];
-
   const [name, setName] = useState(customer.name || "");
   const [phone, setPhone] = useState(customer.phone || "");
 

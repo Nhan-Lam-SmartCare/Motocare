@@ -46,6 +46,7 @@ import {
   getVehiclesNeedingMaintenance,
   MAINTENANCE_CYCLES,
 } from "../../utils/maintenanceReminder";
+import { POPULAR_MOTORCYCLES } from "../../constants/vehicleModels";
 
 // --- COMPONENTS ---
 
@@ -1790,110 +1791,6 @@ const CustomerModal: React.FC<{
   onSave: (c: Partial<Customer> & { id?: string }) => void;
   onClose: () => void;
 }> = ({ customer, onSave, onClose }) => {
-  // Danh sách dòng xe phổ biến tại Việt Nam
-  const POPULAR_MOTORCYCLES = [
-    // === HONDA ===
-    "Honda Wave Alpha",
-    "Honda Wave RSX",
-    "Honda Wave RSX FI",
-    "Honda Wave 110",
-    "Honda Super Dream",
-    "Honda Dream",
-    "Honda Dream II",
-    "Honda Dream Thái",
-    "Honda Blade 110",
-    "Honda Future 125",
-    "Honda Future Neo",
-    "Honda Winner X",
-    "Honda Winner 150",
-    "Honda CB150R",
-    "Honda CBR150R",
-    "Honda Vision",
-    "Honda Air Blade 125",
-    "Honda Air Blade 150",
-    "Honda Air Blade 160",
-    "Honda SH Mode 125",
-    "Honda SH 125i",
-    "Honda SH 150i",
-    "Honda SH 160i",
-    "Honda SH 350i",
-    "Honda Lead 125",
-    "Honda PCX 125",
-    "Honda PCX 160",
-    "Honda Vario 125",
-    "Honda Vario 150",
-    "Honda Vario 160",
-    "Honda ADV 150",
-    "Honda ADV 160",
-    "Honda Forza 350",
-    "Honda Giorno",
-    "Honda Stylo 160",
-    "Honda Cub 50",
-    "Honda Cub 81",
-    "Honda Super Cub",
-    // === YAMAHA ===
-    "Yamaha Sirius",
-    "Yamaha Sirius FI",
-    "Yamaha Jupiter",
-    "Yamaha Jupiter FI",
-    "Yamaha Jupiter Finn",
-    "Yamaha Exciter 135",
-    "Yamaha Exciter 150",
-    "Yamaha Exciter 155",
-    "Yamaha MT-15",
-    "Yamaha R15",
-    "Yamaha FZ150i",
-    "Yamaha TFX 150",
-    "Yamaha XSR155",
-    "Yamaha Grande",
-    "Yamaha Grande Hybrid",
-    "Yamaha Janus",
-    "Yamaha FreeGo",
-    "Yamaha Latte",
-    "Yamaha NVX 125",
-    "Yamaha NVX 155",
-    "Yamaha NMAX 155",
-    "Yamaha XMAX 300",
-    "Yamaha Nouvo",
-    "Yamaha Mio",
-    // === SUZUKI ===
-    "Suzuki Raider 150",
-    "Suzuki Satria F150",
-    "Suzuki GSX-R150",
-    "Suzuki GSX-S150",
-    "Suzuki Axelo",
-    "Suzuki Revo",
-    "Suzuki Address",
-    "Suzuki Burgman",
-    // === SYM ===
-    "SYM Elegant",
-    "SYM Attila",
-    "SYM Angela",
-    "SYM Galaxy",
-    "SYM Star SR",
-    "SYM Shark",
-    // === PIAGGIO & VESPA ===
-    "Piaggio Liberty",
-    "Piaggio Medley",
-    "Vespa Sprint",
-    "Vespa Primavera",
-    "Vespa LX",
-    "Vespa GTS",
-    // === KYMCO ===
-    "Kymco Like",
-    "Kymco Many",
-    "Kymco Jockey",
-    // === VINFAST ===
-    "VinFast Klara",
-    "VinFast Ludo",
-    "VinFast Feliz",
-    "VinFast Theon",
-    "VinFast Evo200",
-    // === Khác ===
-    "Xe điện khác",
-    "Khác",
-  ];
-
   const [name, setName] = useState(customer.name || "");
   const [phone, setPhone] = useState(customer.phone || "");
 

@@ -73,6 +73,7 @@ import {
 } from "../../utils/maintenanceReminder";
 import { RepairTemplatesModal } from "./components/RepairTemplatesModal";
 import { USER_ROLES } from "../../constants";
+import { POPULAR_MOTORCYCLES } from "../../constants/vehicleModels";
 
 interface StoreSettings {
   store_name?: string;
@@ -110,66 +111,6 @@ export default function ServiceManager() {
     workOrders,
     setWorkOrders,
   } = useAppContext();
-
-  // Popular motorcycle models in Vietnam
-  const POPULAR_MOTORCYCLES = [
-    // Honda
-    "Honda Wave RSX",
-    "Honda Wave Alpha",
-    "Honda Blade",
-    "Honda Future",
-    "Honda Winner X",
-    "Honda Vision",
-    "Honda Air Blade",
-    "Honda SH Mode",
-    "Honda SH 125i",
-    "Honda SH 150i",
-    "Honda SH 160i",
-    "Honda SH 350i",
-    "Honda Vario",
-    "Honda Lead",
-    "Honda PCX",
-    "Honda ADV",
-    // Yamaha
-    "Yamaha Exciter",
-    "Yamaha Sirius",
-    "Yamaha Jupiter",
-    "Yamaha Grande",
-    "Yamaha Janus",
-    "Yamaha FreeGo",
-    "Yamaha Latte",
-    "Yamaha NVX",
-    "Yamaha XSR",
-    // Suzuki
-    "Suzuki Raider",
-    "Suzuki Axelo",
-    "Suzuki Satria",
-    "Suzuki GD110",
-    "Suzuki Impulse",
-    "Suzuki Address",
-    "Suzuki Revo",
-    // SYM
-    "SYM Elite",
-    "SYM Galaxy",
-    "SYM Star",
-    "SYM Attila",
-    "SYM Angela",
-    "SYM Passing",
-    // Piaggio & Vespa
-    "Piaggio Liberty",
-    "Piaggio Medley",
-    "Vespa Sprint",
-    "Vespa Primavera",
-    "Vespa GTS",
-    // VinFast
-    "VinFast Klara",
-    "VinFast Evo200",
-    "VinFast Ludo",
-    "VinFast Impes",
-    "VinFast Theon",
-    // Khác
-    "Khác",
-  ];
 
   // Fetch parts from Supabase
   const { data: fetchedParts, isLoading: partsLoading } = usePartsRepo();

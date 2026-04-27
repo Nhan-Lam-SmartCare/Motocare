@@ -80,7 +80,7 @@ export const CartItemRow: React.FC<CartItemRowProps> = ({
                         value={item.sellingPrice}
                         onChange={(val: number) => onUpdatePrice(item.partId, val || 0)}
                         className="w-full px-3 py-1.5 text-sm font-bold text-slate-900 dark:text-white bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-1 focus:ring-blue-500 transition-all text-right"
-                        min={0}
+                        allowNegative
                     />
                 </div>
 

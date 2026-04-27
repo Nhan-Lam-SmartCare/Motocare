@@ -28,8 +28,23 @@ export const supabaseHelpers = {
   },
 
   async createCustomer(customer: any) {
-    // Extract vehicleModel and licensePlate, store them in vehicles array
-    const { vehicleModel, licensePlate, ...customerData } = customer;
+    // Accept both camelCase and lowercase keys to avoid losing vehicle info.
+    const vehicleModel = String(
+      customer?.vehicleModel ?? customer?.vehiclemodel ?? ""
+    ).trim();
+    const licensePlate = String(
+      customer?.licensePlate ?? customer?.licenseplate ?? ""
+    )
+      .trim()
+      .toUpperCase();
+
+    const {
+      vehicleModel: _vehicleModel,
+      vehiclemodel: _vehiclemodel,
+      licensePlate: _licensePlate,
+      licenseplate: _licenseplate,
+      ...customerData
+    } = customer;
 
     // Build vehicles array if we have vehicle info
     const vehicles =
@@ -39,6 +54,9 @@ export const supabaseHelpers = {
 
     const insertData = {
       ...customerData,
+      // customers table uses lowercase columns in production DB.
+      vehiclemodel: vehicleModel || null,
+      licenseplate: licensePlate || null,
       vehicles: vehicles.length > 0 ? vehicles : undefined,
     };
 
@@ -49,7 +67,15 @@ export const supabaseHelpers = {
       .single();
 
     if (error) throw error;
-    return data;
+    return {
+      ...data,
+      vehicleModel: data?.vehicleModel ?? data?.vehiclemodel ?? null,
+      licensePlate: data?.licensePlate ?? data?.licenseplate ?? null,
+      totalSpent: data?.totalSpent ?? data?.totalspent ?? 0,
+      visitCount: data?.visitCount ?? data?.visitcount ?? 0,
+      lastVisit: data?.lastVisit ?? data?.lastvisit ?? null,
+      loyaltyPoints: data?.loyaltyPoints ?? data?.loyaltypoints ?? 0,
+    };
   },
 
   async createCustomersBulk(customers: any[]) {

@@ -10,6 +10,7 @@ import {
     Zap,
     Truck,
     ScanLine,
+    Plus,
 } from "lucide-react";
 import { useAppContext } from "../../contexts/AppContext";
 import { usePartsRepo } from "../../hooks/usePartsRepository";
@@ -37,6 +38,7 @@ import { ReceiptTemplateModal } from "./modals/ReceiptTemplateModal";
 import { SalesHistoryModal } from "./modals/SalesHistoryModal";
 import QuickServiceModal from "./QuickServiceModal";
 import BarcodeScannerModal from "../common/BarcodeScannerModal";
+import { NumberInput } from "../common/NumberInput";
 import { DeliveryOrdersView } from "./DeliveryOrdersView";
 
 // Custom Hooks
@@ -100,6 +102,11 @@ const SalesManager: React.FC = () => {
     const [showInstallmentModal, setShowInstallmentModal] = useState(false);
     const [actionFeedback, setActionFeedback] = useState<string | null>(null);
     const [cartPulse, setCartPulse] = useState(false);
+    const [showManualItemForm, setShowManualItemForm] = useState(false);
+    const [manualItemName, setManualItemName] = useState("");
+    const [manualItemCost, setManualItemCost] = useState<number>(0);
+    const [manualItemPrice, setManualItemPrice] = useState<number>(0);
+    const [manualItemQty, setManualItemQty] = useState<number>(1);
 
     // Custom hooks
     const cart = useSalesCart(cartItems, setCartItems, clearCart);
@@ -137,6 +144,56 @@ const SalesManager: React.FC = () => {
         window.setTimeout(() => {
             setActionFeedback((current) => (current === message ? null : current));
         }, 1800);
+    };
+
+    const resetManualItemForm = () => {
+        setManualItemName("");
+        setManualItemCost(0);
+        setManualItemPrice(0);
+        setManualItemQty(1);
+    };
+
+    const handleAddManualItem = () => {
+        const name = manualItemName.trim();
+        const cost = Number(manualItemCost || 0);
+        const price = Number(manualItemPrice || 0);
+        const qty = Number(manualItemQty || 1);
+
+        if (!name) {
+            showToast.error("Vui lòng nhập tên hàng ngoài kho");
+            return;
+        }
+        if (price === 0) {
+            showToast.error("Giá bán không được bằng 0");
+            return;
+        }
+        if (qty <= 0) {
+            showToast.error("Số lượng phải lớn hơn 0");
+            return;
+        }
+
+        const baseId = `quick_service_manual_${Date.now()}`;
+        const safeSku = name.replace(/\s+/g, "_").toUpperCase().slice(0, 24);
+
+        setCartItems((prev) => [
+            ...prev,
+            {
+                partId: baseId,
+                partName: name,
+                sku: `MANUAL_${safeSku || "ITEM"}`,
+                category: "Ngoài kho",
+                quantity: qty,
+                sellingPrice: price,
+                costPrice: cost,
+                stockSnapshot: 999999,
+                discount: 0,
+                isService: true,
+            },
+        ]);
+
+        triggerCartFeedback(`Đã thêm ngoài kho: ${name} x${qty}`);
+        resetManualItemForm();
+        setShowManualItemForm(false);
     };
 
     const handleAddToCartWithFeedback = (part: Part, source: "tap" | "scan" = "tap") => {
@@ -237,19 +294,18 @@ const SalesManager: React.FC = () => {
             return;
         }
 
-        // Clear current cart
+        // Clear current cart and restore item snapshot (including non-stock/manual items)
         cart.clearCart();
-
-        // Load sale items into cart
-        sale.items.forEach((item) => {
-            const part = repoParts.find((p) => p.id === item.partId);
-            if (part) {
-                // Add to cart with correct quantity
-                for (let i = 0; i < item.quantity; i++) {
-                    cart.addToCart(part, currentBranchId);
-                }
-            }
-        });
+        setCartItems(
+            (sale.items || []).map((item) => {
+                const part = repoParts.find((p) => p.id === item.partId);
+                const stock = part ? getAvailableStock(part, currentBranchId) : 999999;
+                return {
+                    ...item,
+                    stockSnapshot: Number(item.stockSnapshot || stock || 999999),
+                };
+            })
+        );
 
         // Load customer if exists
         if (sale.customer.id) {
@@ -409,6 +465,9 @@ const SalesManager: React.FC = () => {
 
         // ✅ FIX: Validate stock availability before finalizing
         const outOfStockItems = cart.cartItems.filter(item => {
+            if (item.isService || item.partId.startsWith("quick_service_")) {
+                return false;
+            }
             const part = repoParts.find(p => p.id === item.partId);
             if (!part) return true; // Part not found = out of stock
 
@@ -508,6 +567,11 @@ const SalesManager: React.FC = () => {
                     : undefined,
             };
 
+            const purchaseExpenseTotal = cart.cartItems.reduce((sum, item) => {
+                const cost = Number(item.costPrice || 0);
+                return cost > 0 ? sum + cost * item.quantity : sum;
+            }, 0);
+
             const newSale = await createSaleAtomicAsync(saleData as unknown as Partial<Sale>);
             const saleId = newSale?.id;
 
@@ -522,6 +586,28 @@ const SalesManager: React.FC = () => {
             // Force update note if it wasn't saved by RPC (backup)
             if (finalization.paymentType === "installment" && saleId) {
                 await supabase.from("sales").update({ note: finalNote }).eq("id", saleId);
+            }
+
+            // Auto record cash expense for purchase cost lines (manual/out-of-stock intake)
+            if (purchaseExpenseTotal > 0 && saleId) {
+                const { error: costExpenseError } = await supabase
+                    .from("cash_transactions")
+                    .insert({
+                        type: "expense",
+                        category: "inventory_purchase",
+                        amount: purchaseExpenseTotal,
+                        date: saleTime,
+                        notes: `Chi giá nhập - Đơn ${saleId}`,
+                        branchId: currentBranchId,
+                        paymentSourceId: finalization.paymentMethod,
+                        saleId,
+                        recipient: customer.selectedCustomer?.name || "Khách hàng",
+                    });
+
+                if (costExpenseError) {
+                    console.error("Failed to record purchase cost expense:", costExpenseError);
+                    showToast.error("Đã tạo đơn nhưng chưa ghi được bút toán chi giá nhập");
+                }
             }
 
             // Create customer debt if needed
@@ -893,12 +979,116 @@ const SalesManager: React.FC = () => {
                             )}
                             <div className="flex items-center justify-between mb-4">
                                 <h2 className="text-xl font-bold">Giỏ hàng</h2>
-                                {cart.isWholesaleMode && (
-                                    <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-600 text-white text-xs font-bold rounded-full shadow-sm">
-                                        💰 Giá sỉ
-                                    </span>
-                                )}
+                                <div className="flex items-center gap-2">
+                                    {cart.isWholesaleMode && (
+                                        <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-600 text-white text-xs font-bold rounded-full shadow-sm">
+                                            💰 Giá sỉ
+                                        </span>
+                                    )}
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowManualItemForm((prev) => !prev)}
+                                        className="inline-flex items-center gap-1 px-2 py-1 bg-amber-100 text-amber-800 border border-amber-300 rounded-full text-xs font-bold hover:bg-amber-200 transition-colors"
+                                    >
+                                        <Plus className="w-3 h-3" />
+                                        Ngoài kho
+                                    </button>
+                                </div>
                             </div>
+
+                            {showManualItemForm && (
+                                <div className="mb-4 rounded-2xl border border-amber-300/80 bg-gradient-to-b from-amber-50 to-amber-100/70 dark:from-amber-900/25 dark:to-amber-900/10 dark:border-amber-700 p-3 md:p-4 space-y-3 shadow-sm">
+                                    <div className="flex items-center justify-between">
+                                        <div className="text-sm font-bold text-amber-900 dark:text-amber-200">
+                                            Thêm hàng ngoài kho
+                                        </div>
+                                        <span className="text-[10px] px-2 py-1 rounded-full bg-amber-200/80 dark:bg-amber-800/70 text-amber-900 dark:text-amber-100 font-semibold">
+                                            Mobile nhanh
+                                        </span>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-[11px] font-semibold text-amber-900 dark:text-amber-200 mb-1">
+                                            Tên hàng
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={manualItemName}
+                                            onChange={(e) => setManualItemName(e.target.value)}
+                                            placeholder="VD: Thu bình cũ"
+                                            className="w-full px-3 py-2.5 text-sm border rounded-xl bg-white dark:bg-slate-700"
+                                        />
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <div>
+                                            <label className="block text-[11px] font-semibold text-amber-900 dark:text-amber-200 mb-1">
+                                                Giá nhập
+                                            </label>
+                                            <NumberInput
+                                                value={manualItemCost}
+                                                onChange={(value) => {
+                                                    const cost = Math.max(0, Number(value || 0));
+                                                    setManualItemCost(cost);
+                                                    setManualItemPrice(Math.round(cost * 1.4));
+                                                }}
+                                                placeholder="100000"
+                                                className="w-full px-3 py-2.5 text-sm border rounded-xl bg-white dark:bg-slate-700 text-right"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-[11px] font-semibold text-amber-900 dark:text-amber-200 mb-1">
+                                                Số lượng
+                                            </label>
+                                            <input
+                                                type="number"
+                                                min={1}
+                                                value={manualItemQty}
+                                                onChange={(e) => setManualItemQty(Math.max(1, Number(e.target.value || 1)))}
+                                                placeholder="1"
+                                                className="w-full px-3 py-2.5 text-sm border rounded-xl bg-white dark:bg-slate-700 text-right"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-[11px] font-semibold text-amber-900 dark:text-amber-200 mb-1">
+                                            Giá bán
+                                        </label>
+                                        <NumberInput
+                                            value={manualItemPrice}
+                                            onChange={(value) => setManualItemPrice(Number(value || 0))}
+                                            allowNegative
+                                            placeholder="140000 hoặc -50000"
+                                            className="w-full px-3 py-2.5 text-sm border rounded-xl bg-white dark:bg-slate-700 text-right"
+                                        />
+                                    </div>
+
+                                    <div className="text-[11px] leading-relaxed text-amber-900/90 dark:text-amber-200/90 bg-amber-100/70 dark:bg-amber-900/20 rounded-lg px-2.5 py-2 border border-amber-200/70 dark:border-amber-800/60">
+                                        Nhập giá nhập để tự gợi ý giá bán +40%. Bạn vẫn có thể sửa tay giá bán, kể cả số âm để thu mua lại.
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-2 pt-1">
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setShowManualItemForm(false);
+                                                resetManualItemForm();
+                                            }}
+                                            className="w-full px-3 py-2.5 text-sm font-semibold rounded-xl border border-slate-300 bg-white hover:bg-slate-50"
+                                        >
+                                            Hủy
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={handleAddManualItem}
+                                            className="w-full px-3 py-2.5 text-sm font-semibold rounded-xl bg-amber-600 text-white hover:bg-amber-700 shadow-sm"
+                                        >
+                                            Thêm vào giỏ
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
 
                             {/* Customer Selection */}
                             <div className="mb-4">

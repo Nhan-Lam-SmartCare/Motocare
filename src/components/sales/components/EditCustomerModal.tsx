@@ -3,6 +3,7 @@ import { User, X, Phone, Save, Bike, Plus, Trash2, Edit2, Check } from "lucide-r
 import type { Customer, Vehicle } from "../../../types";
 import { useUpdateCustomer } from "../../../hooks/useSupabase";
 import { showToast } from "../../../utils/toast";
+import { POPULAR_MOTORCYCLES } from "../../../constants/vehicleModels";
 
 interface EditCustomerModalProps {
     isOpen: boolean;
@@ -10,19 +11,6 @@ interface EditCustomerModalProps {
     onClose: () => void;
     onSaveSuccess: (updatedCustomer: Customer) => void;
 }
-
-const POPULAR_MOTORCYCLES = [
-    // Honda
-    "Air Blade", "Vision", "Lead", "SH 125/150", "SH Mode", "Wave Alpha", "Wave RSX", "Winner X", "Future 125", "Vario 160",
-    // Yamaha
-    "Exciter 155", "Exciter 150", "Grande", "Janus", "Sirius", "NVX 155", "FreeGo",
-    // Suzuki
-    "Raider R150", "Satria F150", "Burgman Street",
-    // Piaggio
-    "Vespa Sprint", "Vespa Primavera", "Liberty 125",
-    // Generic
-    "Khác"
-];
 
 export const EditCustomerModal: React.FC<EditCustomerModalProps> = ({
     isOpen,

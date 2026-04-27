@@ -102,6 +102,7 @@ export interface CartItem {
   category?: string;
   quantity: number;
   sellingPrice: number; // Final unit price after selecting retail/wholesale
+  costPrice?: number; // Giá nhập để hạch toán chi khi bán ngoài kho/thu mua
   stockSnapshot: number; // Stock at time added for validation
   discount?: number; // Per-line discount (absolute)
   isService?: boolean; // Mark as service item to skip stock validation

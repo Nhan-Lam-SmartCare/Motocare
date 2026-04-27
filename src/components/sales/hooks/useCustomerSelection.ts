@@ -291,10 +291,9 @@ export function useCustomerSelection(
 
                 // Select the new customer
                 setSelectedCustomer({
-                    id: savedCustomer.id,
-                    name: savedCustomer.name,
-                    phone: savedCustomer.phone,
-                    created_at: savedCustomer.created_at,
+                    ...savedCustomer,
+                    vehicleModel: (savedCustomer as any).vehicleModel ?? (savedCustomer as any).vehiclemodel,
+                    licensePlate: (savedCustomer as any).licensePlate ?? (savedCustomer as any).licenseplate,
                 });
                 setCustomerSearch(savedCustomer.name);
 

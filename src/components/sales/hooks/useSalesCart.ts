@@ -121,10 +121,6 @@ export function useSalesCart(
 
     const updateCartPrice = useCallback(
         (partId: string, newPrice: number) => {
-            if (newPrice < 0) {
-                showToast.error("Giá không được âm!");
-                return;
-            }
             setGlobalCartItems((prev) =>
                 prev.map((item) =>
                     item.partId === partId ? { ...item, sellingPrice: newPrice } : item

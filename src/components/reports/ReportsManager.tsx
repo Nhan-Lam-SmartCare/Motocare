@@ -191,6 +191,17 @@ const ReportsManager: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [showOrderDetails] = useState(false);
 
+  const getLocalDateKey = (input: string | Date): string => {
+    const d = input instanceof Date ? input : new Date(input);
+    if (Number.isNaN(d.getTime())) {
+      return String(input).slice(0, 10);
+    }
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
 
   // Function to handle column sorting
   const handleSort = (column: string) => {
@@ -284,7 +295,7 @@ const ReportsManager: React.FC = () => {
 
     // Add sales to daily data
     filteredSales.forEach((sale) => {
-      const dateKey = new Date(sale.date).toISOString().split("T")[0];
+      const dateKey = getLocalDateKey(sale.date);
       if (!dataByDate.has(dateKey)) {
         dataByDate.set(dateKey, {
           date: dateKey,
@@ -338,7 +349,7 @@ const ReportsManager: React.FC = () => {
       }
 
       const woDateObj = new Date(accountingDateRaw);
-      const dateKey = woDateObj.toISOString().split("T")[0];
+  const dateKey = getLocalDateKey(woDateObj);
 
       if (!dataByDate.has(dateKey)) {
         dataByDate.set(dateKey, {
@@ -396,11 +407,61 @@ const ReportsManager: React.FC = () => {
     };
   }, [salesData, workOrdersData, partsData, currentBranchId, partsCostMap, start, end]);
 
+  // Báo cáo thu chi
+  // Fetch cash transactions via repository with range filters
+  const { data: cashTxData = [], isLoading: cashTxLoading } = useCashTxRepo({
+    branchId: currentBranchId,
+    startDate: start.toISOString(),
+    endDate: end.toISOString(),
+  });
+
   // Sorted daily report based on sortColumn and sortDirection
   const sortedDailyReport = useMemo(() => {
-    if (!sortColumn) return revenueReport.dailyReport;
+    const reportableCashTx = cashTxData.filter((t) => {
+      const txDate = new Date(t.date);
+      if (Number.isNaN(txDate.getTime()) || txDate < start || txDate > end) {
+        return false;
+      }
 
-    return [...revenueReport.dailyReport].sort((a, b) => {
+      if (t.type === "income") {
+        return !isExcludedIncomeCategory(t.category);
+      }
+
+      if (t.type === "expense") {
+        return t.amount > 0 && (!isExcludedExpenseCategory(t.category) || isRefundCategory(t.category));
+      }
+
+      return false;
+    });
+
+    const mergedReportMap = new Map(
+      revenueReport.dailyReport.map((d) => [d.date, d])
+    );
+
+    reportableCashTx.forEach((t) => {
+      const dateKey = getLocalDateKey(t.date);
+      if (!mergedReportMap.has(dateKey)) {
+        mergedReportMap.set(dateKey, {
+          date: dateKey,
+          sales: [],
+          workOrders: [],
+          totalRevenue: 0,
+          totalCost: 0,
+          partsCost: 0,
+          servicesCost: 0,
+          totalProfit: 0,
+          orderCount: 0,
+        });
+      }
+    });
+
+    const baseDailyReport = Array.from(mergedReportMap.values()).sort(
+      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+    );
+
+    if (!sortColumn) return baseDailyReport;
+
+    return [...baseDailyReport].sort((a, b) => {
       let aValue: any;
       let bValue: any;
 
@@ -435,15 +496,7 @@ const ReportsManager: React.FC = () => {
         return bValue - aValue;
       }
     });
-  }, [revenueReport.dailyReport, sortColumn, sortDirection]);
-
-  // Báo cáo thu chi
-  // Fetch cash transactions via repository with range filters
-  const { data: cashTxData = [], isLoading: cashTxLoading } = useCashTxRepo({
-    branchId: currentBranchId,
-    startDate: start.toISOString(),
-    endDate: end.toISOString(),
-  });
+  }, [revenueReport.dailyReport, cashTxData, start, end, sortColumn, sortDirection]);
 
   // Exclusion logic is shared (Dashboard/Analytics/Reports) to keep numbers consistent.
 
@@ -1089,20 +1142,20 @@ const ReportsManager: React.FC = () => {
                       // Tính phiếu thu/chi theo ngày
                       const dayDateStr = day.date;
                       const thuKhac = cashTxData
-                        .filter(t => t.type === "income" && !isExcludedIncomeCategory(t.category) && t.date.slice(0, 10) === dayDateStr)
+                        .filter(t => t.type === "income" && !isExcludedIncomeCategory(t.category) && getLocalDateKey(t.date) === dayDateStr)
                         .reduce((sum, t) => sum + t.amount, 0);
                       const chiKhac = cashTxData
-                        .filter(t => t.type === "expense" && t.amount > 0 && !isExcludedExpenseCategory(t.category) && t.date.slice(0, 10) === dayDateStr)
+                        .filter(t => t.type === "expense" && t.amount > 0 && !isExcludedExpenseCategory(t.category) && getLocalDateKey(t.date) === dayDateStr)
                         .reduce((sum, t) => sum + t.amount, 0);
                       // Hoàn tiền (giá bán âm): trừ vào doanh thu, hiện thị trong Thu/Chi khác
                       const chiHoan = cashTxData
-                        .filter(t => t.type === "expense" && t.amount > 0 && isRefundCategory(t.category) && t.date.slice(0, 10) === dayDateStr)
+                        .filter(t => t.type === "expense" && t.amount > 0 && isRefundCategory(t.category) && getLocalDateKey(t.date) === dayDateStr)
                         .reduce((sum, t) => sum + t.amount, 0);
                       const thuChiKhac = thuKhac - chiKhac - chiHoan;
                       const laiRong = laiGop + thuKhac - chiKhac - chiHoan;
                       // Chi tiết giao dịch khác cho ngày (bao gồm cả hoàn tiền)
                       const dayCashTx = cashTxData.filter(t =>
-                        t.date.slice(0, 10) === dayDateStr &&
+                        getLocalDateKey(t.date) === dayDateStr &&
                         (
                           (!isExcludedIncomeCategory(t.category) && !isExcludedExpenseCategory(t.category)) ||
                           (t.type === "expense" && t.amount > 0 && isRefundCategory(t.category))

@@ -49,6 +49,9 @@ export const useUpdateCashTxRepo = () => {
     mutationFn: (input: UpdateCashTxInput) => updateCashTransaction(input),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["cashTxRepo"] });
+      qc.invalidateQueries({ queryKey: ["salesRepo"] });
+      qc.invalidateQueries({ queryKey: ["salesRepoPaged"] });
+      qc.invalidateQueries({ queryKey: ["salesRepoKeyset"] });
       showToast.success("Đã cập nhật giao dịch");
     },
     onError: (err: any) => showToast.error(mapRepoErrorForUser(err)),

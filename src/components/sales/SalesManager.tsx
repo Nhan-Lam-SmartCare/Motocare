@@ -27,6 +27,8 @@ import { formatCurrency } from "../../utils/format";
 import { useCustomers, useCreateCustomer } from "../../hooks/useSupabase";
 import { useEmployeesRepo } from "../../hooks/useEmployeesRepository";
 import { updateDeliveryStatus, completeDelivery } from "../../lib/repository/salesRepository";
+import { createCashTransaction } from "../../lib/repository/cashTransactionsRepository";
+import { updatePaymentSourceBalance } from "../../lib/repository/paymentSourcesRepository";
 import {
     useCreateCustomerDebtRepo,
     useCustomerDebtsRepo,
@@ -568,6 +570,7 @@ const SalesManager: React.FC = () => {
             };
 
             const purchaseExpenseTotal = cart.cartItems.reduce((sum, item) => {
+                if (!item.isService) return sum;
                 const cost = Number(item.costPrice || 0);
                 return cost > 0 ? sum + cost * item.quantity : sum;
             }, 0);
@@ -590,23 +593,31 @@ const SalesManager: React.FC = () => {
 
             // Auto record cash expense for purchase cost lines (manual/out-of-stock intake)
             if (purchaseExpenseTotal > 0 && saleId) {
-                const { error: costExpenseError } = await supabase
-                    .from("cash_transactions")
-                    .insert({
-                        type: "expense",
-                        category: "inventory_purchase",
-                        amount: purchaseExpenseTotal,
-                        date: saleTime,
-                        notes: `Chi giá nhập - Đơn ${saleId}`,
-                        branchId: currentBranchId,
-                        paymentSourceId: finalization.paymentMethod,
-                        saleId,
-                        recipient: customer.selectedCustomer?.name || "Khách hàng",
-                    });
+                const costExpenseRes = await createCashTransaction({
+                    type: "expense",
+                    category: "inventory_purchase",
+                    amount: purchaseExpenseTotal,
+                    date: saleTime,
+                    notes: `Chi giá nhập - Đơn ${saleId}`,
+                    branchId: currentBranchId,
+                    paymentSourceId: finalization.paymentMethod || "cash",
+                    saleId,
+                    recipient: customer.selectedCustomer?.name || "Khách hàng",
+                });
 
-                if (costExpenseError) {
-                    console.error("Failed to record purchase cost expense:", costExpenseError);
+                if (!costExpenseRes.ok) {
+                    console.error("Failed to record purchase cost expense:", costExpenseRes.error);
                     showToast.error("Đã tạo đơn nhưng chưa ghi được bút toán chi giá nhập");
+                } else {
+                    const balanceRes = await updatePaymentSourceBalance(
+                        finalization.paymentMethod || "cash",
+                        currentBranchId,
+                        -purchaseExpenseTotal
+                    );
+                    if (!balanceRes.ok) {
+                        console.error("Failed to update payment source balance:", balanceRes.error);
+                        showToast.error("Đã ghi chi giá nhập nhưng chưa cập nhật số dư nguồn tiền");
+                    }
                 }
             }
 

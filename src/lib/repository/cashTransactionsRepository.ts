@@ -183,7 +183,14 @@ export async function createCashTransaction(
         (input.type === "income" ? "general_income" : "general_expense"),
       date: input.date || new Date().toISOString(),
       description: input.notes || "",
+      notes: input.notes || "",
       recipient: input.recipient || null,
+      saleid: input.saleId || null,
+      workorderid: input.workOrderId || null,
+      payrollrecordid: input.payrollRecordId || null,
+      loanpaymentid: input.loanPaymentId || null,
+      supplierid: input.supplierId || null,
+      customerid: input.customerId || null,
     };
 
     const { data, error } = await supabase
@@ -321,6 +328,61 @@ export async function updateCashTransaction(
         data.paymentSourceId ||
         "cash",
     };
+
+    // Keep revenue reports consistent when user edits date of a sale-linked cash tx.
+    // Resolve linked sale by saleid first, then fallback to reference / sale_code in notes.
+    if (input.date && oldData) {
+      let linkedSaleId: string | null =
+        (oldData as any).saleid || (oldData as any).saleId || null;
+
+      // Fallback 1: resolve from reference (may store sale UUID or sale_code)
+      if (!linkedSaleId) {
+        const ref = String((oldData as any).reference || "").trim();
+        if (ref) {
+          const { data: saleByRef } = await supabase
+            .from("sales")
+            .select("id")
+            .or(`id.eq.${ref},sale_code.eq.${ref}`)
+            .limit(1)
+            .maybeSingle();
+          linkedSaleId = (saleByRef as any)?.id || null;
+        }
+      }
+
+      // Fallback 2: parse BH code in description/notes (e.g. BH-20260414-001)
+      if (!linkedSaleId) {
+        const desc = String((oldData as any).description || (oldData as any).notes || "");
+        const saleCodeMatch = desc.match(/(BH-\d{8}-\d{3})/i);
+        const saleCode = saleCodeMatch?.[1] || null;
+        if (saleCode) {
+          const { data: saleByCode } = await supabase
+            .from("sales")
+            .select("id")
+            .eq("sale_code", saleCode)
+            .limit(1)
+            .maybeSingle();
+          linkedSaleId = (saleByCode as any)?.id || null;
+        }
+      }
+
+      if (linkedSaleId) {
+        const { error: saleUpdateError } = await supabase
+          .from("sales")
+          .update({ date: input.date })
+          .eq("id", linkedSaleId);
+
+        if (saleUpdateError) {
+          console.warn(
+            "[CashTx] Updated cash tx date but failed to sync sales.date:",
+            saleUpdateError
+          );
+        }
+      } else {
+        console.warn(
+          "[CashTx] Updated cash tx date but could not resolve linked sale from saleid/reference/description"
+        );
+      }
+    }
 
     // Audit
     try {

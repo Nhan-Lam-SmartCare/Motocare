@@ -29,96 +29,75 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     return (
         <div
             onClick={() => !isOutOfStock && onAddToCart(part)}
-            className={`group relative bg-white dark:bg-slate-800 rounded-xl border-2 transition-all duration-200 overflow-hidden ${isOutOfStock
-                ? "border-slate-200 dark:border-slate-700 opacity-60 cursor-not-allowed"
+            className={`group relative bg-white dark:bg-slate-800 rounded-xl border transition-all duration-200 overflow-hidden ${isOutOfStock
+                ? "border-slate-200 dark:border-slate-700 opacity-50 cursor-not-allowed"
                 : inCart
-                    ? "border-blue-500 dark:border-blue-400 shadow-lg shadow-blue-500/25 ring-1 ring-blue-400/60"
-                    : "border-slate-200 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-500 hover:shadow-xl hover:shadow-slate-500/10 cursor-pointer active:scale-98"
+                    ? "border-blue-500 dark:border-blue-400 shadow-lg shadow-blue-500/20 ring-1 ring-blue-400/50"
+                    : "border-slate-200 dark:border-slate-700 hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-xl hover:-translate-y-0.5 cursor-pointer active:scale-[0.98]"
                 }`}
         >
             {/* In Cart Indicator */}
             {inCart && !isOutOfStock && (
-                <div className="absolute top-2 right-2 z-10">
-                    <div className="bg-blue-500 text-white rounded-full p-1.5 shadow-lg">
-                        <ShoppingCart className="w-4 h-4" />
+                <div className="absolute top-2.5 right-2.5 z-10">
+                    <div className="bg-blue-500 text-white rounded-full p-1.5 shadow-lg animate-[bounce_1s_ease-in-out_1]">
+                        <ShoppingCart className="w-3.5 h-3.5" />
                     </div>
                 </div>
             )}
 
-            {/* Out of Stock Badge */}
-            {isOutOfStock && (
-                <div className="absolute top-2 right-2 z-10">
-                    <div className="bg-red-500 text-white text-xs font-semibold px-2 py-1 rounded-md shadow-md">
-                        Hết hàng
-                    </div>
-                </div>
+            {/* Top accent bar for items in cart */}
+            {inCart && (
+                <div className="h-0.5 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500" />
             )}
 
-            {/* Low Stock Badge */}
-            {isLowStock && !inCart && (
-                <div className="absolute top-2 right-2 z-10">
-                    <div className="bg-amber-500 text-white text-xs font-semibold px-2 py-1 rounded-md shadow-md">
-                        Sắp hết
-                    </div>
-                </div>
-            )}
-
-            <div className="p-3 md:p-4 space-y-2 md:space-y-3">
-
-
+            <div className="p-3 md:p-4 space-y-2 md:space-y-2.5">
                 {/* Product Name */}
-                <div className="min-h-[48px]">
-                    <h3 className="font-semibold text-slate-900 dark:text-white text-[15px] line-clamp-2 leading-snug">
+                <div className="min-h-[44px]">
+                    <h3 className="font-semibold text-slate-900 dark:text-white text-sm leading-snug line-clamp-2">
                         {part.name}
                     </h3>
-                    <p className="text-[12px] text-slate-600 dark:text-slate-300 mt-1 font-mono leading-relaxed">
+                    <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5 font-mono tracking-wide">
                         {part.sku}
                     </p>
                 </div>
 
                 {/* Category Badge */}
                 {part.category && (
-                    <div className="flex items-center gap-2">
-                        <span
-                            className="text-[11px] text-slate-500 dark:text-slate-400"
-                        >
-                            {part.category}
-                        </span>
-                    </div>
+                    <span className="inline-block text-[10px] font-medium text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-700/50 px-2 py-0.5 rounded-md">
+                        {part.category}
+                    </span>
                 )}
 
-                {/* Price */}
-                <div className="pt-2 border-t border-slate-100 dark:border-slate-700">
+                {/* Price & Stock */}
+                <div className="pt-2 border-t border-slate-100 dark:border-slate-700/50">
                     <div className="flex items-end justify-between">
                         <div className="flex flex-col">
-                            <span className="text-lg font-bold text-sky-600 dark:text-sky-400 leading-none">
+                            <span className="text-base font-bold text-emerald-600 dark:text-emerald-400 leading-none">
                                 {formatCurrency(price)}
                             </span>
                             {wholesalePrice > 0 && wholesalePrice !== price && (
-                                <span className="text-xs text-slate-600 dark:text-slate-300 mt-1 font-medium">
+                                <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
                                     Sỉ: {formatCurrency(wholesalePrice)}
                                 </span>
                             )}
                         </div>
-                        <div className="flex flex-col items-end">
-                            <span
-                                className={`text-xs font-semibold ${isOutOfStock
-                                    ? "text-red-500"
-                                    : isLowStock
-                                        ? "text-amber-500"
-                                        : "text-slate-600 dark:text-slate-300"
-                                    }`}
-                            >
-                                Tồn: {stock}
-                            </span>
-                        </div>
+                        <span
+                            className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${isOutOfStock
+                                ? "text-red-50 bg-red-500 dark:bg-red-600"
+                                : isLowStock
+                                    ? "text-amber-50 bg-amber-500 dark:bg-amber-600"
+                                    : "text-slate-500 dark:text-slate-400 font-semibold"
+                                }`}
+                        >
+                            {isOutOfStock ? "Hết hàng" : isLowStock ? `Còn ${stock}` : `Tồn: ${stock}`}
+                        </span>
                     </div>
                 </div>
             </div>
 
-            {/* Hover Effect */}
+            {/* Hover Overlay */}
             {!isOutOfStock && (
-                <div className="absolute inset-0 bg-slate-500/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+                <div className="absolute inset-0 bg-blue-500/[0.03] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
             )}
         </div>
     );

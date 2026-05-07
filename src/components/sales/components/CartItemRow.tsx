@@ -23,28 +23,35 @@ export const CartItemRow: React.FC<CartItemRowProps> = ({
     const itemTotal = item.sellingPrice * item.quantity;
 
     return (
-        <div className="group p-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 hover:border-blue-400 transition-all shadow-sm">
+        <div className="group relative p-3 border border-slate-100 dark:border-slate-800 rounded-2xl bg-white dark:bg-slate-900/50 hover:border-blue-300 dark:hover:border-blue-700/50 hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all duration-300">
             {/* Top Row: Icon, Name, Delete */}
-            <div className="flex items-start gap-3 mb-2">
+            <div className="flex items-start gap-3 mb-3">
                 {/* Icon */}
-                <div className="flex-shrink-0 w-10 h-10 bg-slate-100 dark:bg-slate-700 rounded-lg flex items-center justify-center">
-                    <Package className="w-5 h-5 text-slate-500 dark:text-slate-400" />
+                <div className="flex-shrink-0 w-10 h-10 bg-slate-50 dark:bg-slate-800 rounded-xl flex items-center justify-center border border-slate-100 dark:border-slate-700 group-hover:bg-blue-50 dark:group-hover:bg-blue-900/20 transition-colors">
+                    <Package className="w-5 h-5 text-slate-400 group-hover:text-blue-500 transition-colors" />
                 </div>
 
                 {/* Product Info */}
                 <div className="flex-1 min-w-0">
-                    <h4 className="font-bold text-[15px] text-slate-900 dark:text-white line-clamp-1">
+                    <h4 className="font-black text-sm text-slate-900 dark:text-white line-clamp-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                         {item.partName}
                     </h4>
-                    <p className="text-[12px] text-slate-600 dark:text-slate-300 font-mono mt-0.5 leading-relaxed">
-                        {item.sku}
-                    </p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                        <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">
+                            {item.sku}
+                        </span>
+                        {item.stockSnapshot <= 5 && (
+                            <span className="text-[9px] text-amber-600 dark:text-amber-400 font-black uppercase">
+                                Sắp hết hàng
+                            </span>
+                        )}
+                    </div>
                 </div>
 
                 {/* Delete Button */}
                 <button
                     onClick={() => onRemove(item.partId)}
-                    className="p-1.5 text-slate-400 dark:text-slate-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors border border-transparent hover:border-red-200 dark:hover:border-red-800"
+                    className="p-1.5 text-slate-300 dark:text-slate-700 hover:text-rose-500 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-xl transition-all"
                     title="Xóa"
                 >
                     <Trash2 className="w-4 h-4" />
@@ -54,20 +61,20 @@ export const CartItemRow: React.FC<CartItemRowProps> = ({
             {/* Bottom Row: Quantity + Price inline */}
             <div className="flex items-center gap-3">
                 {/* Quantity Controls - Compact */}
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center bg-slate-50 dark:bg-slate-800 p-0.5 rounded-xl border border-slate-100 dark:border-slate-700">
                     <button
                         onClick={() => onUpdateQuantity(item.partId, item.quantity - 1)}
-                        className="w-8 h-8 flex items-center justify-center bg-slate-200 dark:bg-slate-700 hover:bg-red-500 hover:text-white rounded-lg transition-all font-bold text-sm"
+                        className="w-7 h-7 flex items-center justify-center bg-white dark:bg-slate-700 hover:bg-rose-500 hover:text-white rounded-lg transition-all font-black text-sm shadow-sm active:scale-90 disabled:opacity-30"
                         disabled={item.quantity <= 1}
                     >
                         −
                     </button>
-                    <span className="w-9 text-center font-black text-sm text-slate-900 dark:text-white px-1.5 py-1">
+                    <span className="w-9 text-center font-black text-sm text-slate-900 dark:text-white">
                         {item.quantity}
                     </span>
                     <button
                         onClick={() => onUpdateQuantity(item.partId, item.quantity + 1)}
-                        className="w-8 h-8 flex items-center justify-center bg-slate-200 dark:bg-slate-700 hover:bg-blue-500 hover:text-white rounded-lg transition-all font-bold text-sm"
+                        className="w-7 h-7 flex items-center justify-center bg-white dark:bg-slate-700 hover:bg-blue-600 hover:text-white rounded-lg transition-all font-black text-sm shadow-sm active:scale-90 disabled:opacity-30"
                         disabled={item.quantity >= item.stockSnapshot}
                     >
                         +
@@ -75,18 +82,18 @@ export const CartItemRow: React.FC<CartItemRowProps> = ({
                 </div>
 
                 {/* Price - Compact */}
-                <div className="flex-1">
+                <div className="flex-1 relative">
                     <NumberInput
                         value={item.sellingPrice}
                         onChange={(val: number) => onUpdatePrice(item.partId, val || 0)}
-                        className="w-full px-3 py-1.5 text-sm font-bold text-slate-900 dark:text-white bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-1 focus:ring-blue-500 transition-all text-right"
+                        className="w-full pl-3 pr-2 py-1.5 text-sm font-black text-slate-900 dark:text-white bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-right outline-none"
                         allowNegative
                     />
                 </div>
 
                 {/* Item Total */}
-                <div className="text-right">
-                    <span className="text-base font-black text-slate-900 dark:text-white">
+                <div className="text-right min-w-[90px]">
+                    <span className="text-sm font-black text-slate-900 dark:text-white tracking-tight">
                         {formatCurrency(itemTotal)}
                     </span>
                 </div>

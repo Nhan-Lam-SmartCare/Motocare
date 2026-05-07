@@ -2198,10 +2198,26 @@ const WorkOrderModal: React.FC<{
               {/* Status Stepper */}
               <div className="flex items-center gap-1 overflow-x-auto pb-0.5 flex-1 mr-3">
                 {[
-                  { key: "Tiếp nhận", icon: "📋", color: "blue" },
-                  { key: "Đang sửa", icon: "🔧", color: "orange" },
-                  { key: "Đã sửa xong", icon: "✅", color: "purple" },
-                  { key: "Trả máy", icon: "🏍️", color: "green" },
+                  { 
+                    key: "Tiếp nhận", 
+                    icon: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>, 
+                    color: "blue" 
+                  },
+                  { 
+                    key: "Đang sửa", 
+                    icon: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.877-5.877M11.42 15.17l2.496-3.03c.317-.384.74-.626 1.208-.766M11.42 15.17l-4.655 5.653a2.548 2.548 0 11-3.586-3.586l6.837-5.63m5.108-.233c.55-.164 1.163-.188 1.743-.14a4.5 4.5 0 004.486-6.336l-3.276 3.277a3.004 3.004 0 01-2.25-2.25l3.276-3.276a4.5 4.5 0 00-6.336 4.486c.091 1.076-.071 2.264-.904 2.95l-.102.085m-1.745 1.437L5.909 7.5H4.5L2.25 3.75l1.5-1.5L7.5 4.5v1.409l4.26 4.26m-1.745 1.437l1.745-1.437m6.615 8.206L15.75 15.75M4.867 19.125h.008v.008h-.008v-.008z" /></svg>, 
+                    color: "orange" 
+                  },
+                  { 
+                    key: "Đã sửa xong", 
+                    icon: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>, 
+                    color: "purple" 
+                  },
+                  { 
+                    key: "Trả máy", 
+                    icon: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" /></svg>, 
+                    color: "green" 
+                  },
                 ].map((step, idx, arr) => {
                   const statuses = arr.map(s => s.key);
                   const currentIdx = statuses.indexOf(formData.status || "Tiếp nhận");
@@ -2408,10 +2424,10 @@ const WorkOrderModal: React.FC<{
           {/* Main Content: 2-Panel Layout */}
           <div className="flex flex-1 overflow-hidden">
             {/* Left Panel - Scrollable Form */}
-            <div className="flex-1 px-4 py-5 md:px-6 md:py-5 space-y-5 overflow-y-auto pb-24 md:pb-6">
-              {/* Section 1: Customer & Vehicle Info */}
-              <div className="grid gap-5 lg:grid-cols-2">
-                <div className="space-y-4">
+            <div className="flex-1 px-4 py-5 md:px-6 md:py-6 space-y-5 overflow-y-auto pb-24 md:pb-6 bg-slate-50/50 dark:bg-slate-900/20">
+              {/* Section 1 & 2 */}
+              <div className="space-y-5">
+                <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-5 shadow-sm space-y-4">
                   <div className="flex items-center gap-2">
                     <div className="w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center flex-shrink-0 shadow-sm">
                       <span className="text-xs font-bold">1</span>
@@ -2421,7 +2437,8 @@ const WorkOrderModal: React.FC<{
                     </h3>
                   </div>
 
-                  <div>
+                  <div className="grid gap-5 xl:grid-cols-2">
+                    <div>
                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                       Khách hàng <span className="text-red-500">*</span>
                     </label>
@@ -2846,7 +2863,9 @@ const WorkOrderModal: React.FC<{
                         </div>
                       </div>
                     )}
-
+                    </div> {/* Đóng cột Khách hàng */}
+                    <div> {/* Mở cột Chọn xe */}
+                    
                     {/* Vehicle Selection & Add Vehicle - Hiển thị khi đã có thông tin khách hàng */}
                     {(currentCustomer || formData.customerName) && (
                       <div className="mt-3 space-y-2">
@@ -3025,130 +3044,98 @@ const WorkOrderModal: React.FC<{
                         )}
                       </div>
                     )}
-                  </div>
+                    </div> {/* Đóng cột Chọn xe */}
+                  </div> {/* Đóng grid */}
 
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                      Số KM hiện tại
-                    </label>
-                    <input
-                      type="number"
-                      placeholder="15000"
-                      value={formData.currentKm || ""}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          currentKm: e.target.value
-                            ? parseInt(e.target.value)
-                            : undefined,
-                        })
-                      }
-                      className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                      Mô tả sự cố
-                    </label>
-                    <textarea
-                      rows={2}
-                      placeholder="Bảo dưỡng định kỳ, thay nhớt..."
-                      value={formData.issueDescription || ""}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          issueDescription: e.target.value,
-                        })
-                      }
-                      className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 resize-none"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center flex-shrink-0 shadow-sm">
-                      <span className="text-xs font-bold">2</span>
+                  <div className="grid gap-5 md:grid-cols-2">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                        Số KM hiện tại
+                      </label>
+                      <input
+                        type="number"
+                        placeholder="15000"
+                        value={formData.currentKm || ""}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            currentKm: e.target.value
+                              ? parseInt(e.target.value)
+                              : undefined,
+                          })
+                        }
+                        className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
+                      />
                     </div>
-                    <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                      Chi tiết Dịch vụ
-                    </h3>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                        Kỹ thuật viên
+                      </label>
+                      <select
+                        value={formData.technicianName || ""}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            technicianName: e.target.value,
+                          })
+                        }
+                        className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
+                      >
+                        <option value="">-- Chọn kỹ thuật viên --</option>
+                        {employees
+                          .filter(
+                            (emp) =>
+                              emp.status === "active" &&
+                              (emp.department?.toLowerCase().includes("kỹ thuật") ||
+                                emp.position?.toLowerCase().includes("kỹ thuật"))
+                          )
+                          .map((emp) => (
+                            <option key={emp.id} value={emp.name}>
+                              {emp.name}
+                            </option>
+                          ))}
+                      </select>
+                    </div>
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                      Kỹ thuật viên
-                    </label>
-                    <select
-                      value={formData.technicianName || ""}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          technicianName: e.target.value,
-                        })
-                      }
-                      className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
-                    >
-                      <option value="">-- Chọn kỹ thuật viên --</option>
-                      {employees
-                        .filter(
-                          (emp) =>
-                            emp.status === "active" &&
-                            (emp.department?.toLowerCase().includes("kỹ thuật") ||
-                              emp.position?.toLowerCase().includes("kỹ thuật"))
-                        )
-                        .map((emp) => (
-                          <option key={emp.id} value={emp.name}>
-                            {emp.name}
-                          </option>
-                        ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                      Phí dịch vụ (Công thợ)
-                      {!canEditPriceAndParts && (
-                        <span className="ml-2 text-xs text-amber-600 dark:text-amber-400">
-                          (Không thể sửa)
-                        </span>
-                      )}
-                    </label>
-                    <NumberInput
-                      placeholder="100.000"
-                      value={formData.laborCost || ""}
-                      onChange={(val) =>
-                        setFormData({
-                          ...formData,
-                          laborCost: val,
-                        })
-                      }
-                      disabled={!canEditPriceAndParts}
-                      className={`w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 ${!canEditPriceAndParts ? "opacity-50 cursor-not-allowed" : ""
-                        }`}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                      Ghi chú nội bộ
-                    </label>
-                    <textarea
-                      rows={2}
-                      placeholder="VD: Khách yêu cầu kiểm tra thêm hệ thống điện"
-                      className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 resize-none"
-                    />
+                  <div className="grid gap-5 md:grid-cols-2">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                        Mô tả sự cố
+                      </label>
+                      <textarea
+                        rows={2}
+                        placeholder="Bảo dưỡng định kỳ, thay nhớt..."
+                        value={formData.issueDescription || ""}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            issueDescription: e.target.value,
+                          })
+                        }
+                        className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 resize-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                        Ghi chú nội bộ
+                      </label>
+                      <textarea
+                        rows={2}
+                        placeholder="VD: Khách yêu cầu kiểm tra thêm hệ thống điện"
+                        className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 resize-none"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
 
               {/* Parts Used */}
-              <div className="space-y-3">
+              <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-5 shadow-sm space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <div className="w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center flex-shrink-0 shadow-sm">
-                      <span className="text-xs font-bold">3</span>
+                      <span className="text-xs font-bold">2</span>
                     </div>
                     <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">
                       Phụ tùng sử dụng
@@ -3422,10 +3409,10 @@ const WorkOrderModal: React.FC<{
               </div>
 
               {/* Quote/Estimate Section */}
-              <div className="border-t border-slate-200 dark:border-slate-700 pt-4">
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center flex-shrink-0 shadow-sm">
-                    <span className="text-xs font-bold">4</span>
+              <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-5 shadow-sm space-y-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-full bg-purple-500 text-white flex items-center justify-center flex-shrink-0 shadow-sm">
+                    <span className="text-xs font-bold">3</span>
                   </div>
                   <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">
                     Báo giá (Gia công, Đặt hàng)
@@ -3683,9 +3670,28 @@ const WorkOrderModal: React.FC<{
                   </div>
 
                   <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-slate-500 dark:text-slate-400">Phí dịch vụ</span>
-                      <span className="font-medium text-slate-800 dark:text-slate-200">{formatCurrency(formData.laborCost || 0)}</span>
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-slate-500 dark:text-slate-400">
+                        Phí dịch vụ
+                        {!canEditPriceAndParts && (
+                          <span className="block text-[10px] text-amber-500">(Không thể sửa)</span>
+                        )}
+                      </span>
+                      <div className="w-32">
+                        <NumberInput
+                          placeholder="0"
+                          value={formData.laborCost || ""}
+                          onChange={(val) =>
+                            setFormData({
+                              ...formData,
+                              laborCost: val,
+                            })
+                          }
+                          disabled={!canEditPriceAndParts}
+                          className={`w-full px-2 py-1.5 text-right border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 ${!canEditPriceAndParts ? "opacity-50 cursor-not-allowed" : ""
+                            }`}
+                        />
+                      </div>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-slate-500 dark:text-slate-400">Phụ tùng</span>
@@ -3893,49 +3899,57 @@ const WorkOrderModal: React.FC<{
                 </div>
 
                 {/* Action Buttons - Sticky at bottom */}
-                <div className="mt-auto pt-3 space-y-2">
-                  <button
-                    onClick={handleSaveOnly}
-                    disabled={isSubmitting}
-                    className={`w-full px-4 py-2.5 rounded-xl font-medium text-sm flex items-center justify-center gap-2 transition-all ${isSubmitting ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed border border-slate-200 dark:border-slate-700' : 'bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-500/20 w-full'}`}
-                  >
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
-                    </svg>
-                    {isSubmitting ? 'Đang lưu...' : 'Lưu Phiếu'}
-                  </button>
+                <div className="mt-auto pt-4 space-y-3">
+                  <div className="flex flex-col gap-2">
+                    {/* Primary Actions based on state */}
+                    {formData.status === "Trả máy" ? (
+                      <button
+                        onClick={handleSave}
+                        disabled={isSubmitting}
+                        className={`w-full px-4 py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all ${isSubmitting ? 'bg-emerald-400 cursor-not-allowed text-white' : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/30'}`}
+                      >
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        Thanh toán & Trả máy
+                      </button>
+                    ) : (showDepositInput && depositAmount > 0) ? (
+                      <button
+                        onClick={handleSave}
+                        disabled={isSubmitting}
+                        className={`w-full px-4 py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all ${isSubmitting ? 'bg-blue-400 cursor-not-allowed text-white' : 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-600/30'}`}
+                      >
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        Lưu & Nhận cọc
+                      </button>
+                    ) : null}
 
-                  {formData.status !== "Trả máy" && showDepositInput && (
+                    {/* Secondary/Default Save */}
                     <button
-                      onClick={handleSave}
+                      onClick={handleSaveOnly}
                       disabled={isSubmitting}
-                      className={`w-full px-4 py-2.5 rounded-xl font-medium text-sm flex items-center justify-center gap-2 transition-all ${isSubmitting ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 shadow-sm shadow-blue-200 dark:shadow-blue-900'} text-white`}
+                      className={`w-full px-4 py-3 rounded-xl font-medium text-sm flex items-center justify-center gap-2 transition-all ${
+                        isSubmitting 
+                          ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed border border-slate-200 dark:border-slate-700' 
+                          : (formData.status === "Trả máy" || (showDepositInput && depositAmount > 0))
+                            ? 'bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-300'
+                            : 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-600/30'
+                      }`}
                     >
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
                       </svg>
-                      Đặt cọc
+                      {isSubmitting ? 'Đang lưu...' : (formData.status === "Trả máy" || (showDepositInput && depositAmount > 0)) ? 'Chỉ lưu thông tin' : 'Lưu Phiếu'}
                     </button>
-                  )}
-
-                  {formData.status === "Trả máy" && (
-                    <button
-                      onClick={handleSave}
-                      disabled={isSubmitting}
-                      className={`w-full px-4 py-2.5 rounded-xl font-medium text-sm flex items-center justify-center gap-2 transition-all ${isSubmitting ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 shadow-sm shadow-blue-200 dark:shadow-blue-900'} text-white`}
-                    >
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      Thanh toán
-                    </button>
-                  )}
+                  </div>
 
                   <button
                     onClick={onClose}
-                    className="w-full px-4 py-2 text-sm text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
+                    className="w-full px-4 py-2 text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition-colors"
                   >
-                    Hủy
+                    Hủy bỏ
                   </button>
                 </div>
               </div>

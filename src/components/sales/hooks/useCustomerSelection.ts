@@ -15,6 +15,11 @@ function normalizeSearchText(text: string): string {
         .replace(/Đ/g, "D");
 }
 
+function normalizePlate(text: string): string {
+    if (!text) return "";
+    return text.toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
 const CUSTOMER_PAGE_SIZE = 20;
 
 export interface NewCustomerData {
@@ -79,7 +84,7 @@ export function useCustomerSelection(
     const [customerPage, setCustomerPage] = useState(0);
 
     // Debounce customer search for server queries
-    const debouncedCustomerSearch = useDebounce(customerSearch, 300);
+    const debouncedCustomerSearch = useDebounce(customerSearch, 200);
 
     const extractPhoneNumbers = useCallback((value: string) => {
         const matches = value.match(/\d{8,12}/g);
@@ -100,6 +105,8 @@ export function useCustomerSelection(
 
             // Extract digits for better phone search
             const searchDigits = searchTerm.replace(/\D/g, "");
+            const normalizedTerm = normalizeSearchText(searchTerm);
+            const plateTerm = normalizePlate(searchTerm);
 
             // Build OR query - search by name, phone, vehicle model, license plate
             const orConditions = [
@@ -110,6 +117,15 @@ export function useCustomerSelection(
             // Include phone search if we have digits
             if (searchDigits.length > 0) {
                 orConditions.push(`phone.ilike.%${searchDigits}%`);
+            }
+            if (normalizedTerm && normalizedTerm !== searchTerm.toLowerCase()) {
+                orConditions.push(
+                    `name.ilike.%${normalizedTerm}%`,
+                    `vehiclemodel.ilike.%${normalizedTerm}%`
+                );
+            }
+            if (plateTerm && plateTerm !== searchTerm.toLowerCase()) {
+                orConditions.push(`licenseplate.ilike.%${plateTerm}%`);
             }
 
             const { data, error, count } = await supabase
@@ -176,32 +192,76 @@ export function useCustomerSelection(
         if (!customerSearch) return uniqueCandidates.slice(0, 20); // Show first 20 when no search
 
         const term = normalizeSearchText(customerSearch);
+        const tokens = term.split(/\s+/).filter(Boolean);
         const searchDigits = customerSearch.replace(/\D/g, "");
+        const searchPlate = normalizePlate(customerSearch);
 
-        return uniqueCandidates.filter((c) => {
-            // Search by name (normalized - remove diacritics)
-            const nameMatch = normalizeSearchText(c.name).includes(term);
+        const searchIndex = new Map<string, {
+            text: string;
+            name: string;
+            phoneDigits: string;
+            plateCompacts: string[];
+        }>();
 
-            // Search by phone
-            const phoneNumbers = extractPhoneNumbers(c.phone || "");
-            const phoneMatch = searchDigits.length > 0
-                ? phoneNumbers.some((num) => num.includes(searchDigits) || searchDigits.includes(num))
-                : false;
+        uniqueCandidates.forEach((c) => {
+            const vehicles = (c.vehicles || []) as Array<{ licensePlate?: string; model?: string }>;
+            const plates = [c.licensePlate || "", ...vehicles.map((v) => v.licensePlate || "")]
+                .map((p) => p.trim())
+                .filter(Boolean);
+            const models = [c.vehicleModel || "", ...vehicles.map((v) => v.model || "")]
+                .map((m) => m.trim())
+                .filter(Boolean);
 
-            // Search by vehicle model
-            const vehicleModelMatch = normalizeSearchText(c.vehicleModel || "").includes(term);
-
-            // Search by license plate  
-            const licensePlateMatch = normalizeSearchText(c.licensePlate || "").includes(term);
-
-            // Search in vehicles array
-            const vehicleMatch = c.vehicles?.some((v: any) =>
-                normalizeSearchText(v.model || "").includes(term) ||
-                normalizeSearchText(v.licensePlate || "").includes(term)
+            const text = normalizeSearchText(
+                [c.name || "", c.email || "", ...models, ...plates].join(" ")
             );
+            const phoneDigits = (c.phone || "").replace(/\D/g, "");
+            const plateCompacts = plates.map((p) => normalizePlate(p)).filter(Boolean);
 
-            return Boolean(nameMatch || phoneMatch || vehicleModelMatch || licensePlateMatch || vehicleMatch);
+            searchIndex.set(c.id, {
+                text,
+                name: normalizeSearchText(c.name || ""),
+                phoneDigits,
+                plateCompacts,
+            });
         });
+
+        const scored = uniqueCandidates
+            .map((c) => {
+                const index = searchIndex.get(c.id);
+                if (!index) return null;
+
+                let score = 0;
+
+                if (searchDigits.length > 0 && index.phoneDigits) {
+                    if (index.phoneDigits === searchDigits) score += 120;
+                    else if (index.phoneDigits.startsWith(searchDigits)) score += 100;
+                    else if (index.phoneDigits.includes(searchDigits)) score += 80;
+                }
+
+                if (searchPlate.length > 0 && index.plateCompacts.length > 0) {
+                    for (const plate of index.plateCompacts) {
+                        if (plate === searchPlate) score = Math.max(score, 110);
+                        else if (plate.startsWith(searchPlate)) score = Math.max(score, 90);
+                        else if (plate.includes(searchPlate)) score = Math.max(score, 70);
+                    }
+                }
+
+                if (tokens.length > 0) {
+                    const name = index.name;
+                    if (name === term) score = Math.max(score, 60);
+                    else if (name.startsWith(term)) score = Math.max(score, 50);
+
+                    const tokenMatch = tokens.every((t) => index.text.includes(t));
+                    if (tokenMatch) score = Math.max(score, 40 + tokens.length * 2);
+                }
+
+                return score > 0 ? { customer: c, score } : null;
+            })
+            .filter((item): item is { customer: Customer; score: number } => Boolean(item));
+
+        scored.sort((a, b) => b.score - a.score || a.customer.name.localeCompare(b.customer.name));
+        return scored.map((item) => item.customer);
     }, [allCustomers, serverCustomers, customerSearch, extractPhoneNumbers]);
 
     // Custom handler for showing the Add Customer Modal

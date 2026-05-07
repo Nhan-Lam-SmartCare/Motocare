@@ -501,6 +501,9 @@ const CustomerManager: React.FC = () => {
   const [serverCustomers, setServerCustomers] = useState<Customer[]>([]);
   const [isSearchingServer, setIsSearchingServer] = useState(false);
 
+  const normalizePlate = (value: string) =>
+    value.toLowerCase().replace(/[^a-z0-9]/g, "");
+
   // Hàm lưu khách hàng (tạo mới hoặc cập nhật)
   const handleSaveCustomer = async (c: Partial<Customer> & { id?: string }) => {
     if (c.id) {
@@ -525,14 +528,35 @@ const CustomerManager: React.FC = () => {
         return;
       }
 
+      const keywordDigits = keyword.replace(/\D/g, "");
+      const plateKeyword = normalizePlate(keyword);
+      const normalizedKeyword = normalizeSearchText(keyword);
+      const orParts = [
+        `name.ilike.%${keyword}%`,
+        `phone.ilike.%${keyword}%`,
+        `vehiclemodel.ilike.%${keyword}%`,
+        `licenseplate.ilike.%${keyword}%`,
+      ];
+
+      if (keywordDigits) {
+        orParts.push(`phone.ilike.%${keywordDigits}%`);
+      }
+      if (plateKeyword && plateKeyword !== keyword.toLowerCase()) {
+        orParts.push(`licenseplate.ilike.%${plateKeyword}%`);
+      }
+      if (normalizedKeyword && normalizedKeyword !== keyword.toLowerCase()) {
+        orParts.push(
+          `name.ilike.%${normalizedKeyword}%`,
+          `vehiclemodel.ilike.%${normalizedKeyword}%`
+        );
+      }
+
       setIsSearchingServer(true);
       try {
         const { data, error } = await supabase
           .from("customers")
           .select("*")
-          .or(
-            `name.ilike.%${keyword}%,phone.ilike.%${keyword}%,vehiclemodel.ilike.%${keyword}%,licenseplate.ilike.%${keyword}%`
-          )
+          .or(orParts.join(","))
           .limit(120);
 
         if (error) throw error;
@@ -765,6 +789,40 @@ const CustomerManager: React.FC = () => {
      
   }, [customers, allSales, allWorkOrders]);
 
+  const customerSearchIndex = useMemo(() => {
+    const map = new Map<
+      string,
+      {
+        text: string;
+        phoneDigits: string;
+        plateCompacts: string[];
+      }
+    >();
+
+    allCustomers.forEach((c) => {
+      const vehicles = (c.vehicles || []) as Array<{
+        licensePlate?: string;
+        model?: string;
+      }>;
+      const plates = [c.licensePlate || "", ...vehicles.map((v) => v.licensePlate || "")]
+        .map((p) => p.trim())
+        .filter(Boolean);
+      const models = [c.vehicleModel || "", ...vehicles.map((v) => v.model || "")]
+        .map((m) => m.trim())
+        .filter(Boolean);
+
+      const text = normalizeSearchText(
+        [c.name || "", c.email || "", ...models, ...plates].join(" ")
+      );
+      const phoneDigits = (c.phone || "").replace(/\D/g, "");
+      const plateCompacts = plates.map((p) => normalizePlate(p)).filter(Boolean);
+
+      map.set(c.id, { text, phoneDigits, plateCompacts });
+    });
+
+    return map;
+  }, [allCustomers]);
+
   const filtered = useMemo(() => {
     const searchTerm = search.trim();
     if (!searchTerm) {
@@ -786,24 +844,32 @@ const CustomerManager: React.FC = () => {
 
     // Normalize search text (bỏ dấu tiếng Việt)
     const q = normalizeSearchText(searchTerm);
-    const qLower = searchTerm.toLowerCase();
+    const tokens = q.split(/\s+/).filter(Boolean);
     const searchDigits = searchTerm.replace(/\D/g, "");
+    const searchPlate = normalizePlate(searchTerm);
 
     let result = allCustomers.filter((c) => {
-      if (searchDigits.length > 0 && c.phone) {
-        const phoneDigits = c.phone.replace(/\D/g, "");
-        if (phoneDigits.includes(searchDigits) || searchDigits.includes(phoneDigits)) return true;
+      const index = customerSearchIndex.get(c.id);
+      if (!index) return false;
+
+      if (searchDigits.length > 0 && index.phoneDigits) {
+        if (
+          index.phoneDigits.includes(searchDigits) ||
+          searchDigits.includes(index.phoneDigits)
+        ) {
+          return true;
+        }
       }
-      if (normalizeSearchText(c.name).includes(q)) return true;
-      if (c.email?.toLowerCase().includes(qLower)) return true;
-      if (normalizeSearchText(c.vehicleModel || "").includes(q)) return true;
-      if (c.licensePlate?.toLowerCase().includes(qLower)) return true;
-      if (c.vehicles && c.vehicles.some((v: any) =>
-        normalizeSearchText(v.licensePlate || "").includes(q) ||
-        normalizeSearchText(v.model || "").includes(q) ||
-        v.licensePlate?.toLowerCase().includes(qLower)
-      )) return true;
-      return false;
+
+      if (searchPlate.length > 0 && index.plateCompacts.length > 0) {
+        const plateMatched = index.plateCompacts.some(
+          (p) => p.includes(searchPlate) || searchPlate.includes(p)
+        );
+        if (plateMatched) return true;
+      }
+
+      if (tokens.length === 0) return true;
+      return tokens.every((t) => index.text.includes(t));
     });
 
     if (activeFilter !== "all") {
@@ -820,7 +886,7 @@ const CustomerManager: React.FC = () => {
     }
 
     return result;
-  }, [allCustomers, search, activeFilter, liveSegmentMap]);
+  }, [allCustomers, search, activeFilter, liveSegmentMap, customerSearchIndex]);
 
   const displayedCustomers = useMemo(
     () => filtered.slice(0, displayCount),

@@ -2512,182 +2512,135 @@ export default function ServiceManager() {
   }
 
   return (
-    <div className="space-y-3">
-      {/* Desktop insight cards */}
-      <div className="grid gap-3 lg:grid-cols-[2fr,1fr]">
-        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
-          <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-50 dark:bg-slate-900/50 p-3 rounded-lg border border-slate-100 dark:border-slate-700/50">
+    <div className="space-y-4">
+      {/* Cụm Thống kê (Hero Stats) - Giao diện mới */}
+      <div className="flex flex-col lg:flex-row gap-4">
+        {/* Khối Trạng thái & Tiến độ (Quy trình) */}
+        <div className="flex-1 bg-white dark:bg-slate-800/95 rounded-2xl border border-slate-200 dark:border-slate-700/80 p-5 shadow-sm backdrop-blur-sm">
+          <div className="flex flex-wrap items-center justify-between mb-5 gap-3">
             <div>
-              <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-300">
-                Phiếu cần xử lý
-              </p>
-              <div className="flex items-baseline gap-2">
-                <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-                  {urgentTickets}
-                </p>
-                <p className="text-xs text-slate-600 dark:text-slate-200 font-medium">
-                  Chiếm {urgentRatio}% của {totalOpenTickets || 0} phiếu đang mở
-                </p>
-              </div>
+              <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100 uppercase tracking-wider">Tiến trình dịch vụ</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Tiến độ xử lý các phiếu hiện tại</p>
             </div>
-            <div className="text-right">
-              <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-300">
-                Hoàn thành
-              </p>
-              <div className="flex items-baseline justify-end gap-2">
-                <p className="text-xs text-slate-600 dark:text-slate-300">
-                  {totalOpenTickets > 0
-                    ? `${stats.done} phiếu chờ giao`
-                    : "Chưa có"}
-                </p>
-                <p className="text-xl font-bold text-emerald-600 dark:text-emerald-400">
-                  {totalOpenTickets > 0 ? `${completionRate}%` : "—"}
-                </p>
+            {/* Tóm tắt nhanh */}
+            <div className="flex items-center gap-4 text-sm bg-slate-50 dark:bg-slate-900/50 px-4 py-2.5 rounded-xl border border-slate-100 dark:border-slate-700/50">
+              <div className="flex flex-col">
+                <span className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold uppercase">Đang mở</span>
+                <span className="font-bold text-slate-900 dark:text-white leading-none mt-1">{totalOpenTickets}</span>
+              </div>
+              <div className="w-px h-6 bg-slate-200 dark:bg-slate-700"></div>
+              <div className="flex flex-col">
+                <span className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold uppercase">Cần xử lý</span>
+                <span className="font-bold text-amber-600 dark:text-amber-500 leading-none mt-1">{urgentTickets}</span>
+              </div>
+              <div className="w-px h-6 bg-slate-200 dark:bg-slate-700"></div>
+              <div className="flex flex-col">
+                <span className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold uppercase">Tỷ lệ HT</span>
+                <span className="font-bold text-emerald-600 dark:text-emerald-400 leading-none mt-1">{totalOpenTickets > 0 ? `${completionRate}%` : "—"}</span>
               </div>
             </div>
           </div>
 
-          <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+          {/* Pipeline Trạng thái */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 relative z-10">
+            {/* Optional background connecting line for pipeline effect */}
+            <div className="hidden md:block absolute top-1/2 left-[12%] right-[12%] h-0.5 bg-slate-100 dark:bg-slate-700/50 -z-10 -translate-y-1/2 rounded-full"></div>
+            
             {statusSnapshotCards.map((card) => (
               <button
                 key={card.key}
-                onClick={() =>
-                  setActiveTab(activeTab === card.key ? "all" : card.key)
-                }
-                className={`text-left rounded-lg border p-3 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 ${activeTab === card.key
-                  ? "border-blue-500 bg-blue-50/60 dark:bg-blue-900/20"
-                  : "border-slate-200 dark:border-slate-700"
+                onClick={() => setActiveTab(activeTab === card.key ? "all" : card.key)}
+                className={`relative group flex flex-col items-center justify-center py-3 px-2 rounded-2xl transition-all duration-300 focus:outline-none 
+                  ${activeTab === card.key 
+                    ? 'bg-blue-50 dark:bg-blue-900/30 ring-2 ring-blue-500/40 shadow-sm' 
+                    : 'bg-white dark:bg-slate-800/80 border border-slate-100 dark:border-slate-700/60 hover:border-blue-300 hover:shadow-md hover:-translate-y-0.5'
                   }`}
               >
-                <div
-                  className={`rounded-lg bg-gradient-to-br ${card.accent} p-2`}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <p className="text-[10px] uppercase tracking-wide font-semibold text-slate-500 dark:text-slate-200">
-                        {card.label}
-                      </p>
-                      <p className="text-xl font-bold text-slate-900 dark:text-white">
-                        {card.value}
-                      </p>
-                    </div>
-                    <span className={`h-2.5 w-2.5 rounded-full ${card.dot}`}></span>
-                  </div>
-                  <p className="mt-1 text-[10px] font-medium text-slate-500 dark:text-slate-300">
-                    {card.subtitle}
-                  </p>
+                <div className={`w-11 h-11 rounded-full flex items-center justify-center mb-2.5 shadow-sm transition-transform duration-300 group-hover:scale-110 
+                    bg-gradient-to-br ${card.accent} text-white`}>
+                   <span className="text-lg font-bold">{card.value}</span>
+                </div>
+                <div className="text-center">
+                  <p className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wide">{card.label}</p>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 truncate max-w-full px-1">{card.subtitle}</p>
                 </div>
               </button>
             ))}
           </div>
         </div>
 
+        {/* Khối Tài chính */}
         {canViewServiceFinancial ? (
-          <div className="grid gap-2">
-            <div className="rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-3 flex flex-col justify-between">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-[9px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-300">
-                    Doanh thu {getDateFilterLabel(dateFilter)}
-                  </p>
-                  <p className="mt-1 text-xl font-bold text-blue-600 dark:text-blue-400">
-                    {showFinancialOverview
-                      ? formatCurrency(stats.filteredRevenue)
-                      : "•••••••"}
-                  </p>
+          <div className="lg:w-80 xl:w-96 flex flex-row lg:flex-col gap-4">
+             {/* Doanh thu */}
+             <div className="flex-1 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl p-4 shadow-md text-white relative overflow-hidden group">
+                <div className="absolute -bottom-4 -right-2 p-4 opacity-10 transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-12">
+                   <HandCoins className="w-24 h-24" />
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <button
-                    type="button"
-                    onClick={() => setShowFinancialOverview((prev) => !prev)}
-                    className="p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
-                    aria-label={showFinancialOverview ? "Ẩn số liệu tài chính" : "Hiện số liệu tài chính"}
-                    title={showFinancialOverview ? "Ẩn số liệu tài chính" : "Hiện số liệu tài chính"}
-                  >
-                    {showFinancialOverview ? (
-                      <Eye className="w-4 h-4 text-slate-500" />
-                    ) : (
-                      <EyeOff className="w-4 h-4 text-slate-500" />
-                    )}
-                  </button>
-                  <HandCoins className="w-6 h-6 text-blue-500" />
-                </div>
-              </div>
-
-              {chartData && (
-                <div className="mt-2 flex items-end gap-1 h-7 opacity-80" aria-hidden="true">
-                  {chartData.data.map((d, i) => (
-                    <div key={i} className="flex-1 bg-blue-50 dark:bg-blue-900/20 rounded-t-[3px] relative group h-full transition-colors hover:bg-blue-100 dark:hover:bg-blue-900/40">
-                      <div className="absolute bottom-0 left-0 right-0 bg-blue-500 dark:bg-blue-400 rounded-t-[3px] transition-all duration-300" style={{ height: `${Math.max((d.rev / chartData.maxRev) * 100, 4)}%` }} />
-                      <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 hidden group-hover:block bg-slate-800 dark:bg-slate-700 text-white text-[9px] px-1.5 py-0.5 rounded shadow whitespace-nowrap z-10">
-                        {showFinancialOverview ? formatCurrency(d.rev) : "••••••"}
+                <div className="relative z-10 h-full flex flex-col justify-between">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className="text-[10px] font-semibold uppercase tracking-wider text-blue-100/90 drop-shadow-sm">Doanh thu {getDateFilterLabel(dateFilter).toLowerCase()}</p>
+                      <div className="mt-1 flex items-baseline gap-1">
+                        <p className="text-2xl font-bold tracking-tight drop-shadow-sm">
+                          {showFinancialOverview ? formatCurrency(stats.filteredRevenue) : "•••••••"}
+                        </p>
                       </div>
                     </div>
-                  ))}
-                </div>
-              )}
-
-              <p className="mt-1 text-[9px] text-slate-500 dark:text-slate-400">
-                Bao gồm các phiếu đã thanh toán {getDateFilterLabel(dateFilter).toLowerCase()}
-              </p>
-            </div>
-
-            <div className="rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-3 flex flex-col justify-between">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-[9px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-300">
-                    Lợi nhuận {getDateFilterLabel(dateFilter)}
-                  </p>
-                  <div className="flex items-baseline gap-2 mt-1">
-                    <p className="text-xl font-bold text-emerald-600 dark:text-emerald-400">
-                      {showFinancialOverview
-                        ? formatCurrency(stats.filteredProfit)
-                        : "•••••••"}
-                    </p>
-                    <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-500 bg-emerald-50 dark:bg-emerald-900/30 px-1.5 py-0.5 rounded">
-                      {showFinancialOverview ? `${profitMargin}%` : "••%"}
-                    </span>
+                    <button
+                      onClick={() => setShowFinancialOverview(!showFinancialOverview)}
+                      className="p-1.5 rounded-full hover:bg-white/20 transition-colors backdrop-blur-sm"
+                      aria-label="Ẩn/hiện doanh thu"
+                    >
+                      {showFinancialOverview ? <Eye className="w-4 h-4 text-blue-50" /> : <EyeOff className="w-4 h-4 text-blue-50" />}
+                    </button>
                   </div>
+                  {chartData && (
+                     <div className="mt-3 h-7 flex items-end gap-1 opacity-90" aria-hidden="true">
+                        {chartData.data.map((d, i) => (
+                           <div key={i} className="flex-1 bg-white/20 rounded-t-[3px] hover:bg-white/40 transition-colors relative">
+                              <div className="absolute bottom-0 left-0 right-0 bg-white/90 rounded-t-[3px] transition-all duration-500" style={{ height: `${Math.max((d.rev / chartData.maxRev) * 100, 4)}%` }} />
+                           </div>
+                        ))}
+                     </div>
+                  )}
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <button
-                    type="button"
-                    onClick={() => setShowFinancialOverview((prev) => !prev)}
-                    className="p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
-                    aria-label={showFinancialOverview ? "Ẩn số liệu tài chính" : "Hiện số liệu tài chính"}
-                    title={showFinancialOverview ? "Ẩn số liệu tài chính" : "Hiện số liệu tài chính"}
-                  >
-                    {showFinancialOverview ? (
-                      <Eye className="w-4 h-4 text-slate-500" />
-                    ) : (
-                      <EyeOff className="w-4 h-4 text-slate-500" />
-                    )}
-                  </button>
-                  <TrendingUp className="w-6 h-6 text-emerald-500" />
+             </div>
+             
+             {/* Lợi nhuận */}
+             <div className="flex-1 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl p-4 shadow-md text-white relative overflow-hidden group">
+                <div className="absolute -bottom-4 -right-2 p-4 opacity-10 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-12">
+                   <TrendingUp className="w-24 h-24" />
                 </div>
-              </div>
-
-              {chartData && (
-                <div className="mt-2 flex items-end gap-1 h-7 opacity-80" aria-hidden="true">
-                  {chartData.data.map((d, i) => (
-                    <div key={i} className="flex-1 bg-emerald-50 dark:bg-emerald-900/20 rounded-t-[3px] relative group h-full transition-colors hover:bg-emerald-100 dark:hover:bg-emerald-900/40">
-                      <div className="absolute bottom-0 left-0 right-0 bg-emerald-500 dark:bg-emerald-400 rounded-t-[3px] transition-all duration-300" style={{ height: `${Math.max((Math.abs(d.prof) / chartData.maxProf) * 100, 4)}%` }} />
-                      <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 hidden group-hover:block bg-slate-800 dark:bg-slate-700 text-white text-[9px] px-1.5 py-0.5 rounded shadow whitespace-nowrap z-10">
-                        {showFinancialOverview ? formatCurrency(d.prof) : "••••••"}
+                <div className="relative z-10 h-full flex flex-col justify-between">
+                   <div className="flex justify-between items-start">
+                    <div>
+                      <p className="text-[10px] font-semibold uppercase tracking-wider text-emerald-100/90 drop-shadow-sm">Lợi nhuận {getDateFilterLabel(dateFilter).toLowerCase()}</p>
+                      <div className="mt-1 flex items-baseline gap-2">
+                        <p className="text-xl font-bold tracking-tight drop-shadow-sm">
+                          {showFinancialOverview ? formatCurrency(stats.filteredProfit) : "•••••••"}
+                        </p>
+                        <span className="text-[10px] font-bold bg-white/25 px-2 py-0.5 rounded-md backdrop-blur-sm drop-shadow-sm border border-white/20">
+                          {showFinancialOverview ? `${profitMargin}%` : "••%"}
+                        </span>
                       </div>
                     </div>
-                  ))}
+                  </div>
+                  {chartData && (
+                     <div className="mt-3 h-7 flex items-end gap-1 opacity-90" aria-hidden="true">
+                        {chartData.data.map((d, i) => (
+                           <div key={i} className="flex-1 bg-white/20 rounded-t-[3px] hover:bg-white/40 transition-colors relative">
+                              <div className="absolute bottom-0 left-0 right-0 bg-white/90 rounded-t-[3px] transition-all duration-500" style={{ height: `${Math.max((Math.abs(d.prof) / chartData.maxProf) * 100, 4)}%` }} />
+                           </div>
+                        ))}
+                     </div>
+                  )}
                 </div>
-              )}
-
-              <p className="mt-1 text-[9px] text-slate-500 dark:text-slate-400">
-                Biên lợi nhuận gộp {getDateFilterLabel(dateFilter).toLowerCase()}
-              </p>
-            </div>
+             </div>
           </div>
         ) : (
-          <div className="rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 p-3 text-xs text-slate-600 dark:text-slate-300">
-            Số liệu doanh thu và lợi nhuận chỉ hiển thị cho tài khoản có quyền tài chính.
+          <div className="lg:w-80 xl:w-96 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 p-5 text-sm text-slate-500 flex items-center justify-center text-center">
+            Số liệu tài chính chỉ hiển thị cho tài khoản có quyền.
           </div>
         )}
       </div>
@@ -2721,158 +2674,120 @@ export default function ServiceManager() {
         </div>
       </div>
 
-      {/* Action Bar - Two rows: filters on top, actions on bottom */}
-      <div className="sticky top-2 z-20 bg-white/95 dark:bg-slate-800/95 backdrop-blur rounded-lg px-3 py-2.5 border border-slate-200 dark:border-slate-700 shadow-sm space-y-2">
-        {/* Row 1: Search + Filters + Quick actions */}
-        <div className="flex flex-wrap items-center gap-2">
+      {/* Action Bar & Filters - Giao diện mới */}
+      <div className="sticky top-2 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md rounded-2xl px-4 py-3 border border-slate-200/80 dark:border-slate-700/80 shadow-sm flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
+        {/* Left: Search & Filters */}
+        <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto flex-1">
           {/* Search */}
-          <div className="relative flex-1 min-w-[200px] max-w-[320px]">
+          <div className="relative flex-1 min-w-[200px] max-w-[280px]">
             <input
               ref={searchInputRef}
               type="text"
-              placeholder="Mã phiếu, tên khách, biển số, dòng xe..."
+              placeholder="Tìm mã phiếu, tên, biển số..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-8 pr-3 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500"
+              className="w-full pl-9 pr-3 py-2 bg-slate-100/50 dark:bg-slate-800/50 border-none rounded-full text-sm text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-shadow"
             />
-            <Search
-              className="absolute left-2.5 top-2 w-3.5 h-3.5 text-slate-400"
-              aria-hidden="true"
-            />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" aria-hidden="true" />
           </div>
 
-          {/* Date filter */}
-          <select
-            value={dateFilter}
-            onChange={(e) => setDateFilter(e.target.value)}
-            className="px-3 py-2 text-sm bg-slate-50 hover:bg-slate-100 dark:bg-slate-800/50 dark:hover:bg-slate-800 border border-transparent rounded-lg text-slate-700 dark:text-slate-300 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:bg-white dark:focus:bg-slate-800 transition-colors"
-          >
-            <option value="today">Hôm nay</option>
-            <option value="week">7 ngày qua</option>
-            <option value="month">Tháng này (từ đầu tháng)</option>
-            <option value="custom">Tùy chọn</option>
-            <option value="all">Tất cả (chậm hơn)</option>
-          </select>
+          {/* Group Dropdowns in a clean pill style */}
+          <div className="flex flex-wrap items-center gap-1.5 bg-slate-50 dark:bg-slate-800/50 p-1 rounded-full border border-slate-100 dark:border-slate-700/50 overflow-hidden">
+             <div className="relative flex items-center">
+               <select
+                 value={dateFilter}
+                 onChange={(e) => setDateFilter(e.target.value)}
+                 className="pl-3 pr-7 py-1.5 text-[13px] bg-transparent border-none text-slate-700 dark:text-slate-300 font-medium focus:outline-none focus:ring-0 cursor-pointer appearance-none hover:bg-slate-200/50 dark:hover:bg-slate-700/50 rounded-full transition-colors"
+               >
+                 <option value="today">Hôm nay</option>
+                 <option value="week">7 ngày</option>
+                 <option value="month">Tháng này</option>
+                 <option value="custom">Tùy chọn</option>
+                 <option value="all">Tất cả</option>
+               </select>
+               <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 pointer-events-none" />
+             </div>
+             
+             <div className="w-px h-4 bg-slate-200 dark:bg-slate-600"></div>
+
+             <div className="relative flex items-center">
+               <select
+                 value={technicianFilter}
+                 onChange={(e) => setTechnicianFilter(e.target.value)}
+                 className="pl-3 pr-7 py-1.5 text-[13px] bg-transparent border-none text-slate-700 dark:text-slate-300 font-medium focus:outline-none focus:ring-0 cursor-pointer appearance-none hover:bg-slate-200/50 dark:hover:bg-slate-700/50 rounded-full transition-colors"
+               >
+                 <option value="all">KTV: Tất cả</option>
+                 {employees.map((emp) => (
+                   <option key={emp.id} value={emp.name}>{emp.name}</option>
+                 ))}
+               </select>
+               <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 pointer-events-none" />
+             </div>
+
+             <div className="w-px h-4 bg-slate-200 dark:bg-slate-600"></div>
+
+             <div className="relative flex items-center">
+               <select
+                 value={paymentFilter}
+                 onChange={(e) => setPaymentFilter(e.target.value)}
+                 className="pl-3 pr-7 py-1.5 text-[13px] bg-transparent border-none text-slate-700 dark:text-slate-300 font-medium focus:outline-none focus:ring-0 cursor-pointer appearance-none hover:bg-slate-200/50 dark:hover:bg-slate-700/50 rounded-full transition-colors"
+               >
+                 <option value="all">TT: Tất cả</option>
+                 <option value="paid">Đã thu</option>
+                 <option value="unpaid">Chưa thu</option>
+                 <option value="partial">Nợ</option>
+               </select>
+               <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 pointer-events-none" />
+             </div>
+          </div>
+
           {dateFilter === "custom" && (
-            <div className="flex items-center gap-2">
-              <input
-                type="date"
-                value={customDateStart}
-                onChange={(e) => setCustomDateStart(e.target.value)}
-                className="px-3 py-2 text-sm bg-slate-50 hover:bg-slate-100 dark:bg-slate-800/50 dark:hover:bg-slate-800 border border-transparent rounded-lg text-slate-700 dark:text-slate-300 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:bg-white dark:focus:bg-slate-800 transition-colors"
-              />
-              <span className="text-xs text-slate-500">—</span>
-              <input
-                type="date"
-                value={customDateEnd}
-                onChange={(e) => setCustomDateEnd(e.target.value)}
-                className="px-3 py-2 text-sm bg-slate-50 hover:bg-slate-100 dark:bg-slate-800/50 dark:hover:bg-slate-800 border border-transparent rounded-lg text-slate-700 dark:text-slate-300 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:bg-white dark:focus:bg-slate-800 transition-colors"
-              />
+            <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800/50 p-1.5 rounded-full border border-slate-100 dark:border-slate-700/50">
+              <input type="date" value={customDateStart} onChange={(e) => setCustomDateStart(e.target.value)} className="px-2 py-1 text-xs bg-transparent border-none text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-0" />
+              <span className="text-slate-400">-</span>
+              <input type="date" value={customDateEnd} onChange={(e) => setCustomDateEnd(e.target.value)} className="px-2 py-1 text-xs bg-transparent border-none text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-0" />
             </div>
           )}
 
-          {/* KTV filter */}
-          <select
-            value={technicianFilter}
-            onChange={(e) => setTechnicianFilter(e.target.value)}
-            className="px-3 py-2 text-sm bg-slate-50 hover:bg-slate-100 dark:bg-slate-800/50 dark:hover:bg-slate-800 border border-transparent rounded-lg text-slate-700 dark:text-slate-300 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:bg-white dark:focus:bg-slate-800 transition-colors"
-          >
-            <option value="all">Tất cả KTV</option>
-            {employees.map((emp) => (
-              <option key={emp.id} value={emp.name}>
-                {emp.name}
-              </option>
-            ))}
-          </select>
-
-          {/* Payment filter */}
-          <select
-            value={paymentFilter}
-            onChange={(e) => setPaymentFilter(e.target.value)}
-            className="px-3 py-2 text-sm bg-slate-50 hover:bg-slate-100 dark:bg-slate-800/50 dark:hover:bg-slate-800 border border-transparent rounded-lg text-slate-700 dark:text-slate-300 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:bg-white dark:focus:bg-slate-800 transition-colors"
-          >
-            <option value="all">Thanh toán</option>
-            <option value="paid">Đã TT</option>
-            <option value="unpaid">Chưa TT</option>
-            <option value="partial">Trả trước</option>
-          </select>
-
-          {/* Reload + Reset */}
-          <button
-            onClick={() => refetchWorkOrders()}
-            disabled={workOrdersFetching}
-            className="px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg text-sm font-medium flex items-center gap-1.5 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
-            aria-label="Làm mới dữ liệu"
-            title="Làm mới"
-          >
-            <RefreshCw
-              className={`w-3.5 h-3.5 ${workOrdersFetching ? "animate-spin" : ""}`}
-            />
-          </button>
-          <button
-            onClick={clearFilters}
-            className="px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg text-sm font-medium flex items-center gap-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
-            aria-label="Xóa bộ lọc"
-            title="Xóa bộ lọc"
-          >
-            <Search className="w-3.5 h-3.5" /> Reset
-          </button>
+          {/* Icon buttons for clear/refresh */}
+          <div className="flex items-center gap-1">
+             <button onClick={() => refetchWorkOrders()} disabled={workOrdersFetching} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-slate-800 rounded-full transition-colors" title="Làm mới">
+               <RefreshCw className={`w-4 h-4 ${workOrdersFetching ? "animate-spin" : ""}`} />
+             </button>
+             {(searchQuery || dateFilter !== 'week' || technicianFilter !== 'all' || paymentFilter !== 'all') && (
+               <button onClick={clearFilters} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-slate-800 rounded-full transition-colors" title="Xóa bộ lọc">
+                 <Settings className="w-4 h-4" /> {/* Settings icon as clear filter proxy or we can use generic reset text */}
+               </button>
+             )}
+          </div>
         </div>
 
-        {/* Divider */}
-        <div className="border-t border-slate-100 dark:border-slate-700/60" />
-
-        {/* Row 2: Result count + Action buttons */}
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Result count */}
-          <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-            {filteredOrders.length} phiếu
+        {/* Right: Actions */}
+        <div className="flex items-center justify-end gap-3 w-full lg:w-auto shrink-0">
+          <span className="text-[11px] text-slate-500 dark:text-slate-400 font-semibold px-2.5 py-1 bg-slate-100 dark:bg-slate-800 rounded-full border border-slate-200 dark:border-slate-700/50">
+            {filteredOrders.length} KQ
           </span>
-
-          {/* Spacer */}
-          <div className="flex-1" />
-
-          {isOwner && (
-            <button
-              onClick={() => setShowProfit(!showProfit)}
-              className={`px-3 py-1.5 border rounded-lg text-sm font-medium flex items-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500/40 ${showProfit
-                ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/30"
-                : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700"
-                }`}
-              aria-label={showProfit ? "Ẩn lợi nhuận" : "Hiện lợi nhuận"}
-              title={showProfit ? "Ẩn lợi nhuận" : "Hiện lợi nhuận"}
-            >
-              {showProfit ? (
-                <Eye className="w-3.5 h-3.5" />
-              ) : (
-                <EyeOff className="w-3.5 h-3.5" />
-              )}
-              {showProfit ? "Ẩn LN" : "Hiện LN"}
+          
+          <div className="flex items-center gap-1.5">
+            {isOwner && (
+              <button onClick={() => setShowProfit(!showProfit)} className={`p-2 rounded-full transition-colors ${showProfit ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800'}`} title={showProfit ? "Ẩn LN" : "Hiện LN"}>
+                {showProfit ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+              </button>
+            )}
+            <button onClick={() => setShowTemplateModal(true)} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-slate-800 rounded-full transition-colors" title="Mẫu SC">
+              <FileText className="w-4 h-4" />
             </button>
-          )}
+            <Link to="/service-history" className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-slate-800 rounded-full transition-colors" title="Lịch sử">
+              <History className="w-4 h-4" />
+            </Link>
+          </div>
+
           <button
-            onClick={() => setShowTemplateModal(true)}
-            className="px-3 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg text-sm font-medium flex items-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500/40"
-            aria-label="Mở danh sách mẫu sửa chữa"
+            onClick={() => handleOpenModal()}
+            className="pl-3 pr-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-full text-sm font-bold flex items-center gap-2 shadow-[0_0_15px_rgba(37,99,235,0.4)] transition-all hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-blue-500/50 ml-2"
           >
-            <FileText className="w-3.5 h-3.5" /> Mẫu SC
-          </button>
-          <Link
-            to="/service-history"
-            className="px-3 py-1.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg text-sm font-medium flex items-center gap-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500/40"
-          >
-            <History className="w-3.5 h-3.5" /> Lịch sử SC
-          </Link>
-          <button
-            onClick={() => {
-              // Always use Desktop modal
-              handleOpenModal();
-            }}
-            className="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-semibold flex items-center gap-1.5 shadow-sm hover:shadow focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-            aria-label="Tạo phiếu sửa chữa mới"
-          >
-            <Plus className="w-4 h-4" />
-            {filteredOrders.length === 0 ? "Tạo Phiếu đầu tiên" : "Thêm Phiếu"}
+            <div className="bg-white/25 p-1 rounded-full"><Plus className="w-3.5 h-3.5" /></div>
+            <span>{filteredOrders.length === 0 ? "Tạo Phiếu" : "Thêm Phiếu"}</span>
           </button>
         </div>
       </div>
@@ -3102,297 +3017,159 @@ export default function ServiceManager() {
                       className={`group bg-white dark:bg-slate-800/80 hover:bg-blue-50/60 dark:hover:bg-slate-700/60 cursor-pointer transition-all duration-150 hover:shadow-md focus-within:ring-2 focus-within:ring-blue-500/30`}
                     >
                       {/* Column 1: Mã phiếu + Status */}
-                      <td className="px-4 py-6 xl:py-8 align-top">
-                        <div className="space-y-2">
-                          {/* Status badge - prominent */}
+                      <td className="px-4 py-5 xl:py-6 align-top">
+                        <div className="space-y-3">
                           <StatusBadge status={order.status as WorkOrderStatus} />
-                          {/* Mã phiếu - shortened */}
-                          <div
-                            className="font-mono text-xs font-medium text-slate-600 dark:text-slate-300 cursor-help"
-                            title={formatWorkOrderId(order.id, storeSettings?.work_order_prefix)}
-                          >
-                            {formatShortWorkOrderId(order.id, storeSettings?.work_order_prefix).short}
-                          </div>
-                          <div className="text-xs text-slate-500 dark:text-slate-400">
-                            {formatDate(order.creationDate, true)}
-                          </div>
-                          <div className="text-xs text-sky-600 dark:text-sky-300 font-medium">
-                            {order.technicianName || "Chưa phân công"}
+                          <div className="flex flex-col gap-1.5">
+                            <div
+                              className="font-mono text-[13px] font-bold text-slate-800 dark:text-slate-200 cursor-help w-fit bg-slate-100 dark:bg-slate-700/50 px-2 py-0.5 rounded border border-slate-200/50 dark:border-slate-600/50"
+                              title={formatWorkOrderId(order.id, storeSettings?.work_order_prefix)}
+                            >
+                              {formatShortWorkOrderId(order.id, storeSettings?.work_order_prefix).short}
+                            </div>
+                            <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                              <Clock className="w-3 h-3"/> {formatDate(order.creationDate, true)}
+                            </div>
+                            <div className="text-[11px] text-blue-600 bg-blue-50 dark:bg-blue-900/30 dark:text-blue-400 font-medium px-2 py-0.5 rounded-full w-fit">
+                              {order.technicianName || "Chưa phân công"}
+                            </div>
                           </div>
                         </div>
                       </td>
 
                       {/* Column 2: Khách hàng */}
-                      <td className="px-4 py-6 xl:py-8 align-top">
-                        <div className="space-y-1">
-                          <div className="font-bold text-base xl:text-lg text-slate-900 dark:text-slate-100 truncate">
+                      <td className="px-4 py-5 xl:py-6 align-top">
+                        <div className="space-y-2">
+                          <div className="font-bold text-sm xl:text-base text-slate-900 dark:text-slate-100 truncate pr-4">
                             {order.customerName}
                           </div>
-                          <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-300">
-                            <Smartphone className="w-3.5 h-3.5" />
-                            <span className="font-mono">
-                              {formatMaskedPhone(order.customerPhone)}
-                            </span>
-                            {order.customerPhone && (
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  callCustomer(order.customerPhone || "");
-                                }}
-                                className="ml-1 inline-flex items-center justify-center w-7 h-7 rounded-md text-blue-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20"
-                                aria-label={`Gọi khách: ${order.customerPhone}`}
-                                title={`Gọi: ${order.customerPhone}`}
-                              >
-                                <PhoneCall className="w-3.5 h-3.5" />
-                              </button>
-                            )}
-                          </div>
-                          <div className="text-xs text-slate-600 dark:text-slate-200 truncate font-medium">
-                            <Bike className="w-3.5 h-3.5 inline-block mr-1 text-slate-400" />
-                            <span>
-                              {order.vehicleModel || "N/A"}
-                            </span>
-                            {order.licensePlate && (
-                              <span className="ml-1.5 px-1.5 py-0.5 bg-slate-100 dark:bg-slate-700 rounded text-slate-800 dark:text-slate-100 font-mono text-[10px]">
-                                {order.licensePlate}
-                              </span>
-                            )}
-                          </div>
-                          {order.issueDescription &&
-                            order.issueDescription !== "Không có mô tả" && (
-                              <div className="hidden xl:block text-xs text-slate-600 dark:text-slate-300 italic line-clamp-2 mt-1.5">
-                                {order.issueDescription}
+                          <div className="flex flex-col gap-2">
+                            <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300">
+                              <div className="flex items-center justify-center w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-800 shrink-0">
+                                <Smartphone className="w-3.5 h-3.5 text-slate-500" />
                               </div>
-                            )}
+                              <span className="font-mono font-medium">{formatMaskedPhone(order.customerPhone)}</span>
+                              {order.customerPhone && (
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); callCustomer(order.customerPhone || ""); }}
+                                  className="ml-auto inline-flex items-center justify-center w-7 h-7 rounded-full text-blue-500 hover:text-white hover:bg-blue-500 dark:hover:bg-blue-600 transition-colors bg-blue-50 dark:bg-blue-900/20"
+                                >
+                                  <PhoneCall className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                            </div>
+                            <div className="text-[11px] text-slate-600 dark:text-slate-300 font-medium flex items-center gap-2 bg-slate-50 dark:bg-slate-800/50 rounded-lg p-1.5 border border-slate-100 dark:border-slate-700/60 w-fit">
+                              <div className="flex items-center justify-center w-5 h-5 rounded-md bg-white dark:bg-slate-700 shrink-0 shadow-sm border border-slate-100 dark:border-slate-600">
+                                <Bike className="w-3 h-3 text-slate-500" />
+                              </div>
+                              <span className="truncate max-w-[120px]">{order.vehicleModel || "N/A"}</span>
+                              {order.licensePlate && (
+                                <>
+                                  <span className="w-px h-3 bg-slate-300 dark:bg-slate-600"></span>
+                                  <span className="font-mono font-bold text-slate-800 dark:text-slate-200">{order.licensePlate}</span>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                          {order.issueDescription && order.issueDescription !== "Không có mô tả" && (
+                             <div className="hidden xl:block text-[11px] text-slate-500 dark:text-slate-400 italic line-clamp-2 mt-1">
+                               "{order.issueDescription}"
+                             </div>
+                          )}
                         </div>
                       </td>
 
                       {/* Column 3: Chi tiết - Compact format */}
-                      <td className="px-4 py-6 xl:py-8 align-top">
+                      <td className="px-4 py-5 xl:py-6 align-top">
                         <div className="space-y-2 max-w-[220px] xl:max-w-[280px]">
                           {servicesSummary && (
-                            <div
-                              className="text-xs flex items-start gap-1.5"
-                              title={
-                                servicesTitle
-                                  ? `Dịch vụ: ${servicesTitle}`
-                                  : "Dịch vụ"
-                              }
-                            >
-                              <Settings className="w-3.5 h-3.5 text-slate-400 mt-0.5 flex-shrink-0" />
-                              <span className="text-slate-700 dark:text-slate-200 line-clamp-2 leading-relaxed">
+                            <div className="text-xs flex items-start gap-2 group/item" title={servicesTitle ? `Dịch vụ: ${servicesTitle}` : "Dịch vụ"}>
+                              <div className="mt-0.5 p-1 rounded-md bg-indigo-50 text-indigo-500 dark:bg-indigo-900/20 dark:text-indigo-400 shrink-0 group-hover/item:bg-indigo-100 transition-colors">
+                                <Settings className="w-3 h-3" />
+                              </div>
+                              <span className="text-slate-700 dark:text-slate-200 line-clamp-2 leading-relaxed pt-0.5">
                                 {servicesSummary}
-                                {servicesSuffix && (
-                                  <span className="text-slate-400 ml-0.5">
-                                    {servicesSuffix}
-                                  </span>
-                                )}
+                                {servicesSuffix && <span className="text-indigo-500 font-medium ml-1">{servicesSuffix}</span>}
                               </span>
                             </div>
                           )}
 
                           {partsSummary && (
-                            <div
-                              className="text-xs flex items-start gap-1.5"
-                              title={
-                                partsTitle
-                                  ? `Phụ tùng: ${partsTitle}`
-                                  : "Phụ tùng"
-                              }
-                            >
-                              <Wrench className="w-3.5 h-3.5 text-slate-400 mt-0.5 flex-shrink-0" />
-                              <span className="text-slate-700 dark:text-slate-200 line-clamp-2 leading-relaxed">
+                            <div className="text-xs flex items-start gap-2 group/item" title={partsTitle ? `Phụ tùng: ${partsTitle}` : "Phụ tùng"}>
+                              <div className="mt-0.5 p-1 rounded-md bg-orange-50 text-orange-500 dark:bg-orange-900/20 dark:text-orange-400 shrink-0 group-hover/item:bg-orange-100 transition-colors">
+                                <Wrench className="w-3 h-3" />
+                              </div>
+                              <span className="text-slate-700 dark:text-slate-200 line-clamp-2 leading-relaxed pt-0.5">
                                 {partsSummary}
-                                {partsSuffix && (
-                                  <span className="text-slate-400 ml-0.5">
-                                    {partsSuffix}
-                                  </span>
-                                )}
+                                {partsSuffix && <span className="text-orange-500 font-medium ml-1">{partsSuffix}</span>}
                               </span>
                             </div>
                           )}
 
                           {!partsSummary && !servicesSummary && (
-                            <div className="text-xs text-slate-500 dark:text-slate-400 italic">
-                              —
+                            <div className="text-[11px] text-slate-400 italic flex items-center justify-center py-2 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-dashed border-slate-200 dark:border-slate-700">
+                              Chưa có chi tiết
                             </div>
                           )}
 
                           {/* Payment pill for tablet/mobile - show when payment column hidden */}
-                          <div className="lg:hidden flex flex-wrap items-center gap-1.5 pt-1">
-                            <span
-                              className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-lg font-medium border ${order.paymentStatus === "paid"
-                                ? "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700/50"
-                                : order.paymentStatus === "partial"
-                                  ? "bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-700/50"
-                                  : "bg-slate-50 dark:bg-slate-700/50 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-600"
-                                }`}
-                            >
-                              <span className={`w-1.5 h-1.5 rounded-full ${order.paymentStatus === "paid"
-                                ? "bg-emerald-500"
-                                : order.paymentStatus === "partial"
-                                  ? "bg-amber-500"
-                                  : "bg-slate-400"
-                                }`} />
-                              {order.paymentStatus === "paid"
-                                ? "Đã TT"
-                                : order.paymentStatus === "partial"
-                                  ? "TT một phần"
-                                  : "Chưa TT"}
+                          <div className="lg:hidden mt-3">
+                            <span className={`inline-flex items-center gap-1.5 text-[11px] px-2.5 py-1 rounded-full font-bold shadow-sm ${order.paymentStatus === "paid" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" : order.paymentStatus === "partial" ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"}`}>
+                              <span className={`w-1.5 h-1.5 rounded-full ${order.paymentStatus === "paid" ? "bg-emerald-500" : order.paymentStatus === "partial" ? "bg-amber-500" : "bg-slate-400"}`} />
+                              {order.paymentStatus === "paid" ? "Đã TT" : order.paymentStatus === "partial" ? "Nợ" : "Chưa TT"}
                             </span>
                           </div>
                         </div>
                       </td>
 
                       {/* Column 4: Thanh toán & trạng thái - Clean layout - Hidden on tablet */}
-                      <td className="hidden lg:table-cell px-4 py-6 xl:py-8 align-top">
-                        <div className="space-y-2.5 min-w-[200px]">
-                          {/* Tổng tiền */}
-                          <div className="text-sm font-bold text-slate-800 dark:text-slate-100">
-                            {formatCurrency(totalAmount)}
+                      <td className="hidden lg:table-cell px-4 py-5 xl:py-6 align-top">
+                        <div className="space-y-3 min-w-[180px]">
+                          {/* Header: Tổng tiền + Nhãn TT */}
+                          <div className="flex items-start justify-between gap-2">
+                             <div className="text-sm font-black text-slate-800 dark:text-slate-100 tracking-tight">
+                               {formatCurrency(totalAmount)}
+                             </div>
+                             <span className={`inline-flex items-center gap-1.5 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${order.paymentStatus === "paid" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" : order.paymentStatus === "partial" ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"}`}>
+                                {order.paymentStatus === "paid" ? "Đã xong" : order.paymentStatus === "partial" ? "Còn nợ" : "Chưa TT"}
+                             </span>
                           </div>
-
-                          {/* Lợi nhuận - Chỉ hiển thị cho owner khi bật toggle */}
-                          {isOwner &&
-                            showProfit && (
-                              <div
-                                className="flex items-center gap-1 text-xs"
-                                title="Lợi nhuận và biên lợi nhuận trên tổng tiền"
-                              >
-                                <span className="text-slate-500">LN</span>
-                                <span
-                                  className={`font-semibold ${orderProfit > 0
-                                    ? "text-emerald-600 dark:text-emerald-400"
-                                    : "text-red-500"
-                                    }`}
-                                >
-                                  {orderProfit > 0 ? "+" : ""}
-                                  {formatCurrency(orderProfit)}
-                                </span>
-                                {totalAmount > 0 && (
-                                  <span className="text-slate-400">
-                                    (Biên LN{" "}
-                                    {Math.round(
-                                      (orderProfit / totalAmount) * 100
-                                    )}
-                                    %)
-                                  </span>
-                                )}
-                              </div>
-                            )}
 
                           {/* Progress bar + Đã thu */}
                           {totalAmount > 0 && order.paymentStatus !== "paid" && (
-                            <div className="space-y-1">
-                              <div
-                                className="h-1.5 w-full rounded-full bg-slate-200 dark:bg-slate-600 overflow-hidden"
-                                title={`Đã thanh toán ${paymentProgress}%`}
-                              >
-                                <div
-                                  className={`h-full rounded-full transition-all duration-300 ${paymentProgress >= 100
-                                    ? "bg-gradient-to-r from-emerald-500 to-emerald-600"
-                                    : paymentProgress > 0
-                                      ? "bg-gradient-to-r from-blue-500 to-blue-600"
-                                      : "bg-slate-300"
-                                    }`}
-                                  style={{
-                                    width: `${Math.min(paymentProgress, 100)}%`,
-                                  }}
-                                />
+                            <div className="space-y-1.5">
+                              <div className="h-1.5 w-full rounded-full bg-slate-100 dark:bg-slate-700 overflow-hidden border border-slate-200/50 dark:border-slate-600/50" title={`Đã thanh toán ${paymentProgress}%`}>
+                                <div className={`h-full rounded-full transition-all duration-500 ${paymentProgress > 0 ? "bg-gradient-to-r from-blue-500 to-blue-400" : "bg-transparent"}`} style={{ width: `${Math.min(paymentProgress, 100)}%` }} />
                               </div>
-                              <div className="flex justify-between items-center text-xs text-slate-600 dark:text-slate-300">
-                                <span className="flex items-center gap-1">
-                                  <span className="font-medium text-slate-600 dark:text-slate-300">
-                                    Đã thu:
-                                  </span>
-                                  <span className="font-semibold text-emerald-600 dark:text-emerald-400">
-                                    {formatCurrency(Math.max(0, paidAmount))}
-                                  </span>
-                                </span>
-                                {order.remainingAmount !== undefined &&
-                                  order.remainingAmount > 0 && (
-                                    <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400 font-medium">
-                                      <span>Còn</span>
-                                      <span className="font-bold">
-                                        {formatCurrency(order.remainingAmount)}
-                                      </span>
-                                    </span>
-                                  )}
+                              <div className="flex justify-between items-center text-[11px]">
+                                <span className="font-medium text-slate-500">Thu: <strong className="text-slate-700 dark:text-slate-300">{formatCurrency(Math.max(0, paidAmount))}</strong></span>
+                                {(order.remainingAmount ?? 0) > 0 && <span className="font-bold text-amber-600 dark:text-amber-500">{formatCurrency(order.remainingAmount ?? 0)}</span>}
                               </div>
                             </div>
                           )}
-
+                          
                           {/* Payment details - Show deposit/partial info when applicable */}
-                          {Boolean(
-                            (order.depositAmount && order.depositAmount > 0) ||
-                            order.paymentStatus === "partial" ||
-                            (order.paymentStatus === "paid" &&
-                              order.depositAmount &&
-                              order.depositAmount > 0)
-                          ) && (
-                              <div className="space-y-1 pt-1 border-t border-slate-200 dark:border-slate-700">
-                                {order.depositAmount &&
-                                  order.depositAmount > 0 && (
-                                    <div className="flex items-center justify-between text-xs">
-                                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-purple-500/20 text-purple-600 dark:text-purple-400 rounded font-medium">
-                                        <HandCoins className="w-3 h-3" /> Đã cọc
-                                      </span>
-                                      <span className="text-purple-600 dark:text-purple-400 font-medium">
-                                        {formatCurrency(order.depositAmount)}
-                                      </span>
-                                    </div>
-                                  )}
-                                {totalAmount > 0 &&
-                                  (order.remainingAmount ?? 0) > 0 && (
-                                    <div className="flex items-center justify-between text-xs">
-                                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-amber-500/20 text-amber-600 dark:text-amber-400 rounded font-medium">
-                                        <Clock className="w-3 h-3" /> Còn nợ
-                                      </span>
-                                      <span className="text-amber-600 dark:text-amber-400 font-medium">
-                                        {formatCurrency(
-                                          order.remainingAmount ?? 0
-                                        )}
-                                      </span>
-                                    </div>
-                                  )}
-                                {order.paymentStatus === "paid" &&
-                                  totalAmount > 0 &&
-                                  (order.remainingAmount ?? 0) === 0 && (
-                                    <div className="flex items-center justify-between text-xs font-semibold pt-1 border-t border-slate-100 dark:border-slate-700 mt-1">
-                                      <span className="inline-flex items-center gap-1.5 text-green-600 dark:text-green-400">
-                                        <Check className="w-3.5 h-3.5" /> Tổng đã thu
-                                      </span>
-                                      <span className="text-green-600 dark:text-green-400">
-                                        {formatCurrency(totalAmount)}
-                                      </span>
-                                    </div>
-                                  )}
-                              </div>
-                            )}
+                          {Boolean((order.depositAmount && order.depositAmount > 0) || order.paymentStatus === "partial" || (order.paymentStatus === "paid" && order.depositAmount && order.depositAmount > 0)) && (
+                            <div className="space-y-1 pt-1 border-t border-slate-100 dark:border-slate-700/50">
+                              {order.depositAmount && order.depositAmount > 0 && (
+                                <div className="flex items-center justify-between text-[11px]">
+                                  <span className="text-slate-500">Đã cọc:</span>
+                                  <span className="font-medium text-slate-700 dark:text-slate-300">{formatCurrency(order.depositAmount)}</span>
+                                </div>
+                              )}
+                            </div>
+                          )}
 
-                          {/* Payment status pill */}
-                          <div className="flex flex-wrap items-center gap-1.5">
-                            <span
-                              className={`inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg font-semibold border ${order.paymentStatus === "paid"
-                                ? "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700/50"
-                                : order.paymentStatus === "partial"
-                                  ? "bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-700/50"
-                                  : "bg-slate-50 dark:bg-slate-700/50 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-600"
-                                }`}
-                            >
-                              <span className={`w-1.5 h-1.5 rounded-full ${order.paymentStatus === "paid"
-                                ? "bg-emerald-500"
-                                : order.paymentStatus === "partial"
-                                  ? "bg-amber-500"
-                                  : "bg-slate-400"
-                                }`} />
-                              {order.paymentStatus === "paid"
-                                ? "Đã thanh toán"
-                                : order.paymentStatus === "partial"
-                                  ? "TT một phần"
-                                  : "Chưa TT"}
-                            </span>
-                          </div>
+                          {/* Lợi nhuận - Chỉ hiển thị cho owner khi bật toggle */}
+                          {isOwner && showProfit && (
+                            <div className="flex items-center justify-between text-[11px] pt-2 border-t border-dashed border-slate-200 dark:border-slate-700 mt-2">
+                              <span className="text-slate-500">Lợi nhuận</span>
+                              <span className={`font-bold flex items-center gap-1 ${orderProfit > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-500"}`}>
+                                {orderProfit > 0 ? "+" : ""}{formatCurrency(orderProfit)}
+                                {totalAmount > 0 && <span className="text-[9px] text-slate-400 ml-0.5">({Math.round((orderProfit / totalAmount) * 100)}%)</span>}
+                              </span>
+                            </div>
+                          )}
                         </div>
                       </td>
 
@@ -3400,17 +3177,17 @@ export default function ServiceManager() {
                         className="px-4 py-5 xl:py-6 align-top overflow-visible"
                         onClick={(e) => e.stopPropagation()}
                       >
-                        <div className="flex items-center justify-end gap-2">
+                        <div className="flex items-center justify-end gap-1.5">
                           {/* Quick action buttons - Ghost style */}
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
                               handleOpenModal(order);
                             }}
-                            className="w-9 h-9 inline-flex items-center justify-center rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:text-blue-400 dark:hover:bg-blue-900/30 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+                            className="w-8 h-8 inline-flex items-center justify-center rounded-full text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:text-blue-400 dark:hover:bg-blue-900/30 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
                             title="Xem chi tiết"
                           >
-                            <Eye className="w-4.5 h-4.5" />
+                            <Eye className="w-4 h-4" />
                           </button>
 
                           <button
@@ -3418,10 +3195,10 @@ export default function ServiceManager() {
                               e.stopPropagation();
                               handlePrintOrder(order);
                             }}
-                            className="w-9 h-9 inline-flex items-center justify-center rounded-lg text-slate-400 hover:text-purple-600 hover:bg-purple-50 dark:hover:text-purple-400 dark:hover:bg-purple-900/30 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-purple-500/40"
+                            className="w-8 h-8 inline-flex items-center justify-center rounded-full text-slate-400 hover:text-purple-600 hover:bg-purple-50 dark:hover:text-purple-400 dark:hover:bg-purple-900/30 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500/40"
                             title="In phiếu"
                           >
-                            <Printer className="w-4.5 h-4.5" />
+                            <Printer className="w-4 h-4" />
                           </button>
 
                           {/* More actions menu */}
@@ -3441,10 +3218,10 @@ export default function ServiceManager() {
                               }}
                               aria-haspopup="menu"
                               aria-expanded={rowActionMenuId === order.id}
-                              className="w-9 h-9 inline-flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+                              className="w-8 h-8 inline-flex items-center justify-center rounded-full text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
                               title="Thêm thao tác"
                             >
-                              <MoreVertical className="w-4.5 h-4.5" />
+                              <MoreVertical className="w-4 h-4" />
                             </button>
                             {rowActionMenuId === order.id && (
                               <div

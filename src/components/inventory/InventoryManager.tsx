@@ -25,8 +25,14 @@ import {
   Eye,
   X,
   AlertTriangle,
+  AlertCircle,
   TrendingUp,
   ChevronDown,
+  Hash,
+  Banknote,
+  Tags,
+  BarChart3,
+  Settings,
 } from "lucide-react";
 import { useAppContext } from "../../contexts/AppContext";
 import { safeAudit } from "../../lib/repository/auditLogsRepository";
@@ -1498,44 +1504,71 @@ const InventoryManagerNew: React.FC = () => {
           <div className="space-y-2">
             {/* Row 1: Stats inline + Search */}
             <div className="flex items-center gap-3">
-              {/* Compact Stats */}
-              <div className="flex items-center gap-4 flex-shrink-0">
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-blue-500/20 bg-blue-500/5">
-                  <Boxes className="w-4 h-4 text-blue-600" />
+              {/* Premium Stats Cards in Header */}
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <div className="flex items-center gap-3 px-4 py-2 rounded-2xl border border-blue-500/10 bg-blue-500/5 shadow-sm transition-all hover:bg-blue-500/10 group">
+                  <div className="p-1.5 bg-blue-500/20 rounded-lg group-hover:scale-110 transition-transform">
+                    <Boxes className="w-4 h-4 text-blue-500" />
+                  </div>
                   <div>
-                    <span className="text-lg font-bold text-slate-900 dark:text-slate-100">
-                      {totalStockQuantity.toLocaleString()}
-                    </span>
-                    <span className="text-[10px] text-slate-600 dark:text-slate-300 ml-1">
-                      sp
-                    </span>
+                    <div className="text-[9px] uppercase font-black text-blue-500/70 tracking-widest leading-none mb-0.5">Tồn kho</div>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-lg font-black text-slate-900 dark:text-white leading-none">
+                        {totalStockQuantity.toLocaleString()}
+                      </span>
+                      <span className="text-[10px] font-bold text-slate-400">SP</span>
+                    </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-emerald-500/20 bg-emerald-500/5">
-                  <Package className="w-4 h-4 text-emerald-600" />
+
+                <div className="flex items-center gap-3 px-4 py-2 rounded-2xl border border-emerald-500/10 bg-emerald-500/5 shadow-sm transition-all hover:bg-emerald-500/10 group">
+                  <div className="p-1.5 bg-emerald-500/20 rounded-lg group-hover:scale-110 transition-transform">
+                    <Package className="w-4 h-4 text-emerald-500" />
+                  </div>
                   <div>
-                    <span className="text-lg font-bold text-slate-900 dark:text-slate-100">
+                    <div className="text-[9px] uppercase font-black text-emerald-500/70 tracking-widest leading-none mb-0.5">Giá trị tồn</div>
+                    <div className="text-lg font-black text-slate-900 dark:text-white leading-none">
                       {formatCurrency(totalStockValue)}
-                    </span>
+                    </div>
                   </div>
                 </div>
+
+                {stockHealth.lowStock > 0 && (
+                   <div 
+                    onClick={() => handleStockFilterChange("low-stock")}
+                    className="flex items-center gap-3 px-4 py-2 rounded-2xl border border-amber-500/10 bg-amber-500/5 shadow-sm transition-all hover:bg-amber-500/10 group cursor-pointer"
+                   >
+                    <div className="p-1.5 bg-amber-500/20 rounded-lg group-hover:scale-110 transition-transform">
+                      <AlertTriangle className="w-4 h-4 text-amber-500" />
+                    </div>
+                    <div>
+                      <div className="text-[9px] uppercase font-black text-amber-500/70 tracking-widest leading-none mb-0.5">Sắp hết</div>
+                      <div className="text-lg font-black text-slate-900 dark:text-white leading-none">
+                        {stockHealth.lowStock}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
-              {/* Search */}
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+
+              {/* Search Bar - Modernized */}
+              <div className="relative flex-1 group">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
                 <input
                   type="text"
-                  placeholder="Tìm theo tên, SKU hoặc danh mục..."
+                  placeholder="Tìm kiếm sản phẩm theo tên, SKU, mã vạch hoặc danh mục..."
                   value={searchInput}
                   onChange={(e) => {
                     setPage(1);
                     setSearchInput(e.target.value);
                   }}
-                  className="w-full pl-9 pr-16 py-1.5 text-sm border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full pl-11 pr-20 py-2.5 text-sm border border-slate-200 dark:border-slate-700 rounded-2xl bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500/50 outline-none transition-all placeholder:text-slate-400 font-medium"
                 />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-slate-600 dark:text-slate-300">
-                  {filteredParts.length}/{isSearching ? filteredParts.length : totalParts}
-                </span>
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                  <div className="px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-[10px] font-bold text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+                    {filteredParts.length} / {isSearching ? filteredParts.length : totalParts}
+                  </div>
+                </div>
               </div>
               {/* Filter button */}
               <button
@@ -1550,70 +1583,49 @@ const InventoryManagerNew: React.FC = () => {
               </button>
             </div>
 
-            {/* Row 2: Quick filters as horizontal pills + Low stock warning inline */}
-            <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-2 flex-wrap mb-4">
               {stockQuickFilters.map((filter) => {
                 const isActive = stockFilter === filter.id;
-                const colorMap: Record<string, string> = {
-                  neutral: isActive
-                    ? "bg-slate-600 text-white"
-                    : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700",
-                  success: isActive
-                    ? "bg-emerald-600 text-white"
-                    : "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100",
-                  warning: isActive
-                    ? "bg-amber-600 text-white"
-                    : "bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 hover:bg-amber-100",
-                  danger: isActive
-                    ? "bg-red-600 text-white"
-                    : "bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 hover:bg-red-100",
+                const variants: Record<string, string> = {
+                  neutral: isActive 
+                    ? "bg-slate-900 dark:bg-white text-white dark:text-slate-900 border-slate-900 dark:border-white shadow-lg shadow-slate-900/10" 
+                    : "bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-600",
+                  success: isActive 
+                    ? "bg-emerald-600 text-white border-emerald-600 shadow-lg shadow-emerald-600/10" 
+                    : "bg-emerald-50/30 dark:bg-emerald-500/5 text-emerald-600 dark:text-emerald-400 border-emerald-200/50 dark:border-emerald-500/10 hover:bg-emerald-50 dark:hover:bg-emerald-500/10",
+                  warning: isActive 
+                    ? "bg-amber-500 text-white border-amber-500 shadow-lg shadow-amber-500/10" 
+                    : "bg-amber-50/30 dark:bg-amber-500/5 text-amber-600 dark:text-amber-400 border-amber-200/50 dark:border-amber-500/10 hover:bg-amber-50 dark:hover:bg-amber-500/10",
+                  danger: isActive 
+                    ? "bg-rose-500 text-white border-rose-500 shadow-lg shadow-rose-500/10" 
+                    : "bg-rose-50/30 dark:bg-rose-500/5 text-rose-600 dark:text-rose-400 border-rose-200/50 dark:border-rose-500/10 hover:bg-rose-50 dark:hover:bg-rose-500/10",
                 };
+
                 return (
                   <button
                     key={filter.id}
                     onClick={() => handleStockFilterChange(filter.id)}
-                    className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition ${colorMap[filter.variant || "neutral"]
-                      }`}
+                    className={`inline-flex items-center gap-2.5 px-4 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all duration-200 active:scale-95 ${variants[filter.variant || "neutral"]}`}
                   >
-                    <span>{filter.label}</span>
-                    <span
-                      className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${isActive
-                        ? "bg-white/20"
-                        : "bg-black/10 dark:bg-white/10"
-                        }`}
-                    >
+                    <span className="leading-none">{filter.label}</span>
+                    <span className={`inline-flex items-center justify-center px-2 py-0.5 rounded-full text-[9px] font-black leading-none ${isActive ? "bg-white/20 dark:bg-black/20" : "bg-slate-100 dark:bg-slate-800 text-slate-400"}`}>
                       {filter.count}
                     </span>
                   </button>
                 );
               })}
-
-              {/* Low stock warning inline */}
-              {shouldShowLowStockBanner && (
-                <div className="ml-auto flex items-center gap-2 text-amber-700 dark:text-amber-400">
-                  <span className="text-xs">
-                    ⚠️ {stockHealth.lowStock} sắp hết
-                  </span>
-                  <button
-                    onClick={() => handleStockFilterChange("low-stock")}
-                    className="px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-600 text-white hover:bg-amber-700"
-                  >
-                    Lọc
-                  </button>
-                </div>
-              )}
             </div>
 
             {showAdvancedFilters && (
-              <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white/70 dark:bg-slate-900/40 p-3 grid gap-3 md:grid-cols-3">
+              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 backdrop-blur-md p-4 grid gap-4 md:grid-cols-3 shadow-xl animate-in zoom-in-95 duration-200">
                 <div>
-                  <label className="text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-1.5 block">
                     Trạng thái tồn kho
                   </label>
                   <select
                     value={stockFilter}
                     onChange={(e) => handleStockFilterChange(e.target.value)}
-                    className="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-1.5 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/40"
+                    className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm font-bold text-slate-700 dark:text-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none"
                   >
                     <option value="all">Tất cả tồn kho</option>
                     <option value="in-stock">Còn hàng</option>
@@ -1622,13 +1634,13 @@ const InventoryManagerNew: React.FC = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300">
-                    Danh mục
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-1.5 block">
+                    Danh mục sản phẩm
                   </label>
                   <select
                     value={categoryFilter}
                     onChange={(e) => handleCategoryFilterChange(e.target.value)}
-                    className="mt-1 w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-1.5 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/40"
+                    className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm font-bold text-slate-700 dark:text-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none"
                   >
                     <option value="all">Tất cả danh mục</option>
                     {allCategories.map((cat) => (
@@ -1639,18 +1651,33 @@ const InventoryManagerNew: React.FC = () => {
                   </select>
                 </div>
                 <div className="flex flex-col justify-end">
-                  <label className="text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300">
-                    Phát hiện trùng mã
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-1.5 block">
+                    Xử lý dữ liệu
                   </label>
-                  <button
-                    onClick={() => setShowDuplicatesOnly((prev) => !prev)}
-                    className={`mt-1 rounded-lg border px-3 py-1.5 text-sm font-medium transition ${showDuplicatesOnly
-                      ? "border-orange-500 text-orange-600 bg-orange-50 dark:bg-orange-900/20"
-                      : "border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:text-slate-100"
-                      }`}
-                  >
-                    {showDuplicatesOnly ? "Đang lọc trùng mã" : "Lọc trùng mã"}
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setShowDuplicatesOnly((prev) => !prev)}
+                      className={`flex-1 rounded-xl border px-4 py-2 text-[11px] font-black uppercase tracking-widest transition-all active:scale-95 ${showDuplicatesOnly
+                        ? "bg-amber-500 border-amber-500 text-white shadow-lg shadow-amber-500/20"
+                        : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-amber-500 hover:text-amber-500"
+                        }`}
+                    >
+                      {showDuplicatesOnly ? "✓ Đang lọc trùng" : "🔍 Lọc trùng SKU"}
+                    </button>
+                    {(stockFilter !== "all" || categoryFilter !== "all" || showDuplicatesOnly) && (
+                      <button
+                        onClick={() => {
+                          setStockFilter("all");
+                          setCategoryFilter("all");
+                          setShowDuplicatesOnly(false);
+                        }}
+                        className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-rose-500 transition-colors"
+                        title="Xóa tất cả bộ lọc"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             )}
@@ -1668,15 +1695,20 @@ const InventoryManagerNew: React.FC = () => {
                 {/* Header */}
                 <button
                   onClick={() => setShowReorderAlert((v) => !v)}
-                  className="w-full flex items-center justify-between px-3 py-2 hover:bg-amber-100 dark:hover:bg-amber-900/30 transition"
+                  className="w-full flex items-center justify-between px-4 py-3 bg-amber-50/50 dark:bg-amber-900/10 hover:bg-amber-100/50 dark:hover:bg-amber-900/20 transition-all group"
                 >
-                  <div className="flex items-center gap-2">
-                    <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0" />
-                    <span className="text-xs font-semibold text-amber-800 dark:text-amber-300">
-                      Đề nghị nhập hàng: {reorderAlertItems.length} sản phẩm bán chạy còn ≤ 2 tồn — {reorderGroupedBySupplier.length} nhà cung cấp
-                    </span>
+                  <div className="flex items-center gap-3">
+                    <div className="p-1.5 bg-amber-500/20 rounded-lg group-hover:scale-110 transition-transform">
+                      <AlertTriangle className="w-4 h-4 text-amber-500" />
+                    </div>
+                    <div className="text-left">
+                      <div className="text-sm font-black text-amber-900 dark:text-amber-300 leading-tight">Đề nghị nhập hàng</div>
+                      <div className="text-[10px] font-bold text-amber-600 dark:text-amber-500 uppercase tracking-widest">
+                        {reorderAlertItems.length} sản phẩm bán chạy sắp hết — {reorderGroupedBySupplier.length} nhà cung cấp
+                      </div>
+                    </div>
                   </div>
-                  <ChevronDown className={`w-4 h-4 text-amber-600 dark:text-amber-400 transition-transform duration-200 ${showReorderAlert ? "rotate-180" : ""}`} />
+                  <ChevronDown className={`w-5 h-5 text-amber-500 transition-transform duration-300 ${showReorderAlert ? "rotate-180" : ""}`} />
                 </button>
 
                 {showReorderAlert && (
@@ -1822,21 +1854,26 @@ const InventoryManagerNew: React.FC = () => {
 
             {/* Duplicate Warning Banner - More compact */}
             {duplicateSkus.size > 0 && (
-              <div className="bg-orange-50 dark:bg-orange-900/20 border-l-4 border-orange-500 px-3 py-2 rounded-lg flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span>⚠️</span>
-                  <span className="text-xs font-semibold text-orange-800 dark:text-orange-300">
-                    Phát hiện {duplicateSkus.size} sản phẩm trùng mã
-                  </span>
+              <div className="bg-white dark:bg-slate-900 border border-rose-200 dark:border-rose-800/50 rounded-2xl p-4 flex items-center justify-between shadow-sm animate-in fade-in slide-in-from-left-4 duration-500">
+                <div className="flex items-center gap-4">
+                  <div className="p-2 bg-rose-500/20 rounded-xl">
+                    <AlertCircle className="w-5 h-5 text-rose-500" />
+                  </div>
+                  <div>
+                    <div className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight">Cảnh báo trùng mã SKU</div>
+                    <div className="text-xs font-bold text-slate-500 dark:text-slate-400">
+                      Phát hiện <span className="text-rose-500">{duplicateSkus.size}</span> bộ mã trùng lặp trong kho hàng.
+                    </div>
+                  </div>
                 </div>
                 <button
-                  onClick={() => setShowDuplicatesOnly(!showDuplicatesOnly)}
-                  className={`px-2 py-0.5 rounded text-[10px] font-medium transition ${showDuplicatesOnly
-                    ? "bg-orange-600 text-white"
-                    : "bg-orange-100 dark:bg-orange-900/40 text-orange-800 dark:text-orange-300"
-                    }`}
+                  onClick={() => setShowDuplicatesOnly((prev) => !prev)}
+                  className={`px-4 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest border transition-all active:scale-95 ${showDuplicatesOnly
+                    ? "bg-rose-500 border-rose-500 text-white shadow-lg shadow-rose-500/20"
+                    : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-rose-500 hover:text-rose-500"
+                  }`}
                 >
-                  {showDuplicatesOnly ? "✓ Đang lọc" : "🔍 Lọc"}
+                  {showDuplicatesOnly ? "✓ Đang lọc" : "🔍 Xử lý ngay"}
                 </button>
               </div>
             )}
@@ -1861,142 +1898,104 @@ const InventoryManagerNew: React.FC = () => {
                     </button>
                     <button
                       onClick={handleBulkDelete}
-                      className="flex items-center gap-2 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-medium transition-colors"
+                      className="flex items-center gap-2 px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
                     >
-                      <svg
-                        className="w-4 h-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                        />
-                      </svg>
+                      <Trash2 className="w-4 h-4" />
                       Xóa đã chọn
                     </button>
                   </div>
                 </div>
               )}
 
-              {/* Mobile: stacked cards (visible on small screens) */}
+              {/* Mobile Layout: Premium Card Grid */}
               <div className="block sm:hidden">
-                <div className="space-y-3 p-3">
+                <div className="space-y-3 p-3 bg-slate-50 dark:bg-slate-900/50">
                   {filteredParts.map((part, index) => {
                     const stock = part.stock[currentBranchId] || 0;
+                    const reserved = part.reservedstock?.[currentBranchId] || 0;
+                    const available = Math.max(0, stock - reserved);
                     const retailPrice = part.retailPrice[currentBranchId] || 0;
-                    const costPrice = part.costPrice?.[currentBranchId] || 0;
                     const isDuplicate = hasDuplicateSku(part.sku || "");
+                    
                     return (
                       <div
                         key={part.id}
-                        className={`p-3 rounded-xl bg-[#2d3748] border border-slate-600 transition ${isDuplicate ? "border-l-4 border-l-orange-500" : ""
-                          }`}
-                        role="listitem"
+                        className={`bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm active:scale-[0.98] transition-all ${isDuplicate ? "border-l-4 border-l-amber-500" : ""}`}
                       >
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="flex-1 min-w-0">
-                              {/* Tên sản phẩm: hiển thị đầy đủ */}
-                              <div className="text-[15px] font-medium text-slate-900 dark:text-white leading-tight">
-                                {part.name}
-                              </div>
-                              <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 truncate font-mono">
-                                SKU: {part.sku}
-                              </div>
-                              {/* Danh mục với viền */}
-                              {part.category && (
-                                <span
-                                  className="inline-flex items-center px-1.5 py-0.5 mt-1.5 rounded text-[10px] font-medium border border-slate-300 dark:border-slate-600 text-slate-500 dark:text-slate-400"
-                                >
-                                  {part.category}
-                                </span>
-                              )}
-                            </div>
-                            <div className="text-right flex-shrink-0">
-                              {/* Hiển thị giá bán */}
-                              <div className="text-[13px] text-slate-900 dark:text-white font-semibold">
-                                {formatCurrency(retailPrice)}
-                              </div>
-                              {/* Hiển thị giá nhập */}
-                              <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
-                                Vốn: {formatCurrency(costPrice)}
-                              </div>
-                            </div>
-                          </div>
-                          <div className="mt-2 flex items-center justify-between">
-                            {/* Badge số lượng tồn kho */}
-                            <span
-                              className={`inline-flex items-center gap-1 px-2.5 py-1 text-sm font-bold rounded-lg ${stock === 0
-                                ? "text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/40 border border-red-200 dark:border-red-700/50"
-                                : stock <= LOW_STOCK_THRESHOLD
-                                  ? "text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/40 border border-amber-200 dark:border-amber-700/50"
-                                  : "text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
-                                }`}
-                            >
-                              <span className="text-xs opacity-80">SL:</span>
-                              {stock}
-                            </span>
-                            <div className="relative">
-                              {/* Tăng vùng tap cho menu 3 chấm */}
-                              <button
-                                onClick={() =>
-                                  setMobileMenuOpenIndex(
-                                    mobileMenuOpenIndex === index ? null : index
-                                  )
-                                }
-                                aria-haspopup="true"
-                                aria-expanded={mobileMenuOpenIndex === index}
-                                aria-label="Thêm hành động"
-                                className="p-2.5 -m-1 text-slate-400 hover:bg-slate-600 rounded-lg transition active:bg-slate-500"
+                        <div className="flex gap-4">
+                          <div className="h-16 w-16 rounded-2xl overflow-hidden flex-shrink-0 border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 shadow-inner">
+                            {part.imageUrl ? (
+                              <img src={part.imageUrl} alt={part.name} className="h-full w-full object-cover" />
+                            ) : (
+                              <div 
+                                className="w-full h-full flex items-center justify-center text-xs font-black text-white"
+                                style={{ backgroundColor: getAvatarColor(part.name) }}
                               >
-                                <MoreHorizontal className="w-5 h-5" />
-                              </button>
-
-                              {mobileMenuOpenIndex === index && (
-                                <div className="absolute right-0 bottom-full mb-2 w-40 bg-slate-800 border border-slate-700 rounded-lg shadow-xl z-[9999]">
+                                {part.name?.charAt(0).toUpperCase()}
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0 flex flex-col justify-between">
+                            <div>
+                              <div className="flex items-start justify-between gap-2">
+                                <h3 className="text-[15px] font-black text-slate-900 dark:text-white leading-tight truncate tracking-tight">
+                                  {part.name}
+                                </h3>
+                                <div className="relative">
                                   <button
-                                    onClick={() => {
-                                      setSelectedPartDetail(part);
-                                      setMobileMenuOpenIndex(null);
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setMobileMenuOpenIndex(mobileMenuOpenIndex === index ? null : index);
                                     }}
-                                    className="w-full text-left px-3 py-2.5 text-sm hover:bg-slate-700 flex items-center gap-2 text-white rounded-t-lg"
-                                    aria-label={`Xem chi tiết ${part.name}`}
+                                    className="p-1 -m-1 text-slate-400 hover:text-slate-600 transition-colors"
                                   >
-                                    <Eye className="w-4 h-4 text-emerald-400" />
-                                    <span>Xem chi tiết</span>
+                                    <MoreHorizontal className="w-5 h-5" />
                                   </button>
-                                  <button
-                                    onClick={() => {
-                                      if (!canUpdatePart) {
-                                        showToast.error("Bạn không có quyền sửa phụ tùng");
-                                        return;
-                                      }
-                                      setEditingPart(part);
-                                      setMobileMenuOpenIndex(null);
-                                    }}
-                                    className="w-full text-left px-3 py-2.5 text-sm hover:bg-slate-700 flex items-center gap-2 text-white"
-                                    aria-label={`Chỉnh sửa ${part.name}`}
-                                  >
-                                    <Edit className="w-4 h-4 text-blue-400" />
-                                    <span>Chỉnh sửa</span>
-                                  </button>
-                                  <button
-                                    onClick={() => {
-                                      handleDeleteItem(part.id);
-                                      setMobileMenuOpenIndex(null);
-                                    }}
-                                    className="w-full text-left px-3 py-2.5 text-sm hover:bg-slate-700 flex items-center gap-2 text-red-400 rounded-b-lg"
-                                    aria-label={`Xóa ${part.name}`}
-                                  >
-                                    <Trash2 className="w-4 h-4" />
-                                    <span>Xóa</span>
-                                  </button>
+                                  {mobileMenuOpenIndex === index && (
+                                    <div className="absolute right-0 top-full mt-2 w-44 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in duration-200">
+                                      <button
+                                        onClick={() => { setSelectedPartDetail(part); setMobileMenuOpenIndex(null); }}
+                                        className="w-full text-left px-4 py-3 text-sm font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-3 border-b border-slate-100 dark:border-slate-700"
+                                      >
+                                        <Eye className="w-4 h-4 text-emerald-500" /> Xem chi tiết
+                                      </button>
+                                      <button
+                                        onClick={() => { setEditingPart(part); setMobileMenuOpenIndex(null); }}
+                                        className="w-full text-left px-4 py-3 text-sm font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-3 border-b border-slate-100 dark:border-slate-700"
+                                      >
+                                        <Edit className="w-4 h-4 text-blue-500" /> Chỉnh sửa
+                                      </button>
+                                      <button
+                                        onClick={() => { handleDeleteItem(part.id); setMobileMenuOpenIndex(null); }}
+                                        className="w-full text-left px-4 py-3 text-sm font-bold text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 flex items-center gap-3"
+                                      >
+                                        <Trash2 className="w-4 h-4" /> Xóa sản phẩm
+                                      </button>
+                                    </div>
+                                  )}
                                 </div>
-                              )}
+                              </div>
+                              <div className="flex items-center gap-2 mt-1.5">
+                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 dark:bg-slate-800 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-700">
+                                  {part.sku || "N/A"}
+                                </span>
+                                {part.category && (
+                                  <span className="text-[10px] font-black text-blue-500/80 uppercase tracking-widest">{part.category}</span>
+                                )}
+                              </div>
+                            </div>
+                            
+                            <div className="flex items-end justify-between mt-4">
+                              <div className="flex flex-col">
+                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Giá bán</span>
+                                <span className="text-base font-black text-blue-600 dark:text-blue-400 font-mono tracking-tight">{formatCurrency(retailPrice)}</span>
+                              </div>
+                              <div className="flex flex-col items-end">
+                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1 text-right">Tồn khả dụng</span>
+                                <span className={`inline-flex items-center px-2.5 py-1 rounded-xl font-black text-sm border shadow-sm ${available === 0 ? "bg-rose-50 border-rose-200 text-rose-600 dark:bg-rose-900/20 dark:border-rose-900/50" : available <= LOW_STOCK_THRESHOLD ? "bg-amber-50 border-amber-200 text-amber-600 dark:bg-amber-900/20 dark:border-amber-900/50" : "bg-emerald-50 border-emerald-200 text-emerald-600 dark:bg-emerald-900/20 dark:border-emerald-900/50"}`}>
+                                  {available}
+                                </span>
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -2009,9 +2008,9 @@ const InventoryManagerNew: React.FC = () => {
               {/* Desktop / tablet: wide table (hidden on small screens) */}
               <div className="hidden sm:block overflow-x-auto">
                 <table className="w-full">
-                  <thead className="bg-slate-100 dark:bg-slate-700/50">
-                    <tr className="border-b border-slate-200 dark:border-slate-600 text-[10px] font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
-                      <th className="px-3 py-2.5 text-center w-10">
+                  <thead className="bg-slate-50 dark:bg-slate-900 sticky top-0 z-20 border-b border-slate-200 dark:border-slate-800 shadow-sm">
+                    <tr className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">
+                      <th className="px-4 py-4 text-center w-12">
                         <input
                           type="checkbox"
                           checked={
@@ -2019,89 +2018,61 @@ const InventoryManagerNew: React.FC = () => {
                             filteredParts.length > 0
                           }
                           onChange={(e) => handleSelectAll(e.target.checked)}
-                          className="w-3.5 h-3.5 text-blue-600 rounded border-slate-300 dark:border-slate-600 focus:ring-blue-500"
+                          className="w-4 h-4 text-blue-600 rounded-md border-slate-300 dark:border-slate-700 focus:ring-blue-500/20 transition-all cursor-pointer"
                         />
                       </th>
                       <th
-                        className="px-3 py-2.5 text-left cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors select-none w-[280px]"
+                        className="px-4 py-4 text-left cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors select-none group"
                         onClick={() => handleSort("name")}
                       >
                         <div className="flex items-center gap-1.5">
-                          <span>Sản phẩm</span>
-                          {sortField === "name" && (
-                            <span className="text-blue-500">
-                              {sortDirection === "asc" ? "↑" : "↓"}
-                            </span>
-                          )}
+                          <Package className={`w-3.5 h-3.5 transition-colors ${sortField === 'name' ? 'text-blue-500' : 'text-slate-400 group-hover:text-blue-500'}`} />
+                          <span className={`transition-colors ${sortField === 'name' ? 'text-slate-900 dark:text-white' : 'group-hover:text-slate-900 dark:group-hover:text-white'}`}>Sản phẩm</span>
+                          <ChevronDown className={`w-3 h-3 transition-all duration-300 ${sortField === 'name' ? (sortDirection === 'asc' ? 'rotate-180 text-blue-500' : 'text-blue-500') : 'opacity-0 group-hover:opacity-100'}`} />
                         </div>
                       </th>
                       <th
-                        className="px-3 py-2.5 text-right cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors select-none w-[100px]"
+                        className="px-4 py-4 text-right cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors select-none group"
                         onClick={() => handleSort("stock")}
                       >
                         <div className="flex items-center justify-end gap-1.5">
-                          <span>Tồn kho</span>
-                          {sortField === "stock" && (
-                            <span className="text-blue-500">
-                              {sortDirection === "asc" ? "↑" : "↓"}
-                            </span>
-                          )}
+                          <Hash className={`w-3.5 h-3.5 transition-colors ${sortField === 'stock' ? 'text-amber-500' : 'text-slate-400 group-hover:text-amber-500'}`} />
+                          <span className={`transition-colors ${sortField === 'stock' ? 'text-slate-900 dark:text-white' : 'group-hover:text-slate-900 dark:group-hover:text-white'}`}>Tồn kho</span>
+                          <ChevronDown className={`w-3 h-3 transition-all duration-300 ${sortField === 'stock' ? (sortDirection === 'asc' ? 'rotate-180 text-amber-500' : 'text-amber-500') : 'opacity-0 group-hover:opacity-100'}`} />
                         </div>
                       </th>
                       <th
-                        className="px-3 py-2.5 text-right cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors select-none w-[110px]"
+                        className="px-4 py-4 text-right cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors select-none group"
                         onClick={() => handleSort("costPrice")}
                       >
                         <div className="flex items-center justify-end gap-1.5">
-                          <span>Giá nhập</span>
-                          {sortField === "costPrice" && (
-                            <span className="text-blue-500">
-                              {sortDirection === "asc" ? "↑" : "↓"}
-                            </span>
-                          )}
+                          <Banknote className={`w-3.5 h-3.5 transition-colors ${sortField === 'costPrice' ? 'text-emerald-500' : 'text-slate-400 group-hover:text-emerald-500'}`} />
+                          <span className={`transition-colors ${sortField === 'costPrice' ? 'text-slate-900 dark:text-white' : 'group-hover:text-slate-900 dark:group-hover:text-white'}`}>Giá nhập</span>
+                          <ChevronDown className={`w-3 h-3 transition-all duration-300 ${sortField === 'costPrice' ? (sortDirection === 'asc' ? 'rotate-180 text-emerald-500' : 'text-emerald-500') : 'opacity-0 group-hover:opacity-100'}`} />
                         </div>
                       </th>
                       <th
-                        className="px-3 py-2.5 text-right cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors select-none w-[110px]"
+                        className="px-4 py-4 text-right cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors select-none group"
                         onClick={() => handleSort("retailPrice")}
                       >
                         <div className="flex items-center justify-end gap-1.5">
-                          <span>Giá bán lẻ</span>
-                          {sortField === "retailPrice" && (
-                            <span className="text-blue-500">
-                              {sortDirection === "asc" ? "↑" : "↓"}
-                            </span>
-                          )}
+                          <Tags className={`w-3.5 h-3.5 transition-colors ${sortField === 'retailPrice' ? 'text-blue-500' : 'text-slate-400 group-hover:text-blue-500'}`} />
+                          <span className={`transition-colors ${sortField === 'retailPrice' ? 'text-slate-900 dark:text-white' : 'group-hover:text-slate-900 dark:group-hover:text-white'}`}>Giá bán</span>
+                          <ChevronDown className={`w-3 h-3 transition-all duration-300 ${sortField === 'retailPrice' ? (sortDirection === 'asc' ? 'rotate-180 text-blue-500' : 'text-blue-500') : 'opacity-0 group-hover:opacity-100'}`} />
                         </div>
                       </th>
                       <th
-                        className="px-3 py-2.5 text-right cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors select-none w-[110px]"
-                        onClick={() => handleSort("wholesalePrice")}
-                      >
-                        <div className="flex items-center justify-end gap-1.5">
-                          <span>Giá bán sỉ</span>
-                          {sortField === "wholesalePrice" && (
-                            <span className="text-blue-500">
-                              {sortDirection === "asc" ? "↑" : "↓"}
-                            </span>
-                          )}
-                        </div>
-                      </th>
-                      <th
-                        className="px-3 py-2.5 text-right cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors select-none w-[120px]"
+                        className="px-4 py-4 text-right cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors select-none group"
                         onClick={() => handleSort("totalValue")}
                       >
                         <div className="flex items-center justify-end gap-1.5">
-                          <span>Giá trị tồn</span>
-                          {sortField === "totalValue" && (
-                            <span className="text-blue-500">
-                              {sortDirection === "asc" ? "↑" : "↓"}
-                            </span>
-                          )}
+                          <BarChart3 className={`w-3.5 h-3.5 transition-colors ${sortField === 'totalValue' ? 'text-purple-500' : 'text-slate-400 group-hover:text-purple-500'}`} />
+                          <span className={`transition-colors ${sortField === 'totalValue' ? 'text-slate-900 dark:text-white' : 'group-hover:text-slate-900 dark:group-hover:text-white'}`}>Giá trị tồn</span>
+                          <ChevronDown className={`w-3 h-3 transition-all duration-300 ${sortField === 'totalValue' ? (sortDirection === 'asc' ? 'rotate-180 text-purple-500' : 'text-purple-500') : 'opacity-0 group-hover:opacity-100'}`} />
                         </div>
                       </th>
-                      <th className="px-3 py-2.5 text-center w-14">
-                        Hành động
+                      <th className="px-4 py-4 text-center w-24">
+                        HÀNH ĐỘNG
                       </th>
                     </tr>
                   </thead>
@@ -2164,92 +2135,95 @@ const InventoryManagerNew: React.FC = () => {
                         return (
                           <tr
                             key={part.id}
-                            className={`hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors ${rowHighlight}`}
+                            className={`group border-b border-slate-50 dark:border-slate-800/50 hover:bg-blue-50/30 dark:hover:bg-blue-900/10 transition-all duration-200 ${rowHighlight}`}
                           >
-                            <td className="px-3 py-2 text-center">
+                            <td className="px-4 py-4 text-center">
                               <input
                                 type="checkbox"
                                 checked={isSelected}
                                 onChange={(e) =>
                                   handleSelectItem(part.id, e.target.checked)
                                 }
-                                className="w-3.5 h-3.5 text-blue-600 rounded border-slate-300 dark:border-slate-600 focus:ring-blue-500"
+                                className="w-4 h-4 text-blue-600 rounded-md border-slate-300 dark:border-slate-700 focus:ring-blue-500/20 transition-all cursor-pointer opacity-50 group-hover:opacity-100"
                               />
                             </td>
-                            <td className="px-3 py-2">
-                              <div className="flex items-center gap-2">
-                                {part.imageUrl && (
-                                  <div className="h-8 w-8 rounded-lg overflow-hidden flex items-center justify-center flex-shrink-0 border border-slate-200 dark:border-slate-700">
+                            <td className="px-4 py-4">
+                              <div className="flex items-center gap-4">
+                                <div className="h-10 w-10 rounded-2xl overflow-hidden flex items-center justify-center flex-shrink-0 border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 group-hover:border-blue-500/30 transition-colors shadow-sm">
+                                  {part.imageUrl ? (
                                     <img
                                       src={part.imageUrl}
                                       alt={part.name}
-                                      className="h-full w-full object-cover"
+                                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
                                     />
-                                  </div>
-                                )}
-                                <div className="flex flex-col gap-0.5 min-w-0">
-                                  <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-900 dark:text-slate-100 truncate">
-                                    {part.name}
-                                    {isDuplicate && (
-                                      <span
-                                        className="inline-flex items-center gap-0.5 rounded-full border border-orange-300 bg-orange-50 px-1.5 py-0 text-[9px] font-semibold text-orange-700 dark:bg-orange-900/30 flex-shrink-0"
-                                        title="Sản phẩm có mã trùng lặp"
-                                      >
-                                        ⚠️ Trùng
-                                      </span>
-                                    )}
-                                  </div>
-                                  <div className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">
-                                    {part.barcode ? (
-                                      <span className="text-blue-600 dark:text-blue-400">
-                                        Mã: {part.barcode}
-                                      </span>
-                                    ) : (
-                                      <span className="text-blue-600 dark:text-blue-400">
-                                        SKU: {part.sku || "N/A"}
-                                      </span>
-                                    )}
-                                  </div>
-                                  {part.category && (
-                                    <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
-                                      {part.category}
-                                    </span>
+                                  ) : (
+                                    <div 
+                                      className="w-full h-full flex items-center justify-center text-[10px] font-black text-white"
+                                      style={{ backgroundColor: getAvatarColor(part.name) }}
+                                    >
+                                      {productInitial}
+                                    </div>
                                   )}
+                                </div>
+                                <div className="flex flex-col gap-1 min-w-0">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-sm font-black text-slate-900 dark:text-white leading-none tracking-tight group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                                      {part.name}
+                                    </span>
+                                    {isDuplicate && (
+                                      <span className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-[9px] font-black text-amber-500 uppercase tracking-widest">
+                                        TRÙNG MÃ
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1.5 py-0.5 bg-slate-100 dark:bg-slate-900 rounded-md border border-slate-200 dark:border-slate-800">
+                                      {part.sku || "N/A"}
+                                    </span>
+                                    {part.category && (
+                                      <span className="text-[10px] font-bold text-blue-500/70 uppercase tracking-widest">
+                                        {part.category}
+                                      </span>
+                                    )}
+                                  </div>
                                 </div>
                               </div>
                             </td>
-                            <td className="px-3 py-2 whitespace-nowrap text-right">
-                              <div className="flex flex-col items-end gap-0.5">
-                                <span
-                                  className={`text-sm font-bold ${stockQtyClass}`}
-                                >
-                                  {available.toLocaleString()}
-                                </span>
+                            <td className="px-4 py-4 whitespace-nowrap text-right">
+                              <div className="flex flex-col items-end gap-1">
+                                <div className={`inline-flex items-center px-2 py-1 rounded-xl font-black text-sm border shadow-sm transition-all ${stockStatusClass}`}>
+                                  <span className="font-mono">{available.toLocaleString()}</span>
+                                </div>
                                 {activeReserved > 0 && (
-                                  <span
-                                    className="text-[10px] text-amber-600 dark:text-amber-400 cursor-pointer hover:underline hover:text-amber-700"
+                                  <button
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       setReservedInfoPartId(part.id);
                                     }}
-                                    title="Nhấn để xem chi tiết phiếu đang giữ hàng"
+                                    className="text-[10px] font-black text-amber-500 uppercase tracking-widest hover:underline active:scale-95"
                                   >
-                                    (Giữ: {activeReserved})
-                                  </span>
+                                    Giữ: {activeReserved}
+                                  </button>
                                 )}
                               </div>
                             </td>
-                            <td className="px-3 py-2 whitespace-nowrap text-right text-xs text-slate-400 dark:text-slate-500">
-                              {formatCurrency(costPrice)}
+                            <td className="px-4 py-4 whitespace-nowrap text-right">
+                              <div className="text-[13px] font-bold text-slate-400 dark:text-slate-500 font-mono">
+                                {formatCurrency(costPrice)}
+                              </div>
                             </td>
-                            <td className="px-3 py-2 whitespace-nowrap text-right text-[13px] font-semibold text-sky-600 dark:text-sky-400">
-                              {formatCurrency(retailPrice)}
+                            <td className="px-4 py-4 whitespace-nowrap text-right">
+                              <div className="text-[15px] font-black text-blue-600 dark:text-blue-400 font-mono tracking-tight">
+                                {formatCurrency(retailPrice)}
+                              </div>
+                              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mt-1">
+                                Sỉ: {formatCurrency(wholesalePrice)}
+                              </div>
                             </td>
-                            <td className="px-3 py-2 whitespace-nowrap text-right text-xs text-slate-400 dark:text-slate-500">
-                              {formatCurrency(wholesalePrice)}
-                            </td>
-                            <td className="px-3 py-2 whitespace-nowrap text-right text-[13px] font-bold text-slate-800 dark:text-slate-200">
-                              {formatCurrency(value)}
+                            <td className="px-4 py-4 whitespace-nowrap text-right">
+                              <div className="text-[15px] font-black text-slate-900 dark:text-white font-mono tracking-tight">
+                                {formatCurrency(value)}
+                              </div>
                             </td>
                             <td className="px-3 py-2 whitespace-nowrap text-center">
                               <div className="relative flex justify-end">

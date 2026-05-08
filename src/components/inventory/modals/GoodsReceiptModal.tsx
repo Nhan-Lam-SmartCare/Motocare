@@ -1,4 +1,4 @@
-﻿import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { canDo } from '../../../utils/permissions';
 import { useSuppliers } from '../../../hooks/useSuppliers';
@@ -13,6 +13,7 @@ import BarcodeScannerModal from '../../common/BarcodeScannerModal';
 import SupplierModal from '../../inventory/components/SupplierModal';
 import AddProductModal from './AddProductModal';
 import type { Part } from '../../../types';
+import { Banknote, CreditCard, Save } from 'lucide-react';
 
 // Goods Receipt Modal Component (Ảnh 2)
 const GoodsReceiptModal: React.FC<{
@@ -1042,47 +1043,47 @@ const GoodsReceiptModal: React.FC<{
             </div>
 
             {/* Payment Section - Compact */}
-            <div className="p-3 border-t-2 border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
+            <div className="p-3 border-t border-slate-200 dark:border-slate-800/60 bg-white dark:bg-slate-900/50">
               {/* Total Display - Always visible */}
-              <div className="mb-3 p-3 bg-slate-800 dark:bg-slate-900/80 rounded-lg shadow">
+              <div className="mb-4 p-4 bg-gradient-to-r from-slate-900 to-slate-800 dark:from-slate-800 dark:to-slate-900 rounded-2xl shadow-sm border border-slate-700/50">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-white uppercase">
+                  <span className="text-[10px] font-black tracking-widest text-slate-300 uppercase">
                     Tổng thanh toán
                   </span>
                   <div className="text-right">
-                    <div className="text-xl font-black text-white">
+                    <div className="text-2xl font-black text-white tracking-tight">
                       {formatCurrency(totalAmount)}
                     </div>
-                    <div className="text-[10px] text-white/70">
-                      {receiptItems.length} SP
+                    <div className="text-[10px] font-bold text-slate-400 mt-0.5">
+                      {receiptItems.length} Sản phẩm
                     </div>
                   </div>
                 </div>
               </div>
 
               {/* Payment Method - Compact buttons */}
-              <div className="mb-3">
-                <label className="block text-[10px] font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                  Phương thức thanh toán <span className="text-red-500">*</span>
+              <div className="mb-4">
+                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">
+                  Phương thức thanh toán <span className="text-rose-500">*</span>
                 </label>
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     onClick={() => setPaymentMethod("cash")}
-                    className={`flex items-center justify-center gap-1.5 px-3 py-2 border-2 rounded-lg text-xs font-bold transition-all ${paymentMethod === "cash"
-                      ? "border-slate-800 bg-slate-800 text-white dark:border-slate-600 dark:bg-slate-700 dark:text-white"
-                      : "border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300"
+                    className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-xs font-black transition-all ${paymentMethod === "cash"
+                      ? "bg-slate-900 dark:bg-white text-white dark:text-slate-900 border-transparent shadow-md"
+                      : "bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 hover:border-slate-300"
                       }`}
                   >
-                    💵 Tiền mặt
+                    <Banknote className="w-4 h-4" /> Tiền mặt
                   </button>
                   <button
                     onClick={() => setPaymentMethod("bank")}
-                    className={`flex items-center justify-center gap-1.5 px-3 py-2 border-2 rounded-lg text-xs font-bold transition-all ${paymentMethod === "bank"
-                      ? "border-slate-800 bg-slate-800 text-white dark:border-slate-600 dark:bg-slate-700 dark:text-white"
-                      : "border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300"
+                    className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-xs font-black transition-all ${paymentMethod === "bank"
+                      ? "bg-slate-900 dark:bg-white text-white dark:text-slate-900 border-transparent shadow-md"
+                      : "bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 hover:border-slate-300"
                       }`}
                   >
-                    🏦 Chuyển khoản
+                    <CreditCard className="w-4 h-4" /> Chuyển khoản
                   </button>
                 </div>
               </div>
@@ -1091,64 +1092,64 @@ const GoodsReceiptModal: React.FC<{
               {paymentMethod && (
                 <>
                   {/* Payment Type */}
-                  <div className="mb-3">
-                    <label className="block text-[10px] font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                      Hình thức thanh toán
+                  <div className="mb-4">
+                    <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">
+                      Hình thức
                     </label>
-                    <div className="flex bg-slate-200/50 dark:bg-slate-700/50 p-1 rounded-lg">
+                    <div className="flex bg-slate-100/80 dark:bg-slate-800/80 p-1 rounded-xl border border-slate-200/50 dark:border-slate-700/50">
                       <button
                         onClick={() => {
                           setPaymentType("full");
                           setPartialAmount(0);
                         }}
-                        className={`flex-1 py-1.5 rounded-md text-[10px] font-bold transition-all ${paymentType === "full"
-                          ? "bg-white dark:bg-slate-600 text-slate-900 dark:text-white shadow-sm"
-                          : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+                        className={`flex-1 py-2 rounded-lg text-[11px] font-black transition-all ${paymentType === "full"
+                          ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm border border-slate-200/50 dark:border-slate-600/50"
+                          : "text-slate-500 hover:text-slate-700 dark:text-slate-400"
                           }`}
                       >
-                        Đủ
+                        Thanh toán đủ
                       </button>
                       <button
                         onClick={() => setPaymentType("partial")}
-                        className={`flex-1 py-1.5 rounded-md text-[10px] font-bold transition-all ${paymentType === "partial"
-                          ? "bg-white dark:bg-slate-600 text-slate-900 dark:text-white shadow-sm"
-                          : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+                        className={`flex-1 py-2 rounded-lg text-[11px] font-black transition-all ${paymentType === "partial"
+                          ? "bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm border border-blue-200 dark:border-blue-500/30"
+                          : "text-slate-500 hover:text-slate-700 dark:text-slate-400"
                           }`}
                       >
-                        1 phần
+                        Thanh toán 1 phần
                       </button>
                       <button
                         onClick={() => {
                           setPaymentType("note");
                           setPartialAmount(0);
                         }}
-                        className={`flex-1 py-1.5 rounded-md text-[10px] font-bold transition-all ${paymentType === "note"
-                          ? "bg-white dark:bg-slate-600 text-slate-900 dark:text-white shadow-sm"
-                          : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+                        className={`flex-1 py-2 rounded-lg text-[11px] font-black transition-all ${paymentType === "note"
+                          ? "bg-white dark:bg-slate-700 text-amber-600 dark:text-amber-500 shadow-sm border border-amber-200 dark:border-amber-500/30"
+                          : "text-slate-500 hover:text-slate-700 dark:text-slate-400"
                           }`}
                       >
-                        Công nợ
+                        Ghi nợ
                       </button>
                     </div>
                   </div>
 
                   {/* Partial Payment Input */}
                   {paymentType === "partial" && (
-                    <div className="mb-3">
-                      <label className="block text-[10px] font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                        Số tiền khách trả
+                    <div className="mb-4">
+                      <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">
+                        Đã thanh toán (Trả trước)
                       </label>
                       <FormattedNumberInput
                         value={partialAmount}
                         onValue={(v) =>
                           setPartialAmount(Math.max(0, Math.round(v)))
                         }
-                        className="w-full px-3 py-2 border-2 border-orange-300 dark:border-orange-700 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 text-right text-sm font-bold focus:border-orange-500"
-                        placeholder="Nhập số tiền..."
+                        className="w-full px-4 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-right text-sm font-black focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 placeholder:text-slate-400"
+                        placeholder="0 ₫"
                       />
-                      <div className="mt-1.5 flex items-center justify-between text-[10px]">
-                        <span className="text-slate-500">Còn lại:</span>
-                        <span className="font-bold text-red-600 dark:text-red-400">
+                      <div className="mt-2 flex items-center justify-between text-[11px] font-black">
+                        <span className="text-slate-500">Còn lại (Công nợ):</span>
+                        <span className="text-red-500 dark:text-red-400">
                           {formatCurrency(
                             Math.max(0, totalAmount - partialAmount)
                           )}
@@ -1159,11 +1160,11 @@ const GoodsReceiptModal: React.FC<{
 
                   {/* Transaction Type */}
                   {paymentType && (
-                    <div className="mb-3">
-                      <label className="block text-[10px] font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                    <div className="mb-4">
+                      <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">
                         Loại hạch toán
                       </label>
-                      <select className="w-full px-3 py-2 border-2 border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 text-xs font-semibold focus:border-blue-500">
+                      <select className="w-full px-4 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-sm font-black focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 placeholder:text-slate-400 appearance-none cursor-pointer outline-none">
                         <option>Mua hàng/nhập kho</option>
                         <option>Nhập trả hàng</option>
                         <option>Khác</option>
@@ -1174,25 +1175,13 @@ const GoodsReceiptModal: React.FC<{
               )}
 
               {/* Action Buttons - Always visible */}
-              <div className="flex gap-2">
+              <div className="flex gap-3">
                 <button
                   onClick={onClose}
-                  className="flex-1 bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-900 dark:text-slate-100 px-3 py-2.5 rounded-lg font-bold text-xs transition-all"
+                  className="flex-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 px-4 py-3 rounded-xl font-black text-xs uppercase tracking-widest transition-all"
                 >
                   <div className="flex items-center justify-center gap-2">
-                    <svg
-                      className="w-4 h-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"
-                      />
-                    </svg>
+                    <Save className="w-4 h-4" />
                     LƯU NHÁP
                   </div>
                 </button>

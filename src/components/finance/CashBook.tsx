@@ -449,35 +449,26 @@ const CashBook: React.FC = () => {
         )}
 
         {/* Actual Balance Section - Always visible */}
-        <div className="p-3 md:p-4 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
-                Số dư thực tế
-              </h3>
-              <span className="text-xs text-slate-500 dark:text-slate-400 font-normal m-0" style={{ transform: "translateY(1px)" }}>
-                (Tổng cộng từ đầu)
-              </span>
+        <div className="p-3 md:p-6 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-slate-800 dark:text-slate-200">
+                  Số dư thực tế
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Số tiền hiện có tới thời điểm hiện tại
+                </p>
+              </div>
             </div>
 
             <div className="flex items-center gap-2">
               {/* Action Buttons */}
-              <button
-                onClick={() => {
-                  if (!canManageFinance) {
-                    showToast.error("Bạn không có quyền thêm giao dịch");
-                    return;
-                  }
-                  setShowAddModal(true);
-                }}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium shadow-sm transition-colors flex items-center gap-2"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
-                <span>Thêm giao dịch</span>
-              </button>
-
               <button
                 onClick={() => {
                   if (!canManageFinance) {
@@ -488,67 +479,74 @@ const CashBook: React.FC = () => {
                   setInitialBankBalance(savedInitialBank.toString());
                   setShowInitialBalanceModal(true);
                 }}
-                className="p-2.5 bg-white dark:bg-slate-700 hover:bg-amber-50 dark:hover:bg-slate-600 text-amber-600 dark:text-amber-400 rounded-lg shadow-sm border border-amber-200 dark:border-slate-600 transition-all"
+                className="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 rounded-lg transition-colors"
                 title="Cài đặt số dư ban đầu"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
+              </button>
+              
+              <button
+                onClick={() => {
+                  if (!canManageFinance) {
+                    showToast.error("Bạn không có quyền thêm giao dịch");
+                    return;
+                  }
+                  setShowAddModal(true);
+                }}
+                className="px-4 py-2 h-10 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium shadow-sm transition-colors flex items-center gap-2 text-sm"
+              >
+                <PlusIcon className="w-4 h-4" />
+                <span>Thêm giao dịch</span>
               </button>
             </div>
           </div>
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700 shadow-sm relative overflow-hidden">
-              <div className="absolute top-0 left-0 w-1 h-full bg-amber-500 rounded-l-xl"></div>
-              <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 text-sm font-medium mb-3">
-                <svg className="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-                </svg>
+            <div className="bg-white dark:bg-slate-800 rounded-xl p-5 border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col justify-center transition-all hover:border-slate-300 dark:hover:border-slate-600">
+              <div className="text-slate-500 dark:text-slate-400 text-sm font-medium mb-1">
                 Tiền mặt
               </div>
-              <div className={`text-2xl font-bold ${actualBalance.cashBalance >= 0
+              <div className={`text-2xl lg:text-3xl font-bold tracking-tight ${actualBalance.cashBalance >= 0
                 ? "text-slate-900 dark:text-white"
-                : "text-red-600 dark:text-red-400"
+                : "text-red-500"
                 }`}>
                 {formatCurrency(actualBalance.cashBalance)}
               </div>
               {actualBalance.cashBalance < 0 && (
-                <div className="mt-1 text-xs text-red-600 dark:text-red-400 font-medium">
-                  ⚠️ Số dư âm - cần kiểm tra
+                <div className="mt-1.5 text-xs text-red-500 font-medium flex items-center gap-1">
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                  Kiểm tra lại số dư
                 </div>
               )}
             </div>
-            <div className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700 shadow-sm relative overflow-hidden">
-              <div className="absolute top-0 left-0 w-1 h-full bg-indigo-500 rounded-l-xl"></div>
-              <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 text-sm font-medium mb-3">
-                <svg className="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                </svg>
+            
+            <div className="bg-white dark:bg-slate-800 rounded-xl p-5 border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col justify-center transition-all hover:border-slate-300 dark:hover:border-slate-600">
+              <div className="text-slate-500 dark:text-slate-400 text-sm font-medium mb-1">
                 Ngân hàng
               </div>
-              <div className={`text-2xl font-bold ${actualBalance.bankBalance >= 0
+              <div className={`text-2xl lg:text-3xl font-bold tracking-tight ${actualBalance.bankBalance >= 0
                 ? "text-slate-900 dark:text-white"
-                : "text-red-600 dark:text-red-400"
+                : "text-red-500"
                 }`}>
                 {formatCurrency(actualBalance.bankBalance)}
               </div>
               {actualBalance.bankBalance < 0 && (
-                <div className="mt-1 text-xs text-red-600 dark:text-red-400 font-medium">
-                  ⚠️ Số dư âm - cần kiểm tra
+                <div className="mt-1.5 text-xs text-red-500 font-medium flex items-center gap-1">
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                  Kiểm tra lại số dư
                 </div>
               )}
             </div>
-            <div className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700 shadow-sm relative overflow-hidden">
-              <div className="absolute top-0 left-0 w-1 h-full bg-blue-500 rounded-l-xl"></div>
-              <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 text-sm font-medium mb-3">
-                <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
+            
+            <div className="bg-blue-50/50 dark:bg-blue-900/10 rounded-xl p-5 border border-blue-100 dark:border-blue-800/30 shadow-sm flex flex-col justify-center">
+              <div className="text-blue-600/80 dark:text-blue-400/80 text-sm font-medium mb-1">
                 Tổng cộng
               </div>
-              <div className={`text-2xl font-bold ${actualBalance.totalBalance >= 0
-                ? "text-blue-600 dark:text-blue-400"
+              <div className={`text-2xl lg:text-3xl font-bold tracking-tight ${actualBalance.totalBalance >= 0
+                ? "text-blue-700 dark:text-blue-400"
                 : "text-red-600 dark:text-red-400"
                 }`}>
                 {formatCurrency(actualBalance.totalBalance)}
@@ -559,77 +557,53 @@ const CashBook: React.FC = () => {
 
         {/* Filtered Summary Section - Only show when filtered */}
         {isFilteredView && (
-          <div className="p-3 md:p-4 bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-700">
-            <div className="flex items-center gap-2 mb-3">
-              <svg className="w-4 h-4 text-slate-500 dark:text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-              </svg>
-              <h4 className="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+          <div className="px-3 md:px-6 py-3 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-slate-800 dark:text-slate-200">
                 Tóm tắt kỳ lọc
-              </h4>
-              <span className="text-xs text-slate-500 dark:text-slate-400">
-                ({filteredTransactions.length} giao dịch)
+              </span>
+              <span className="px-2 py-0.5 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs font-medium rounded-full">
+                {filteredTransactions.length} GD
               </span>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-              <div className="bg-white dark:bg-slate-800 rounded-lg p-3 border border-slate-200 dark:border-slate-700 border-t-2 border-t-green-500 shadow-sm">
-                <div className="text-slate-500 dark:text-slate-400 text-xs font-medium mb-1">
-                  Thu
-                </div>
-                <div className="text-slate-900 dark:text-white text-lg font-bold">
-                  {formatCurrency(filteredSummary.income)}
-                </div>
+            
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
+              <div className="flex items-center gap-2">
+                <span className="text-slate-500 dark:text-slate-400">Thu:</span>
+                <span className="font-bold text-slate-900 dark:text-white">{formatCurrency(filteredSummary.income)}</span>
               </div>
-              <div className="bg-white dark:bg-slate-800 rounded-lg p-3 border border-slate-200 dark:border-slate-700 border-t-2 border-t-red-500 shadow-sm">
-                <div className="text-slate-500 dark:text-slate-400 text-xs font-medium mb-1">
-                  Chi
-                </div>
-                <div className="text-slate-900 dark:text-white text-lg font-bold">
-                  {formatCurrency(filteredSummary.expense)}
-                </div>
+              <div className="flex items-center gap-2">
+                <span className="text-slate-500 dark:text-slate-400">Chi:</span>
+                <span className="font-bold text-slate-900 dark:text-white">{formatCurrency(filteredSummary.expense)}</span>
               </div>
-              <div className="bg-white dark:bg-slate-800 rounded-lg p-3 border border-slate-200 dark:border-slate-700 border-t-2 border-t-blue-500 shadow-sm">
-                <div className="text-slate-500 dark:text-slate-400 text-xs font-medium mb-1">
-                  Chênh lệch
-                </div>
-                <div className={`text-lg font-bold ${filteredSummary.balance >= 0
-                  ? "text-blue-600 dark:text-blue-400"
-                  : "text-red-600 dark:text-red-400"
-                  }`}>
-                  {formatCurrency(filteredSummary.balance)}
-                </div>
+              <div className="flex items-center gap-2">
+                <span className="text-slate-500 dark:text-slate-400">Chênh lệch:</span>
+                <span className={`font-bold ${filteredSummary.balance >= 0 ? "text-blue-600 dark:text-blue-400" : "text-red-600 dark:text-red-400"}`}>
+                  {filteredSummary.balance > 0 ? "+" : ""}{formatCurrency(filteredSummary.balance)}
+                </span>
               </div>
-              <div className="bg-white dark:bg-slate-800 rounded-lg p-3 border border-slate-200 dark:border-slate-700 border-t-2 border-t-amber-500 shadow-sm">
-                <div className="text-slate-500 dark:text-slate-400 text-xs font-medium mb-1">
-                  TM trong kỳ
-                </div>
-                <div className={`text-lg font-bold ${filteredSummary.cashBalance >= 0
-                  ? "text-slate-900 dark:text-white"
-                  : "text-red-600 dark:text-red-400"
-                  }`}>
-                  {filteredSummary.cashBalance >= 0 ? "+" : ""}{formatCurrency(filteredSummary.cashBalance)}
-                </div>
+              <div className="h-4 w-px bg-slate-300 dark:bg-slate-600 hidden md:block"></div>
+              <div className="flex items-center gap-2">
+                <span className="text-slate-500 dark:text-slate-400">TM:</span>
+                <span className={`font-bold ${filteredSummary.cashBalance >= 0 ? "text-slate-900 dark:text-white" : "text-red-600 dark:text-red-400"}`}>
+                  {filteredSummary.cashBalance > 0 ? "+" : ""}{formatCurrency(filteredSummary.cashBalance)}
+                </span>
               </div>
-              <div className="bg-white dark:bg-slate-800 rounded-lg p-3 border border-slate-200 dark:border-slate-700 border-t-2 border-t-indigo-500 shadow-sm">
-                <div className="text-slate-500 dark:text-slate-400 text-xs font-medium mb-1">
-                  NH trong kỳ
-                </div>
-                <div className={`text-lg font-bold ${filteredSummary.bankBalance >= 0
-                  ? "text-slate-900 dark:text-white"
-                  : "text-red-600 dark:text-red-400"
-                  }`}>
-                  {filteredSummary.bankBalance >= 0 ? "+" : ""}{formatCurrency(filteredSummary.bankBalance)}
-                </div>
+              <div className="flex items-center gap-2">
+                <span className="text-slate-500 dark:text-slate-400">NH:</span>
+                <span className={`font-bold ${filteredSummary.bankBalance >= 0 ? "text-slate-900 dark:text-white" : "text-red-600 dark:text-red-400"}`}>
+                  {filteredSummary.bankBalance > 0 ? "+" : ""}{formatCurrency(filteredSummary.bankBalance)}
+                </span>
               </div>
             </div>
           </div>
         )}
 
         {/* Filters Section */}
-        <div className="p-3 md:p-4">
-          {/* Filters */}
+        <div className="p-3 md:p-6 pb-2">
           {/* Mobile Filters */}
           <div className="md:hidden space-y-3 mb-4">
+
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1 block">
@@ -687,97 +661,99 @@ const CashBook: React.FC = () => {
           </div>
 
           {/* Desktop Filters */}
-          <div className="hidden md:block bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-4 mb-4">
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                  Loại:
-                </span>
-                <div className="flex gap-1">
-                  {[
-                    { value: "all", label: "Tất cả", icon: "" },
-                    { value: "income", label: "Thu", icon: "↑" },
-                    { value: "expense", label: "Chi", icon: "↓" },
-                  ].map((option) => (
-                    <button
-                      key={option.value}
-                      onClick={() => setFilterType(option.value as any)}
-                      className={`min-w-[56px] px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${filterType === option.value
-                        ? option.value === "income"
-                          ? "bg-green-600 text-white"
-                          : option.value === "expense"
-                            ? "bg-red-600 text-white"
-                            : "bg-blue-600 text-white"
-                        : "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600"
-                        }`}
-                    >
-                      {option.icon ? `${option.icon} ${option.label}` : option.label}
-                    </button>
-                  ))}
-                </div>
+          <div className="hidden md:flex flex-wrap items-center gap-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-2 shadow-sm mb-4 sticky top-0 z-10 transition-all">
+            {/* Search */}
+            <div className="flex-1 min-w-[200px] relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
               </div>
+              <input
+                type="text"
+                placeholder="Tìm nội dung, mã GD, đối tượng..."
+                className="w-full pl-9 pr-4 py-2 bg-slate-50 dark:bg-slate-900 border-none rounded-lg text-sm focus:ring-2 focus:ring-blue-500 transition-all dark:text-white placeholder-slate-400"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
 
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                  Nguồn tiền:
-                </span>
-                <select
-                  value={filterPaymentSource}
-                  onChange={(e) => setFilterPaymentSource(e.target.value)}
-                  className="px-3 py-1.5 bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-md text-sm text-slate-900 dark:text-white"
+            <div className="h-6 w-px bg-slate-200 dark:bg-slate-700 hidden lg:block"></div>
+
+            {/* Type Filter */}
+            <div className="flex p-0.5 bg-slate-100 dark:bg-slate-700/50 rounded-lg">
+              {[
+                { value: "all", label: "Tất cả" },
+                { value: "income", label: "Thu" },
+                { value: "expense", label: "Chi" },
+              ].map((option) => (
+                <button
+                  key={option.value}
+                  onClick={() => setFilterType(option.value as any)}
+                  className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${filterType === option.value
+                    ? option.value === "income"
+                      ? "bg-green-600 text-white shadow-sm"
+                      : option.value === "expense"
+                        ? "bg-red-600 text-white shadow-sm"
+                        : "bg-white dark:bg-slate-600 text-slate-900 dark:text-white shadow-sm"
+                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/50 dark:hover:bg-slate-600/50"
+                    }`}
                 >
-                  <option value="all">Tất cả</option>
-                  <option value="cash">Tiền mặt</option>
-                  <option value="bank">Ngân hàng</option>
-                </select>
-              </div>
+                  {option.label}
+                </button>
+              ))}
+            </div>
 
-              <div className="flex items-center gap-2 flex-1">
-                <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                  Tìm kiếm:
-                </span>
+            {/* Source Filter */}
+            <div className="flex p-0.5 bg-slate-100 dark:bg-slate-700/50 rounded-lg">
+              {[
+                { value: "all", label: "Mọi nguồn" },
+                { value: "cash", label: "Tiền mặt" },
+                { value: "bank", label: "Ngân hàng" },
+              ].map((option) => (
+                <button
+                  key={option.value}
+                  onClick={() => setFilterPaymentSource(option.value as any)}
+                  className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${filterPaymentSource === option.value
+                    ? "bg-white dark:bg-slate-600 text-slate-900 dark:text-white shadow-sm"
+                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/50 dark:hover:bg-slate-600/50"
+                    }`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="h-6 w-px bg-slate-200 dark:bg-slate-700 hidden lg:block"></div>
+
+            {/* Date Filter */}
+            <div className="flex items-center gap-2">
+              <select
+                value={filterDateRange}
+                onChange={(e) => setFilterDateRange(e.target.value as any)}
+                className="py-1.5 pl-3 pr-8 bg-transparent border-none text-sm font-medium text-slate-700 dark:text-slate-300 focus:ring-0 cursor-pointer appearance-none"
+                style={{
+                  backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
+                  backgroundPosition: `right 0.25rem center`,
+                  backgroundRepeat: `no-repeat`,
+                  backgroundSize: `1.25em 1.25em`,
+                }}
+              >
+                <option value="today">Hôm nay</option>
+                <option value="week">7 ngày qua</option>
+                <option value="month">30 ngày qua</option>
+                <option value="custom-month">Theo tháng</option>
+                <option value="all">Tất cả thời gian</option>
+              </select>
+              
+              {filterDateRange === 'custom-month' && (
                 <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Tìm theo nội dung, mã phiếu, đối tượng..."
-                  className="flex-1 px-3 py-1.5 bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-md text-sm text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400"
+                  type="month"
+                  value={selectedMonth}
+                  onChange={(e) => setSelectedMonth(e.target.value)}
+                  className="px-3 py-1.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-700 dark:text-slate-300 focus:ring-2 focus:ring-blue-500"
                 />
-              </div>
-
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                  Thời gian:
-                </span>
-                <div className="flex gap-2 items-center">
-                  {[
-                    { value: "today", label: "Hôm nay" },
-                    { value: "week", label: "7 ngày" },
-                    { value: "month", label: "30 ngày" },
-                    { value: "custom-month", label: "Theo tháng" },
-                    { value: "all", label: "Tất cả" },
-                  ].map((option) => (
-                    <button
-                      key={option.value}
-                      onClick={() => setFilterDateRange(option.value as any)}
-                      className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${filterDateRange === option.value
-                        ? "bg-blue-600 text-white"
-                        : "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600"
-                        }`}
-                    >
-                      {option.label}
-                    </button>
-                  ))}
-                  {filterDateRange === 'custom-month' && (
-                    <input
-                      type="month"
-                      value={selectedMonth}
-                      onChange={(e) => setSelectedMonth(e.target.value)}
-                      className="px-3 py-1.5 bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-md text-sm text-slate-900 dark:text-white"
-                    />
-                  )}
-                </div>
-              </div>
+              )}
             </div>
           </div>
 
@@ -956,10 +932,7 @@ const CashBook: React.FC = () => {
                     return (
                       <tr
                         key={tx.id}
-                        className={`group transition-colors duration-100 border-l-4 ${txIsIncome
-                          ? "border-l-green-400 hover:bg-green-50/50 dark:hover:bg-green-900/10"
-                          : "border-l-red-400 hover:bg-red-50/50 dark:hover:bg-red-900/10"
-                          }`}
+                        className={`group transition-colors duration-100 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/50`}
                       >
                         <td className="px-4 py-4 text-sm text-slate-900 dark:text-slate-100">
                           <div className="flex flex-col">
@@ -979,13 +952,12 @@ const CashBook: React.FC = () => {
                         </td>
                         <td className="px-4 py-4">
                           <span
-                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border ${txIsIncome
-                              ? "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 border-green-200 dark:border-green-700/50"
-                              : "bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 border-red-200 dark:border-red-700/50"
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold ${txIsIncome
+                              ? "bg-green-100/50 dark:bg-green-900/20 text-green-700 dark:text-green-400"
+                              : "bg-red-100/50 dark:bg-red-900/20 text-red-700 dark:text-red-400"
                               }`}
                           >
-                            <span className={`w-2 h-2 rounded-full ${txIsIncome ? "bg-green-500" : "bg-red-500"}`} />
-                            {txIsIncome ? "↑ Thu" : "↓ Chi"}
+                            {txIsIncome ? "Thu" : "Chi"}
                           </span>
                         </td>
                         <td className="px-4 py-4 text-sm text-slate-600 dark:text-slate-400">
@@ -1018,13 +990,13 @@ const CashBook: React.FC = () => {
                               (tx as any).paymentsource ||
                               (tx as any).paymentSource;
                             if (source === "cash") return (
-                              <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 text-xs font-medium">
-                                💵 Tiền mặt
+                              <span className="text-slate-600 dark:text-slate-400 font-medium">
+                                Tiền mặt
                               </span>
                             );
                             if (source === "bank") return (
-                              <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 text-xs font-medium">
-                                🏦 Ngân hàng
+                              <span className="text-slate-600 dark:text-slate-400 font-medium">
+                                Ngân hàng
                               </span>
                             );
                             return <span className="text-slate-400">{source || "--"}</span>;
@@ -1100,33 +1072,37 @@ const CashBook: React.FC = () => {
               </tbody>
               {/* Footer totals */}
               {!isCashTxLoading && filteredTransactions.length > 0 && (
-                <tfoot className="bg-slate-50 dark:bg-slate-700/50 border-t-2 border-slate-200 dark:border-slate-600">
+                <tfoot className="bg-slate-50 dark:bg-slate-700 border-t border-slate-200 dark:border-slate-600">
                   <tr>
-                    <td colSpan={3} className="px-4 py-3 text-sm font-medium text-slate-600 dark:text-slate-300">
+                    <td colSpan={3} className="px-4 py-4 text-sm font-medium text-slate-600 dark:text-slate-300">
                       Tổng: {filteredTransactions.length} giao dịch
-                      <span className="text-slate-400 dark:text-slate-500 ml-1">
+                      <span className="text-slate-400 ml-1">
                         ({filteredTransactions.filter((t) => isIncomeTx(t)).length} thu, {filteredTransactions.filter((t) => !isIncomeTx(t)).length} chi)
                       </span>
                     </td>
-                    <td className="px-4 py-3"></td>
-                    <td className="px-4 py-3"></td>
-                    <td className="px-4 py-3 text-right">
-                      <div className="space-y-0.5">
-                        <div className="text-xs font-semibold text-green-600 dark:text-green-400">
-                          +{formatCurrency(filteredSummary.income)}
+                    <td className="px-4 py-4"></td>
+                    <td className="px-4 py-4"></td>
+                    <td className="px-4 py-4 text-right">
+                      <div className="flex flex-col items-end gap-1">
+                        <div className="flex items-center justify-between w-28 text-xs font-semibold text-green-600 dark:text-green-400">
+                          <span>Thu:</span>
+                          <span>+{formatCurrency(filteredSummary.income)}</span>
                         </div>
-                        <div className="text-xs font-semibold text-red-600 dark:text-red-400">
-                          {formatCurrency(filteredSummary.expense)}
+                        <div className="flex items-center justify-between w-28 text-xs font-semibold text-red-600 dark:text-red-400">
+                          <span>Chi:</span>
+                          <span>-{formatCurrency(filteredSummary.expense)}</span>
                         </div>
-                        <div className={`text-sm font-bold pt-1 border-t border-slate-200 dark:border-slate-600 ${filteredSummary.balance >= 0
-                          ? "text-blue-700 dark:text-blue-300"
+                        <div className="w-28 h-px bg-slate-200 dark:bg-slate-600 my-0.5"></div>
+                        <div className={`flex items-center justify-between w-28 text-sm font-bold ${filteredSummary.balance >= 0
+                          ? "text-blue-600 dark:text-blue-400"
                           : "text-red-600 dark:text-red-400"
                           }`}>
-                          = {formatCurrency(filteredSummary.balance)}
+                          <span>Dư:</span>
+                          <span>{formatCurrency(filteredSummary.balance)}</span>
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-3"></td>
+                    <td className="px-4 py-4"></td>
                   </tr>
                 </tfoot>
               )}

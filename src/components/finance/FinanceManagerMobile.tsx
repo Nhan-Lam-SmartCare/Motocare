@@ -16,7 +16,7 @@ import CombinedFinance from "./CombinedFinance";
 type Tab = "combined" | "cashbook" | "loans" | "assets" | "capital";
 
 export const FinanceManagerMobile: React.FC = () => {
-    const [activeTab, setActiveTab] = useState<Tab>("combined");
+    const [activeTab, setActiveTab] = useState<Tab>("cashbook");
 
     const tabs = [
         { key: "combined" as const, label: "Tổng hợp", icon: LayoutDashboard },

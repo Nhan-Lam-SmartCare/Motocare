@@ -1175,11 +1175,148 @@ const CustomerManager: React.FC = () => {
 
       {/* Main Scrollable Area */}
       {activeTab === "customers" ? (
-        <div className="flex-1 overflow-y-auto p-4 custom-scrollbar relative">
-          {/* Sticky Action Bar */}
-          <div className="sticky top-0 z-10 pb-3 -mt-2 pt-2 bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur-sm transition-all">
-            <div className="flex flex-col md:flex-row gap-2 mb-3">
-              <div className="flex-1 relative w-full">
+        <div className="flex-1 overflow-y-auto p-4 custom-scrollbar relative flex flex-col gap-4">
+          {/* 1. TOP KPI & MAINTENANCE ALERTS */}
+          <div className="flex flex-col lg:flex-row gap-4 mb-2">
+            {/* Left: KPIs */}
+            <div className="flex-1 grid grid-cols-2 md:grid-cols-4 gap-3">
+              {overviewCards.map((card) => (
+                <div
+                  key={card.id}
+                  className={`rounded-xl p-4 border ${card.gradient} ${card.border} flex flex-col justify-center`}
+                >
+                  <span className={`text-xs font-semibold uppercase mb-1 ${card.labelClass}`}>
+                    {card.title}
+                  </span>
+                  <span className={`text-2xl font-black ${card.valueClass}`}>
+                    {card.value}
+                  </span>
+                  {card.subLabel && (
+                    <span className="text-[10px] md:text-xs mt-0.5 text-slate-600 dark:text-slate-300">
+                      {card.subLabel}
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Right: Maintenance Alerts (Compact) */}
+            {vehiclesNeedingMaintenance.length > 0 && (
+              <div className="lg:w-1/3 bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20 border border-orange-200 dark:border-orange-800 rounded-xl p-4 flex flex-col justify-center gap-2">
+                <div className="flex items-center gap-2 mb-1">
+                  <AlertTriangle className="w-5 h-5 text-orange-500" />
+                  <h3 className="font-bold text-orange-800 dark:text-orange-400">
+                    Cần bảo dưỡng ({vehiclesNeedingMaintenance.length})
+                  </h3>
+                </div>
+                <button
+                  onClick={() => setShowMaintenanceVehicles(!showMaintenanceVehicles)}
+                  className="text-sm text-center bg-white dark:bg-slate-800 border border-orange-200 dark:border-orange-700 text-orange-600 dark:text-orange-400 rounded-lg py-1.5 font-medium hover:bg-orange-100 dark:hover:bg-orange-900/40 transition-colors w-full shadow-sm"
+                >
+                  {showMaintenanceVehicles ? "Ẩn danh sách" : "Xem danh sách xe"}
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Maintenance Vehicles List (Expandable) */}
+          {showMaintenanceVehicles && vehiclesNeedingMaintenance.length > 0 && (
+            <div className="bg-white dark:bg-slate-800 rounded-xl border border-orange-200 dark:border-orange-800 p-4 -mt-2">
+              <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory md:grid md:grid-cols-2 lg:grid-cols-3 md:overflow-visible md:snap-none">
+                {vehiclesNeedingMaintenance.slice(0, 9).map((item, index) => {
+                  if (!item.customer) return null;
+                  return (
+                    <div
+                      key={`${item.customer.id}-${item.vehicle.licensePlate}-${index}`}
+                      className="snap-start min-w-[280px] md:min-w-0 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700 p-3 shadow-sm"
+                    >
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <div className="min-w-0 flex-1">
+                          <p className="font-semibold text-slate-900 dark:text-slate-100 truncate text-sm">
+                            {item.customer.name || "Khách hàng"}
+                          </p>
+                          <a
+                            href={`tel:${item.customer.phone}`}
+                            className="text-xs text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                          >
+                            {item.customer.phone}
+                          </a>
+                        </div>
+                        <div className="flex flex-col items-end gap-1.5">
+                          <div className="flex items-center gap-1.5 px-2 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg">
+                            <Bike className="w-3 h-3 text-slate-500 dark:text-slate-400" />
+                            <span className="text-[10px] font-bold text-slate-700 dark:text-slate-200">
+                              {item.vehicle.licensePlate}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="text-[11px] text-slate-500 dark:text-slate-400 mb-2">
+                        Số km hiện tại:{" "}
+                        <span className="font-semibold text-slate-700 dark:text-slate-200">
+                          {(item.vehicle.currentKm || 0).toLocaleString()} km
+                        </span>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        {item.warnings.map((warning, wIdx) => {
+                          const IconComponent =
+                            warning.type === "oilChange"
+                              ? Droplets
+                              : warning.type === "gearboxOil"
+                                ? Cog
+                                : Wind;
+                          return (
+                            <div
+                              key={wIdx}
+                              className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[11px] ${warning.isOverdue
+                                  ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300"
+                                  : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300"
+                                }`}
+                            >
+                              <IconComponent className="w-3.5 h-3.5 flex-shrink-0" />
+                              <div className="flex-1 min-w-0">
+                                <span className="font-medium">
+                                  {warning.name}
+                                </span>
+                                <span className="ml-1">
+                                  {warning.isOverdue
+                                    ? `(quá ${Math.abs(
+                                      warning.kmUntilDue
+                                    ).toLocaleString()} km)`
+                                    : `(còn ${warning.kmUntilDue.toLocaleString()} km)`}
+                                </span>
+                              </div>
+                              <span
+                                className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${warning.isOverdue
+                                    ? "bg-red-200 text-red-800 dark:bg-red-800 dark:text-red-100"
+                                    : "bg-amber-200 text-amber-800 dark:bg-amber-800 dark:text-amber-100"
+                                  }`}
+                              >
+                                {warning.isOverdue ? "QUÁ HẠN" : "SẮP ĐẾN"}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              {vehiclesNeedingMaintenance.length > 9 && (
+                <p className="text-center text-xs text-orange-600 dark:text-orange-400 mt-2 font-medium">
+                  Và {vehiclesNeedingMaintenance.length - 9} xe khác cần bảo
+                  dưỡng...
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* 2. STICKY TOOLBAR (Search & Pill Filters) */}
+          <div className="sticky top-0 z-10 bg-slate-50/95 dark:bg-slate-900/95 pt-2 pb-3 backdrop-blur-sm border-b border-slate-200 dark:border-slate-700 flex flex-col gap-3">
+            <div className="flex flex-col sm:flex-row items-center gap-3">
+              <div className="relative flex-1 w-full">
                 <svg
                   className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
                   fill="none"
@@ -1195,43 +1332,24 @@ const CustomerManager: React.FC = () => {
                 </svg>
                 <input
                   type="text"
-                  placeholder="Tìm theo tên, SĐT, biển số, dòng xe..."
+                  placeholder="Tìm theo tên, SĐT, biển số..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="w-full pl-9 pr-14 md:pr-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm text-sm"
+                  className="w-full pl-9 pr-10 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm text-sm"
                 />
                 {isSearchingServer && (
-                  <div className="absolute right-14 md:right-3 top-1/2 -translate-y-1/2">
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
                     <svg className="animate-spin h-4 w-4 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
                   </div>
                 )}
-                <button
-                  onClick={() => setShowActionSheet(true)}
-                  className="md:hidden absolute right-2 top-1/2 -translate-y-1/2 inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-semibold text-slate-600 shadow-sm transition-colors hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
-                >
-                  <svg
-                    className="h-4 w-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 6.75a.75.75 0 100-1.5.75.75 0 000 1.5zm0 6a.75.75 0 100-1.5.75.75 0 000 1.5zm0 6a.75.75 0 100-1.5.75.75 0 000 1.5z"
-                    />
-                  </svg>
-                  <span>Tác vụ</span>
-                </button>
               </div>
-              <div className="hidden md:flex gap-2 overflow-x-auto pb-2 md:pb-0 no-scrollbar">
+              <div className="flex gap-2 w-full sm:w-auto">
                 <button
                   onClick={() => setShowImport(true)}
-                  className="flex items-center gap-1.5 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg font-medium transition-colors whitespace-nowrap shadow-sm text-sm"
+                  className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg font-medium transition-colors whitespace-nowrap shadow-sm text-sm"
                 >
                   <svg
                     className="w-4 h-4"
@@ -1246,30 +1364,31 @@ const CustomerManager: React.FC = () => {
                       d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
                     />
                   </svg>
-                  <span>Tải lên DS</span>
+                  <span className="hidden sm:inline">Tải lên DS</span>
                 </button>
-                <button
-                  className="flex items-center gap-1.5 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg font-medium transition-colors whitespace-nowrap shadow-sm text-sm"
-                  onClick={() => alert("Tính năng đang phát triển")}
-                >
-                  <svg
-                    className="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
+                <div className="hidden sm:inline-flex rounded-lg border border-slate-200 bg-white p-0.5 text-xs font-semibold dark:border-slate-600 dark:bg-slate-900/40">
+                  <button
+                    onClick={() => setViewMode("grid")}
+                    className={`flex items-center justify-center gap-1 rounded-md px-2 py-1.5 transition-colors ${viewMode === "grid"
+                      ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900"
+                      : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+                      }`}
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-                    />
-                  </svg>
-                  <span>Nhắc BD</span>
-                </button>
+                    <LayoutGrid className="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    onClick={() => setViewMode("list")}
+                    className={`flex items-center justify-center gap-1 rounded-md px-2 py-1.5 transition-colors ${viewMode === "list"
+                      ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900"
+                      : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+                      }`}
+                  >
+                    <List className="h-3.5 w-3.5" />
+                  </button>
+                </div>
                 <button
                   onClick={() => setEditCustomer({} as Customer)}
-                  className="flex items-center gap-1.5 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors whitespace-nowrap shadow-sm text-sm"
+                  className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors whitespace-nowrap shadow-sm text-sm"
                 >
                   <PlusIcon className="w-4 h-4" />
                   <span>Thêm KH</span>
@@ -1277,256 +1396,33 @@ const CustomerManager: React.FC = () => {
               </div>
             </div>
 
-            {/* Filters */}
-            <div className="rounded-xl border border-slate-200 bg-white/80 p-3 shadow-sm dark:border-slate-700 dark:bg-slate-800/60 md:border-none md:bg-transparent md:p-0 md:shadow-none">
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
-                    Phân khúc khách hàng
-                  </p>
-                  <p className="text-[10px] text-slate-400">
-                    Chạm để lọc nhanh
-                  </p>
-                </div>
-                <div className="hidden sm:inline-flex rounded-xl border border-slate-200 bg-white p-0.5 text-xs font-semibold dark:border-slate-600 dark:bg-slate-900/40">
-                  <button
-                    onClick={() => setViewMode("grid")}
-                    className={`flex flex-1 items-center justify-center gap-1 rounded-lg px-2 py-1.5 transition-colors sm:flex-none ${viewMode === "grid"
-                      ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900"
-                      : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
-                      }`}
-                  >
-                    <LayoutGrid className="h-3.5 w-3.5" />
-                    <span>Thẻ</span>
-                  </button>
-                  <button
-                    onClick={() => setViewMode("list")}
-                    className={`flex flex-1 items-center justify-center gap-1 rounded-lg px-2 py-1.5 transition-colors sm:flex-none ${viewMode === "list"
-                      ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900"
-                      : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
-                      }`}
-                  >
-                    <List className="h-3.5 w-3.5" />
-                    <span>Danh sách</span>
-                  </button>
-                </div>
-              </div>
-              <div className="mt-2 flex gap-2 overflow-x-auto pb-1 no-scrollbar snap-x snap-mandatory md:mt-3 md:snap-none">
-                {filterOptions.map((filter) => (
-                  <button
-                    key={filter.id}
-                    onClick={() => setActiveFilter(filter.id)}
-                    className={`min-w-[160px] snap-start rounded-xl border px-3 py-2 text-left transition-all md:min-w-0 ${activeFilter === filter.id
-                      ? `${filter.activeClasses} dark:bg-slate-800/80 dark:border-slate-600 dark:text-white`
-                      : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-slate-300"
-                      }`}
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2">
-                        <span className="text-base">{filter.icon}</span>
-                        <div>
-                          <p className="text-xs font-semibold">
-                            {filter.label}
-                          </p>
-                          <p className="text-[10px] text-slate-500">
-                            {filter.hint}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="text-base font-black text-slate-900 dark:text-slate-100">
-                        {filter.count}
-                      </div>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Statistics Section - Scrolled with content */}
-          <div className="mb-6 mt-2">
-            <div className="flex items-center gap-2 mb-4">
-              <svg
-                className="w-5 h-5 text-slate-600 dark:text-slate-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                />
-              </svg>
-              <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-                Thống kê tổng quan
-              </h2>
-            </div>
-            <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory md:grid md:grid-cols-4 md:gap-4 md:overflow-visible md:snap-none">
-              {overviewCards.map((card) => (
-                <div
-                  key={card.id}
-                  className={`snap-start min-w-[170px] rounded-lg border bg-gradient-to-br p-3 md:p-4 ${card.gradient} ${card.border}`}
+            {/* Segmented Pill Filters */}
+            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1 pt-1">
+              {filterOptions.map((filter) => (
+                <button
+                  key={filter.id}
+                  onClick={() => setActiveFilter(filter.id)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold whitespace-nowrap transition-colors ${
+                    activeFilter === filter.id
+                      ? "bg-slate-900 border-slate-900 text-white dark:bg-slate-100 dark:border-slate-100 dark:text-slate-900"
+                      : "bg-white border-slate-200 text-slate-600 hover:bg-slate-100 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-700"
+                  }`}
                 >
-                  <div
-                    className={`text-[10px] md:text-sm font-semibold mb-1 uppercase ${card.labelClass}`}
+                  <span>{filter.icon}</span>
+                  <span>{filter.label}</span>
+                  <span
+                    className={`ml-1 px-1.5 py-0.5 rounded-full text-[10px] ${
+                      activeFilter === filter.id
+                        ? "bg-slate-700 text-white dark:bg-slate-300 dark:text-slate-900"
+                        : "bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400"
+                    }`}
                   >
-                    {card.title}
-                  </div>
-                  <div
-                    className={`text-2xl md:text-3xl font-black ${card.valueClass}`}
-                  >
-                    {card.value}
-                  </div>
-                  <div className="text-[10px] md:text-xs mt-0.5 text-slate-600 dark:text-slate-300">
-                    {card.subLabel}
-                  </div>
-                </div>
+                    {filter.count}
+                  </span>
+                </button>
               ))}
             </div>
           </div>
-
-          {/* Maintenance Reminder Section for Customer Care Team */}
-          {vehiclesNeedingMaintenance.length > 0 && (
-            <div className="mb-6">
-              <button
-                onClick={() => setShowMaintenanceVehicles(!showMaintenanceVehicles)}
-                className="w-full flex items-center justify-between gap-2 p-4 bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20 rounded-xl border border-orange-200 dark:border-orange-800 hover:border-orange-300 dark:hover:border-orange-700 transition-all group"
-              >
-                <div className="flex items-center gap-2">
-                  <AlertTriangle className="w-5 h-5 text-orange-500" />
-                  <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-                    Xe cần bảo dưỡng ({vehiclesNeedingMaintenance.length})
-                  </h2>
-                </div>
-                <ChevronDown
-                  className={`w-5 h-5 text-orange-500 transition-transform duration-200 ${showMaintenanceVehicles ? "rotate-180" : ""
-                    }`}
-                />
-              </button>
-              {showMaintenanceVehicles && (
-                <div className="bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20 rounded-xl border border-orange-200 dark:border-orange-800 p-4 mt-2">
-                  <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory md:grid md:grid-cols-2 lg:grid-cols-3 md:overflow-visible md:snap-none">
-                    {vehiclesNeedingMaintenance.slice(0, 9).map((item, index) => {
-                      if (!item.customer) return null;
-                      return (
-                        <div
-                          key={`${item.customer.id}-${item.vehicle.licensePlate}-${index}`}
-                          className="snap-start min-w-[280px] md:min-w-0 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-4 shadow-sm"
-                        >
-                          <div className="flex items-start justify-between gap-2 mb-3">
-                            <div className="min-w-0 flex-1">
-                              <p className="font-semibold text-slate-900 dark:text-slate-100 truncate">
-                                {item.customer.name || "Khách hàng"}
-                              </p>
-                              <a
-                                href={`tel:${item.customer.phone}`}
-                                className="text-sm text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-                              >
-                                {item.customer.phone}
-                              </a>
-                            </div>
-                            <div className="flex flex-col items-end gap-1.5">
-                              <div className="flex items-center gap-1.5 px-2 py-1 bg-slate-100 dark:bg-slate-700 rounded-lg">
-                                <Bike className="w-3.5 h-3.5 text-slate-600 dark:text-slate-300" />
-                                <span className="text-xs font-medium text-slate-700 dark:text-slate-200">
-                                  {item.vehicle.licensePlate}
-                                </span>
-                              </div>
-                              {/* Vehicle Type Badge */}
-                              {(() => {
-                                const model = (
-                                  item.vehicle.model || ""
-                                ).toLowerCase();
-                                const isAutomatic =
-                                  model.includes("sh") ||
-                                  model.includes("vision") ||
-                                  model.includes("air blade") ||
-                                  model.includes("lead") ||
-                                  model.includes("vario") ||
-                                  model.includes("pcx") ||
-                                  model.includes("freego") ||
-                                  model.includes("janus") ||
-                                  model.includes("grande") ||
-                                  model.includes("medley") ||
-                                  model.includes("liberty");
-                                return (
-                                  <span
-                                    className={`text-[10px] font-medium px-2 py-0.5 rounded ${isAutomatic
-                                      ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
-                                      : "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300"
-                                      }`}
-                                  >
-                                    {isAutomatic ? "🛵 Tay ga" : "🏍️ Xe số"}
-                                  </span>
-                                );
-                              })()}
-                            </div>
-                          </div>
-
-                          <div className="text-xs text-slate-500 dark:text-slate-400 mb-2">
-                            Số km hiện tại:{" "}
-                            <span className="font-semibold text-slate-700 dark:text-slate-200">
-                              {(item.vehicle.currentKm || 0).toLocaleString()} km
-                            </span>
-                          </div>
-
-                          <div className="space-y-2">
-                            {item.warnings.map((warning, wIdx) => {
-                              const IconComponent =
-                                warning.type === "oilChange"
-                                  ? Droplets
-                                  : warning.type === "gearboxOil"
-                                    ? Cog
-                                    : Wind;
-                              return (
-                                <div
-                                  key={wIdx}
-                                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs ${warning.isOverdue
-                                    ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300"
-                                    : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300"
-                                    }`}
-                                >
-                                  <IconComponent className="w-4 h-4 flex-shrink-0" />
-                                  <div className="flex-1 min-w-0">
-                                    <span className="font-medium">
-                                      {warning.name}
-                                    </span>
-                                    <span className="ml-1">
-                                      {warning.isOverdue
-                                        ? `(quá ${Math.abs(
-                                          warning.kmUntilDue
-                                        ).toLocaleString()} km)`
-                                        : `(còn ${warning.kmUntilDue.toLocaleString()} km)`}
-                                    </span>
-                                  </div>
-                                  <span
-                                    className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${warning.isOverdue
-                                      ? "bg-red-200 text-red-800 dark:bg-red-800 dark:text-red-100"
-                                      : "bg-amber-200 text-amber-800 dark:bg-amber-800 dark:text-amber-100"
-                                      }`}
-                                  >
-                                    {warning.isOverdue ? "QUÁ HẠN" : "SẮP ĐẾN"}
-                                  </span>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                  {vehiclesNeedingMaintenance.length > 9 && (
-                    <p className="text-center text-sm text-orange-600 dark:text-orange-400 mt-3 font-medium">
-                      Và {vehiclesNeedingMaintenance.length - 9} xe khác cần bảo
-                      dưỡng...
-                    </p>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
 
           {/* Customer Cards Grid */}
           {filtered.length === 0 ? (

@@ -76,7 +76,7 @@ const TAB_CONFIGS: Record<Tab, TabConfig> = {
 };
 
 const FinanceManager: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<Tab>("combined");
+  const [activeTab, setActiveTab] = useState<Tab>("cashbook");
   const { profile } = useAuth();
 
   if (!canDo(profile?.role, "finance.view")) {

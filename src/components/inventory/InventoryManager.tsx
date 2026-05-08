@@ -1915,7 +1915,10 @@ const InventoryManagerNew: React.FC = () => {
                     const reserved = part.reservedstock?.[currentBranchId] || 0;
                     const available = Math.max(0, stock - reserved);
                     const retailPrice = part.retailPrice[currentBranchId] || 0;
+                    const costPrice = part.costPrice?.[currentBranchId] || 0;
+                    const wholesalePrice = part.wholesalePrice?.[currentBranchId] || 0;
                     const isDuplicate = hasDuplicateSku(part.sku || "");
+                    const isOwner = profile?.role === "owner";
                     
                     return (
                       <div
@@ -1923,18 +1926,6 @@ const InventoryManagerNew: React.FC = () => {
                         className={`bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm active:scale-[0.98] transition-all ${isDuplicate ? "border-l-4 border-l-amber-500" : ""}`}
                       >
                         <div className="flex gap-4">
-                          <div className="h-16 w-16 rounded-2xl overflow-hidden flex-shrink-0 border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 shadow-inner">
-                            {part.imageUrl ? (
-                              <img src={part.imageUrl} alt={part.name} className="h-full w-full object-cover" />
-                            ) : (
-                              <div 
-                                className="w-full h-full flex items-center justify-center text-xs font-black text-white"
-                                style={{ backgroundColor: getAvatarColor(part.name) }}
-                              >
-                                {part.name?.charAt(0).toUpperCase()}
-                              </div>
-                            )}
-                          </div>
                           <div className="flex-1 min-w-0 flex flex-col justify-between">
                             <div>
                               <div className="flex items-start justify-between gap-2">
@@ -1985,14 +1976,31 @@ const InventoryManagerNew: React.FC = () => {
                               </div>
                             </div>
                             
-                            <div className="flex items-end justify-between mt-4">
-                              <div className="flex flex-col">
-                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Giá bán</span>
-                                <span className="text-base font-black text-blue-600 dark:text-blue-400 font-mono tracking-tight">{formatCurrency(retailPrice)}</span>
+                            {/* Bottom row: Prices + Stock — balanced layout */}
+                            <div className="flex items-end justify-between mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 gap-2">
+                              {/* Prices cluster */}
+                              <div className="flex items-end gap-4 flex-1 min-w-0">
+                                {/* Giá nhập - Chỉ owner mới thấy */}
+                                {isOwner && (
+                                  <div className="flex flex-col min-w-0">
+                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider leading-none mb-1">Nhập</span>
+                                    <span className="text-[13px] font-bold text-slate-500 dark:text-slate-400 font-mono tracking-tight leading-none">{formatCurrency(costPrice)}</span>
+                                  </div>
+                                )}
+                                {/* Giá bán lẻ */}
+                                <div className="flex flex-col min-w-0">
+                                  <span className="text-[9px] font-bold text-blue-500 uppercase tracking-wider leading-none mb-1">Bán lẻ</span>
+                                  <span className="text-[13px] font-black text-blue-600 dark:text-blue-400 font-mono tracking-tight leading-none">{formatCurrency(retailPrice)}</span>
+                                </div>
+                                {/* Giá sỉ */}
+                                <div className="flex flex-col min-w-0">
+                                  <span className="text-[9px] font-bold text-emerald-500 uppercase tracking-wider leading-none mb-1">Bán sỉ</span>
+                                  <span className="text-[13px] font-bold text-emerald-600 dark:text-emerald-400 font-mono tracking-tight leading-none">{formatCurrency(wholesalePrice)}</span>
+                                </div>
                               </div>
-                              <div className="flex flex-col items-end">
-                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1 text-right">Tồn khả dụng</span>
-                                <span className={`inline-flex items-center px-2.5 py-1 rounded-xl font-black text-sm border shadow-sm ${available === 0 ? "bg-rose-50 border-rose-200 text-rose-600 dark:bg-rose-900/20 dark:border-rose-900/50" : available <= LOW_STOCK_THRESHOLD ? "bg-amber-50 border-amber-200 text-amber-600 dark:bg-amber-900/20 dark:border-amber-900/50" : "bg-emerald-50 border-emerald-200 text-emerald-600 dark:bg-emerald-900/20 dark:border-emerald-900/50"}`}>
+                              {/* Stock badge */}
+                              <div className="flex flex-col items-center flex-shrink-0">
+                                <span className={`inline-flex items-center justify-center w-10 h-10 rounded-full font-black text-sm border-2 shadow-sm ${available === 0 ? "bg-rose-50 border-rose-300 text-rose-600 dark:bg-rose-900/30 dark:border-rose-700 dark:text-rose-400" : available <= LOW_STOCK_THRESHOLD ? "bg-amber-50 border-amber-300 text-amber-600 dark:bg-amber-900/30 dark:border-amber-700 dark:text-amber-400" : "bg-emerald-50 border-emerald-300 text-emerald-600 dark:bg-emerald-900/30 dark:border-emerald-700 dark:text-emerald-400"}`}>
                                   {available}
                                 </span>
                               </div>
@@ -2149,22 +2157,6 @@ const InventoryManagerNew: React.FC = () => {
                             </td>
                             <td className="px-4 py-4">
                               <div className="flex items-center gap-4">
-                                <div className="h-10 w-10 rounded-2xl overflow-hidden flex items-center justify-center flex-shrink-0 border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 group-hover:border-blue-500/30 transition-colors shadow-sm">
-                                  {part.imageUrl ? (
-                                    <img
-                                      src={part.imageUrl}
-                                      alt={part.name}
-                                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
-                                    />
-                                  ) : (
-                                    <div 
-                                      className="w-full h-full flex items-center justify-center text-[10px] font-black text-white"
-                                      style={{ backgroundColor: getAvatarColor(part.name) }}
-                                    >
-                                      {productInitial}
-                                    </div>
-                                  )}
-                                </div>
                                 <div className="flex flex-col gap-1 min-w-0">
                                   <div className="flex items-center gap-2">
                                     <span className="text-sm font-black text-slate-900 dark:text-white leading-none tracking-tight group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">

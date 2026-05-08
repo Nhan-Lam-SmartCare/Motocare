@@ -1975,34 +1975,64 @@ const InventoryManagerNew: React.FC = () => {
                                 )}
                               </div>
                             </div>
-                            
-                            {/* Bottom row: Prices + Stock — balanced layout */}
-                            <div className="flex items-end justify-between mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 gap-2">
-                              {/* Prices cluster */}
-                              <div className="flex items-end gap-4 flex-1 min-w-0">
-                                {/* Giá nhập - Chỉ owner mới thấy */}
-                                {isOwner && (
-                                  <div className="flex flex-col min-w-0">
-                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider leading-none mb-1">Nhập</span>
-                                    <span className="text-[13px] font-bold text-slate-500 dark:text-slate-400 font-mono tracking-tight leading-none">{formatCurrency(costPrice)}</span>
+                            {/* Bottom row: Business Indicators — Scientific Layout */}
+                            <div className="mt-4 pt-3 border-t border-slate-100/50 dark:border-slate-800/50">
+                              <div className="flex items-center justify-between">
+                                {/* Price Grid with Micro-icons */}
+                                <div className="flex items-center gap-4 flex-1">
+                                  {/* Giá nhập */}
+                                  {isOwner && (
+                                    <div className="flex flex-col">
+                                      <div className="flex items-center gap-1 mb-1">
+                                        <Banknote className="w-3 h-3 text-slate-400" />
+                                        <span className="text-[8px] font-bold text-slate-400 uppercase tracking-tighter">Nhập</span>
+                                      </div>
+                                      <span className="text-[12px] font-bold text-slate-600 dark:text-slate-400 font-mono tracking-tight leading-none">
+                                        {formatCurrency(costPrice)}
+                                      </span>
+                                    </div>
+                                  )}
+                                  {/* Giá bán lẻ */}
+                                  <div className="flex flex-col">
+                                    <div className="flex items-center gap-1 mb-1">
+                                      <Tags className="w-3 h-3 text-blue-500/70" />
+                                      <span className="text-[8px] font-bold text-blue-500/70 uppercase tracking-tighter">Bán lẻ</span>
+                                    </div>
+                                    <span className="text-[12px] font-black text-blue-600 dark:text-blue-400 font-mono tracking-tight leading-none">
+                                      {formatCurrency(retailPrice)}
+                                    </span>
                                   </div>
-                                )}
-                                {/* Giá bán lẻ */}
-                                <div className="flex flex-col min-w-0">
-                                  <span className="text-[9px] font-bold text-blue-500 uppercase tracking-wider leading-none mb-1">Bán lẻ</span>
-                                  <span className="text-[13px] font-black text-blue-600 dark:text-blue-400 font-mono tracking-tight leading-none">{formatCurrency(retailPrice)}</span>
+                                  {/* Giá sỉ */}
+                                  <div className="flex flex-col">
+                                    <div className="flex items-center gap-1 mb-1">
+                                      <Package className="w-3 h-3 text-emerald-500/70" />
+                                      <span className="text-[8px] font-bold text-emerald-500/70 uppercase tracking-tighter">Bán sỉ</span>
+                                    </div>
+                                    <span className="text-[12px] font-bold text-emerald-600 dark:text-emerald-400 font-mono tracking-tight leading-none">
+                                      {formatCurrency(wholesalePrice)}
+                                    </span>
+                                  </div>
                                 </div>
-                                {/* Giá sỉ */}
-                                <div className="flex flex-col min-w-0">
-                                  <span className="text-[9px] font-bold text-emerald-500 uppercase tracking-wider leading-none mb-1">Bán sỉ</span>
-                                  <span className="text-[13px] font-bold text-emerald-600 dark:text-emerald-400 font-mono tracking-tight leading-none">{formatCurrency(wholesalePrice)}</span>
+
+                                {/* Modern Stock Badge */}
+                                <div className="flex flex-col items-center">
+                                  <div className={`relative flex items-center justify-center w-11 h-11 rounded-xl border-2 transition-all shadow-sm ${
+                                    available === 0 
+                                      ? "bg-rose-500/5 border-rose-500/20 text-rose-500" 
+                                      : available <= LOW_STOCK_THRESHOLD 
+                                        ? "bg-amber-500/5 border-amber-500/20 text-amber-500" 
+                                        : "bg-emerald-500/5 border-emerald-500/20 text-emerald-500"
+                                  }`}>
+                                    <div className="flex flex-col items-center justify-center leading-none">
+                                      <span className="text-[14px] font-black">{available}</span>
+                                      <span className="text-[7px] font-bold uppercase mt-0.5 opacity-70">Tồn</span>
+                                    </div>
+                                    {/* Small indicator dot */}
+                                    <div className={`absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full border-2 border-white dark:border-slate-900 ${
+                                      available === 0 ? "bg-rose-500" : available <= LOW_STOCK_THRESHOLD ? "bg-amber-500" : "bg-emerald-500"
+                                    }`} />
+                                  </div>
                                 </div>
-                              </div>
-                              {/* Stock badge */}
-                              <div className="flex flex-col items-center flex-shrink-0">
-                                <span className={`inline-flex items-center justify-center w-10 h-10 rounded-full font-black text-sm border-2 shadow-sm ${available === 0 ? "bg-rose-50 border-rose-300 text-rose-600 dark:bg-rose-900/30 dark:border-rose-700 dark:text-rose-400" : available <= LOW_STOCK_THRESHOLD ? "bg-amber-50 border-amber-300 text-amber-600 dark:bg-amber-900/30 dark:border-amber-700 dark:text-amber-400" : "bg-emerald-50 border-emerald-300 text-emerald-600 dark:bg-emerald-900/30 dark:border-emerald-700 dark:text-emerald-400"}`}>
-                                  {available}
-                                </span>
                               </div>
                             </div>
                           </div>

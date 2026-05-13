@@ -456,7 +456,7 @@ const ReportsManager: React.FC = () => {
     });
 
     const baseDailyReport = Array.from(mergedReportMap.values()).sort(
-      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
     );
 
     if (!sortColumn) return baseDailyReport;

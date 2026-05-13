@@ -291,7 +291,7 @@ export const ReportsManagerMobile: React.FC<ReportsManagerMobileProps> = ({
                 <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider ml-1">
                     Chi tiết theo ngày
                 </h3>
-                {revenueReport.dailyReport.map((day, idx) => {
+                {[...revenueReport.dailyReport].reverse().map((day, idx) => {
                     // Calculate daily cash flow
                     const dailyTransactions = cashflowReport.transactions.filter(t => {
                         const tDate = new Date(t.date);

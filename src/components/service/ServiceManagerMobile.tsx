@@ -147,19 +147,19 @@ const WorkOrderCard = React.memo(({
         {/* Customer & Vehicle - Single row */}
         <div className="flex items-center gap-2 mb-1.5 text-sm">
           <span className="text-xs">👤</span>
-          <span className="text-slate-900 dark:text-white font-medium flex-1 min-w-0 truncate">
+          <span className="text-slate-900 dark:text-white font-bold flex-1 min-w-0 truncate text-sm">
             {workOrder.customerName}
           </span>
-          <span className="text-slate-600 dark:text-gray-500 text-xs shrink-0">
+          <span className="text-slate-500 dark:text-gray-400 text-xs shrink-0 font-medium">
             {workOrder.customerPhone}
           </span>
         </div>
         <div className="flex items-center gap-2 mb-1.5 text-sm">
           <span className="text-xs">🏍️</span>
-          <span className="text-slate-700 dark:text-gray-300 flex-1 min-w-0 truncate">
+          <span className="text-slate-700 dark:text-gray-300 flex-1 min-w-0 truncate text-xs font-medium">
             {workOrder.vehicleModel}
           </span>
-          <span className="text-slate-500 dark:text-gray-400 text-xs font-mono shrink-0">
+          <span className="text-slate-500 dark:text-gray-400 text-[11px] font-mono shrink-0 bg-slate-100 dark:bg-gray-800 px-1.5 py-0.5 rounded">
             {workOrder.licensePlate}
           </span>
         </div>
@@ -231,43 +231,37 @@ const WorkOrderCard = React.memo(({
         </div>
       </div>
 
-      {/* Action Buttons Row */}
-      <div className="grid grid-cols-4 border-t border-slate-200 dark:border-gray-800">
+      {/* Action Buttons Row - Modernized */}
+      <div className="px-3 py-2.5 bg-slate-50/50 dark:bg-slate-800/30 border-t border-slate-100 dark:border-gray-800 flex justify-end items-center gap-3">
         <button
           onClick={(e) => {
             e.stopPropagation();
             onCall(workOrder.customerPhone || "");
           }}
-          className="flex items-center justify-center gap-1.5 py-3 hover:bg-slate-50 dark:hover:bg-[#2b2b40] transition-colors border-r border-slate-200 dark:border-gray-800"
+          className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-gray-700 text-slate-500 dark:text-gray-400 transition-colors bg-white dark:bg-[#2b2b40] shadow-sm"
+          aria-label="Gọi"
         >
-          <Phone className="w-3.5 h-3.5 text-slate-500 dark:text-gray-400" />
-          <span className="text-[11px] font-medium text-slate-700 dark:text-gray-300">
-            Gọi
-          </span>
+          <Phone className="w-4 h-4" />
         </button>
         <button
           onClick={(e) => {
             e.stopPropagation();
             onPrint(workOrder);
           }}
-          className="flex items-center justify-center gap-1.5 py-3 hover:bg-slate-50 dark:hover:bg-[#2b2b40] transition-colors border-r border-slate-200 dark:border-gray-800"
+          className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-gray-700 text-slate-500 dark:text-gray-400 transition-colors bg-white dark:bg-[#2b2b40] shadow-sm"
+          aria-label="In"
         >
-          <Printer className="w-3.5 h-3.5 text-slate-500 dark:text-gray-400" />
-          <span className="text-[11px] font-medium text-slate-700 dark:text-gray-300">
-            In
-          </span>
+          <Printer className="w-4 h-4" />
         </button>
         <button
           onClick={(e) => {
             e.stopPropagation();
             onEdit(workOrder);
           }}
-          className="flex items-center justify-center gap-1.5 py-3 hover:bg-slate-50 dark:hover:bg-[#2b2b40] transition-colors border-r border-slate-200 dark:border-gray-800"
+          className="p-2 rounded-full text-[#009ef7] transition-colors bg-[#009ef7]/10 dark:bg-[#009ef7]/20 hover:bg-[#009ef7]/20 dark:hover:bg-[#009ef7]/30 shadow-sm"
+          aria-label="Sửa"
         >
-          <Edit2 className="w-3.5 h-3.5 text-slate-500 dark:text-gray-400" />
-          <span className="text-[11px] font-medium text-slate-700 dark:text-gray-300">
-            Sửa
-          </span>
+          <Edit2 className="w-4 h-4" />
         </button>
         {canDelete && (
           <button
@@ -275,12 +269,10 @@ const WorkOrderCard = React.memo(({
               e.stopPropagation();
               onDelete(workOrder);
             }}
-            className="flex items-center justify-center gap-1.5 py-3 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+            className="p-2 rounded-full text-[#f1416c] transition-colors bg-[#f1416c]/10 dark:bg-[#f1416c]/20 hover:bg-[#f1416c]/20 dark:hover:bg-[#f1416c]/30 shadow-sm"
+            aria-label="Xóa"
           >
-            <Trash2 className="w-3.5 h-3.5 text-[#f1416c]" />
-            <span className="text-[11px] font-medium text-[#f1416c]">
-              Xóa
-            </span>
+            <Trash2 className="w-4 h-4" />
           </button>
         )}
       </div>
@@ -443,14 +435,14 @@ export function ServiceManagerMobile({
                     );
                     triggerHaptic("selection");
                   }}
-                  className={`p-2 rounded-lg text-center transition-all border ${statusFilter === "Tiếp nhận"
-                    ? "bg-[#009ef7]/10 border-[#009ef7]"
-                    : "bg-slate-100 dark:bg-[#2b2b40] border-slate-200 dark:border-gray-700 hover:border-slate-300 dark:hover:border-gray-600"
+                  className={`p-2 rounded-2xl text-center transition-all border backdrop-blur-md ${statusFilter === "Tiếp nhận"
+                    ? "bg-[#009ef7]/10 border-[#009ef7]/50 shadow-[0_0_15px_rgba(0,158,247,0.15)]"
+                    : "bg-slate-50/80 dark:bg-slate-800/40 border-slate-200 dark:border-gray-700 hover:bg-slate-100 dark:hover:bg-slate-800/60"
                     }`}
                 >
-                  <FileText className="w-4 h-4 text-[#009ef7] mx-auto mb-0.5" />
-                  <div className="text-lg font-bold text-slate-900 dark:text-white">{kpis.tiepNhan}</div>
-                  <span className="text-[8px] text-slate-600 dark:text-gray-400">Tiếp nhận</span>
+                  <FileText className={`w-4 h-4 mx-auto mb-0.5 ${statusFilter === "Tiếp nhận" ? "text-[#009ef7] drop-shadow-[0_0_5px_rgba(0,158,247,0.5)]" : "text-[#009ef7]/70"}`} />
+                  <div className="text-lg font-black text-slate-900 dark:text-white">{kpis.tiepNhan}</div>
+                  <span className="text-[9px] font-medium text-slate-600 dark:text-gray-400">Tiếp nhận</span>
                 </button>
 
                 {/* Đang sửa */}
@@ -459,14 +451,14 @@ export function ServiceManagerMobile({
                     setStatusFilter(statusFilter === "Đang sửa" ? "all" : "Đang sửa");
                     triggerHaptic("selection");
                   }}
-                  className={`p-2 rounded-lg text-center transition-all border ${statusFilter === "Đang sửa"
-                    ? "bg-[#009ef7]/10 border-[#009ef7]"
-                    : "bg-slate-100 dark:bg-[#2b2b40] border-slate-200 dark:border-gray-700 hover:border-slate-300 dark:hover:border-gray-600"
+                  className={`p-2 rounded-2xl text-center transition-all border backdrop-blur-md ${statusFilter === "Đang sửa"
+                    ? "bg-[#f1416c]/10 border-[#f1416c]/50 shadow-[0_0_15px_rgba(241,65,108,0.15)]"
+                    : "bg-slate-50/80 dark:bg-slate-800/40 border-slate-200 dark:border-gray-700 hover:bg-slate-100 dark:hover:bg-slate-800/60"
                     }`}
                 >
-                  <Wrench className="w-4 h-4 text-[#f1416c] mx-auto mb-0.5" />
-                  <div className="text-lg font-bold text-slate-900 dark:text-white">{kpis.dangSua}</div>
-                  <span className="text-[8px] text-slate-600 dark:text-gray-400">Đang sửa</span>
+                  <Wrench className={`w-4 h-4 mx-auto mb-0.5 ${statusFilter === "Đang sửa" ? "text-[#f1416c] drop-shadow-[0_0_5px_rgba(241,65,108,0.5)]" : "text-[#f1416c]/70"}`} />
+                  <div className="text-lg font-black text-slate-900 dark:text-white">{kpis.dangSua}</div>
+                  <span className="text-[9px] font-medium text-slate-600 dark:text-gray-400">Đang sửa</span>
                 </button>
 
                 {/* Đã sửa xong */}
@@ -477,16 +469,16 @@ export function ServiceManagerMobile({
                     );
                     triggerHaptic("selection");
                   }}
-                  className={`p-2 rounded-lg text-center transition-all border ${statusFilter === "Đã sửa xong"
-                    ? "bg-[#009ef7]/10 border-[#009ef7]"
-                    : "bg-slate-100 dark:bg-[#2b2b40] border-slate-200 dark:border-gray-700 hover:border-slate-300 dark:hover:border-gray-600"
+                  className={`p-2 rounded-2xl text-center transition-all border backdrop-blur-md ${statusFilter === "Đã sửa xong"
+                    ? "bg-[#50cd89]/10 border-[#50cd89]/50 shadow-[0_0_15px_rgba(80,205,137,0.15)]"
+                    : "bg-slate-50/80 dark:bg-slate-800/40 border-slate-200 dark:border-gray-700 hover:bg-slate-100 dark:hover:bg-slate-800/60"
                     }`}
                 >
-                  <Check className="w-4 h-4 text-[#50cd89] mx-auto mb-0.5" />
-                  <div className="text-lg font-bold text-slate-900 dark:text-white">
+                  <Check className={`w-4 h-4 mx-auto mb-0.5 ${statusFilter === "Đã sửa xong" ? "text-[#50cd89] drop-shadow-[0_0_5px_rgba(80,205,137,0.5)]" : "text-[#50cd89]/70"}`} />
+                  <div className="text-lg font-black text-slate-900 dark:text-white">
                     {kpis.daHoanThanh}
                   </div>
-                  <span className="text-[8px] text-slate-600 dark:text-gray-400">Đã sửa</span>
+                  <span className="text-[9px] font-medium text-slate-600 dark:text-gray-400">Đã sửa</span>
                 </button>
 
                 {/* Trả máy */}
@@ -495,14 +487,14 @@ export function ServiceManagerMobile({
                     setStatusFilter(statusFilter === "Trả máy" ? "all" : "Trả máy");
                     triggerHaptic("selection");
                   }}
-                  className={`p-2 rounded-lg text-center transition-all border ${statusFilter === "Trả máy"
-                    ? "bg-[#009ef7]/10 border-[#009ef7]"
-                    : "bg-slate-100 dark:bg-[#2b2b40] border-slate-200 dark:border-gray-700 hover:border-slate-300 dark:hover:border-gray-600"
+                  className={`p-2 rounded-2xl text-center transition-all border backdrop-blur-md ${statusFilter === "Trả máy"
+                    ? "bg-purple-500/10 border-purple-500/50 shadow-[0_0_15px_rgba(168,85,247,0.15)]"
+                    : "bg-slate-50/80 dark:bg-slate-800/40 border-slate-200 dark:border-gray-700 hover:bg-slate-100 dark:hover:bg-slate-800/60"
                     }`}
                 >
-                  <Key className="w-4 h-4 text-purple-500 mx-auto mb-0.5" />
-                  <div className="text-lg font-bold text-slate-900 dark:text-white">{kpis.traMay}</div>
-                  <span className="text-[8px] text-slate-600 dark:text-gray-400">Trả máy</span>
+                  <Key className={`w-4 h-4 mx-auto mb-0.5 ${statusFilter === "Trả máy" ? "text-purple-500 drop-shadow-[0_0_5px_rgba(168,85,247,0.5)]" : "text-purple-500/70"}`} />
+                  <div className="text-lg font-black text-slate-900 dark:text-white">{kpis.traMay}</div>
+                  <span className="text-[9px] font-medium text-slate-600 dark:text-gray-400">Trả máy</span>
                 </button>
               </div>
 
@@ -577,7 +569,7 @@ export function ServiceManagerMobile({
               </div>
 
               {/* Date Filter Segmented Control */}
-              <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-1">
+              <div className="bg-slate-100 dark:bg-[#2b2b40] p-1 rounded-xl flex items-center justify-between mt-2">
                 {[
                   { label: "Hôm nay", value: "today" },
                   { label: "7 ngày", value: "week" },
@@ -587,9 +579,9 @@ export function ServiceManagerMobile({
                   <button
                     key={option.value}
                     onClick={() => setDateFilter(option.value)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors ${dateFilter === option.value
-                      ? "bg-[#009ef7]/20 text-[#009ef7] border border-[#009ef7]/50"
-                      : "bg-slate-100 dark:bg-[#2b2b40] text-slate-700 dark:text-gray-400 border border-slate-300 dark:border-gray-700"
+                    className={`flex-1 py-1.5 rounded-lg text-[11px] font-bold transition-all duration-200 ${dateFilter === option.value
+                      ? "bg-white dark:bg-gray-700 text-[#009ef7] shadow-sm"
+                      : "text-slate-500 dark:text-gray-400 hover:text-slate-700 dark:hover:text-gray-300"
                       }`}
                   >
                     {option.label}
@@ -686,7 +678,7 @@ export function ServiceManagerMobile({
             <button
               onClick={handleCreateWorkOrder}
               disabled={isCreating}
-              className="fixed bottom-20 right-4 w-12 h-12 bg-gradient-to-br from-[#009ef7] to-[#0077b6] rounded-full shadow-xl shadow-[#009ef7]/50 flex items-center justify-center hover:from-[#0077b6] hover:to-[#005a8a] transition-all z-[60] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="fixed bottom-24 right-4 w-12 h-12 bg-gradient-to-br from-[#009ef7] to-[#0077b6] rounded-full shadow-[0_4px_20px_rgba(0,158,247,0.4)] flex items-center justify-center hover:from-[#0077b6] hover:to-[#005a8a] transition-all z-[60] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed border border-white/10"
               aria-label="Tạo phiếu mới"
             >
               <Plus className="w-5 h-5 text-white" />
@@ -818,34 +810,34 @@ export function ServiceManagerMobile({
       </div >
 
       {/* BOTTOM NAVIGATION BAR */}
-      < div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-[#1e1e2d] border-t border-slate-200 dark:border-gray-800 px-6 py-2 z-[100] flex justify-between items-center pb-safe" >
+      <div className="fixed bottom-0 left-0 right-0 bg-white/90 dark:bg-[#1e1e2d]/80 backdrop-blur-xl border-t border-slate-200/50 dark:border-white/5 px-6 py-2 z-[100] flex justify-between items-center pb-safe shadow-[0_-4px_20px_rgba(0,0,0,0.05)] dark:shadow-[0_-4px_20px_rgba(0,0,0,0.2)]">
         <button
           onClick={() => setActiveTab("orders")}
-          className={`flex flex-col items-center gap-1 transition-colors ${activeTab === "orders" ? "text-[#009ef7]" : "text-slate-600 dark:text-gray-500 hover:text-slate-900 dark:hover:text-gray-300"
+          className={`flex flex-col items-center gap-1 transition-colors ${activeTab === "orders" ? "text-[#009ef7]" : "text-slate-500 dark:text-gray-500 hover:text-slate-900 dark:hover:text-gray-300"
             }`}
         >
           <ClipboardList className={`w-6 h-6 ${activeTab === "orders" ? "fill-current/20" : ""}`} />
-          <span className="text-[10px] font-medium">Tổng quan</span>
+          <span className="text-[10px] font-semibold">Tổng quan</span>
         </button>
 
         <button
           onClick={() => setActiveTab("history")}
-          className={`flex flex-col items-center gap-1 transition-colors ${activeTab === "history" ? "text-[#009ef7]" : "text-slate-600 dark:text-gray-500 hover:text-slate-900 dark:hover:text-gray-300"
+          className={`flex flex-col items-center gap-1 transition-colors ${activeTab === "history" ? "text-[#009ef7]" : "text-slate-500 dark:text-gray-500 hover:text-slate-900 dark:hover:text-gray-300"
             }`}
         >
           <History className={`w-6 h-6 ${activeTab === "history" ? "fill-current/20" : ""}`} />
-          <span className="text-[10px] font-medium">Lịch sử</span>
+          <span className="text-[10px] font-semibold">Lịch sử</span>
         </button>
 
         <button
           onClick={() => setActiveTab("templates")}
-          className={`flex flex-col items-center gap-1 transition-colors ${activeTab === "templates" ? "text-[#009ef7]" : "text-gray-500 hover:text-gray-300"
+          className={`flex flex-col items-center gap-1 transition-colors ${activeTab === "templates" ? "text-[#009ef7]" : "text-slate-500 dark:text-gray-500 hover:text-slate-900 dark:hover:text-gray-300"
             }`}
         >
           <FileText className={`w-6 h-6 ${activeTab === "templates" ? "fill-current/20" : ""}`} />
-          <span className="text-[10px] font-medium">Mẫu SC</span>
+          <span className="text-[10px] font-semibold">Mẫu SC</span>
         </button>
-      </div >
+      </div>
     </div >
   );
 }

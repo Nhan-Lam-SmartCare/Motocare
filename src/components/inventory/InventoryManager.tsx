@@ -88,6 +88,9 @@ import GoodsReceiptModal from "./modals/GoodsReceiptModal";
 import InventoryHistorySection from "./InventoryHistorySection";
 import ImportInventoryModal from "./modals/ImportInventoryModal";
 import EditPartModal from "./modals/EditPartModal";
+import InventoryMobileCards from "./components/InventoryMobileCards";
+import InventoryDesktopTable from "./components/InventoryDesktopTable";
+import InventoryHeader from "./components/InventoryHeader";
 
 const LOW_STOCK_THRESHOLD = 5;
 
@@ -145,6 +148,7 @@ const InventoryManagerNew: React.FC = () => {
     null
   );
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [showAlertsSection, setShowAlertsSection] = useState(false);
   const [openActionRow, setOpenActionRow] = useState<string | null>(null);
   const [inventoryDropdownPos, setInventoryDropdownPos] = useState({
     top: 0,
@@ -1500,196 +1504,42 @@ const InventoryManagerNew: React.FC = () => {
 
       {/* Desktop Filters - Compact for small screens */}
       {activeTab === "stock" && (
-        <div className="hidden sm:block bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-4 py-2">
-          <div className="space-y-2">
-            {/* Row 1: Stats inline + Search */}
-            <div className="flex items-center gap-3">
-              {/* Premium Stats Cards in Header */}
-              <div className="flex items-center gap-2 flex-shrink-0">
-                <div className="flex items-center gap-3 px-4 py-2 rounded-2xl border border-blue-500/10 bg-blue-500/5 shadow-sm transition-all hover:bg-blue-500/10 group">
-                  <div className="p-1.5 bg-blue-500/20 rounded-lg group-hover:scale-110 transition-transform">
-                    <Boxes className="w-4 h-4 text-blue-500" />
-                  </div>
-                  <div>
-                    <div className="text-[9px] uppercase font-black text-blue-500/70 tracking-widest leading-none mb-0.5">Tồn kho</div>
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-lg font-black text-slate-900 dark:text-white leading-none">
-                        {totalStockQuantity.toLocaleString()}
-                      </span>
-                      <span className="text-[10px] font-bold text-slate-400">SP</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3 px-4 py-2 rounded-2xl border border-emerald-500/10 bg-emerald-500/5 shadow-sm transition-all hover:bg-emerald-500/10 group">
-                  <div className="p-1.5 bg-emerald-500/20 rounded-lg group-hover:scale-110 transition-transform">
-                    <Package className="w-4 h-4 text-emerald-500" />
-                  </div>
-                  <div>
-                    <div className="text-[9px] uppercase font-black text-emerald-500/70 tracking-widest leading-none mb-0.5">Giá trị tồn</div>
-                    <div className="text-lg font-black text-slate-900 dark:text-white leading-none">
-                      {formatCurrency(totalStockValue)}
-                    </div>
-                  </div>
-                </div>
-
-                {stockHealth.lowStock > 0 && (
-                   <div 
-                    onClick={() => handleStockFilterChange("low-stock")}
-                    className="flex items-center gap-3 px-4 py-2 rounded-2xl border border-amber-500/10 bg-amber-500/5 shadow-sm transition-all hover:bg-amber-500/10 group cursor-pointer"
-                   >
-                    <div className="p-1.5 bg-amber-500/20 rounded-lg group-hover:scale-110 transition-transform">
-                      <AlertTriangle className="w-4 h-4 text-amber-500" />
-                    </div>
-                    <div>
-                      <div className="text-[9px] uppercase font-black text-amber-500/70 tracking-widest leading-none mb-0.5">Sắp hết</div>
-                      <div className="text-lg font-black text-slate-900 dark:text-white leading-none">
-                        {stockHealth.lowStock}
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Search Bar - Modernized */}
-              <div className="relative flex-1 group">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
-                <input
-                  type="text"
-                  placeholder="Tìm kiếm sản phẩm theo tên, SKU, mã vạch hoặc danh mục..."
-                  value={searchInput}
-                  onChange={(e) => {
-                    setPage(1);
-                    setSearchInput(e.target.value);
-                  }}
-                  className="w-full pl-11 pr-20 py-2.5 text-sm border border-slate-200 dark:border-slate-700 rounded-2xl bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500/50 outline-none transition-all placeholder:text-slate-400 font-medium"
-                />
-                <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
-                  <div className="px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-[10px] font-bold text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
-                    {filteredParts.length} / {isSearching ? filteredParts.length : totalParts}
-                  </div>
-                </div>
-              </div>
-              {/* Filter button */}
-              <button
-                onClick={() => setShowAdvancedFilters((prev) => !prev)}
-                className={`flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg border transition flex-shrink-0 ${showAdvancedFilters
-                  ? "border-blue-500 text-blue-600 bg-blue-50 dark:bg-blue-900/20"
-                  : "border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:text-slate-100"
-                  }`}
-              >
-                <Filter className="w-3.5 h-3.5" />
-                Bộ lọc nâng cao
-              </button>
-            </div>
-
-            <div className="flex items-center gap-2 flex-wrap mb-4">
-              {stockQuickFilters.map((filter) => {
-                const isActive = stockFilter === filter.id;
-                const variants: Record<string, string> = {
-                  neutral: isActive 
-                    ? "bg-slate-900 dark:bg-white text-white dark:text-slate-900 border-slate-900 dark:border-white shadow-lg shadow-slate-900/10" 
-                    : "bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-600",
-                  success: isActive 
-                    ? "bg-emerald-600 text-white border-emerald-600 shadow-lg shadow-emerald-600/10" 
-                    : "bg-emerald-50/30 dark:bg-emerald-500/5 text-emerald-600 dark:text-emerald-400 border-emerald-200/50 dark:border-emerald-500/10 hover:bg-emerald-50 dark:hover:bg-emerald-500/10",
-                  warning: isActive 
-                    ? "bg-amber-500 text-white border-amber-500 shadow-lg shadow-amber-500/10" 
-                    : "bg-amber-50/30 dark:bg-amber-500/5 text-amber-600 dark:text-amber-400 border-amber-200/50 dark:border-amber-500/10 hover:bg-amber-50 dark:hover:bg-amber-500/10",
-                  danger: isActive 
-                    ? "bg-rose-500 text-white border-rose-500 shadow-lg shadow-rose-500/10" 
-                    : "bg-rose-50/30 dark:bg-rose-500/5 text-rose-600 dark:text-rose-400 border-rose-200/50 dark:border-rose-500/10 hover:bg-rose-50 dark:hover:bg-rose-500/10",
-                };
-
-                return (
-                  <button
-                    key={filter.id}
-                    onClick={() => handleStockFilterChange(filter.id)}
-                    className={`inline-flex items-center gap-2.5 px-4 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all duration-200 active:scale-95 ${variants[filter.variant || "neutral"]}`}
-                  >
-                    <span className="leading-none">{filter.label}</span>
-                    <span className={`inline-flex items-center justify-center px-2 py-0.5 rounded-full text-[9px] font-black leading-none ${isActive ? "bg-white/20 dark:bg-black/20" : "bg-slate-100 dark:bg-slate-800 text-slate-400"}`}>
-                      {filter.count}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-
-            {showAdvancedFilters && (
-              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 backdrop-blur-md p-4 grid gap-4 md:grid-cols-3 shadow-xl animate-in zoom-in-95 duration-200">
-                <div>
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-1.5 block">
-                    Trạng thái tồn kho
-                  </label>
-                  <select
-                    value={stockFilter}
-                    onChange={(e) => handleStockFilterChange(e.target.value)}
-                    className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm font-bold text-slate-700 dark:text-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none"
-                  >
-                    <option value="all">Tất cả tồn kho</option>
-                    <option value="in-stock">Còn hàng</option>
-                    <option value="low-stock">Sắp hết</option>
-                    <option value="out-of-stock">Hết hàng</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-1.5 block">
-                    Danh mục sản phẩm
-                  </label>
-                  <select
-                    value={categoryFilter}
-                    onChange={(e) => handleCategoryFilterChange(e.target.value)}
-                    className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm font-bold text-slate-700 dark:text-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none"
-                  >
-                    <option value="all">Tất cả danh mục</option>
-                    {allCategories.map((cat) => (
-                      <option key={cat.id} value={cat.name}>
-                        {cat.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="flex flex-col justify-end">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-1.5 block">
-                    Xử lý dữ liệu
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => setShowDuplicatesOnly((prev) => !prev)}
-                      className={`flex-1 rounded-xl border px-4 py-2 text-[11px] font-black uppercase tracking-widest transition-all active:scale-95 ${showDuplicatesOnly
-                        ? "bg-amber-500 border-amber-500 text-white shadow-lg shadow-amber-500/20"
-                        : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-amber-500 hover:text-amber-500"
-                        }`}
-                    >
-                      {showDuplicatesOnly ? "✓ Đang lọc trùng" : "🔍 Lọc trùng SKU"}
-                    </button>
-                    {(stockFilter !== "all" || categoryFilter !== "all" || showDuplicatesOnly) && (
-                      <button
-                        onClick={() => {
-                          setStockFilter("all");
-                          setCategoryFilter("all");
-                          setShowDuplicatesOnly(false);
-                        }}
-                        className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-rose-500 transition-colors"
-                        title="Xóa tất cả bộ lọc"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
+        <InventoryHeader
+          totalStockQuantity={totalStockQuantity}
+          totalStockValue={totalStockValue}
+          stockHealth={stockHealth}
+          handleStockFilterChange={handleStockFilterChange}
+          searchInput={searchInput}
+          setSearchInput={setSearchInput}
+          setPage={setPage}
+          filteredPartsLength={filteredParts.length}
+          totalParts={totalParts}
+          isSearching={isSearching}
+          reorderGroupedBySupplierLength={reorderGroupedBySupplier.length}
+          duplicateSkusSize={duplicateSkus.size}
+          showAlertsSection={showAlertsSection}
+          setShowAlertsSection={setShowAlertsSection}
+          showAdvancedFilters={showAdvancedFilters}
+          setShowAdvancedFilters={setShowAdvancedFilters}
+          stockQuickFilters={stockQuickFilters}
+          stockFilter={stockFilter}
+          setStockFilter={setStockFilter}
+          categoryFilter={categoryFilter}
+          handleCategoryFilterChange={handleCategoryFilterChange}
+          allCategories={allCategories}
+          showDuplicatesOnly={showDuplicatesOnly}
+          setShowDuplicatesOnly={setShowDuplicatesOnly}
+          setCategoryFilter={setCategoryFilter}
+        />
       )}
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-2 sm:p-3">
         {activeTab === "stock" && (
           <div className="space-y-2">
-            {/* Reorder Alert Banner */}
+            {showAlertsSection && (
+              <>
+                {/* Reorder Alert Banner */}
             {reorderGroupedBySupplier.length > 0 && (
               <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-600 rounded-lg overflow-hidden">
                 {/* Header */}
@@ -1877,6 +1727,8 @@ const InventoryManagerNew: React.FC = () => {
                 </button>
               </div>
             )}
+              </>
+            )}
 
             {/* Stock Table + Pagination */}
             <div className="rounded-lg overflow-hidden bg-white dark:bg-slate-800">
@@ -1906,426 +1758,44 @@ const InventoryManagerNew: React.FC = () => {
                   </div>
                 </div>
               )}
-
               {/* Mobile Layout: Premium Card Grid */}
-              <div className="block sm:hidden">
-                <div className="space-y-3 p-3 bg-slate-50 dark:bg-slate-900/50">
-                  {filteredParts.map((part, index) => {
-                    const stock = part.stock[currentBranchId] || 0;
-                    const reserved = part.reservedstock?.[currentBranchId] || 0;
-                    const available = Math.max(0, stock - reserved);
-                    const retailPrice = part.retailPrice[currentBranchId] || 0;
-                    const costPrice = part.costPrice?.[currentBranchId] || 0;
-                    const wholesalePrice = part.wholesalePrice?.[currentBranchId] || 0;
-                    const isDuplicate = hasDuplicateSku(part.sku || "");
-                    const isOwner = profile?.role === "owner";
-                    
-                    return (
-                      <div
-                        key={part.id}
-                        className={`bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm active:scale-[0.98] transition-all ${isDuplicate ? "border-l-4 border-l-amber-500" : ""}`}
-                      >
-                        <div className="flex gap-4">
-                          <div className="flex-1 min-w-0 flex flex-col justify-between">
-                            <div>
-                              <div className="flex items-start justify-between gap-2">
-                                <h3 className="text-[15px] font-black text-slate-900 dark:text-white leading-tight truncate tracking-tight">
-                                  {part.name}
-                                </h3>
-                                <div className="relative">
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setMobileMenuOpenIndex(mobileMenuOpenIndex === index ? null : index);
-                                    }}
-                                    className="p-1 -m-1 text-slate-400 hover:text-slate-600 transition-colors"
-                                  >
-                                    <MoreHorizontal className="w-5 h-5" />
-                                  </button>
-                                  {mobileMenuOpenIndex === index && (
-                                    <div className="absolute right-0 top-full mt-2 w-44 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in duration-200">
-                                      <button
-                                        onClick={() => { setSelectedPartDetail(part); setMobileMenuOpenIndex(null); }}
-                                        className="w-full text-left px-4 py-3 text-sm font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-3 border-b border-slate-100 dark:border-slate-700"
-                                      >
-                                        <Eye className="w-4 h-4 text-emerald-500" /> Xem chi tiết
-                                      </button>
-                                      <button
-                                        onClick={() => { setEditingPart(part); setMobileMenuOpenIndex(null); }}
-                                        className="w-full text-left px-4 py-3 text-sm font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-3 border-b border-slate-100 dark:border-slate-700"
-                                      >
-                                        <Edit className="w-4 h-4 text-blue-500" /> Chỉnh sửa
-                                      </button>
-                                      <button
-                                        onClick={() => { handleDeleteItem(part.id); setMobileMenuOpenIndex(null); }}
-                                        className="w-full text-left px-4 py-3 text-sm font-bold text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 flex items-center gap-3"
-                                      >
-                                        <Trash2 className="w-4 h-4" /> Xóa sản phẩm
-                                      </button>
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-2 mt-1.5">
-                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 dark:bg-slate-800 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-700">
-                                  {part.sku || "N/A"}
-                                </span>
-                                {part.category && (
-                                  <span className="text-[10px] font-black text-blue-500/80 uppercase tracking-widest">{part.category}</span>
-                                )}
-                              </div>
-                            </div>
-                            {/* Bottom row: Business Indicators — Scientific Layout */}
-                            <div className="mt-4 pt-3 border-t border-slate-100/50 dark:border-slate-800/50">
-                              <div className="flex items-center justify-between">
-                                {/* Price Grid with Micro-icons */}
-                                <div className="flex items-center gap-4 flex-1">
-                                  {/* Giá nhập */}
-                                  {isOwner && (
-                                    <div className="flex flex-col">
-                                      <div className="flex items-center gap-1 mb-1">
-                                        <Banknote className="w-3 h-3 text-slate-400" />
-                                        <span className="text-[8px] font-bold text-slate-400 uppercase tracking-tighter">Nhập</span>
-                                      </div>
-                                      <span className="text-[12px] font-bold text-slate-600 dark:text-slate-400 font-mono tracking-tight leading-none">
-                                        {formatCurrency(costPrice)}
-                                      </span>
-                                    </div>
-                                  )}
-                                  {/* Giá bán lẻ */}
-                                  <div className="flex flex-col">
-                                    <div className="flex items-center gap-1 mb-1">
-                                      <Tags className="w-3 h-3 text-blue-500/70" />
-                                      <span className="text-[8px] font-bold text-blue-500/70 uppercase tracking-tighter">Bán lẻ</span>
-                                    </div>
-                                    <span className="text-[12px] font-black text-blue-600 dark:text-blue-400 font-mono tracking-tight leading-none">
-                                      {formatCurrency(retailPrice)}
-                                    </span>
-                                  </div>
-                                  {/* Giá sỉ */}
-                                  <div className="flex flex-col">
-                                    <div className="flex items-center gap-1 mb-1">
-                                      <Package className="w-3 h-3 text-emerald-500/70" />
-                                      <span className="text-[8px] font-bold text-emerald-500/70 uppercase tracking-tighter">Bán sỉ</span>
-                                    </div>
-                                    <span className="text-[12px] font-bold text-emerald-600 dark:text-emerald-400 font-mono tracking-tight leading-none">
-                                      {formatCurrency(wholesalePrice)}
-                                    </span>
-                                  </div>
-                                </div>
-
-                                {/* Modern Stock Badge */}
-                                <div className="flex flex-col items-center">
-                                  <div className={`relative flex items-center justify-center w-11 h-11 rounded-xl border-2 transition-all shadow-sm ${
-                                    available === 0 
-                                      ? "bg-rose-500/5 border-rose-500/20 text-rose-500" 
-                                      : available <= LOW_STOCK_THRESHOLD 
-                                        ? "bg-amber-500/5 border-amber-500/20 text-amber-500" 
-                                        : "bg-emerald-500/5 border-emerald-500/20 text-emerald-500"
-                                  }`}>
-                                    <div className="flex flex-col items-center justify-center leading-none">
-                                      <span className="text-[14px] font-black">{available}</span>
-                                      <span className="text-[7px] font-bold uppercase mt-0.5 opacity-70">Tồn</span>
-                                    </div>
-                                    {/* Small indicator dot */}
-                                    <div className={`absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full border-2 border-white dark:border-slate-900 ${
-                                      available === 0 ? "bg-rose-500" : available <= LOW_STOCK_THRESHOLD ? "bg-amber-500" : "bg-emerald-500"
-                                    }`} />
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
+              <InventoryMobileCards
+                filteredParts={filteredParts}
+                currentBranchId={currentBranchId || ""}
+                duplicateSkus={duplicateSkus}
+                mobileMenuOpenIndex={mobileMenuOpenIndex}
+                setMobileMenuOpenIndex={setMobileMenuOpenIndex}
+                setSelectedPartDetail={setSelectedPartDetail}
+                setEditingPart={setEditingPart}
+                handleDeleteItem={handleDeleteItem}
+                LOW_STOCK_THRESHOLD={LOW_STOCK_THRESHOLD}
+                isOwner={profile?.role === "owner"}
+              />
 
               {/* Desktop / tablet: wide table (hidden on small screens) */}
-              <div className="hidden sm:block overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-slate-50 dark:bg-slate-900 sticky top-0 z-20 border-b border-slate-200 dark:border-slate-800 shadow-sm">
-                    <tr className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">
-                      <th className="px-4 py-4 text-center w-12">
-                        <input
-                          type="checkbox"
-                          checked={
-                            selectedItems.length === filteredParts.length &&
-                            filteredParts.length > 0
-                          }
-                          onChange={(e) => handleSelectAll(e.target.checked)}
-                          className="w-4 h-4 text-blue-600 rounded-md border-slate-300 dark:border-slate-700 focus:ring-blue-500/20 transition-all cursor-pointer"
-                        />
-                      </th>
-                      <th
-                        className="px-4 py-4 text-left cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors select-none group"
-                        onClick={() => handleSort("name")}
-                      >
-                        <div className="flex items-center gap-1.5">
-                          <Package className={`w-3.5 h-3.5 transition-colors ${sortField === 'name' ? 'text-blue-500' : 'text-slate-400 group-hover:text-blue-500'}`} />
-                          <span className={`transition-colors ${sortField === 'name' ? 'text-slate-900 dark:text-white' : 'group-hover:text-slate-900 dark:group-hover:text-white'}`}>Sản phẩm</span>
-                          <ChevronDown className={`w-3 h-3 transition-all duration-300 ${sortField === 'name' ? (sortDirection === 'asc' ? 'rotate-180 text-blue-500' : 'text-blue-500') : 'opacity-0 group-hover:opacity-100'}`} />
-                        </div>
-                      </th>
-                      <th
-                        className="px-4 py-4 text-right cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors select-none group"
-                        onClick={() => handleSort("stock")}
-                      >
-                        <div className="flex items-center justify-end gap-1.5">
-                          <Hash className={`w-3.5 h-3.5 transition-colors ${sortField === 'stock' ? 'text-amber-500' : 'text-slate-400 group-hover:text-amber-500'}`} />
-                          <span className={`transition-colors ${sortField === 'stock' ? 'text-slate-900 dark:text-white' : 'group-hover:text-slate-900 dark:group-hover:text-white'}`}>Tồn kho</span>
-                          <ChevronDown className={`w-3 h-3 transition-all duration-300 ${sortField === 'stock' ? (sortDirection === 'asc' ? 'rotate-180 text-amber-500' : 'text-amber-500') : 'opacity-0 group-hover:opacity-100'}`} />
-                        </div>
-                      </th>
-                      <th
-                        className="px-4 py-4 text-right cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors select-none group"
-                        onClick={() => handleSort("costPrice")}
-                      >
-                        <div className="flex items-center justify-end gap-1.5">
-                          <Banknote className={`w-3.5 h-3.5 transition-colors ${sortField === 'costPrice' ? 'text-emerald-500' : 'text-slate-400 group-hover:text-emerald-500'}`} />
-                          <span className={`transition-colors ${sortField === 'costPrice' ? 'text-slate-900 dark:text-white' : 'group-hover:text-slate-900 dark:group-hover:text-white'}`}>Giá nhập</span>
-                          <ChevronDown className={`w-3 h-3 transition-all duration-300 ${sortField === 'costPrice' ? (sortDirection === 'asc' ? 'rotate-180 text-emerald-500' : 'text-emerald-500') : 'opacity-0 group-hover:opacity-100'}`} />
-                        </div>
-                      </th>
-                      <th
-                        className="px-4 py-4 text-right cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors select-none group"
-                        onClick={() => handleSort("retailPrice")}
-                      >
-                        <div className="flex items-center justify-end gap-1.5">
-                          <Tags className={`w-3.5 h-3.5 transition-colors ${sortField === 'retailPrice' ? 'text-blue-500' : 'text-slate-400 group-hover:text-blue-500'}`} />
-                          <span className={`transition-colors ${sortField === 'retailPrice' ? 'text-slate-900 dark:text-white' : 'group-hover:text-slate-900 dark:group-hover:text-white'}`}>Giá bán</span>
-                          <ChevronDown className={`w-3 h-3 transition-all duration-300 ${sortField === 'retailPrice' ? (sortDirection === 'asc' ? 'rotate-180 text-blue-500' : 'text-blue-500') : 'opacity-0 group-hover:opacity-100'}`} />
-                        </div>
-                      </th>
-                      <th
-                        className="px-4 py-4 text-right cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors select-none group"
-                        onClick={() => handleSort("totalValue")}
-                      >
-                        <div className="flex items-center justify-end gap-1.5">
-                          <BarChart3 className={`w-3.5 h-3.5 transition-colors ${sortField === 'totalValue' ? 'text-purple-500' : 'text-slate-400 group-hover:text-purple-500'}`} />
-                          <span className={`transition-colors ${sortField === 'totalValue' ? 'text-slate-900 dark:text-white' : 'group-hover:text-slate-900 dark:group-hover:text-white'}`}>Giá trị tồn</span>
-                          <ChevronDown className={`w-3 h-3 transition-all duration-300 ${sortField === 'totalValue' ? (sortDirection === 'asc' ? 'rotate-180 text-purple-500' : 'text-purple-500') : 'opacity-0 group-hover:opacity-100'}`} />
-                        </div>
-                      </th>
-                      <th className="px-4 py-4 text-center w-24">
-                        HÀNH ĐỘNG
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white dark:bg-slate-800 divide-y divide-slate-100 dark:divide-slate-700">
-                    {filteredParts.length === 0 ? (
-                      <tr>
-                        <td
-                          colSpan={8}
-                          className="px-4 py-6 text-center text-slate-400 dark:text-slate-500"
-                        >
-                          <div className="text-4xl mb-2">🗂️</div>
-                          <div className="text-sm">Không có sản phẩm nào</div>
-                          <div className="text-xs">
-                            Hãy thử một bộ lọc khác hoặc thêm sản phẩm mới
-                          </div>
-                        </td>
-                      </tr>
-                    ) : (
-                      filteredParts.map((part) => {
-                        const branchKey = currentBranchId || "";
-                        const stock = part.stock?.[branchKey] || 0;
-                        const reserved = part.reservedstock?.[branchKey] || 0;
-                        const activeReserved = activeReservedByPartId.get(part.id) || 0;
-                        const available = Math.max(0, stock - reserved); // ✅ Calculate available (clamped)
-                        const retailPrice = part.retailPrice?.[branchKey] || 0;
-                        const wholesalePrice =
-                          part.wholesalePrice?.[branchKey] || 0;
-                        const costPrice = part.costPrice?.[branchKey] || 0;
-                        // Use costPrice to be consistent with footer totalStockValue
-                        const value = available * costPrice; // ✅ Giá trị tồn = tồn × giá nhập (book value)
-                        const isSelected = selectedItems.includes(part.id);
-                        const isDuplicate = hasDuplicateSku(part.sku || "");
-                        // available is already clamped ≥ 0, so comparisons are safe
-                        const stockStatusClass =
-                          available === 0
-                            ? "border-red-300 bg-red-50 text-red-700 dark:border-red-700 dark:bg-red-950/50 dark:text-red-300"
-                            : available <= LOW_STOCK_THRESHOLD
-                              ? "border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-600 dark:bg-amber-950/50 dark:text-amber-300"
-                              : "border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-700/50 dark:bg-slate-800 dark:text-slate-400";
-                        const stockStatusLabel =
-                          available === 0
-                            ? "Hết hàng"
-                            : available <= LOW_STOCK_THRESHOLD
-                              ? "Sắp hết"
-                              : "Ổn định";
-                        const stockQtyClass =
-                          available === 0
-                            ? "text-red-600 dark:text-red-400"
-                            : available <= LOW_STOCK_THRESHOLD
-                              ? "text-amber-600 dark:text-amber-400"
-                              : "text-slate-900 dark:text-slate-100";
-                        const productInitial =
-                          part.name?.charAt(0)?.toUpperCase() || "?";
-                        const rowHighlight = isSelected
-                          ? "bg-blue-900/20 dark:bg-blue-900/20"
-                          : isDuplicate
-                            ? "bg-orange-500/10 border-l-4 border-l-orange-500"
-                            : "";
-
-                        return (
-                          <tr
-                            key={part.id}
-                            className={`group border-b border-slate-50 dark:border-slate-800/50 hover:bg-blue-50/30 dark:hover:bg-blue-900/10 transition-all duration-200 ${rowHighlight}`}
-                          >
-                            <td className="px-4 py-4 text-center">
-                              <input
-                                type="checkbox"
-                                checked={isSelected}
-                                onChange={(e) =>
-                                  handleSelectItem(part.id, e.target.checked)
-                                }
-                                className="w-4 h-4 text-blue-600 rounded-md border-slate-300 dark:border-slate-700 focus:ring-blue-500/20 transition-all cursor-pointer opacity-50 group-hover:opacity-100"
-                              />
-                            </td>
-                            <td className="px-4 py-4">
-                              <div className="flex items-center gap-4">
-                                <div className="flex flex-col gap-1 min-w-0">
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-sm font-black text-slate-900 dark:text-white leading-none tracking-tight group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                                      {part.name}
-                                    </span>
-                                    {isDuplicate && (
-                                      <span className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-[9px] font-black text-amber-500 uppercase tracking-widest">
-                                        TRÙNG MÃ
-                                      </span>
-                                    )}
-                                  </div>
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1.5 py-0.5 bg-slate-100 dark:bg-slate-900 rounded-md border border-slate-200 dark:border-slate-800">
-                                      {part.sku || "N/A"}
-                                    </span>
-                                    {part.category && (
-                                      <span className="text-[10px] font-bold text-blue-500/70 uppercase tracking-widest">
-                                        {part.category}
-                                      </span>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-                            </td>
-                            <td className="px-4 py-4 whitespace-nowrap text-right">
-                              <div className="flex flex-col items-end gap-1">
-                                <div className={`inline-flex items-center px-2 py-1 rounded-xl font-black text-sm border shadow-sm transition-all ${stockStatusClass}`}>
-                                  <span className="font-mono">{available.toLocaleString()}</span>
-                                </div>
-                                {activeReserved > 0 && (
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setReservedInfoPartId(part.id);
-                                    }}
-                                    className="text-[10px] font-black text-amber-500 uppercase tracking-widest hover:underline active:scale-95"
-                                  >
-                                    Giữ: {activeReserved}
-                                  </button>
-                                )}
-                              </div>
-                            </td>
-                            <td className="px-4 py-4 whitespace-nowrap text-right">
-                              <div className="text-[13px] font-bold text-slate-400 dark:text-slate-500 font-mono">
-                                {formatCurrency(costPrice)}
-                              </div>
-                            </td>
-                            <td className="px-4 py-4 whitespace-nowrap text-right">
-                              <div className="text-[15px] font-black text-blue-600 dark:text-blue-400 font-mono tracking-tight">
-                                {formatCurrency(retailPrice)}
-                              </div>
-                              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mt-1">
-                                Sỉ: {formatCurrency(wholesalePrice)}
-                              </div>
-                            </td>
-                            <td className="px-4 py-4 whitespace-nowrap text-right">
-                              <div className="text-[15px] font-black text-slate-900 dark:text-white font-mono tracking-tight">
-                                {formatCurrency(value)}
-                              </div>
-                            </td>
-                            <td className="px-3 py-2 whitespace-nowrap text-center">
-                              <div className="relative flex justify-end">
-                                <button
-                                  onClick={(event) => {
-                                    event.stopPropagation();
-                                    const rect =
-                                      event.currentTarget.getBoundingClientRect();
-                                    setInventoryDropdownPos({
-                                      top: rect.bottom + 4,
-                                      right: window.innerWidth - rect.right,
-                                    });
-                                    setOpenActionRow((prev) =>
-                                      prev === part.id ? null : part.id
-                                    );
-                                  }}
-                                  className="p-1.5 text-slate-500 hover:text-slate-300 hover:bg-slate-700/50 rounded transition"
-                                  aria-haspopup="menu"
-                                  aria-expanded={openActionRow === part.id}
-                                  title="Thao tác nhanh"
-                                >
-                                  <MoreHorizontal className="w-5 h-5" />
-                                </button>
-                                {openActionRow === part.id && (
-                                  <div
-                                    className="fixed w-44 overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700 bg-white shadow-xl dark:bg-slate-800 z-[9999]"
-                                    style={{
-                                      top: inventoryDropdownPos.top,
-                                      right: inventoryDropdownPos.right,
-                                    }}
-                                    onClick={(event) => event.stopPropagation()}
-                                  >
-                                    <button
-                                      onClick={(event) => {
-                                        event.stopPropagation();
-                                        setSelectedPartDetail(part);
-                                        setOpenActionRow(null);
-                                      }}
-                                      className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm hover:bg-emerald-50 dark:hover:bg-slate-700 rounded-t-xl"
-                                    >
-                                      <Eye className="h-4 w-4 text-emerald-500" />
-                                      Xem chi tiết
-                                    </button>
-                                    <button
-                                      onClick={(event) => {
-                                        event.stopPropagation();
-                                        if (!canUpdatePart) {
-                                          showToast.error("Bạn không có quyền sửa phụ tùng");
-                                          return;
-                                        }
-                                        setEditingPart(part);
-                                        setOpenActionRow(null);
-                                      }}
-                                      className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm hover:bg-blue-50 dark:hover:bg-slate-700"
-                                    >
-                                      <Edit className="h-4 w-4 text-blue-500" />
-                                      Chỉnh sửa
-                                    </button>
-                                    <button
-                                      onClick={(event) => {
-                                        event.stopPropagation();
-                                        setOpenActionRow(null);
-                                        handleDeleteItem(part.id);
-                                      }}
-                                      className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-red-500 hover:bg-red-50 dark:hover:bg-slate-700/70 rounded-b-xl"
-                                    >
-                                      <Trash2 className="h-4 w-4" />
-                                      Xóa
-                                    </button>
-                                  </div>
-                                )}
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })
-                    )}
-                  </tbody>
-                </table>
-              </div>
+              <InventoryDesktopTable
+                filteredParts={filteredParts}
+                currentBranchId={currentBranchId || ""}
+                selectedItems={selectedItems}
+                handleSelectAll={handleSelectAll}
+                handleSelectItem={handleSelectItem}
+                handleSort={handleSort}
+                sortField={sortField}
+                sortDirection={sortDirection}
+                isOwner={profile?.role === "owner"}
+                duplicateSkus={duplicateSkus}
+                activeReservedByPartId={activeReservedByPartId}
+                setReservedInfoPartId={setReservedInfoPartId}
+                LOW_STOCK_THRESHOLD={LOW_STOCK_THRESHOLD}
+                openActionRow={openActionRow}
+                setOpenActionRow={setOpenActionRow}
+                inventoryDropdownPos={inventoryDropdownPos}
+                setInventoryDropdownPos={setInventoryDropdownPos}
+                setSelectedPartDetail={setSelectedPartDetail}
+                setEditingPart={setEditingPart}
+                handleDeleteItem={handleDeleteItem}
+                canUpdatePart={canUpdatePart}
+              />
               {/* Pagination Controls */}
               <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-3 sm:px-6 py-3 sm:py-4 border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
                 <div className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 text-center sm:text-left">

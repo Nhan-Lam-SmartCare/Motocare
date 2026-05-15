@@ -86,6 +86,7 @@ export const GoodsReceiptMobileModal: React.FC<Props> = ({
   const { data: suppliers = [] } = useSuppliers();
   const { data: storeSettings } = useStoreSettings();
 
+  const retailMarkup = (storeSettings?.retail_markup_percent ?? 40) / 100 + 1;
   const wholesaleMarkup = (storeSettings?.wholesale_markup_percent ?? 25) / 100 + 1;
 
   const filteredParts =
@@ -687,10 +688,70 @@ export const GoodsReceiptMobileModal: React.FC<Props> = ({
                             <NumberInput
                               value={item.importPrice}
                               onChange={(val) => {
-                                const updated = [...receiptItems];
-                                updated[index].importPrice = val;
-                                updated[index].wholesalePrice = Math.round(val * wholesaleMarkup);
-                                setReceiptItems(updated);
+                                setReceiptItems((items) =>
+                                  items.map((it, idx) => {
+                                    if (idx !== index) return it;
+                                    const prevAutoRetail = Math.round(
+                                      (it.importPrice || 0) * retailMarkup
+                                    );
+                                    const prevAutoWholesale = Math.round(
+                                      (it.importPrice || 0) * wholesaleMarkup
+                                    );
+                                    const nextAutoRetail = Math.round(
+                                      val * retailMarkup
+                                    );
+                                    const nextAutoWholesale = Math.round(
+                                      val * wholesaleMarkup
+                                    );
+                                    return {
+                                      ...it,
+                                      importPrice: val,
+                                      sellingPrice:
+                                        it.sellingPrice === 0 ||
+                                          it.sellingPrice === prevAutoRetail
+                                          ? nextAutoRetail
+                                          : it.sellingPrice,
+                                      wholesalePrice:
+                                        it.wholesalePrice === 0 ||
+                                          it.wholesalePrice ===
+                                          prevAutoWholesale
+                                          ? nextAutoWholesale
+                                          : it.wholesalePrice,
+                                    };
+                                  })
+                                );
+                              }}
+                              className="w-20 px-1 py-0.5 text-right text-sm border-transparent bg-slate-100/50 dark:bg-slate-800/50 text-slate-700 dark:text-slate-300 focus:outline-none focus:bg-white dark:focus:bg-slate-700 focus:border-blue-400 focus:ring-1 focus:ring-blue-400/30 rounded transition-all"
+                            />
+                          </div>
+                          <div className="flex justify-end items-center gap-1 mb-1">
+                            <span className="text-xs text-slate-400">Giá bán:</span>
+                            <NumberInput
+                              value={item.sellingPrice}
+                              onChange={(val) => {
+                                setReceiptItems((items) =>
+                                  items.map((it, idx) =>
+                                    idx === index
+                                      ? { ...it, sellingPrice: val }
+                                      : it
+                                  )
+                                );
+                              }}
+                              className="w-20 px-1 py-0.5 text-right text-sm border-transparent bg-slate-100/50 dark:bg-slate-800/50 text-slate-700 dark:text-slate-300 focus:outline-none focus:bg-white dark:focus:bg-slate-700 focus:border-blue-400 focus:ring-1 focus:ring-blue-400/30 rounded transition-all"
+                            />
+                          </div>
+                          <div className="flex justify-end items-center gap-1 mb-1">
+                            <span className="text-xs text-slate-400">Giá sỉ:</span>
+                            <NumberInput
+                              value={item.wholesalePrice}
+                              onChange={(val) => {
+                                setReceiptItems((items) =>
+                                  items.map((it, idx) =>
+                                    idx === index
+                                      ? { ...it, wholesalePrice: val }
+                                      : it
+                                  )
+                                );
                               }}
                               className="w-20 px-1 py-0.5 text-right text-sm border-transparent bg-slate-100/50 dark:bg-slate-800/50 text-slate-700 dark:text-slate-300 focus:outline-none focus:bg-white dark:focus:bg-slate-700 focus:border-blue-400 focus:ring-1 focus:ring-blue-400/30 rounded transition-all"
                             />

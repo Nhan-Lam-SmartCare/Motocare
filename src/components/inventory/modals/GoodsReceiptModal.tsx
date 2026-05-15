@@ -28,6 +28,7 @@ const GoodsReceiptModal: React.FC<{
       quantity: number;
       importPrice: number;
       sellingPrice: number;
+      wholesalePrice?: number;
     }>,
     supplierId: string,
     totalAmount: number,
@@ -292,7 +293,22 @@ const GoodsReceiptModal: React.FC<{
         if (item.partId !== partId) return item;
         const newItem = { ...item, [field]: value };
         if (field === "importPrice") {
-          newItem.wholesalePrice = Math.round(value * wholesaleMarkup);
+          const prevAutoRetail = Math.round((item.importPrice || 0) * retailMarkup);
+          const prevAutoWholesale = Math.round(
+            (item.importPrice || 0) * wholesaleMarkup
+          );
+          const nextAutoRetail = Math.round(value * retailMarkup);
+          const nextAutoWholesale = Math.round(value * wholesaleMarkup);
+
+          if (item.sellingPrice === 0 || item.sellingPrice === prevAutoRetail) {
+            newItem.sellingPrice = nextAutoRetail;
+          }
+          if (
+            item.wholesalePrice === 0 ||
+            item.wholesalePrice === prevAutoWholesale
+          ) {
+            newItem.wholesalePrice = nextAutoWholesale;
+          }
         }
         return newItem;
       })
@@ -883,6 +899,7 @@ const GoodsReceiptModal: React.FC<{
                     <span className="w-[96px] text-center">SL</span>
                     <span className="w-[90px] text-right pr-2">Giá nhập</span>
                     <span className="w-[90px] text-right pr-2">Giá bán</span>
+                    <span className="w-[90px] text-right pr-2">Giá sỉ</span>
                     <span className="w-[85px] text-right">Thành tiền</span>
                     <span className="w-5"></span>
                   </div>
@@ -985,7 +1002,10 @@ const GoodsReceiptModal: React.FC<{
                                   item.quantity
                                 );
                                 const newImport = clean.importPrice;
-                                const autoPrice = Math.round(newImport * retailMarkup);
+                                const autoRetail = Math.round(newImport * retailMarkup);
+                                const autoWholesale = Math.round(
+                                  newImport * wholesaleMarkup
+                                );
                                 setReceiptItems((items) =>
                                   items.map((it) =>
                                     it.partId === item.partId
@@ -998,8 +1018,16 @@ const GoodsReceiptModal: React.FC<{
                                             Math.round(
                                               (it.importPrice || 0) * retailMarkup
                                             )
-                                            ? autoPrice
+                                            ? autoRetail
                                             : it.sellingPrice,
+                                        wholesalePrice:
+                                          it.wholesalePrice === 0 ||
+                                            it.wholesalePrice ===
+                                            Math.round(
+                                              (it.importPrice || 0) * wholesaleMarkup
+                                            )
+                                            ? autoWholesale
+                                            : it.wholesalePrice,
                                       }
                                       : it
                                   )
@@ -1023,6 +1051,22 @@ const GoodsReceiptModal: React.FC<{
                               }
                               className="w-full px-2 py-1 border border-transparent rounded-md bg-slate-100/50 dark:bg-slate-800/50 text-slate-900 dark:text-slate-100 text-right text-xs font-medium focus:bg-white dark:focus:bg-slate-700 focus:border-blue-400 focus:ring-1 focus:ring-blue-400/30 h-7 transition-all"
                               placeholder="Giá bán"
+                            />
+                          </div>
+
+                          {/* Wholesale price */}
+                          <div className="w-[90px] flex-shrink-0">
+                            <FormattedNumberInput
+                              value={item.wholesalePrice}
+                              onValue={(val) =>
+                                updateReceiptItem(
+                                  item.partId,
+                                  "wholesalePrice",
+                                  Math.max(0, Math.round(val))
+                                )
+                              }
+                              className="w-full px-2 py-1 border border-transparent rounded-md bg-slate-100/50 dark:bg-slate-800/50 text-slate-900 dark:text-slate-100 text-right text-xs font-medium focus:bg-white dark:focus:bg-slate-700 focus:border-blue-400 focus:ring-1 focus:ring-blue-400/30 h-7 transition-all"
+                              placeholder="Giá sỉ"
                             />
                           </div>
 

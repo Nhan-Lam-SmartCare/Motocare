@@ -9,7 +9,7 @@ import {
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import ErrorBoundary from "./components/common/ErrorBoundary";
 import TopProgressBar from "./components/common/TopProgressBar";
-import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+// import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { AppProvider } from "./contexts/AppContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { AuthProvider } from "./contexts/AuthContext";
@@ -465,7 +465,7 @@ export default function App() {
                     }
                   />
                 </Routes>
-                <ReactQueryDevtools initialIsOpen={false} />
+                {/* <ReactQueryDevtools initialIsOpen={false} /> */}
                 {/* Dev-only repository error panel */}
                 {import.meta.env.DEV && <RepoErrorPanel />}
               </ErrorBoundary>

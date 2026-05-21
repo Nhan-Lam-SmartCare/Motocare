@@ -12,6 +12,14 @@ import {
   Check,
   BriefcaseBusiness,
   FileText,
+  Clock,
+  Building,
+  AlertTriangle,
+  Calendar,
+  Wrench,
+  ShoppingBag,
+  ArrowRightLeft,
+  CheckCircle2,
 } from "lucide-react";
 import { useAppContext } from "../../contexts/AppContext";
 import { useSalesRepo } from "../../hooks/useSalesRepository";
@@ -132,6 +140,58 @@ const REPORT_TAB_CONFIGS: Array<{
       dotClass: "bg-indigo-400",
     },
   ];
+
+const getCategoryIconAndColor = (categoryKey: string) => {
+  switch (categoryKey) {
+    case "sale_income":
+    case "service_income":
+      return {
+        icon: <TrendingUp className="w-4 h-4" />,
+        colorClass: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20 shadow-[0_0_12px_rgba(16,185,129,0.15)]",
+        glow: "bg-emerald-500/5",
+      };
+    case "inventory_purchase":
+    case "supplier_payment":
+    case "debt_payment":
+      return {
+        icon: <Boxes className="w-4 h-4" />,
+        colorClass: "bg-amber-500/10 text-amber-400 border-amber-500/20 shadow-[0_0_12px_rgba(245,158,11,0.15)]",
+        glow: "bg-amber-500/5",
+      };
+    case "salary":
+    case "employee_advance":
+      return {
+        icon: <BriefcaseBusiness className="w-4 h-4" />,
+        colorClass: "bg-violet-500/10 text-violet-400 border-violet-500/20 shadow-[0_0_12px_rgba(139,92,246,0.15)]",
+        glow: "bg-violet-500/5",
+      };
+    case "rent":
+    case "utilities":
+      return {
+        icon: <Building className="w-4 h-4" />,
+        colorClass: "bg-indigo-500/10 text-indigo-400 border-indigo-500/20 shadow-[0_0_12px_rgba(99,102,241,0.15)]",
+        glow: "bg-indigo-500/5",
+      };
+    case "sale_refund":
+      return {
+        icon: <AlertTriangle className="w-4 h-4" />,
+        colorClass: "bg-rose-500/10 text-rose-400 border-rose-500/20 shadow-[0_0_12px_rgba(244,63,94,0.15)]",
+        glow: "bg-rose-500/5",
+      };
+    case "debt_collection":
+      return {
+        icon: <Users className="w-4 h-4" />,
+        colorClass: "bg-sky-500/10 text-sky-400 border-sky-500/20 shadow-[0_0_12px_rgba(14,165,233,0.15)]",
+        glow: "bg-sky-500/5",
+      };
+    default:
+      return {
+        icon: <Wallet className="w-4 h-4" />,
+        colorClass: "bg-blue-500/10 text-blue-400 border-blue-500/20 shadow-[0_0_12px_rgba(59,130,246,0.15)]",
+        glow: "bg-blue-500/5",
+      };
+  }
+};
 
 const ReportsManager: React.FC = () => {
   const { payrollRecords, customers, suppliers, currentBranchId, employees } =
@@ -501,7 +561,29 @@ const ReportsManager: React.FC = () => {
   // Exclusion logic is shared (Dashboard/Analytics/Reports) to keep numbers consistent.
 
   const translateCategory = (category: string): string => {
-    return formatCashTxCategory(category);
+    const formatted = formatCashTxCategory(category);
+    if (!formatted || formatted === "refund" || category === "refund" || category === "sale_refund") {
+      return "Hoàn tiền trả hàng";
+    }
+    if (category === "salary" || category === "payroll") {
+      return "Chi trả lương nhân viên";
+    }
+    if (category === "inventory_purchase" || category === "purchase") {
+      return "Nhập hàng / Mua sắm";
+    }
+    if (category === "utilities") {
+      return "Chi phí điện nước, internet";
+    }
+    if (category === "rent") {
+      return "Chi phí mặt bằng";
+    }
+    if (category === "other_expense" || category === "other") {
+      return "Chi phí khác";
+    }
+    if (category === "other_income") {
+      return "Thu nhập khác";
+    }
+    return formatted;
   };
 
   const cashTotals = useMemo(() => {
@@ -810,176 +892,209 @@ const ReportsManager: React.FC = () => {
       />
 
       {/* Desktop Controls - Hidden on Mobile */}
-      <div className="hidden md:flex items-center gap-2 flex-wrap">
-        {/* Report Tabs */}
-        {REPORT_TAB_CONFIGS.map((tab) => {
-          const isActive = activeTab === tab.key;
-          return (
-            <button
-              type="button"
-              aria-pressed={isActive}
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              className={`px-4 py-1.5 rounded-xl font-medium whitespace-nowrap transition-all border text-sm ${isActive ? tab.activeClass : tab.inactiveClass
-                }`}
-            >
-              <span className="inline-flex items-center gap-1.5">
-                <span
-                  aria-hidden
-                  className={`w-2 h-2 rounded-full ${isActive ? "bg-white/90" : tab.dotClass
-                    }`}
-                ></span>
-                {tab.icon}
-                {tab.label}
-              </span>
-            </button>
-          );
-        })}
+      <div className="hidden md:flex flex-col gap-3">
+        <div className="flex items-center justify-between gap-4 bg-[#0D121F]/60 backdrop-blur-md border border-slate-800/80 p-2 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.2)]">
+          {/* Report Tabs */}
+          <div className="flex items-center gap-1.5">
+            {REPORT_TAB_CONFIGS.map((tab) => {
+              const isActive = activeTab === tab.key;
+              let iconColorSchema = "";
+              switch (tab.key) {
+                case "revenue":
+                  iconColorSchema = isActive ? "bg-white/20 text-white" : "bg-blue-500/10 text-blue-400 group-hover:bg-blue-500/20";
+                  break;
+                case "cashflow":
+                  iconColorSchema = isActive ? "bg-white/20 text-white" : "bg-emerald-500/10 text-emerald-400 group-hover:bg-emerald-500/20";
+                  break;
+                case "inventory":
+                  iconColorSchema = isActive ? "bg-white/20 text-white" : "bg-amber-500/10 text-amber-400 group-hover:bg-amber-500/20";
+                  break;
+                case "payroll":
+                  iconColorSchema = isActive ? "bg-white/20 text-white" : "bg-violet-500/10 text-violet-400 group-hover:bg-violet-500/20";
+                  break;
+                case "debt":
+                  iconColorSchema = isActive ? "bg-white/20 text-white" : "bg-rose-500/10 text-rose-400 group-hover:bg-rose-500/20";
+                  break;
+                case "tax":
+                  iconColorSchema = isActive ? "bg-white/20 text-white" : "bg-indigo-500/10 text-indigo-400 group-hover:bg-indigo-500/20";
+                  break;
+              }
 
-        {/* Divider */}
-        <div className="h-6 w-px bg-slate-300 dark:bg-slate-600 mx-1"></div>
-
-        {/* Date Range Selector */}
-        {(["today", "week", "month", "quarter", "year", "custom"] as const).map(
-          (range) => (
-            <button
-              key={range}
-              onClick={() => setDateRange(range)}
-              className={`px-3 py-1.5 rounded-lg font-medium text-xs transition-all ${dateRange === range
-                ? "bg-blue-600 text-white shadow-md"
-                : "bg-slate-100 dark:bg-slate-700/50 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
-                }`}
-            >
-              {range === "today"
-                ? "Hôm nay"
-                : range === "week"
-                  ? "7 ngày"
-                  : range === "month"
-                    ? "Tháng"
-                    : range === "quarter"
-                      ? "Quý"
-                      : range === "year"
-                        ? "Năm"
-                        : "Tùy chỉnh"}
-            </button>
-          )
-        )}
-
-        {dateRange === "month" && (
-          <div className="flex gap-1.5 flex-wrap">
-            {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => (
-              <button
-                key={month}
-                onClick={() => setSelectedMonth(month)}
-                className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${selectedMonth === month
-                  ? "bg-blue-600 text-white shadow-md scale-105"
-                  : "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-blue-100 dark:hover:bg-blue-900/30 hover:scale-105"
+              return (
+                <button
+                  type="button"
+                  aria-pressed={isActive}
+                  key={tab.key}
+                  onClick={() => setActiveTab(tab.key)}
+                  className={`group px-3.5 py-2 rounded-xl font-black whitespace-nowrap transition-all duration-300 flex items-center gap-2.5 text-xs uppercase tracking-wider ${
+                    isActive
+                      ? tab.activeClass
+                      : "bg-transparent text-slate-400 hover:text-white hover:bg-slate-800/40 border-transparent"
                   }`}
-              >
-                T{month}
-              </button>
-            ))}
+                >
+                  <div className={`p-1.5 rounded-lg transition-all duration-300 ${iconColorSchema}`}>
+                    {tab.icon}
+                  </div>
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
           </div>
-        )}
 
-        {dateRange === "custom" && (
-          <>
-            <input
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm"
-            />
-            <span className="text-slate-500 dark:text-slate-400">→</span>
-            <input
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm"
-            />
-          </>
-        )}
+          {/* Export Excel Button & Advanced Reports */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={exportToExcel}
+              className="px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white rounded-xl font-black shadow-[0_4px_20px_rgba(16,185,129,0.25)] hover:shadow-[0_4px_25px_rgba(16,185,129,0.4)] active:scale-95 transition-all duration-200 flex items-center gap-2 text-xs uppercase tracking-wider border border-emerald-500/30"
+            >
+              <FileSpreadsheet className="w-4 h-4" />
+              <span>Xuất Excel</span>
+            </button>
 
-        {/* Export Excel Button */}
-        <div className="ml-auto flex gap-2">
-          <button
-            onClick={exportToExcel}
-            className="px-3 py-1.5 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg font-medium shadow-md hover:shadow-lg hover:from-green-700 hover:to-emerald-700 transition-all duration-200 flex items-center gap-1.5 text-sm"
-          >
-            <FileSpreadsheet className="w-4 h-4" /> Xuất Excel
-          </button>
-
-          {/* Advanced Reports Dropdown */}
-          {activeTab === "revenue" && (
-            <div className="relative group">
-              <button className="px-3 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg font-medium shadow-md hover:shadow-lg hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 flex items-center gap-1.5 text-sm">
-                <TrendingUp className="w-4 h-4" /> Báo cáo nâng cao
-              </button>
-
-              {/* Dropdown menu */}
-              <div className="absolute right-0 top-full mt-2 w-64 bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-slate-200 dark:border-slate-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-                <button
-                  onClick={() => {
-                    const startStr = start.toISOString().split("T")[0];
-                    const endStr = end.toISOString().split("T")[0];
-                    exportTopProductsReport(
-                      revenueReport.sales,
-                      startStr,
-                      endStr,
-                      20
-                    );
-                    showToast.success("Xuất Top sản phẩm thành công!");
-                  }}
-                  className="w-full px-4 py-3 text-left hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors flex items-center gap-3 text-sm text-slate-700 dark:text-slate-300 rounded-t-lg"
-                >
-                  <Tag className="w-4 h-4 text-blue-600" />
-                  <span>Top sản phẩm bán chạy</span>
+            {/* Advanced Reports Dropdown */}
+            {activeTab === "revenue" && (
+              <div className="relative group">
+                <button className="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-500 hover:from-blue-500 hover:to-indigo-400 text-white rounded-xl font-black shadow-[0_4px_20px_rgba(37,99,235,0.25)] hover:shadow-[0_4px_25px_rgba(37,99,235,0.4)] active:scale-95 transition-all duration-200 flex items-center gap-2 text-xs uppercase tracking-wider border border-blue-500/30">
+                  <TrendingUp className="w-4 h-4" />
+                  <span>Báo cáo nâng cao</span>
                 </button>
 
-                <button
-                  onClick={() => {
-                    const startStr = start.toISOString().split("T")[0];
-                    const endStr = end.toISOString().split("T")[0];
-                    exportProductProfitReport(
-                      revenueReport.sales,
-                      startStr,
-                      endStr
-                    );
-                    showToast.success("Xuất lợi nhuận sản phẩm thành công!");
-                  }}
-                  className="w-full px-4 py-3 text-left hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors flex items-center gap-3 text-sm text-slate-700 dark:text-slate-300 rounded-b-lg"
-                >
-                  <BadgePercent className="w-4 h-4 text-green-600" />
-                  <span>Lợi nhuận theo sản phẩm</span>
-                </button>
+                {/* Dropdown menu */}
+                <div className="absolute right-0 top-full mt-2 w-64 bg-[#0F172A]/95 shadow-[0_10px_40px_rgba(0,0,0,0.5)] border border-slate-800/80 rounded-2xl p-1.5 backdrop-blur-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 animate-in fade-in slide-in-from-top-2">
+                  <button
+                    onClick={() => {
+                      const startStr = start.toISOString().split("T")[0];
+                      const endStr = end.toISOString().split("T")[0];
+                      exportTopProductsReport(
+                        revenueReport.sales,
+                        startStr,
+                        endStr,
+                        20
+                      );
+                      showToast.success("Xuất Top sản phẩm thành công!");
+                    }}
+                    className="w-full px-4 py-3 text-left hover:bg-[#1E293B]/80 transition-colors flex items-center gap-3 text-xs uppercase font-bold tracking-wider text-slate-300 hover:text-white rounded-xl"
+                  >
+                    <Tag className="w-4 h-4 text-blue-400" />
+                    <span>Top sản phẩm bán chạy</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      const startStr = start.toISOString().split("T")[0];
+                      const endStr = end.toISOString().split("T")[0];
+                      exportProductProfitReport(
+                        revenueReport.sales,
+                        startStr,
+                        endStr
+                      );
+                      showToast.success("Xuất lợi nhuận sản phẩm thành công!");
+                    }}
+                    className="w-full px-4 py-3 text-left hover:bg-[#1E293B]/80 transition-colors flex items-center gap-3 text-xs uppercase font-bold tracking-wider text-slate-300 hover:text-white rounded-xl"
+                  >
+                    <BadgePercent className="w-4 h-4 text-emerald-400" />
+                    <span>Lợi nhuận theo sản phẩm</span>
+                  </button>
+                </div>
               </div>
+            )}
+
+            {/* Inventory Advanced Report */}
+            {activeTab === "inventory" && (
+              <button
+                onClick={() => {
+                  const startStr = start.toISOString().split("T")[0];
+                  const endStr = end.toISOString().split("T")[0];
+                  exportDetailedInventoryReport(
+                    partsData,
+                    currentBranchId,
+                    startStr,
+                    endStr
+                  );
+                  showToast.success("Xuất báo cáo tồn kho chi tiết thành công!");
+                }}
+                className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-500 hover:to-pink-400 text-white rounded-xl font-black shadow-[0_4px_20px_rgba(168,85,247,0.25)] hover:shadow-[0_4px_25px_rgba(168,85,247,0.4)] active:scale-95 transition-all duration-200 flex items-center gap-2 text-xs uppercase tracking-wider border border-purple-500/30"
+              >
+                <Boxes className="w-4 h-4" />
+                <span>Tồn kho chi tiết</span>
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Sub-bar for Date Range and Month selectors */}
+        <div className="flex items-center gap-4 flex-wrap bg-[#131926]/30 border border-slate-800/60 p-2 rounded-2xl shadow-[0_4px_20px_rgb(0,0,0,0.15)]">
+          {/* Date Range Selector Pill */}
+          <div className="bg-[#0B0F19]/80 border border-slate-800/80 p-1 rounded-xl flex items-center gap-1 shadow-inner">
+            {(["today", "week", "month", "quarter", "year", "custom"] as const).map(
+              (range) => (
+                <button
+                  key={range}
+                  onClick={() => setDateRange(range)}
+                  className={`px-3 py-1.5 rounded-lg font-bold text-[10px] uppercase tracking-wider transition-all duration-200 ${
+                    dateRange === range
+                      ? "bg-blue-600 text-white shadow-[0_0_12px_rgba(37,99,235,0.4)]"
+                      : "text-slate-400 hover:text-white hover:bg-slate-800/40"
+                  }`}
+                >
+                  {range === "today"
+                    ? "Hôm nay"
+                    : range === "week"
+                      ? "7 ngày"
+                      : range === "month"
+                        ? "Tháng"
+                        : range === "quarter"
+                          ? "Quý"
+                          : range === "year"
+                            ? "Năm"
+                            : "Tùy chỉnh"}
+                </button>
+              )
+            )}
+          </div>
+
+          {/* Month selector T1..T12 */}
+          {dateRange === "month" && (
+            <div className="flex items-center gap-1 bg-[#0B0F19]/80 border border-slate-800/80 p-1 rounded-xl shadow-inner flex-wrap">
+              {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => (
+                <button
+                  key={month}
+                  onClick={() => setSelectedMonth(month)}
+                  className={`px-2.5 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all duration-200 hover:scale-105 ${
+                    selectedMonth === month
+                      ? "bg-blue-600 text-white shadow-[0_0_10px_rgba(37,99,235,0.4)]"
+                      : "text-slate-400 hover:text-white hover:bg-blue-500/10 hover:text-blue-400"
+                  }`}
+                >
+                  T{month}
+                </button>
+              ))}
             </div>
           )}
 
-          {/* Inventory Advanced Report */}
-          {activeTab === "inventory" && (
-            <button
-              onClick={() => {
-                const startStr = start.toISOString().split("T")[0];
-                const endStr = end.toISOString().split("T")[0];
-                exportDetailedInventoryReport(
-                  partsData,
-                  currentBranchId,
-                  startStr,
-                  endStr
-                );
-                showToast.success("Xuất báo cáo tồn kho chi tiết thành công!");
-              }}
-              className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg font-medium shadow-md hover:shadow-lg hover:from-purple-700 hover:to-pink-700 transition-all duration-200 flex items-center gap-2"
-            >
-              <Boxes className="w-4 h-4" /> Tồn kho chi tiết
-            </button>
+          {/* Custom Date inputs */}
+          {dateRange === "custom" && (
+            <div className="flex items-center gap-2 bg-[#0B0F19]/80 border border-slate-800/80 px-3 py-1.5 rounded-xl shadow-inner">
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="px-2.5 py-1 border border-slate-800/85 rounded-lg bg-[#0F172A] text-slate-100 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-blue-500"
+              />
+              <span className="text-slate-500 text-xs font-bold">→</span>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="px-2.5 py-1 border border-slate-800/85 rounded-lg bg-[#0F172A] text-slate-100 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-blue-500"
+              />
+            </div>
           )}
         </div>
       </div>
 
       {/* Report Content - Desktop Only */}
-      <div className="hidden md:block bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-4">
+      <div className="hidden md:block bg-[#131926]/20 backdrop-blur-xl rounded-2xl border border-slate-800/80 p-5 shadow-[0_8px_30px_rgb(0,0,0,0.3)]">
         {activeTab === "revenue" && (
           <div className="space-y-4">
             {salesLoading && (
@@ -988,79 +1103,106 @@ const ReportsManager: React.FC = () => {
               </div>
             )}
             {/* Thống kê cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-              <div className="bg-white dark:bg-slate-800/80 rounded-lg p-4 border border-slate-200 dark:border-slate-700 border-t-2 border-t-blue-500">
-                <div className="flex items-center gap-1 text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5">
-                  <DollarSign className="w-3.5 h-3.5" /> Tổng doanh thu
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              {/* Card 1: Tổng doanh thu */}
+              <div className="bg-gradient-to-b from-[#1E293B]/40 to-[#0F172A]/60 backdrop-blur-xl border border-slate-800/80 hover:border-slate-700/80 shadow-[0_8px_30px_rgba(0,0,0,0.2)] hover:shadow-[0_15px_45px_rgba(0,0,0,0.4)] transition-all duration-300 rounded-2xl p-5 relative overflow-hidden group">
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-[11px] font-black uppercase tracking-wider text-slate-400">
+                    Tổng doanh thu
+                  </span>
+                  <div className="p-2.5 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20 shadow-[0_0_15px_rgba(59,130,246,0.15)] group-hover:scale-110 transition-transform duration-300">
+                    <DollarSign className="w-5 h-5" />
+                  </div>
                 </div>
-                <div className="text-2xl font-bold text-slate-800 dark:text-white">
+                <div className="text-2xl font-black text-white leading-none font-mono tracking-tight group-hover:text-blue-400 transition-colors">
                   {formatCurrency(combinedRevenue).replace("₫", "")}
                 </div>
-                <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
-                  đ (Bán hàng: {formatCurrency(revenueReport.totalRevenue)} +
-                  Phiếu thu: {formatCurrency(cashTotals.totalIncome)})
+                <div className="text-[10px] text-slate-400 mt-3 leading-relaxed border-t border-slate-850 pt-2.5">
+                  Bán hàng: <span className="font-mono text-slate-300 font-bold">{formatCurrency(revenueReport.totalRevenue)}</span> <br/>
+                  Phiếu thu: <span className="font-mono text-slate-300 font-bold">{formatCurrency(cashTotals.totalIncome)}</span>
                 </div>
               </div>
 
-              <div className="bg-white dark:bg-slate-800/80 rounded-lg p-4 border border-slate-200 dark:border-slate-700 border-t-2 border-t-red-500">
-                <div className="flex items-center gap-1 text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5">
-                  <Wallet className="w-3.5 h-3.5" /> Tổng chi phí
+              {/* Card 2: Tổng chi phí */}
+              <div className="bg-gradient-to-b from-[#1E293B]/40 to-[#0F172A]/60 backdrop-blur-xl border border-slate-800/80 hover:border-slate-700/80 shadow-[0_8px_30px_rgba(0,0,0,0.2)] hover:shadow-[0_15px_45px_rgba(0,0,0,0.4)] transition-all duration-300 rounded-2xl p-5 relative overflow-hidden group">
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-[11px] font-black uppercase tracking-wider text-slate-400">
+                    Tổng chi phí
+                  </span>
+                  <div className="p-2.5 rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/20 shadow-[0_0_15px_rgba(244,63,94,0.15)] group-hover:scale-110 transition-transform duration-300">
+                    <Wallet className="w-5 h-5" />
+                  </div>
                 </div>
-                <div className="text-2xl font-bold text-slate-800 dark:text-white">
-                  {formatCurrency(
-                    revenueReport.totalCost + cashTotals.totalExpense
-                  ).replace("₫", "")}
+                <div className="text-2xl font-black text-white leading-none font-mono tracking-tight group-hover:text-rose-400 transition-colors">
+                  {formatCurrency(revenueReport.totalCost + cashTotals.totalExpense).replace("₫", "")}
                 </div>
-                <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
-                  đ (Giá vốn: {formatCurrency(revenueReport.totalCost)} + Phiếu
-                  chi: {formatCurrency(cashTotals.totalExpense)})
+                <div className="text-[10px] text-slate-400 mt-3 leading-relaxed border-t border-slate-850 pt-2.5">
+                  Giá vốn: <span className="font-mono text-slate-300 font-bold">{formatCurrency(revenueReport.totalCost)}</span> <br/>
+                  Phiếu chi: <span className="font-mono text-slate-300 font-bold">{formatCurrency(cashTotals.totalExpense)}</span>
                 </div>
               </div>
 
-              <div className="bg-white dark:bg-slate-800/80 rounded-lg p-4 border border-slate-200 dark:border-slate-700 border-t-2 border-t-green-500">
-                <div className="flex items-center gap-1 text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5">
-                  <TrendingUp className="w-3.5 h-3.5" /> Lợi nhuận thuần
+              {/* Card 3: Lợi nhuận thuần */}
+              <div className="bg-gradient-to-b from-[#1E293B]/40 to-[#0F172A]/60 backdrop-blur-xl border border-slate-800/80 hover:border-slate-700/80 shadow-[0_8px_30px_rgba(0,0,0,0.2)] hover:shadow-[0_15px_45px_rgba(0,0,0,0.4)] transition-all duration-300 rounded-2xl p-5 relative overflow-hidden group">
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-[11px] font-black uppercase tracking-wider text-slate-400">
+                    Lợi nhuận thuần
+                  </span>
+                  <div className={`p-2.5 rounded-xl border group-hover:scale-110 transition-transform duration-300 ${
+                    netProfit >= 0
+                      ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20 shadow-[0_0_15px_rgba(16,185,129,0.15)]"
+                      : "bg-rose-500/10 text-rose-400 border-rose-500/20 shadow-[0_0_15px_rgba(244,63,94,0.15)]"
+                  }`}>
+                    <TrendingUp className="w-5 h-5" />
+                  </div>
                 </div>
-                <div
-                  className={`text-2xl font-bold ${netProfit >= 0
-                    ? "text-green-600 dark:text-green-400"
-                    : "text-red-600 dark:text-red-400"
-                    }`}
-                >
+                <div className={`text-2xl font-black leading-none font-mono tracking-tight ${
+                  netProfit >= 0
+                    ? "text-emerald-400 drop-shadow-[0_0_10px_rgba(16,185,129,0.15)]"
+                    : "text-rose-400 drop-shadow-[0_0_10px_rgba(244,63,94,0.15)]"
+                }`}>
                   {formatCurrency(netProfit).replace("₫", "")}
                 </div>
-                <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
-                  đ (Lợi nhuận gộp: {formatCurrency(revenueReport.totalProfit)}{" "}
-                  - Phiếu chi: {formatCurrency(cashTotals.totalExpense)})
+                <div className="text-[10px] text-slate-400 mt-3 leading-relaxed border-t border-slate-850 pt-2.5">
+                  Lãi gộp: <span className="font-mono text-slate-300 font-bold">{formatCurrency(revenueReport.totalProfit)}</span> <br/>
+                  Chi phí khác: <span className="font-mono text-slate-300 font-bold">{formatCurrency(cashTotals.totalExpense)}</span>
                 </div>
               </div>
 
-              <div className="bg-white dark:bg-slate-800/80 rounded-lg p-4 border border-slate-200 dark:border-slate-700 border-t-2 border-t-purple-500">
-                <div className="flex items-center gap-1 text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5">
-                  <BadgePercent className="w-3.5 h-3.5" /> Tỷ suất lợi nhuận
-                  thuần
+              {/* Card 4: Tỷ suất lợi nhuận */}
+              <div className="bg-gradient-to-b from-[#1E293B]/40 to-[#0F172A]/60 backdrop-blur-xl border border-slate-800/80 hover:border-slate-700/80 shadow-[0_8px_30px_rgba(0,0,0,0.2)] hover:shadow-[0_15px_45px_rgba(0,0,0,0.4)] transition-all duration-300 rounded-2xl p-5 relative overflow-hidden group">
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-[11px] font-black uppercase tracking-wider text-slate-400">
+                    Tỷ suất lợi nhuận
+                  </span>
+                  <div className="p-2.5 rounded-xl bg-purple-500/10 text-purple-400 border border-purple-500/20 shadow-[0_0_15px_rgba(168,85,247,0.15)] group-hover:scale-110 transition-transform duration-300">
+                    <BadgePercent className="w-5 h-5" />
+                  </div>
                 </div>
-                <div className="text-2xl font-bold text-slate-800 dark:text-white">
+                <div className="text-2xl font-black text-white leading-none font-mono tracking-tight group-hover:text-purple-400 transition-colors">
                   {combinedRevenue > 0
                     ? ((netProfit / combinedRevenue) * 100).toFixed(1)
-                    : 0}
+                    : 0}%
                 </div>
-                <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
-                  % (Lợi nhuận thuần / Doanh thu tổng)
+                <div className="text-[10px] text-slate-400 mt-3 leading-relaxed border-t border-slate-850 pt-2.5">
+                  Lợi nhuận ròng / Doanh thu tổng <br/>
+                  Hiệu quả sử dụng dòng vốn
                 </div>
               </div>
             </div>
 
             {/* Bảng chi tiết theo ngày - Redesigned */}
-            <div className="bg-slate-900 rounded-xl border border-slate-700/50 overflow-hidden shadow-xl">
+            <div className="bg-[#0D121F]/60 backdrop-blur-md border border-slate-800/80 rounded-2xl overflow-hidden shadow-2xl">
               {/* Table Header */}
-              <div className="px-5 py-3.5 border-b border-slate-700/50 flex items-center justify-between">
+              <div className="px-5 py-3.5 border-b border-slate-800/80 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <span className="text-base">📅</span>
-                  <h3 className="text-sm font-bold text-white tracking-wide">
+                  <div className="p-2 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20 shadow-[0_0_15px_rgba(59,130,246,0.2)]">
+                    <Calendar className="w-4 h-4" />
+                  </div>
+                  <h3 className="text-sm font-black text-slate-200 tracking-wide uppercase">
                     Chi tiết theo ngày
                   </h3>
-                  <span className="px-2.5 py-0.5 bg-amber-500/20 text-amber-400 text-[11px] font-semibold rounded-full border border-amber-500/30">
+                  <span className="px-2.5 py-0.5 bg-amber-500/20 text-amber-400 text-[10px] font-black uppercase rounded-full border border-amber-500/30">
                     {revenueReport.dailyReport.length} ngày
                   </span>
                 </div>
@@ -1213,38 +1355,42 @@ const ReportsManager: React.FC = () => {
                           {isExpanded && (
                             <tr>
                               <td colSpan={9} className="p-0">
-                                <div className="bg-slate-850 border-t border-b border-slate-700/50 px-4 py-4" style={{ backgroundColor: 'rgb(17 24 39)' }}>
-                                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                                <div className="bg-[#0B0F19]/90 border-t border-b border-slate-800/80 backdrop-blur-md px-6 py-6">
+                                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                                     {/* CÁCH TÍNH LỢI NHUẬN */}
-                                    <div className="bg-slate-900/60 shadow-lg rounded-xl border border-slate-700/50 p-4">
-                                      <h4 className="text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-3 flex items-center gap-2">
-                                        <span className="text-base">📊</span>
-                                        CÁCH TÍNH LỢI NHUẬN NGÀY {new Date(day.date).toLocaleDateString('vi-VN')}
+                                    <div className="bg-[#0D121F]/80 backdrop-blur-xl border border-slate-800/80 shadow-2xl rounded-2xl p-5 relative overflow-hidden group transition-all duration-300 hover:scale-[1.01]">
+                                      {/* Ambient Glow */}
+                                      <div className="absolute -right-10 -bottom-10 w-24 h-24 bg-emerald-500/5 blur-2xl rounded-full pointer-events-none" />
+                                      <h4 className="text-xs font-black text-slate-200 uppercase tracking-wider mb-4 flex items-center gap-2.5">
+                                        <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-[0_0_12px_rgba(16,185,129,0.15)] group-hover:scale-110 transition-transform duration-300">
+                                          <TrendingUp className="w-4 h-4" />
+                                        </div>
+                                        <span>Cách tính lợi nhuận</span>
                                       </h4>
-                                      <div className="space-y-2.5 text-xs">
-                                        <div className="flex justify-between items-center">
-                                          <span className="text-slate-400">Doanh thu bán hàng</span>
-                                          <span className="font-bold text-white">{formatCurrency(salesRevenue + woRevenue)}</span>
+                                      <div className="space-y-3 text-xs">
+                                        <div className="flex justify-between items-center p-2.5 bg-[#131926]/30 border border-slate-800/40 rounded-xl">
+                                          <span className="text-slate-400 font-medium">Doanh thu bán hàng</span>
+                                          <span className="font-bold text-slate-200 font-mono">{formatCurrency(salesRevenue + woRevenue)}</span>
                                         </div>
-                                        <div className="flex justify-between items-center">
-                                          <span className="text-slate-400">(-) Giá vốn hàng bán</span>
-                                          <span className="font-bold text-rose-400">- {formatCurrency(salesCOGS + woParts)}</span>
+                                        <div className="flex justify-between items-center p-2.5 bg-[#131926]/30 border border-slate-800/40 rounded-xl">
+                                          <span className="text-slate-400 font-medium">(-) Giá vốn hàng bán</span>
+                                          <span className="font-bold text-rose-400 font-mono">- {formatCurrency(salesCOGS + woParts)}</span>
                                         </div>
-                                        <div className="border-t border-slate-700/50 pt-2 flex justify-between items-center">
-                                          <span className="text-slate-300 font-medium">= Lãi gộp bán hàng</span>
-                                          <span className="font-bold text-emerald-400">{formatCurrency(laiGop)}</span>
+                                        <div className="flex justify-between items-center p-2.5 bg-[#131926]/50 border border-emerald-500/10 rounded-xl text-emerald-400/90">
+                                          <span className="font-bold">= Lãi gộp bán hàng</span>
+                                          <span className="font-extrabold font-mono">{formatCurrency(laiGop)}</span>
                                         </div>
                                         {thuChiKhac !== 0 && (
-                                          <div className="flex justify-between items-center">
-                                            <span className="text-slate-400">{thuChiKhac > 0 ? '(+) Thu khác' : '(-) Chi khác'}</span>
-                                            <span className={`font-bold ${thuChiKhac > 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                                          <div className="flex justify-between items-center p-2.5 bg-[#131926]/30 border border-slate-800/40 rounded-xl">
+                                            <span className="text-slate-400 font-medium">{thuChiKhac > 0 ? '(+) Thu khác' : '(-) Chi khác'}</span>
+                                            <span className={`font-bold font-mono ${thuChiKhac > 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                                               {thuChiKhac > 0 ? '+' : ''}{formatCurrency(thuChiKhac)}
                                             </span>
                                           </div>
                                         )}
-                                        <div className="border-t-2 border-slate-600 pt-2.5 flex justify-between items-center">
-                                          <span className="text-white font-black text-sm">= LÃI RÒNG</span>
-                                          <span className={`font-black text-base ${laiRong >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                                        <div className="p-3 bg-gradient-to-r from-slate-900 to-slate-950 border border-slate-700/50 rounded-xl flex justify-between items-center shadow-inner mt-4">
+                                          <span className="text-white font-black text-xs tracking-wider">LÃI RÒNG</span>
+                                          <span className={`font-black text-sm font-mono tracking-tight ${laiRong >= 0 ? 'text-green-400 drop-shadow-[0_0_8px_rgba(74,222,128,0.25)]' : 'text-red-400 drop-shadow-[0_0_8px_rgba(248,113,113,0.25)]'}`}>
                                             {laiRong > 0 ? '+' : ''}{formatCurrency(laiRong)}
                                           </span>
                                         </div>
@@ -1252,21 +1398,25 @@ const ReportsManager: React.FC = () => {
                                     </div>
 
                                     {/* ĐƠN BÁN HÀNG */}
-                                    <div className="bg-slate-900/60 shadow-lg rounded-xl border border-slate-700/50 p-4">
-                                      <h4 className="text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-3 flex items-center gap-2">
-                                        <span className="text-base">📦</span>
-                                        ĐƠN BÁN HÀNG ({day.sales.length})
+                                    <div className="bg-[#0D121F]/80 backdrop-blur-xl border border-slate-800/80 shadow-2xl rounded-2xl p-5 relative overflow-hidden group transition-all duration-300 hover:scale-[1.01]">
+                                      {/* Ambient Glow */}
+                                      <div className="absolute -right-10 -bottom-10 w-24 h-24 bg-blue-500/5 blur-2xl rounded-full pointer-events-none" />
+                                      <h4 className="text-xs font-black text-slate-200 uppercase tracking-wider mb-4 flex items-center gap-2.5">
+                                        <div className="p-1.5 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/20 shadow-[0_0_12px_rgba(59,130,246,0.15)] group-hover:scale-110 transition-transform duration-300">
+                                          <ShoppingBag className="w-4 h-4" />
+                                        </div>
+                                        <span>Đơn bán hàng ({day.sales.length})</span>
                                       </h4>
                                       {day.sales.length === 0 ? (
-                                        <div className="text-xs text-slate-500 py-4 text-center">Không có đơn BH</div>
+                                        <div className="text-xs text-slate-550 py-8 text-center bg-[#131926]/20 border border-slate-800/40 rounded-xl">Không có đơn bán hàng</div>
                                       ) : (
                                         <>
                                           {/* Tổng bán hàng */}
-                                          <div className="flex justify-between items-center mb-3 pb-2.5 border-b border-slate-700/50">
-                                            <div className="text-[11px] text-slate-400">Tổng doanh thu</div>
+                                          <div className="flex justify-between items-center mb-3 pb-3 border-b border-slate-800/60">
+                                            <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Tổng doanh thu</div>
                                             <div className="text-right">
-                                              <span className="font-bold text-slate-200 text-xs">{formatCurrency(salesRevenue)}</span>
-                                              <span className={`text-[10px] ml-2 text-slate-400`}>
+                                              <span className="font-black text-slate-200 text-xs font-mono">{formatCurrency(salesRevenue)}</span>
+                                              <span className="px-2 py-0.5 ml-2 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[9px] font-black uppercase rounded-full">
                                                 Lãi: {formatCurrency(salesRevenue - salesCOGS)}
                                               </span>
                                             </div>
@@ -1279,27 +1429,32 @@ const ReportsManager: React.FC = () => {
                                               }, 0);
                                               const saleProfit = sale.total - saleCost;
                                               return (
-                                                <div key={sale.id} className="bg-slate-900/60 rounded-lg p-3 border border-slate-700/30">
-                                                  <div className="flex justify-between items-start mb-1.5">
-                                                    <div className="flex items-center gap-1.5">
-                                                      <span className="font-bold text-white text-xs">{sale.customer.name}</span>
-                                                      {saleProfit > 0 && <span className="text-slate-400 text-[10px]">Lãi</span>}
+                                                <div key={sale.id} className="bg-[#131926]/40 hover:bg-[#1E293B]/60 border border-slate-800/60 rounded-xl p-3.5 transition-all duration-300 hover:scale-[1.01] hover:shadow-[0_4px_15px_rgba(0,0,0,0.3)]">
+                                                  <div className="flex justify-between items-start mb-2">
+                                                    <div className="flex items-center gap-2">
+                                                      <div className="p-1 rounded-md bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                                                        <Users className="w-3 h-3" />
+                                                      </div>
+                                                      <span className="font-extrabold text-slate-200 text-xs">{sale.customer.name}</span>
                                                     </div>
                                                     <div className="text-right">
-                                                      <div className="font-bold text-slate-200 text-xs">{formatCurrency(sale.total)}</div>
-                                                      <div className={`text-[10px] mt-0.5 text-slate-500`}>
-                                                        Lãi: {formatCurrency(saleProfit)}
+                                                      <div className="font-black text-slate-200 text-xs font-mono">{formatCurrency(sale.total)}</div>
+                                                      <div className="text-[9px] font-bold text-emerald-400 mt-0.5">
+                                                        Lãi: +{formatCurrency(saleProfit)}
                                                       </div>
                                                     </div>
                                                   </div>
-                                                  <div className="text-[10px] text-slate-500 mb-1.5">
-                                                    {sale.sale_code || '---'} • {sale.paymentMethod === 'bank' ? 'CK' : 'TM'}
+                                                  <div className="text-[10px] text-slate-550 font-medium mb-2.5 pb-2 border-b border-slate-800/40 flex justify-between">
+                                                    <span>{sale.sale_code || '---'}</span>
+                                                    <span className="px-1.5 py-0.2 bg-[#0D121F] rounded text-[9px] font-black uppercase text-slate-400 border border-slate-800">
+                                                      {sale.paymentMethod === 'bank' ? 'CK' : 'TM'}
+                                                    </span>
                                                   </div>
-                                                  <div className="space-y-0.5">
+                                                  <div className="space-y-1">
                                                     {sale.items.map((item, idx) => (
-                                                      <div key={idx} className="flex justify-between text-[10px]">
-                                                        <span className="text-slate-400 truncate mr-2">{item.partName}</span>
-                                                        <span className="text-slate-300 whitespace-nowrap flex-shrink-0">
+                                                      <div key={idx} className="flex justify-between text-[10px] bg-[#0D121F]/40 p-1.5 rounded-lg border border-slate-800/20">
+                                                        <span className="text-slate-400 truncate mr-2 font-medium">{item.partName}</span>
+                                                        <span className="text-slate-350 font-mono font-bold whitespace-nowrap flex-shrink-0">
                                                           x{item.quantity} = {formatCurrency(item.sellingPrice * item.quantity)}
                                                         </span>
                                                       </div>
@@ -1316,26 +1471,30 @@ const ReportsManager: React.FC = () => {
                                     {/* SỬA CHỮA + GIAO DỊCH KHÁC */}
                                     <div className="space-y-4">
                                       {/* SỬA CHỮA */}
-                                      <div className="bg-slate-900/60 shadow-lg rounded-xl border border-slate-700/50 p-4">
-                                        <h4 className="text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-3 flex items-center gap-2">
-                                          <span className="text-base">⚙️</span>
-                                          SỬA CHỮA ({day.workOrders.length})
+                                      <div className="bg-[#0D121F]/80 backdrop-blur-xl border border-slate-800/80 shadow-2xl rounded-2xl p-5 relative overflow-hidden group transition-all duration-300 hover:scale-[1.01]">
+                                        {/* Ambient Glow */}
+                                        <div className="absolute -right-10 -bottom-10 w-24 h-24 bg-violet-500/5 blur-2xl rounded-full pointer-events-none" />
+                                        <h4 className="text-xs font-black text-slate-200 uppercase tracking-wider mb-4 flex items-center gap-2.5">
+                                          <div className="p-1.5 rounded-lg bg-violet-500/10 text-violet-400 border border-violet-500/20 shadow-[0_0_12px_rgba(139,92,246,0.15)] group-hover:scale-110 transition-transform duration-300">
+                                            <Wrench className="w-4 h-4" />
+                                          </div>
+                                          <span>Sửa chữa ({day.workOrders.length})</span>
                                         </h4>
                                         {day.workOrders.length === 0 ? (
-                                          <div className="text-xs text-slate-500 py-2 text-center">Không có đơn SC</div>
+                                          <div className="text-xs text-slate-555 py-8 text-center bg-[#131926]/20 border border-slate-800/40 rounded-xl">Không có phiếu sửa chữa</div>
                                         ) : (
                                           <>
                                             {/* Tổng sửa chữa */}
-                                            <div className="flex justify-between items-center mb-2.5 pb-2 border-b border-slate-700/50">
-                                              <div className="text-[11px] text-slate-400">Tổng doanh thu</div>
+                                            <div className="flex justify-between items-center mb-3 pb-3 border-b border-slate-800/60">
+                                              <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Tổng doanh thu</div>
                                               <div className="text-right">
-                                                <span className="font-bold text-slate-200 text-xs">{formatCurrency(woRevenue)}</span>
-                                                <span className={`text-[10px] ml-2 text-slate-400`}>
+                                                <span className="font-black text-slate-200 text-xs font-mono">{formatCurrency(woRevenue)}</span>
+                                                <span className="px-2 py-0.5 ml-2 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[9px] font-black uppercase rounded-full">
                                                   Lãi: {formatCurrency(woRevenue - woParts)}
                                                 </span>
                                               </div>
                                             </div>
-                                            <div className="space-y-2 max-h-32 overflow-y-auto pr-1">
+                                            <div className="space-y-3 max-h-48 overflow-y-auto pr-1">
                                               {day.workOrders.map((wo: any) => {
                                                 const woTotal = wo.totalPaid || wo.totalpaid || wo.total || 0;
                                                 const woPartsCost = (wo.partsUsed || wo.partsused || []).reduce((c: number, p: any) => {
@@ -1345,16 +1504,21 @@ const ReportsManager: React.FC = () => {
                                                 }, 0);
                                                 const woProfit = woTotal - woPartsCost;
                                                 return (
-                                                  <div key={wo.id} className="bg-slate-900/60 rounded-lg p-2.5 border border-slate-700/30">
+                                                  <div key={wo.id} className="bg-[#131926]/40 hover:bg-[#1E293B]/60 border border-slate-800/60 rounded-xl p-3 transition-all duration-300 hover:scale-[1.01] hover:shadow-[0_4px_15px_rgba(0,0,0,0.3)]">
                                                     <div className="flex justify-between items-start">
-                                                      <div>
-                                                        <div className="font-semibold text-white text-[11px]">{wo.customerName || wo.customername}</div>
-                                                        <div className="text-[10px] text-slate-500">{wo.vehicleModel || wo.vehiclemodel || ''} {wo.licensePlate || wo.licenseplate || ''}</div>
+                                                      <div className="flex items-start gap-2">
+                                                        <div className="p-1 rounded-md bg-violet-500/10 text-violet-400 border border-violet-500/20 mt-0.5">
+                                                          <Wrench className="w-3 h-3" />
+                                                        </div>
+                                                        <div>
+                                                          <div className="font-extrabold text-slate-200 text-xs">{wo.customerName || wo.customername}</div>
+                                                          <div className="text-[9px] font-medium text-slate-500 mt-0.5">{wo.vehicleModel || wo.vehiclemodel || ''} • {wo.licensePlate || wo.licenseplate || ''}</div>
+                                                        </div>
                                                       </div>
                                                       <div className="text-right">
-                                                        <div className="font-bold text-slate-200 text-xs">{formatCurrency(woTotal)}</div>
-                                                        <div className={`text-[10px] mt-0.5 text-slate-500`}>
-                                                          Lãi: {formatCurrency(woProfit)}
+                                                        <div className="font-black text-slate-200 text-xs font-mono">{formatCurrency(woTotal)}</div>
+                                                        <div className="text-[9px] font-bold text-emerald-400 mt-0.5">
+                                                          Lãi: +{formatCurrency(woProfit)}
                                                         </div>
                                                       </div>
                                                     </div>
@@ -1367,21 +1531,28 @@ const ReportsManager: React.FC = () => {
                                       </div>
 
                                       {/* GIAO DỊCH KHÁC */}
-                                      <div className="bg-slate-900/60 shadow-lg rounded-xl border border-slate-700/50 p-4">
-                                        <h4 className="text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-3 flex items-center gap-2">
-                                          <span className="text-base">💰</span>
-                                          GIAO DỊCH KHÁC ({dayCashTx.length})
+                                      <div className="bg-[#0D121F]/80 backdrop-blur-xl border border-slate-800/80 shadow-2xl rounded-2xl p-5 relative overflow-hidden group transition-all duration-300 hover:scale-[1.01]">
+                                        {/* Ambient Glow */}
+                                        <div className="absolute -right-10 -bottom-10 w-24 h-24 bg-amber-500/5 blur-2xl rounded-full pointer-events-none" />
+                                        <h4 className="text-xs font-black text-slate-200 uppercase tracking-wider mb-4 flex items-center gap-2.5">
+                                          <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20 shadow-[0_0_12px_rgba(245,158,11,0.15)] group-hover:scale-110 transition-transform duration-300">
+                                            <ArrowRightLeft className="w-4 h-4" />
+                                          </div>
+                                          <span>Giao dịch khác ({dayCashTx.length})</span>
                                         </h4>
                                         {dayCashTx.length === 0 ? (
-                                          <div className="text-xs text-slate-500 py-2 text-center">Không có giao dịch</div>
+                                          <div className="text-xs text-slate-555 py-8 text-center bg-[#131926]/20 border border-slate-800/40 rounded-xl">Không có giao dịch khác</div>
                                         ) : (
-                                          <div className="space-y-1.5 max-h-32 overflow-y-auto pr-1">
+                                          <div className="space-y-1.5 max-h-36 overflow-y-auto pr-1">
                                             {dayCashTx.map((tx) => (
-                                              <div key={tx.id} className="flex justify-between items-center text-[11px] py-2 border-b border-slate-700/30 last:border-0">
-                                                <span className="text-slate-300 truncate mr-2">
-                                                  {(tx as any).description || tx.notes || formatCashTxCategory(tx.category || '')}
-                                                </span>
-                                                <span className={`font-mono text-white text-[10px] font-bold whitespace-nowrap flex-shrink-0`}>
+                                              <div key={tx.id} className="flex justify-between items-center text-xs py-2 px-3 bg-[#131926]/40 hover:bg-[#1E293B]/60 border border-slate-800/40 rounded-xl transition-all duration-200">
+                                                <div className="flex items-center gap-2">
+                                                  <div className={`w-1.5 h-1.5 rounded-full ${tx.type === 'income' ? 'bg-emerald-400 animate-pulse' : 'bg-rose-400 animate-pulse'}`} />
+                                                  <span className="text-slate-300 font-bold">
+                                                    {(tx as any).description || tx.notes || formatCashTxCategory(tx.category || '')}
+                                                  </span>
+                                                </div>
+                                                <span className={`font-mono text-xs font-extrabold ${tx.type === 'income' ? 'text-emerald-400' : 'text-rose-400'}`}>
                                                   {tx.type === 'income' ? '+' : '-'}{formatCurrency(Math.abs(tx.amount))}
                                                 </span>
                                               </div>
@@ -1514,116 +1685,180 @@ const ReportsManager: React.FC = () => {
               </div>
             )}
             {/* Thống kê cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-lg p-4 border border-green-200 dark:border-green-800">
-                <div className="text-xs font-medium text-green-700 dark:text-green-400 mb-1.5">
-                  <span className="inline-flex items-center gap-1">
-                    <Wallet className="w-3.5 h-3.5" /> Tổng thu
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Card 1: Tổng thu */}
+              <div className="bg-gradient-to-b from-[#1E293B]/40 to-[#0F172A]/60 backdrop-blur-xl border border-slate-800/80 hover:border-slate-700/80 shadow-[0_8px_30px_rgba(0,0,0,0.2)] hover:shadow-[0_15px_45px_rgba(0,0,0,0.4)] transition-all duration-300 rounded-2xl p-5 relative overflow-hidden group">
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-[11px] font-black uppercase tracking-wider text-slate-400">
+                    Tổng thu
                   </span>
+                  <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-[0_0_15px_rgba(16,185,129,0.15)] group-hover:scale-110 transition-transform duration-300">
+                    <Wallet className="w-5 h-5" />
+                  </div>
                 </div>
-                <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                <div className="text-2xl font-black text-emerald-400 leading-none font-mono tracking-tight drop-shadow-[0_0_10px_rgba(16,185,129,0.15)]">
                   {formatCurrency(cashflowReport.totalIncome).replace("₫", "")}
                 </div>
-                <div className="text-[10px] text-green-600 dark:text-green-400 mt-0.5">
-                  đ
+                <div className="text-[10px] text-slate-400 mt-3 leading-relaxed border-t border-slate-850 pt-2.5">
+                  Tổng hợp tất cả khoản thu thực tế <br/>
+                  (Đã bao gồm doanh thu bán hàng & dịch vụ)
                 </div>
               </div>
 
-              <div className="bg-gradient-to-br from-red-50 to-rose-50 dark:from-red-900/20 dark:to-rose-900/20 rounded-lg p-4 border border-red-200 dark:border-red-800">
-                <div className="text-xs font-medium text-red-700 dark:text-red-400 mb-1.5 inline-flex items-center gap-1">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    className="w-3.5 h-3.5"
-                  >
-                    <rect x="2" y="6" width="20" height="12" rx="2" ry="2" />
-                    <circle cx="12" cy="12" r="2" />
-                    <path d="M6 12h.01M18 12h.01" />
-                  </svg>
-                  Tổng chi
+              {/* Card 2: Tổng chi */}
+              <div className="bg-gradient-to-b from-[#1E293B]/40 to-[#0F172A]/60 backdrop-blur-xl border border-slate-800/80 hover:border-slate-700/80 shadow-[0_8px_30px_rgba(0,0,0,0.2)] hover:shadow-[0_15px_45px_rgba(0,0,0,0.4)] transition-all duration-300 rounded-2xl p-5 relative overflow-hidden group">
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-[11px] font-black uppercase tracking-wider text-slate-400">
+                    Tổng chi
+                  </span>
+                  <div className="p-2.5 rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/20 shadow-[0_0_15px_rgba(244,63,94,0.15)] group-hover:scale-110 transition-transform duration-300">
+                    <Wallet className="w-5 h-5" />
+                  </div>
                 </div>
-                <div className="text-2xl font-bold text-red-600 dark:text-red-400">
+                <div className="text-2xl font-black text-rose-400 leading-none font-mono tracking-tight drop-shadow-[0_0_10px_rgba(244,63,94,0.15)]">
                   {formatCurrency(cashflowReport.totalExpense).replace("₫", "")}
                 </div>
-                <div className="text-[10px] text-red-600 dark:text-red-400 mt-0.5">
-                  đ
+                <div className="text-[10px] text-slate-400 mt-3 leading-relaxed border-t border-slate-850 pt-2.5">
+                  Tổng hợp tất cả khoản chi thực tế <br/>
+                  (Chi phí nhập kho, vận hành, lương, mặt bằng...)
                 </div>
               </div>
 
-              <div
-                className={`bg-gradient-to-br rounded-lg p-4 border ${cashflowReport.netCashFlow >= 0
-                  ? "from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-blue-200 dark:border-blue-800"
-                  : "from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20 border-orange-200 dark:border-orange-800"
-                  }`}
-              >
-                <div
-                  className={`text-sm font-medium mb-2 ${cashflowReport.netCashFlow >= 0
-                    ? "text-blue-700 dark:text-blue-400"
-                    : "text-orange-700 dark:text-orange-400"
-                    }`}
-                >
-                  <span className="inline-flex items-center gap-1">
-                    <DollarSign className="w-4 h-4" /> Dòng tiền ròng
+              {/* Card 3: Dòng tiền ròng */}
+              <div className="bg-gradient-to-b from-[#1E293B]/40 to-[#0F172A]/60 backdrop-blur-xl border border-slate-800/80 hover:border-slate-700/80 shadow-[0_8px_30px_rgba(0,0,0,0.2)] hover:shadow-[0_15px_45px_rgba(0,0,0,0.4)] transition-all duration-300 rounded-2xl p-5 relative overflow-hidden group">
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-[11px] font-black uppercase tracking-wider text-slate-400">
+                    Dòng tiền ròng
                   </span>
+                  <div className={`p-2.5 rounded-xl border group-hover:scale-110 transition-transform duration-300 ${
+                    cashflowReport.netCashFlow >= 0
+                      ? "bg-blue-500/10 text-blue-400 border-blue-500/20 shadow-[0_0_15px_rgba(59,130,246,0.15)]"
+                      : "bg-amber-500/10 text-amber-400 border-amber-500/20 shadow-[0_0_15px_rgba(245,158,11,0.15)]"
+                  }`}>
+                    <DollarSign className="w-5 h-5" />
+                  </div>
                 </div>
-                <div
-                  className={`text-3xl font-bold ${cashflowReport.netCashFlow >= 0
-                    ? "text-blue-600 dark:text-blue-400"
-                    : "text-orange-600 dark:text-orange-400"
-                    }`}
-                >
+                <div className={`text-2xl font-black leading-none font-mono tracking-tight ${
+                  cashflowReport.netCashFlow >= 0
+                    ? "text-blue-400 drop-shadow-[0_0_10px_rgba(59,130,246,0.15)]"
+                    : "text-amber-400 drop-shadow-[0_0_10px_rgba(245,158,11,0.15)]"
+                }`}>
                   {formatCurrency(cashflowReport.netCashFlow).replace("₫", "")}
                 </div>
-                <div
-                  className={`text-xs mt-1 ${cashflowReport.netCashFlow >= 0
-                    ? "text-blue-600 dark:text-blue-400"
-                    : "text-orange-600 dark:text-orange-400"
-                    }`}
-                >
-                  đ
+                <div className="text-[10px] text-slate-400 mt-3 leading-relaxed border-t border-slate-850 pt-2.5">
+                  Chênh lệch Thu - Chi thực tế của cửa hàng <br/>
+                  (Phản ánh tính thanh khoản dòng tiền mặt/chuyển khoản)
                 </div>
               </div>
             </div>
 
-            {/* Thu chi theo danh mục */}
-            <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-6">
-              <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
-                Thu chi theo danh mục
+            {/* Thu chi theo danh mục - Redesigned */}
+            <div className="bg-[#0D121F]/60 backdrop-blur-md border border-slate-800/80 rounded-2xl p-6 shadow-2xl relative overflow-hidden group">
+              {/* Ambient Glow */}
+              <div className="absolute -right-12 -bottom-12 w-32 h-32 bg-emerald-500/5 blur-3xl rounded-full pointer-events-none" />
+              
+              <h3 className="text-sm font-black text-slate-200 tracking-wide uppercase mb-5 flex items-center gap-3">
+                <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-[0_0_15px_rgba(16,185,129,0.2)]">
+                  <Wallet className="w-4 h-4" />
+                </div>
+                <span>Thu chi theo danh mục</span>
               </h3>
+              
               <div className="space-y-3">
                 {Object.entries(cashflowReport.byCategory).map(
-                  ([category, amounts]) => (
-                    <div
-                      key={category}
-                      className="flex items-center justify-between p-4 bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-700 dark:to-slate-800 rounded-lg hover:shadow-md transition-shadow"
-                    >
-                      <span className="font-semibold text-slate-900 dark:text-white">
-                        {translateCategory(category)}
-                      </span>
-                      <div className="flex gap-6">
-                        <div className="text-right">
-                          <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">
-                            Thu
+                  ([category, amounts]) => {
+                    const catKey = getCashTxCategoryKey(category);
+                    const design = getCategoryIconAndColor(catKey);
+                    
+                    const isIncome = amounts.income > amounts.expense || (amounts.income > 0 && amounts.expense === 0);
+                    const amount = isIncome ? amounts.income : amounts.expense;
+                    
+                    // Share calculation relative to total income or total expense
+                    const total = isIncome ? cashflowReport.totalIncome : cashflowReport.totalExpense;
+                    const percentage = total > 0 ? (amount / total) * 100 : 0;
+                    
+                    const typeLabel = isIncome ? "Thu" : "Chi";
+                    const typeColorClass = isIncome 
+                      ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20 shadow-[0_0_10px_rgba(16,185,129,0.1)]" 
+                      : "bg-rose-500/10 text-rose-400 border-rose-500/20 shadow-[0_0_10px_rgba(244,63,94,0.1)]";
+                    const barColorClass = isIncome ? "bg-emerald-400 animate-pulse" : "bg-rose-400 animate-pulse";
+                    const amountColorClass = isIncome ? "text-emerald-400" : "text-rose-400";
+                    const amountSign = isIncome ? "+" : "-";
+
+                    return (
+                      <div
+                        key={category}
+                        className="flex items-center justify-between p-4 bg-[#131926]/40 hover:bg-[#1E293B]/60 border border-slate-800/50 hover:border-slate-700/50 rounded-xl hover:shadow-[0_4px_15px_rgba(0,0,0,0.3)] transition-all duration-300 group/item relative overflow-hidden"
+                      >
+                        {/* Internal hover ambient glow */}
+                        <div className={`absolute -right-10 -bottom-10 w-20 h-20 ${design.glow} blur-2xl rounded-full opacity-0 group-hover/item:opacity-100 transition-opacity duration-500 pointer-events-none`} />
+                        
+                        {/* Left: Icon, Category Name, and Type Badge */}
+                        <div className="flex items-center gap-3 min-w-[150px] sm:min-w-[200px]">
+                          <div className={`p-2 rounded-lg border transition-transform duration-300 group-hover/item:scale-110 ${design.colorClass}`}>
+                            {design.icon}
                           </div>
-                          <div className="text-green-600 dark:text-green-400 font-bold">
-                            {formatCurrency(amounts.income)}
+                          <div className="flex flex-col gap-1">
+                            <span className="font-extrabold text-slate-200 text-xs sm:text-sm">
+                              {translateCategory(category)}
+                            </span>
+                            <span className={`inline-block px-2 py-0.5 rounded-full text-[9px] font-black uppercase border tracking-wider w-fit ${typeColorClass}`}>
+                              {typeLabel}
+                            </span>
                           </div>
                         </div>
-                        <div className="text-right">
-                          <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">
-                            Chi
+                        
+                        {/* Center: Share Track (hidden on mobile) */}
+                        <div className="hidden md:flex flex-col flex-1 max-w-xs lg:max-w-md mx-8 gap-1.5">
+                          <div className="flex justify-between text-[9px] font-black uppercase text-slate-400 tracking-wider">
+                            <span>Tỉ lệ trong tổng {isIncome ? "thu" : "chi"}</span>
+                            <span className="font-mono text-slate-300">{percentage.toFixed(1)}%</span>
                           </div>
-                          <div className="text-red-600 dark:text-red-400 font-bold">
-                            {formatCurrency(amounts.expense)}
+                          <div className="h-2 bg-slate-900/60 rounded-full overflow-hidden border border-slate-800/40 p-[2px]">
+                            <div 
+                              className={`h-full rounded-full transition-all duration-500 ease-out ${barColorClass}`}
+                              style={{ width: `${percentage}%` }}
+                            />
+                          </div>
+                        </div>
+                        
+                        {/* Right: Clean Cash Amount */}
+                        <div className="text-right">
+                          <div className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-1">
+                            Số tiền thực tế
+                          </div>
+                          <div className={`font-black font-mono text-sm sm:text-base ${amountColorClass}`}>
+                            {amountSign}{formatCurrency(amount)}
                           </div>
                         </div>
                       </div>
-                    </div>
-                  )
+                    );
+                  }
                 )}
+                
+                {/* Net Summary Footer */}
+                <div className="mt-4 pt-4 border-t border-slate-800/60 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2 rounded-lg border ${
+                      cashflowReport.netCashFlow >= 0
+                        ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                        : "bg-rose-500/10 text-rose-400 border-rose-500/20"
+                    }`}>
+                      <DollarSign className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <div className="text-[10px] font-black uppercase tracking-wider text-slate-400">Dòng tiền ròng (Thu − Chi)</div>
+                      <div className="text-[9px] text-slate-600 mt-0.5">Tổng thu thực tế trừ tổng chi thực tế</div>
+                    </div>
+                  </div>
+                  <div className={`font-black font-mono text-base ${
+                    cashflowReport.netCashFlow >= 0
+                      ? "text-emerald-400 drop-shadow-[0_0_10px_rgba(16,185,129,0.2)]"
+                      : "text-rose-400 drop-shadow-[0_0_10px_rgba(244,63,94,0.2)]"
+                  }`}>
+                    {cashflowReport.netCashFlow >= 0 ? "+" : ""}{formatCurrency(cashflowReport.netCashFlow)}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -1638,125 +1873,112 @@ const ReportsManager: React.FC = () => {
             )}
             {/* Thống kê cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg p-6 border border-blue-200 dark:border-blue-800">
-                <div className="text-sm font-medium text-blue-700 dark:text-blue-400 mb-2">
-                  <span className="inline-flex items-center gap-1">
-                    <Boxes className="w-4 h-4" /> Tổng giá trị tồn kho
+              {/* Card 1: Tổng giá trị tồn */}
+              <div className="bg-gradient-to-b from-[#1E293B]/40 to-[#0F172A]/60 backdrop-blur-xl border border-slate-800/80 hover:border-slate-700/80 shadow-[0_8px_30px_rgba(0,0,0,0.2)] hover:shadow-[0_15px_45px_rgba(0,0,0,0.4)] transition-all duration-300 rounded-2xl p-5 relative overflow-hidden group">
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-[11px] font-black uppercase tracking-wider text-slate-400">
+                    Tổng giá trị tồn kho
                   </span>
+                  <div className="p-2.5 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20 shadow-[0_0_15px_rgba(59,130,246,0.15)] group-hover:scale-110 transition-transform duration-300">
+                    <Boxes className="w-5 h-5" />
+                  </div>
                 </div>
-                <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">
+                <div className="text-2xl font-black text-blue-400 leading-none font-mono tracking-tight group-hover:text-blue-400 transition-colors">
                   {formatCurrency(inventoryReport.totalValue).replace("₫", "")}
                 </div>
-                <div className="text-xs text-blue-600 dark:text-blue-400 mt-1">
-                  đ
+                <div className="text-[10px] text-slate-400 mt-3 leading-relaxed border-t border-slate-850 pt-2.5">
+                  Tính theo giá bán lẻ hiện hành <br/>
+                  (Giá trị hàng hóa sẵn có tại kho chi nhánh)
                 </div>
               </div>
 
-              <div className="bg-gradient-to-br from-purple-50 to-fuchsia-50 dark:from-purple-900/20 dark:to-fuchsia-900/20 rounded-lg p-6 border border-purple-200 dark:border-purple-800">
-                <div className="text-sm font-medium text-purple-700 dark:text-purple-400 mb-2">
-                  <span className="inline-flex items-center gap-1">
-                    <Tag className="w-4 h-4" /> Tổng sản phẩm
+              {/* Card 2: Tổng sản phẩm */}
+              <div className="bg-gradient-to-b from-[#1E293B]/40 to-[#0F172A]/60 backdrop-blur-xl border border-slate-800/80 hover:border-slate-700/80 shadow-[0_8px_30px_rgba(0,0,0,0.2)] hover:shadow-[0_15px_45px_rgba(0,0,0,0.4)] transition-all duration-300 rounded-2xl p-5 relative overflow-hidden group">
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-[11px] font-black uppercase tracking-wider text-slate-400">
+                    Tổng danh mục sản phẩm
                   </span>
+                  <div className="p-2.5 rounded-xl bg-purple-500/10 text-purple-400 border border-purple-500/20 shadow-[0_0_15px_rgba(168,85,247,0.15)] group-hover:scale-110 transition-transform duration-300">
+                    <Tag className="w-5 h-5" />
+                  </div>
                 </div>
-                <div className="text-3xl font-bold text-purple-600 dark:text-purple-400">
+                <div className="text-2xl font-black text-purple-400 leading-none font-mono tracking-tight group-hover:text-purple-400 transition-colors">
                   {inventoryReport.parts.length}
                 </div>
-                <div className="text-xs text-purple-600 dark:text-purple-400 mt-1">
-                  sản phẩm
+                <div className="text-[10px] text-slate-400 mt-3 leading-relaxed border-t border-slate-855 pt-2.5">
+                  Số lượng mã sản phẩm khác nhau <br/>
+                  đang có hồ sơ lưu trữ và kiểm soát kho
                 </div>
               </div>
 
-              <div className="bg-gradient-to-br from-red-50 to-rose-50 dark:from-red-900/20 dark:to-rose-900/20 rounded-lg p-6 border border-red-200 dark:border-red-800">
-                <div className="text-sm font-medium text-red-700 dark:text-red-400 mb-2">
-                  <span className="inline-flex items-center gap-1">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      className="w-4 h-4 text-amber-500"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M12 9v4m0 4h.01"
-                      />
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"
-                      />
-                    </svg>
-                    Sản phẩm sắp hết
+              {/* Card 3: Sản phẩm sắp hết */}
+              <div className="bg-gradient-to-b from-[#1E293B]/40 to-[#0F172A]/60 backdrop-blur-xl border border-slate-800/80 hover:border-slate-700/80 shadow-[0_8px_30px_rgba(0,0,0,0.2)] hover:shadow-[0_15px_45px_rgba(0,0,0,0.4)] transition-all duration-300 rounded-2xl p-5 relative overflow-hidden group">
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-[11px] font-black uppercase tracking-wider text-slate-400">
+                    Sản phẩm sắp hết hàng
                   </span>
+                  <div className="p-2.5 rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/20 shadow-[0_0_15px_rgba(244,63,94,0.15)] group-hover:scale-110 transition-transform duration-300">
+                    <AlertTriangle className="w-5 h-5" />
+                  </div>
                 </div>
-                <div className="text-3xl font-bold text-red-600 dark:text-red-400">
+                <div className="text-2xl font-black text-rose-500 leading-none font-mono tracking-tight drop-shadow-[0_0_10px_rgba(244,63,94,0.15)]">
                   {inventoryReport.lowStockCount}
                 </div>
-                <div className="text-xs text-red-600 dark:text-red-400 mt-1">
-                  sản phẩm
+                <div className="text-[10px] text-slate-400 mt-3 leading-relaxed border-t border-slate-850 pt-2.5">
+                  Số lượng mã hàng sắp hết hàng <br/>
+                  (Có tồn kho thực tế dưới 10 cái)
                 </div>
               </div>
             </div>
 
             {inventoryReport.lowStockCount > 0 && (
-              <div>
-                <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
-                  <span className="inline-flex items-center gap-1">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      className="w-4 h-4 text-amber-500"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M12 9v4m0 4h.01"
-                      />
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"
-                      />
-                    </svg>
-                    Cảnh báo hàng sắp hết
-                  </span>
-                </h3>
+              <div className="bg-[#0D121F]/60 backdrop-blur-md border border-slate-800/80 rounded-2xl overflow-hidden shadow-2xl mt-6">
+                {/* Header */}
+                <div className="px-5 py-4 border-b border-slate-800/80 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/20 shadow-[0_0_15px_rgba(244,63,94,0.2)] animate-pulse">
+                      <AlertTriangle className="w-4 h-4" />
+                    </div>
+                    <h3 className="text-sm font-black text-slate-200 tracking-wide uppercase">
+                      Cảnh báo hàng sắp hết
+                    </h3>
+                    <span className="px-2.5 py-0.5 bg-rose-500/20 text-rose-400 text-[10px] font-black uppercase rounded-full border border-rose-500/30">
+                      {inventoryReport.lowStockCount} sản phẩm
+                    </span>
+                  </div>
+                </div>
+
                 <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead className="bg-slate-50 dark:bg-slate-700">
-                      <tr>
-                        <th className="px-4 py-2 text-left text-sm font-medium text-slate-700 dark:text-slate-300">
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="border-b border-slate-700/70 bg-slate-800/40">
+                        <th className="px-4 py-3 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                           Sản phẩm
                         </th>
-                        <th className="px-4 py-2 text-right text-sm font-medium text-slate-700 dark:text-slate-300">
+                        <th className="px-4 py-3 text-right text-[10px] font-bold text-slate-400 uppercase tracking-wider w-32">
                           Tồn kho
                         </th>
-                        <th className="px-4 py-2 text-right text-sm font-medium text-slate-700 dark:text-slate-300">
-                          Đơn giá
+                        <th className="px-4 py-3 text-right text-[10px] font-bold text-slate-400 uppercase tracking-wider w-40">
+                          Đơn giá bán lẻ
                         </th>
-                        <th className="px-4 py-2 text-right text-sm font-medium text-slate-700 dark:text-slate-300">
-                          Giá trị
+                        <th className="px-4 py-3 text-right text-[10px] font-bold text-slate-400 uppercase tracking-wider w-44">
+                          Tổng giá trị tồn
                         </th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
+                    <tbody className="divide-y divide-slate-800/60">
                       {inventoryReport.lowStockItems.map((part) => (
-                        <tr key={part.id}>
-                          <td className="px-4 py-2 text-sm text-slate-900 dark:text-white">
+                        <tr key={part.id} className="hover:bg-slate-800/20 transition-colors">
+                          <td className="px-4 py-3 text-slate-300 font-extrabold">
                             {part.name}
                           </td>
-                          <td className="px-4 py-2 text-sm text-right text-red-600 dark:text-red-400 font-medium">
+                          <td className="px-4 py-3 text-right text-rose-400 font-black font-mono">
                             {part.stock}
                           </td>
-                          <td className="px-4 py-2 text-sm text-right text-slate-900 dark:text-white">
+                          <td className="px-4 py-3 text-right text-slate-400 font-mono font-semibold">
                             {formatCurrency(part.price)}
                           </td>
-                          <td className="px-4 py-2 text-sm text-right font-medium text-slate-900 dark:text-white">
+                          <td className="px-4 py-3 text-right font-black text-slate-300 font-mono">
                             {formatCurrency(part.value)}
                           </td>
                         </tr>
@@ -1766,6 +1988,85 @@ const ReportsManager: React.FC = () => {
                 </div>
               </div>
             )}
+
+            {/* Danh sách toàn bộ tồn kho */}
+            <div className="bg-[#0D121F]/60 backdrop-blur-md border border-slate-800/80 rounded-2xl overflow-hidden shadow-2xl">
+              {/* Header */}
+              <div className="px-5 py-4 border-b border-slate-800/80 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20 shadow-[0_0_15px_rgba(59,130,246,0.15)]">
+                    <Boxes className="w-4 h-4" />
+                  </div>
+                  <h3 className="text-sm font-black text-slate-200 tracking-wide uppercase">
+                    Danh sách tồn kho
+                  </h3>
+                  <span className="px-2.5 py-0.5 bg-blue-500/20 text-blue-400 text-[10px] font-black uppercase rounded-full border border-blue-500/30">
+                    {inventoryReport.parts.length} sản phẩm
+                  </span>
+                </div>
+                <div className="text-[10px] text-slate-500 hidden sm:block italic">
+                  Đỏ: Sắp hết · Vàng: Ít hàng · Xanh: Đủ hàng
+                </div>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="border-b border-slate-700/70 bg-slate-800/40">
+                      <th className="px-4 py-3 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                        Tên sản phẩm
+                      </th>
+                      <th className="px-4 py-3 text-center text-[10px] font-bold text-slate-400 uppercase tracking-wider w-28">
+                        Tồn kho
+                      </th>
+                      <th className="px-4 py-3 text-right text-[10px] font-bold text-slate-400 uppercase tracking-wider w-40">
+                        Đơn giá bán lẻ
+                      </th>
+                      <th className="px-4 py-3 text-right text-[10px] font-bold text-slate-400 uppercase tracking-wider w-44">
+                        Tổng giá trị tồn
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800/60">
+                    {inventoryReport.parts
+                      .slice()
+                      .sort((a: any, b: any) => a.stock - b.stock)
+                      .map((part: any) => {
+                        const isLow = part.stock < 5;
+                        const isWarning = part.stock >= 5 && part.stock < 10;
+                        const stockColorClass = isLow
+                          ? "text-rose-400 font-black"
+                          : isWarning
+                          ? "text-amber-400 font-black"
+                          : "text-emerald-400 font-semibold";
+                        const dotColor = isLow
+                          ? "bg-rose-400 animate-pulse"
+                          : isWarning
+                          ? "bg-amber-400"
+                          : "bg-emerald-400/60";
+                        return (
+                          <tr key={part.id} className="hover:bg-slate-800/20 transition-colors">
+                            <td className="px-4 py-3">
+                              <div className="flex items-center gap-2.5">
+                                <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${dotColor}`} />
+                                <span className="text-slate-200 font-semibold">{part.name}</span>
+                              </div>
+                            </td>
+                            <td className={`px-4 py-3 text-center font-mono ${stockColorClass}`}>
+                              {part.stock}
+                            </td>
+                            <td className="px-4 py-3 text-right text-slate-400 font-mono">
+                              {formatCurrency(part.price)}
+                            </td>
+                            <td className="px-4 py-3 text-right font-bold text-slate-300 font-mono">
+                              {formatCurrency(part.value)}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
         )}
 
@@ -1773,112 +2074,144 @@ const ReportsManager: React.FC = () => {
           <div className="space-y-6">
             {/* Thống kê cards */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg p-6 border border-blue-200 dark:border-blue-800">
-                <div className="text-sm font-medium text-blue-700 dark:text-blue-400 mb-2">
-                  <span className="inline-flex items-center gap-1">
-                    <DollarSign className="w-4 h-4" /> Tổng lương
+              {/* Card 1: Tổng lương */}
+              <div className="bg-gradient-to-b from-[#1E293B]/40 to-[#0F172A]/60 backdrop-blur-xl border border-slate-800/80 hover:border-slate-700/80 shadow-[0_8px_30px_rgba(0,0,0,0.2)] hover:shadow-[0_15px_45px_rgba(0,0,0,0.4)] transition-all duration-300 rounded-2xl p-5 relative overflow-hidden group">
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-[11px] font-black uppercase tracking-wider text-slate-400">
+                    Tổng quỹ lương
                   </span>
+                  <div className="p-2.5 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20 shadow-[0_0_15px_rgba(59,130,246,0.15)] group-hover:scale-110 transition-transform duration-300">
+                    <DollarSign className="w-5 h-5" />
+                  </div>
                 </div>
-                <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">
+                <div className="text-2xl font-black text-blue-400 leading-none font-mono tracking-tight group-hover:text-blue-400 transition-colors">
                   {formatCurrency(payrollReport.totalSalary).replace("₫", "")}
                 </div>
-                <div className="text-xs text-blue-600 dark:text-blue-400 mt-1">
-                  đ
+                <div className="text-[10px] text-slate-400 mt-3 leading-relaxed border-t border-slate-850 pt-2.5">
+                  Tổng lương thực nhận của nhân viên <br/>
+                  (Bao gồm lương cứng + hoa hồng thưởng)
                 </div>
               </div>
 
-              <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-lg p-6 border border-green-200 dark:border-green-800">
-                <div className="text-sm font-medium text-green-700 dark:text-green-400 mb-2">
-                  <span className="inline-flex items-center gap-1">
-                    <Check className="w-4 h-4" /> Đã thanh toán
+              {/* Card 2: Đã thanh toán */}
+              <div className="bg-gradient-to-b from-[#1E293B]/40 to-[#0F172A]/60 backdrop-blur-xl border border-slate-800/80 hover:border-slate-700/80 shadow-[0_8px_30px_rgba(0,0,0,0.2)] hover:shadow-[0_15px_45px_rgba(0,0,0,0.4)] transition-all duration-300 rounded-2xl p-5 relative overflow-hidden group">
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-[11px] font-black uppercase tracking-wider text-slate-400">
+                    Đã thanh toán
                   </span>
+                  <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-[0_0_15px_rgba(16,185,129,0.15)] group-hover:scale-110 transition-transform duration-300">
+                    <Check className="w-5 h-5" />
+                  </div>
                 </div>
-                <div className="text-3xl font-bold text-green-600 dark:text-green-400">
+                <div className="text-2xl font-black text-emerald-400 leading-none font-mono tracking-tight drop-shadow-[0_0_10px_rgba(16,185,129,0.15)]">
                   {formatCurrency(payrollReport.paidSalary).replace("₫", "")}
                 </div>
-                <div className="text-xs text-green-600 dark:text-green-400 mt-1">
-                  đ
+                <div className="text-[10px] text-slate-400 mt-3 leading-relaxed border-t border-slate-850 pt-2.5">
+                  Khoản quỹ lương đã được chi trả <br/>
+                  hoàn tất và ghi nhận vào sổ quỹ
                 </div>
               </div>
 
-              <div className="bg-gradient-to-br from-red-50 to-rose-50 dark:from-red-900/20 dark:to-rose-900/20 rounded-lg p-6 border border-red-200 dark:border-red-800">
-                <div className="text-sm font-medium text-red-700 dark:text-red-400 mb-2">
-                  ⏳ Chưa thanh toán
+              {/* Card 3: Chưa thanh toán */}
+              <div className="bg-gradient-to-b from-[#1E293B]/40 to-[#0F172A]/60 backdrop-blur-xl border border-slate-800/80 hover:border-slate-700/80 shadow-[0_8px_30px_rgba(0,0,0,0.2)] hover:shadow-[0_15px_45px_rgba(0,0,0,0.4)] transition-all duration-300 rounded-2xl p-5 relative overflow-hidden group">
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-[11px] font-black uppercase tracking-wider text-slate-400">
+                    Lương còn nợ
+                  </span>
+                  <div className="p-2.5 rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/20 shadow-[0_0_15px_rgba(244,63,94,0.15)] group-hover:scale-110 transition-transform duration-300">
+                    <Clock className="w-5 h-5" />
+                  </div>
                 </div>
-                <div className="text-3xl font-bold text-red-600 dark:text-red-400">
+                <div className="text-2xl font-black text-rose-400 leading-none font-mono tracking-tight drop-shadow-[0_0_10px_rgba(244,63,94,0.15)]">
                   {formatCurrency(payrollReport.unpaidSalary).replace("₫", "")}
                 </div>
-                <div className="text-xs text-red-600 dark:text-red-400 mt-1">
-                  đ
+                <div className="text-[10px] text-slate-400 mt-3 leading-relaxed border-t border-slate-850 pt-2.5">
+                  Khoản quỹ lương chưa được chi trả <br/>
+                  (Tính lũy kế đến kỳ hiện tại)
                 </div>
               </div>
 
-              <div className="bg-gradient-to-br from-purple-50 to-fuchsia-50 dark:from-purple-900/20 dark:to-fuchsia-900/20 rounded-lg p-6 border border-purple-200 dark:border-purple-800">
-                <div className="text-sm font-medium text-purple-700 dark:text-purple-400 mb-2">
-                  <span className="inline-flex items-center gap-1">
-                    <BriefcaseBusiness className="w-4 h-4" /> Số nhân viên
+              {/* Card 4: Số nhân viên */}
+              <div className="bg-gradient-to-b from-[#1E293B]/40 to-[#0F172A]/60 backdrop-blur-xl border border-slate-800/80 hover:border-slate-700/80 shadow-[0_8px_30px_rgba(0,0,0,0.2)] hover:shadow-[0_15px_45px_rgba(0,0,0,0.4)] transition-all duration-300 rounded-2xl p-5 relative overflow-hidden group">
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-[11px] font-black uppercase tracking-wider text-slate-400">
+                    Tổng số nhân viên
                   </span>
+                  <div className="p-2.5 rounded-xl bg-purple-500/10 text-purple-400 border border-purple-500/20 shadow-[0_0_15px_rgba(168,85,247,0.15)] group-hover:scale-110 transition-transform duration-300">
+                    <BriefcaseBusiness className="w-5 h-5" />
+                  </div>
                 </div>
-                <div className="text-3xl font-bold text-purple-600 dark:text-purple-400">
+                <div className="text-2xl font-black text-purple-400 leading-none font-mono tracking-tight drop-shadow-[0_0_10px_rgba(168,85,247,0.15)]">
                   {payrollReport.employeeCount}
                 </div>
-                <div className="text-xs text-purple-600 dark:text-purple-400 mt-1">
-                  nhân viên
+                <div className="text-[10px] text-slate-400 mt-3 leading-relaxed border-t border-slate-855 pt-2.5">
+                  Số nhân sự phát sinh ghi nhận công <br/>
+                  và lương trong khoảng thời gian lọc
                 </div>
               </div>
             </div>
 
             {/* Bảng chi tiết lương */}
-            <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
-              <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-                <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
-                  Chi tiết lương
-                </h3>
+            <div className="bg-[#0D121F]/60 backdrop-blur-md border border-slate-800/80 rounded-2xl overflow-hidden shadow-2xl">
+              <div className="px-5 py-4 border-b border-slate-800/80 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-xl bg-violet-500/10 text-violet-400 border border-violet-500/20 shadow-[0_0_15px_rgba(139,92,246,0.2)]">
+                    <BriefcaseBusiness className="w-4 h-4" />
+                  </div>
+                  <h3 className="text-sm font-black text-slate-200 tracking-wide uppercase">
+                    Chi tiết lương nhân viên
+                  </h3>
+                </div>
               </div>
               <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-slate-50 dark:bg-slate-700/50">
-                    <tr>
-                      <th className="px-4 py-2 text-left text-sm font-medium text-slate-700 dark:text-slate-300">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="border-b border-slate-700/70 bg-slate-800/40">
+                      <th className="px-4 py-3 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                         Tháng
                       </th>
-                      <th className="px-4 py-2 text-left text-sm font-medium text-slate-700 dark:text-slate-300">
+                      <th className="px-4 py-3 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                         Nhân viên
                       </th>
-                      <th className="px-4 py-2 text-right text-sm font-medium text-slate-700 dark:text-slate-300">
+                      <th className="px-4 py-3 text-right text-[10px] font-bold text-slate-400 uppercase tracking-wider w-44">
                         Lương thực nhận
                       </th>
-                      <th className="px-4 py-2 text-center text-sm font-medium text-slate-700 dark:text-slate-300">
+                      <th className="px-4 py-3 text-center text-[10px] font-bold text-slate-400 uppercase tracking-wider w-36">
                         Trạng thái
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
+                  <tbody className="divide-y divide-slate-800/60">
                     {payrollReport.records.map((record) => {
                       const employee = employees.find(
                         (e) => e.id === record.employeeId
                       );
+                      const isPaid = record.paymentStatus === "paid";
                       return (
-                        <tr key={record.id}>
-                          <td className="px-4 py-2 text-sm text-slate-900 dark:text-white">
+                        <tr key={record.id} className="hover:bg-slate-800/20 transition-colors">
+                          <td className="px-4 py-3 text-slate-300 font-semibold">
                             {record.month}
                           </td>
-                          <td className="px-4 py-2 text-sm text-slate-900 dark:text-white">
+                          <td className="px-4 py-3 text-slate-200 font-extrabold">
                             {record.employeeName || employee?.name || "N/A"}
                           </td>
-                          <td className="px-4 py-2 text-sm text-right font-medium text-slate-900 dark:text-white">
+                          <td className="px-4 py-3 text-right font-black text-slate-300 font-mono text-sm">
                             {formatCurrency(record.netSalary)}
                           </td>
-                          <td className="px-4 py-2 text-center">
+                          <td className="px-4 py-3 text-center">
                             <span
-                              className={`px-2 py-1 rounded-full text-xs font-medium ${record.paymentStatus === "paid"
-                                ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
-                                : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400"
-                                }`}
+                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase border tracking-wider ${
+                                isPaid
+                                  ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20 shadow-[0_0_12px_rgba(16,185,129,0.15)]"
+                                  : "bg-amber-500/10 text-amber-400 border-amber-500/20 shadow-[0_0_12px_rgba(245,158,11,0.15)]"
+                              }`}
                             >
-                              {record.paymentStatus === "paid"
-                                ? "Đã trả"
-                                : "Chưa trả"}
+                              <span
+                                className={`inline-block w-1.5 h-1.5 rounded-full mr-1.5 animate-pulse ${
+                                  isPaid ? "bg-emerald-400" : "bg-amber-400"
+                                }`}
+                              />
+                              {isPaid ? "Đã trả" : "Chưa trả"}
                             </span>
                           </td>
                         </tr>
@@ -1895,39 +2228,60 @@ const ReportsManager: React.FC = () => {
           <div className="space-y-6">
             {/* Thống kê tổng quan - 3 cards ngang */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-lg p-6 border border-green-200 dark:border-green-800">
-                <div className="text-sm font-medium text-green-700 dark:text-green-400 mb-2">
-                  Nợ khách hàng
+              {/* Card 1: Nợ khách hàng */}
+              <div className="bg-gradient-to-b from-[#1E293B]/40 to-[#0F172A]/60 backdrop-blur-xl border border-slate-800/80 hover:border-slate-700/80 shadow-[0_8px_30px_rgba(0,0,0,0.2)] hover:shadow-[0_15px_45px_rgba(0,0,0,0.4)] transition-all duration-300 rounded-2xl p-5 relative overflow-hidden group">
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-[11px] font-black uppercase tracking-wider text-slate-400">
+                    Phải thu khách hàng
+                  </span>
+                  <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-[0_0_15px_rgba(16,185,129,0.15)] group-hover:scale-110 transition-transform duration-300">
+                    <Users className="w-5 h-5" />
+                  </div>
                 </div>
-                <div className="text-3xl font-bold text-green-600 dark:text-green-400">
+                <div className="text-2xl font-black text-emerald-400 leading-none font-mono tracking-tight drop-shadow-[0_0_10px_rgba(16,185,129,0.15)]">
                   {formatCurrency(debtReport.totalCustomerDebt)}
                 </div>
-                <div className="text-xs text-green-600 dark:text-green-400 mt-1">
-                  {debtReport.customerDebts.length} khách hàng
+                <div className="text-[10px] text-slate-400 mt-3 leading-relaxed border-t border-slate-850 pt-2.5">
+                  Lũy kế nợ từ tất cả người mua hàng <br/>
+                  ({debtReport.customerDebts.length} khách hàng phát sinh công nợ)
                 </div>
               </div>
 
-              <div className="bg-gradient-to-br from-red-50 to-rose-50 dark:from-red-900/20 dark:to-rose-900/20 rounded-lg p-6 border border-red-200 dark:border-red-800">
-                <div className="text-sm font-medium text-red-700 dark:text-red-400 mb-2">
-                  Nợ nhà cung cấp
+              {/* Card 2: Nợ nhà cung cấp */}
+              <div className="bg-gradient-to-b from-[#1E293B]/40 to-[#0F172A]/60 backdrop-blur-xl border border-slate-800/80 hover:border-slate-700/80 shadow-[0_8px_30px_rgba(0,0,0,0.2)] hover:shadow-[0_15px_45px_rgba(0,0,0,0.4)] transition-all duration-300 rounded-2xl p-5 relative overflow-hidden group">
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-[11px] font-black uppercase tracking-wider text-slate-400">
+                    Phải trả nhà cung cấp
+                  </span>
+                  <div className="p-2.5 rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/20 shadow-[0_0_15px_rgba(244,63,94,0.15)] group-hover:scale-110 transition-transform duration-300">
+                    <Building className="w-5 h-5" />
+                  </div>
                 </div>
-                <div className="text-3xl font-bold text-red-600 dark:text-red-400">
+                <div className="text-2xl font-black text-rose-400 leading-none font-mono tracking-tight drop-shadow-[0_0_10px_rgba(244,63,94,0.15)]">
                   {formatCurrency(debtReport.totalSupplierDebt)}
                 </div>
-                <div className="text-xs text-red-600 dark:text-red-400 mt-1">
-                  {debtReport.supplierDebts.length} nhà cung cấp
+                <div className="text-[10px] text-slate-400 mt-3 leading-relaxed border-t border-slate-850 pt-2.5">
+                  Lũy kế nợ nhập kho đối với đối tác <br/>
+                  ({debtReport.supplierDebts.length} nhà cung cấp phát sinh công nợ)
                 </div>
               </div>
 
-              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg p-6 border border-blue-200 dark:border-blue-800">
-                <div className="text-sm font-medium text-blue-700 dark:text-blue-400 mb-2">
-                  Công nợ ròng
+              {/* Card 3: Công nợ ròng */}
+              <div className="bg-gradient-to-b from-[#1E293B]/40 to-[#0F172A]/60 backdrop-blur-xl border border-slate-800/80 hover:border-slate-700/80 shadow-[0_8px_30px_rgba(0,0,0,0.2)] hover:shadow-[0_15px_45px_rgba(0,0,0,0.4)] transition-all duration-300 rounded-2xl p-5 relative overflow-hidden group">
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-[11px] font-black uppercase tracking-wider text-slate-400">
+                    Dư nợ ròng
+                  </span>
+                  <div className="p-2.5 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20 shadow-[0_0_15px_rgba(59,130,246,0.15)] group-hover:scale-110 transition-transform duration-300">
+                    <DollarSign className="w-5 h-5" />
+                  </div>
                 </div>
-                <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">
+                <div className="text-2xl font-black text-blue-400 leading-none font-mono tracking-tight drop-shadow-[0_0_10px_rgba(59,130,246,0.15)]">
                   {formatCurrency(debtReport.netDebt)}
                 </div>
-                <div className="text-xs text-blue-600 dark:text-blue-400 mt-1">
-                  Khách nợ - Nợ NCC
+                <div className="text-[10px] text-slate-400 mt-3 leading-relaxed border-t border-slate-850 pt-2.5">
+                  Chênh lệch Phải thu - Phải trả <br/>
+                  (Số tiền thực thu về sau khi cấn trừ nợ NCC)
                 </div>
               </div>
             </div>
@@ -1935,29 +2289,40 @@ const ReportsManager: React.FC = () => {
             {/* Hai cột danh sách công nợ */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Công nợ khách hàng */}
-              <div className="bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 rounded-lg p-6 border border-slate-200 dark:border-slate-700">
-                <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-                  <Users className="w-4 h-4 text-green-600 dark:text-green-400" />
-                  Công nợ khách hàng
-                </h3>
-                <div className="space-y-2 max-h-96 overflow-y-auto">
+              <div className="bg-[#0D121F]/60 backdrop-blur-md border border-slate-800/80 rounded-2xl p-5 shadow-2xl space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-[0_0_15px_rgba(16,185,129,0.15)]">
+                    <Users className="w-4 h-4" />
+                  </div>
+                  <h3 className="text-sm font-black text-slate-200 tracking-wide uppercase">
+                    Phải thu khách hàng
+                  </h3>
+                </div>
+                <div className="space-y-2 max-h-96 overflow-y-auto pr-1">
                   {debtReport.customerDebts.length === 0 ? (
-                    <div className="text-center py-12">
-                      <div className="text-4xl mb-3">✓</div>
-                      <p className="text-slate-500 dark:text-slate-400">
-                        Không có công nợ
+                    <div className="text-center py-10">
+                      <div className="inline-flex p-3 rounded-2xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-[0_0_15px_rgba(16,185,129,0.15)] mb-3">
+                        <CheckCircle2 className="w-6 h-6" />
+                      </div>
+                      <p className="text-xs font-black uppercase text-slate-400 tracking-wider">
+                        Không phát sinh công nợ
                       </p>
                     </div>
                   ) : (
                     debtReport.customerDebts.map((customer, idx) => (
                       <div
                         key={idx}
-                        className="flex items-center justify-between p-3 bg-white dark:bg-slate-700 rounded-lg hover:shadow-md transition-shadow"
+                        className="flex items-center justify-between p-3 bg-slate-900/40 border border-slate-800/40 hover:border-slate-700/40 hover:bg-slate-800/20 rounded-xl transition-all duration-300 group"
                       >
-                        <span className="font-medium text-slate-900 dark:text-white">
-                          {customer.name}
-                        </span>
-                        <span className="text-green-600 dark:text-green-400 font-bold">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-xl bg-slate-800/80 border border-slate-700/50 flex items-center justify-center text-xs font-black text-slate-300">
+                            {(customer.name || "K").charAt(0).toUpperCase()}
+                          </div>
+                          <span className="font-extrabold text-slate-200 text-xs">
+                            {customer.name}
+                          </span>
+                        </div>
+                        <span className="text-emerald-400 font-mono font-black text-xs">
                           {formatCurrency(customer.debt)}
                         </span>
                       </div>
@@ -1967,29 +2332,40 @@ const ReportsManager: React.FC = () => {
               </div>
 
               {/* Công nợ nhà cung cấp */}
-              <div className="bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 rounded-lg p-6 border border-slate-200 dark:border-slate-700">
-                <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-                  <span className="text-red-600 dark:text-red-400">🏢</span>
-                  Công nợ nhà cung cấp
-                </h3>
-                <div className="space-y-2 max-h-96 overflow-y-auto">
+              <div className="bg-[#0D121F]/60 backdrop-blur-md border border-slate-800/80 rounded-2xl p-5 shadow-2xl space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/20 shadow-[0_0_15px_rgba(244,63,94,0.15)]">
+                    <Building className="w-4 h-4" />
+                  </div>
+                  <h3 className="text-sm font-black text-slate-200 tracking-wide uppercase">
+                    Phải trả nhà cung cấp
+                  </h3>
+                </div>
+                <div className="space-y-2 max-h-96 overflow-y-auto pr-1">
                   {debtReport.supplierDebts.length === 0 ? (
-                    <div className="text-center py-12">
-                      <div className="text-4xl mb-3">✓</div>
-                      <p className="text-slate-500 dark:text-slate-400">
-                        Không có công nợ
+                    <div className="text-center py-10">
+                      <div className="inline-flex p-3 rounded-2xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-[0_0_15px_rgba(16,185,129,0.15)] mb-3">
+                        <CheckCircle2 className="w-6 h-6" />
+                      </div>
+                      <p className="text-xs font-black uppercase text-slate-400 tracking-wider">
+                        Không phát sinh công nợ
                       </p>
                     </div>
                   ) : (
                     debtReport.supplierDebts.map((supplier, idx) => (
                       <div
                         key={idx}
-                        className="flex items-center justify-between p-3 bg-white dark:bg-slate-700 rounded-lg hover:shadow-md transition-shadow"
+                        className="flex items-center justify-between p-3 bg-slate-900/40 border border-slate-800/40 hover:border-slate-700/40 hover:bg-slate-800/20 rounded-xl transition-all duration-300 group"
                       >
-                        <span className="font-medium text-slate-900 dark:text-white">
-                          {supplier.name}
-                        </span>
-                        <span className="text-red-600 dark:text-red-400 font-bold">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-xl bg-slate-800/80 border border-slate-700/50 flex items-center justify-center text-xs font-black text-slate-300">
+                            {(supplier.name || "N").charAt(0).toUpperCase()}
+                          </div>
+                          <span className="font-extrabold text-slate-200 text-xs">
+                            {supplier.name}
+                          </span>
+                        </div>
+                        <span className="text-rose-400 font-mono font-black text-xs">
                           {formatCurrency(supplier.debt)}
                         </span>
                       </div>

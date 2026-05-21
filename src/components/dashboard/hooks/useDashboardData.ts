@@ -165,6 +165,11 @@ export const useDashboardData = (
         );
         const customerCount = new Set([...salesCustomers, ...woCustomers].filter(Boolean)).size;
 
+        const salesRevenue = summary.salesRevenue;
+        const salesProfit = summary.salesGrossProfit;
+        const woRevenue = summary.woRevenue;
+        const woProfit = summary.woGrossProfit;
+
         return {
             revenue,
             profit,
@@ -173,6 +178,10 @@ export const useDashboardData = (
             expense,
             customerCount,
             orderCount: summary.orderCount,
+            salesRevenue,
+            salesProfit,
+            woRevenue,
+            woProfit,
         };
     }, [sales, workOrders, parts, cashTransactions, reportFilter, currentBranchId]); // Added getPartCost to dependencyoanh thu 7 ngày gần nhất (bao gồm cả Sales và Work Orders)
     const last7DaysRevenue = useMemo(() => {
@@ -686,6 +695,23 @@ export const useDashboardData = (
         return warnings;
     }, [parts, loans, cashBalance, bankBalance, currentBranchId]);
 
+    const unpaidWorkOrdersCount = useMemo(() => {
+        return (workOrders || []).filter((wo: any) => {
+            const statusRaw = wo?.paymentStatus ?? wo?.paymentstatus;
+            const status = String(statusRaw || "").toLowerCase();
+            const isPaid = status === "paid";
+            const woStatus = String(wo?.status || "").toLowerCase();
+            const isCancelled = woStatus === "đã hủy" || woStatus === "cancelled";
+            return !isPaid && !isCancelled;
+        }).length;
+    }, [workOrders]);
+
+    const lowStockCount = useMemo(() => {
+        return (parts || []).filter(
+            (p: any) => (p.stock?.[currentBranchId] || 0) < 10
+        ).length;
+    }, [parts, currentBranchId]);
+
     return {
         todayStats,
         filteredStats,
@@ -697,5 +723,7 @@ export const useDashboardData = (
         cashBalance,
         bankBalance,
         debugData, // EXPORT DEBUG DATA HERE
+        unpaidWorkOrdersCount,
+        lowStockCount,
     };
 };

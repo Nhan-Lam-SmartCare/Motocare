@@ -26,8 +26,13 @@ import {
   Clock,
   XCircle,
   HandCoins,
+  Shield,
+  ChevronRight,
+  ArrowDownToLine,
+  Pencil,
+  UserPlus,
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   LineChart,
   Line,
@@ -45,6 +50,7 @@ import {
 import { useAuth } from "../../contexts/AuthContext";
 import { formatCurrency } from "../../utils/format";
 import { loadDemoData, clearDemoData } from "../../utils/demoData";
+import { showToast } from "../../utils/toast";
 
 // Components
 import StatCard from "./components/StatCard";
@@ -57,7 +63,8 @@ import TetConfetti from "../common/TetConfetti";
 import { useDashboardData } from "./hooks/useDashboardData";
 
 const Dashboard: React.FC = () => {
-  const { profile } = useAuth();
+  const { profile, signOut } = useAuth();
+  const navigate = useNavigate();
   const [reportFilter, setReportFilter] = useState<string>("month");
   const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
   const [selectedQuarter, setSelectedQuarter] = useState<number>(Math.ceil((new Date().getMonth() + 1) / 3));
@@ -79,6 +86,8 @@ const Dashboard: React.FC = () => {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     debugData,
+    unpaidWorkOrdersCount,
+    lowStockCount,
   } = useDashboardData(reportFilter);
 
   // ... (existing code)
@@ -109,6 +118,18 @@ const Dashboard: React.FC = () => {
     }
   }, []);
 
+  const handleLogout = async () => {
+    if (window.confirm("Bạn có chắc chắn muốn đăng xuất?")) {
+      try {
+        await signOut();
+        showToast.success("Đã đăng xuất");
+        navigate("/login");
+      } catch (err) {
+        showToast.error("Lỗi khi đăng xuất");
+      }
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-96">
@@ -121,296 +142,245 @@ const Dashboard: React.FC = () => {
     <div className="space-y-3 md:space-y-4">
       {/* <TetConfetti duration={6000} count={40} /> */}
       {/* <TetBanner /> */}
-      {/* Header - Lời chào người dùng - Chỉ hiện trên mobile */}
-      <div className="md:hidden bg-gradient-to-r from-red-600 to-yellow-500 rounded-2xl p-4 md:p-6 text-white shadow-lg">
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
-            <h1 className="text-lg md:text-xl font-semibold mb-1">
-              Xin chào,{" "}
-              {profile?.name ||
-                profile?.full_name ||
-                profile?.email?.split("@")[0] ||
-                "Người dùng"}{" "}
-              👋
-            </h1>
-            <p className="text-sm md:text-base text-blue-100 dark:text-violet-100">
-              {new Date().toLocaleDateString("vi-VN", {
-                weekday: "long",
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-              })}
-            </p>
+      <div className="relative md:hidden bg-[#0B0F19] min-h-screen -mx-4 -mt-4 px-6 py-5 pb-24 space-y-6 font-sans text-slate-200 overflow-hidden">
+        {/* Ambient Glowing Background Backdrops */}
+        <div className="absolute top-0 left-1/4 w-72 h-72 bg-emerald-500/10 rounded-full blur-[100px] pointer-events-none" />
+        <div className="absolute top-[35%] right-1/4 w-72 h-72 bg-blue-500/10 rounded-full blur-[100px] pointer-events-none" />
+        <div className="absolute bottom-[20%] left-10 w-56 h-56 bg-rose-500/5 rounded-full blur-[80px] pointer-events-none" />
 
-            {/* Mini stats trong header */}
-            <div className="mt-4 flex flex-wrap gap-2">
-              <button
-                onClick={() => setShowBalance(!showBalance)}
-                className="bg-white/20 backdrop-blur-sm rounded-lg px-2.5 py-1.5 flex items-center gap-1.5 hover:bg-white/30 transition-colors"
-              >
-                {showBalance ? (
-                  <EyeOff className="w-3.5 h-3.5" />
-                ) : (
-                  <Eye className="w-3.5 h-3.5" />
-                )}
-                <div className="text-left">
-                  <p className="text-[10px] opacity-80">Tiền mặt</p>
-                  <p className="text-xs font-semibold">
-                    {showBalance ? formatCurrency(cashBalance) : "••••••"}
-                  </p>
-                </div>
-              </button>
-              <button
-                onClick={() => setShowBalance(!showBalance)}
-                className="bg-white/20 backdrop-blur-sm rounded-lg px-2.5 py-1.5 flex items-center gap-1.5 hover:bg-white/30 transition-colors"
-              >
-                <Landmark className="w-3.5 h-3.5" />
-                <div className="text-left">
-                  <p className="text-[10px] opacity-80">Ngân hàng</p>
-                  <p className="text-xs font-semibold">
-                    {showBalance ? formatCurrency(bankBalance) : "••••••"}
-                  </p>
-                </div>
-              </button>
+        {/* Báo cáo (Tháng này) */}
+        <div className="relative z-10 space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-base font-bold text-white tracking-wide">Báo cáo</h2>
+            <span className="text-xs text-slate-400 font-medium bg-slate-800/40 px-2.5 py-0.5 rounded-full">Tháng này</span>
+          </div>
+          <div className="grid grid-cols-2 gap-3.5">
+            <div className="bg-gradient-to-br from-[#182030] to-[#111723] rounded-2xl p-4 border border-slate-800/80 flex flex-col space-y-1 shadow-[0_4px_20px_rgba(0,0,0,0.4)]">
+              <span className="text-xs text-slate-400 font-medium">Doanh thu</span>
+              <span className="text-xl font-extrabold text-blue-400 tracking-tight">
+                {formatCurrency(filteredStats.revenue)}
+              </span>
+            </div>
+            <div className="bg-gradient-to-br from-[#182030] to-[#111723] rounded-2xl p-4 border border-slate-800/80 flex flex-col space-y-1 shadow-[0_4px_20px_rgba(0,0,0,0.4)]">
+              <span className="text-xs text-slate-400 font-medium">Lợi nhuận</span>
+              <span className="text-xl font-extrabold text-[#34d399] tracking-tight">
+                {formatCurrency(filteredStats.profit)}
+              </span>
             </div>
           </div>
-
-          <Bell className="w-6 h-6 md:w-7 md:h-7 opacity-80 hover:opacity-100 cursor-pointer transition" />
         </div>
-      </div>
 
-      {/* Báo cáo - Dropdown với Doanh thu & Lợi nhuận - Chỉ hiện trên mobile */}
-      <div className="md:hidden bg-white dark:bg-slate-800 rounded-xl p-4 md:p-5 shadow-sm border border-slate-200 dark:border-slate-700">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <h2 className="text-base md:text-lg font-bold text-slate-900 dark:text-white">
-              Báo cáo
-            </h2>
-            <button
-              onClick={() => setShowRevenue(!showRevenue)}
-              className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors p-1"
-            >
-              {showRevenue ? (
-                <EyeOff className="w-4 h-4" />
-              ) : (
-                <Eye className="w-4 h-4" />
-              )}
-            </button>
+        {/* Hôm nay (Tổng nhanh) */}
+        <div className="relative z-10 space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-base font-bold text-white tracking-wide">Hôm nay</h2>
+            <span className="text-xs text-slate-400 font-medium bg-slate-800/40 px-2.5 py-0.5 rounded-full">Tổng nhanh</span>
           </div>
-          <select
-            value={reportFilter}
-            onChange={(e) => setReportFilter(e.target.value)}
-            className="text-sm bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-1.5 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          >
-            <optgroup label="Thời gian">
-              <option value="today">Hôm nay</option>
-              <option value="7days">7 ngày qua</option>
-              <option value="week">Tuần này</option>
-              <option value="month">Tháng này</option>
-              <option value="year">Năm nay</option>
-            </optgroup>
-            <optgroup label="Theo tháng">
-              <option value="month1">Tháng 1</option>
-              <option value="month2">Tháng 2</option>
-              <option value="month3">Tháng 3</option>
-              <option value="month4">Tháng 4</option>
-              <option value="month5">Tháng 5</option>
-              <option value="month6">Tháng 6</option>
-              <option value="month7">Tháng 7</option>
-              <option value="month8">Tháng 8</option>
-              <option value="month9">Tháng 9</option>
-              <option value="month10">Tháng 10</option>
-              <option value="month11">Tháng 11</option>
-              <option value="month12">Tháng 12</option>
-            </optgroup>
-            <optgroup label="Theo quý">
-              <option value="q1">Quý 1 (T1-T3)</option>
-              <option value="q2">Quý 2 (T4-T6)</option>
-              <option value="q3">Quý 3 (T7-T9)</option>
-              <option value="q4">Quý 4 (T10-T12)</option>
-            </optgroup>
-          </select>
+          <div className="grid grid-cols-3 gap-2.5">
+            <div className="bg-gradient-to-br from-[#182030] to-[#111723] rounded-2xl p-3 border border-slate-800/80 flex flex-col space-y-1 shadow-[0_4px_20px_rgba(0,0,0,0.4)]">
+              <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">Doanh thu</span>
+              <span className="text-sm font-bold text-blue-400 truncate">
+                {formatCurrency(todayStats.revenue)}
+              </span>
+            </div>
+            <div className="bg-gradient-to-br from-[#182030] to-[#111723] rounded-2xl p-3 border border-slate-800/80 flex flex-col space-y-1 shadow-[0_4px_20px_rgba(0,0,0,0.4)]">
+              <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">Lợi nhuận</span>
+              <span className="text-sm font-bold text-[#34d399] truncate">
+                {formatCurrency(todayStats.profit)}
+              </span>
+            </div>
+            <div className="bg-gradient-to-br from-[#182030] to-[#111723] rounded-2xl p-3 border border-slate-800/80 flex flex-col space-y-1 shadow-[0_4px_20px_rgba(0,0,0,0.4)]">
+              <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">Bill/phiếu</span>
+              <span className="text-sm font-bold text-white truncate">
+                {todayStats.orderCount}
+              </span>
+            </div>
+          </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 md:gap-4">
-          <Link
-            to="/reports"
-            className="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-3 md:p-4 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
-          >
-            <p className="text-xs md:text-sm text-slate-600 dark:text-slate-400 mb-1">
-              Doanh thu
-            </p>
-            <p className="text-lg md:text-2xl font-bold text-blue-600 dark:text-blue-400">
-              {showRevenue ? formatCurrency(filteredStats.revenue) : "******"}
-            </p>
-          </Link>
-          <Link
-            to="/reports"
-            className="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-3 md:p-4 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
-          >
-            <p className="text-xs md:text-sm text-slate-600 dark:text-slate-400 mb-1">
-              Lợi nhuận
-            </p>
-            <p
-              className={`text-lg md:text-2xl font-bold ${filteredStats.profit >= 0
-                ? "text-green-600 dark:text-green-400"
-                : "text-red-600 dark:text-red-400"
-                }`}
-            >
-              {showRevenue ? formatCurrency(filteredStats.profit) : "******"}
-            </p>
-          </Link>
-        </div>
-      </div>
-
-      {/* Danh sách trạng thái phiếu sửa chữa - Chỉ hiện trên mobile */}
-      <div className="md:hidden bg-white dark:bg-slate-800 rounded-xl p-4 md:p-5 shadow-sm border border-slate-200 dark:border-slate-700">
-        <h3 className="text-sm md:text-base font-semibold text-slate-900 dark:text-white mb-3">
-          Trạng thái phiếu sửa chữa
-        </h3>
-        <div className="space-y-2">
-          <StatusItem
-            icon={<Package className="w-5 h-5" />}
-            label="Biên nhận mới"
-            count={workOrderStats.newOrders}
-            color="blue"
-          />
-          <StatusItem
-            icon={<CheckCircle2 className="w-5 h-5" />}
-            label="Đã sửa xong"
-            count={workOrderStats.completed}
-            color="green"
-          />
-          <StatusItem
-            icon={<Clock className="w-5 h-5" />}
-            label="Đang sửa"
-            count={workOrderStats.inProgress}
-            color="amber"
-          />
-          <StatusItem
-            icon={<Car className="w-5 h-5" />}
-            label="Đã trả/giao xe"
-            count={workOrderStats.delivered}
-            color="slate"
-          />
-          <StatusItem
-            icon={<XCircle className="w-5 h-5" />}
-            label="Đã hủy"
-            count={workOrderStats.cancelled}
-            color="red"
-          />
-        </div>
-      </div>
-
-      {/* Quick Actions - Grid 4 cột với 12 tính năng - Chỉ hiện trên mobile */}
-      <div className="md:hidden bg-white dark:bg-slate-800 rounded-xl p-4 md:p-5 shadow-sm border border-slate-200 dark:border-slate-700">
-        <h3 className="text-sm md:text-base font-semibold text-slate-900 dark:text-white mb-4">
-          Truy cập nhanh
-        </h3>
-        <div className="grid grid-cols-4 gap-3 md:gap-4">
-          {/* Nhóm Chính - Hàng 1 */}
-          <QuickActionCard
-            to="/sales"
-            icon={<ShoppingCart className="w-6 h-6 md:w-7 md:h-7" />}
-            label="Bán hàng"
-            color="emerald"
-          />
-          <QuickActionCard
-            to="/service"
-            icon={<Wrench className="w-6 h-6 md:w-7 md:h-7" />}
-            label="Sửa chữa"
-            color="blue"
-          />
-          <QuickActionCard
-            to="/inventory"
-            icon={<Boxes className="w-6 h-6 md:w-7 md:h-7" />}
-            label="Kho hàng"
-            color="orange"
-          />
-          <QuickActionCard
-            to="/customers"
-            icon={<Users className="w-6 h-6 md:w-7 md:h-7" />}
-            label="Khách hàng"
-            color="cyan"
-          />
-
-          {/* Nhóm Tài chính - Hàng 2 */}
-          <QuickActionCard
-            to="/finance"
-            icon={<Landmark className="w-6 h-6 md:w-7 md:h-7" />}
-            label="Tài chính"
-            color="violet"
-          />
-          <QuickActionCard
-            to="/debt"
-            icon={<HandCoins className="w-6 h-6 md:w-7 md:h-7" />}
-            label="Công nợ"
-            color="rose"
-          />
-          <QuickActionCard
-            to="/cashbook"
-            icon={<Wallet className="w-6 h-6 md:w-7 md:h-7" />}
-            label="Sổ quỹ"
-            color="amber"
-          />
-          <QuickActionCard
-            to="/reports"
-            icon={<FileText className="w-6 h-6 md:w-7 md:h-7" />}
-            label="Báo cáo"
-            color="slate"
-          />
-
-          {/* Nhóm Quản lý & Khác - Hàng 3 */}
-          <QuickActionCard
-            to="/employees"
-            icon={<BriefcaseBusiness className="w-6 h-6 md:w-7 md:h-7" />}
-            label="Nhân viên"
-            color="purple"
-          />
-          <QuickActionCard
-            to="/categories"
-            icon={<List className="w-6 h-6 md:w-7 md:h-7" />}
-            label="Danh mục"
-            color="slate"
-          />
-          <QuickActionCard
-            to="/lookup"
-            icon={<Search className="w-6 h-6 md:w-7 md:h-7" />}
-            label="Tra cứu"
-            color="slate"
-          />
-          <QuickActionCard
-            to="/settings"
-            icon={<Settings className="w-6 h-6 md:w-7 md:h-7" />}
-            label="Cài đặt"
-            color="slate"
-          />
-        </div>
-      </div>
-
-      {/* Cảnh báo quan trọng - Chỉ hiện trên mobile khi có cảnh báo */}
-      {alerts.length > 0 && (
-        <div className="md:hidden space-y-3">
-          {alerts.map((alert, idx) => (
-            <div
-              key={idx}
-              className="bg-white dark:bg-slate-800 rounded-xl p-4 md:p-5 shadow-sm border-l-4 border-l-amber-500 border border-t-slate-200 border-r-slate-200 border-b-slate-200 dark:border-t-slate-700 dark:border-r-slate-700 dark:border-b-slate-700"
-            >
-              <div className="flex items-start gap-3">
-                <AlertTriangle className="w-5 h-5 text-amber-500 mt-0.5" />
-                <div>
-                  <h3 className="font-semibold text-slate-900 dark:text-white text-sm">
-                    {alert.type}
-                  </h3>
-                  <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
-                    {alert.message}
-                  </p>
+        {/* Hiệu quả kinh doanh (Theo nguồn) */}
+        <div className="relative z-10 space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-base font-bold text-white tracking-wide">Hiệu quả kinh doanh</h2>
+            <span className="text-xs text-slate-400 font-medium bg-slate-800/40 px-2.5 py-0.5 rounded-full">Theo nguồn</span>
+          </div>
+          <div className="bg-gradient-to-br from-[#182030] to-[#111723] rounded-2xl border border-slate-800/80 p-4 space-y-4 shadow-[0_4px_20px_rgba(0,0,0,0.4)]">
+            {/* Bán hàng */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-blue-950/40 border border-blue-500/20 flex items-center justify-center shrink-0">
+                  <ShoppingCart className="w-5 h-5 text-blue-400" />
+                </div>
+                <div className="flex flex-col text-left">
+                  <span className="text-sm font-bold text-white">Bán hàng</span>
+                  <span className="text-xs text-slate-400 mt-0.5">
+                    Doanh thu {formatCurrency(filteredStats.salesRevenue)}
+                  </span>
                 </div>
               </div>
+              <div className="flex flex-col items-end shrink-0">
+                <span className="text-[10px] text-slate-500 uppercase tracking-wider">Lợi nhuận</span>
+                <span className="text-sm font-bold text-blue-400 mt-0.5">
+                  {formatCurrency(filteredStats.salesProfit)}
+                </span>
+              </div>
             </div>
-          ))}
+
+            {/* Separator */}
+            <div className="border-t border-slate-800/60 my-1" />
+
+            {/* Sửa chữa */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-emerald-950/40 border border-emerald-500/20 flex items-center justify-center shrink-0">
+                  <Wrench className="w-5 h-5 text-emerald-400" />
+                </div>
+                <div className="flex flex-col text-left">
+                  <span className="text-sm font-bold text-white">Sửa chữa</span>
+                  <span className="text-xs text-slate-400 mt-0.5">
+                    Doanh thu {formatCurrency(filteredStats.woRevenue)}
+                  </span>
+                </div>
+              </div>
+              <div className="flex flex-col items-end shrink-0">
+                <span className="text-[10px] text-slate-500 uppercase tracking-wider">Lợi nhuận</span>
+                <span className="text-sm font-bold text-[#34d399] mt-0.5">
+                  {formatCurrency(filteredStats.woProfit)}
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
-      )}
+
+        {/* Cần xử lý (Ưu tiên) */}
+        <div className="relative z-10 space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-base font-bold text-white tracking-wide">Cần xử lý</h2>
+            <span className="text-xs text-slate-400 font-medium bg-slate-800/40 px-2.5 py-0.5 rounded-full">Ưu tiên</span>
+          </div>
+          <div className="space-y-3">
+            {/* Tồn kho thấp */}
+            <Link
+              to="/inventory"
+              className="flex items-center justify-between bg-gradient-to-br from-[#182030] to-[#111723] rounded-2xl p-4 border border-slate-800/80 active:from-[#202b40] active:to-[#171f30] transition shadow-[0_4px_20px_rgba(0,0,0,0.4)]"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-amber-950/40 border border-amber-500/20 flex items-center justify-center shrink-0">
+                  <AlertTriangle className="w-5 h-5 text-amber-500" />
+                </div>
+                <div className="flex flex-col text-left">
+                  <span className="text-sm font-bold text-white">Tồn kho thấp</span>
+                  <span className="text-xs text-slate-400 mt-0.5">
+                    {lowStockCount} sản phẩm sắp hết hàng
+                  </span>
+                </div>
+              </div>
+              <ChevronRight className="w-5 h-5 text-slate-500 shrink-0" />
+            </Link>
+
+            {/* Phiếu chưa thanh toán */}
+            <Link
+              to="/debt"
+              className="flex items-center justify-between bg-gradient-to-br from-[#182030] to-[#111723] rounded-2xl p-4 border border-slate-800/80 active:from-[#202b40] active:to-[#171f30] transition shadow-[0_4px_20px_rgba(0,0,0,0.4)]"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-rose-950/40 border border-rose-500/20 flex items-center justify-center shrink-0">
+                  <Wallet className="w-5 h-5 text-rose-400" />
+                </div>
+                <div className="flex flex-col text-left">
+                  <span className="text-sm font-bold text-white">Phiếu chưa thanh toán</span>
+                  <span className="text-xs text-slate-400 mt-0.5">
+                    {unpaidWorkOrdersCount} phiếu sửa chữa còn chờ thu tiền
+                  </span>
+                </div>
+              </div>
+              <ChevronRight className="w-5 h-5 text-slate-500 shrink-0" />
+            </Link>
+          </div>
+        </div>
+
+        {/* Tác vụ nhanh */}
+        <div className="relative z-10 space-y-3">
+          <h2 className="text-base font-bold text-white tracking-wide text-left">Tác vụ nhanh</h2>
+          <div className="grid grid-cols-3 gap-3">
+            {/* Tạo phiếu sửa */}
+            <Link
+              to="/service"
+              className="flex flex-col items-center justify-center bg-gradient-to-br from-[#152e2a]/30 to-[#0e1d1b]/30 border border-[#1d4d44]/55 rounded-2xl p-4 active:from-[#152e2a]/55 active:to-[#0e1d1b]/55 transition space-y-2 text-center shadow-md"
+            >
+              <div className="w-10 h-10 rounded-xl bg-[#152e2a]/80 flex items-center justify-center shrink-0 border border-[#34d399]/10">
+                <Pencil className="w-5 h-5 text-[#34d399]" />
+              </div>
+              <span className="text-[11px] font-bold text-[#34d399] tracking-tight">Tạo phiếu sửa</span>
+            </Link>
+
+            {/* Bán nhanh */}
+            <Link
+              to="/sales"
+              className="flex flex-col items-center justify-center bg-gradient-to-br from-[#17253d]/30 to-[#0f1726]/30 border border-[#233a61]/55 rounded-2xl p-4 active:from-[#17253d]/55 active:to-[#0f1726]/55 transition space-y-2 text-center shadow-md"
+            >
+              <div className="w-10 h-10 rounded-xl bg-[#17253d]/80 flex items-center justify-center shrink-0 border border-[#60a5fa]/10">
+                <ShoppingCart className="w-5 h-5 text-[#60a5fa]" />
+              </div>
+              <span className="text-[11px] font-bold text-[#60a5fa] tracking-tight">Bán nhanh</span>
+            </Link>
+
+            {/* Nhập kho */}
+            <Link
+              to="/inventory"
+              className="flex flex-col items-center justify-center bg-gradient-to-br from-[#2d271b]/30 to-[#1e1a12]/30 border border-[#4d3f27]/55 rounded-2xl p-4 active:from-[#2d271b]/55 active:to-[#1e1a12]/55 transition space-y-2 text-center shadow-md"
+            >
+              <div className="w-10 h-10 rounded-xl bg-[#2d271b]/80 flex items-center justify-center shrink-0 border border-[#f59e0b]/10">
+                <ArrowDownToLine className="w-5 h-5 text-amber-500" />
+              </div>
+              <span className="text-[11px] font-bold text-amber-500 tracking-tight">Nhập kho</span>
+            </Link>
+
+            {/* Thêm khách */}
+            <Link
+              to="/customers"
+              className="flex flex-col items-center justify-center bg-gradient-to-br from-[#241b35]/30 to-[#171122]/30 border border-[#3c285c]/55 rounded-2xl p-4 active:from-[#241b35]/55 active:to-[#171122]/55 transition space-y-2 text-center shadow-md"
+            >
+              <div className="w-10 h-10 rounded-xl bg-[#241b35]/80 flex items-center justify-center shrink-0 border border-[#a78bfa]/10">
+                <UserPlus className="w-5 h-5 text-violet-400" />
+              </div>
+              <span className="text-[11px] font-bold text-violet-400 tracking-tight">Thêm khách</span>
+            </Link>
+
+            {/* Thu công nợ */}
+            <Link
+              to="/debt"
+              className="flex flex-col items-center justify-center bg-gradient-to-br from-[#2d1b22]/30 to-[#1e1216]/30 border border-[#4d2532]/55 rounded-2xl p-4 active:from-[#2d1b22]/55 active:to-[#1e1216]/55 transition space-y-2 text-center shadow-md"
+            >
+              <div className="w-10 h-10 rounded-xl bg-[#2d1b22]/80 flex items-center justify-center shrink-0 border border-[#fb7185]/10">
+                <Wallet className="w-5 h-5 text-rose-400" />
+              </div>
+              <span className="text-[11px] font-bold text-rose-400 tracking-tight">Thu công nợ</span>
+            </Link>
+
+            {/* Báo cáo */}
+            <Link
+              to="/reports"
+              className="flex flex-col items-center justify-center bg-gradient-to-br from-[#1c1c38]/30 to-[#121224]/30 border border-[#2e2b5e]/55 rounded-2xl p-4 active:from-[#1c1c38]/55 active:to-[#121224]/55 transition space-y-2 text-center shadow-md"
+            >
+              <div className="w-10 h-10 rounded-xl bg-[#1c1c38]/80 flex items-center justify-center shrink-0 border border-[#818cf8]/10">
+                <BarChart3 className="w-5 h-5 text-indigo-400" />
+              </div>
+              <span className="text-[11px] font-bold text-indigo-400 tracking-tight">Báo cáo</span>
+            </Link>
+          </div>
+        </div>
+
+        {/* Đăng xuất */}
+        <div className="relative z-10 pt-2">
+          <button
+            onClick={handleLogout}
+            className="w-full py-3.5 bg-gradient-to-r from-red-800 to-rose-900 border border-red-700/30 rounded-2xl text-white font-bold transition shadow-lg active:from-red-900 active:to-rose-950 tracking-wide text-sm"
+          >
+            Đăng xuất
+          </button>
+        </div>
+      </div>
 
       {/* Desktop View Helpers - Tiêu đề ngày tháng + Bộ lọc */}
       <div className="hidden md:flex items-center justify-between gap-4">

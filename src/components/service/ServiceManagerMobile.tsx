@@ -17,6 +17,12 @@ import {
   Package,
   Eye,
   EyeOff,
+  User,
+  X,
+  ChevronDown,
+  ChevronUp,
+  BarChart3,
+  Coins,
 } from "lucide-react";
 import type { WorkOrder } from "../../types";
 import {
@@ -40,6 +46,60 @@ import {
 
 const normalizePlateSearch = (value?: string | null) =>
   (value || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+
+// Modern sleek inline SVG Motorcycle Icon matching Lucide style
+const MotorcycleIcon = ({ className = "w-3.5 h-3.5" }: { className?: string }) => (
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2.2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
+    {/* Rear Wheel */}
+    <circle cx="5" cy="18" r="3" />
+    {/* Front Wheel */}
+    <circle cx="19" cy="18" r="3" />
+    {/* Frame and structures */}
+    <path d="M12 18V13H7" />
+    <path d="M7 18L10 11H15L17 18" />
+    {/* Fork and handlebar */}
+    <path d="M19 18L15 9" />
+    <path d="M15 9L13 6h-2" />
+    {/* Seat */}
+    <path d="M7 11c0-1.5 1-2.5 2.5-2.5h3c.8 0 1.5.5 1.5 1.5v0" />
+  </svg>
+);
+
+// Helper to generate dynamic colors based on name hash
+const getAvatarColor = (name: string) => {
+  const colors = [
+    '#3b82f6', // Blue
+    '#10b981', // Emerald
+    '#f59e0b', // Amber
+    '#8b5cf6', // Purple
+    '#ec4899', // Pink
+    '#06b6d4', // Cyan
+    '#ef4444', // Red
+  ];
+  if (!name) return colors[0];
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const index = Math.abs(hash) % colors.length;
+  return colors[index];
+};
+
+// Helper to get name initials (e.g. Nguyễn Văn An -> NA)
+const getInitials = (name: string) => {
+  if (!name) return 'K';
+  const parts = name.trim().split(' ');
+  if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
+  return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+};
 
 interface ServiceManagerMobileProps {
   workOrders: WorkOrder[];
@@ -85,144 +145,131 @@ const WorkOrderCard = React.memo(({
   canViewFinancials?: boolean;
   showFinancials?: boolean;
 }) => {
-  // Get status badge color
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "Tiếp nhận":
-        return "bg-transparent text-[#009ef7] border-[#009ef7]/30";
-      case "Đang sửa":
-        return "bg-transparent text-[#f1416c] border-[#f1416c]/30";
-      case "Đã sửa xong":
-        return "bg-transparent text-[#50cd89] border-[#50cd89]/30";
-      case "Trả máy":
-        return "bg-transparent text-purple-500 border-purple-500/30";
-      default:
-        return "bg-transparent text-gray-500 border-gray-500/30";
-    }
-  };
+  const avatarColor = getAvatarColor(workOrder.customerName);
+  const initials = getInitials(workOrder.customerName);
 
-  // Get status icon
-  const getStatusIcon = (status: string) => {
+  // Get status color matching design
+  const getStatusColors = (status: string) => {
     switch (status) {
       case "Tiếp nhận":
-        return <FileText className="w-4 h-4" />;
+        return { text: "text-[#009ef7]", bg: "bg-[#009ef7]/10", border: "border-[#009ef7]/20", dot: "bg-[#009ef7]" };
       case "Đang sửa":
-        return <Wrench className="w-4 h-4" />;
+        return { text: "text-[#f1416c]", bg: "bg-[#f1416c]/10", border: "border-[#f1416c]/20", dot: "bg-[#f1416c]" };
       case "Đã sửa xong":
-        return <Check className="w-4 h-4" />;
+        return { text: "text-[#50cd89]", bg: "bg-[#50cd89]/10", border: "border-[#50cd89]/20", dot: "bg-[#50cd89]" };
       case "Trả máy":
-        return <Key className="w-4 h-4" />;
+        return { text: "text-purple-500", bg: "bg-purple-500/10", border: "border-purple-500/20", dot: "bg-purple-500" };
       default:
-        return <FileText className="w-4 h-4" />;
+        return { text: "text-gray-500", bg: "bg-gray-500/10", border: "border-gray-500/20", dot: "bg-gray-500" };
     }
   };
+  const statusColors = getStatusColors(workOrder.status);
 
   return (
     <div
       onClick={() => onEdit(workOrder)}
-      className="bg-white dark:bg-[#1e1e2d] rounded-lg border border-slate-200 dark:border-gray-800 overflow-hidden active:scale-[0.99] transition-transform shadow-sm"
+      className="bg-white dark:bg-[#1e1e2d] rounded-xl border border-slate-200 dark:border-gray-800/80 overflow-hidden active:scale-[0.99] transition-all hover:border-slate-300 dark:hover:border-gray-700 shadow-sm hover:shadow-md cursor-pointer duration-200"
     >
       {/* Card Content */}
-      <div className="p-2.5">
-        {/* Header - Single row: ID + Date + Status */}
-        <div className="flex items-center justify-between mb-1.5">
-          <div className="flex items-center gap-2">
-            <span className="text-slate-700 dark:text-gray-300 font-mono text-xs font-semibold" title={formatWorkOrderId(workOrder.id)}>
+      <div className="p-3">
+        {/* Header - Avatar + Customer Info & Code Badge + Date */}
+        <div className="flex items-center gap-2.5 mb-2">
+          {/* Avatar Column */}
+          <div
+            className="w-10 h-10 rounded-full flex items-center justify-center text-white text-xs font-black shadow-sm shrink-0"
+            style={{ backgroundColor: avatarColor }}
+          >
+            {initials}
+          </div>
+          
+          {/* Customer & Vehicle Info Column */}
+          <div className="flex-1 min-w-0">
+            <h4 className="text-slate-900 dark:text-white font-bold text-sm leading-tight truncate">
+              {workOrder.customerName}
+            </h4>
+            <div className="flex items-center gap-1.5 mt-0.5 text-slate-500 dark:text-gray-400">
+              <MotorcycleIcon className="w-3.5 h-3.5 text-slate-400 dark:text-gray-500 shrink-0" />
+              <span className="text-[11px] font-medium truncate">
+                {workOrder.vehicleModel || "Xe máy"}
+              </span>
+              {workOrder.licensePlate && (
+                <span className="text-[9px] font-mono bg-slate-100 dark:bg-gray-800 px-1 py-0.2 rounded text-slate-600 dark:text-gray-300">
+                  {workOrder.licensePlate}
+                </span>
+              )}
+            </div>
+          </div>
+          
+          {/* Code Badge column */}
+          <div className="flex flex-col items-end shrink-0 gap-0.5">
+            <span
+              className="text-[10px] font-mono font-bold bg-blue-50 dark:bg-blue-950/40 text-blue-500 dark:text-blue-400 px-1.5 py-0.5 rounded"
+              title={formatWorkOrderId(workOrder.id)}
+            >
               {formatShortWorkOrderId(workOrder.id).short}
             </span>
-            <span className="text-[10px] text-slate-500 dark:text-gray-500">
+            <span className="text-[9px] text-slate-400 dark:text-gray-500 font-medium">
               {formatDate(workOrder.creationDate)}
             </span>
           </div>
-          <div
-            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded border text-[10px] font-semibold ${getStatusColor(
-              workOrder.status
-            )}`}
-          >
-            {getStatusIcon(workOrder.status)}
-            {workOrder.status}
-          </div>
         </div>
 
-        {/* Customer & Vehicle - Single row */}
-        <div className="flex items-center gap-2 mb-1.5 text-sm">
-          <span className="text-xs">👤</span>
-          <span className="text-slate-900 dark:text-white font-bold flex-1 min-w-0 truncate text-sm">
-            {workOrder.customerName}
-          </span>
-          <span className="text-slate-500 dark:text-gray-400 text-xs shrink-0 font-medium">
-            {workOrder.customerPhone}
-          </span>
-        </div>
-        <div className="flex items-center gap-2 mb-1.5 text-sm">
-          <span className="text-xs">🏍️</span>
-          <span className="text-slate-700 dark:text-gray-300 flex-1 min-w-0 truncate text-xs font-medium">
-            {workOrder.vehicleModel}
-          </span>
-          <span className="text-slate-500 dark:text-gray-400 text-[11px] font-mono shrink-0 bg-slate-100 dark:bg-gray-800 px-1.5 py-0.5 rounded">
-            {workOrder.licensePlate}
-          </span>
-        </div>
-        {/* Issue Description - More compact */}
+        {/* Issue Description enclosed in beautiful accent box */}
         {workOrder.issueDescription && (
-          <div className="flex items-center gap-1.5 text-slate-400 text-xs mb-1.5 truncate">
-            <span>🔧</span>
-            <span className="truncate">
+          <div className={`text-xs pl-2.5 py-1.5 bg-slate-50 dark:bg-slate-800/10 rounded-r-md border-l-2 mb-2 flex items-start gap-1.5 ${
+            workOrder.status === 'Tiếp nhận' ? 'border-[#009ef7]' :
+            workOrder.status === 'Đang sửa' ? 'border-[#f1416c]' :
+            workOrder.status === 'Đã sửa xong' ? 'border-[#50cd89]' :
+            workOrder.status === 'Trả máy' ? 'border-purple-500' : 'border-gray-400'
+          }`}>
+            <span className="text-slate-400 dark:text-gray-500 mt-0.5">🔧</span>
+            <span className="text-slate-600 dark:text-gray-400 leading-relaxed truncate flex-1 font-medium">
               {workOrder.issueDescription}
             </span>
           </div>
         )}
 
-        {/* Footer - Compact single row */}
-        <div className="pt-1.5 border-t border-slate-200 dark:border-gray-800 flex items-center justify-between">
-          <div className="flex items-center gap-2 text-xs flex-1 min-w-0">
-            <span className="text-slate-600 dark:text-gray-500 shrink-0">KTV:</span>
-            <span className="text-slate-700 dark:text-gray-300 truncate">
+        {/* Info & Footer row: KTV, Payment status and Total price */}
+        <div className="pt-2 border-t border-slate-100 dark:border-gray-800 flex items-center justify-between">
+          <div className="flex items-center gap-1.5 text-[11px] flex-1 min-w-0">
+            <span className="text-slate-400 dark:text-gray-500 shrink-0">KTV:</span>
+            <span className="text-slate-600 dark:text-gray-300 font-semibold truncate max-w-[100px]">
               {workOrder.technicianName || "Chưa phân"}
             </span>
-            {/* Payment badge */}
-            {workOrder.paymentStatus === "paid" &&
-              workOrder.remainingAmount === 0 && (
-                <span className="px-1.5 py-0.5 bg-green-500/20 text-green-400 rounded text-[10px]">
-                  ✓ Đủ
-                </span>
-              )}
-            {((workOrder.depositAmount &&
-              workOrder.depositAmount > 0) ||
-              workOrder.paymentStatus === "partial") &&
-              (workOrder.remainingAmount ?? 0) > 0 && (
-                <span className="px-1.5 py-0.5 bg-amber-500/20 text-amber-400 rounded text-[10px]">
-                  Nợ {formatCurrency(workOrder.remainingAmount || 0)}
-                </span>
-              )}
-            {workOrder.paymentStatus === "unpaid" &&
-              (!workOrder.depositAmount ||
-                workOrder.depositAmount === 0) && (
-                <span className="px-1.5 py-0.5 bg-slate-700 text-slate-400 rounded text-[10px]">
-                  Chưa TT
-                </span>
-              )}
+            
+            {/* Payment badge styled as pills */}
+            {workOrder.paymentStatus === "paid" && workOrder.remainingAmount === 0 && (
+              <span className="px-1.5 py-0.5 bg-emerald-500/10 text-emerald-500 dark:text-emerald-400 font-bold rounded text-[9px] shrink-0">
+                ✓ Đủ
+              </span>
+            )}
+            {((workOrder.depositAmount && workOrder.depositAmount > 0) || workOrder.paymentStatus === "partial") && (workOrder.remainingAmount ?? 0) > 0 && (
+              <span className="px-1.5 py-0.5 bg-amber-500/10 text-amber-500 dark:text-amber-400 font-bold rounded text-[9px] shrink-0">
+                Nợ {formatCurrency(workOrder.remainingAmount || 0)}
+              </span>
+            )}
+            {workOrder.paymentStatus === "unpaid" && (!workOrder.depositAmount || workOrder.depositAmount === 0) && (
+              <span className="px-1.5 py-0.5 bg-red-500/10 text-red-500 dark:text-red-400 font-bold rounded text-[9px] shrink-0">
+                Chưa TT
+              </span>
+            )}
           </div>
-          <div className="flex flex-col items-end">
-            {/* Total amount - color coded by payment status */}
-            <div className={`font-bold text-sm ${workOrder.paymentStatus === "paid"
-              ? "text-emerald-500"
-              : (workOrder.depositAmount && workOrder.depositAmount > 0) || workOrder.paymentStatus === "partial"
-                ? "text-amber-500"
-                : "text-red-500"
-              }`}>
+          
+          <div className="flex flex-col items-end shrink-0">
+            <div className={`font-black text-sm ${
+              workOrder.paymentStatus === "paid" ? "text-emerald-500" :
+              (workOrder.depositAmount && workOrder.depositAmount > 0) || workOrder.paymentStatus === "partial" ? "text-amber-500" : "text-red-500"
+            }`}>
               {formatCurrency(workOrder.total || 0)}
             </div>
-            {/* Profit display - only for users with finance.view when showFinancials is on */}
             {canViewFinancials && showFinancials && (() => {
-              // Calculate total cost from parts and services
               const partsCost = workOrder.partsUsed?.reduce((sum, p) => sum + ((p.costPrice || 0) * p.quantity), 0) || 0;
               const servicesCost = workOrder.additionalServices?.reduce((sum, s) => sum + ((s.costPrice || 0) * (s.quantity || 1)), 0) || 0;
               const totalCost = partsCost + servicesCost;
               const profit = (workOrder.total || 0) - totalCost;
 
               return (
-                <div className={`text-[10px] font-semibold ${profit >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+                <div className={`text-[9px] font-bold mt-0.5 ${profit >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
                   Lãi: {formatCurrency(profit)}
                 </div>
               );
@@ -231,50 +278,64 @@ const WorkOrderCard = React.memo(({
         </div>
       </div>
 
-      {/* Action Buttons Row - Modernized */}
-      <div className="px-3 py-2.5 bg-slate-50/50 dark:bg-slate-800/30 border-t border-slate-100 dark:border-gray-800 flex justify-end items-center gap-3">
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onCall(workOrder.customerPhone || "");
-          }}
-          className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-gray-700 text-slate-500 dark:text-gray-400 transition-colors bg-white dark:bg-[#2b2b40] shadow-sm"
-          aria-label="Gọi"
+      {/* Action Row - Beautiful Native Circular Buttons & Status Badge */}
+      <div className="px-3 py-2 bg-slate-50/50 dark:bg-slate-800/15 border-t border-slate-100 dark:border-gray-800/60 flex justify-between items-center">
+        {/* Left Status Badge */}
+        <div 
+          className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border text-[10px] font-bold ${statusColors.bg} ${statusColors.text} ${statusColors.border}`}
         >
-          <Phone className="w-4 h-4" />
-        </button>
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onPrint(workOrder);
-          }}
-          className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-gray-700 text-slate-500 dark:text-gray-400 transition-colors bg-white dark:bg-[#2b2b40] shadow-sm"
-          aria-label="In"
-        >
-          <Printer className="w-4 h-4" />
-        </button>
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onEdit(workOrder);
-          }}
-          className="p-2 rounded-full text-[#009ef7] transition-colors bg-[#009ef7]/10 dark:bg-[#009ef7]/20 hover:bg-[#009ef7]/20 dark:hover:bg-[#009ef7]/30 shadow-sm"
-          aria-label="Sửa"
-        >
-          <Edit2 className="w-4 h-4" />
-        </button>
-        {canDelete && (
+          <span className={`w-1.5 h-1.5 rounded-full ${statusColors.dot}`} />
+          {workOrder.status}
+        </div>
+        
+        {/* Right Circle Buttons */}
+        <div className="flex items-center gap-2">
           <button
             onClick={(e) => {
               e.stopPropagation();
-              onDelete(workOrder);
+              onCall(workOrder.customerPhone || "");
             }}
-            className="p-2 rounded-full text-[#f1416c] transition-colors bg-[#f1416c]/10 dark:bg-[#f1416c]/20 hover:bg-[#f1416c]/20 dark:hover:bg-[#f1416c]/30 shadow-sm"
-            aria-label="Xóa"
+            className="w-7 h-7 rounded-full flex items-center justify-center bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 text-blue-600 transition-colors border border-blue-100 dark:border-blue-900/30 shadow-sm"
+            aria-label="Gọi"
           >
-            <Trash2 className="w-4 h-4" />
+            <Phone className="w-3.5 h-3.5" />
           </button>
-        )}
+          
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onPrint(workOrder);
+            }}
+            className="w-7 h-7 rounded-full flex items-center justify-center bg-slate-100 dark:bg-gray-800 hover:bg-slate-200 text-slate-500 dark:text-gray-400 transition-colors border border-slate-200 dark:border-gray-700 shadow-sm"
+            aria-label="In"
+          >
+            <Printer className="w-3.5 h-3.5" />
+          </button>
+          
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onEdit(workOrder);
+            }}
+            className="w-7 h-7 rounded-full flex items-center justify-center bg-[#009ef7]/10 hover:bg-[#009ef7]/20 text-[#009ef7] transition-colors border border-[#009ef7]/20 shadow-sm"
+            aria-label="Sửa"
+          >
+            <Edit2 className="w-3.5 h-3.5" />
+          </button>
+          
+          {canDelete && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(workOrder);
+              }}
+              className="w-7 h-7 rounded-full flex items-center justify-center bg-[#f1416c]/10 hover:bg-[#f1416c]/20 text-[#f1416c] transition-colors border border-[#f1416c]/20 shadow-sm"
+              aria-label="Xóa"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -300,6 +361,7 @@ export function ServiceManagerMobile({
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [showFilterPopup, setShowFilterPopup] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+  const [collapseFinance, setCollapseFinance] = useState(false);
   const [activeTab, setActiveTabRaw] = useState<"orders" | "history" | "templates">("orders");
   const setActiveTab = (tab: "orders" | "history" | "templates") => {
     triggerHaptic("selection");
@@ -378,8 +440,8 @@ export function ServiceManagerMobile({
           .join(" ");
 
         const text = [
-          w.id, // Original ID (e.g., SC-1767330309661)
-          formatWorkOrderId(w.id), // Formatted ID (e.g., SC-20260127-309661)
+          w.id,
+          formatWorkOrderId(w.id),
           w.customerName,
           w.customerPhone,
           w.vehicleModel,
@@ -425,8 +487,8 @@ export function ServiceManagerMobile({
         {activeTab === "orders" && (
           <>
             {/* KPI CARDS */}
-            <div className="bg-white dark:bg-[#1e1e2d] border-b border-slate-200 dark:border-gray-800 p-2">
-              <div className="grid grid-cols-4 gap-1.5">
+            <div className="bg-white dark:bg-[#1e1e2d] border-b border-slate-200 dark:border-gray-800/80 p-3">
+              <div className="grid grid-cols-4 gap-2">
                 {/* Tiếp nhận */}
                 <button
                   onClick={() => {
@@ -435,14 +497,14 @@ export function ServiceManagerMobile({
                     );
                     triggerHaptic("selection");
                   }}
-                  className={`p-2 rounded-2xl text-center transition-all border backdrop-blur-md ${statusFilter === "Tiếp nhận"
-                    ? "bg-[#009ef7]/10 border-[#009ef7]/50 shadow-[0_0_15px_rgba(0,158,247,0.15)]"
-                    : "bg-slate-50/80 dark:bg-slate-800/40 border-slate-200 dark:border-gray-700 hover:bg-slate-100 dark:hover:bg-slate-800/60"
+                  className={`py-2 px-1 rounded-xl text-center transition-all border backdrop-blur-md ${statusFilter === "Tiếp nhận"
+                    ? "bg-[#009ef7]/10 border-[#009ef7]/60 shadow-sm shadow-[#009ef7]/20 scale-105"
+                    : "bg-slate-50/60 dark:bg-slate-800/20 border-slate-200 dark:border-gray-800 hover:bg-slate-100 dark:hover:bg-slate-800/40"
                     }`}
                 >
-                  <FileText className={`w-4 h-4 mx-auto mb-0.5 ${statusFilter === "Tiếp nhận" ? "text-[#009ef7] drop-shadow-[0_0_5px_rgba(0,158,247,0.5)]" : "text-[#009ef7]/70"}`} />
-                  <div className="text-lg font-black text-slate-900 dark:text-white">{kpis.tiepNhan}</div>
-                  <span className="text-[9px] font-medium text-slate-600 dark:text-gray-400">Tiếp nhận</span>
+                  <FileText className={`w-4 h-4 mx-auto mb-1 ${statusFilter === "Tiếp nhận" ? "text-[#009ef7]" : "text-[#009ef7]/60"}`} />
+                  <div className="text-base font-extrabold text-slate-900 dark:text-white leading-tight">{kpis.tiepNhan}</div>
+                  <span className="text-[9px] font-bold text-slate-500 dark:text-gray-400">Tiếp nhận</span>
                 </button>
 
                 {/* Đang sửa */}
@@ -451,14 +513,14 @@ export function ServiceManagerMobile({
                     setStatusFilter(statusFilter === "Đang sửa" ? "all" : "Đang sửa");
                     triggerHaptic("selection");
                   }}
-                  className={`p-2 rounded-2xl text-center transition-all border backdrop-blur-md ${statusFilter === "Đang sửa"
-                    ? "bg-[#f1416c]/10 border-[#f1416c]/50 shadow-[0_0_15px_rgba(241,65,108,0.15)]"
-                    : "bg-slate-50/80 dark:bg-slate-800/40 border-slate-200 dark:border-gray-700 hover:bg-slate-100 dark:hover:bg-slate-800/60"
+                  className={`py-2 px-1 rounded-xl text-center transition-all border backdrop-blur-md ${statusFilter === "Đang sửa"
+                    ? "bg-[#f1416c]/10 border-[#f1416c]/60 shadow-sm shadow-[#f1416c]/20 scale-105"
+                    : "bg-slate-50/60 dark:bg-slate-800/20 border-slate-200 dark:border-gray-800 hover:bg-slate-100 dark:hover:bg-slate-800/40"
                     }`}
                 >
-                  <Wrench className={`w-4 h-4 mx-auto mb-0.5 ${statusFilter === "Đang sửa" ? "text-[#f1416c] drop-shadow-[0_0_5px_rgba(241,65,108,0.5)]" : "text-[#f1416c]/70"}`} />
-                  <div className="text-lg font-black text-slate-900 dark:text-white">{kpis.dangSua}</div>
-                  <span className="text-[9px] font-medium text-slate-600 dark:text-gray-400">Đang sửa</span>
+                  <Wrench className={`w-4 h-4 mx-auto mb-1 ${statusFilter === "Đang sửa" ? "text-[#f1416c]" : "text-[#f1416c]/60"}`} />
+                  <div className="text-base font-extrabold text-slate-900 dark:text-white leading-tight">{kpis.dangSua}</div>
+                  <span className="text-[9px] font-bold text-slate-500 dark:text-gray-400">Đang sửa</span>
                 </button>
 
                 {/* Đã sửa xong */}
@@ -469,16 +531,16 @@ export function ServiceManagerMobile({
                     );
                     triggerHaptic("selection");
                   }}
-                  className={`p-2 rounded-2xl text-center transition-all border backdrop-blur-md ${statusFilter === "Đã sửa xong"
-                    ? "bg-[#50cd89]/10 border-[#50cd89]/50 shadow-[0_0_15px_rgba(80,205,137,0.15)]"
-                    : "bg-slate-50/80 dark:bg-slate-800/40 border-slate-200 dark:border-gray-700 hover:bg-slate-100 dark:hover:bg-slate-800/60"
+                  className={`py-2 px-1 rounded-xl text-center transition-all border backdrop-blur-md ${statusFilter === "Đã sửa xong"
+                    ? "bg-[#50cd89]/10 border-[#50cd89]/60 shadow-sm shadow-[#50cd89]/20 scale-105"
+                    : "bg-slate-50/60 dark:bg-slate-800/20 border-slate-200 dark:border-gray-800 hover:bg-slate-100 dark:hover:bg-slate-800/40"
                     }`}
                 >
-                  <Check className={`w-4 h-4 mx-auto mb-0.5 ${statusFilter === "Đã sửa xong" ? "text-[#50cd89] drop-shadow-[0_0_5px_rgba(80,205,137,0.5)]" : "text-[#50cd89]/70"}`} />
-                  <div className="text-lg font-black text-slate-900 dark:text-white">
+                  <Check className={`w-4 h-4 mx-auto mb-1 ${statusFilter === "Đã sửa xong" ? "text-[#50cd89]" : "text-[#50cd89]/60"}`} />
+                  <div className="text-base font-extrabold text-slate-900 dark:text-white leading-tight">
                     {kpis.daHoanThanh}
                   </div>
-                  <span className="text-[9px] font-medium text-slate-600 dark:text-gray-400">Đã sửa</span>
+                  <span className="text-[9px] font-bold text-slate-500 dark:text-gray-400">Đã sửa xong</span>
                 </button>
 
                 {/* Trả máy */}
@@ -487,89 +549,117 @@ export function ServiceManagerMobile({
                     setStatusFilter(statusFilter === "Trả máy" ? "all" : "Trả máy");
                     triggerHaptic("selection");
                   }}
-                  className={`p-2 rounded-2xl text-center transition-all border backdrop-blur-md ${statusFilter === "Trả máy"
-                    ? "bg-purple-500/10 border-purple-500/50 shadow-[0_0_15px_rgba(168,85,247,0.15)]"
-                    : "bg-slate-50/80 dark:bg-slate-800/40 border-slate-200 dark:border-gray-700 hover:bg-slate-100 dark:hover:bg-slate-800/60"
+                  className={`py-2 px-1 rounded-xl text-center transition-all border backdrop-blur-md ${statusFilter === "Trả máy"
+                    ? "bg-purple-500/10 border-purple-500/60 shadow-sm shadow-purple-500/20 scale-105"
+                    : "bg-slate-50/60 dark:bg-slate-800/20 border-slate-200 dark:border-gray-800 hover:bg-slate-100 dark:hover:bg-slate-800/40"
                     }`}
                 >
-                  <Key className={`w-4 h-4 mx-auto mb-0.5 ${statusFilter === "Trả máy" ? "text-purple-500 drop-shadow-[0_0_5px_rgba(168,85,247,0.5)]" : "text-purple-500/70"}`} />
-                  <div className="text-lg font-black text-slate-900 dark:text-white">{kpis.traMay}</div>
-                  <span className="text-[9px] font-medium text-slate-600 dark:text-gray-400">Trả máy</span>
+                  <Key className={`w-4 h-4 mx-auto mb-1 ${statusFilter === "Trả máy" ? "text-purple-500" : "text-purple-500/60"}`} />
+                  <div className="text-base font-extrabold text-slate-900 dark:text-white leading-tight">{kpis.traMay}</div>
+                  <span className="text-[9px] font-bold text-slate-500 dark:text-gray-400">Trả máy</span>
                 </button>
               </div>
 
-              {/* Doanh thu & Lợi nhuận */}
+              {/* Collapsible Gradient Financial panel */}
               {canViewFinancials && (
-                <div className="grid grid-cols-2 gap-2 mt-2">
-                <div className="p-3 rounded-xl bg-slate-50 dark:bg-[#2b2b40] border border-slate-200 dark:border-gray-700 shadow-sm relative overflow-hidden">
-                  <div className="absolute top-0 right-0 w-16 h-16 bg-emerald-500/5 dark:bg-emerald-500/10 rounded-bl-full pointer-events-none"></div>
-                  <div className="flex items-center justify-between mb-1 relative z-10">
-                    <span className="text-[10px] font-medium text-slate-500 dark:text-gray-400">
-                      Doanh thu {getDateLabel()}
-                    </span>
+                <div className="mt-3.5 border border-slate-200/80 dark:border-gray-800/80 rounded-2xl bg-white dark:bg-[#1e1e2d]/60 backdrop-blur-md overflow-hidden shadow-sm shadow-slate-100/50 dark:shadow-none hover:shadow-md transition-all duration-300">
+                  {/* Panel Header */}
+                  <div className="px-3.5 py-2.5 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/10 border-b border-slate-100 dark:border-gray-800/60">
+                    <div className="flex items-center gap-2">
+                      <BarChart3 className="w-4 h-4 text-blue-500 dark:text-blue-400" />
+                      <span className="text-xs font-extrabold text-slate-800 dark:text-white leading-tight">
+                        Báo cáo tài chính
+                      </span>
+                      <span className="px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-gray-800 text-slate-500 dark:text-gray-400 text-[9px] font-bold uppercase tracking-wider scale-[0.9] origin-left">
+                        {getDateLabel()}
+                      </span>
+                    </div>
                     <div className="flex items-center gap-1">
                       <button
                         onClick={() => setShowFinancials(!showFinancials)}
-                        className="p-1 hover:bg-slate-200 dark:hover:bg-gray-700 rounded transition-colors"
-                        aria-label="Toggle revenue visibility"
+                        className="p-1.5 hover:bg-slate-100 dark:hover:bg-gray-800/80 text-slate-400 dark:text-gray-500 hover:text-slate-700 dark:hover:text-gray-300 rounded-lg transition-colors"
+                        title="Ẩn/hiện doanh số"
                       >
                         {showFinancials ? (
-                          <Eye className="w-3.5 h-3.5 text-slate-400" />
+                          <Eye className="w-3.5 h-3.5" />
                         ) : (
-                          <EyeOff className="w-3.5 h-3.5 text-slate-400" />
+                          <EyeOff className="w-3.5 h-3.5" />
                         )}
                       </button>
-                      <DollarSign className="w-4 h-4 text-emerald-500" />
-                    </div>
-                  </div>
-                  <div className="text-base font-black text-slate-800 dark:text-white relative z-10">
-                    {showFinancials ? formatCurrency(kpis.doanhThu) : "•••••••"}
-                  </div>
-                </div>
-                <div className="p-3 rounded-xl bg-slate-50 dark:bg-[#2b2b40] border border-slate-200 dark:border-gray-700 shadow-sm relative overflow-hidden">
-                  <div className="absolute top-0 right-0 w-16 h-16 bg-[#009ef7]/5 dark:bg-[#009ef7]/10 rounded-bl-full pointer-events-none"></div>
-                  <div className="flex items-center justify-between mb-1 relative z-10">
-                    <span className="text-[10px] font-medium text-slate-500 dark:text-gray-400">
-                      Lợi nhuận {getDateLabel()}
-                    </span>
-                    <div className="flex items-center gap-1">
                       <button
-                        onClick={() => setShowFinancials(!showFinancials)}
-                        className="p-1 hover:bg-slate-200 dark:hover:bg-gray-700 rounded transition-colors"
-                        aria-label="Toggle profit visibility"
+                        onClick={() => setCollapseFinance(!collapseFinance)}
+                        className="p-1.5 hover:bg-slate-100 dark:hover:bg-gray-800/80 text-slate-400 dark:text-gray-500 hover:text-slate-700 dark:hover:text-gray-300 rounded-lg transition-colors"
                       >
-                        {showFinancials ? (
-                          <Eye className="w-3.5 h-3.5 text-slate-400" />
+                        {collapseFinance ? (
+                          <ChevronDown className="w-3.5 h-3.5" />
                         ) : (
-                          <EyeOff className="w-3.5 h-3.5 text-slate-400" />
+                          <ChevronUp className="w-3.5 h-3.5" />
                         )}
                       </button>
-                      <TrendingUp className="w-4 h-4 text-[#009ef7]" />
                     </div>
                   </div>
-                  <div className="text-base font-black text-slate-800 dark:text-white relative z-10">
-                    {showFinancials ? formatCurrency(kpis.loiNhuan) : "•••••••"}
-                  </div>
-                </div>
+                  
+                  {/* Panel Cards - soft gradient styling */}
+                  {!collapseFinance && (
+                    <div className="p-3 grid grid-cols-2 gap-3">
+                      {/* Doanh thu */}
+                      <div className="p-3 rounded-xl bg-gradient-to-br from-blue-50/70 to-indigo-50/40 dark:from-blue-950/15 dark:to-indigo-950/5 border border-blue-100/50 dark:border-blue-900/20 relative overflow-hidden transition-all duration-300 hover:scale-[1.01] hover:border-blue-200/50 flex flex-col justify-between">
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className="text-[10px] font-black uppercase tracking-wider text-blue-600 dark:text-blue-400">
+                            Doanh thu
+                          </span>
+                          <div className="w-5.5 h-5.5 rounded-lg flex items-center justify-center bg-blue-500/10 text-blue-600 dark:text-blue-400 shrink-0">
+                            <Coins className="w-3 h-3" />
+                          </div>
+                        </div>
+                        <div className="text-sm font-black text-slate-800 dark:text-white font-mono tracking-tight leading-tight">
+                          {showFinancials ? formatCurrency(kpis.doanhThu) : "•••••••"}
+                        </div>
+                      </div>
+                      
+                      {/* Lợi nhuận */}
+                      <div className="p-3 rounded-xl bg-gradient-to-br from-emerald-50/70 to-teal-50/40 dark:from-emerald-950/15 dark:to-teal-950/5 border border-emerald-100/50 dark:border-emerald-900/20 relative overflow-hidden transition-all duration-300 hover:scale-[1.01] hover:border-emerald-200/50 flex flex-col justify-between">
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className="text-[10px] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                            Lợi nhuận
+                          </span>
+                          <div className="w-5.5 h-5.5 rounded-lg flex items-center justify-center bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shrink-0">
+                            <TrendingUp className="w-3 h-3" />
+                          </div>
+                        </div>
+                        <div className="text-sm font-black text-slate-800 dark:text-white font-mono tracking-tight leading-tight">
+                          {showFinancials ? formatCurrency(kpis.loiNhuan) : "•••••••"}
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
 
             {/* SEARCH BAR & DATE FILTER */}
-            <div className="bg-white dark:bg-[#1e1e2d] border-b border-slate-200 dark:border-gray-800 px-2 py-2 space-y-2">
+            <div className="bg-white dark:bg-[#1e1e2d] border-b border-slate-200 dark:border-gray-800/80 px-3 py-2 space-y-2">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 dark:text-gray-500" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-gray-500" />
                 <input
                   type="text"
                   placeholder="Tìm tên, SĐT, biển số, dòng xe..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-3 py-2.5 bg-slate-100 dark:bg-[#2b2b40] border border-slate-300 dark:border-gray-700 rounded-xl text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-gray-500 text-sm focus:outline-none focus:border-[#009ef7]"
+                  className="w-full pl-10 pr-9 py-2 bg-slate-100 dark:bg-[#2b2b40] border border-slate-200 dark:border-gray-800 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-500 text-xs focus:outline-none focus:border-[#009ef7] focus:bg-white dark:focus:bg-[#1e1e2d] transition-all"
                 />
+                {searchQuery.length > 0 && (
+                  <button
+                    onClick={() => setSearchQuery("")}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-slate-200 dark:hover:bg-gray-700 rounded-full transition-colors text-slate-400 dark:text-gray-500"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
               </div>
 
               {/* Date Filter Segmented Control */}
-              <div className="bg-slate-100 dark:bg-[#2b2b40] p-1 rounded-xl flex items-center justify-between mt-2">
+              <div className="bg-slate-100 dark:bg-[#2b2b40]/60 p-1 rounded-xl flex items-center justify-between mt-2.5 border border-slate-200/50 dark:border-gray-800/40">
                 {[
                   { label: "Hôm nay", value: "today" },
                   { label: "7 ngày", value: "week" },
@@ -579,8 +669,8 @@ export function ServiceManagerMobile({
                   <button
                     key={option.value}
                     onClick={() => setDateFilter(option.value)}
-                    className={`flex-1 py-1.5 rounded-lg text-[11px] font-bold transition-all duration-200 ${dateFilter === option.value
-                      ? "bg-white dark:bg-gray-700 text-[#009ef7] shadow-sm"
+                    className={`flex-1 py-1.5 rounded-lg text-[10px] font-bold transition-all duration-200 ${dateFilter === option.value
+                      ? "bg-white dark:bg-gray-800 text-[#009ef7] shadow-sm"
                       : "text-slate-500 dark:text-gray-400 hover:text-slate-700 dark:hover:text-gray-300"
                       }`}
                   >
@@ -592,11 +682,10 @@ export function ServiceManagerMobile({
 
             {/* DANH SÁCH PHIẾU SỬA CHỮA */}
             <PullToRefresh onRefresh={onRefresh || (async () => { })}>
-              <div className="space-y-2 px-2 pb-4 min-h-[50vh]">
+              <div className="space-y-2.5 px-3 pt-3 pb-4 min-h-[50vh]">
                 {isLoading ? (
-                  // Loading Skeletons using shared Skeleton component
                   Array.from({ length: 4 }).map((_, i) => (
-                    <div key={i} className="bg-white dark:bg-[#1e1e2d] rounded-lg border border-slate-200 dark:border-gray-800 p-4 space-y-3">
+                    <div key={i} className="bg-white dark:bg-[#1e1e2d] rounded-xl border border-slate-200 dark:border-gray-800 p-4 space-y-3">
                       <div className="flex justify-between items-start mb-2">
                         <div className="flex gap-2">
                           <Skeleton width={60} height={20} className="bg-slate-700/50" />
@@ -624,39 +713,25 @@ export function ServiceManagerMobile({
                     </div>
                   ))
                 ) : filteredWorkOrders.length === 0 ? (
-                  /* Empty State */
                   <div className="flex flex-col items-center justify-center h-full text-center px-6 py-12">
-                    <div className="w-32 h-32 mb-6 flex items-center justify-center">
-                      <svg
-                        className="w-full h-full text-gray-600"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={1.5}
-                          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                        />
-                      </svg>
+                    <div className="w-24 h-24 mb-4 flex items-center justify-center text-slate-300 dark:text-gray-600">
+                      <ClipboardList className="w-16 h-16 stroke-[1.2]" />
                     </div>
-                    <h3 className="text-xl font-semibold text-slate-700 dark:text-gray-300 mb-2">
+                    <h3 className="text-base font-bold text-slate-700 dark:text-gray-300 mb-1">
                       Chưa có phiếu sửa chữa nào!
                     </h3>
-                    <p className="text-slate-600 dark:text-gray-500 mb-6">
+                    <p className="text-xs text-slate-500 dark:text-gray-500 mb-5">
                       Hãy tạo phiếu đầu tiên để quản lý dịch vụ sửa chữa
                     </p>
                     <button
                       onClick={handleCreateWorkOrder}
                       disabled={isCreating}
-                      className="px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl font-medium hover:from-blue-600 hover:to-blue-700 transition-all shadow-lg shadow-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="px-5 py-2.5 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl text-xs font-bold hover:from-blue-600 hover:to-blue-700 transition-all shadow-md shadow-blue-500/10 disabled:opacity-50"
                     >
                       + Tạo phiếu mới
                     </button>
                   </div>
                 ) : (
-                  /* Work Order Cards - Compact for Mobile */
                   filteredWorkOrders.map((workOrder) => (
                     <WorkOrderCard
                       key={workOrder.id}
@@ -678,114 +753,99 @@ export function ServiceManagerMobile({
             <button
               onClick={handleCreateWorkOrder}
               disabled={isCreating}
-              className="fixed bottom-24 right-4 w-12 h-12 bg-gradient-to-br from-[#009ef7] to-[#0077b6] rounded-full shadow-[0_4px_20px_rgba(0,158,247,0.4)] flex items-center justify-center hover:from-[#0077b6] hover:to-[#005a8a] transition-all z-[60] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed border border-white/10"
+              className="fixed bottom-20 right-4 w-12 h-12 bg-gradient-to-br from-[#009ef7] to-[#0077b6] rounded-full shadow-lg shadow-[#009ef7]/20 flex items-center justify-center hover:scale-105 active:scale-95 transition-all z-[60] border border-white/10"
               aria-label="Tạo phiếu mới"
             >
               <Plus className="w-5 h-5 text-white" />
             </button>
           </>
-        )
-        }
+        )}
 
         {/* HISTORY TAB */}
-        {/* HISTORY TAB */}
-        {
-          activeTab === "history" && (
-            <div className="pb-20">
-              <ServiceHistory currentBranchId={currentBranchId} />
-            </div>
-          )
-        }
+        {activeTab === "history" && (
+          <div className="pb-20">
+            <ServiceHistory currentBranchId={currentBranchId} />
+          </div>
+        )}
 
         {/* TEMPLATES TAB */}
-        {
-          activeTab === "templates" && (
-            <div className="p-3">
-              <div className="space-y-3">
-                {templates?.map((template) => (
-                  <div
-                    key={template.id}
-                    className="bg-white dark:bg-[#1e1e2d] rounded-xl p-4 border border-slate-200 dark:border-gray-800 active:bg-slate-50 dark:active:bg-[#2b2b40] transition-colors cursor-pointer"
-                    onClick={() => onApplyTemplate(template)}
-                  >
-                    <div className="flex justify-between items-start mb-2">
-                      <div>
-                        <h3 className="font-bold text-slate-900 dark:text-white">{template.name}</h3>
-                        <p className="text-xs text-slate-600 dark:text-gray-500 mt-1">
-                          {template.description}
-                        </p>
-                      </div>
-                      <span className="text-[#009ef7] font-bold">
-                        {formatCurrency(
-                          template.labor_cost +
-                          (template.parts?.reduce(
-                            (s: number, p: any) => s + p.price * p.quantity,
-                            0
-                          ) || 0)
-                        )}
-                      </span>
+        {activeTab === "templates" && (
+          <div className="p-3">
+            <div className="space-y-3">
+              {templates?.map((template) => (
+                <div
+                  key={template.id}
+                  className="bg-white dark:bg-[#1e1e2d] rounded-xl p-4 border border-slate-200 dark:border-gray-800 active:bg-slate-50 dark:active:bg-[#2b2b40] transition-colors cursor-pointer"
+                  onClick={() => onApplyTemplate(template)}
+                >
+                  <div className="flex justify-between items-start mb-2">
+                    <div>
+                      <h3 className="font-bold text-slate-900 dark:text-white">{template.name}</h3>
+                      <p className="text-xs text-slate-600 dark:text-gray-500 mt-1">
+                        {template.description}
+                      </p>
                     </div>
-                    <div className="flex items-center gap-4 text-xs text-slate-600 dark:text-gray-400 mt-3 pt-3 border-t border-slate-200 dark:border-gray-800">
-                      <div className="flex items-center gap-1">
-                        <Wrench className="w-3.5 h-3.5" />
-                        {template.duration} phút
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Package className="w-3.5 h-3.5" />
-                        {template.parts?.length || 0} phụ tùng
-                      </div>
+                    <span className="text-[#009ef7] font-bold">
+                      {formatCurrency(
+                        template.labor_cost +
+                        (template.parts?.reduce(
+                          (s: number, p: any) => s + p.price * p.quantity,
+                          0
+                        ) || 0)
+                      )}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-4 text-xs text-slate-600 dark:text-gray-400 mt-3 pt-3 border-t border-slate-200 dark:border-gray-800">
+                    <div className="flex items-center gap-1">
+                      <Wrench className="w-3.5 h-3.5" />
+                      {template.duration} phút
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Package className="w-3.5 h-3.5" />
+                      {template.parts?.length || 0} phụ tùng
                     </div>
                   </div>
-                ))}
+                </div>
+              ))}
 
-                {(!templates || templates.length === 0) && (
-                  <div className="text-center py-10 text-slate-600 dark:text-gray-500">
-                    Chưa có mẫu sửa chữa nào
-                  </div>
-                )}
-              </div>
-
-              {/* FAB for Templates */}
-              <button
-                onClick={() => {
-                  // Open template modal for creating
-                  // Since we don't have direct access to open the modal in create mode easily without prop drilling or state lift, 
-                  // we can use the existing onOpenTemplates which opens the modal in ServiceManager.
-                  // Ideally we should refactor to handle it here, but for now:
-                  onOpenTemplates();
-                }}
-                className="fixed bottom-20 right-4 w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-700 rounded-full shadow-xl shadow-purple-500/50 flex items-center justify-center hover:from-purple-600 hover:to-purple-800 transition-all z-[60] active:scale-95"
-              >
-                <Plus className="w-5 h-5 text-white" />
-              </button>
+              {(!templates || templates.length === 0) && (
+                <div className="text-center py-10 text-slate-600 dark:text-gray-500">
+                  Chưa có mẫu sửa chữa nào
+                </div>
+              )}
             </div>
-          )
-        }
 
-        {/* Filter Popup (Optional) */}
-        {
-          showFilterPopup && (
-            <div className="fixed inset-0 bg-black/50 z-50 flex items-end md:items-center md:justify-center modal-bottom-safe">
-              <div className="bg-white dark:bg-[#1e1e2d] rounded-t-3xl md:rounded-2xl w-full md:max-w-md p-6 space-y-4 animate-slide-up">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
-                    Bộ lọc nâng cao
-                  </h3>
-                  <button
-                    onClick={() => setShowFilterPopup(false)}
-                    className="text-slate-600 dark:text-gray-500 hover:text-slate-900 dark:hover:text-gray-300"
-                  >
-                    ✕
-                  </button>
-                </div>
-                {/* Add more filter options here */}
-                <div className="text-slate-600 dark:text-gray-400 text-sm text-center py-8">
-                  Các tùy chọn lọc sẽ được bổ sung...
-                </div>
+            {/* FAB for Templates */}
+            <button
+              onClick={onOpenTemplates}
+              className="fixed bottom-20 right-4 w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-700 rounded-full shadow-lg shadow-purple-500/20 flex items-center justify-center hover:scale-105 active:scale-95 transition-all z-[60]"
+            >
+              <Plus className="w-5 h-5 text-white" />
+            </button>
+          </div>
+        )}
+
+        {/* Filter Popup */}
+        {showFilterPopup && (
+          <div className="fixed inset-0 bg-black/50 z-50 flex items-end md:items-center md:justify-center modal-bottom-safe">
+            <div className="bg-white dark:bg-[#1e1e2d] rounded-t-3xl md:rounded-2xl w-full md:max-w-md p-6 space-y-4 animate-slide-up border border-slate-200 dark:border-gray-800">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
+                  Bộ lọc nâng cao
+                </h3>
+                <button
+                  onClick={() => setShowFilterPopup(false)}
+                  className="text-slate-600 dark:text-gray-500 hover:text-slate-900 dark:hover:text-gray-300"
+                >
+                  ✕
+                </button>
+              </div>
+              <div className="text-slate-600 dark:text-gray-400 text-sm text-center py-8">
+                Các tùy chọn lọc sẽ được bổ sung...
               </div>
             </div>
-          )
-        }
+          </div>
+        )}
 
         <style>{`
         .scrollbar-hide::-webkit-scrollbar {
@@ -807,37 +867,46 @@ export function ServiceManagerMobile({
           animation: slide-up 0.3s ease-out;
         }
       `}</style>
-      </div >
+      </div>
 
-      {/* BOTTOM NAVIGATION BAR */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white/90 dark:bg-[#1e1e2d]/80 backdrop-blur-xl border-t border-slate-200/50 dark:border-white/5 px-6 py-2 z-[100] flex justify-between items-center pb-safe shadow-[0_-4px_20px_rgba(0,0,0,0.05)] dark:shadow-[0_-4px_20px_rgba(0,0,0,0.2)]">
+      {/* BOTTOM NAVIGATION BAR - Dynamic highlight with premium transitions */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white/90 dark:bg-[#1e1e2d]/85 backdrop-blur-xl border-t border-slate-200/50 dark:border-white/5 px-8 py-2 z-[100] flex justify-between items-center pb-safe shadow-[0_-4px_25px_rgba(0,0,0,0.04)] dark:shadow-[0_-4px_25px_rgba(0,0,0,0.25)]">
         <button
           onClick={() => setActiveTab("orders")}
-          className={`flex flex-col items-center gap-1 transition-colors ${activeTab === "orders" ? "text-[#009ef7]" : "text-slate-500 dark:text-gray-500 hover:text-slate-900 dark:hover:text-gray-300"
-            }`}
+          className={`flex flex-col items-center gap-0.5 transition-all duration-200 ${
+            activeTab === "orders" 
+              ? "text-[#009ef7] scale-105 -translate-y-0.5 font-bold" 
+              : "text-slate-400 dark:text-gray-500 hover:text-slate-700 dark:hover:text-gray-300"
+          }`}
         >
-          <ClipboardList className={`w-6 h-6 ${activeTab === "orders" ? "fill-current/20" : ""}`} />
-          <span className="text-[10px] font-semibold">Tổng quan</span>
+          <ClipboardList className={`w-5.5 h-5.5 ${activeTab === "orders" ? "stroke-[2.2]" : "stroke-[1.8]"}`} />
+          <span className="text-[9px] font-bold">Tổng quan</span>
         </button>
 
         <button
           onClick={() => setActiveTab("history")}
-          className={`flex flex-col items-center gap-1 transition-colors ${activeTab === "history" ? "text-[#009ef7]" : "text-slate-500 dark:text-gray-500 hover:text-slate-900 dark:hover:text-gray-300"
-            }`}
+          className={`flex flex-col items-center gap-0.5 transition-all duration-200 ${
+            activeTab === "history" 
+              ? "text-[#009ef7] scale-105 -translate-y-0.5 font-bold" 
+              : "text-slate-400 dark:text-gray-500 hover:text-slate-700 dark:hover:text-gray-300"
+          }`}
         >
-          <History className={`w-6 h-6 ${activeTab === "history" ? "fill-current/20" : ""}`} />
-          <span className="text-[10px] font-semibold">Lịch sử</span>
+          <History className={`w-5.5 h-5.5 ${activeTab === "history" ? "stroke-[2.2]" : "stroke-[1.8]"}`} />
+          <span className="text-[9px] font-bold">Lịch sử</span>
         </button>
 
         <button
           onClick={() => setActiveTab("templates")}
-          className={`flex flex-col items-center gap-1 transition-colors ${activeTab === "templates" ? "text-[#009ef7]" : "text-slate-500 dark:text-gray-500 hover:text-slate-900 dark:hover:text-gray-300"
-            }`}
+          className={`flex flex-col items-center gap-0.5 transition-all duration-200 ${
+            activeTab === "templates" 
+              ? "text-[#009ef7] scale-105 -translate-y-0.5 font-bold" 
+              : "text-slate-400 dark:text-gray-500 hover:text-slate-700 dark:hover:text-gray-300"
+          }`}
         >
-          <FileText className={`w-6 h-6 ${activeTab === "templates" ? "fill-current/20" : ""}`} />
-          <span className="text-[10px] font-semibold">Mẫu SC</span>
+          <FileText className={`w-5.5 h-5.5 ${activeTab === "templates" ? "stroke-[2.2]" : "stroke-[1.8]"}`} />
+          <span className="text-[9px] font-bold">Mẫu SC</span>
         </button>
       </div>
-    </div >
+    </div>
   );
 }

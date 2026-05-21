@@ -69,19 +69,19 @@ const STATUS_ORDER = ['Tiếp nhận', 'Đang sửa', 'Đã sửa xong', 'Trả 
 const PAYMENT_ORDER: PaymentFilter[] = ['all', 'unpaid', 'partial', 'paid'];
 
 const STATUS_COLORS: Record<string, string> = {
-  'Tiếp nhận': '#5AB0FF',
-  'Đang sửa': '#E37D3F',
-  'Đã sửa xong': '#67F0A1',
-  'Trả máy': '#B08AFF',
-  'Đã hủy': '#FF5C6C',
+  'Tiếp nhận': '#3B82F6',
+  'Đang sửa': '#F59E0B',
+  'Đã sửa xong': '#10B981',
+  'Trả máy': '#8B5CF6',
+  'Đã hủy': '#EF4444',
 };
 
 const STATUS_BG: Record<string, string> = {
-  'Tiếp nhận': 'rgba(90,176,255,0.16)',
-  'Đang sửa': 'rgba(227,125,63,0.16)',
-  'Đã sửa xong': 'rgba(103,240,161,0.16)',
-  'Trả máy': 'rgba(176,138,255,0.16)',
-  'Đã hủy': 'rgba(255,92,108,0.16)',
+  'Tiếp nhận': 'rgba(59, 130, 246, 0.12)',
+  'Đang sửa': 'rgba(245, 158, 11, 0.12)',
+  'Đã sửa xong': 'rgba(16, 185, 129, 0.12)',
+  'Trả máy': 'rgba(139, 92, 246, 0.12)',
+  'Đã hủy': 'rgba(239, 68, 68, 0.12)',
 };
 
 const PAYMENT_LABEL: Record<PaymentFilter, string> = {
@@ -94,8 +94,8 @@ const PAYMENT_LABEL: Record<PaymentFilter, string> = {
 const DATE_LABEL: Record<DateFilter, string> = {
   all: 'Mọi thời gian',
   today: 'Hôm nay',
-  '7d': '7 ngày',
-  '30d': '30 ngày',
+  '7d': '7 ngày qua',
+  '30d': '30 ngày qua',
 };
 
 const SORT_LABEL: Record<SortBy, string> = {
@@ -128,7 +128,7 @@ const pickArray = (row: any, keys: string[]) => {
 const normalizeWorkOrder = (row: any): WorkOrder => ({
   id: row.id,
   creationDate: row.creationDate || row.creationdate || row.created_at || new Date().toISOString(),
-  customerName: row.customerName || row.customername || 'Khach le',
+  customerName: row.customerName || row.customername || 'Khách lẻ',
   customerPhone: row.customerPhone || row.customerphone || '',
   customerId: row.customerId || row.customerid,
   vehicleModel: row.vehicleModel || row.vehiclemodel || '',
@@ -340,6 +340,32 @@ const pickDateFilterRange = (filter: DateFilter): { start: Date; end: Date } | n
   return null;
 };
 
+const getAvatarColor = (name: string) => {
+  const colors = [
+    '#3B82F6', // Blue
+    '#10B981', // Emerald
+    '#F59E0B', // Amber
+    '#8B5CF6', // Purple
+    '#EC4899', // Pink
+    '#06B6D4', // Cyan
+    '#EF4444', // Red
+  ];
+  if (!name) return colors[0];
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const index = Math.abs(hash) % colors.length;
+  return colors[index];
+};
+
+const getInitials = (name: string) => {
+  if (!name) return 'K';
+  const parts = name.trim().split(' ');
+  if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
+  return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+};
+
 export default function WorkOrdersScreen() {
   const theme = useAppTheme();
   const styles = useMemo(() => getStyles(theme), [theme]);
@@ -356,6 +382,7 @@ export default function WorkOrdersScreen() {
   const [technicianFilter, setTechnicianFilter] = useState<string>('all');
   const [sortBy, setSortBy] = useState<SortBy>('date_desc');
   const [hideFinance, setHideFinance] = useState(true);
+  const [collapseFinance, setCollapseFinance] = useState(false);
   const [activeTab, setActiveTab] = useState<WorkOrdersTab>('orders');
   const [previewOrder, setPreviewOrder] = useState<WorkOrder | null>(null);
   const [showFilterSheet, setShowFilterSheet] = useState(false);
@@ -375,7 +402,6 @@ export default function WorkOrdersScreen() {
     queryFn: fetchWorkOrders,
     initialPageParam: 0,
     getNextPageParam: (lastPage, allPages) => {
-      // If the last page has less than the page size, it means no more pages.
       return lastPage.length === 20 ? allPages.length : undefined;
     },
     refetchInterval: 30000,
@@ -502,51 +528,6 @@ export default function WorkOrdersScreen() {
       supabase.removeChannel(channel);
     };
   }, [queryClient]);
-
-  const openStatusPicker = () => {
-    Alert.alert('Lọc trạng thái', 'Chọn trạng thái phiếu sửa', [
-      {
-        text: 'Tất cả',
-        onPress: () => setFilterStatus(null),
-      },
-      ...STATUS_ORDER.map((status) => ({
-        text: status,
-        onPress: () => setFilterStatus(status),
-      })),
-      { text: 'Đóng', style: 'cancel' },
-    ]);
-  };
-
-  const openPaymentPicker = () => {
-    Alert.alert('Lọc thanh toán', 'Chọn trạng thái thanh toán', [
-      ...PAYMENT_ORDER.map((key) => ({
-        text: PAYMENT_LABEL[key],
-        onPress: () => setPaymentFilter(key),
-      })),
-      { text: 'Đóng', style: 'cancel' },
-    ]);
-  };
-
-  const openTechnicianPicker = () => {
-    Alert.alert('Lọc kỹ thuật viên', 'Chọn kỹ thuật viên phụ trách', [
-      ...technicians.map((tech) => ({
-        text: tech === 'all' ? 'Tất cả KTV' : tech,
-        onPress: () => setTechnicianFilter(tech),
-      })),
-      { text: 'Đóng', style: 'cancel' },
-    ]);
-  };
-
-  const openSortPicker = () => {
-    const sortOptions: SortBy[] = ['date_desc', 'date_asc', 'total_desc', 'total_asc'];
-    Alert.alert('Sắp xếp', 'Chọn cách sắp xếp danh sách', [
-      ...sortOptions.map((key) => ({
-        text: SORT_LABEL[key],
-        onPress: () => setSortBy(key),
-      })),
-      { text: 'Đóng', style: 'cancel' },
-    ]);
-  };
 
   const askUpdateStatus = (order: WorkOrder) => {
     Alert.alert(
@@ -684,18 +665,25 @@ export default function WorkOrdersScreen() {
     { key: '30d', label: 'Tháng' },
     { key: 'all', label: 'Tất cả' },
   ];
+
   const clearFilters = () => {
     setFilterStatus(null);
     setPaymentFilter('all');
     setTechnicianFilter('all');
     setSortBy('date_desc');
   };
+
+  const handleToggleStatusFilter = (status: string) => {
+    setFilterStatus((prev) => (prev === status ? null : status));
+  };
+
   const activeFilterCount = [
     filterStatus ? 1 : 0,
     paymentFilter !== 'all' ? 1 : 0,
     technicianFilter !== 'all' ? 1 : 0,
     sortBy !== 'date_desc' ? 1 : 0,
   ].reduce((sum, value) => sum + value, 0);
+
   const activeFilterSummary = [
     filterStatus,
     paymentFilter !== 'all' ? PAYMENT_LABEL[paymentFilter] : null,
@@ -705,33 +693,40 @@ export default function WorkOrdersScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      <View style={[styles.tabRow, compact && { gap: 6 }]}>
+      {/* Premium iOS-style Segmented Control */}
+      <View style={styles.segmentedContainer}>
         <Pressable
-          style={({ pressed }) => [styles.tabBtn, activeTab === 'orders' && styles.tabBtnActive, pressed && styles.pressableDown]}
+          style={[styles.segmentBtn, activeTab === 'orders' && styles.segmentBtnActive]}
           onPress={() => setActiveTab('orders')}
         >
-          <View style={[styles.tabIconWrap, activeTab === 'orders' && styles.tabIconWrapActive]}>
-            <MaterialCommunityIcons name="file-document-multiple-outline" size={14} color={activeTab === 'orders' ? '#2B83FF' : '#8EA1C1'} />
-          </View>
-          <Text style={[styles.tabBtnText, activeTab === 'orders' && styles.tabBtnTextActive]}>Phiếu sửa</Text>
+          <MaterialCommunityIcons
+            name="file-document-multiple-outline"
+            size={14}
+            color={activeTab === 'orders' ? theme.primary : theme.textSecondary}
+          />
+          <Text style={[styles.segmentText, activeTab === 'orders' && styles.segmentTextActive]}>Phiếu sửa</Text>
         </Pressable>
         <Pressable
-          style={({ pressed }) => [styles.tabBtn, activeTab === 'history' && styles.tabBtnActive, pressed && styles.pressableDown]}
+          style={[styles.segmentBtn, activeTab === 'history' && styles.segmentBtnActive]}
           onPress={() => setActiveTab('history')}
         >
-          <View style={[styles.tabIconWrap, activeTab === 'history' && styles.tabIconWrapActive]}>
-            <MaterialCommunityIcons name="history" size={14} color={activeTab === 'history' ? '#2B83FF' : '#8EA1C1'} />
-          </View>
-          <Text style={[styles.tabBtnText, activeTab === 'history' && styles.tabBtnTextActive]}>Lịch sử</Text>
+          <MaterialCommunityIcons
+            name="history"
+            size={14}
+            color={activeTab === 'history' ? theme.primary : theme.textSecondary}
+          />
+          <Text style={[styles.segmentText, activeTab === 'history' && styles.segmentTextActive]}>Lịch sử</Text>
         </Pressable>
         <Pressable
-          style={({ pressed }) => [styles.tabBtn, activeTab === 'templates' && styles.tabBtnActive, pressed && styles.pressableDown]}
+          style={[styles.segmentBtn, activeTab === 'templates' && styles.segmentBtnActive]}
           onPress={() => setActiveTab('templates')}
         >
-          <View style={[styles.tabIconWrap, activeTab === 'templates' && styles.tabIconWrapActive]}>
-            <MaterialCommunityIcons name="clipboard-text-outline" size={14} color={activeTab === 'templates' ? '#2B83FF' : '#8EA1C1'} />
-          </View>
-          <Text style={[styles.tabBtnText, activeTab === 'templates' && styles.tabBtnTextActive]}>Mẫu</Text>
+          <MaterialCommunityIcons
+            name="clipboard-text-outline"
+            size={14}
+            color={activeTab === 'templates' ? theme.primary : theme.textSecondary}
+          />
+          <Text style={[styles.segmentText, activeTab === 'templates' && styles.segmentTextActive]}>Mẫu</Text>
         </Pressable>
       </View>
 
@@ -754,12 +749,12 @@ export default function WorkOrdersScreen() {
               </View>
             ) : historyError ? (
               <View style={styles.emptyBox}>
-                <MaterialCommunityIcons name="alert-circle-outline" size={34} color="#6F86AA" />
+                <MaterialCommunityIcons name="alert-circle-outline" size={34} color={theme.textSecondary} />
                 <Text style={styles.emptyText}>Không tải được lịch sử phiếu sửa</Text>
               </View>
             ) : (
               <View style={styles.emptyBox}>
-                <MaterialCommunityIcons name="history" size={34} color="#6F86AA" />
+                <MaterialCommunityIcons name="history" size={34} color={theme.textSecondary} />
                 <Text style={styles.emptyText}>Chưa có lịch sử thao tác</Text>
               </View>
             )
@@ -796,7 +791,7 @@ export default function WorkOrdersScreen() {
               </View>
             ) : (
               <View style={styles.emptyBox}>
-                <MaterialCommunityIcons name="clipboard-text-outline" size={34} color="#6F86AA" />
+                <MaterialCommunityIcons name="clipboard-text-outline" size={34} color={theme.textSecondary} />
                 <Text style={styles.emptyText}>Chưa có mẫu gợi ý từ dữ liệu</Text>
               </View>
             )
@@ -832,335 +827,358 @@ export default function WorkOrdersScreen() {
         />
       ) : (
         <>
-      <View style={styles.statsRow}>
-        <View style={styles.summaryCell}>
-          <StatCard icon="file-document-outline" label="Tiếp nhận" value={stats['Tiếp nhận'] ?? 0} color={STATUS_COLORS['Tiếp nhận']} compact />
-        </View>
-        <View style={styles.summaryCell}>
-          <StatCard icon="wrench-outline" label="Đang sửa" value={stats['Đang sửa'] ?? 0} color={STATUS_COLORS['Đang sửa']} compact />
-        </View>
-        <View style={styles.summaryCell}>
-          <StatCard icon="check-circle-outline" label="Đã sửa" value={stats['Đã sửa xong'] ?? 0} color={STATUS_COLORS['Đã sửa xong']} compact />
-        </View>
-        <View style={styles.summaryCell}>
-          <StatCard icon="motorbike" label="Trả máy" value={stats['Trả máy'] ?? 0} color={STATUS_COLORS['Trả máy']} compact />
-        </View>
-      </View>
+          {/* Interactive Status Cards Row */}
+          <View style={styles.statsRow}>
+            <View style={styles.summaryCell}>
+              <StatCard
+                icon="file-document-outline"
+                label="Tiếp nhận"
+                value={stats['Tiếp nhận'] ?? 0}
+                color={STATUS_COLORS['Tiếp nhận']}
+                active={filterStatus === 'Tiếp nhận'}
+                onPress={() => handleToggleStatusFilter('Tiếp nhận')}
+                compact
+              />
+            </View>
+            <View style={styles.summaryCell}>
+              <StatCard
+                icon="wrench-outline"
+                label="Đang sửa"
+                value={stats['Đang sửa'] ?? 0}
+                color={STATUS_COLORS['Đang sửa']}
+                active={filterStatus === 'Đang sửa'}
+                onPress={() => handleToggleStatusFilter('Đang sửa')}
+                compact
+              />
+            </View>
+            <View style={styles.summaryCell}>
+              <StatCard
+                icon="check-circle-outline"
+                label="Đã xong"
+                value={stats['Đã sửa xong'] ?? 0}
+                color={STATUS_COLORS['Đã sửa xong']}
+                active={filterStatus === 'Đã sửa xong'}
+                onPress={() => handleToggleStatusFilter('Đã sửa xong')}
+                compact
+              />
+            </View>
+            <View style={styles.summaryCell}>
+              <StatCard
+                icon="motorbike"
+                label="Trả máy"
+                value={stats['Trả máy'] ?? 0}
+                color={STATUS_COLORS['Trả máy']}
+                active={filterStatus === 'Trả máy'}
+                onPress={() => handleToggleStatusFilter('Trả máy')}
+                compact
+              />
+            </View>
+          </View>
 
-      <View style={styles.financeRow}>
-        <View style={styles.financeCell}>
-          <FinanceCard
-            label="Doanh thu 7 ngày qua"
-            value={financeSummary.revenue}
-            kind="revenue"
-            dateFilter={dateFilter}
-            hidden={hideFinance}
-            onToggle={() => setHideFinance((v) => !v)}
-            compact
-          />
-        </View>
-        <View style={styles.financeCell}>
-          <FinanceCard
-            label="Lợi nhuận 7 ngày qua"
-            value={financeSummary.profit}
-            kind="profit"
-            dateFilter={dateFilter}
-            hidden={hideFinance}
-            onToggle={() => setHideFinance((v) => !v)}
-            compact
-          />
-        </View>
-      </View>
+          {/* Premium Collapsible Financial Panel */}
+          <View style={styles.financeContainer}>
+            <View style={styles.financeHeader}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <MaterialCommunityIcons name="chart-bell-curve-cumulative" size={16} color={theme.primary} />
+                <Text style={styles.financeHeaderTitle}>Báo cáo tài chính ({DATE_LABEL[dateFilter].toLowerCase()})</Text>
+              </View>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                <TouchableOpacity onPress={() => setHideFinance((v) => !v)} style={styles.financeHeaderIcon}>
+                  <Feather name={hideFinance ? 'eye-off' : 'eye'} size={14} color={theme.textSecondary} />
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => setCollapseFinance((v) => !v)} style={styles.financeHeaderIcon}>
+                  <Feather name={collapseFinance ? 'chevron-down' : 'chevron-up'} size={15} color={theme.textSecondary} />
+                </TouchableOpacity>
+              </View>
+            </View>
+            
+            {!collapseFinance && (
+              <View style={styles.financeCardRow}>
+                <View style={[styles.financeItemCard, { backgroundColor: theme.primary === '#3B82F6' ? 'rgba(59, 130, 246, 0.06)' : 'rgba(43, 131, 255, 0.04)', borderColor: theme.primary + '30' }]}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Text style={styles.financeItemLabel}>Doanh thu</Text>
+                    <MaterialCommunityIcons name="cash-multiple" size={15} color={theme.primary} />
+                  </View>
+                  <Text style={[styles.financeItemValue, { color: theme.primary }]}>
+                    {hideFinance ? '••••••••' : formatCurrency(financeSummary.revenue)}
+                  </Text>
+                </View>
+                
+                <View style={[styles.financeItemCard, { backgroundColor: 'rgba(16, 185, 129, 0.06)', borderColor: 'rgba(16, 185, 129, 0.3)' }]}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Text style={styles.financeItemLabel}>Lợi nhuận</Text>
+                    <MaterialCommunityIcons name="trending-up" size={15} color="#10B981" />
+                  </View>
+                  <Text style={[styles.financeItemValue, { color: '#10B981' }]}>
+                    {hideFinance ? '••••••••' : formatCurrency(financeSummary.profit)}
+                  </Text>
+                </View>
+              </View>
+            )}
+          </View>
 
-      <View style={styles.searchRow}>
-        <Feather name="search" size={16} color="#8290A8" style={styles.searchIcon} />
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Tìm tên, SDT, biển số, dòng xe..."
-          placeholderTextColor={theme.textSecondary}
-          value={search}
-          onChangeText={setSearch}
-        />
-      </View>
+          {/* Sleek Integrated Search & Filter Row */}
+          <View style={styles.searchFilterRow}>
+            <View style={styles.searchInputContainer}>
+              <Feather name="search" size={15} color={theme.textSecondary} style={styles.searchFieldIcon} />
+              <TextInput
+                style={styles.searchFieldInput}
+                placeholder="Tìm tên, SĐT, biển số, xe..."
+                placeholderTextColor={theme.textSecondary + '80'}
+                value={search}
+                onChangeText={setSearch}
+              />
+              {search.length > 0 && (
+                <TouchableOpacity onPress={() => setSearch('')} style={styles.searchClearBtn}>
+                  <Feather name="x" size={14} color={theme.textSecondary} />
+                </TouchableOpacity>
+              )}
+            </View>
+            
+            <TouchableOpacity
+              style={[
+                styles.filterIconButton,
+                activeFilterCount > 0 && { borderColor: theme.primary, backgroundColor: theme.primary + '10' }
+              ]}
+              onPress={() => setShowFilterSheet(true)}
+            >
+              <MaterialCommunityIcons
+                name={activeFilterCount > 0 ? "filter" : "filter-outline"}
+                size={18}
+                color={activeFilterCount > 0 ? theme.primary : theme.textSecondary}
+              />
+              {activeFilterCount > 0 && (
+                <View style={styles.filterIconBadge}>
+                  <Text style={styles.filterIconBadgeText}>{activeFilterCount}</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+          </View>
 
-      <View style={styles.quickFiltersRow}>
-        {dateQuickChips.map((chip) => (
-          <Pressable
-            key={chip.key}
-            style={({ pressed }) => [styles.quickChip, dateFilter === chip.key && styles.quickChipActive, pressed && styles.pressableDown]}
-            onPress={() => setDateFilter(chip.key)}
-          >
-            <Text style={[styles.quickChipText, dateFilter === chip.key && styles.quickChipTextActive]}>
-              {chip.label}
-            </Text>
-          </Pressable>
-        ))}
-      </View>
+          {/* Quick Date Range Filters */}
+          <View style={styles.quickFiltersRow}>
+            {dateQuickChips.map((chip) => (
+              <Pressable
+                key={chip.key}
+                style={({ pressed }) => [styles.quickChip, dateFilter === chip.key && styles.quickChipActive, pressed && styles.pressableDown]}
+                onPress={() => setDateFilter(chip.key)}
+              >
+                <Text style={[styles.quickChipText, dateFilter === chip.key && styles.quickChipTextActive]}>
+                  {chip.label}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
 
-      <View style={styles.filterBar}>
-        <Pressable
-          style={({ pressed }) => [styles.filterButton, pressed && styles.pressableDown]}
-          onPress={() => setShowFilterSheet(true)}
-        >
-          <MaterialCommunityIcons name="tune-variant" size={16} color="#A9B7D0" />
-          <Text style={styles.filterButtonText}>Bộ lọc</Text>
+          {/* Active Filters Clear Options */}
           {activeFilterCount > 0 ? (
-            <View style={styles.filterBadge}>
-              <Text style={styles.filterBadgeText}>{activeFilterCount}</Text>
+            <View style={styles.filterBar}>
+              <Pressable
+                style={({ pressed }) => [styles.clearFilterButton, pressed && styles.pressableDown]}
+                onPress={clearFilters}
+              >
+                <MaterialCommunityIcons name="filter-remove-outline" size={14} color={theme.danger} />
+                <Text style={styles.clearFilterText}>Xóa bộ lọc ({activeFilterCount})</Text>
+              </Pressable>
             </View>
           ) : null}
-        </Pressable>
 
-        {activeFilterCount > 0 ? (
-          <Pressable
-            style={({ pressed }) => [styles.clearFilterButton, pressed && styles.pressableDown]}
-            onPress={clearFilters}
-          >
-            <MaterialCommunityIcons name="filter-remove-outline" size={14} color="#FF9BA8" />
-            <Text style={styles.clearFilterText}>Xóa lọc</Text>
-          </Pressable>
-        ) : null}
-      </View>
-
-      {activeFilterSummary.length > 0 ? (
-        <View style={styles.filterSummaryRow}>
-          <Text style={styles.filterSummaryText}>{activeFilterSummary.join(' • ')}</Text>
-        </View>
-      ) : null}
-
-      {isLoading ? (
-        <View style={styles.loadingBox}>
-          <ActivityIndicator size="large" color={BRAND_COLORS.primary} />
-        </View>
-      ) : isError ? (
-        <View style={styles.emptyBox}>
-          <MaterialCommunityIcons name="alert-circle-outline" size={34} color="#6F86AA" />
-          <Text style={styles.emptyText}>Không tải được danh sách phiếu sửa</Text>
-          <Text style={styles.errorHint}>{(error as Error)?.message || 'Lỗi không xác định'}</Text>
-        </View>
-      ) : (
-        <FlatList
-          data={filtered}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listContent}
-          refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={BRAND_COLORS.primary} />}
-          onEndReached={() => {
-            if (hasNextPage && !isFetchingNextPage) {
-              fetchNextPage();
-            }
-          }}
-          onEndReachedThreshold={0.5}
-          ListFooterComponent={
-            isFetchingNextPage ? (
-              <View style={{ paddingVertical: 16, alignItems: 'center' }}>
-                <ActivityIndicator size="small" color={BRAND_COLORS.primary} />
-                <Text style={{ marginTop: 8, color: theme.textSecondary, fontSize: 13 }}>Đang tải thêm...</Text>
-              </View>
-            ) : null
-          }
-          ListEmptyComponent={
-            <View style={styles.emptyBox}>
-              <MaterialCommunityIcons name="text-box-search-outline" size={34} color="#6F86AA" />
-              <Text style={styles.emptyText}>Không có phiếu sửa theo bộ lọc</Text>
+          {activeFilterSummary.length > 0 ? (
+            <View style={styles.filterSummaryRow}>
+              <Text style={styles.filterSummaryText}>Đang lọc: {activeFilterSummary.join(' • ')}</Text>
             </View>
-          }
-          renderItem={({ item }) => (
-            <WorkOrderCard
-              order={item}
-              onOpenDetail={() =>
-                router.push({
-                  pathname: '/(tabs)/workorder-detail/[id]',
-                  params: { id: item.id },
-                })
+          ) : null}
+
+          {/* Infinite Scroll FlatList */}
+          {isLoading ? (
+            <View style={styles.loadingBox}>
+              <ActivityIndicator size="large" color={BRAND_COLORS.primary} />
+            </View>
+          ) : isError ? (
+            <View style={styles.emptyBox}>
+              <MaterialCommunityIcons name="alert-circle-outline" size={34} color={theme.textSecondary} />
+              <Text style={styles.emptyText}>Không tải được danh sách phiếu sửa</Text>
+              <Text style={styles.errorHint}>{(error as Error)?.message || 'Lỗi không xác định'}</Text>
+            </View>
+          ) : (
+            <FlatList
+              data={filtered}
+              keyExtractor={(item) => item.id}
+              contentContainerStyle={styles.listContent}
+              refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={BRAND_COLORS.primary} />}
+              onEndReached={() => {
+                if (hasNextPage && !isFetchingNextPage) {
+                  fetchNextPage();
+                }
+              }}
+              onEndReachedThreshold={0.5}
+              ListFooterComponent={
+                isFetchingNextPage ? (
+                  <View style={{ paddingVertical: 16, alignItems: 'center' }}>
+                    <ActivityIndicator size="small" color={BRAND_COLORS.primary} />
+                    <Text style={{ marginTop: 8, color: theme.textSecondary, fontSize: 13 }}>Đang tải thêm...</Text>
+                  </View>
+                ) : null
               }
-              onChangeStatus={() => askUpdateStatus(item)}
-              onCall={() => callCustomer(item.customerPhone)}
-              onPrint={() => handlePrintOrder(item)}
-              onShare={() => handleShareOrder(item)}
-              isSharing={false}
-              onEdit={() =>
-                router.push({
-                  pathname: '/(tabs)/workorder-edit/[id]',
-                  params: { id: item.id },
-                })
+              ListEmptyComponent={
+                <View style={styles.emptyBox}>
+                  <MaterialCommunityIcons name="text-box-search-outline" size={34} color={theme.textSecondary} />
+                  <Text style={styles.emptyText}>Không có phiếu sửa phù hợp</Text>
+                </View>
               }
-              onDelete={() => askDeleteOrder(item)}
+              renderItem={({ item }) => (
+                <WorkOrderCard
+                  order={item}
+                  onOpenDetail={() =>
+                    router.push({
+                      pathname: '/(tabs)/workorder-detail/[id]',
+                      params: { id: item.id },
+                    })
+                  }
+                  onChangeStatus={() => askUpdateStatus(item)}
+                  onCall={() => callCustomer(item.customerPhone)}
+                  onPrint={() => handlePrintOrder(item)}
+                  onShare={() => handleShareOrder(item)}
+                  isSharing={false}
+                  onEdit={() =>
+                    router.push({
+                      pathname: '/(tabs)/workorder-edit/[id]',
+                      params: { id: item.id },
+                    })
+                  }
+                  onDelete={() => askDeleteOrder(item)}
+                />
+              )}
             />
           )}
-        />
-      )}
 
-      <Pressable
-        style={({ pressed }) => [styles.fab, { bottom: 96 + insets.bottom }, pressed && styles.pressableDown]}
-        onPress={() => router.push('/(tabs)/workorder-create')}
-      >
-        <Text style={styles.fabText}>＋</Text>
-      </Pressable>
-
-      <WorkOrderPreviewModal
-        visible={!!previewOrder}
-        order={previewOrder as any}
-        storeSettings={(storeSettingsForReceipt || null) as any}
-        onClose={() => setPreviewOrder(null)}
-      />
-
-      <Modal
-        visible={showFilterSheet}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowFilterSheet(false)}
-      >
-        <Pressable style={styles.sheetBackdrop} onPress={() => setShowFilterSheet(false)}>
-          <Pressable style={styles.sheetCard} onPress={() => {}}>
-            <View style={styles.sheetHandle} />
-            <Text style={styles.sheetTitle}>Bộ lọc phiếu sửa</Text>
-            <Text style={styles.sheetSubtitle}>Chọn các điều kiện muốn áp dụng cho danh sách</Text>
-
-            <Text style={styles.filterSectionTitle}>Trạng thái</Text>
-            <View style={styles.filterOptionsWrap}>
-              <Pressable
-                style={({ pressed }) => [
-                  styles.filterOptionChip,
-                  !filterStatus && styles.filterOptionChipActive,
-                  pressed && styles.pressableDown,
-                ]}
-                onPress={() => setFilterStatus(null)}
-              >
-                <Text style={[styles.filterOptionText, !filterStatus && styles.filterOptionTextActive]}>Tất cả</Text>
-              </Pressable>
-              {STATUS_ORDER.map((status) => (
-                <Pressable
-                  key={status}
-                  style={({ pressed }) => [
-                    styles.filterOptionChip,
-                    filterStatus === status && styles.filterOptionChipActive,
-                    pressed && styles.pressableDown,
-                  ]}
-                  onPress={() => setFilterStatus(status)}
-                >
-                  <Text style={[styles.filterOptionText, filterStatus === status && styles.filterOptionTextActive]}>{status}</Text>
-                </Pressable>
-              ))}
-            </View>
-
-            <Text style={styles.filterSectionTitle}>Thanh toán</Text>
-            <View style={styles.filterOptionsWrap}>
-              {PAYMENT_ORDER.map((key) => (
-                <Pressable
-                  key={key}
-                  style={({ pressed }) => [
-                    styles.filterOptionChip,
-                    paymentFilter === key && styles.filterOptionChipActive,
-                    pressed && styles.pressableDown,
-                  ]}
-                  onPress={() => setPaymentFilter(key)}
-                >
-                  <Text style={[styles.filterOptionText, paymentFilter === key && styles.filterOptionTextActive]}>
-                    {PAYMENT_LABEL[key]}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
-
-            <Text style={styles.filterSectionTitle}>Kỹ thuật viên</Text>
-            <View style={styles.filterOptionsWrap}>
-              {technicians.map((tech) => (
-                <Pressable
-                  key={tech}
-                  style={({ pressed }) => [
-                    styles.filterOptionChip,
-                    technicianFilter === tech && styles.filterOptionChipActive,
-                    pressed && styles.pressableDown,
-                  ]}
-                  onPress={() => setTechnicianFilter(tech)}
-                >
-                  <Text style={[styles.filterOptionText, technicianFilter === tech && styles.filterOptionTextActive]}>
-                    {tech === 'all' ? 'Tất cả KTV' : tech}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
-
-            <Text style={styles.filterSectionTitle}>Sắp xếp</Text>
-            <View style={styles.filterOptionsWrap}>
-              {(['date_desc', 'date_asc', 'total_desc', 'total_asc'] as SortBy[]).map((key) => (
-                <Pressable
-                  key={key}
-                  style={({ pressed }) => [
-                    styles.filterOptionChip,
-                    sortBy === key && styles.filterOptionChipActive,
-                    pressed && styles.pressableDown,
-                  ]}
-                  onPress={() => setSortBy(key)}
-                >
-                  <Text style={[styles.filterOptionText, sortBy === key && styles.filterOptionTextActive]}>
-                    {SORT_LABEL[key]}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
-
-            <View style={styles.filterSheetActions}>
-              {activeFilterCount > 0 ? (
-                <TouchableOpacity style={styles.sheetSecondaryBtn} onPress={clearFilters}>
-                  <Text style={styles.sheetSecondaryText}>Xóa lọc</Text>
-                </TouchableOpacity>
-              ) : null}
-              <TouchableOpacity style={styles.sheetPrimaryBtn} onPress={() => setShowFilterSheet(false)}>
-                <Text style={styles.sheetPrimaryText}>Áp dụng</Text>
-              </TouchableOpacity>
-            </View>
+          {/* Glowing Primary Gradient-style FAB */}
+          <Pressable
+            style={({ pressed }) => [styles.fab, { bottom: 96 + insets.bottom }, pressed && styles.pressableDown]}
+            onPress={() => router.push('/(tabs)/workorder-create')}
+          >
+            <Text style={styles.fabText}>＋</Text>
           </Pressable>
-        </Pressable>
-      </Modal>
-      </>
+
+          <WorkOrderPreviewModal
+            visible={!!previewOrder}
+            order={previewOrder as any}
+            storeSettings={(storeSettingsForReceipt || null) as any}
+            onClose={() => setPreviewOrder(null)}
+          />
+
+          {/* Theme-compliant Dynamic Filter Modal */}
+          <Modal
+            visible={showFilterSheet}
+            transparent
+            animationType="fade"
+            onRequestClose={() => setShowFilterSheet(false)}
+          >
+            <Pressable style={styles.sheetBackdrop} onPress={() => setShowFilterSheet(false)}>
+              <Pressable style={styles.sheetCard} onPress={() => {}}>
+                <View style={styles.sheetHandle} />
+                <Text style={styles.sheetTitle}>Bộ lọc nâng cao</Text>
+                <Text style={styles.sheetSubtitle}>Chọn các điều kiện muốn áp dụng cho danh sách</Text>
+
+                <Text style={styles.filterSectionTitle}>Trạng thái phiếu sửa</Text>
+                <View style={styles.filterOptionsWrap}>
+                  <Pressable
+                    style={({ pressed }) => [
+                      styles.filterOptionChip,
+                      !filterStatus && styles.filterOptionChipActive,
+                      pressed && styles.pressableDown,
+                    ]}
+                    onPress={() => setFilterStatus(null)}
+                  >
+                    <Text style={[styles.filterOptionText, !filterStatus && styles.filterOptionTextActive]}>Tất cả</Text>
+                  </Pressable>
+                  {STATUS_ORDER.map((status) => (
+                    <Pressable
+                      key={status}
+                      style={({ pressed }) => [
+                        styles.filterOptionChip,
+                        filterStatus === status && styles.filterOptionChipActive,
+                        pressed && styles.pressableDown,
+                      ]}
+                      onPress={() => setFilterStatus(status)}
+                    >
+                      <Text style={[styles.filterOptionText, filterStatus === status && styles.filterOptionTextActive]}>{status}</Text>
+                    </Pressable>
+                  ))}
+                </View>
+
+                <Text style={styles.filterSectionTitle}>Trạng thái thanh toán</Text>
+                <View style={styles.filterOptionsWrap}>
+                  {PAYMENT_ORDER.map((key) => (
+                    <Pressable
+                      key={key}
+                      style={({ pressed }) => [
+                        styles.filterOptionChip,
+                        paymentFilter === key && styles.filterOptionChipActive,
+                        pressed && styles.pressableDown,
+                      ]}
+                      onPress={() => setPaymentFilter(key)}
+                    >
+                      <Text style={[styles.filterOptionText, paymentFilter === key && styles.filterOptionTextActive]}>
+                        {PAYMENT_LABEL[key]}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+
+                <Text style={styles.filterSectionTitle}>Kỹ thuật viên phụ trách</Text>
+                <View style={styles.filterOptionsWrap}>
+                  {technicians.map((tech) => (
+                    <Pressable
+                      key={tech}
+                      style={({ pressed }) => [
+                        styles.filterOptionChip,
+                        technicianFilter === tech && styles.filterOptionChipActive,
+                        pressed && styles.pressableDown,
+                      ]}
+                      onPress={() => setTechnicianFilter(tech)}
+                    >
+                      <Text style={[styles.filterOptionText, technicianFilter === tech && styles.filterOptionTextActive]}>
+                        {tech === 'all' ? 'Tất cả KTV' : tech}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+
+                <Text style={styles.filterSectionTitle}>Sắp xếp danh sách</Text>
+                <View style={styles.filterOptionsWrap}>
+                  {(['date_desc', 'date_asc', 'total_desc', 'total_asc'] as SortBy[]).map((key) => (
+                    <Pressable
+                      key={key}
+                      style={({ pressed }) => [
+                        styles.filterOptionChip,
+                        sortBy === key && styles.filterOptionChipActive,
+                        pressed && styles.pressableDown,
+                      ]}
+                      onPress={() => setSortBy(key)}
+                    >
+                      <Text style={[styles.filterOptionText, sortBy === key && styles.filterOptionTextActive]}>
+                        {SORT_LABEL[key]}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+
+                <View style={styles.filterSheetActions}>
+                  {activeFilterCount > 0 ? (
+                    <TouchableOpacity style={styles.sheetSecondaryBtn} onPress={clearFilters}>
+                      <Text style={styles.sheetSecondaryText}>Xóa lọc</Text>
+                    </TouchableOpacity>
+                  ) : null}
+                  <TouchableOpacity style={styles.sheetPrimaryBtn} onPress={() => setShowFilterSheet(false)}>
+                    <Text style={styles.sheetPrimaryText}>Áp dụng</Text>
+                  </TouchableOpacity>
+                </View>
+              </Pressable>
+            </Pressable>
+          </Modal>
+        </>
       )}
-    </View>
-  );
-}
-
-function FinanceCard({
-  label,
-  value,
-  kind,
-  dateFilter = '7d',
-  hidden,
-  onToggle,
-  compact = false,
-}: {
-  label: string;
-  value: number;
-  kind: 'revenue' | 'profit';
-  dateFilter?: DateFilter;
-  hidden: boolean;
-  onToggle: () => void;
-  compact?: boolean;
-}) {
-  const theme = useAppTheme();
-  const styles = useMemo(() => getStyles(theme), [theme]);
-  const displayLabel = useMemo(() => {
-    if (kind === 'revenue') {
-      if (dateFilter === 'today') return 'Doanh thu hôm nay';
-      if (dateFilter === '30d') return 'Doanh thu tháng này';
-      if (dateFilter === 'all') return 'Doanh thu toàn bộ';
-      return 'Doanh thu 7 ngày qua';
-    }
-
-    if (dateFilter === 'today') return 'Lợi nhuận hôm nay';
-    if (dateFilter === '30d') return 'Lợi nhuận tháng này';
-    if (dateFilter === 'all') return 'Lợi nhuận toàn bộ';
-    return 'Lợi nhuận 7 ngày qua';
-  }, [dateFilter, kind]);
-
-  return (
-    <View style={[styles.financeCard, compact && styles.financeCardCompact]}>
-      <View style={styles.financeTopRow}>
-        <Text style={styles.financeLabel}>{displayLabel || label}</Text>
-        <TouchableOpacity onPress={onToggle}>
-          <Feather name={hidden ? 'eye-off' : 'eye'} size={14} color="#8FA2C3" />
-        </TouchableOpacity>
-      </View>
-      <Text style={styles.financeValue}>{hidden ? '••••••••' : formatCurrency(value)}</Text>
     </View>
   );
 }
@@ -1171,21 +1189,33 @@ function StatCard({
   value,
   color,
   compact = false,
+  active = false,
+  onPress,
 }: {
   icon: React.ComponentProps<typeof MaterialCommunityIcons>['name'];
   label: string;
   value: number;
   color: string;
   compact?: boolean;
+  active?: boolean;
+  onPress?: () => void;
 }) {
   const theme = useAppTheme();
   const styles = useMemo(() => getStyles(theme), [theme]);
   return (
-    <View style={[styles.statCard, compact && styles.statCardCompact]}>
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.statCard,
+        compact && styles.statCardCompact,
+        active && { borderColor: color, borderWidth: 1.5, backgroundColor: color + '0D' },
+        pressed && styles.pressableDown
+      ]}
+    >
       <MaterialCommunityIcons name={icon} size={18} color={color} />
-      <Text style={styles.statValue}>{value}</Text>
-      <Text style={styles.statLabel}>{label}</Text>
-    </View>
+      <Text style={[styles.statValue, active && { fontWeight: '900' }]}>{value}</Text>
+      <Text style={[styles.statLabel, active && { color: color, fontWeight: '700' }]}>{label}</Text>
+    </Pressable>
   );
 }
 
@@ -1230,6 +1260,12 @@ function WorkOrderCard({
     partial: BRAND_COLORS.warning,
     paid: BRAND_COLORS.success,
   };
+  const payBg: Record<string, string> = {
+    unpaid: 'rgba(239, 68, 68, 0.1)',
+    partial: 'rgba(245, 158, 11, 0.1)',
+    paid: 'rgba(16, 185, 129, 0.1)',
+  };
+
   const openMoreActions = () => setShowMoreActions(true);
   const closeMoreActions = () => setShowMoreActions(false);
   const runMoreAction = (action: () => void) => {
@@ -1237,199 +1273,183 @@ function WorkOrderCard({
     action();
   };
 
+  const avatarColor = getAvatarColor(order.customerName);
+  const initials = getInitials(order.customerName);
+
   return (
     <Animated.View style={{ transform: [{ scale }] }}>
-      <>
-        <TouchableOpacity
-          style={styles.card}
-          activeOpacity={0.96}
-          onPress={onOpenDetail}
-          onPressIn={() => runSpring(0.985)}
-          onPressOut={() => runSpring(1)}
-        >
-          <View style={styles.cardTopRow}>
-            <Text style={styles.codeText}>{formatWorkOrderCode(order.id)}</Text>
+      <TouchableOpacity
+        style={styles.card}
+        activeOpacity={0.96}
+        onPress={onOpenDetail}
+        onPressIn={() => runSpring(0.985)}
+        onPressOut={() => runSpring(1)}
+      >
+        {/* Top Header Row with Avatar & Code Badge */}
+        <View style={styles.cardHeader}>
+          <View style={[styles.avatarContainer, { backgroundColor: avatarColor }]}>
+            <Text style={styles.avatarText}>{initials}</Text>
+          </View>
+          
+          <View style={{ flex: 1, gap: 2 }}>
+            <Text style={styles.customerName} numberOfLines={1}>{order.customerName}</Text>
+            <View style={styles.inlineInfoRow}>
+              <MaterialCommunityIcons name="motorbike" size={13} color={theme.textSecondary} />
+              <Text style={styles.vehicleModel} numberOfLines={1}>
+                {order.vehicleModel || 'Xe máy'} {order.licensePlate ? `• ${order.licensePlate}` : ''}
+              </Text>
+            </View>
+          </View>
+          
+          <View style={{ alignItems: 'flex-end', gap: 4 }}>
+            <View style={styles.codeBadge}>
+              <Text style={styles.codeBadgeText}>{formatWorkOrderCode(order.id)}</Text>
+            </View>
             <Text style={styles.dateText}>{formatDate(order.creationDate)}</Text>
           </View>
-          <View style={styles.cardHeader}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.customerName}>{order.customerName}</Text>
-              <View style={styles.inlineInfoRow}>
-                <MaterialCommunityIcons name="motorbike" size={14} color="#9FAECC" />
-                <Text style={styles.vehicleModel}>{order.vehicleModel || 'Xe máy'}</Text>
-              </View>
-              <Text style={styles.plateText}>{order.licensePlate || 'Chưa có biển số'}</Text>
-            </View>
-            <View style={{ alignItems: 'flex-end', gap: 6 }}>
-              <TouchableOpacity
-                onPress={onChangeStatus}
-                style={[styles.statusBadge, { backgroundColor: theme.primary === '#3B82F6' ? (STATUS_BG[order.status] + '20') : (STATUS_BG[order.status] || '#EEF2F8') }]}
-              >
-                <Text style={[styles.statusText, { color: STATUS_COLORS[order.status] || '#D2DBEC' }]}>
-                  {order.status}
+        </View>
+
+        {/* Issue Description enclosed in a beautiful accent box */}
+        {order.issueDescription ? (
+          <View style={[styles.issueBox, { borderLeftColor: STATUS_COLORS[order.status] || theme.primary }]}>
+            <Text style={styles.issueText} numberOfLines={2}>{order.issueDescription}</Text>
+          </View>
+        ) : null}
+
+        {/* Footer info: KTV, Payment Status & Total */}
+        <View style={styles.cardFooter}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+            <Feather name="tool" size={11} color={theme.textSecondary} />
+            <Text style={styles.techText} numberOfLines={1}>KTV: {order.technicianName || 'Chưa gán'}</Text>
+          </View>
+          
+          <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+            {order.paymentStatus ? (
+              <View style={[styles.payPill, { backgroundColor: payBg[order.paymentStatus] || 'rgba(0,0,0,0.05)' }]}>
+                <Text style={[styles.payLabel, { color: payColor[order.paymentStatus] || theme.textSecondary }]}>
+                  {payLabel[order.paymentStatus]}
                 </Text>
-              </TouchableOpacity>
-              <Text style={styles.phoneText}>{order.customerPhone || '-'}</Text>
-            </View>
+              </View>
+            ) : null}
+            <Text style={styles.total}>{formatCurrency(order.total)}</Text>
           </View>
+        </View>
 
-          {order.issueDescription ? (
-            <View style={styles.inlineInfoRow}>
-              <MaterialCommunityIcons name="text-box-outline" size={14} color="#A9B7D0" />
-              <Text style={styles.issue} numberOfLines={2}>{order.issueDescription}</Text>
-            </View>
-          ) : null}
-
-          <View style={styles.cardFooter}>
-            <Text style={styles.techText}>KTV: {order.technicianName || 'Chưa gán'}</Text>
-            <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
-              {order.paymentStatus ? (
-                <View style={styles.payPill}>
-                  <Text style={[styles.payLabel, { color: payColor[order.paymentStatus] || '#555' }]}>
-                    {payLabel[order.paymentStatus]}
-                  </Text>
-                </View>
-              ) : null}
-              <Text style={styles.total}>{formatCurrency(order.total)}</Text>
-            </View>
+        {/* Actions Row with Sleek Circle Icons and Status Badge */}
+        <View style={styles.actionsRow}>
+          {/* Left Action: Quick Status Picker */}
+          <TouchableOpacity
+            onPress={onChangeStatus}
+            style={[
+              styles.statusBadge,
+              { backgroundColor: STATUS_BG[order.status] || 'rgba(0,0,0,0.05)' }
+            ]}
+          >
+            <View style={[styles.statusDot, { backgroundColor: STATUS_COLORS[order.status] || '#FFF' }]} />
+            <Text style={[styles.statusText, { color: STATUS_COLORS[order.status] || theme.text }]}>
+              {order.status}
+            </Text>
+          </TouchableOpacity>
+          
+          {/* Right Actions: Phone Call, Edit, More (Printer, Share, Delete) */}
+          <View style={styles.rightActionsContainer}>
+            <TouchableOpacity style={styles.circleActionButton} onPress={onCall}>
+              <Feather name="phone" size={13} color={theme.primary} />
+            </TouchableOpacity>
+            
+            <TouchableOpacity style={styles.circleActionButton} onPress={onEdit}>
+              <Feather name="edit-2" size={13} color={theme.textSecondary} />
+            </TouchableOpacity>
+            
+            <TouchableOpacity style={styles.circleActionButton} onPress={openMoreActions} disabled={isSharing}>
+              <Feather name="more-horizontal" size={13} color={theme.textSecondary} />
+            </TouchableOpacity>
           </View>
+        </View>
+      </TouchableOpacity>
 
-          <View style={styles.actionsRow}>
-            <ActionItem icon="phone-outline" label="Gọi" onPress={onCall} />
-            <ActionItem icon="square-edit-outline" label="Sửa" onPress={onEdit} />
-            <ActionItem icon="dots-horizontal" label="Thêm" onPress={openMoreActions} disabled={isSharing} />
-          </View>
-        </TouchableOpacity>
+      {/* Dynamic Action Bottom Sheet Modal */}
+      <Modal
+        visible={showMoreActions}
+        transparent
+        animationType="fade"
+        onRequestClose={closeMoreActions}
+      >
+        <Pressable style={styles.sheetBackdrop} onPress={closeMoreActions}>
+          <Pressable style={styles.sheetCard} onPress={() => {}}>
+            <View style={styles.sheetHandle} />
+            <Text style={styles.sheetTitle}>Thao tác khác</Text>
+            <Text style={styles.sheetSubtitle}>Phiếu {formatWorkOrderCode(order.id)}</Text>
 
-        <Modal
-          visible={showMoreActions}
-          transparent
-          animationType="fade"
-          onRequestClose={closeMoreActions}
-        >
-          <Pressable style={styles.sheetBackdrop} onPress={closeMoreActions}>
-            <Pressable style={styles.sheetCard} onPress={() => {}}>
-              <View style={styles.sheetHandle} />
-              <Text style={styles.sheetTitle}>Thao tác khác</Text>
-              <Text style={styles.sheetSubtitle}>{formatWorkOrderCode(order.id)}</Text>
+            <TouchableOpacity style={styles.sheetAction} onPress={() => runMoreAction(onPrint)}>
+              <MaterialCommunityIcons name="printer-outline" size={18} color={theme.textSecondary} />
+              <Text style={styles.sheetActionText}>In hóa đơn</Text>
+            </TouchableOpacity>
 
-              <TouchableOpacity style={styles.sheetAction} onPress={() => runMoreAction(onPrint)}>
-                <MaterialCommunityIcons name="printer-outline" size={18} color="#D7E0F0" />
-                <Text style={styles.sheetActionText}>In phiếu</Text>
-              </TouchableOpacity>
+            <TouchableOpacity style={styles.sheetAction} onPress={() => runMoreAction(onShare)} disabled={isSharing}>
+              <MaterialCommunityIcons name="share-variant-outline" size={18} color={theme.textSecondary} />
+              <Text style={styles.sheetActionText}>{isSharing ? 'Đang tạo chia sẻ...' : 'Chia sẻ'}</Text>
+            </TouchableOpacity>
 
-              <TouchableOpacity style={styles.sheetAction} onPress={() => runMoreAction(onShare)} disabled={isSharing}>
-                <MaterialCommunityIcons name="share-variant-outline" size={18} color="#D7E0F0" />
-                <Text style={styles.sheetActionText}>{isSharing ? 'Đang xử lý...' : 'Chia sẻ'}</Text>
-              </TouchableOpacity>
+            <TouchableOpacity style={styles.sheetAction} onPress={() => runMoreAction(onDelete)}>
+              <MaterialCommunityIcons name="trash-can-outline" size={18} color={theme.danger} />
+              <Text style={styles.sheetActionDanger}>Xóa phiếu sửa</Text>
+            </TouchableOpacity>
 
-              <TouchableOpacity style={styles.sheetAction} onPress={() => runMoreAction(onDelete)}>
-                <MaterialCommunityIcons name="trash-can-outline" size={18} color="#FF7E90" />
-                <Text style={styles.sheetActionDanger}>Xóa phiếu</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity style={styles.sheetCloseBtn} onPress={closeMoreActions}>
-                <Text style={styles.sheetCloseText}>Đóng</Text>
-              </TouchableOpacity>
-            </Pressable>
+            <TouchableOpacity style={styles.sheetCloseBtn} onPress={closeMoreActions}>
+              <Text style={styles.sheetCloseText}>Đóng</Text>
+            </TouchableOpacity>
           </Pressable>
-        </Modal>
-      </>
+        </Pressable>
+      </Modal>
     </Animated.View>
-  );
-}
-
-function ActionItem({
-  icon,
-  label,
-  onPress,
-  danger,
-  disabled,
-}: {
-  icon: React.ComponentProps<typeof MaterialCommunityIcons>['name'];
-  label: string;
-  onPress: () => void;
-  danger?: boolean;
-  disabled?: boolean;
-}) {
-  const theme = useAppTheme();
-  const styles = useMemo(() => getStyles(theme), [theme]);
-  return (
-    <TouchableOpacity style={[styles.actionItem, disabled && { opacity: 0.6 }]} onPress={onPress} disabled={disabled}>
-      <MaterialCommunityIcons name={icon} size={15} color={danger ? '#FF6A7B' : '#B8C3DA'} />
-      <Text style={[styles.actionBtn, danger && { color: theme.danger }]}>{label}</Text>
-    </TouchableOpacity>
   );
 }
 
 const getStyles = (theme: any) => StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.background },
-  tabRow: {
-    paddingHorizontal: 12,
-    paddingTop: 12,
-    flexDirection: 'row',
-    gap: 8,
-  },
-  tabBtn: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: theme.border,
-    borderRadius: 999,
-    backgroundColor: theme.surface,
-    paddingVertical: 7,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'row',
-    gap: 7,
-  },
-  tabBtnActive: {
-    borderColor: theme.border,
-    backgroundColor: theme.primaryBg,
-  },
-  tabIconWrap: {
-    minWidth: 24,
-    height: 24,
-    borderRadius: 999,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: theme.surface,
-  },
-  tabIconWrapActive: {
-    backgroundColor: theme.primaryBg,
-  },
-  tabBtnText: {
-    color: theme.textSecondary,
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  tabBtnTextActive: {
-    color: theme.primary,
-  },
-  altTabBox: {
+  
+  // Premium Segmented control
+  segmentedContainer: {
     marginHorizontal: 12,
-    marginTop: 10,
+    marginTop: 12,
+    backgroundColor: theme.surfaceVariant || theme.border + '30',
+    borderRadius: 14,
+    padding: 3,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
     borderWidth: 1,
     borderColor: theme.border,
-    borderRadius: 16,
-    backgroundColor: theme.surface,
-    padding: 16,
+  },
+  segmentBtn: {
+    flex: 1,
+    flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-  },
-  altTabAction: {
-    marginTop: 4,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#2B83FF',
-    backgroundColor: theme.primaryBg,
-    paddingHorizontal: 12,
+    justifyContent: 'center',
+    gap: 6,
     paddingVertical: 9,
+    borderRadius: 11,
   },
-  altTabActionText: {
-    color: theme.primary,
+  segmentBtnActive: {
+    backgroundColor: theme.surface,
+    shadowColor: '#64748B',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  segmentText: {
     fontSize: 12,
+    fontWeight: '600',
+    color: theme.textSecondary,
+  },
+  segmentTextActive: {
+    color: theme.text,
     fontWeight: '700',
   },
+
+  // Alt headers (history & template tabs)
   altTabHeaderBox: {
     borderWidth: 1,
     borderColor: theme.border,
@@ -1477,9 +1497,26 @@ const getStyles = (theme: any) => StyleSheet.create({
     color: theme.textSecondary,
     fontSize: 12,
   },
+  altTabAction: {
+    marginTop: 6,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: theme.primary,
+    backgroundColor: theme.primaryBg,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    alignItems: 'center',
+  },
+  altTabActionText: {
+    color: theme.primary,
+    fontSize: 12,
+    fontWeight: '700',
+  },
+
+  // Stats Row
   statsRow: {
     paddingHorizontal: 12,
-    paddingTop: 10,
+    paddingTop: 12,
     flexDirection: 'row',
     gap: 8,
   },
@@ -1504,63 +1541,120 @@ const getStyles = (theme: any) => StyleSheet.create({
   },
   statValue: { marginTop: 4, color: theme.text, fontSize: 16, fontWeight: '800' },
   statLabel: { marginTop: 2, color: theme.textSecondary, fontSize: 10 },
-  financeRow: {
-    paddingHorizontal: 12,
-    paddingTop: 8,
-    flexDirection: 'row',
-    gap: 8,
-  },
-  financeCell: {
-    flex: 1,
-  },
-  financeCard: {
+
+  // Finance Panel
+  financeContainer: {
+    marginHorizontal: 12,
+    marginTop: 10,
     backgroundColor: theme.surface,
     borderRadius: 16,
     borderWidth: 1,
     borderColor: theme.border,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    minWidth: 168,
+    padding: 12,
+    gap: 10,
+    shadowColor: '#94A3B8',
+    shadowOpacity: 0.02,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 1,
   },
-  financeCardCompact: {
-    width: '100%',
-    minWidth: 0,
-    borderRadius: 14,
-    paddingVertical: 9,
-  },
-  financeTopRow: {
+  financeHeader: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
     justifyContent: 'space-between',
-    gap: 8,
+    alignItems: 'center',
   },
-  financeLabel: {
-    color: theme.textSecondary,
+  financeHeaderTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: theme.text,
+  },
+  financeHeaderIcon: {
+    padding: 4,
+  },
+  financeCardRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  financeItemCard: {
+    flex: 1,
+    borderRadius: 12,
+    borderWidth: 1,
+    padding: 10,
+    gap: 6,
+  },
+  financeItemLabel: {
     fontSize: 11,
     fontWeight: '600',
-    flex: 1,
+    color: theme.textSecondary,
   },
-  financeValue: {
-    marginTop: 8,
-    color: theme.text,
-    fontSize: 14,
+  financeItemValue: {
+    fontSize: 15,
     fontWeight: '800',
   },
-  searchRow: { paddingHorizontal: 12, paddingTop: 10, paddingBottom: 2, position: 'relative' },
-  searchIcon: { position: 'absolute', left: 26, top: 21, zIndex: 1 },
-  searchInput: {
+
+  // Sleek Integrated Search & Filters
+  searchFilterRow: {
+    paddingHorizontal: 12,
+    paddingTop: 12,
+    flexDirection: 'row',
+    gap: 8,
+    alignItems: 'center',
+  },
+  searchInputContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: theme.surface,
-    borderRadius: 16,
-    paddingHorizontal: 38,
-    paddingVertical: 10,
-    fontSize: 13,
-    color: theme.text,
+    borderRadius: 12,
     borderWidth: 1,
     borderColor: theme.border,
+    paddingHorizontal: 10,
+    height: 42,
   },
+  searchFieldIcon: {
+    marginRight: 8,
+  },
+  searchFieldInput: {
+    flex: 1,
+    fontSize: 13,
+    color: theme.text,
+    paddingVertical: 6,
+  },
+  searchClearBtn: {
+    padding: 4,
+  },
+  filterIconButton: {
+    width: 42,
+    height: 42,
+    borderRadius: 12,
+    backgroundColor: theme.surface,
+    borderWidth: 1,
+    borderColor: theme.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  filterIconBadge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: theme.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 3,
+  },
+  filterIconBadgeText: {
+    color: '#FFF',
+    fontSize: 9,
+    fontWeight: '800',
+  },
+
   quickFiltersRow: {
     paddingHorizontal: 12,
-    paddingTop: 8,
+    paddingTop: 10,
     flexDirection: 'row',
     gap: 8,
   },
@@ -1574,7 +1668,7 @@ const getStyles = (theme: any) => StyleSheet.create({
     alignItems: 'center',
   },
   quickChipActive: {
-    borderColor: theme.border,
+    borderColor: theme.primary,
     backgroundColor: theme.primaryBg,
   },
   quickChipText: {
@@ -1585,48 +1679,13 @@ const getStyles = (theme: any) => StyleSheet.create({
   quickChipTextActive: {
     color: theme.primary,
   },
-  controlRow: {
-    paddingHorizontal: 12,
-    paddingTop: 8,
-    paddingBottom: 4,
-    gap: 8,
-  },
+
   filterBar: {
     paddingHorizontal: 12,
-    paddingTop: 8,
+    paddingTop: 10,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-  },
-  filterButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: theme.surface,
-    borderWidth: 1,
-    borderColor: theme.border,
-    borderRadius: 999,
-    paddingHorizontal: 14,
-    paddingVertical: 9,
-  },
-  filterButtonText: {
-    color: theme.text,
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  filterBadge: {
-    minWidth: 18,
-    height: 18,
-    borderRadius: 999,
-    paddingHorizontal: 5,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: theme.primary,
-  },
-  filterBadgeText: {
-    color: '#F5FAFF',
-    fontSize: 10,
-    fontWeight: '800',
   },
   clearFilterButton: {
     flexDirection: 'row',
@@ -1634,13 +1693,13 @@ const getStyles = (theme: any) => StyleSheet.create({
     gap: 6,
     backgroundColor: theme.surface,
     borderWidth: 1,
-    borderColor: 'rgba(255, 122, 141, 0.24)',
+    borderColor: theme.danger + '40',
     borderRadius: 999,
     paddingHorizontal: 12,
-    paddingVertical: 9,
+    paddingVertical: 7,
   },
   clearFilterText: {
-    color: '#FFB1BB',
+    color: theme.danger,
     fontSize: 12,
     fontWeight: '700',
   },
@@ -1649,134 +1708,199 @@ const getStyles = (theme: any) => StyleSheet.create({
     paddingTop: 8,
   },
   filterSummaryText: {
-    color: '#9EB0CB',
+    color: theme.textSecondary,
     fontSize: 12,
     fontWeight: '600',
   },
-  controlChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: theme.surface,
-    borderWidth: 1,
-    borderColor: theme.border,
-    borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-  },
-  controlChipText: {
-    color: theme.textSecondary,
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  chipList: { paddingVertical: 10, maxHeight: 52 },
-  chip: {
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: 20,
-    backgroundColor: theme.surface,
-    borderWidth: 1,
-    borderColor: theme.border,
-  },
-  chipText: { fontSize: 13, fontWeight: '700', color: theme.textSecondary },
+
   listContent: { padding: 12, gap: 10, paddingBottom: 160 },
   loadingBox: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 12, marginTop: 80 },
   emptyBox: { alignItems: 'center', paddingTop: 60, gap: 8 },
   emptyText: { fontSize: 14, color: theme.textSecondary },
-  errorHint: { fontSize: 12, color: '#F9A8B5', paddingHorizontal: 16, textAlign: 'center' },
+  errorHint: { fontSize: 12, color: theme.danger, paddingHorizontal: 16, textAlign: 'center' },
+
+  // Wow-Factor Card
   card: {
     backgroundColor: theme.surface,
-    borderRadius: 16,
-    padding: 15,
+    borderRadius: 18,
+    padding: 14,
     borderWidth: 1,
     borderColor: theme.border,
-    gap: 8,
-    shadowColor: '#94A3B8',
-    shadowOpacity: 0.02,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 1,
+    gap: 10,
+    shadowColor: '#64748B',
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 2,
   },
-  cardTopRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  codeText: { color: theme.primary, fontSize: 12, fontWeight: '700' },
-  dateText: { color: theme.textSecondary, fontSize: 11 },
-  cardHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
-  customerName: { fontSize: 16, lineHeight: 20, fontWeight: '800', color: theme.text },
-  inlineInfoRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2 },
-  vehicleInfo: { fontSize: 12, color: theme.textSecondary },
-  vehicleModel: { fontSize: 12, color: '#C4CEE0', fontWeight: '600' },
-  plateText: { fontSize: 11, color: '#97A5BD', marginTop: 2, letterSpacing: 0.2 },
-  statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },
-  statusText: { fontSize: 11, fontWeight: '700' },
-  phoneText: { color: '#97A5BD', fontSize: 11, fontWeight: '600' },
-  issue: { fontSize: 12, color: theme.textSecondary, lineHeight: 15, flex: 1 },
-  cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  date: { fontSize: 11, color: theme.textSecondary },
-  techText: { fontSize: 11, color: '#97A5BD', fontWeight: '600' },
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10
+  },
+  avatarContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  customerName: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: theme.text
+  },
+  inlineInfoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4
+  },
+  vehicleModel: {
+    fontSize: 12,
+    color: theme.textSecondary,
+    fontWeight: '500'
+  },
+  codeBadge: {
+    backgroundColor: theme.primaryBg,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  codeBadgeText: {
+    color: theme.primary,
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  dateText: {
+    color: theme.textSecondary,
+    fontSize: 11
+  },
+
+  // Issue Box
+  issueBox: {
+    backgroundColor: theme.surfaceVariant || theme.border + '20',
+    borderRadius: 10,
+    padding: 10,
+    borderLeftWidth: 3,
+  },
+  issueText: {
+    fontSize: 12,
+    color: theme.textSecondary,
+    lineHeight: 16
+  },
+
+  cardFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 2,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.border + '40',
+    paddingBottom: 8,
+  },
+  techText: {
+    fontSize: 11,
+    color: theme.textSecondary,
+    fontWeight: '600',
+    maxWidth: 140,
+  },
   payPill: {
     borderRadius: 999,
-    backgroundColor: theme.primary === '#3B82F6' ? 'rgba(52, 211, 153, 0.14)' : 'rgba(16, 185, 129, 0.08)',
-    paddingHorizontal: 9,
+    paddingHorizontal: 8,
     paddingVertical: 2,
   },
   payLabel: { fontSize: 10, fontWeight: '700' },
-  total: { fontSize: 13, fontWeight: '800', color: theme.primary === '#3B82F6' ? '#5FE0A7' : '#10B981' },
+  total: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#10B981'
+  },
+
+  // Card bottom action row with Circle Buttons
   actionsRow: {
-    marginTop: 2,
-    borderTopWidth: 1,
-    borderTopColor: theme.border,
     paddingTop: 4,
     flexDirection: 'row',
     justifyContent: 'space-between',
-  },
-  actionItem: {
-    flex: 1,
     alignItems: 'center',
-    gap: 1,
+  },
+  statusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 10,
     paddingVertical: 5,
+    borderRadius: 20
   },
-  actionBtn: {
-    color: theme.textSecondary,
-    fontSize: 10,
-    fontWeight: '700',
+  statusDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
   },
+  statusText: { fontSize: 11, fontWeight: '700' },
+  rightActionsContainer: {
+    flexDirection: 'row',
+    gap: 8,
+    alignItems: 'center',
+  },
+  circleActionButton: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: theme.surfaceVariant || theme.border + '25',
+    borderWidth: 1,
+    borderColor: theme.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  // Theme-compliant Dynamic Bottom Sheets
   sheetBackdrop: {
     flex: 1,
-    backgroundColor: 'rgba(7, 11, 19, 0.58)',
+    backgroundColor: 'rgba(7, 11, 19, 0.6)',
     justifyContent: 'flex-end',
     padding: 12,
   },
   sheetCard: {
-    backgroundColor: '#1B2232',
-    borderRadius: 22,
+    backgroundColor: theme.surface,
+    borderRadius: 24,
     borderWidth: 1,
-    borderColor: 'rgba(98, 122, 166, 0.32)',
-    paddingHorizontal: 14,
-    paddingTop: 10,
-    paddingBottom: 14,
-    gap: 6,
+    borderColor: theme.border,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 20,
+    gap: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 8,
   },
   sheetHandle: {
     alignSelf: 'center',
-    width: 42,
+    width: 38,
     height: 4,
     borderRadius: 999,
-    backgroundColor: 'rgba(202, 214, 235, 0.24)',
-    marginBottom: 4,
+    backgroundColor: theme.textSecondary + '40',
+    marginBottom: 2,
   },
   sheetTitle: {
-    color: '#F4F8FF',
-    fontSize: 15,
+    color: theme.text,
+    fontSize: 16,
     fontWeight: '800',
   },
   sheetSubtitle: {
-    color: '#93A3BF',
+    color: theme.textSecondary,
     fontSize: 12,
-    marginBottom: 4,
+    marginTop: -8,
   },
   filterSectionTitle: {
-    marginTop: 8,
-    color: '#DCE6F6',
+    marginTop: 6,
+    color: theme.text,
     fontSize: 12,
     fontWeight: '800',
   },
@@ -1784,57 +1908,57 @@ const getStyles = (theme: any) => StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
-    marginTop: 8,
+    marginTop: 2,
   },
   filterOptionChip: {
     borderRadius: 999,
     paddingHorizontal: 12,
-    paddingVertical: 8,
-    backgroundColor: 'rgba(255,255,255,0.03)',
+    paddingVertical: 7,
+    backgroundColor: theme.surfaceVariant || theme.border + '20',
     borderWidth: 1,
-    borderColor: 'rgba(98, 122, 166, 0.24)',
+    borderColor: theme.border,
   },
   filterOptionChipActive: {
-    backgroundColor: 'rgba(59, 130, 246, 0.18)',
-    borderColor: 'rgba(89, 155, 255, 0.42)',
+    backgroundColor: theme.primary + '1C',
+    borderColor: theme.primary + '80',
   },
   filterOptionText: {
-    color: '#AEBED8',
+    color: theme.textSecondary,
     fontSize: 12,
     fontWeight: '700',
   },
   filterOptionTextActive: {
-    color: '#7FB6FF',
+    color: theme.primary,
   },
   filterSheetActions: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
     gap: 10,
-    marginTop: 12,
+    marginTop: 10,
   },
   sheetSecondaryBtn: {
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 14,
-    paddingHorizontal: 14,
-    paddingVertical: 11,
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    backgroundColor: theme.border + '40',
   },
   sheetSecondaryText: {
-    color: '#FFB1BB',
+    color: theme.danger,
     fontSize: 13,
     fontWeight: '700',
   },
   sheetPrimaryBtn: {
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 14,
-    paddingHorizontal: 16,
-    paddingVertical: 11,
-    backgroundColor: 'rgba(59, 130, 246, 0.22)',
+    borderRadius: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    backgroundColor: theme.primary,
   },
   sheetPrimaryText: {
-    color: '#8BC0FF',
+    color: '#FFF',
     fontSize: 13,
     fontWeight: '800',
   },
@@ -1842,18 +1966,18 @@ const getStyles = (theme: any) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    borderRadius: 14,
+    borderRadius: 12,
     paddingHorizontal: 12,
     paddingVertical: 12,
-    backgroundColor: 'rgba(255,255,255,0.03)',
+    backgroundColor: theme.surfaceVariant || theme.border + '20',
   },
   sheetActionText: {
-    color: '#E7EEF9',
+    color: theme.text,
     fontSize: 14,
     fontWeight: '700',
   },
   sheetActionDanger: {
-    color: '#FF7E90',
+    color: theme.danger,
     fontSize: 14,
     fontWeight: '700',
   },
@@ -1861,12 +1985,12 @@ const getStyles = (theme: any) => StyleSheet.create({
     marginTop: 4,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 14,
+    borderRadius: 12,
     paddingVertical: 11,
-    backgroundColor: 'rgba(98, 130, 188, 0.16)',
+    backgroundColor: theme.border + '60',
   },
   sheetCloseText: {
-    color: '#BFD0EA',
+    color: theme.text,
     fontSize: 13,
     fontWeight: '700',
   },
@@ -1885,8 +2009,8 @@ const getStyles = (theme: any) => StyleSheet.create({
     backgroundColor: theme.primary,
     borderWidth: 1,
     borderColor: theme.primary,
-    shadowColor: theme.primary === '#3B82F6' ? '#000' : theme.textSecondary,
-    shadowOpacity: 0.16,
+    shadowColor: theme.primary,
+    shadowOpacity: 0.2,
     shadowRadius: 6,
     shadowOffset: { width: 0, height: 3 },
     elevation: 4,

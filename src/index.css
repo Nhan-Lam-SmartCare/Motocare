@@ -18,8 +18,8 @@
 /* ==================== THEME COLORS ==================== */
 :root {
   /* Font */
-  --font-sans: "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", Roboto,
-    "Helvetica Neue", Arial;
+  --font-sans: "Inter", "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI",
+    Roboto, "Helvetica Neue", Arial;
 
   /* Light Mode Colors */
   --color-bg-primary: 255 255 255;
@@ -675,3 +675,20 @@ body.hide-bottom-nav nav[aria-label="Bottom Navigation"] {
 .animate-bounce-slow {
   animation: bounce-slow 2s ease-in-out infinite;
 }
+
+/* Subtle pulse for active icons */
+@keyframes pulse-subtle {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.85;
+    transform: scale(0.96);
+  }
+}
+
+.animate-pulse-subtle {
+  animation: pulse-subtle 3s ease-in-out infinite;
+}
+

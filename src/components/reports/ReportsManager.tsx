@@ -1117,9 +1117,9 @@ const ReportsManager: React.FC = () => {
                 <div className="text-2xl font-black text-white leading-none font-mono tracking-tight group-hover:text-blue-400 transition-colors">
                   {formatCurrency(combinedRevenue).replace("₫", "")}
                 </div>
-                <div className="text-[10px] text-slate-400 mt-3 leading-relaxed border-t border-slate-850 pt-2.5">
-                  Bán hàng: <span className="font-mono text-slate-300 font-bold">{formatCurrency(revenueReport.totalRevenue)}</span> <br/>
-                  Phiếu thu: <span className="font-mono text-slate-300 font-bold">{formatCurrency(cashTotals.totalIncome)}</span>
+                <div className="text-[11px] text-slate-400 mt-3 leading-relaxed border-t border-slate-800/60 pt-2.5">
+                  Bán hàng: <span className="font-mono text-slate-200 font-bold">{formatCurrency(revenueReport.totalRevenue)}</span> <br/>
+                  Phiếu thu: <span className="font-mono text-slate-200 font-bold">{formatCurrency(cashTotals.totalIncome)}</span>
                 </div>
               </div>
 
@@ -1136,9 +1136,9 @@ const ReportsManager: React.FC = () => {
                 <div className="text-2xl font-black text-white leading-none font-mono tracking-tight group-hover:text-rose-400 transition-colors">
                   {formatCurrency(revenueReport.totalCost + cashTotals.totalExpense).replace("₫", "")}
                 </div>
-                <div className="text-[10px] text-slate-400 mt-3 leading-relaxed border-t border-slate-850 pt-2.5">
-                  Giá vốn: <span className="font-mono text-slate-300 font-bold">{formatCurrency(revenueReport.totalCost)}</span> <br/>
-                  Phiếu chi: <span className="font-mono text-slate-300 font-bold">{formatCurrency(cashTotals.totalExpense)}</span>
+                <div className="text-[11px] text-slate-400 mt-3 leading-relaxed border-t border-slate-800/60 pt-2.5">
+                  Giá vốn: <span className="font-mono text-slate-200 font-bold">{formatCurrency(revenueReport.totalCost)}</span> <br/>
+                  Phiếu chi: <span className="font-mono text-slate-200 font-bold">{formatCurrency(cashTotals.totalExpense)}</span>
                 </div>
               </div>
 
@@ -1163,9 +1163,9 @@ const ReportsManager: React.FC = () => {
                 }`}>
                   {formatCurrency(netProfit).replace("₫", "")}
                 </div>
-                <div className="text-[10px] text-slate-400 mt-3 leading-relaxed border-t border-slate-850 pt-2.5">
-                  Lãi gộp: <span className="font-mono text-slate-300 font-bold">{formatCurrency(revenueReport.totalProfit)}</span> <br/>
-                  Chi phí khác: <span className="font-mono text-slate-300 font-bold">{formatCurrency(cashTotals.totalExpense)}</span>
+                <div className="text-[11px] text-slate-400 mt-3 leading-relaxed border-t border-slate-800/60 pt-2.5">
+                  Lãi gộp: <span className="font-mono text-slate-200 font-bold">{formatCurrency(revenueReport.totalProfit)}</span> <br/>
+                  Chi phí khác: <span className="font-mono text-slate-200 font-bold">{formatCurrency(cashTotals.totalExpense)}</span>
                 </div>
               </div>
 
@@ -1184,7 +1184,7 @@ const ReportsManager: React.FC = () => {
                     ? ((netProfit / combinedRevenue) * 100).toFixed(1)
                     : 0}%
                 </div>
-                <div className="text-[10px] text-slate-400 mt-3 leading-relaxed border-t border-slate-850 pt-2.5">
+                <div className="text-[11px] text-slate-400 mt-3 leading-relaxed border-t border-slate-800/60 pt-2.5">
                   Lợi nhuận ròng / Doanh thu tổng <br/>
                   Hiệu quả sử dụng dòng vốn
                 </div>
@@ -1248,15 +1248,15 @@ const ReportsManager: React.FC = () => {
                     </tr>
                     <tr className="border-b border-slate-700/70 bg-slate-800/40">
                       {/* DOANH THU sub-columns */}
-                      <th className="px-2 py-1.5 text-right text-[10px] font-semibold text-slate-400 border-l border-slate-700/50">Bán hàng</th>
-                      <th className="px-2 py-1.5 text-right text-[10px] font-semibold text-slate-400">Sửa chữa</th>
+                      <th className="px-2 py-1.5 text-right text-[11px] font-bold text-slate-300 border-l border-slate-700/50">Bán hàng</th>
+                      <th className="px-2 py-1.5 text-right text-[11px] font-bold text-slate-300">Sửa chữa</th>
                       {/* GIÁ VỐN sub-columns */}
-                      <th className="px-2 py-1.5 text-right text-[10px] font-semibold text-slate-400 border-l border-slate-700/50">Vốn BH</th>
-                      <th className="px-2 py-1.5 text-right text-[10px] font-semibold text-slate-400">Vật tư SC</th>
+                      <th className="px-2 py-1.5 text-right text-[11px] font-bold text-slate-300 border-l border-slate-700/50">Vốn BH</th>
+                      <th className="px-2 py-1.5 text-right text-[11px] font-bold text-slate-300">Vật tư SC</th>
                       {/* LỢI NHUẬN sub-columns */}
-                      <th className="px-2 py-1.5 text-right text-[10px] font-semibold text-slate-400 border-l border-slate-700/50">Lãi gộp</th>
-                      <th className="px-2 py-1.5 text-right text-[10px] font-semibold text-slate-400">Thu/Chi khác</th>
-                      <th className="px-2 py-1.5 text-right text-[10px] font-bold text-slate-300">Lãi ròng</th>
+                      <th className="px-2 py-1.5 text-right text-[11px] font-bold text-slate-300 border-l border-slate-700/50">Lãi gộp</th>
+                      <th className="px-2 py-1.5 text-right text-[11px] font-bold text-slate-300">Thu/Chi khác</th>
+                      <th className="px-2 py-1.5 text-right text-[11px] font-black text-white">Lãi ròng</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1330,19 +1330,19 @@ const ReportsManager: React.FC = () => {
                               {woRevenue === 0 ? '-' : formatCurrency(woRevenue)}
                             </td>
                             {/* COGS */}
-                            <td className={`px-2 py-2.5 text-right text-xs border-l border-slate-700/50 ${salesCOGS === 0 ? 'text-slate-600' : 'text-slate-400'}`}>
+                            <td className={`px-2 py-2.5 text-right text-xs border-l border-slate-700/50 ${salesCOGS === 0 ? 'text-slate-600' : 'text-slate-300'}`}>
                               {salesCOGS === 0 ? '-' : formatCurrency(salesCOGS)}
                             </td>
                             {/* Vật tư SC */}
-                            <td className={`px-2 py-2.5 text-right text-xs ${woParts === 0 ? 'text-slate-600' : 'text-slate-400'}`}>
+                            <td className={`px-2 py-2.5 text-right text-xs ${woParts === 0 ? 'text-slate-600' : 'text-slate-300'}`}>
                               {woParts === 0 ? '-' : formatCurrency(woParts)}
                             </td>
                             {/* Lãi gộp */}
-                            <td className={`px-2 py-2.5 text-right text-xs font-semibold border-l border-slate-700/50 ${laiGop === 0 ? 'text-slate-600' : 'text-slate-300'}`}>
+                            <td className={`px-2 py-2.5 text-right text-xs font-semibold border-l border-slate-700/50 ${laiGop === 0 ? 'text-slate-600' : 'text-slate-200'}`}>
                               {laiGop === 0 ? '-' : formatCurrency(laiGop)}
                             </td>
                             {/* Thu/Chi khác */}
-                            <td className={`px-2 py-2.5 text-right text-xs ${thuChiKhac === 0 ? 'text-slate-600' : 'text-slate-400'}`}>
+                            <td className={`px-2 py-2.5 text-right text-xs ${thuChiKhac === 0 ? 'text-slate-600' : 'text-slate-300'}`}>
                               {thuChiKhac === 0 ? '-' : (thuChiKhac > 0 ? '+' : '') + formatCurrency(thuChiKhac)}
                             </td>
                             {/* Lãi ròng */}

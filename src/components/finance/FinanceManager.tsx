@@ -91,29 +91,66 @@ const FinanceManager: React.FC = () => {
     <>
       <FinanceManagerMobile />
       <div className="hidden md:block space-y-6">
-        {/* Header with Toggle Buttons */}
-        <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-0 overflow-hidden">
-
-
-          <div className="px-4 md:px-6 flex overflow-x-auto no-scrollbar gap-6 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
+        {/* Header with Toggle Buttons - Premium Glass Capsule Dock */}
+        <div className="bg-gradient-to-r from-[#141C30]/85 to-[#0D1222]/95 border border-[#2B3B5C]/65 shadow-[0_15px_40px_rgba(0,0,0,0.5)] backdrop-blur-2xl p-2.5 rounded-2xl flex items-center justify-between gap-4">
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
             {(Object.keys(TAB_CONFIGS) as Tab[]).map((tabKey) => {
               const config = TAB_CONFIGS[tabKey];
               const isActive = activeTab === tabKey;
               const Icon = config.Icon;
+
+              let activeStyle = "";
+              let iconStyle = "";
+
+              switch (tabKey) {
+                case "combined":
+                  activeStyle = "bg-gradient-to-r from-blue-500/15 to-indigo-500/15 text-blue-400 border-blue-500/35 shadow-[0_0_15px_rgba(59,130,246,0.2)]";
+                  iconStyle = isActive
+                    ? "bg-blue-500/25 text-blue-400 shadow-[0_0_10px_rgba(59,130,246,0.3)]"
+                    : "bg-blue-500/5 text-blue-400/70 group-hover:bg-blue-500/15 group-hover:text-blue-300";
+                  break;
+                case "cashbook":
+                  activeStyle = "bg-gradient-to-r from-emerald-500/15 to-teal-500/15 text-emerald-400 border-emerald-500/35 shadow-[0_0_15px_rgba(16,185,129,0.2)]";
+                  iconStyle = isActive
+                    ? "bg-emerald-500/25 text-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.3)]"
+                    : "bg-emerald-500/5 text-emerald-400/70 group-hover:bg-emerald-500/15 group-hover:text-emerald-300";
+                  break;
+                case "loans":
+                  activeStyle = "bg-gradient-to-r from-rose-500/15 to-pink-500/15 text-rose-400 border-rose-500/35 shadow-[0_0_15px_rgba(244,63,94,0.2)]";
+                  iconStyle = isActive
+                    ? "bg-rose-500/25 text-rose-400 shadow-[0_0_10px_rgba(244,63,94,0.3)]"
+                    : "bg-rose-500/5 text-rose-400/70 group-hover:bg-rose-500/15 group-hover:text-rose-300";
+                  break;
+                case "assets":
+                  activeStyle = "bg-gradient-to-r from-violet-500/15 to-purple-500/15 text-violet-400 border-violet-500/35 shadow-[0_0_15px_rgba(139,92,246,0.2)]";
+                  iconStyle = isActive
+                    ? "bg-violet-500/25 text-violet-400 shadow-[0_0_10px_rgba(139,92,246,0.3)]"
+                    : "bg-violet-500/5 text-violet-400/70 group-hover:bg-violet-500/15 group-hover:text-violet-300";
+                  break;
+                case "capital":
+                  activeStyle = "bg-gradient-to-r from-amber-500/15 to-orange-500/15 text-amber-400 border-amber-500/35 shadow-[0_0_15px_rgba(245,158,11,0.2)]";
+                  iconStyle = isActive
+                    ? "bg-amber-500/25 text-amber-400 shadow-[0_0_10px_rgba(245,158,11,0.3)]"
+                    : "bg-amber-500/5 text-amber-400/70 group-hover:bg-amber-500/15 group-hover:text-amber-300";
+                  break;
+              }
+
               return (
                 <button
                   type="button"
                   key={tabKey}
                   aria-pressed={isActive}
                   onClick={() => setActiveTab(tabKey)}
-                  className={`py-4 font-bold text-sm transition-all flex items-center justify-center gap-2 relative ${isActive ? "text-slate-900 dark:text-white" : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
-                    }`}
+                  className={`group px-4 py-2.5 rounded-xl font-extrabold whitespace-nowrap transition-all duration-300 flex items-center gap-2.5 text-xs uppercase tracking-wider border ${
+                    isActive
+                      ? activeStyle
+                      : "bg-transparent text-slate-400 hover:text-slate-200 hover:bg-[#1E293B]/40 border-transparent hover:border-[#2B3B5C]/30"
+                  }`}
                 >
-                  <Icon className={`w-4 h-4 ${isActive ? "text-slate-900 dark:text-white" : "text-slate-400"}`} />
-                  <span className="whitespace-nowrap">{config.label}</span>
-                  {isActive && (
-                    <div className="absolute bottom-0 left-0 right-0 h-1 bg-slate-800 dark:bg-slate-200 rounded-t-full"></div>
-                  )}
+                  <div className={`p-1.5 rounded-lg transition-all duration-300 ${iconStyle}`}>
+                    <Icon className="w-4 h-4" />
+                  </div>
+                  <span>{config.label}</span>
                 </button>
               );
             })}

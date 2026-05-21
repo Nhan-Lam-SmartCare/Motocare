@@ -484,6 +484,45 @@ export function ServiceManagerMobile({
     <div className="md:hidden flex flex-col h-screen bg-slate-50 dark:bg-[#151521]">
       {/* CONTENT BASED ON TAB */}
       <div className="flex-1 overflow-y-auto pb-24 scrollbar-hide">
+        {/* Top Capsule Tabs Navigation */}
+        <div className="px-3 pt-3 pb-1.5 flex gap-2 overflow-x-auto scrollbar-hide bg-slate-50 dark:bg-[#151521] sticky top-0 z-10">
+          <button
+            onClick={() => setActiveTab("orders")}
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold transition-all duration-200 border ${
+              activeTab === "orders"
+                ? "bg-[#009ef7] text-white border-[#009ef7] shadow-sm shadow-[#009ef7]/20"
+                : "bg-white dark:bg-[#1e1e2d] text-slate-600 dark:text-gray-400 border-slate-200 dark:border-gray-800 hover:bg-slate-50 dark:hover:bg-slate-800"
+            }`}
+          >
+            <ClipboardList className="w-3.5 h-3.5" />
+            <span>Phiếu sửa</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab("history")}
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold transition-all duration-200 border ${
+              activeTab === "history"
+                ? "bg-[#009ef7] text-white border-[#009ef7] shadow-sm shadow-[#009ef7]/20"
+                : "bg-white dark:bg-[#1e1e2d] text-slate-600 dark:text-gray-400 border-slate-200 dark:border-gray-800 hover:bg-slate-50 dark:hover:bg-slate-800"
+            }`}
+          >
+            <History className="w-3.5 h-3.5" />
+            <span>Lịch sử</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab("templates")}
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold transition-all duration-200 border ${
+              activeTab === "templates"
+                ? "bg-[#009ef7] text-white border-[#009ef7] shadow-sm shadow-[#009ef7]/20"
+                : "bg-white dark:bg-[#1e1e2d] text-slate-600 dark:text-gray-400 border-slate-200 dark:border-gray-800 hover:bg-slate-50 dark:hover:bg-slate-800"
+            }`}
+          >
+            <FileText className="w-3.5 h-3.5" />
+            <span>Mẫu</span>
+          </button>
+        </div>
+
         {activeTab === "orders" && (
           <>
             {/* KPI CARDS */}
@@ -867,45 +906,6 @@ export function ServiceManagerMobile({
           animation: slide-up 0.3s ease-out;
         }
       `}</style>
-      </div>
-
-      {/* BOTTOM NAVIGATION BAR - Dynamic highlight with premium transitions */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white/90 dark:bg-[#1e1e2d]/85 backdrop-blur-xl border-t border-slate-200/50 dark:border-white/5 px-8 py-2 z-[100] flex justify-between items-center pb-safe shadow-[0_-4px_25px_rgba(0,0,0,0.04)] dark:shadow-[0_-4px_25px_rgba(0,0,0,0.25)]">
-        <button
-          onClick={() => setActiveTab("orders")}
-          className={`flex flex-col items-center gap-0.5 transition-all duration-200 ${
-            activeTab === "orders" 
-              ? "text-[#009ef7] scale-105 -translate-y-0.5 font-bold" 
-              : "text-slate-400 dark:text-gray-500 hover:text-slate-700 dark:hover:text-gray-300"
-          }`}
-        >
-          <ClipboardList className={`w-5.5 h-5.5 ${activeTab === "orders" ? "stroke-[2.2]" : "stroke-[1.8]"}`} />
-          <span className="text-[9px] font-bold">Tổng quan</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab("history")}
-          className={`flex flex-col items-center gap-0.5 transition-all duration-200 ${
-            activeTab === "history" 
-              ? "text-[#009ef7] scale-105 -translate-y-0.5 font-bold" 
-              : "text-slate-400 dark:text-gray-500 hover:text-slate-700 dark:hover:text-gray-300"
-          }`}
-        >
-          <History className={`w-5.5 h-5.5 ${activeTab === "history" ? "stroke-[2.2]" : "stroke-[1.8]"}`} />
-          <span className="text-[9px] font-bold">Lịch sử</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab("templates")}
-          className={`flex flex-col items-center gap-0.5 transition-all duration-200 ${
-            activeTab === "templates" 
-              ? "text-[#009ef7] scale-105 -translate-y-0.5 font-bold" 
-              : "text-slate-400 dark:text-gray-500 hover:text-slate-700 dark:hover:text-gray-300"
-          }`}
-        >
-          <FileText className={`w-5.5 h-5.5 ${activeTab === "templates" ? "stroke-[2.2]" : "stroke-[1.8]"}`} />
-          <span className="text-[9px] font-bold">Mẫu SC</span>
-        </button>
       </div>
     </div>
   );

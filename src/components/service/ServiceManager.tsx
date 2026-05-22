@@ -3106,7 +3106,7 @@ export default function ServiceManager() {
                               {order.customerPhone && (
                                 <button
                                   onClick={(e) => { e.stopPropagation(); callCustomer(order.customerPhone || ""); }}
-                                  className="ml-auto inline-flex items-center justify-center w-7 h-7 rounded-full text-blue-500 hover:text-white hover:bg-blue-500 dark:hover:bg-blue-600 transition-colors bg-blue-50 dark:bg-blue-900/20"
+                                  className="ml-2 inline-flex items-center justify-center w-7 h-7 rounded-full text-blue-500 hover:text-white hover:bg-blue-500 dark:hover:bg-blue-600 transition-colors bg-blue-50 dark:bg-blue-900/20"
                                 >
                                   <PhoneCall className="w-3.5 h-3.5" />
                                 </button>

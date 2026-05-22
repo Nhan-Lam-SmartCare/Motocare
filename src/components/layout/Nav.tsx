@@ -363,193 +363,193 @@ export function Nav() {
             </Link>
           </div>
         </div>
+      </div>
 
-        {/* Mobile Menu Drawer - For Secondary Functions */}
-        {showMobileMenu && (
-          <>
-            {/* Backdrop */}
-            <div
-              className="fixed inset-0 bg-black/50 z-40 md:hidden"
-              onClick={() => setShowMobileMenu(false)}
-            ></div>
+      {/* Mobile Menu Drawer - For Secondary Functions */}
+      {showMobileMenu && (
+        <>
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 bg-black/50 z-40 md:hidden"
+            onClick={() => setShowMobileMenu(false)}
+          ></div>
 
-            {/* Menu Drawer - Redesigned with modern style */}
-            <div className="fixed inset-y-0 left-0 w-80 bg-gradient-to-br from-white to-slate-50 dark:from-slate-800 dark:to-slate-900 z-50 shadow-2xl md:hidden overflow-y-auto animate-slide-in-left">
-              {/* Header with Profile */}
-              <div className="relative p-6 pb-8 bg-slate-900 border-b border-slate-800">
-                <button
-                  onClick={() => setShowMobileMenu(false)}
-                  className="absolute top-4 right-4 p-2 hover:bg-white/10 rounded-lg transition text-white"
-                >
-                  <X className="w-5 h-5" />
-                </button>
+          {/* Menu Drawer - Redesigned with modern style */}
+          <div className="fixed inset-y-0 left-0 w-80 bg-gradient-to-br from-white to-slate-50 dark:from-slate-800 dark:to-slate-900 z-50 shadow-2xl md:hidden overflow-y-auto animate-slide-in-left">
+            {/* Header with Profile */}
+            <div className="relative p-6 pb-8 bg-slate-900 border-b border-slate-800">
+              <button
+                onClick={() => setShowMobileMenu(false)}
+                className="absolute top-4 right-4 p-2 hover:bg-white/10 rounded-lg transition text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
 
-                {profile && (
-                  <div className="flex items-center gap-3 text-white mt-2">
-                    <div className="w-14 h-14 bg-white/20 backdrop-blur rounded-full flex items-center justify-center text-xl font-bold border-2 border-white/30">
-                      {profile.full_name?.[0] || profile.email[0].toUpperCase()}
+              {profile && (
+                <div className="flex items-center gap-3 text-white mt-2">
+                  <div className="w-14 h-14 bg-white/20 backdrop-blur rounded-full flex items-center justify-center text-xl font-bold border-2 border-white/30">
+                    {profile.full_name?.[0] || profile.email[0].toUpperCase()}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-semibold text-base truncate">
+                      {profile.full_name || profile.email}
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="font-semibold text-base truncate">
-                        {profile.full_name || profile.email}
-                      </div>
-                      <div className="text-xs text-white/80 flex items-center gap-1 mt-0.5">
-                        {profile.role === USER_ROLES.OWNER && (
-                          <Crown className="w-3 h-3" />
-                        )}
-                        {profile.role === USER_ROLES.MANAGER && (
-                          <UserCog className="w-3 h-3" />
-                        )}
-                        {profile.role === USER_ROLES.STAFF && (
-                          <User className="w-3 h-3" />
-                        )}
-                        <span>
-                          {USER_ROLE_LABELS[profile.role] ||
-                            USER_ROLE_LABELS[USER_ROLES.STAFF]}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Secondary Functions - Grouped by category */}
-              <div className="p-4 space-y-6">
-                {/* Management Section */}
-                <div>
-                  <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-3 mb-2">
-                    Quản lý
-                  </div>
-                  <div className="space-y-1">
-                    {can.viewEmployees && (
-                      <MobileDrawerLink
-                        to="/employees"
-                        icon={<BriefcaseBusiness className="w-5 h-5" />}
-                        label="Nhân viên"
-                        color="indigo"
-                        onClick={() => setShowMobileMenu(false)}
-                      />
-                    )}
-                    {can.viewDebt && (
-                      <MobileDrawerLink
-                        to="/debt"
-                        icon={<HandCoins className="w-5 h-5" />}
-                        label="Công nợ"
-                        color="orange"
-                        onClick={() => setShowMobileMenu(false)}
-                      />
-                    )}
-                  </div>
-                </div>
-
-                {/* Finance & Reports Section */}
-                {(can.viewFinance || can.viewAnalytics) && (
-                  <div>
-                    <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-3 mb-2">
-                      Tài chính & Báo cáo
-                    </div>
-                    <div className="space-y-1">
-                      {can.viewFinance && (
-                        <MobileDrawerLink
-                          to="/finance"
-                          icon={<Landmark className="w-5 h-5" />}
-                          label="Tài chính"
-                          color="rose"
-                          onClick={() => setShowMobileMenu(false)}
-                        />
+                    <div className="text-xs text-white/80 flex items-center gap-1 mt-0.5">
+                      {profile.role === USER_ROLES.OWNER && (
+                        <Crown className="w-3 h-3" />
                       )}
-                      {can.viewAnalytics && (
-                        <MobileDrawerLink
-                          to="/analytics"
-                          icon={<BarChart3 className="w-5 h-5" />}
-                          label="Phân tích"
-                          color="teal"
-                          onClick={() => setShowMobileMenu(false)}
-                        />
+                      {profile.role === USER_ROLES.MANAGER && (
+                        <UserCog className="w-3 h-3" />
                       )}
-                      <MobileDrawerLink
-                        to="/reports"
-                        icon={<FileText className="w-5 h-5" />}
-                        label="Báo cáo"
-                        color="fuchsia"
-                        onClick={() => setShowMobileMenu(false)}
-                      />
-                      <MobileDrawerLink
-                        to="/tax-report"
-                        icon={<DollarSign className="w-5 h-5" />}
-                        label="Báo cáo thuế"
-                        color="amber"
-                        onClick={() => setShowMobileMenu(false)}
-                      />
-                      {isOwnerOrManager && (
-                        <MobileDrawerLink
-                          to="/admin/khuyen-mai"
-                          icon={<Tag className="w-5 h-5" />}
-                          label="Quản lý khuyến mãi"
-                          color="rose"
-                          onClick={() => setShowMobileMenu(false)}
-                        />
+                      {profile.role === USER_ROLES.STAFF && (
+                        <User className="w-3 h-3" />
                       )}
-                    </div>
-                  </div>
-                )}
-
-                {/* Settings Section */}
-                <div>
-                  <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-3 mb-2">
-                    Hệ thống
-                  </div>
-                  <div className="space-y-1">
-                    <button
-                      onClick={() => {
-                        toggleTheme();
-                        setShowMobileMenu(false);
-                      }}
-                      className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700/50 transition text-slate-700 dark:text-slate-300"
-                    >
-                      {theme === "dark" ? (
-                        <Moon className="w-5 h-5" />
-                      ) : (
-                        <Sun className="w-5 h-5" />
-                      )}
-                      <span className="font-medium">
-                        Chế độ {theme === "dark" ? "tối" : "sáng"}
+                      <span>
+                        {USER_ROLE_LABELS[profile.role] ||
+                          USER_ROLE_LABELS[USER_ROLES.STAFF]}
                       </span>
-                    </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
 
-                    {can.viewSettings && (
+            {/* Secondary Functions - Grouped by category */}
+            <div className="p-4 space-y-6">
+              {/* Management Section */}
+              <div>
+                <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-3 mb-2">
+                  Quản lý
+                </div>
+                <div className="space-y-1">
+                  {can.viewEmployees && (
+                    <MobileDrawerLink
+                      to="/employees"
+                      icon={<BriefcaseBusiness className="w-5 h-5" />}
+                      label="Nhân viên"
+                      color="indigo"
+                      onClick={() => setShowMobileMenu(false)}
+                    />
+                  )}
+                  {can.viewDebt && (
+                    <MobileDrawerLink
+                      to="/debt"
+                      icon={<HandCoins className="w-5 h-5" />}
+                      label="Công nợ"
+                      color="orange"
+                      onClick={() => setShowMobileMenu(false)}
+                    />
+                  )}
+                </div>
+              </div>
+
+              {/* Finance & Reports Section */}
+              {(can.viewFinance || can.viewAnalytics) && (
+                <div>
+                  <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-3 mb-2">
+                    Tài chính & Báo cáo
+                  </div>
+                  <div className="space-y-1">
+                    {can.viewFinance && (
                       <MobileDrawerLink
-                        to="/settings"
-                        icon={<Cog className="w-5 h-5" />}
-                        label="Cài đặt"
-                        color="slate"
+                        to="/finance"
+                        icon={<Landmark className="w-5 h-5" />}
+                        label="Tài chính"
+                        color="rose"
+                        onClick={() => setShowMobileMenu(false)}
+                      />
+                    )}
+                    {can.viewAnalytics && (
+                      <MobileDrawerLink
+                        to="/analytics"
+                        icon={<BarChart3 className="w-5 h-5" />}
+                        label="Phân tích"
+                        color="teal"
+                        onClick={() => setShowMobileMenu(false)}
+                      />
+                    )}
+                    <MobileDrawerLink
+                      to="/reports"
+                      icon={<FileText className="w-5 h-5" />}
+                      label="Báo cáo"
+                      color="fuchsia"
+                      onClick={() => setShowMobileMenu(false)}
+                    />
+                    <MobileDrawerLink
+                      to="/tax-report"
+                      icon={<DollarSign className="w-5 h-5" />}
+                      label="Báo cáo thuế"
+                      color="amber"
+                      onClick={() => setShowMobileMenu(false)}
+                    />
+                    {isOwnerOrManager && (
+                      <MobileDrawerLink
+                        to="/admin/khuyen-mai"
+                        icon={<Tag className="w-5 h-5" />}
+                        label="Quản lý khuyến mãi"
+                        color="rose"
                         onClick={() => setShowMobileMenu(false)}
                       />
                     )}
                   </div>
                 </div>
-              </div>
+              )}
 
-              {/* Logout Button - Fixed at bottom */}
-              <div className="absolute bottom-0 left-0 right-0 p-4 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700">
-                <button
-                  onClick={async () => {
-                    try {
-                      await signOut();
-                    } finally {
+              {/* Settings Section */}
+              <div>
+                <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-3 mb-2">
+                  Hệ thống
+                </div>
+                <div className="space-y-1">
+                  <button
+                    onClick={() => {
+                      toggleTheme();
                       setShowMobileMenu(false);
-                    }
-                  }}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-red-500 hover:bg-red-600 text-white rounded-xl font-medium transition shadow-lg shadow-red-500/20"
-                >
-                  <LogOut className="w-5 h-5" />
-                  <span>Đăng xuất</span>
-                </button>
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700/50 transition text-slate-700 dark:text-slate-300"
+                  >
+                    {theme === "dark" ? (
+                      <Moon className="w-5 h-5" />
+                    ) : (
+                      <Sun className="w-5 h-5" />
+                    )}
+                    <span className="font-medium">
+                      Chế độ {theme === "dark" ? "tối" : "sáng"}
+                    </span>
+                  </button>
+
+                  {can.viewSettings && (
+                    <MobileDrawerLink
+                      to="/settings"
+                      icon={<Cog className="w-5 h-5" />}
+                      label="Cài đặt"
+                      color="slate"
+                      onClick={() => setShowMobileMenu(false)}
+                    />
+                  )}
+                </div>
               </div>
             </div>
-          </>
-        )}
-      </div>
+
+            {/* Logout Button - Fixed at bottom */}
+            <div className="absolute bottom-0 left-0 right-0 p-4 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700">
+              <button
+                onClick={async () => {
+                  try {
+                    await signOut();
+                  } finally {
+                    setShowMobileMenu(false);
+                  }
+                }}
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-red-500 hover:bg-red-600 text-white rounded-xl font-medium transition shadow-lg shadow-red-500/20"
+              >
+                <LogOut className="w-5 h-5" />
+                <span>Đăng xuất</span>
+              </button>
+            </div>
+          </div>
+        </>
+      )}
     </nav>
   );
 }

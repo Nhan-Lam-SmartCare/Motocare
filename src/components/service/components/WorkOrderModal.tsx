@@ -2190,13 +2190,13 @@ const WorkOrderModal: React.FC<{
     }, [availableParts, searchPart, searchPartCategory]);
 
     return (
-      <div className="fixed inset-0 bg-black/50 z-50 flex items-end md:items-center justify-center p-0 md:p-4">
-        <div className="bg-white dark:bg-slate-800 w-full h-full md:h-auto md:max-h-[90vh] md:max-w-6xl rounded-t-3xl md:rounded-xl shadow-2xl md:shadow-lg flex flex-col overflow-hidden">
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end md:items-center justify-center p-0 md:p-4">
+        <div className="bg-slate-50 dark:bg-slate-900 w-full h-full md:h-auto md:max-h-[90vh] md:max-w-6xl rounded-t-3xl md:rounded-xl shadow-2xl flex flex-col overflow-hidden border border-white/5">
           {/* Header */}
-          <div className="bg-gradient-to-r from-slate-50 to-white dark:from-slate-800 dark:to-slate-800 border-b border-slate-200 dark:border-slate-700 px-4 py-2.5 md:px-6 flex-shrink-0">
+          <div className="bg-white/80 dark:bg-slate-950/20 backdrop-blur border-b border-slate-200 dark:border-slate-800/80 px-4 py-3 md:px-6 flex-shrink-0">
             <div className="flex items-center justify-between">
               {/* Status Stepper */}
-              <div className="flex items-center gap-1 overflow-x-auto pb-0.5 flex-1 mr-3">
+              <div className="flex items-center bg-slate-100 dark:bg-slate-950/40 p-1 rounded-full border border-slate-200/50 dark:border-slate-800/60 overflow-x-auto flex-1 mr-3 max-w-max">
                 {[
                   { 
                     key: "Tiếp nhận", 
@@ -2223,27 +2223,30 @@ const WorkOrderModal: React.FC<{
                   const currentIdx = statuses.indexOf(formData.status || "Tiếp nhận");
                   const stepIdx = idx;
                   const isActive = stepIdx === currentIdx;
-                  const isPast = stepIdx < currentIdx;
                   const colorMap: Record<string, string> = {
-                    blue: isActive ? "bg-blue-50 text-blue-600 border-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/30" : isPast ? "bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700" : "bg-slate-50 dark:bg-slate-800/50 text-slate-400 border-slate-200 dark:border-slate-700",
-                    orange: isActive ? "bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/30" : isPast ? "bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700" : "bg-slate-50 dark:bg-slate-800/50 text-slate-400 border-slate-200 dark:border-slate-700",
-                    purple: isActive ? "bg-purple-50 text-purple-600 border-purple-200 dark:bg-purple-500/10 dark:text-purple-400 dark:border-purple-500/30" : isPast ? "bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700" : "bg-slate-50 dark:bg-slate-800/50 text-slate-400 border-slate-200 dark:border-slate-700",
-                    green: isActive ? "bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/30" : isPast ? "bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700" : "bg-slate-50 dark:bg-slate-800/50 text-slate-400 border-slate-200 dark:border-slate-700",
+                    blue: isActive 
+                      ? "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/25 shadow-sm shadow-blue-500/5" 
+                      : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-800/30 border-transparent",
+                    orange: isActive 
+                      ? "bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/25 shadow-sm shadow-orange-500/5" 
+                      : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-800/30 border-transparent",
+                    purple: isActive 
+                      ? "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/25 shadow-sm shadow-purple-500/5" 
+                      : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-800/30 border-transparent",
+                    green: isActive 
+                      ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/25 shadow-sm shadow-emerald-500/5" 
+                      : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-800/30 border-transparent",
                   };
                   return (
-                    <div key={step.key} className="flex items-center gap-1 flex-shrink-0">
-                      <button
-                        type="button"
-                        onClick={() => setFormData({ ...formData, status: step.key as any })}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${colorMap[step.color]} ${isActive ? "shadow-sm" : ""}`}
-                      >
-                        <span className="text-sm">{step.icon}</span>
-                        <span className="hidden sm:inline">{step.key}</span>
-                      </button>
-                      {idx < arr.length - 1 && (
-                        <div className={`w-4 h-0.5 rounded-full ${isPast ? "bg-slate-300 dark:bg-slate-500" : "bg-slate-200 dark:bg-slate-700"}`} />
-                      )}
-                    </div>
+                    <button
+                      key={step.key}
+                      type="button"
+                      onClick={() => setFormData({ ...formData, status: step.key as any })}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${colorMap[step.color]}`}
+                    >
+                      <span className="text-sm">{step.icon}</span>
+                      <span className="hidden sm:inline">{step.key}</span>
+                    </button>
                   );
                 })}
               </div>
@@ -2251,17 +2254,17 @@ const WorkOrderModal: React.FC<{
               {/* Right: Badge + Close Button */}
               <div className="flex items-center gap-2 flex-shrink-0">
                 {formData.id ? (
-                  <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-600">
+                  <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
                     #{formatWorkOrderId(formData.id, storeSettings?.work_order_prefix)}
                   </span>
                 ) : (
-                  <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-700">
+                  <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
                     Phiếu mới
                   </span>
                 )}
                 <button
                   onClick={onClose}
-                  className="w-8 h-8 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+                  className="w-8 h-8 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
                   aria-label="Đóng"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5">
@@ -2601,24 +2604,24 @@ const WorkOrderModal: React.FC<{
 
                     {/* Display customer info after selection */}
                     {formData.customerName && formData.customerPhone && (
-                      <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-                        <div className="flex items-start justify-between">
+                      <div className="mt-3 p-4 bg-slate-100/50 dark:bg-slate-950/20 border border-slate-200 dark:border-slate-800/60 rounded-xl shadow-sm">
+                        <div className="flex items-center justify-between">
                           {/* View Mode */}
                           {!isEditingCustomer ? (
                             <>
-                              <div className="space-y-1">
-                                <div className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                              <div className="space-y-1.5 flex-1 pr-2">
+                                <div className="text-sm font-semibold text-slate-800 dark:text-slate-200 tracking-tight">
                                   {formData.customerName}
                                 </div>
-                                <div className="text-xs text-slate-600 dark:text-slate-400">
-                                  <span className="inline-flex items-center gap-1">
+                                <div className="text-xs text-slate-600 dark:text-slate-400 flex flex-wrap gap-x-4 gap-y-1.5">
+                                  <span className="inline-flex items-center gap-1.5">
                                     <svg
                                       xmlns="http://www.w3.org/2000/svg"
                                       viewBox="0 0 24 24"
                                       fill="none"
                                       stroke="currentColor"
                                       strokeWidth="2"
-                                      className="w-3.5 h-3.5"
+                                      className="w-3.5 h-3.5 text-blue-500 dark:text-blue-400"
                                     >
                                       <path
                                         strokeLinecap="round"
@@ -2626,31 +2629,34 @@ const WorkOrderModal: React.FC<{
                                         d="M2.25 6.75c0 8.284 6.716 15 15 15 .828 0 1.5-.672 1.5-1.5v-2.25a1.5 1.5 0 00-1.5-1.5h-1.158a1.5 1.5 0 00-1.092.468l-.936.996a1.5 1.5 0 01-1.392.444 12.035 12.035 0 01-7.29-7.29 1.5 1.5 0 01.444-1.392l.996-.936a1.5 1.5 0 00.468-1.092V6.75A1.5 1.5 0 006.75 5.25H4.5c-.828 0-1.5.672-1.5 1.5z"
                                       />
                                     </svg>
-                                    {formData.customerPhone}
+                                    <span className="font-medium">{formData.customerPhone}</span>
                                   </span>
-                                </div>
-                                {(formData.vehicleModel ||
-                                  formData.licensePlate) && (
-                                    <div className="text-xs text-slate-600 dark:text-slate-400">
-                                      <span className="inline-flex items-center gap-1">
+                                  {(formData.vehicleModel ||
+                                    formData.licensePlate) && (
+                                      <span className="inline-flex items-center gap-1.5">
                                         <svg
                                           xmlns="http://www.w3.org/2000/svg"
                                           viewBox="0 0 24 24"
                                           fill="none"
                                           stroke="currentColor"
                                           strokeWidth="2"
-                                          className="w-3.5 h-3.5"
+                                          className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400"
                                         >
                                           <circle cx="6" cy="17" r="2" />
                                           <circle cx="18" cy="17" r="2" />
                                           <path d="M4 17h2l4-6h2l2 3h4" />
                                         </svg>
-                                        {formData.vehicleModel}{" "}
-                                        {formData.licensePlate &&
-                                          `- ${formData.licensePlate}`}
+                                        <span className="font-medium flex items-center gap-1.5">
+                                          {formData.vehicleModel}
+                                          {formData.licensePlate && (
+                                            <span className="text-[10px] font-semibold text-yellow-600 dark:text-yellow-400 bg-yellow-500/10 px-1.5 py-0.5 rounded border border-yellow-500/20 font-mono">
+                                              {formData.licensePlate}
+                                            </span>
+                                          )}
+                                        </span>
                                       </span>
-                                    </div>
-                                  )}
+                                    )}
+                                </div>
                               </div>
                               <div className="flex items-center gap-1">
                                 {/* Save Customer Button - Only show if customer not in DB yet */}
@@ -2724,7 +2730,7 @@ const WorkOrderModal: React.FC<{
                                         }
                                       }
                                     }}
-                                    className="text-green-500 hover:text-green-600 text-sm flex items-center gap-1 px-2 py-1 rounded border border-green-500 hover:bg-green-50 dark:hover:bg-green-900/20"
+                                    className="text-emerald-500 hover:text-emerald-600 hover:bg-emerald-500/10 text-xs font-semibold flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-emerald-500/25 transition-all"
                                     title="Lưu khách hàng vào hệ thống"
                                   >
                                     <svg
@@ -2741,7 +2747,7 @@ const WorkOrderModal: React.FC<{
                                         d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8zM23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"
                                       />
                                     </svg>
-                                    <span className="text-xs font-medium">Lưu KH</span>
+                                    <span>Lưu KH</span>
                                   </button>
                                 )}
                                 {/* Edit Button */}
@@ -2756,7 +2762,7 @@ const WorkOrderModal: React.FC<{
                                     );
                                     setIsEditingCustomer(true);
                                   }}
-                                  className="text-slate-400 hover:text-blue-500 text-sm flex items-center"
+                                  className="text-slate-400 hover:text-blue-500 hover:bg-blue-500/10 p-1.5 rounded-lg transition-colors flex items-center justify-center"
                                   title="Sửa thông tin khách hàng"
                                 >
                                   <svg
@@ -2790,7 +2796,7 @@ const WorkOrderModal: React.FC<{
                                       licensePlate: "",
                                     });
                                   }}
-                                  className="text-slate-400 hover:text-red-500 text-sm flex items-center"
+                                  className="text-slate-400 hover:text-red-500 hover:bg-red-500/10 p-1.5 rounded-lg transition-colors flex items-center justify-center"
                                   title="Xóa khách hàng"
                                 >
                                   <svg
@@ -2900,9 +2906,9 @@ const WorkOrderModal: React.FC<{
                               return (
                                 <div
                                   key={vehicle.id}
-                                  className={`w-full rounded-lg border-2 transition-all ${isSelected
-                                    ? "border-blue-500 bg-blue-50 dark:bg-blue-900/30"
-                                    : "border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700"
+                                  className={`w-full rounded-xl border transition-all duration-300 ${isSelected
+                                    ? "border-blue-500/50 bg-gradient-to-r from-blue-500/5 to-indigo-500/5 dark:from-blue-500/10 dark:to-indigo-500/10 shadow-md shadow-blue-500/5"
+                                    : "border-slate-200 dark:border-slate-800/60 bg-slate-100/30 dark:bg-slate-950/20 hover:bg-slate-100/50 dark:hover:bg-slate-950/30"
                                     }`}
                                 >
                                   {isEditing ? (
@@ -2918,7 +2924,7 @@ const WorkOrderModal: React.FC<{
                                           onChange={(e) =>
                                             setEditVehicleModel(e.target.value)
                                           }
-                                          className="w-full px-2 py-1.5 text-sm border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
+                                          className="w-full px-2.5 py-1.5 text-sm border border-slate-200 dark:border-slate-850 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 focus:outline-none transition-all"
                                           placeholder="Nhập dòng xe"
                                         />
                                       </div>
@@ -2934,7 +2940,7 @@ const WorkOrderModal: React.FC<{
                                               e.target.value.toUpperCase()
                                             )
                                           }
-                                          className="w-full px-2 py-1.5 text-sm border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
+                                          className="w-full px-2.5 py-1.5 text-sm border border-slate-200 dark:border-slate-850 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 focus:outline-none transition-all"
                                           placeholder="Nhập biển số"
                                         />
                                       </div>
@@ -2946,14 +2952,14 @@ const WorkOrderModal: React.FC<{
                                             setEditVehicleModel("");
                                             setEditVehicleLicensePlate("");
                                           }}
-                                          className="px-3 py-1 text-xs bg-slate-200 dark:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-md hover:bg-slate-300 dark:hover:bg-slate-500"
+                                          className="px-3 py-1 text-xs bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-350 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors"
                                         >
                                           Hủy
                                         </button>
                                         <button
                                           type="button"
                                           onClick={handleSaveEditedVehicle}
-                                          className="px-3 py-1 text-xs bg-blue-500 text-white rounded-md hover:bg-blue-600"
+                                          className="px-3 py-1 text-xs bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                                         >
                                           Lưu
                                         </button>
@@ -2964,26 +2970,31 @@ const WorkOrderModal: React.FC<{
                                     <button
                                       type="button"
                                       onClick={() => handleSelectVehicle(vehicle)}
-                                      className="w-full text-left px-3 py-2.5"
+                                      className="w-full text-left px-4 py-3"
                                     >
                                       <div className="flex items-center gap-2">
-                                        {isPrimary && (
-                                          <span
-                                            className="text-yellow-500"
-                                            title="Xe chính"
-                                          >
-                                            ⭐
-                                          </span>
-                                        )}
                                         <div className="flex-1">
-                                          <div className="font-medium text-sm text-slate-900 dark:text-slate-100">
-                                            {vehicle.model}
+                                          <div className="flex items-center gap-2">
+                                            <div className="font-semibold text-sm text-slate-800 dark:text-slate-200">
+                                              {vehicle.model}
+                                            </div>
+                                            {isPrimary && (
+                                              <span
+                                                className="inline-flex items-center gap-1 text-[9px] font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20"
+                                                title="Xe chính mặc định"
+                                              >
+                                                <svg xmlns="http://www.w3.org/2050/svg" viewBox="0 0 24 24" fill="currentColor" className="w-2.5 h-2.5 text-amber-500">
+                                                  <path fillRule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.007 5.404.433c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.433 2.082-5.006z" clipRule="evenodd" />
+                                                </svg>
+                                                Mặc định
+                                              </span>
+                                            )}
                                           </div>
-                                          <div className="text-xs font-mono text-slate-600 dark:text-slate-400 mt-0.5">
+                                          <div className="text-xs font-semibold font-mono text-blue-600 dark:text-blue-400 mt-1 bg-blue-500/5 border border-blue-500/10 px-2 py-0.5 rounded inline-block">
                                             {vehicle.licensePlate}
                                           </div>
                                         </div>
-                                        <div className="flex items-center gap-1">
+                                        <div className="flex items-center gap-1.5">
                                           <button
                                             type="button"
                                             onClick={(e) => {
@@ -2996,7 +3007,7 @@ const WorkOrderModal: React.FC<{
                                                 vehicle.licensePlate || ""
                                               );
                                             }}
-                                            className="text-slate-400 hover:text-blue-500 p-1"
+                                            className="text-slate-400 hover:text-blue-500 hover:bg-blue-500/10 p-1.5 rounded-lg transition-colors flex items-center justify-center"
                                             title="Sửa thông tin xe"
                                           >
                                             <svg
@@ -3015,17 +3026,11 @@ const WorkOrderModal: React.FC<{
                                             </svg>
                                           </button>
                                           {isSelected && (
-                                            <svg
-                                              className="w-5 h-5 text-blue-500"
-                                              fill="currentColor"
-                                              viewBox="0 0 20 20"
-                                            >
-                                              <path
-                                                fillRule="evenodd"
-                                                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                                                clipRule="evenodd"
-                                              />
-                                            </svg>
+                                            <span className="flex items-center justify-center w-5 h-5 rounded-full bg-blue-500 text-white shadow-sm shadow-blue-500/20">
+                                              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                              </svg>
+                                            </span>
                                           )}
                                         </div>
                                       </div>
@@ -3251,41 +3256,41 @@ const WorkOrderModal: React.FC<{
                   </div>
                 )}
 
-                <div className="border border-slate-300 dark:border-slate-600 rounded-lg overflow-hidden">
+                <div className="border border-slate-200/60 dark:border-slate-800/40 rounded-xl overflow-hidden shadow-sm bg-slate-500/[0.01] backdrop-blur-sm">
                   <table className="w-full">
-                    <thead className="bg-slate-50 dark:bg-slate-700">
+                    <thead className="bg-slate-100/50 dark:bg-slate-900/40 border-b border-slate-200/50 dark:border-slate-800/50">
                       <tr>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-slate-600 dark:text-slate-300">
+                        <th className="px-4 py-3 text-left text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                           Tên
                         </th>
-                        <th className="px-4 py-2 text-center text-xs font-medium text-slate-600 dark:text-slate-300">
+                        <th className="px-4 py-3 text-center text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                           SL
                         </th>
-                        <th className="px-4 py-2 text-right text-xs font-medium text-slate-600 dark:text-slate-300">
+                        <th className="px-4 py-3 text-right text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                           Đ.Giá
                         </th>
-                        <th className="px-4 py-2 text-right text-xs font-medium text-slate-600 dark:text-slate-300">
+                        <th className="px-4 py-3 text-right text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                           T.Tiền
                         </th>
-                        <th className="px-4 py-2 text-center text-xs font-medium text-slate-600 dark:text-slate-300"></th>
+                        <th className="px-4 py-3 text-center text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider w-12"></th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-200 dark:divide-slate-600">
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800/40 bg-white/40 dark:bg-slate-900/10">
                       {selectedParts.length === 0 ? (
                         <tr>
                           <td
                             colSpan={5}
-                            className="px-4 py-6 text-center text-sm text-slate-400"
+                            className="px-4 py-8 text-center text-sm text-slate-400 dark:text-slate-500"
                           >
                             Chưa có phụ tùng nào
                           </td>
                         </tr>
                       ) : (
                         selectedParts.map((part, idx) => (
-                          <tr key={idx} className="bg-white dark:bg-slate-800">
-                            <td className="px-4 py-2">
+                          <tr key={idx} className="hover:bg-slate-500/[0.02] transition-colors">
+                            <td className="px-4 py-3">
                               <div className="relative group/part">
-                                <div className="text-sm text-slate-900 dark:text-slate-100 font-medium cursor-default">
+                                <div className="text-sm text-slate-800 dark:text-slate-200 font-semibold cursor-default">
                                   {part.partName}
                                 </div>
                                 {isOwner && (() => {
@@ -3299,24 +3304,24 @@ const WorkOrderModal: React.FC<{
                                     }
                                   }
                                   return costPrice != null ? (
-                                    <div className="absolute left-0 bottom-full mb-1 hidden group-hover/part:block z-20 pointer-events-none">
-                                      <div className="bg-slate-800 dark:bg-slate-600 text-white text-[10px] px-2.5 py-1.5 rounded-lg shadow-lg whitespace-nowrap border border-slate-700 dark:border-slate-500">
-                                        <span className="text-slate-300">Giá nhập:</span>{" "}
-                                        <span className="font-semibold text-amber-300">{formatCurrency(costPrice)}</span>
+                                    <div className="absolute left-0 bottom-full mb-1.5 hidden group-hover/part:block z-20 pointer-events-none">
+                                      <div className="bg-slate-900 dark:bg-slate-950 text-white text-[10px] px-2.5 py-1.5 rounded-lg shadow-xl whitespace-nowrap border border-white/10 backdrop-blur-md">
+                                        <span className="text-slate-400">Giá nhập:</span>{" "}
+                                        <span className="font-semibold text-amber-400">{formatCurrency(costPrice)}</span>
                                       </div>
                                     </div>
                                   ) : null;
                                 })()}
                               </div>
-                              <div className="flex items-center gap-2 mt-0.5">
+                              <div className="flex items-center gap-2 mt-1">
                                 {part.sku && (
-                                  <span className="text-[10px] text-blue-600 dark:text-blue-400 font-mono">
+                                  <span className="text-[10px] text-blue-600 dark:text-blue-400 font-mono bg-blue-500/5 px-1.5 py-0.5 rounded border border-blue-500/10">
                                     {part.sku}
                                   </span>
                                 )}
                                 {part.category && (
                                   <span
-                                    className={`inline-flex items-center px-1.5 py-0 rounded-full text-[9px] font-medium ${getCategoryColor(part.category).bg
+                                    className={`inline-flex items-center px-1.5 py-0 rounded text-[9px] font-medium ${getCategoryColor(part.category).bg
                                       } ${getCategoryColor(part.category).text}`}
                                   >
                                     {part.category}
@@ -3324,7 +3329,7 @@ const WorkOrderModal: React.FC<{
                                 )}
                               </div>
                             </td>
-                            <td className="px-4 py-2 text-center">
+                            <td className="px-4 py-3 text-center">
                               <input
                                 type="number"
                                 min="1"
@@ -3338,13 +3343,13 @@ const WorkOrderModal: React.FC<{
                                     )
                                   );
                                 }}
-                                className={`w-16 px-2 py-1 border border-slate-300 dark:border-slate-600 rounded text-center bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 ${!canEditPriceAndParts
+                                className={`w-16 px-2 py-1 border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/30 text-slate-800 dark:text-slate-200 rounded-lg text-center transition-all focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 focus:outline-none ${!canEditPriceAndParts
                                   ? "opacity-50 cursor-not-allowed"
                                   : ""
                                   }`}
                               />
                             </td>
-                            <td className="px-4 py-2 text-right">
+                            <td className="px-4 py-3 text-right">
                               <NumberInput
                                 placeholder="Đơn giá"
                                 value={part.price || ""}
@@ -3356,16 +3361,16 @@ const WorkOrderModal: React.FC<{
                                   );
                                 }}
                                 disabled={!canEditPriceAndParts}
-                                className={`w-28 px-2 py-1 border border-slate-300 dark:border-slate-600 rounded text-right bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 text-sm ${!canEditPriceAndParts
+                                className={`w-28 px-2 py-1 border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/30 text-slate-800 dark:text-slate-200 rounded-lg text-right transition-all focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 focus:outline-none text-sm ${!canEditPriceAndParts
                                   ? "opacity-50 cursor-not-allowed"
                                   : ""
                                   }`}
                               />
                             </td>
-                            <td className="px-4 py-2 text-right text-sm font-semibold text-slate-900 dark:text-slate-100">
+                            <td className="px-4 py-3 text-right text-sm font-semibold text-slate-800 dark:text-slate-200">
                               {formatCurrency(part.price * part.quantity)}
                             </td>
-                            <td className="px-4 py-2 text-center">
+                            <td className="px-4 py-3 text-center">
                               <button
                                 onClick={() =>
                                   setSelectedParts(
@@ -3373,9 +3378,9 @@ const WorkOrderModal: React.FC<{
                                   )
                                 }
                                 disabled={!canEditPriceAndParts}
-                                className={`${canEditPriceAndParts
-                                  ? "text-red-500 hover:text-red-700"
-                                  : "text-slate-400 cursor-not-allowed"
+                                className={`p-1.5 rounded-lg transition-colors flex items-center justify-center mx-auto ${canEditPriceAndParts
+                                  ? "text-slate-400 hover:text-red-500 hover:bg-red-500/10"
+                                  : "text-slate-300 dark:text-slate-650 cursor-not-allowed"
                                   }`}
                                 aria-label="Xóa phụ tùng"
                                 title={
@@ -3422,26 +3427,26 @@ const WorkOrderModal: React.FC<{
                   )}
                 </div>
 
-                <div className="border border-slate-300 dark:border-slate-600 rounded-lg overflow-hidden">
+                <div className="border border-slate-200/60 dark:border-slate-800/40 rounded-xl overflow-hidden shadow-sm bg-slate-500/[0.01] backdrop-blur-sm">
                   <table className="w-full">
-                    <thead className="bg-slate-50 dark:bg-slate-700">
+                    <thead className="bg-slate-100/50 dark:bg-slate-900/40 border-b border-slate-200/50 dark:border-slate-800/50">
                       <tr>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-slate-600 dark:text-slate-300">
+                        <th className="px-4 py-3 text-left text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                           Mô tả
                         </th>
-                        <th className="px-4 py-2 text-center text-xs font-medium text-slate-600 dark:text-slate-300">
+                        <th className="px-4 py-3 text-center text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                           SL
                         </th>
-                        <th className="px-4 py-2 text-right text-xs font-medium text-slate-600 dark:text-slate-300">
+                        <th className="px-4 py-3 text-right text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                           Giá nhập
                         </th>
-                        <th className="px-4 py-2 text-right text-xs font-medium text-slate-600 dark:text-slate-300">
+                        <th className="px-4 py-3 text-right text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                           Đơn giá
                         </th>
-                        <th className="px-4 py-2 text-right text-xs font-medium text-slate-600 dark:text-slate-300">
+                        <th className="px-4 py-3 text-right text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                           Thành tiền
                         </th>
-                        <th className="px-4 py-2 text-center text-xs font-medium text-slate-600 dark:text-slate-300">
+                        <th className="px-4 py-3 text-center text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider w-16">
                           <button
                             onClick={() => {
                               if (newService.description) {
@@ -3457,24 +3462,24 @@ const WorkOrderModal: React.FC<{
                                 });
                               }
                             }}
-                            className="px-2 py-1 border border-blue-500 text-blue-500 hover:bg-blue-50 dark:border-blue-500/30 dark:text-blue-400 dark:hover:bg-blue-500/10 rounded text-xs"
+                            className="px-2.5 py-1 bg-blue-500 hover:bg-blue-600 active:scale-95 text-white rounded-lg text-xs font-semibold transition-all shadow-sm shadow-blue-500/10"
                           >
                             Thêm
                           </button>
                         </th>
                       </tr>
                     </thead>
-                    <tbody>
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800/40 bg-white/40 dark:bg-slate-900/10">
                       {/* Existing services */}
                       {additionalServices.map((service) => (
                         <tr
                           key={service.id}
-                          className="border-b border-slate-200 dark:border-slate-700"
+                          className="hover:bg-slate-500/[0.02] transition-colors"
                         >
-                          <td className="px-4 py-2 text-sm text-slate-900 dark:text-slate-100">
+                          <td className="px-4 py-3 text-sm font-medium text-slate-800 dark:text-slate-200">
                             {service.description}
                           </td>
-                          <td className="px-4 py-2 text-center text-sm text-slate-900 dark:text-slate-100">
+                          <td className="px-4 py-3 text-center">
                             <input
                               type="number"
                               value={service.quantity}
@@ -3489,10 +3494,10 @@ const WorkOrderModal: React.FC<{
                                   )
                                 );
                               }}
-                              className="w-16 px-2 py-1 border border-slate-300 dark:border-slate-600 rounded text-center bg-white dark:bg-slate-700 focus:border-blue-500 focus:outline-none"
+                              className="w-16 px-2 py-1 border border-slate-200 dark:border-slate-800 rounded-lg text-center bg-slate-50 dark:bg-slate-950/30 text-slate-800 dark:text-slate-200 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 focus:outline-none transition-all text-sm"
                             />
                           </td>
-                          <td className="px-4 py-2 text-right relative">
+                          <td className="px-4 py-3 text-right relative">
                             <NumberInput
                               value={service.costPrice ?? 0}
                               onChange={(val) =>
@@ -3510,11 +3515,11 @@ const WorkOrderModal: React.FC<{
                               }
                               // Always allow editing cost price for internal tracking
                               disabled={false}
-                              className="w-full px-2 py-1 border border-orange-200 dark:border-orange-800 rounded text-right bg-orange-50 dark:bg-orange-900/10 text-orange-700 dark:text-orange-400 focus:border-orange-500 focus:bg-white dark:focus:bg-slate-700 transition-colors text-sm"
+                              className="w-full px-2 py-1 border border-amber-200/50 dark:border-amber-900/40 rounded-lg text-right bg-amber-500/5 text-amber-700 dark:text-amber-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus:outline-none transition-all text-sm"
                               placeholder="0"
                             />
                           </td>
-                          <td className="px-4 py-2 text-right">
+                          <td className="px-4 py-3 text-right">
                             <NumberInput
                               value={service.price}
                               onChange={(val) =>
@@ -3527,17 +3532,17 @@ const WorkOrderModal: React.FC<{
                                 )
                               }
                               disabled={!canEditPriceAndParts}
-                              className={`w-full px-2 py-1 border border-slate-300 dark:border-slate-600 rounded text-right bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:outline-none text-sm ${!canEditPriceAndParts
+                              className={`w-full px-2 py-1 border border-slate-200 dark:border-slate-800 rounded-lg text-right bg-slate-50 dark:bg-slate-950/30 text-slate-800 dark:text-slate-200 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 focus:outline-none transition-all text-sm ${!canEditPriceAndParts
                                 ? "opacity-50 cursor-not-allowed"
                                 : ""
                                 }`}
                               placeholder="0"
                             />
                           </td>
-                          <td className="px-4 py-2 text-right text-sm font-semibold text-slate-900 dark:text-slate-100">
+                          <td className="px-4 py-3 text-right text-sm font-semibold text-slate-800 dark:text-slate-200">
                             {formatCurrency(service.price * service.quantity)}
                           </td>
-                          <td className="px-4 py-2 text-center">
+                          <td className="px-4 py-3 text-center">
                             <button
                               onClick={async () => {
                                 const newServices = additionalServices.filter(
@@ -3559,7 +3564,7 @@ const WorkOrderModal: React.FC<{
                                   }
                                 }
                               }}
-                              className="text-red-500 hover:text-red-700 text-sm"
+                              className="text-slate-400 hover:text-red-500 hover:bg-red-500/10 p-1.5 rounded-lg transition-colors flex items-center justify-center mx-auto"
                               aria-label="Xóa dịch vụ"
                             >
                               <svg
@@ -3582,8 +3587,8 @@ const WorkOrderModal: React.FC<{
                       ))}
 
                       {/* Input row */}
-                      <tr className="bg-white dark:bg-slate-800">
-                        <td className="px-4 py-2">
+                      <tr className="bg-slate-500/[0.02]">
+                        <td className="px-4 py-3">
                           <input
                             type="text"
                             placeholder="Mô tả..."
@@ -3594,10 +3599,10 @@ const WorkOrderModal: React.FC<{
                                 description: e.target.value,
                               })
                             }
-                            className="w-full px-2 py-1 border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 text-sm"
+                            className="w-full px-2.5 py-1 border border-slate-200 dark:border-slate-800 rounded-lg bg-slate-50 dark:bg-slate-950/30 text-slate-800 dark:text-slate-200 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 focus:outline-none transition-all text-sm"
                           />
                         </td>
-                        <td className="px-4 py-2">
+                        <td className="px-4 py-3">
                           <input
                             type="number"
                             value={newService.quantity}
@@ -3607,10 +3612,10 @@ const WorkOrderModal: React.FC<{
                                 quantity: Number(e.target.value),
                               })
                             }
-                            className="w-16 px-2 py-1 border border-slate-300 dark:border-slate-600 rounded text-center bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 text-sm"
+                            className="w-16 px-2 py-1 border border-slate-200 dark:border-slate-800 rounded-lg text-center bg-slate-50 dark:bg-slate-950/30 text-slate-800 dark:text-slate-200 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 focus:outline-none transition-all text-sm"
                           />
                         </td>
-                        <td className="px-4 py-2">
+                        <td className="px-4 py-3">
                           <NumberInput
                             placeholder="0"
                             value={newService.costPrice ?? ""}
@@ -3622,10 +3627,10 @@ const WorkOrderModal: React.FC<{
                                 price: newCostPrice > 0 ? Math.round(newCostPrice * 1.4) : newService.price,
                               });
                             }}
-                            className="w-full px-2 py-1 border border-orange-300 dark:border-orange-600 rounded text-right bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 text-sm"
+                            className="w-full px-2 py-1 border border-amber-200/50 dark:border-amber-900/40 rounded-lg text-right bg-amber-500/5 text-amber-700 dark:text-amber-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus:outline-none transition-all text-sm"
                           />
                         </td>
-                        <td className="px-4 py-2">
+                        <td className="px-4 py-3">
                           <NumberInput
                             placeholder="0"
                             value={newService.price ?? ""}
@@ -3636,15 +3641,15 @@ const WorkOrderModal: React.FC<{
                               })
                             }
                             allowNegative={true}
-                            className="w-full px-2 py-1 border border-slate-300 dark:border-slate-600 rounded text-right bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 text-sm"
+                            className="w-full px-2 py-1 border border-slate-200 dark:border-slate-800 rounded-lg text-right bg-slate-50 dark:bg-slate-950/30 text-slate-800 dark:text-slate-200 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 focus:outline-none transition-all text-sm"
                           />
                         </td>
-                        <td className="px-4 py-2 text-right text-sm text-slate-400">
+                        <td className="px-4 py-3 text-right text-sm text-slate-400 dark:text-slate-500 font-medium">
                           {newService.price > 0
                             ? formatCurrency(newService.price * newService.quantity)
                             : "Thành tiền"}
                         </td>
-                        <td className="px-4 py-2 text-center">
+                        <td className="px-4 py-3 text-center">
                           {/* Empty for add row */}
                         </td>
                       </tr>
@@ -3795,7 +3800,7 @@ const WorkOrderModal: React.FC<{
                 </div>
 
                 {/* Payment Options Card */}
-                <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4 space-y-3">
+                <div className="bg-white/60 dark:bg-slate-900/40 backdrop-blur-md border border-slate-200/50 dark:border-slate-800/50 rounded-xl p-4 space-y-3 shadow-sm">
                   <div className="flex items-center gap-2 mb-1">
                     <svg className="w-4 h-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
@@ -3804,15 +3809,15 @@ const WorkOrderModal: React.FC<{
                   </div>
 
                   {/* Deposit */}
-                  <label className="flex items-center gap-2">
+                  <label className="flex items-center gap-2.5 cursor-pointer">
                     <input
                       type="checkbox"
                       checked={showDepositInput}
                       onChange={(e) => { setShowDepositInput(e.target.checked); if (!e.target.checked) setDepositAmount(0); }}
                       disabled={!!order?.depositAmount}
-                      className="w-4 h-4 rounded"
+                      className="w-4 h-4 rounded text-violet-600 border-slate-300 dark:border-slate-700 focus:ring-violet-500/20 bg-white/40 dark:bg-slate-900/40 cursor-pointer transition disabled:opacity-50"
                     />
-                    <span className="text-sm text-slate-700 dark:text-slate-300">
+                    <span className="text-sm font-medium text-slate-700 dark:text-slate-300 select-none">
                       Đặt cọc {order?.depositAmount ? `(Đã cọc: ${formatCurrency(order.depositAmount)})` : ""}
                     </span>
                   </label>
@@ -3822,37 +3827,69 @@ const WorkOrderModal: React.FC<{
                         placeholder="Số tiền đặt cọc"
                         value={depositAmount || ""}
                         onChange={(val) => setDepositAmount(val)}
-                        className="w-full px-3 py-1.5 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 text-sm"
+                        className="w-full px-3.5 py-2 border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/40 text-slate-800 dark:text-slate-200 text-sm rounded-xl focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 shadow-inner placeholder-slate-400 dark:placeholder-slate-600 transition"
                       />
                     </div>
                   )}
 
-                  <div className="border-t border-slate-200 dark:border-slate-700"></div>
+                  <div className="border-t border-slate-200/50 dark:border-slate-800/50"></div>
 
                   {/* Payment Method */}
                   <div>
-                    <label className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-2 block uppercase tracking-wide">Phương thức</label>
-                    <div className="grid grid-cols-2 gap-2">
+                    <label className="text-xs font-semibold text-slate-400 dark:text-slate-500 mb-2 block uppercase tracking-wider">Phương thức thanh toán</label>
+                    <div className="grid grid-cols-2 gap-3">
                       <button
                         type="button"
                         onClick={() => setFormData({ ...formData, paymentMethod: "cash" })}
-                        className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium border-2 transition-all ${formData.paymentMethod === "cash" ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300" : "border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-400 hover:border-slate-300"}`}
+                        className={`group relative flex flex-col items-center justify-center gap-2 p-3.5 rounded-xl text-sm font-medium border transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] ${
+                          formData.paymentMethod === "cash"
+                            ? "bg-gradient-to-br from-emerald-500/10 to-teal-500/10 border-emerald-500/80 text-emerald-600 dark:text-emerald-400 shadow-sm shadow-emerald-500/10 ring-1 ring-emerald-500/30"
+                            : "bg-white/40 dark:bg-slate-900/20 border-slate-200/60 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50/50 dark:hover:bg-slate-800/40 hover:border-slate-300 dark:hover:border-slate-700"
+                        }`}
                       >
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                          <rect x="2" y="6" width="20" height="12" rx="2" ry="2" />
-                          <circle cx="12" cy="12" r="3" />
-                        </svg>
-                        Tiền mặt
+                        {formData.paymentMethod === "cash" && (
+                          <span className="absolute top-1.5 right-1.5 flex h-2 w-2">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                          </span>
+                        )}
+                        <div className={`p-2 rounded-lg transition-colors ${
+                          formData.paymentMethod === "cash"
+                            ? "bg-emerald-500/15 text-emerald-500"
+                            : "bg-slate-100 dark:bg-slate-800/60 text-slate-400 group-hover:text-slate-500 dark:group-hover:text-slate-300"
+                        }`}>
+                          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <rect x="2" y="6" width="20" height="12" rx="2" ry="2" />
+                            <circle cx="12" cy="12" r="3" />
+                          </svg>
+                        </div>
+                        <span className="text-xs font-semibold tracking-wide">Tiền mặt</span>
                       </button>
                       <button
                         type="button"
                         onClick={() => setFormData({ ...formData, paymentMethod: "bank" })}
-                        className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium border-2 transition-all ${formData.paymentMethod === "bank" ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300" : "border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-400 hover:border-slate-300"}`}
+                        className={`group relative flex flex-col items-center justify-center gap-2 p-3.5 rounded-xl text-sm font-medium border transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] ${
+                          formData.paymentMethod === "bank"
+                            ? "bg-gradient-to-br from-blue-500/10 to-indigo-500/10 border-blue-500/80 text-blue-600 dark:text-blue-400 shadow-sm shadow-blue-500/10 ring-1 ring-blue-500/30"
+                            : "bg-white/40 dark:bg-slate-900/20 border-slate-200/60 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50/50 dark:hover:bg-slate-800/40 hover:border-slate-300 dark:hover:border-slate-700"
+                        }`}
                       >
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M3 21h18M3 10h18M7 6h10l2 4H5l2-4Zm2 4v11m6-11v11" />
-                        </svg>
-                        Chuyển khoản
+                        {formData.paymentMethod === "bank" && (
+                          <span className="absolute top-1.5 right-1.5 flex h-2 w-2">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+                          </span>
+                        )}
+                        <div className={`p-2 rounded-lg transition-colors ${
+                          formData.paymentMethod === "bank"
+                            ? "bg-blue-500/15 text-blue-500"
+                            : "bg-slate-100 dark:bg-slate-800/60 text-slate-400 group-hover:text-slate-500 dark:group-hover:text-slate-300"
+                        }`}>
+                          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M3 21h18M3 10h18M7 6h10l2 4H5l2-4Zm2 4v11m6-11v11" />
+                          </svg>
+                        </div>
+                        <span className="text-xs font-semibold tracking-wide">Chuyển khoản</span>
                       </button>
                     </div>
                   </div>
@@ -3860,31 +3897,63 @@ const WorkOrderModal: React.FC<{
                   {/* Partial payment - Trả máy only */}
                   {formData.status === "Trả máy" && (
                     <>
-                      <div className="border-t border-slate-200 dark:border-slate-700"></div>
-                      <label className="flex items-center gap-2">
+                      <div className="border-t border-slate-200/50 dark:border-slate-800/50"></div>
+                      <label className="flex items-center gap-2.5 cursor-pointer">
                         <input
                           type="checkbox"
                           checked={showPartialPayment}
                           onChange={(e) => { setShowPartialPayment(e.target.checked); if (e.target.checked) setPartialPayment(maxAdditionalPayment); else setPartialPayment(0); }}
-                          className="w-4 h-4 rounded"
+                          className="w-4 h-4 rounded text-violet-600 border-slate-300 dark:border-slate-700 focus:ring-violet-500/20 bg-white/40 dark:bg-slate-900/40 cursor-pointer transition"
                         />
-                        <span className="text-sm text-slate-700 dark:text-slate-300">Thanh toán khi trả xe</span>
+                        <span className="text-sm font-medium text-slate-700 dark:text-slate-300 select-none">Thanh toán khi trả xe</span>
                       </label>
                       {showPartialPayment && (
-                        <div className="pl-6 space-y-2">
-                          <label className="text-xs text-slate-500 dark:text-slate-400">Số tiền thanh toán thêm:</label>
+                        <div className="pl-6 space-y-3">
+                          <label className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wide">Số tiền thanh toán thêm:</label>
                           <div className="flex items-center gap-1.5">
                             <NumberInput
                               placeholder="0"
                               value={partialPayment || ""}
                               onChange={(val) => setPartialPayment(val)}
-                              className="flex-1 px-3 py-1.5 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 text-sm"
+                              className="flex-1 px-3.5 py-2 border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/40 text-slate-800 dark:text-slate-200 text-sm rounded-xl focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 shadow-inner transition"
                             />
                           </div>
-                          <div className="flex gap-1">
-                            <button onClick={() => setPartialPayment(0)} className="px-2 py-1 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 rounded text-xs">0%</button>
-                            <button onClick={() => setPartialPayment(Math.round(maxAdditionalPayment * 0.5))} className="px-2 py-1 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 rounded text-xs">50%</button>
-                            <button onClick={() => setPartialPayment(maxAdditionalPayment)} className="px-2 py-1 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 rounded text-xs">100%</button>
+                          
+                          {/* Segmented slider/control */}
+                          <div className="flex bg-slate-100/80 dark:bg-slate-950/40 p-0.5 rounded-lg border border-slate-200/50 dark:border-slate-800/60 w-full overflow-hidden">
+                            <button
+                              type="button"
+                              onClick={() => setPartialPayment(0)}
+                              className={`flex-1 py-1 text-center text-xs font-semibold rounded-md transition-all duration-200 ${
+                                partialPayment === 0
+                                  ? "bg-white dark:bg-slate-800 text-violet-600 dark:text-violet-400 shadow-sm border border-slate-200/30 dark:border-slate-700/30"
+                                  : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+                              }`}
+                            >
+                              0%
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setPartialPayment(Math.round(maxAdditionalPayment * 0.5))}
+                              className={`flex-1 py-1 text-center text-xs font-semibold rounded-md transition-all duration-200 ${
+                                partialPayment === Math.round(maxAdditionalPayment * 0.5)
+                                  ? "bg-white dark:bg-slate-800 text-violet-600 dark:text-violet-400 shadow-sm border border-slate-200/30 dark:border-slate-700/30"
+                                  : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+                              }`}
+                            >
+                              50%
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setPartialPayment(maxAdditionalPayment)}
+                              className={`flex-1 py-1 text-center text-xs font-semibold rounded-md transition-all duration-200 ${
+                                partialPayment === maxAdditionalPayment
+                                  ? "bg-white dark:bg-slate-800 text-violet-600 dark:text-violet-400 shadow-sm border border-slate-200/30 dark:border-slate-700/30"
+                                  : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+                              }`}
+                            >
+                              100%
+                            </button>
                           </div>
                         </div>
                       )}
@@ -3892,7 +3961,7 @@ const WorkOrderModal: React.FC<{
                   )}
 
                   {formData.status !== "Trả máy" && (
-                    <p className="text-[10px] text-slate-400 italic leading-relaxed">
+                    <p className="text-[10px] text-slate-400/80 dark:text-slate-500 italic leading-relaxed">
                       * Thanh toán khi trả xe chỉ khả dụng khi trạng thái là "Trả máy"
                     </p>
                   )}
@@ -3906,7 +3975,11 @@ const WorkOrderModal: React.FC<{
                       <button
                         onClick={handleSave}
                         disabled={isSubmitting}
-                        className={`w-full px-4 py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all ${isSubmitting ? 'bg-emerald-400 cursor-not-allowed text-white' : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/30'}`}
+                        className={`w-full px-4 py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all duration-200 ${
+                          isSubmitting 
+                            ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed border border-slate-200 dark:border-slate-700 opacity-60' 
+                            : 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-md shadow-emerald-500/20 active:scale-[0.98]'
+                        }`}
                       >
                         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -3917,7 +3990,11 @@ const WorkOrderModal: React.FC<{
                       <button
                         onClick={handleSave}
                         disabled={isSubmitting}
-                        className={`w-full px-4 py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all ${isSubmitting ? 'bg-blue-400 cursor-not-allowed text-white' : 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-600/30'}`}
+                        className={`w-full px-4 py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all duration-200 ${
+                          isSubmitting 
+                            ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed border border-slate-200 dark:border-slate-700 opacity-60' 
+                            : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-md shadow-blue-500/20 active:scale-[0.98]'
+                        }`}
                       >
                         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -3930,12 +4007,12 @@ const WorkOrderModal: React.FC<{
                     <button
                       onClick={handleSaveOnly}
                       disabled={isSubmitting}
-                      className={`w-full px-4 py-3 rounded-xl font-medium text-sm flex items-center justify-center gap-2 transition-all ${
+                      className={`w-full px-4 py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all duration-200 ${
                         isSubmitting 
                           ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed border border-slate-200 dark:border-slate-700' 
                           : (formData.status === "Trả máy" || (showDepositInput && depositAmount > 0))
-                            ? 'bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-300'
-                            : 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-600/30'
+                            ? 'bg-slate-100/80 hover:bg-slate-200/80 text-slate-700 dark:bg-slate-800/40 dark:hover:bg-slate-800/80 dark:text-slate-300 border border-slate-200/50 dark:border-slate-800/50 active:scale-[0.98]'
+                            : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-md shadow-blue-500/20 active:scale-[0.98]'
                       }`}
                     >
                       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -3947,7 +4024,7 @@ const WorkOrderModal: React.FC<{
 
                   <button
                     onClick={onClose}
-                    className="w-full px-4 py-2 text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition-colors"
+                    className="w-full px-4 py-2 text-sm font-semibold text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition-colors"
                   >
                     Hủy bỏ
                   </button>
@@ -3958,7 +4035,7 @@ const WorkOrderModal: React.FC<{
             {/* Mobile-only: Payment & Summary Section (shown below form on mobile) */}
             <div className="lg:hidden px-4 py-5 space-y-4 border-t border-slate-200 dark:border-slate-700">
               {/* Mobile Summary */}
-              <div className="bg-slate-50 dark:bg-slate-700/30 border border-slate-200 dark:border-slate-700 rounded-xl p-4 space-y-2">
+              <div className="bg-slate-50/50 dark:bg-slate-900/20 border border-slate-200/60 dark:border-slate-800 rounded-xl p-4 space-y-2">
                 <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-2">Tổng kết</h3>
                 <div className="flex justify-between text-sm">
                   <span className="text-slate-500">Phí dịch vụ</span>
@@ -3972,7 +4049,7 @@ const WorkOrderModal: React.FC<{
                   <span className="text-slate-500">Gia công</span>
                   <span className="font-medium">{formatCurrency(servicesTotal)}</span>
                 </div>
-                <div className="pt-2 border-t-2 border-blue-200 dark:border-blue-800">
+                <div className="pt-2 border-t border-slate-200 dark:border-slate-800">
                   <div className="flex justify-between items-center">
                     <span className="font-bold text-slate-900 dark:text-slate-100">Tổng cộng</span>
                     <span className="text-xl font-bold text-blue-600 dark:text-blue-400">{formatCurrency(total)}</span>
@@ -3990,17 +4067,37 @@ const WorkOrderModal: React.FC<{
             <button
               onClick={handleSaveOnly}
               disabled={isSubmitting}
-              className={`px-5 py-2 rounded-lg font-medium text-sm transition-all ${isSubmitting ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed border border-slate-200 dark:border-slate-700' : 'bg-blue-600 hover:bg-blue-700 text-white shadow-sm'}`}
+              className={`px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 active:scale-[0.98] ${
+                isSubmitting 
+                  ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed border border-slate-200 dark:border-slate-700' 
+                  : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-sm'
+              }`}
             >
               {isSubmitting ? 'Đang lưu...' : 'Lưu Phiếu'}
             </button>
             {formData.status !== "Trả máy" && showDepositInput && (
-              <button onClick={handleSave} disabled={isSubmitting} className={`px-5 py-2 rounded-lg font-medium text-sm transition-all ${isSubmitting ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'} text-white`}>
+              <button 
+                onClick={handleSave} 
+                disabled={isSubmitting} 
+                className={`px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 active:scale-[0.98] ${
+                  isSubmitting 
+                    ? 'bg-blue-400 cursor-not-allowed text-white' 
+                    : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-sm'
+                }`}
+              >
                 Đặt cọc
               </button>
             )}
             {formData.status === "Trả máy" && (
-              <button onClick={handleSave} disabled={isSubmitting} className={`px-5 py-2 rounded-lg font-medium text-sm transition-all ${isSubmitting ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'} text-white`}>
+              <button 
+                onClick={handleSave} 
+                disabled={isSubmitting} 
+                className={`px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 active:scale-[0.98] ${
+                  isSubmitting 
+                    ? 'bg-emerald-400 cursor-not-allowed text-white' 
+                    : 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-sm'
+                }`}
+              >
                 Thanh toán
               </button>
             )}

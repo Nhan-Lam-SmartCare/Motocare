@@ -362,7 +362,7 @@ const MainLayout: React.FC = () => {
           <Route
             path="/settings"
             element={
-              <ProtectedRoute requiredRoles={["owner", "manager"]}>
+              <ProtectedRoute requiredRoles={["owner", "manager", "staff"]}>
                 <SettingsPage />
               </ProtectedRoute>
             }

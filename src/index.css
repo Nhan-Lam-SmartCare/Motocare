@@ -219,6 +219,137 @@ body {
   opacity: 1;
 }
 
+/* ==================== SERVICE DESKTOP POLISH ==================== */
+.service-desktop-shell {
+  position: relative;
+  isolation: isolate;
+  padding: 0 0.25rem 1.5rem;
+}
+
+.service-desktop-shell::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    linear-gradient(135deg, rgba(14, 165, 233, 0.08), transparent 34%),
+    linear-gradient(225deg, rgba(16, 185, 129, 0.07), transparent 30%),
+    linear-gradient(180deg, rgba(15, 23, 42, 0), rgba(2, 6, 23, 0.18));
+}
+
+.dark .service-desktop-shell::before {
+  background:
+    linear-gradient(135deg, rgba(37, 99, 235, 0.12), transparent 32%),
+    linear-gradient(225deg, rgba(20, 184, 166, 0.1), transparent 30%),
+    linear-gradient(180deg, rgba(2, 6, 23, 0), rgba(2, 6, 23, 0.48));
+}
+
+.service-panel,
+.service-toolbar,
+.service-money-card {
+  background-image:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0)),
+    linear-gradient(135deg, rgba(59, 130, 246, 0.04), rgba(16, 185, 129, 0.025));
+}
+
+.dark .service-panel,
+.dark .service-toolbar,
+.dark .service-money-card {
+  background-image:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0)),
+    linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(16, 185, 129, 0.04));
+}
+
+.service-stage-card {
+  overflow: hidden;
+}
+
+.service-stage-card::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0;
+  height: 2px;
+  opacity: 0;
+  background: linear-gradient(90deg, transparent, currentColor, transparent);
+  transition: opacity 180ms ease;
+}
+
+.service-stage-card:hover::after,
+.service-stage-card:focus-visible::after {
+  opacity: 0.55;
+}
+
+.service-summary-strip {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.service-toolbar {
+  top: 0.75rem;
+}
+
+.service-search input,
+.service-filter-group,
+.service-result-count {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.service-table {
+  min-width: 1080px;
+}
+
+.service-table thead th {
+  white-space: nowrap;
+}
+
+.service-order-row {
+  filter: drop-shadow(0 10px 24px rgba(15, 23, 42, 0.05));
+}
+
+.dark .service-order-row {
+  filter: drop-shadow(0 16px 30px rgba(0, 0, 0, 0.25));
+}
+
+.service-order-row td {
+  position: relative;
+}
+
+.service-order-row:hover td {
+  transform: translateY(-1px);
+}
+
+.service-order-row td,
+.service-stage-card,
+.service-money-card,
+.service-toolbar {
+  transition:
+    background-color 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease;
+}
+
+@media (max-width: 1023px) {
+  .service-toolbar {
+    position: relative;
+    top: auto;
+  }
+
+  .service-search {
+    max-width: none;
+    width: 100%;
+  }
+
+  .service-filter-group {
+    width: 100%;
+    border-radius: 1rem;
+  }
+
+  .service-actions {
+    justify-content: space-between;
+  }
+}
+
 /* ==================== CUSTOM ANIMATIONS ==================== */
 @keyframes fadeIn {
   from {

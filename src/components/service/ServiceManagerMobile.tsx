@@ -363,9 +363,24 @@ export function ServiceManagerMobile({
   const [isCreating, setIsCreating] = useState(false);
   const [collapseFinance, setCollapseFinance] = useState(false);
   const [activeTab, setActiveTabRaw] = useState<"orders" | "history" | "templates">("orders");
+
+  // Scroll tracking and scroll-to-top behavior for summary metrics
+  const scrollRef = React.useRef<HTMLDivElement>(null);
+  const [showScrollTop, setShowScrollTop] = useState(false);
+
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    setShowScrollTop(e.currentTarget.scrollTop > 250);
+  };
+
+  const scrollToTop = () => {
+    triggerHaptic("medium");
+    scrollRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   const setActiveTab = (tab: "orders" | "history" | "templates") => {
     triggerHaptic("selection");
     setActiveTabRaw(tab);
+    setShowScrollTop(false); // Reset floating button on tab change
   };
 
   // Financial data visibility state (permission-based feature)
@@ -483,7 +498,11 @@ export function ServiceManagerMobile({
   return (
     <div className="md:hidden flex flex-col h-screen bg-slate-50 dark:bg-[#151521]">
       {/* CONTENT BASED ON TAB */}
-      <div className="flex-1 overflow-y-auto pb-24 scrollbar-hide">
+      <div
+        ref={scrollRef}
+        onScroll={handleScroll}
+        className="flex-1 overflow-y-auto pb-24 scrollbar-hide"
+      >
         {/* Top Capsule Tabs Navigation */}
         <div className="px-3 pt-3 pb-1.5 flex gap-2 overflow-x-auto scrollbar-hide bg-slate-50 dark:bg-[#151521] sticky top-0 z-10">
           <button
@@ -797,6 +816,18 @@ export function ServiceManagerMobile({
             >
               <Plus className="w-5 h-5 text-white" />
             </button>
+
+            {/* Floating Summary Shortcut Button */}
+            {showScrollTop && (
+              <button
+                onClick={scrollToTop}
+                className="fixed bottom-20 left-1/2 -translate-x-1/2 bg-slate-900/90 dark:bg-slate-800/95 backdrop-blur-md text-white font-extrabold px-4.5 py-2.5 rounded-full shadow-2xl hover:scale-105 active:scale-95 transition-all duration-300 z-[60] border border-slate-700/60 dark:border-slate-600/50 flex items-center gap-1.5 text-xs tracking-wide cursor-pointer"
+                aria-label="Xem doanh thu và tiến độ"
+              >
+                <BarChart3 className="w-3.5 h-3.5 text-[#009ef7] animate-pulse" />
+                <span>Xem doanh thu & tiến độ</span>
+              </button>
+            )}
           </>
         )}
 

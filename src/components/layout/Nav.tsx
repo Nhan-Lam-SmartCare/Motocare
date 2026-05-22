@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
+import { useAppContext } from "../../contexts/AppContext";
 import { useTheme } from "../../contexts/ThemeContext";
 import { useAuth } from "../../contexts/AuthContext";
 import NotificationDropdown from "../common/NotificationDropdown";
@@ -36,7 +37,9 @@ import {
 export function Nav() {
   const [showSettings, setShowSettings] = useState(false);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
-  const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const { showMobileMenu, setShowMobileMenu } = useAppContext();
+  const location = useLocation();
+  const isServicePage = location.pathname === "/service";
   const { theme, toggleTheme } = useTheme();
   const { profile, user, signOut } = useAuth();
   const role = profile?.role;
@@ -70,8 +73,8 @@ export function Nav() {
   } as const;
 
   return (
-    <nav className="bg-slate-900 border-b border-slate-800 sticky top-0 z-50">
-      <div className="max-w-[1600px] mx-auto px-2 md:px-4 py-1 md:py-1.5">
+    <nav className={`bg-slate-900 sticky top-0 z-50 ${isServicePage ? "md:border-b md:border-slate-800" : "border-b border-slate-800"}`}>
+      <div className={`max-w-[1600px] mx-auto px-2 md:px-4 py-1 md:py-1.5 ${isServicePage ? "hidden md:block" : ""}`}>
         <div className="flex items-center justify-between">
           {/* Left: Brand and Branch Selector */}
           <div className="flex items-center gap-2 md:gap-3">

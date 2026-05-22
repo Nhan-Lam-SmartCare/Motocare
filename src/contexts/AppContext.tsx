@@ -89,6 +89,8 @@ interface AppContextType {
     paymentMethod: "cash" | "bank",
     timestamp: string
   ) => void;
+  showMobileMenu: boolean;
+  setShowMobileMenu: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -98,6 +100,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   // --- State ---
   const [currentBranchId] = useState("CN1");
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
 
   // Load from localStorage on init (once)
   const getInitialData = () => {
@@ -978,6 +981,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         setSupplierDebts,
         payCustomerDebts,
         paySupplierDebts,
+        showMobileMenu,
+        setShowMobileMenu,
       }}
     >
       {children}

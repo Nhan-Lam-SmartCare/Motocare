@@ -102,7 +102,7 @@ const InventoryManagerNew: React.FC = () => {
     searchParams, setSearchParams, activeTab, setActiveTab, showGoodsReceipt, setShowGoodsReceipt, showCreatePO, setShowCreatePO, selectedPO, setSelectedPO, editingPO, setEditingPO, searchInput, setSearchInput, search, setSearch, categoryFilter, setCategoryFilter, stockFilter, setStockFilter, showDuplicatesOnly, setShowDuplicatesOnly, showBarcodeScanner, setShowBarcodeScanner, page, setPage, pageSize, setPageSize, sortField, setSortField, sortDirection, setSortDirection, selectedItems, setSelectedItems, editingPart, setEditingPart, selectedPartDetail, setSelectedPartDetail, editingReceipt, setEditingReceipt, showImportModal, setShowImportModal, reservedInfoPartId, setReservedInfoPartId, showExternalImport, setShowExternalImport, showBatchPrintModal, setShowBatchPrintModal, mobileMenuOpenIndex, setMobileMenuOpenIndex, showAdvancedFilters, setShowAdvancedFilters, showAlertsSection, setShowAlertsSection, openActionRow, setOpenActionRow, inventoryDropdownPos, setInventoryDropdownPos, showReorderAlert, setShowReorderAlert, reorderSelectedIds, setReorderSelectedIds, currentBranchId, createInventoryTxAsync, updateWorkOrderAtomic, invTx, storeSettings, confirm, confirmState, handleConfirm, handleCancel, workOrders, suppliers, allPartsData, refetchAllParts, duplicatePartsData, allCategories, profile, createReceiptAtomicMutation, retailMarkup, wholesaleMarkup, allImports, lastImport, extractSupplierName, getAvatarColor, isSearching, effectivePage, effectivePageSize, partsLoading, refetchInventory, activeReservedByPartId, repoParts, totalParts, totalPages, stockHealth, reorderAlertItems, reorderGroupedBySupplier, stockQuickFilters, duplicateSkus, hasDuplicateSku, filteredParts, totalStockQuantity, totalStockValue, queryClient, updatePartMutation, createPartMutation, deletePartMutation, canImportInventory, canUpdatePart, canDeletePart, handleSaveGoodsReceipt, handleSelectAll, handleSelectItem, handleDeleteItem, handleBulkDelete, handleSaveEditedReceipt, handleDeleteReceipt, handleStockFilterChange, handleCategoryFilterChange, handleSort, shouldShowLowStockBanner, handleExportExcel, handleDownloadTemplate
   } = useInventoryManager();
   return (
-    <div className="h-full flex flex-col bg-slate-50 dark:bg-[#0B0F19] sm:bg-[#0B0F19]">
+    <div className="h-full flex flex-col bg-slate-50 dark:bg-[#0B0F19]">
       {/* Desktop Header - Compact */}
       <div className="hidden sm:block bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-3 py-1.5">
         <div className="flex items-center justify-between gap-3">
@@ -160,7 +160,7 @@ const InventoryManagerNew: React.FC = () => {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setShowBatchPrintModal(true)}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-800/80 text-emerald-400 border border-slate-700/50 text-xs font-medium hover:bg-slate-700 hover:text-emerald-300 hover:border-emerald-500/30 transition"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800/80 text-emerald-650 dark:text-emerald-400 border border-slate-200 dark:border-slate-700/50 dark:hover:bg-slate-700 dark:hover:text-emerald-300 dark:hover:border-emerald-500/30 transition"
               title="In mã vạch hàng loạt"
             >
               <svg
@@ -182,7 +182,7 @@ const InventoryManagerNew: React.FC = () => {
             {canDo(profile?.role, "inventory.import") && (
               <button
                 onClick={() => setShowGoodsReceipt(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800/80 text-blue-400 border border-slate-700/50 text-xs font-medium hover:bg-slate-700 hover:text-blue-300 hover:border-blue-500/30 transition"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800/80 text-blue-650 dark:text-blue-400 border border-slate-200 dark:border-slate-700/50 dark:hover:bg-slate-700 dark:hover:text-blue-300 dark:hover:border-blue-500/30 transition"
               >
                 <Plus className="w-3.5 h-3.5" />
                 Tạo phiếu nhập
@@ -238,11 +238,11 @@ const InventoryManagerNew: React.FC = () => {
       </div>
 
       {/* Mobile Header - Premium Dark & Clean */}
-      <div className="sm:hidden bg-[#0B0F19] border-b border-slate-800/80 px-4 py-4 space-y-4 shadow-[0_4px_20px_rgba(0,0,0,0.4)]">
+      <div className="sm:hidden bg-white dark:bg-[#0B0F19] border-b border-slate-200 dark:border-slate-800/80 px-4 py-4 space-y-4 shadow-[0_4px_20px_rgba(0,0,0,0.02)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.4)]">
         {/* Search and Create Button Row */}
         <div className="flex items-center gap-2">
           <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500" />
             <input
               type="text"
               placeholder="Tìm theo tên, SKU, danh mục..."
@@ -257,14 +257,14 @@ const InventoryManagerNew: React.FC = () => {
                   setSearch(searchInput);
                 }
               }}
-              className="w-full pl-10 pr-3 py-2.5 border border-slate-800 rounded-xl bg-[#131926] text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-slate-500 transition-all shadow-inner"
+              className="w-full pl-10 pr-3 py-2.5 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-[#131926] text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-slate-405 dark:placeholder-slate-500 transition-all shadow-inner"
             />
           </div>
 
           {/* Barcode Scan Button */}
           <button
             onClick={() => setShowBarcodeScanner(true)}
-            className="p-2.5 bg-[#131926] hover:bg-[#182030] text-purple-400 border border-slate-800 rounded-xl transition-colors shadow-sm"
+            className="p-2.5 bg-slate-50 hover:bg-slate-100 dark:bg-[#131926] dark:hover:bg-[#182030] text-purple-650 dark:text-purple-400 border border-slate-205 dark:border-slate-800 rounded-xl transition-colors shadow-sm"
             title="Quét mã vạch"
           >
             <ScanLine className="w-5 h-5" />
@@ -285,16 +285,16 @@ const InventoryManagerNew: React.FC = () => {
         {/* Inline Stats — Beautiful Pill Badges */}
         <div className="flex items-center gap-3 mt-1">
           {/* Total Quantity Pill */}
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400">
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-50 dark:bg-blue-500/10 border border-blue-100 dark:border-blue-500/20 text-blue-600 dark:text-blue-400">
             <Boxes className="w-3.5 h-3.5 shrink-0" />
-            <span className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">Tổng:</span>
+            <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium uppercase tracking-wider">Tổng:</span>
             <span className="text-xs font-extrabold font-mono leading-none">{totalStockQuantity.toLocaleString()} sp</span>
           </div>
 
           {/* Total Value Pill */}
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[#34d399]">
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-500/20 text-emerald-650 dark:text-[#34d399]">
             <Banknote className="w-3.5 h-3.5 shrink-0" />
-            <span className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">Giá trị:</span>
+            <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium uppercase tracking-wider">Giá trị:</span>
             <span className="text-xs font-extrabold font-mono leading-none">{formatCurrency(totalStockValue)}</span>
           </div>
         </div>
@@ -529,7 +529,7 @@ const InventoryManagerNew: React.FC = () => {
             )}
 
             {/* Stock Table + Pagination */}
-            <div className="rounded-2xl overflow-hidden bg-[#131926]/40 border border-slate-800/80 shadow-[0_4px_25px_rgba(0,0,0,0.4)] backdrop-blur-md">
+            <div className="rounded-2xl overflow-hidden bg-white/80 dark:bg-[#131926]/40 border border-slate-200 dark:border-slate-800/80 shadow-[0_4px_25px_rgba(0,0,0,0.02)] dark:shadow-[0_4px_25px_rgba(0,0,0,0.4)] backdrop-blur-md">
               {/* Bulk Actions Bar */}
               {selectedItems.length > 0 && (
                 <div className="px-4 py-3 bg-blue-950/40 dark:bg-blue-950/40 border-b border-blue-900/40 flex items-center justify-between">
@@ -595,29 +595,29 @@ const InventoryManagerNew: React.FC = () => {
                 canUpdatePart={canUpdatePart}
               />
               {/* Pagination Controls */}
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-3 sm:px-6 py-3.5 sm:py-4 border-t border-slate-800/60 bg-transparent text-slate-300">
-                <div className="text-xs sm:text-sm text-slate-400 text-center sm:text-left">
-                  <span className="font-medium text-slate-300">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-3 sm:px-6 py-3.5 sm:py-4 border-t border-slate-200 dark:border-slate-800/60 bg-transparent text-slate-700 dark:text-slate-300">
+                <div className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 text-center sm:text-left">
+                  <span className="font-medium text-slate-800 dark:text-slate-300">
                     Trang {isSearching ? 1 : page}/{totalPages}
                   </span>
-                  <span className="mx-1.5 text-slate-700">•</span>
+                  <span className="mx-1.5 text-slate-300 dark:text-slate-700">•</span>
                   <span>{isSearching ? filteredParts.length : totalParts} phụ tùng</span>
                 </div>
                 <div className="flex items-center gap-1.5 sm:gap-2">
                   <button
                     disabled={page === 1 || partsLoading}
                     onClick={() => setPage((p: any) => Math.max(1, p - 1))}
-                    className="px-2.5 sm:px-3 py-1.5 text-xs sm:text-sm border border-slate-800 rounded bg-[#131926]/80 text-slate-300 disabled:opacity-30 disabled:hover:bg-transparent hover:bg-slate-800 transition"
+                    className="px-2.5 sm:px-3 py-1.5 text-xs sm:text-sm border border-slate-200 dark:border-slate-800 rounded bg-slate-50 dark:bg-[#131926]/80 text-slate-750 dark:text-slate-300 disabled:opacity-30 disabled:hover:bg-transparent hover:bg-slate-100 dark:hover:bg-slate-800 transition"
                   >
                     ←
                   </button>
-                  <span className="px-2 py-1 text-xs sm:text-sm font-bold text-slate-250 min-w-[2rem] text-center">
+                  <span className="px-2 py-1 text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200 min-w-[2rem] text-center">
                     {page}
                   </span>
                   <button
                     disabled={page >= totalPages || partsLoading}
                     onClick={() => setPage((p: any) => Math.min(totalPages, p + 1))}
-                    className="px-2.5 sm:px-3 py-1.5 text-xs sm:text-sm border border-slate-800 rounded bg-[#131926]/80 text-slate-300 disabled:opacity-30 disabled:hover:bg-transparent hover:bg-slate-800 transition"
+                    className="px-2.5 sm:px-3 py-1.5 text-xs sm:text-sm border border-slate-200 dark:border-slate-800 rounded bg-slate-50 dark:bg-[#131926]/80 text-slate-750 dark:text-slate-300 disabled:opacity-30 disabled:hover:bg-transparent hover:bg-slate-100 dark:hover:bg-slate-800 transition"
                   >
                     →
                   </button>
@@ -628,7 +628,7 @@ const InventoryManagerNew: React.FC = () => {
                       setPageSize(newSize);
                       setPage(1);
                     }}
-                    className="px-2 py-1.5 text-xs sm:text-sm border border-slate-850 rounded bg-[#131926] text-slate-350 outline-none focus:border-blue-500/50"
+                    className="px-2 py-1.5 text-xs sm:text-sm border border-slate-200 dark:border-slate-800 rounded bg-slate-50 dark:bg-[#131926] text-slate-700 dark:text-slate-300 outline-none focus:border-blue-500/50"
                   >
                     {[10, 20, 50, 100].map((s) => (
                       <option key={s} value={s}>
@@ -668,7 +668,7 @@ const InventoryManagerNew: React.FC = () => {
         )}
 
         {activeTab === "categories" && (
-          <div className="bg-[#0f172a] -m-3 sm:-m-6">
+          <div className="bg-slate-50 dark:bg-[#0f172a] -m-3 sm:-m-6">
             <CategoriesManager />
           </div>
         )}
@@ -697,7 +697,7 @@ const InventoryManagerNew: React.FC = () => {
         )}
 
         {activeTab === "lookup" && (
-          <div className="bg-[#0f172a] -m-3 sm:-m-6">
+          <div className="bg-slate-50 dark:bg-[#0f172a] -m-3 sm:-m-6">
             {/* Desktop Version */}
             <div className="hidden sm:block">
               <LookupManager />

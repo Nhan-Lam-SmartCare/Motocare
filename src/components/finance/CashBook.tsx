@@ -389,19 +389,19 @@ const CashBook: React.FC = () => {
         {/* Modal cài đặt số dư ban đầu */}
         {showInitialBalanceModal && (
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-            <div className="bg-[#0F172A]/95 border border-slate-800/80 shadow-[0_10px_40px_rgba(0,0,0,0.5)] rounded-2xl w-full max-w-md backdrop-blur-xl">
-              <div className="px-6 py-4 border-b border-slate-800/80">
-                <h2 className="text-base font-black text-slate-200 uppercase tracking-wider flex items-center gap-2">
-                  <Settings className="w-5 h-5 text-blue-400" />
+            <div className="bg-white dark:bg-[#0F172A]/95 border border-slate-200 dark:border-slate-800/80 shadow-[0_10px_40px_rgba(0,0,0,0.15)] dark:shadow-[0_10px_40px_rgba(0,0,0,0.5)] rounded-2xl w-full max-w-md backdrop-blur-xl">
+              <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800/80">
+                <h2 className="text-base font-black text-slate-800 dark:text-slate-200 uppercase tracking-wider flex items-center gap-2">
+                  <Settings className="w-5 h-5 text-blue-500 dark:text-blue-400" />
                   <span>Cài đặt số dư ban đầu</span>
                 </h2>
-                <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
                   Nhập số dư thực tế khi bắt đầu sử dụng hệ thống
                 </p>
               </div>
               <div className="p-6 space-y-4">
                 <div>
-                  <label className="block text-xs font-black uppercase tracking-wider text-slate-400 mb-2">
+                  <label className="block text-xs font-black uppercase tracking-wider text-slate-550 dark:text-slate-400 mb-2">
                     💵 Tiền mặt
                   </label>
                   <input
@@ -414,15 +414,15 @@ const CashBook: React.FC = () => {
                       setInitialCashBalance(hasLeadingMinus ? `-${digitsOnly}` : digitsOnly);
                     }}
                     placeholder="0"
-                    className="w-full px-4 py-3 border border-slate-800/80 rounded-xl bg-[#0B0F19] text-slate-100 text-lg font-bold focus:ring-1 focus:ring-blue-500 focus:border-transparent focus:outline-none"
+                    className="w-full px-4 py-3 border border-slate-200 dark:border-slate-800/80 rounded-xl bg-slate-50 dark:bg-[#0B0F19] text-slate-900 dark:text-slate-100 text-lg font-bold focus:ring-1 focus:ring-blue-500 focus:border-transparent focus:outline-none"
                   />
-                  <p className="text-[10px] text-slate-500 mt-1 font-semibold">
+                  <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1 font-semibold">
                     Hiển thị:{" "}
                     {formatCurrency(parseFloat(initialCashBalance) || 0)}
                   </p>
                 </div>
                 <div>
-                  <label className="block text-xs font-black uppercase tracking-wider text-slate-400 mb-2">
+                  <label className="block text-xs font-black uppercase tracking-wider text-slate-550 dark:text-slate-400 mb-2">
                     🏦 Ngân hàng
                   </label>
                   <input
@@ -435,24 +435,24 @@ const CashBook: React.FC = () => {
                       setInitialBankBalance(hasLeadingMinus ? `-${digitsOnly}` : digitsOnly);
                     }}
                     placeholder="0"
-                    className="w-full px-4 py-3 border border-slate-800/80 rounded-xl bg-[#0B0F19] text-slate-100 text-lg font-bold focus:ring-1 focus:ring-blue-500 focus:border-transparent focus:outline-none"
+                    className="w-full px-4 py-3 border border-slate-200 dark:border-slate-800/80 rounded-xl bg-slate-50 dark:bg-[#0B0F19] text-slate-900 dark:text-slate-100 text-lg font-bold focus:ring-1 focus:ring-blue-500 focus:border-transparent focus:outline-none"
                   />
-                  <p className="text-[10px] text-slate-500 mt-1 font-semibold">
+                  <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1 font-semibold">
                     Hiển thị:{" "}
                     {formatCurrency(parseFloat(initialBankBalance) || 0)}
                   </p>
                 </div>
-                <div className="bg-amber-500/10 rounded-xl p-3 border border-amber-500/20 flex gap-2.5">
-                  <Info className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
-                  <p className="text-[11px] text-amber-400 leading-relaxed font-medium">
+                <div className="bg-amber-55 dark:bg-amber-500/10 rounded-xl p-3 border border-amber-200 dark:border-amber-500/20 flex gap-2.5">
+                  <Info className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                  <p className="text-[11px] text-amber-800 dark:text-amber-400 leading-relaxed font-medium">
                     Số dư ban đầu là số tiền thực tế bạn có <strong>trước khi</strong> bắt đầu ghi chép. Các giao dịch sau sẽ được cộng/trừ từ số này.
                   </p>
                 </div>
               </div>
-              <div className="px-6 py-4 border-t border-slate-800/80 flex gap-3">
+              <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-800/80 flex gap-3">
                 <button
                   onClick={() => setShowInitialBalanceModal(false)}
-                  className="flex-1 px-4 py-2.5 bg-slate-800/50 hover:bg-slate-800 hover:text-white text-slate-400 rounded-xl font-bold text-xs uppercase tracking-wider transition-colors border border-transparent"
+                  className="flex-1 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800/50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white rounded-xl font-bold text-xs uppercase tracking-wider transition-colors border border-slate-200 dark:border-transparent"
                 >
                   Hủy
                 </button>
@@ -589,44 +589,44 @@ const CashBook: React.FC = () => {
 
         {/* Filtered Summary Section - Only show when filtered */}
         {isFilteredView && (
-          <div className="flex items-center justify-between gap-4 flex-wrap bg-[#131926]/30 border border-slate-800/60 p-3.5 rounded-2xl shadow-[0_4px_20px_rgb(0,0,0,0.15)]">
+          <div className="flex items-center justify-between gap-4 flex-wrap bg-white dark:bg-[#131926]/30 border border-slate-200 dark:border-slate-800/60 p-3.5 rounded-2xl shadow-sm dark:shadow-[0_4px_20px_rgb(0,0,0,0.15)]">
             <div className="flex items-center gap-2.5">
-              <div className="p-1.5 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/20">
+              <div className="p-1.5 rounded-lg bg-blue-55 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-500/20">
                 <Activity className="w-4 h-4" />
               </div>
-              <h3 className="text-xs font-black text-slate-200 tracking-wide uppercase">
+              <h3 className="text-xs font-black text-slate-800 dark:text-slate-200 tracking-wide uppercase">
                 Tóm tắt kỳ lọc
               </h3>
-              <span className="px-2.5 py-0.5 bg-blue-500/20 text-blue-400 text-[10px] font-black uppercase rounded-full border border-blue-500/30">
+              <span className="px-2.5 py-0.5 bg-blue-50 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 text-[10px] font-black uppercase rounded-full border border-blue-100 dark:border-blue-500/30">
                 {filteredTransactions.length} GD
               </span>
             </div>
             
             <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs">
               <div className="flex items-center gap-1.5">
-                <span className="text-slate-500 font-medium uppercase tracking-wider text-[10px]">Thu:</span>
-                <span className="font-mono text-green-400 font-bold">{formatCurrency(filteredSummary.income)}</span>
+                <span className="text-slate-500 dark:text-slate-400 font-medium uppercase tracking-wider text-[10px]">Thu:</span>
+                <span className="font-mono text-emerald-650 dark:text-green-400 font-bold">{formatCurrency(filteredSummary.income)}</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <span className="text-slate-500 font-medium uppercase tracking-wider text-[10px]">Chi:</span>
-                <span className="font-mono text-red-400 font-bold">{formatCurrency(filteredSummary.expense)}</span>
+                <span className="text-slate-500 dark:text-slate-400 font-medium uppercase tracking-wider text-[10px]">Chi:</span>
+                <span className="font-mono text-rose-655 dark:text-red-400 font-bold">{formatCurrency(filteredSummary.expense)}</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <span className="text-slate-500 font-medium uppercase tracking-wider text-[10px]">Chênh lệch:</span>
-                <span className={`font-mono font-bold ${filteredSummary.balance >= 0 ? "text-blue-400 shadow-sm" : "text-red-400 shadow-sm"}`}>
+                <span className="text-slate-500 dark:text-slate-400 font-medium uppercase tracking-wider text-[10px]">Chênh lệch:</span>
+                <span className={`font-mono font-bold ${filteredSummary.balance >= 0 ? "text-blue-600 dark:text-blue-400 shadow-sm" : "text-rose-655 dark:text-red-400 shadow-sm"}`}>
                   {filteredSummary.balance > 0 ? "+" : ""}{formatCurrency(filteredSummary.balance)}
                 </span>
               </div>
-              <div className="h-4 w-px bg-slate-800 hidden md:block"></div>
+              <div className="h-4 w-px bg-slate-200 dark:bg-slate-800 hidden md:block"></div>
               <div className="flex items-center gap-1.5">
-                <span className="text-slate-500 font-medium uppercase tracking-wider text-[10px]">TM:</span>
-                <span className={`font-mono font-bold ${filteredSummary.cashBalance >= 0 ? "text-slate-200" : "text-red-400"}`}>
+                <span className="text-slate-500 dark:text-slate-400 font-medium uppercase tracking-wider text-[10px]">TM:</span>
+                <span className={`font-mono font-bold ${filteredSummary.cashBalance >= 0 ? "text-slate-800 dark:text-slate-200" : "text-rose-655 dark:text-red-400"}`}>
                   {filteredSummary.cashBalance > 0 ? "+" : ""}{formatCurrency(filteredSummary.cashBalance)}
                 </span>
               </div>
               <div className="flex items-center gap-1.5">
-                <span className="text-slate-500 font-medium uppercase tracking-wider text-[10px]">NH:</span>
-                <span className={`font-mono font-bold ${filteredSummary.bankBalance >= 0 ? "text-slate-200" : "text-red-400"}`}>
+                <span className="text-slate-500 dark:text-slate-400 font-medium uppercase tracking-wider text-[10px]">NH:</span>
+                <span className={`font-mono font-bold ${filteredSummary.bankBalance >= 0 ? "text-slate-800 dark:text-slate-200" : "text-rose-655 dark:text-red-400"}`}>
                   {filteredSummary.bankBalance > 0 ? "+" : ""}{formatCurrency(filteredSummary.bankBalance)}
                 </span>
               </div>
@@ -696,25 +696,25 @@ const CashBook: React.FC = () => {
           </div>
 
           {/* Desktop Filters */}
-          <div className="hidden md:flex flex-wrap items-center gap-4 bg-[#141C2E]/65 backdrop-blur-xl border border-[#2B354A]/40 p-3 rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.25)] sticky top-0 z-20 transition-all duration-300 hover:border-[#35425C]/60 mb-4">
+          <div className="hidden md:flex flex-wrap items-center gap-4 bg-white/80 dark:bg-[#141C2E]/65 backdrop-blur-xl border border-slate-200 dark:border-[#2B354A]/40 p-3 rounded-2xl shadow-sm dark:shadow-[0_12px_40px_rgba(0,0,0,0.25)] sticky top-0 z-20 transition-all duration-300 hover:border-slate-300 dark:hover:border-[#35425C]/60 mb-4">
             {/* Search */}
             <div className="flex-1 min-w-[240px] relative">
-              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500 dark:text-slate-400">
                 <Search className="w-4 h-4" />
               </div>
               <input
                 type="text"
                 placeholder="Tìm nội dung, mã GD, đối tượng..."
-                className="w-full pl-10 pr-4 py-2.5 bg-[#0C101A]/95 border border-[#2B354A]/60 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500/80 focus:shadow-[0_0_20px_rgba(59,130,246,0.3),inset_0_2px_4px_rgba(0,0,0,0.4)] transition-all text-slate-100 placeholder-slate-500 shadow-[inset_0_2px_4px_rgba(0,0,0,0.4)]"
+                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 focus:bg-white dark:bg-[#0C101A]/95 border border-slate-200 dark:border-[#2B354A]/60 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500/80 dark:focus:shadow-[0_0_20px_rgba(59,130,246,0.3),inset_0_2px_4px_rgba(0,0,0,0.4)] transition-all text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 shadow-sm"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
 
-            <div className="h-6 w-px bg-slate-800 hidden lg:block"></div>
+            <div className="h-6 w-px bg-slate-200 dark:bg-slate-800 hidden lg:block"></div>
 
             {/* Type Filter */}
-            <div className="bg-[#0C101A]/95 border border-[#2B354A]/60 p-1.5 rounded-xl flex items-center gap-1 shadow-[inset_0_2px_4px_rgba(0,0,0,0.4)]">
+            <div className="bg-slate-50 dark:bg-[#0C101A]/95 border border-slate-200 dark:border-[#2B354A]/60 p-1.5 rounded-xl flex items-center gap-1 shadow-sm">
               {[
                 { value: "all", label: "Tất cả" },
                 { value: "income", label: "Thu" },
@@ -723,11 +723,11 @@ const CashBook: React.FC = () => {
                 let activeStyle = "";
                 if (filterType === option.value) {
                   if (option.value === "income") {
-                    activeStyle = "bg-emerald-500/20 text-emerald-400 border-emerald-500/35 shadow-[0_2px_8px_rgba(16,185,129,0.15)]";
+                    activeStyle = "bg-emerald-50 text-emerald-650 border-emerald-250 shadow-sm dark:bg-emerald-500/20 dark:text-emerald-400 dark:border-emerald-500/35 dark:shadow-[0_2px_8px_rgba(16,185,129,0.15)]";
                   } else if (option.value === "expense") {
-                    activeStyle = "bg-rose-500/20 text-rose-400 border-rose-500/35 shadow-[0_2px_8px_rgba(244,63,94,0.15)]";
+                    activeStyle = "bg-rose-50 text-rose-655 border-rose-250 shadow-sm dark:bg-rose-500/20 dark:text-rose-400 dark:border-rose-500/35 dark:shadow-[0_2px_8px_rgba(244,63,94,0.15)]";
                   } else {
-                    activeStyle = "bg-blue-500/20 text-blue-400 border-blue-500/35 shadow-[0_2px_8px_rgba(59,130,246,0.15)]";
+                    activeStyle = "bg-blue-50 text-blue-600 border-blue-250 shadow-sm dark:bg-blue-500/20 dark:text-blue-400 dark:border-blue-500/35 dark:shadow-[0_2px_8px_rgba(59,130,246,0.15)]";
                   }
                 }
                 return (
@@ -737,7 +737,7 @@ const CashBook: React.FC = () => {
                     className={`px-4 py-1.5 rounded-lg font-extrabold text-xs uppercase tracking-wider border transition-all duration-200 ${
                       filterType === option.value
                         ? activeStyle
-                        : "bg-transparent text-slate-400 border-transparent hover:text-slate-200 hover:bg-slate-800/30"
+                        : "bg-transparent text-slate-500 dark:text-slate-400 border-transparent hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-800/30"
                     }`}
                   >
                     {option.label}
@@ -747,7 +747,7 @@ const CashBook: React.FC = () => {
             </div>
 
             {/* Source Filter */}
-            <div className="bg-[#0C101A]/95 border border-[#2B354A]/60 p-1.5 rounded-xl flex items-center gap-1 shadow-[inset_0_2px_4px_rgba(0,0,0,0.4)]">
+            <div className="bg-slate-50 dark:bg-[#0C101A]/95 border border-slate-200 dark:border-[#2B354A]/60 p-1.5 rounded-xl flex items-center gap-1 shadow-sm">
               {[
                 { value: "all", label: "Mọi nguồn" },
                 { value: "cash", label: "Tiền mặt" },
@@ -758,8 +758,8 @@ const CashBook: React.FC = () => {
                   onClick={() => setFilterPaymentSource(option.value as any)}
                   className={`px-4 py-1.5 rounded-lg font-extrabold text-xs uppercase tracking-wider border transition-all duration-200 ${
                     filterPaymentSource === option.value
-                      ? "bg-blue-500/20 text-blue-400 border-blue-500/35 shadow-[0_2px_8px_rgba(59,130,246,0.15)]"
-                      : "bg-transparent text-slate-400 border-transparent hover:text-slate-200 hover:bg-slate-800/30"
+                      ? "bg-blue-50 text-blue-600 border-blue-250 dark:bg-blue-500/20 dark:text-blue-400 dark:border-blue-500/35 dark:shadow-[0_2px_8px_rgba(59,130,246,0.15)] shadow-sm"
+                      : "bg-transparent text-slate-500 dark:text-slate-400 border-transparent hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-800/30"
                   }`}
                 >
                   {option.label}
@@ -767,14 +767,14 @@ const CashBook: React.FC = () => {
               ))}
             </div>
 
-            <div className="h-6 w-px bg-slate-800 hidden lg:block"></div>
+            <div className="h-6 w-px bg-slate-200 dark:bg-slate-800 hidden lg:block"></div>
 
             {/* Date Filter */}
-            <div className="bg-[#0C101A]/95 border border-[#2B354A]/60 p-1.5 rounded-xl flex items-center gap-1.5 shadow-[inset_0_2px_4px_rgba(0,0,0,0.4)]">
+            <div className="bg-slate-50 dark:bg-[#0C101A]/95 border border-slate-200 dark:border-[#2B354A]/60 p-1.5 rounded-xl flex items-center gap-1.5 shadow-sm">
               <select
                 value={filterDateRange}
                 onChange={(e) => setFilterDateRange(e.target.value as any)}
-                className="py-1.5 pl-3.5 pr-9 bg-transparent border-none text-xs font-extrabold uppercase tracking-wider text-slate-300 hover:text-white focus:ring-0 cursor-pointer appearance-none"
+                className="py-1.5 pl-3.5 pr-9 bg-transparent border-none text-xs font-extrabold uppercase tracking-wider text-slate-700 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white focus:ring-0 cursor-pointer appearance-none"
                 style={{
                   backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2394a3b8' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.8' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
                   backgroundPosition: `right 0.35rem center`,
@@ -782,11 +782,11 @@ const CashBook: React.FC = () => {
                   backgroundSize: `1.3em 1.3em`,
                 }}
               >
-                <option value="today">Hôm nay</option>
-                <option value="week">7 ngày</option>
-                <option value="month">Tháng</option>
-                <option value="custom-month">Theo tháng</option>
-                <option value="all">Tất cả</option>
+                <option className="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100" value="today">Hôm nay</option>
+                <option className="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100" value="week">7 ngày</option>
+                <option className="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100" value="month">Tháng</option>
+                <option className="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100" value="custom-month">Theo tháng</option>
+                <option className="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100" value="all">Tất cả</option>
               </select>
               
               {filterDateRange === 'custom-month' && (
@@ -794,7 +794,7 @@ const CashBook: React.FC = () => {
                   type="month"
                   value={selectedMonth}
                   onChange={(e) => setSelectedMonth(e.target.value)}
-                  className="px-2.5 py-1 bg-[#0F172A] border border-[#2B354A]/60 rounded-lg text-xs font-semibold text-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  className="px-2.5 py-1 bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-[#2B354A]/60 rounded-lg text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
                 />
               )}
             </div>
@@ -914,25 +914,25 @@ const CashBook: React.FC = () => {
             <table className="w-full border-separate border-spacing-y-3">
               <thead className="bg-transparent">
                 <tr>
-                  <th className="px-6 py-2 text-left text-xs font-black tracking-widest text-slate-400 uppercase border-none">
+                  <th className="px-6 py-2 text-left text-xs font-black tracking-widest text-slate-500 dark:text-slate-400 uppercase border-none">
                     Ngày/Giờ
                   </th>
-                  <th className="px-4 py-2 text-left text-xs font-black tracking-widest text-slate-400 uppercase border-none">
+                  <th className="px-4 py-2 text-left text-xs font-black tracking-widest text-slate-500 dark:text-slate-400 uppercase border-none">
                     Loại
                   </th>
-                  <th className="px-4 py-2 text-left text-xs font-black tracking-widest text-slate-400 uppercase border-none">
+                  <th className="px-4 py-2 text-left text-xs font-black tracking-widest text-slate-500 dark:text-slate-400 uppercase border-none">
                     Danh mục
                   </th>
-                  <th className="px-4 py-2 text-left text-xs font-black tracking-widest text-slate-400 uppercase border-none">
+                  <th className="px-4 py-2 text-left text-xs font-black tracking-widest text-slate-500 dark:text-slate-400 uppercase border-none">
                     Nội dung
                   </th>
-                  <th className="px-4 py-2 text-left text-xs font-black tracking-widest text-slate-400 uppercase border-none">
+                  <th className="px-4 py-2 text-left text-xs font-black tracking-widest text-slate-500 dark:text-slate-400 uppercase border-none">
                     Nguồn tiền
                   </th>
-                  <th className="px-4 py-2 text-right text-xs font-black tracking-widest text-slate-400 uppercase border-none">
+                  <th className="px-4 py-2 text-right text-xs font-black tracking-widest text-slate-500 dark:text-slate-400 uppercase border-none">
                     Số tiền
                   </th>
-                  <th className="px-6 py-2 text-center text-xs font-black tracking-widest text-slate-400 uppercase border-none">
+                  <th className="px-6 py-2 text-center text-xs font-black tracking-widest text-slate-500 dark:text-slate-400 uppercase border-none">
                     Thao tác
                   </th>
                 </tr>
@@ -942,7 +942,7 @@ const CashBook: React.FC = () => {
                   <tr>
                     <td
                       colSpan={7}
-                      className="px-6 py-12 text-center text-slate-400 bg-[#121929]/50 backdrop-blur-xl border border-[#222E45]/50 rounded-2xl"
+                      className="px-6 py-12 text-center text-slate-500 dark:text-slate-400 bg-white dark:bg-[#121929]/50 backdrop-blur-xl border border-slate-200 dark:border-[#222E45]/50 rounded-2xl shadow-sm"
                     >
                       <div className="animate-spin rounded-full h-7 w-7 border-b-2 border-blue-500 mx-auto mb-3"></div>
                       <span className="text-sm font-semibold tracking-wide">Đang tải dữ liệu giao dịch...</span>
@@ -952,7 +952,7 @@ const CashBook: React.FC = () => {
                   <tr>
                     <td
                       colSpan={7}
-                      className="px-6 py-16 text-center text-slate-400 bg-[#121929]/50 backdrop-blur-xl border border-[#222E45]/50 rounded-2xl font-bold text-sm tracking-wide shadow-inner"
+                      className="px-6 py-16 text-center text-slate-500 dark:text-slate-400 bg-white dark:bg-[#121929]/50 backdrop-blur-xl border border-slate-200 dark:border-[#222E45]/50 rounded-2xl font-bold text-sm tracking-wide shadow-sm"
                     >
                       📭 Không tìm thấy dữ liệu giao dịch sổ quỹ
                     </td>
@@ -978,24 +978,24 @@ const CashBook: React.FC = () => {
                         className="group transition-all duration-300"
                       >
                         {/* Ngày/Giờ - Redesigned into horizontal micro-badges */}
-                        <td className={`pl-6 pr-4 py-5 text-sm first:rounded-l-2xl first:border-l border-y border-[#222E45]/50 bg-[#121929]/50 backdrop-blur-xl group-hover:bg-[#1C263B]/65 group-hover:border-[#354363]/60 transition-all duration-300 ${
+                        <td className={`pl-6 pr-4 py-5 text-sm first:rounded-l-2xl first:border-l border-y border-slate-200 dark:border-[#222E45]/50 bg-white dark:bg-[#121929]/50 backdrop-blur-xl group-hover:bg-slate-50/80 dark:group-hover:bg-[#1C263B]/65 group-hover:border-slate-300 dark:group-hover:border-[#354363]/60 transition-all duration-300 ${
                           txIsIncome
                             ? "group-hover:first:shadow-[inset_4px_0_0_#10B981]"
                             : "group-hover:first:shadow-[inset_4px_0_0_#F43F5E]"
                         }`}>
                           <div className="flex flex-col gap-1.5">
-                            <span className="font-bold text-slate-100 font-mono tracking-tight text-[14.5px] drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]">
+                            <span className="font-bold text-slate-800 dark:text-slate-100 font-mono tracking-tight text-[14.5px] dark:drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]">
                               {formatDate(new Date(tx.date))}
                             </span>
                             <div className="flex items-center gap-1.5 flex-wrap">
-                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded bg-[#1B253D]/80 border border-[#2B354A]/40 text-slate-300 text-[11px] font-semibold font-mono tracking-wide shadow-sm leading-none">
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded bg-slate-50 border border-slate-200 text-slate-600 dark:bg-[#1B253D]/80 dark:border-[#2B354A]/40 dark:text-slate-300 text-[11px] font-semibold font-mono tracking-wide shadow-sm leading-none">
                                 🕒 {new Date(tx.date).toLocaleTimeString("vi-VN", {
                                   hour: "2-digit",
                                   minute: "2-digit",
                                 })}
                               </span>
                               {createdByName && (
-                                <span className="text-[11px] text-slate-400 font-semibold bg-slate-800/30 px-2 py-0.5 rounded border border-[#2B354A]/30 flex items-center gap-1 leading-none shadow-sm">
+                                <span className="text-[11px] text-slate-500 dark:text-slate-400 font-semibold bg-slate-50 dark:bg-slate-800/30 px-2 py-0.5 rounded border border-slate-200 dark:border-[#2B354A]/30 flex items-center gap-1 leading-none shadow-sm">
                                   👤 {createdByName}
                                 </span>
                               )}
@@ -1004,39 +1004,39 @@ const CashBook: React.FC = () => {
                         </td>
 
                         {/* Loại - Sleek capsules */}
-                        <td className="px-4 py-5 text-sm border-y border-[#222E45]/50 bg-[#121929]/50 backdrop-blur-xl group-hover:bg-[#1C263B]/65 group-hover:border-[#354363]/60 transition-all duration-300">
+                        <td className="px-4 py-5 text-sm border-y border-slate-200 dark:border-[#222E45]/50 bg-white dark:bg-[#121929]/50 backdrop-blur-xl group-hover:bg-slate-50/80 dark:group-hover:bg-[#1C263B]/65 group-hover:border-slate-300 dark:group-hover:border-[#354363]/60 transition-all duration-300">
                           <span
                             className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider border shadow-sm ${txIsIncome
-                              ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30 shadow-[0_0_10px_rgba(16,185,129,0.15)]"
-                              : "bg-rose-500/10 text-rose-400 border-rose-500/30 shadow-[0_0_10px_rgba(244,63,94,0.15)]"
+                              ? "bg-emerald-50 text-emerald-650 border-emerald-250 shadow-[0_0_10px_rgba(16,185,129,0.05)] dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/30 dark:shadow-[0_0_10px_rgba(16,185,129,0.15)]"
+                              : "bg-rose-50 text-rose-655 border-rose-250 shadow-[0_0_10px_rgba(244,63,94,0.05)] dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/30 dark:shadow-[0_0_10px_rgba(244,63,94,0.15)]"
                               }`}
                           >
-                            <span className={`w-1.5 h-1.5 rounded-full ${txIsIncome ? "bg-emerald-400 shadow-[0_0_6px_#10B981]" : "bg-rose-400 shadow-[0_0_6px_#F43F5E]"}`} />
+                            <span className={`w-1.5 h-1.5 rounded-full ${txIsIncome ? "bg-emerald-500 dark:bg-emerald-400 shadow-[0_0_6px_#10B981]" : "bg-rose-500 dark:bg-rose-400 shadow-[0_0_6px_#F43F5E]"}`} />
                             {txIsIncome ? "Thu" : "Chi"}
                           </span>
                         </td>
 
                         {/* Danh mục */}
-                        <td className="px-4 py-5 text-sm font-extrabold text-slate-200 border-y border-[#222E45]/50 bg-[#121929]/50 backdrop-blur-xl group-hover:bg-[#1C263B]/65 group-hover:border-[#354363]/60 transition-all duration-300">
+                        <td className="px-4 py-5 text-sm font-extrabold text-slate-800 dark:text-slate-200 border-y border-slate-200 dark:border-[#222E45]/50 bg-white dark:bg-[#121929]/50 backdrop-blur-xl group-hover:bg-slate-50/80 dark:group-hover:bg-[#1C263B]/65 group-hover:border-slate-300 dark:group-hover:border-[#354363]/60 transition-all duration-300">
                           {getCategoryLabel(tx.category)}
                         </td>
 
                         {/* Nội dung - Clean horizontal sub-badges */}
-                        <td className="px-4 py-5 text-sm border-y border-[#222E45]/50 bg-[#121929]/50 backdrop-blur-xl group-hover:bg-[#1C263B]/65 group-hover:border-[#354363]/60 transition-all duration-300">
+                        <td className="px-4 py-5 text-sm border-y border-slate-200 dark:border-[#222E45]/50 bg-white dark:bg-[#121929]/50 backdrop-blur-xl group-hover:bg-slate-50/80 dark:group-hover:bg-[#1C263B]/65 group-hover:border-slate-300 dark:group-hover:border-[#354363]/60 transition-all duration-300">
                           <div className="flex flex-col gap-1.5 max-w-[280px] lg:max-w-[420px]">
-                            <span className="text-slate-100 font-bold leading-relaxed break-words text-[14.5px]">
+                            <span className="text-slate-800 dark:text-slate-100 font-bold leading-relaxed break-words text-[14.5px]">
                               {(tx as any).description || tx.notes || "--"}
                             </span>
                             {(targetName || formattedRef) && (
                               <div className="flex items-center gap-2 flex-wrap">
                                 {targetName && (
-                                  <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-slate-800/30 border border-[#2B354A]/30 text-[11px] text-slate-400 font-semibold leading-none shadow-sm">
+                                  <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-slate-50 dark:bg-slate-800/30 border border-slate-200 dark:border-[#2B354A]/30 text-[11px] text-slate-550 dark:text-slate-400 font-semibold leading-none shadow-sm">
                                     👤 {targetName}
                                   </span>
                                 )}
                                 {formattedRef && (
                                   <span
-                                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-blue-500/10 text-[11px] font-bold font-mono text-blue-400 border border-blue-500/25 hover:bg-blue-500/20 transition-all cursor-help leading-none shadow-sm"
+                                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-blue-50 text-[11px] font-bold font-mono text-blue-600 border border-blue-200 hover:bg-blue-100 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/25 dark:hover:bg-blue-500/20 transition-all cursor-help leading-none shadow-sm"
                                     title={fullRef}
                                   >
                                     🔗 {formattedRef}
@@ -1048,26 +1048,26 @@ const CashBook: React.FC = () => {
                         </td>
 
                         {/* Nguồn tiền - SaaS style LED status pills */}
-                        <td className="px-4 py-5 text-sm border-y border-[#222E45]/50 bg-[#121929]/50 backdrop-blur-xl group-hover:bg-[#1C263B]/65 group-hover:border-[#354363]/60 transition-all duration-300">
+                        <td className="px-4 py-5 text-sm border-y border-slate-200 dark:border-[#222E45]/50 bg-white dark:bg-[#121929]/50 backdrop-blur-xl group-hover:bg-slate-50/80 dark:group-hover:bg-[#1C263B]/65 group-hover:border-slate-300 dark:group-hover:border-[#354363]/60 transition-all duration-300">
                           {(() => {
                             const source =
                               tx.paymentSourceId ||
                               (tx as any).paymentsource ||
                               (tx as any).paymentSource;
                             if (source === "cash") return (
-                              <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/25 text-xs font-black uppercase tracking-wider shadow-sm shadow-amber-500/5">
-                                <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shadow-[0_0_8px_#F59E0B] animate-pulse" />
+                              <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-250 dark:bg-amber-500/10 dark:text-amber-300 dark:border-amber-500/25 text-xs font-black uppercase tracking-wider shadow-sm shadow-amber-500/5">
+                                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 dark:bg-amber-400 shadow-[0_0_8px_#F59E0B] animate-pulse" />
                                 Tiền mặt
                               </span>
                             );
                             if (source === "bank") return (
-                              <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 text-blue-300 border border-blue-500/25 text-xs font-black uppercase tracking-wider shadow-sm shadow-blue-500/5">
-                                <span className="w-1.5 h-1.5 rounded-full bg-blue-400 shadow-[0_0_8px_#3B82F6] animate-pulse" />
+                              <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-250 dark:bg-blue-500/10 dark:text-blue-300 dark:border-blue-500/25 text-xs font-black uppercase tracking-wider shadow-sm shadow-blue-500/5">
+                                <span className="w-1.5 h-1.5 rounded-full bg-blue-500 dark:bg-blue-400 shadow-[0_0_8px_#3B82F6] animate-pulse" />
                                 Ngân hàng
                               </span>
                             );
                             return (
-                              <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-500/10 text-slate-300 border border-slate-500/25 text-xs font-black uppercase tracking-wider">
+                              <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-50 text-slate-600 border border-slate-200 dark:bg-slate-500/10 dark:text-slate-300 dark:border-slate-500/25 text-xs font-black uppercase tracking-wider">
                                 <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
                                 {source || "--"}
                               </span>
@@ -1077,9 +1077,9 @@ const CashBook: React.FC = () => {
 
                         {/* Số tiền - Bold monospace cash figures with neon drop shadows */}
                         <td
-                          className={`px-4 py-5 text-right text-[16px] font-extrabold font-mono tracking-tight border-y border-[#222E45]/50 bg-[#121929]/50 backdrop-blur-xl group-hover:bg-[#1C263B]/65 group-hover:border-[#354363]/60 transition-all duration-300 ${txIsIncome
-                            ? "text-emerald-400 drop-shadow-[0_2px_4px_rgba(16,185,129,0.2)]"
-                            : "text-rose-400 drop-shadow-[0_2px_4px_rgba(244,63,94,0.2)]"
+                          className={`px-4 py-5 text-right text-[16px] font-extrabold font-mono tracking-tight border-y border-slate-200 dark:border-[#222E45]/50 bg-white dark:bg-[#121929]/50 backdrop-blur-xl group-hover:bg-slate-50/80 dark:group-hover:bg-[#1C263B]/65 group-hover:border-slate-300 dark:group-hover:border-[#354363]/60 transition-all duration-300 ${txIsIncome
+                            ? "text-emerald-650 dark:text-emerald-400 dark:drop-shadow-[0_2px_4px_rgba(16,185,129,0.2)] font-black"
+                            : "text-rose-655 dark:text-rose-400 dark:drop-shadow-[0_2px_4px_rgba(244,63,94,0.2)]"
                             }`}
                         >
                           {txIsIncome ? "+" : "-"}
@@ -1087,7 +1087,7 @@ const CashBook: React.FC = () => {
                         </td>
 
                         {/* Thao tác - Beautiful circular loop buttons */}
-                        <td className="pl-4 pr-6 py-5 text-center last:rounded-r-2xl last:border-r border-y border-[#222E45]/50 bg-[#121929]/50 backdrop-blur-xl group-hover:bg-[#1C263B]/65 group-hover:border-[#354363]/60 transition-all duration-300">
+                        <td className="pl-4 pr-6 py-5 text-center last:rounded-r-2xl last:border-r border-y border-slate-200 dark:border-[#222E45]/50 bg-white dark:bg-[#121929]/50 backdrop-blur-xl group-hover:bg-slate-50/80 dark:group-hover:bg-[#1C263B]/65 group-hover:border-slate-300 dark:group-hover:border-[#354363]/60 transition-all duration-300">
                           <div className="flex items-center justify-center gap-2">
                             <button
                               onClick={() => {
@@ -1097,7 +1097,7 @@ const CashBook: React.FC = () => {
                                 }
                                 setEditingTransaction(tx);
                               }}
-                              className="w-8 h-8 rounded-full border border-[#2B354A]/80 bg-slate-900/50 text-slate-400 hover:text-blue-400 hover:border-blue-500/40 hover:bg-blue-500/10 transition-all duration-200 flex items-center justify-center shadow-md shadow-black/30"
+                              className="w-8 h-8 rounded-full border border-slate-200 dark:border-[#2B354A]/80 bg-white dark:bg-slate-900/50 text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:border-blue-300 dark:hover:border-blue-500/40 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-all duration-200 flex items-center justify-center shadow-sm shadow-black/5"
                               title="Chỉnh sửa giao dịch"
                             >
                               <svg
@@ -1122,7 +1122,7 @@ const CashBook: React.FC = () => {
                                 }
                                 setDeletingTransaction(tx);
                               }}
-                              className="w-8 h-8 rounded-full border border-[#2B354A]/80 bg-slate-900/50 text-slate-400 hover:text-rose-400 hover:border-rose-500/40 hover:bg-rose-500/10 transition-all duration-200 flex items-center justify-center shadow-md shadow-black/30"
+                              className="w-8 h-8 rounded-full border border-slate-200 dark:border-[#2B354A]/80 bg-white dark:bg-slate-900/50 text-slate-500 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:border-rose-300 dark:hover:border-rose-500/40 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-all duration-200 flex items-center justify-center shadow-sm shadow-black/5"
                               title="Xóa giao dịch"
                             >
                               <svg
@@ -1152,38 +1152,38 @@ const CashBook: React.FC = () => {
                   <tr className="bg-transparent">
                     <td
                       colSpan={3}
-                      className="pl-6 pr-4 py-5 text-xs font-bold text-slate-400 uppercase tracking-wide first:rounded-l-2xl first:border-l border-y border-[#222E45]/45 bg-[#0F1422]/65 backdrop-blur-xl"
+                      className="pl-6 pr-4 py-5 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide first:rounded-l-2xl first:border-l border-y border-slate-200 dark:border-[#222E45]/45 bg-slate-50 dark:bg-[#0F1422]/65 backdrop-blur-xl"
                     >
                       <div className="flex flex-col gap-1 text-[11px]">
-                        <span className="font-extrabold text-slate-300">Tổng: {filteredTransactions.length} giao dịch</span>
-                        <span className="text-[10px] text-slate-450 font-bold lowercase tracking-normal normal-case opacity-90">
+                        <span className="font-extrabold text-slate-700 dark:text-slate-300">Tổng: {filteredTransactions.length} giao dịch</span>
+                        <span className="text-[10px] text-slate-500 dark:text-slate-455 font-bold lowercase tracking-normal normal-case opacity-90">
                           ({filteredTransactions.filter((t) => isIncomeTx(t)).length} thu, {filteredTransactions.filter((t) => !isIncomeTx(t)).length} chi)
                         </span>
                       </div>
                     </td>
-                    <td className="px-4 py-5 border-y border-[#222E45]/45 bg-[#0F1422]/65 backdrop-blur-xl"></td>
-                    <td className="px-4 py-5 border-y border-[#222E45]/45 bg-[#0F1422]/65 backdrop-blur-xl"></td>
-                    <td className="px-4 py-5 text-right border-y border-[#222E45]/45 bg-[#0F1422]/65 backdrop-blur-xl">
+                    <td className="px-4 py-5 border-y border-slate-200 dark:border-[#222E45]/45 bg-slate-50 dark:bg-[#0F1422]/65 backdrop-blur-xl"></td>
+                    <td className="px-4 py-5 border-y border-slate-200 dark:border-[#222E45]/45 bg-slate-50 dark:bg-[#0F1422]/65 backdrop-blur-xl"></td>
+                    <td className="px-4 py-5 text-right border-y border-slate-200 dark:border-[#222E45]/45 bg-slate-50 dark:bg-[#0F1422]/65 backdrop-blur-xl">
                       <div className="flex flex-col items-end gap-1.5 pr-2">
-                        <div className="flex items-center justify-between w-36 text-[11px] font-bold text-emerald-400/90 font-mono tracking-tight">
+                        <div className="flex items-center justify-between w-36 text-[11px] font-bold text-emerald-600 dark:text-emerald-400/90 font-mono tracking-tight">
                           <span className="font-sans uppercase text-[9px] font-extrabold text-slate-500 tracking-wider">Thu:</span>
                           <span>+{formatCurrency(filteredSummary.income)}</span>
                         </div>
-                        <div className="flex items-center justify-between w-36 text-[11px] font-bold text-rose-400/90 font-mono tracking-tight">
+                        <div className="flex items-center justify-between w-36 text-[11px] font-bold text-rose-655 dark:text-rose-400/90 font-mono tracking-tight">
                           <span className="font-sans uppercase text-[9px] font-extrabold text-slate-500 tracking-wider">Chi:</span>
                           <span>-{formatCurrency(filteredSummary.expense)}</span>
                         </div>
-                        <div className="w-36 h-px bg-slate-800 my-0.5"></div>
+                        <div className="w-36 h-px bg-slate-200 dark:bg-slate-800 my-0.5"></div>
                         <div className={`flex items-center justify-between w-36 text-xs font-black font-mono tracking-tight ${filteredSummary.balance >= 0
-                          ? "text-blue-400"
-                          : "text-rose-400"
+                          ? "text-blue-600 dark:text-blue-400"
+                          : "text-rose-655 dark:text-rose-400"
                           }`}>
-                          <span className="font-sans uppercase text-[9px] font-extrabold text-slate-400 tracking-wider">Dư:</span>
+                          <span className="font-sans uppercase text-[9px] font-extrabold text-slate-500 dark:text-slate-400 tracking-wider">Dư:</span>
                           <span>{formatCurrency(filteredSummary.balance)}</span>
                         </div>
                       </div>
                     </td>
-                    <td className="pl-4 pr-6 py-5 last:rounded-r-2xl last:border-r border-y border-[#222E45]/45 bg-[#0F1422]/65 backdrop-blur-xl"></td>
+                    <td className="pl-4 pr-6 py-5 last:rounded-r-2xl last:border-r border-y border-slate-200 dark:border-[#222E45]/45 bg-slate-50 dark:bg-[#0F1422]/65 backdrop-blur-xl"></td>
                   </tr>
                 </tfoot>
               )}

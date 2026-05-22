@@ -30,6 +30,7 @@ import {
     isRefundCategory,
 } from "../../lib/reports/financialSummary";
 import { formatCashTxCategory } from "../../lib/finance/cashTxCategories";
+import { useTheme } from "../../contexts/ThemeContext";
 // Exclusion logic is shared with Reports/Dashboard/Analytics.
 
 interface ReportsManagerMobileProps {
@@ -111,6 +112,7 @@ export const ReportsManagerMobile: React.FC<ReportsManagerMobileProps> = ({
     cashTotals,
     selectedDate,
 }) => {
+    const { theme } = useTheme();
     const [showFilters, setShowFilters] = useState(false);
     const [showReportMenu, setShowReportMenu] = useState(false);
 
@@ -179,48 +181,48 @@ export const ReportsManagerMobile: React.FC<ReportsManagerMobileProps> = ({
         <div className="space-y-4 pb-20">
             {/* Summary Cards */}
             <div className="grid grid-cols-2 gap-3">
-                <div className="bg-gradient-to-br from-blue-600/20 to-blue-900/20 border border-blue-500/30 p-4 rounded-2xl">
+                <div className="bg-gradient-to-br from-blue-50 to-blue-100/60 dark:from-blue-600/20 dark:to-blue-900/20 border border-blue-100 dark:border-blue-500/30 p-4 rounded-2xl">
                     <div className="flex items-center gap-2 mb-1">
-                        <div className="p-1.5 bg-blue-500/20 rounded-lg">
-                            <DollarSign className="w-4 h-4 text-blue-400" />
+                        <div className="p-1.5 bg-blue-100 dark:bg-blue-500/20 rounded-lg">
+                            <DollarSign className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                         </div>
-                        <span className="text-xs text-blue-300 font-medium">Doanh thu</span>
+                        <span className="text-xs text-blue-600 dark:text-blue-300 font-medium">Doanh thu</span>
                     </div>
-                    <div className="text-lg font-bold text-white">
+                    <div className="text-lg font-bold text-slate-900 dark:text-white">
                         {formatCurrency(revenueReport.totalRevenue + cashTotals.totalIncome).replace("₫", "")}
-                        <span className="text-xs text-slate-400 font-normal ml-1">đ</span>
+                        <span className="text-xs text-slate-500 dark:text-slate-400 font-normal ml-1">đ</span>
                     </div>
                 </div>
 
-                <div className="bg-gradient-to-br from-green-600/20 to-green-900/20 border border-green-500/30 p-4 rounded-2xl">
+                <div className="bg-gradient-to-br from-emerald-50 to-emerald-100/60 dark:from-green-600/20 dark:to-green-900/20 border border-emerald-100 dark:border-green-500/30 p-4 rounded-2xl">
                     <div className="flex items-center gap-2 mb-1">
-                        <div className="p-1.5 bg-green-500/20 rounded-lg">
-                            <TrendingUp className="w-4 h-4 text-green-400" />
+                        <div className="p-1.5 bg-emerald-100 dark:bg-green-500/20 rounded-lg">
+                            <TrendingUp className="w-4 h-4 text-emerald-600 dark:text-green-400" />
                         </div>
-                        <span className="text-xs text-green-300 font-medium">Lợi nhuận</span>
+                        <span className="text-xs text-emerald-600 dark:text-green-300 font-medium">Lợi nhuận</span>
                     </div>
-                    <div className="text-lg font-bold text-white">
+                    <div className="text-lg font-bold text-slate-900 dark:text-white">
                         {formatCurrency(revenueReport.totalProfit).replace("₫", "")}
-                        <span className="text-xs text-slate-400 font-normal ml-1">đ</span>
+                        <span className="text-xs text-slate-500 dark:text-slate-400 font-normal ml-1">đ</span>
                     </div>
                 </div>
             </div>
 
             {/* Net Profit Card */}
-            <div className="bg-gradient-to-br from-purple-600/20 to-purple-900/20 border border-purple-500/30 p-4 rounded-2xl">
+            <div className="bg-gradient-to-br from-purple-50 to-purple-100/60 dark:from-purple-600/20 dark:to-purple-900/20 border border-purple-100 dark:border-purple-500/30 p-4 rounded-2xl">
                 <div className="flex items-center gap-2 mb-1">
-                    <div className="p-1.5 bg-purple-500/20 rounded-lg">
-                        <Wallet className="w-4 h-4 text-purple-400" />
+                    <div className="p-1.5 bg-purple-100 dark:bg-purple-500/20 rounded-lg">
+                        <Wallet className="w-4 h-4 text-purple-600 dark:text-purple-400" />
                     </div>
-                    <span className="text-xs text-purple-300 font-medium">Lợi nhuận ròng</span>
+                    <span className="text-xs text-purple-600 dark:text-purple-300 font-medium">Lợi nhuận ròng</span>
                 </div>
-                <div className="text-lg font-bold text-white">
+                <div className="text-lg font-bold text-slate-900 dark:text-white">
                     {formatCurrency(
                         (revenueReport.totalProfit + cashTotals.totalIncome) - cashTotals.totalExpense
                     ).replace("₫", "")}
-                    <span className="text-xs text-slate-400 font-normal ml-1">đ</span>
+                    <span className="text-xs text-slate-500 dark:text-slate-400 font-normal ml-1">đ</span>
                 </div>
-                <div className="text-[10px] text-purple-300/70 mt-1">
+                <div className="text-[10px] text-purple-600/80 dark:text-purple-300/70 mt-1">
                     (Lợi nhuận + Thu khác) - Chi phí
                 </div>
             </div>
@@ -247,7 +249,7 @@ export const ReportsManagerMobile: React.FC<ReportsManagerMobileProps> = ({
                                     <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
                                 </linearGradient>
                             </defs>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
+                            <CartesianGrid strokeDasharray="3 3" stroke={theme === "dark" ? "#334155" : "#e2e8f0"} vertical={false} />
                             <XAxis
                                 dataKey="date"
                                 tickFormatter={(date) => new Date(date).getDate().toString()}
@@ -543,9 +545,9 @@ export const ReportsManagerMobile: React.FC<ReportsManagerMobileProps> = ({
 
     const renderInventoryTab = () => (
         <div className="space-y-4 pb-20">
-            <div className="bg-gradient-to-br from-purple-600/10 to-purple-900/10 dark:from-purple-600/20 dark:to-purple-900/20 border border-purple-500/20 dark:border-purple-500/30 p-5 rounded-2xl text-center">
+            <div className="bg-gradient-to-br from-purple-50 to-purple-100/60 dark:from-purple-600/20 dark:to-purple-900/20 border border-purple-100 dark:border-purple-500/30 p-5 rounded-2xl text-center">
                 <div className="text-sm text-purple-600 dark:text-purple-300 font-medium mb-2">Tổng giá trị tồn kho</div>
-                <div className="text-3xl font-bold text-slate-900 dark:text-white">
+                <div className="text-3xl font-bold text-slate-950 dark:text-white">
                     {formatCurrency(inventoryReport.totalValue).replace("₫", "")}
                     <span className="text-sm text-purple-500 dark:text-purple-300 font-normal ml-1">đ</span>
                 </div>
@@ -674,7 +676,7 @@ export const ReportsManagerMobile: React.FC<ReportsManagerMobileProps> = ({
                         </div>
 
                         {dateRange === "month" && (
-                            <div className="mt-3 pt-3 border-t border-slate-700 grid grid-cols-6 gap-2">
+                            <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-700 grid grid-cols-6 gap-2">
                                 {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
                                     <button
                                         key={m}

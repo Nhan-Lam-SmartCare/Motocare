@@ -767,28 +767,27 @@ const SalesManager: React.FC = () => {
                         </div>
 
                         <div className="flex items-center gap-3">
-
                             <button
                                 onClick={openQuickServiceModal}
-                                className="flex items-center gap-2 px-4 py-2 bg-slate-800/80 text-slate-300 border border-slate-700/50 rounded-lg hover:text-amber-400 hover:bg-slate-700 hover:border-amber-500/30 transition-all"
+                                className="flex items-center gap-2 px-4 py-2 bg-slate-50 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700/50 rounded-lg hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-50/50 dark:hover:bg-slate-700 hover:border-amber-200 dark:hover:border-amber-500/30 transition-all shadow-sm"
                             >
-                                <Zap className="w-5 h-5" />
+                                <Zap className="w-5 h-5 text-amber-500 dark:text-amber-400" />
                                 <span className="font-medium">Dịch vụ nhanh</span>
                             </button>
 
                             <button
                                 onClick={() => history.setShowSalesHistory(true)}
-                                className="flex items-center gap-2 px-4 py-2 bg-slate-800/80 text-slate-300 border border-slate-700/50 rounded-lg hover:text-blue-400 hover:bg-slate-700 hover:border-blue-500/30 transition-all"
+                                className="flex items-center gap-2 px-4 py-2 bg-slate-50 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700/50 rounded-lg hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50/50 dark:hover:bg-slate-700 hover:border-blue-200 dark:hover:border-blue-500/30 transition-all shadow-sm"
                             >
-                                <History className="w-5 h-5" />
+                                <History className="w-5 h-5 text-blue-500 dark:text-blue-400" />
                                 <span className="font-medium">Lịch sử</span>
                             </button>
 
                             <button
                                 onClick={() => setShowDeliveryModal(true)}
-                                className="flex items-center gap-2 px-4 py-2 bg-slate-800/80 text-slate-300 border border-slate-700/50 rounded-lg hover:text-emerald-400 hover:bg-slate-700 hover:border-emerald-500/30 transition-all"
+                                className="flex items-center gap-2 px-4 py-2 bg-slate-50 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700/50 rounded-lg hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50/50 dark:hover:bg-slate-700 hover:border-emerald-200 dark:hover:border-emerald-500/30 transition-all shadow-sm"
                             >
-                                <Truck className="w-5 h-5" />
+                                <Truck className="w-5 h-5 text-emerald-500 dark:text-emerald-400" />
                                 <span className="font-medium">Giao hàng</span>
                             </button>
                         </div>

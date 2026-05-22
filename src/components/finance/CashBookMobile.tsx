@@ -262,38 +262,38 @@ export const CashBookMobile: React.FC = () => {
     const isFilteredView = filterDateRange !== "all" || filterType !== "all" || filterPaymentSource !== "all" || searchQuery.trim() !== "";
 
     return (
-        <div className="bg-[#151521] min-h-screen text-white pb-20">
+        <div className="bg-slate-50 dark:bg-[#151521] min-h-screen text-slate-800 dark:text-white pb-20">
             {/* Stats Cards - Horizontal Scroll */}
             <div className="px-4 py-4 overflow-x-auto no-scrollbar flex gap-3 snap-x">
                 {/* Balance Card */}
-                <div className="snap-center shrink-0 w-[85vw] bg-slate-800/80 border border-slate-700/50 rounded-2xl p-4 shadow-sm relative overflow-hidden">
-                    <div className="absolute top-0 right-0 p-3 opacity-5">
-                        <Wallet className="w-24 h-24 text-white" />
+                <div className="snap-center shrink-0 w-[85vw] bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/50 rounded-2xl p-4 shadow-sm relative overflow-hidden">
+                    <div className="absolute top-0 right-0 p-3 opacity-[0.03] dark:opacity-[0.05]">
+                        <Wallet className="w-24 h-24 text-slate-900 dark:text-white" />
                     </div>
                     <div className="relative z-10">
-                        <p className="text-slate-400 text-sm font-medium mb-1">Tổng số dư thực tế</p>
-                        <h3 className="text-3xl font-bold text-white mb-4">
+                        <p className="text-slate-550 dark:text-slate-400 text-sm font-medium mb-1">Tổng số dư thực tế</p>
+                        <h3 className="text-3xl font-bold text-slate-800 dark:text-white mb-4">
                             {formatCurrency(actualBalance.totalBalance)}
                         </h3>
                         <div className="grid grid-cols-2 gap-4">
-                            <div className="bg-slate-900/50 rounded-xl p-2.5 border border-slate-700/50">
-                                <p className="text-slate-400 text-xs mb-1">Tiền mặt</p>
-                                <p className="font-semibold text-white">{formatCurrency(actualBalance.cashBalance)}</p>
+                            <div className="bg-slate-50 dark:bg-slate-900/50 rounded-xl p-2.5 border border-slate-200 dark:border-slate-700/50">
+                                <p className="text-slate-500 dark:text-slate-400 text-xs mb-1">Tiền mặt</p>
+                                <p className="font-semibold text-slate-800 dark:text-white">{formatCurrency(actualBalance.cashBalance)}</p>
                             </div>
-                            <div className="bg-slate-900/50 rounded-xl p-2.5 border border-slate-700/50">
-                                <p className="text-slate-400 text-xs mb-1">Ngân hàng</p>
-                                <p className="font-semibold text-white">{formatCurrency(actualBalance.bankBalance)}</p>
+                            <div className="bg-slate-50 dark:bg-slate-900/50 rounded-xl p-2.5 border border-slate-200 dark:border-slate-700/50">
+                                <p className="text-slate-500 dark:text-slate-400 text-xs mb-1">Ngân hàng</p>
+                                <p className="font-semibold text-slate-800 dark:text-white">{formatCurrency(actualBalance.bankBalance)}</p>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 {/* Income/Expense Summary - Show filtered summary */}
-                <div className="snap-center shrink-0 w-[85vw] bg-[#1e1e2d] rounded-2xl p-4 border border-slate-800 shadow-lg">
+                <div className="snap-center shrink-0 w-[85vw] bg-white dark:bg-[#1e1e2d] rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm dark:shadow-lg">
                     <div className="flex items-center justify-between mb-3">
-                        <h4 className="text-slate-400 text-sm font-medium">Thu chi trong kỳ</h4>
+                        <h4 className="text-slate-550 dark:text-slate-400 text-sm font-medium">Thu chi trong kỳ</h4>
                         {isFilteredView && (
-                            <span className="text-xs text-blue-400">
+                            <span className="text-xs text-blue-600 dark:text-blue-400 font-semibold">
                                 ({filteredTransactions.length} GD)
                             </span>
                         )}
@@ -301,36 +301,36 @@ export const CashBookMobile: React.FC = () => {
                     <div className="space-y-3">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center">
-                                    <ArrowUpCircle className="w-6 h-6 text-green-500" />
+                                <div className="w-10 h-10 rounded-full bg-green-500/10 dark:bg-green-500/20 flex items-center justify-center">
+                                    <ArrowUpCircle className="w-6 h-6 text-green-600 dark:text-green-500" />
                                 </div>
                                 <div>
-                                    <p className="text-slate-400 text-xs">Tổng thu</p>
-                                    <p className="text-green-500 font-bold">{formatCurrency(filteredSummary.income)}</p>
+                                    <p className="text-slate-500 dark:text-slate-400 text-xs">Tổng thu</p>
+                                    <p className="text-green-600 dark:text-green-500 font-bold">{formatCurrency(filteredSummary.income)}</p>
                                 </div>
                             </div>
                         </div>
-                        <div className="w-full h-[1px] bg-slate-800"></div>
+                        <div className="w-full h-[1px] bg-slate-100 dark:bg-slate-800"></div>
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center">
-                                    <ArrowDownCircle className="w-6 h-6 text-red-500" />
+                                <div className="w-10 h-10 rounded-full bg-red-500/10 dark:bg-red-500/20 flex items-center justify-center">
+                                    <ArrowDownCircle className="w-6 h-6 text-red-650 dark:text-red-500" />
                                 </div>
                                 <div>
-                                    <p className="text-slate-400 text-xs">Tổng chi</p>
-                                    <p className="text-red-500 font-bold">{formatCurrency(filteredSummary.expense)}</p>
+                                    <p className="text-slate-500 dark:text-slate-400 text-xs">Tổng chi</p>
+                                    <p className="text-red-650 dark:text-red-500 font-bold">{formatCurrency(filteredSummary.expense)}</p>
                                 </div>
                             </div>
                         </div>
-                        <div className="w-full h-[1px] bg-slate-800"></div>
+                        <div className="w-full h-[1px] bg-slate-100 dark:bg-slate-800"></div>
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center">
-                                    <Wallet className="w-6 h-6 text-blue-500" />
+                                <div className="w-10 h-10 rounded-full bg-blue-500/10 dark:bg-blue-500/20 flex items-center justify-center">
+                                    <Wallet className="w-6 h-6 text-blue-600 dark:text-blue-500" />
                                 </div>
                                 <div>
-                                    <p className="text-slate-400 text-xs">Chênh lệch</p>
-                                    <p className={`font-bold ${filteredSummary.balance >= 0 ? "text-blue-500" : "text-red-500"
+                                    <p className="text-slate-550 dark:text-slate-400 text-xs">Chênh lệch</p>
+                                    <p className={`font-bold ${filteredSummary.balance >= 0 ? "text-blue-600 dark:text-blue-500" : "text-red-650 dark:text-red-500"
                                         }`}>
                                         {formatCurrency(filteredSummary.balance)}
                                     </p>
@@ -345,33 +345,33 @@ export const CashBookMobile: React.FC = () => {
             <div className="px-4 mb-4">
                 <div className="flex gap-2 mb-3">
                     <div className="relative flex-1">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500" />
                         <input
                             type="text"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             placeholder="Tìm kiếm giao dịch..."
-                            className="w-full bg-[#1e1e2d] border border-slate-800 rounded-xl pl-9 pr-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+                            className="w-full bg-white dark:bg-[#1e1e2d] border border-slate-200 dark:border-slate-800 rounded-xl pl-9 pr-4 py-2.5 text-sm text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-blue-500 shadow-sm"
                         />
                     </div>
                     <button
                         onClick={() => setShowFilters(!showFilters)}
-                        className={`p-2.5 rounded-xl border ${showFilters ? 'bg-blue-600 border-blue-600 text-white' : 'bg-[#1e1e2d] border-slate-800 text-slate-400'}`}
+                        className={`p-2.5 rounded-xl border shadow-sm transition-all ${showFilters ? 'bg-blue-600 border-blue-600 text-white shadow-md' : 'bg-white dark:bg-[#1e1e2d] border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400'}`}
                     >
                         <Filter className="w-5 h-5" />
                     </button>
                 </div>
 
                 {showFilters && (
-                    <div className="bg-[#1e1e2d] rounded-xl p-4 border border-slate-800 space-y-4 animate-in slide-in-from-top-2">
+                    <div className="bg-white dark:bg-[#1e1e2d] rounded-xl p-4 border border-slate-200 dark:border-slate-800 space-y-4 shadow-sm dark:shadow-none animate-in slide-in-from-top-2">
                         <div>
-                            <label className="text-xs text-slate-400 mb-2 block">Thời gian</label>
-                            <div className="flex bg-[#151521] p-1 rounded-lg">
+                            <label className="text-xs text-slate-500 dark:text-slate-400 mb-2 block">Thời gian</label>
+                            <div className="flex bg-slate-100 dark:bg-[#151521] p-1 rounded-lg">
                                 {['today', 'week', 'month', 'all'].map((range) => (
                                     <button
                                         key={range}
                                         onClick={() => setFilterDateRange(range as any)}
-                                        className={`flex-1 py-1.5 rounded-md text-xs font-medium transition-all ${filterDateRange === range ? 'bg-blue-600 text-white' : 'text-slate-400'}`}
+                                        className={`flex-1 py-1.5 rounded-md text-xs font-medium transition-all ${filterDateRange === range ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-500 dark:text-slate-400'}`}
                                     >
                                         {range === 'today' ? 'Hôm nay' : range === 'week' ? '7 ngày' : range === 'month' ? '30 ngày' : 'Tất cả'}
                                     </button>
@@ -380,11 +380,11 @@ export const CashBookMobile: React.FC = () => {
                         </div>
                         <div className="grid grid-cols-2 gap-3">
                             <div>
-                                <label className="text-xs text-slate-400 mb-2 block">Loại</label>
+                                <label className="text-xs text-slate-500 dark:text-slate-400 mb-2 block">Loại</label>
                                 <select
                                     value={filterType}
                                     onChange={(e) => setFilterType(e.target.value as any)}
-                                    className="w-full bg-[#151521] border border-slate-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500"
+                                    className="w-full bg-slate-100 dark:bg-[#151521] border border-slate-250 dark:border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-800 dark:text-white focus:outline-none focus:border-blue-500"
                                 >
                                     <option value="all">Tất cả</option>
                                     <option value="income">Thu</option>
@@ -392,11 +392,11 @@ export const CashBookMobile: React.FC = () => {
                                 </select>
                             </div>
                             <div>
-                                <label className="text-xs text-slate-400 mb-2 block">Nguồn tiền</label>
+                                <label className="text-xs text-slate-500 dark:text-slate-400 mb-2 block">Nguồn tiền</label>
                                 <select
                                     value={filterPaymentSource}
                                     onChange={(e) => setFilterPaymentSource(e.target.value)}
-                                    className="w-full bg-[#151521] border border-slate-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500"
+                                    className="w-full bg-slate-100 dark:bg-[#151521] border border-slate-250 dark:border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-800 dark:text-white focus:outline-none focus:border-blue-500"
                                 >
                                     <option value="all">Tất cả</option>
                                     <option value="cash">Tiền mặt</option>
@@ -410,63 +410,63 @@ export const CashBookMobile: React.FC = () => {
 
             {/* Transactions List */}
             <div className="px-4 space-y-3">
-                <h3 className="text-slate-400 text-sm font-medium">Giao dịch gần đây</h3>
+                <h3 className="text-slate-550 dark:text-slate-400 text-sm font-medium">Giao dịch gần đây</h3>
                 {isCashTxLoading ? (
                     <div className="text-center py-8 text-slate-500">
                         <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto mb-2"></div>
                         Đang tải dữ liệu...
                     </div>
                 ) : filteredTransactions.length === 0 ? (
-                    <div className="text-center py-12 bg-[#1e1e2d] rounded-2xl border border-slate-800">
-                        <div className="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-3">
-                            <Wallet className="w-8 h-8 text-slate-600" />
+                    <div className="text-center py-12 bg-white dark:bg-[#1e1e2d] rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                        <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-3 border border-slate-200/50 dark:border-transparent">
+                            <Wallet className="w-8 h-8 text-slate-400 dark:text-slate-600" />
                         </div>
-                        <p className="text-slate-400">Không có giao dịch nào</p>
+                        <p className="text-slate-500 dark:text-slate-400">Không có giao dịch nào</p>
                     </div>
                 ) : (
                     filteredTransactions.map((tx) => (
                         <div
                             key={tx.id}
-                            className="bg-[#1e1e2d] p-4 rounded-xl border border-slate-800 active:scale-[0.98] transition-transform"
+                            className="bg-white dark:bg-[#1e1e2d] p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm active:scale-[0.98] transition-transform"
                         >
                             <div className="flex justify-between items-start mb-3">
                                 <div className="flex items-start gap-3">
                                     <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 border ${isIncomeTx(tx) ? 'bg-green-500/10 border-green-500/20' : 'bg-red-500/10 border-red-500/20'}`}>
                                         {isIncomeTx(tx) ? (
-                                            <ArrowUpCircle className="w-5 h-5 text-green-500" />
+                                            <ArrowUpCircle className="w-5 h-5 text-green-600 dark:text-green-550" />
                                         ) : (
-                                            <ArrowDownCircle className="w-5 h-5 text-red-500" />
+                                            <ArrowDownCircle className="w-5 h-5 text-red-650 dark:text-red-500" />
                                         )}
                                     </div>
                                     <div>
-                                        <h4 className="font-medium text-white">{getCategoryLabel(tx.category)}</h4>
-                                        <p className="text-xs text-slate-400 mt-0.5">{formatDate(new Date(tx.date))}</p>
+                                        <h4 className="font-semibold text-slate-800 dark:text-white">{getCategoryLabel(tx.category)}</h4>
+                                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{formatDate(new Date(tx.date))}</p>
                                     </div>
                                 </div>
                                 <div className="text-right">
-                                    <p className={`font-bold ${isIncomeTx(tx) ? 'text-green-500' : 'text-red-500'}`}>
+                                    <p className={`font-bold ${isIncomeTx(tx) ? 'text-green-600 dark:text-green-500' : 'text-red-650 dark:text-red-500'}`}>
                                         {isIncomeTx(tx) ? '+' : '-'}{formatCurrency(Math.abs(tx.amount))}
                                     </p>
-                                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 inline-block mt-1">
+                                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-550 dark:text-slate-400 inline-block mt-1">
                                         {tx.paymentSourceId === 'bank' ? 'Ngân hàng' : 'Tiền mặt'}
                                     </span>
                                 </div>
                             </div>
-                            <div className="mt-3 pt-3 border-t border-slate-800 flex justify-between items-center">
-                                <p className="text-sm text-slate-300 line-clamp-1 flex-1 mr-2">
-                                    {(tx as any).recipient && <span className="font-medium text-blue-400 mr-1">{(tx as any).recipient}:</span>}
-                                    {tx.notes || (tx as any).description || <span className="italic text-slate-500">Không có ghi chú</span>}
+                            <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center">
+                                <p className="text-sm text-slate-600 dark:text-slate-300 line-clamp-1 flex-1 mr-2">
+                                    {(tx as any).recipient && <span className="font-medium text-blue-600 dark:text-blue-400 mr-1">{(tx as any).recipient}:</span>}
+                                    {tx.notes || (tx as any).description || <span className="italic text-slate-400 dark:text-slate-500">Không có ghi chú</span>}
                                 </p>
                                 <div className="flex gap-2 shrink-0">
                                     <button
                                         onClick={() => setEditingTransaction(tx)}
-                                        className="p-2 bg-slate-800/80 rounded-lg text-slate-400 hover:text-blue-400 hover:bg-slate-700 active:scale-95 transition-all"
+                                        className="p-2 bg-slate-100 dark:bg-slate-800/80 rounded-lg text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-200 dark:hover:bg-slate-700 active:scale-95 transition-all"
                                     >
                                         <Edit2 className="w-4 h-4" />
                                     </button>
                                     <button
                                         onClick={() => setDeletingTransaction(tx)}
-                                        className="p-2 bg-slate-800/80 rounded-lg text-slate-400 hover:text-red-400 hover:bg-slate-700 active:scale-95 transition-all"
+                                        className="p-2 bg-slate-100 dark:bg-slate-800/80 rounded-lg text-slate-500 dark:text-slate-400 hover:text-red-650 dark:hover:text-red-400 hover:bg-slate-200 dark:hover:bg-slate-700 active:scale-95 transition-all"
                                     >
                                         <Trash2 className="w-4 h-4" />
                                     </button>
@@ -479,7 +479,7 @@ export const CashBookMobile: React.FC = () => {
             {/* Floating Action Button */}
             <button
                 onClick={() => setShowAddModal(true)}
-                className="fixed bottom-24 right-4 w-14 h-14 bg-slate-800 rounded-full shadow-lg border border-slate-700/50 flex items-center justify-center text-white z-10 hover:bg-slate-700 active:scale-90 transition-all"
+                className="fixed bottom-24 right-4 w-14 h-14 bg-blue-600 dark:bg-slate-800 rounded-full shadow-lg border border-blue-500 dark:border-slate-700/50 flex items-center justify-center text-white z-10 hover:bg-blue-700 dark:hover:bg-slate-700 active:scale-90 transition-all"
             >
                 <Plus className="w-8 h-8" />
             </button>

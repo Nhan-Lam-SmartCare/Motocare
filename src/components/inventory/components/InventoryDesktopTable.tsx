@@ -63,11 +63,11 @@ const InventoryDesktopTable: React.FC<InventoryDesktopTableProps> = ({
   canUpdatePart,
 }) => {
   return (
-    <div className="hidden sm:block overflow-hidden rounded-2xl border border-slate-800/80 bg-[#131926]/20 backdrop-blur-xl shadow-[0_8px_30px_rgb(0,0,0,0.3)]">
+    <div className="hidden sm:block overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800/80 bg-white dark:bg-[#131926]/20 backdrop-blur-xl shadow-[0_8px_30px_rgb(0,0,0,0.02)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.3)]">
       <div className="overflow-x-auto">
         <table className="w-full border-collapse text-left">
-          <thead className="bg-[#0D121F]/90 backdrop-blur-md sticky top-0 z-20 border-b border-slate-800/80">
-            <tr className="text-[11px] font-black uppercase tracking-wider text-slate-400">
+          <thead className="bg-slate-50/90 dark:bg-[#0D121F]/90 backdrop-blur-md sticky top-0 z-20 border-b border-slate-200 dark:border-slate-800/80">
+            <tr className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
               <th className="px-5 py-4 text-center w-14">
                 <input
                   type="checkbox"
@@ -76,11 +76,11 @@ const InventoryDesktopTable: React.FC<InventoryDesktopTableProps> = ({
                     filteredParts.length > 0
                   }
                   onChange={(e) => handleSelectAll(e.target.checked)}
-                  className="w-4.5 h-4.5 rounded-lg border-slate-700/80 bg-[#0B0F19]/80 text-blue-500 focus:ring-blue-500/30 transition-all cursor-pointer focus:ring-offset-0 focus:outline-none accent-blue-600"
+                  className="w-4.5 h-4.5 rounded-lg border-slate-300 dark:border-slate-700/80 bg-slate-50 dark:bg-[#0B0F19]/80 text-blue-500 focus:ring-blue-500/30 transition-all cursor-pointer focus:ring-offset-0 focus:outline-none accent-blue-600"
                 />
               </th>
               <th
-                className="px-5 py-4 text-left cursor-pointer hover:bg-slate-800/30 transition-colors select-none group"
+                className="px-5 py-4 text-left cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800/30 transition-colors select-none group"
                 onClick={() => handleSort("name")}
               >
                 <div className="flex items-center gap-2">
@@ -94,8 +94,8 @@ const InventoryDesktopTable: React.FC<InventoryDesktopTableProps> = ({
                   <span
                     className={`transition-colors ${
                       sortField === "name"
-                        ? "text-white font-bold"
-                        : "group-hover:text-white"
+                        ? "text-slate-900 dark:text-white font-bold"
+                        : "group-hover:text-slate-900 dark:group-hover:text-white"
                     }`}
                   >
                     Sản phẩm
@@ -106,13 +106,13 @@ const InventoryDesktopTable: React.FC<InventoryDesktopTableProps> = ({
                         ? sortDirection === "asc"
                           ? "rotate-180 text-blue-400"
                           : "text-blue-400"
-                        : "opacity-0 group-hover:opacity-100 text-slate-500"
+                        : "opacity-0 group-hover:opacity-100 text-slate-500 dark:text-slate-500"
                     }`}
                   />
                 </div>
               </th>
               <th
-                className="px-5 py-4 text-right cursor-pointer hover:bg-slate-800/30 transition-colors select-none group"
+                className="px-5 py-4 text-right cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800/30 transition-colors select-none group"
                 onClick={() => handleSort("stock")}
               >
                 <div className="flex items-center justify-end gap-2">
@@ -126,8 +126,8 @@ const InventoryDesktopTable: React.FC<InventoryDesktopTableProps> = ({
                   <span
                     className={`transition-colors ${
                       sortField === "stock"
-                        ? "text-white font-bold"
-                        : "group-hover:text-white"
+                        ? "text-slate-900 dark:text-white font-bold"
+                        : "group-hover:text-slate-900 dark:group-hover:text-white"
                     }`}
                   >
                     Tồn kho
@@ -138,14 +138,14 @@ const InventoryDesktopTable: React.FC<InventoryDesktopTableProps> = ({
                         ? sortDirection === "asc"
                           ? "rotate-180 text-amber-400"
                           : "text-amber-400"
-                        : "opacity-0 group-hover:opacity-100 text-slate-500"
+                        : "opacity-0 group-hover:opacity-100 text-slate-500 dark:text-slate-500"
                     }`}
                   />
                 </div>
               </th>
               {isOwner && (
                 <th
-                  className="px-5 py-4 text-right cursor-pointer hover:bg-slate-800/30 transition-colors select-none group"
+                  className="px-5 py-4 text-right cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800/30 transition-colors select-none group"
                   onClick={() => handleSort("costPrice")}
                 >
                   <div className="flex items-center justify-end gap-2">
@@ -154,97 +154,97 @@ const InventoryDesktopTable: React.FC<InventoryDesktopTableProps> = ({
                         sortField === "costPrice"
                           ? "text-emerald-400"
                           : "text-slate-500 group-hover:text-emerald-400"
+                      }`}
+                    />
+                    <span
+                      className={`transition-colors ${
+                        sortField === "costPrice"
+                          ? "text-slate-900 dark:text-white font-bold"
+                          : "group-hover:text-slate-900 dark:group-hover:text-white"
+                      }`}
+                    >
+                      Giá nhập
+                    </span>
+                    <ChevronDown
+                      className={`w-3.5 h-3.5 transition-all duration-300 ${
+                        sortField === "costPrice"
+                          ? sortDirection === "asc"
+                            ? "rotate-180 text-emerald-400"
+                            : "text-emerald-400"
+                          : "opacity-0 group-hover:opacity-100 text-slate-500 dark:text-slate-500"
+                      }`}
+                    />
+                  </div>
+                </th>
+              )}
+              <th
+                className="px-5 py-4 text-right cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800/30 transition-colors select-none group"
+                onClick={() => handleSort("retailPrice")}
+              >
+                <div className="flex items-center justify-end gap-2">
+                  <Tags
+                    className={`w-4 h-4 transition-colors ${
+                      sortField === "retailPrice"
+                        ? "text-blue-400"
+                        : "text-slate-500 group-hover:text-blue-400"
                     }`}
                   />
                   <span
                     className={`transition-colors ${
-                      sortField === "costPrice"
-                        ? "text-white font-bold"
-                        : "group-hover:text-white"
+                      sortField === "retailPrice"
+                        ? "text-slate-900 dark:text-white font-bold"
+                        : "group-hover:text-slate-900 dark:group-hover:text-white"
                     }`}
                   >
-                    Giá nhập
+                    Giá bán
                   </span>
                   <ChevronDown
                     className={`w-3.5 h-3.5 transition-all duration-300 ${
-                      sortField === "costPrice"
+                      sortField === "retailPrice"
                         ? sortDirection === "asc"
-                          ? "rotate-180 text-emerald-400"
-                          : "text-emerald-400"
-                        : "opacity-0 group-hover:opacity-100 text-slate-500"
+                          ? "rotate-180 text-blue-400"
+                          : "text-blue-400"
+                        : "opacity-0 group-hover:opacity-100 text-slate-500 dark:text-slate-500"
                     }`}
                   />
                 </div>
               </th>
-            )}
-            <th
-              className="px-5 py-4 text-right cursor-pointer hover:bg-slate-800/30 transition-colors select-none group"
-              onClick={() => handleSort("retailPrice")}
-            >
-              <div className="flex items-center justify-end gap-2">
-                <Tags
-                  className={`w-4 h-4 transition-colors ${
-                    sortField === "retailPrice"
-                      ? "text-blue-400"
-                      : "text-slate-500 group-hover:text-blue-400"
-                  }`}
-                />
-                <span
-                  className={`transition-colors ${
-                    sortField === "retailPrice"
-                      ? "text-white font-bold"
-                      : "group-hover:text-white"
-                  }`}
-                >
-                  Giá bán
-                </span>
-                <ChevronDown
-                  className={`w-3.5 h-3.5 transition-all duration-300 ${
-                    sortField === "retailPrice"
-                      ? sortDirection === "asc"
-                        ? "rotate-180 text-blue-400"
-                        : "text-blue-400"
-                      : "opacity-0 group-hover:opacity-100 text-slate-500"
-                  }`}
-                />
-              </div>
-            </th>
-            <th
-              className="px-5 py-4 text-right cursor-pointer hover:bg-slate-800/30 transition-colors select-none group"
-              onClick={() => handleSort("totalValue")}
-            >
-              <div className="flex items-center justify-end gap-2">
-                <BarChart3
-                  className={`w-4 h-4 transition-colors ${
-                    sortField === "totalValue"
-                      ? "text-purple-400"
-                      : "text-slate-500 group-hover:text-purple-400"
-                  }`}
-                />
-                <span
-                  className={`transition-colors ${
-                    sortField === "totalValue"
-                      ? "text-white font-bold"
-                      : "group-hover:text-white"
-                  }`}
-                >
-                  Giá trị tồn
-                </span>
-                <ChevronDown
-                  className={`w-3.5 h-3.5 transition-all duration-300 ${
-                    sortField === "totalValue"
-                      ? sortDirection === "asc"
-                        ? "rotate-180 text-purple-400"
-                        : "text-purple-400"
-                      : "opacity-0 group-hover:opacity-100 text-slate-500"
-                  }`}
-                />
-              </div>
-            </th>
-            <th className="px-5 py-4 text-center w-28 text-slate-400">HÀNH ĐỘNG</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-slate-800/60 bg-[#131926]/30">
+              <th
+                className="px-5 py-4 text-right cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800/30 transition-colors select-none group"
+                onClick={() => handleSort("totalValue")}
+              >
+                <div className="flex items-center justify-end gap-2">
+                  <BarChart3
+                    className={`w-4 h-4 transition-colors ${
+                      sortField === "totalValue"
+                        ? "text-purple-400"
+                        : "text-slate-500 group-hover:text-purple-400"
+                    }`}
+                  />
+                  <span
+                    className={`transition-colors ${
+                      sortField === "totalValue"
+                        ? "text-slate-900 dark:text-white font-bold"
+                        : "group-hover:text-slate-900 dark:group-hover:text-white"
+                    }`}
+                  >
+                    Giá trị tồn
+                  </span>
+                  <ChevronDown
+                    className={`w-3.5 h-3.5 transition-all duration-300 ${
+                      sortField === "totalValue"
+                        ? sortDirection === "asc"
+                          ? "rotate-180 text-purple-400"
+                          : "text-purple-400"
+                        : "opacity-0 group-hover:opacity-100 text-slate-500 dark:text-slate-500"
+                    }`}
+                  />
+                </div>
+              </th>
+              <th className="px-5 py-4 text-center w-28 text-slate-500 dark:text-slate-400">HÀNH ĐỘNG</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60 bg-white/50 dark:bg-[#131926]/30">
           {filteredParts.length === 0 ? (
             <tr>
               <td
@@ -273,31 +273,34 @@ const InventoryDesktopTable: React.FC<InventoryDesktopTableProps> = ({
               const isDuplicate = duplicateSkus.has(part.sku || "");
 
               // Sleek, glowing status dot & border indicator based on available quantity
-              let stockStatusGlow = "text-emerald-400 bg-emerald-500/10 border-emerald-500/30";
+              let stockStatusGlow = "text-emerald-605 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 border-emerald-100 dark:border-emerald-500/30";
+              let stockStatusText = "text-emerald-600 dark:text-emerald-400";
               let statusText = "Còn hàng";
-              let statusDot = "bg-emerald-500 shadow-[0_0_10px_#10b981]";
+              let statusDot = "bg-emerald-500 dark:shadow-[0_0_10px_#10b981]";
 
               if (available === 0) {
-                stockStatusGlow = "text-rose-400 bg-rose-500/10 border-rose-500/30";
+                stockStatusGlow = "text-rose-605 dark:text-rose-400 bg-rose-50 dark:bg-rose-500/10 border-rose-100 dark:border-rose-500/30";
+                stockStatusText = "text-rose-600 dark:text-rose-400";
                 statusText = "Hết hàng";
-                statusDot = "bg-rose-500 shadow-[0_0_10px_#f43f5e]";
+                statusDot = "bg-rose-500 dark:shadow-[0_0_10px_#f43f5e]";
               } else if (available <= LOW_STOCK_THRESHOLD) {
-                stockStatusGlow = "text-amber-400 bg-amber-500/10 border-amber-500/30";
+                stockStatusGlow = "text-amber-605 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 border-amber-100 dark:border-amber-500/30";
+                stockStatusText = "text-amber-600 dark:text-amber-400";
                 statusText = "Sắp hết";
-                statusDot = "bg-amber-500 shadow-[0_0_10px_#f59e0b]";
+                statusDot = "bg-amber-500 dark:shadow-[0_0_10px_#f59e0b]";
               }
 
               const rowHighlight = isSelected
-                ? "bg-blue-600/10 border-l border-l-blue-500"
+                ? "bg-blue-50 dark:bg-blue-600/10 border-l border-l-blue-500"
                 : isDuplicate
-                ? "bg-amber-500/5 border-l border-l-amber-500/80"
+                ? "bg-amber-50/50 dark:bg-amber-500/5 border-l border-l-amber-500/80"
                 : "border-l border-l-transparent";
 
               const isActive = openActionRow === part.id;
               return (
                 <tr
                   key={part.id}
-                  className={`group hover:bg-[#1E293B]/45 transition-all duration-200 ${rowHighlight} ${
+                  className={`group hover:bg-slate-50 dark:hover:bg-[#1E293B]/45 transition-all duration-200 ${rowHighlight} ${
                     isActive ? "relative z-30" : ""
                   }`}
                 >
@@ -308,14 +311,14 @@ const InventoryDesktopTable: React.FC<InventoryDesktopTableProps> = ({
                       onChange={(e) =>
                         handleSelectItem(part.id, e.target.checked)
                       }
-                      className="w-4.5 h-4.5 rounded-lg border-slate-700/80 bg-[#0B0F19]/80 text-blue-500 focus:ring-blue-500/30 transition-all cursor-pointer accent-blue-600"
+                      className="w-4.5 h-4.5 rounded-lg border-slate-305 dark:border-slate-700/80 bg-slate-50 dark:bg-[#0B0F19]/80 text-blue-500 focus:ring-blue-500/30 transition-all cursor-pointer accent-blue-600"
                     />
                   </td>
                   <td className="px-5 py-4">
                     <div className="flex items-center gap-4">
                       <div className="flex flex-col gap-1.5 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-sm font-black text-slate-100 leading-tight group-hover:text-blue-400 transition-colors">
+                          <span className="text-sm font-black text-slate-800 dark:text-slate-100 leading-tight group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                             {part.name}
                           </span>
                           {isDuplicate && (
@@ -326,11 +329,11 @@ const InventoryDesktopTable: React.FC<InventoryDesktopTableProps> = ({
                           )}
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-black font-mono text-slate-400 tracking-wider px-2 py-0.5 bg-[#0B0F19]/80 rounded border border-slate-800/80">
+                          <span className="text-[10px] font-black font-mono text-slate-600 dark:text-slate-400 tracking-wider px-2 py-0.5 bg-slate-100 dark:bg-[#0B0F19]/80 rounded border border-slate-200 dark:border-slate-800/80">
                             {part.sku || "N/A"}
                           </span>
                           {part.category && (
-                            <span className="text-[10px] font-bold text-blue-400/80 uppercase tracking-wider px-2 py-0.5 bg-blue-500/5 rounded border border-blue-500/10">
+                            <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400/80 uppercase tracking-wider px-2 py-0.5 bg-blue-50 dark:bg-blue-500/5 rounded border border-blue-100 dark:border-blue-500/10">
                               {part.category}
                             </span>
                           )}
@@ -342,7 +345,7 @@ const InventoryDesktopTable: React.FC<InventoryDesktopTableProps> = ({
                     <div className="flex flex-col items-end gap-1.5">
                       <div className="flex items-center gap-2">
                         <span className={`w-2 h-2 rounded-full ${statusDot}`} />
-                        <span className={`text-[15px] font-black font-mono tracking-tight ${stockStatusGlow.split(" ")[0]}`}>
+                        <span className={`text-[15px] font-black font-mono tracking-tight ${stockStatusText}`}>
                           {available.toLocaleString()}
                         </span>
                       </div>
@@ -356,7 +359,7 @@ const InventoryDesktopTable: React.FC<InventoryDesktopTableProps> = ({
                               e.stopPropagation();
                               setReservedInfoPartId(part.id);
                             }}
-                            className="text-[9px] font-bold text-amber-400 uppercase tracking-wider hover:bg-amber-500/25 active:scale-95 bg-amber-500/15 border border-amber-500/30 px-1.5 py-0.5 rounded transition-all"
+                            className="text-[9px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider hover:bg-amber-100 dark:hover:bg-amber-500/25 active:scale-95 bg-amber-50 dark:bg-amber-500/15 border border-amber-200 dark:border-amber-500/30 px-1.5 py-0.5 rounded transition-all"
                           >
                             Giữ: {activeReserved}
                           </button>
@@ -366,21 +369,21 @@ const InventoryDesktopTable: React.FC<InventoryDesktopTableProps> = ({
                   </td>
                   {isOwner && (
                     <td className="px-5 py-4 whitespace-nowrap text-right">
-                      <div className="text-[13px] font-bold text-slate-400 font-mono">
+                      <div className="text-[13px] font-bold text-slate-650 dark:text-slate-400 font-mono">
                         {formatCurrency(costPrice)}
                       </div>
                     </td>
                   )}
                   <td className="px-5 py-4 whitespace-nowrap text-right">
-                    <div className="text-[15px] font-black text-cyan-400 font-mono tracking-tight drop-shadow-[0_0_10px_rgba(34,211,238,0.15)]">
+                    <div className="text-[15px] font-black text-cyan-600 dark:text-cyan-400 font-mono tracking-tight drop-shadow-[0_0_10px_rgba(34,211,238,0.15)]">
                       {formatCurrency(retailPrice)}
                     </div>
                     <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider leading-none mt-1">
-                      Sỉ: <span className="font-mono text-slate-400 font-bold">{formatCurrency(wholesalePrice)}</span>
+                      Sỉ: <span className="font-mono text-slate-600 dark:text-slate-400 font-bold">{formatCurrency(wholesalePrice)}</span>
                     </div>
                   </td>
                   <td className="px-5 py-4 whitespace-nowrap text-right">
-                    <div className="text-[15px] font-black text-emerald-400 font-mono tracking-tight drop-shadow-[0_0_10px_rgba(52,211,153,0.15)]">
+                    <div className="text-[15px] font-black text-emerald-600 dark:text-emerald-400 font-mono tracking-tight drop-shadow-[0_0_10px_rgba(52,211,153,0.15)]">
                       {formatCurrency(value)}
                     </div>
                   </td>
@@ -398,7 +401,7 @@ const InventoryDesktopTable: React.FC<InventoryDesktopTableProps> = ({
                             prev === part.id ? null : part.id
                           );
                         }}
-                        className="p-2 text-slate-400 hover:text-white hover:bg-slate-800/80 rounded-xl transition-all duration-200 border border-transparent hover:border-slate-700/80 active:scale-95"
+                        className="p-2 text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/80 rounded-xl transition-all duration-200 border border-transparent hover:border-slate-200 dark:hover:border-slate-700/80 active:scale-95"
                         aria-haspopup="menu"
                         aria-expanded={openActionRow === part.id}
                         title="Thao tác nhanh"
@@ -407,7 +410,7 @@ const InventoryDesktopTable: React.FC<InventoryDesktopTableProps> = ({
                       </button>
                       {openActionRow === part.id && (
                         <div
-                          className="absolute right-0 top-full mt-1.5 w-44 overflow-hidden rounded-2xl border border-slate-700/60 bg-[#0F172A]/95 shadow-[0_10px_30px_rgba(0,0,0,0.5)] backdrop-blur-xl z-[9999] p-1.5 animate-in fade-in slide-in-from-top-2 duration-150"
+                          className="absolute right-0 top-full mt-1.5 w-44 overflow-hidden rounded-2xl border border-slate-205 dark:border-slate-700/60 bg-white dark:bg-[#0F172A]/95 shadow-[0_10px_30px_rgba(0,0,0,0.05)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.5)] backdrop-blur-xl z-[9999] p-1.5 animate-in fade-in slide-in-from-top-2 duration-150"
                           onClick={(event) => event.stopPropagation()}
                         >
                           <button
@@ -416,9 +419,9 @@ const InventoryDesktopTable: React.FC<InventoryDesktopTableProps> = ({
                               setSelectedPartDetail(part);
                               setOpenActionRow(null);
                             }}
-                            className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-sm text-slate-300 hover:text-white hover:bg-[#1E293B]/80 rounded-xl transition-all duration-150"
+                            className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-sm text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#1E293B]/80 rounded-xl transition-all duration-150"
                           >
-                            <Eye className="h-4.5 w-4.5 text-emerald-400" />
+                            <Eye className="h-4.5 w-4.5 text-emerald-600 dark:text-emerald-400" />
                             Xem chi tiết
                           </button>
                           <button
@@ -431,19 +434,19 @@ const InventoryDesktopTable: React.FC<InventoryDesktopTableProps> = ({
                               setEditingPart(part);
                               setOpenActionRow(null);
                             }}
-                            className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-sm text-slate-300 hover:text-white hover:bg-[#1E293B]/80 rounded-xl transition-all duration-150"
+                            className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-sm text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#1E293B]/80 rounded-xl transition-all duration-150"
                           >
-                            <Edit className="h-4.5 w-4.5 text-blue-400" />
+                            <Edit className="h-4.5 w-4.5 text-blue-600 dark:text-blue-400" />
                             Chỉnh sửa
                           </button>
-                          <div className="h-px bg-slate-800/80 my-1" />
+                          <div className="h-px bg-slate-100 dark:bg-slate-800/80 my-1" />
                           <button
                             onClick={(event) => {
                               event.stopPropagation();
                               setOpenActionRow(null);
                               handleDeleteItem(part.id);
                             }}
-                            className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-sm text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 rounded-xl transition-all duration-150"
+                            className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-sm text-rose-600 dark:text-rose-450 hover:text-rose-700 dark:hover:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-xl transition-all duration-150"
                           >
                             <Trash2 className="h-4.5 w-4.5" />
                             Xóa

@@ -2883,7 +2883,7 @@ export default function ServiceManager() {
                 <th className="px-4 py-3 text-left text-xs font-bold text-slate-700 dark:text-slate-100 uppercase tracking-wide">
                   Chi tiết
                 </th>
-                <th className="hidden lg:table-cell px-4 py-3 text-left text-xs font-bold text-slate-700 dark:text-slate-100 uppercase tracking-wide">
+                <th className="hidden lg:table-cell px-4 py-3 text-right text-xs font-bold text-slate-700 dark:text-slate-100 uppercase tracking-wide">
                   Thanh toán
                 </th>
                 <th className="px-4 py-3 text-center text-xs font-bold text-slate-700 dark:text-slate-100 uppercase tracking-wide">
@@ -3070,8 +3070,8 @@ export default function ServiceManager() {
                       onClick={() => handleOpenModal(order)}
                       className={`group bg-white dark:bg-slate-800/80 hover:bg-blue-50/60 dark:hover:bg-slate-700/60 cursor-pointer transition-all duration-150 hover:shadow-md focus-within:ring-2 focus-within:ring-blue-500/30`}
                     >
-                      {/* Column 1: Mã phiếu + Status */}
-                      <td className="px-4 py-5 xl:py-6 align-top">
+                      {/* Column 1: Mã phiếu + Status (Tăng padding-y) */}
+                      <td className="px-4 py-6 xl:py-7 align-top">
                         <div className="space-y-3">
                           <StatusBadge status={order.status as WorkOrderStatus} />
                           <div className="flex flex-col gap-1.5">
@@ -3091,8 +3091,8 @@ export default function ServiceManager() {
                         </div>
                       </td>
 
-                      {/* Column 2: Khách hàng */}
-                      <td className="px-4 py-5 xl:py-6 align-top">
+                      {/* Column 2: Khách hàng (Tăng padding-y) */}
+                      <td className="px-4 py-6 xl:py-7 align-top">
                         <div className="space-y-2">
                           <div className="font-bold text-sm xl:text-base text-slate-900 dark:text-slate-100 truncate pr-4">
                             {order.customerName}
@@ -3133,8 +3133,8 @@ export default function ServiceManager() {
                         </div>
                       </td>
 
-                      {/* Column 3: Chi tiết - Compact format */}
-                      <td className="px-4 py-5 xl:py-6 align-top">
+                      {/* Column 3: Chi tiết - Compact format (Tăng padding-y) */}
+                      <td className="px-4 py-6 xl:py-7 align-top">
                         <div className="space-y-2 max-w-[220px] xl:max-w-[280px]">
                           {servicesSummary && (
                             <div className="text-xs flex items-start gap-2 group/item" title={servicesTitle ? `Dịch vụ: ${servicesTitle}` : "Dịch vụ"}>
@@ -3168,44 +3168,56 @@ export default function ServiceManager() {
 
                           {/* Payment pill for tablet/mobile - show when payment column hidden */}
                           <div className="lg:hidden mt-3">
-                            <span className={`inline-flex items-center gap-1.5 text-[10px] px-2.5 py-1 rounded-full font-black tracking-wider uppercase border ${order.paymentStatus === "paid" ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20" : order.paymentStatus === "partial" ? "bg-amber-500/10 text-amber-600 dark:text-amber-500 border-amber-500/20" : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400 border-slate-200 dark:border-slate-700"}`}>
+                            <span className={`inline-flex items-center gap-1.5 text-[10px] px-2.5 py-1 rounded-full font-black tracking-wider uppercase border ${
+                              order.paymentStatus === "paid" 
+                                ? "bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/20" 
+                                : order.paymentStatus === "partial" 
+                                  ? "bg-amber-500/10 text-amber-600 dark:text-amber-500 border-amber-500/20" 
+                                  : "bg-rose-500/10 text-rose-600 dark:text-rose-450 border-rose-500/20"
+                            }`}>
                               {order.paymentStatus === "paid" ? "Đã Xong" : order.paymentStatus === "partial" ? "Còn Nợ" : "Chưa TT"}
                             </span>
                           </div>
                         </div>
                       </td>
 
-                      {/* Column 4: Thanh toán & trạng thái - Clean layout - Hidden on tablet */}
-                      <td className="hidden lg:table-cell px-4 py-5 xl:py-6 align-top">
+                      {/* Column 4: Thanh toán & trạng thái - Căn phải & màu sắc premium */}
+                      <td className="hidden lg:table-cell px-4 py-6 xl:py-7 align-top">
                         <div className="space-y-3 min-w-[180px]">
-                          {/* Header: Tổng tiền + Nhãn TT */}
-                          <div className="flex items-start justify-between gap-2">
+                          {/* Header: Tổng tiền + Nhãn TT - Căn phải */}
+                          <div className="flex items-center justify-end gap-2.5">
+                             <span className={`inline-flex items-center gap-1.5 text-[10px] px-2.5 py-1 rounded-full font-black tracking-wider uppercase border ${
+                               order.paymentStatus === "paid" 
+                                 ? "bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/20" 
+                                 : order.paymentStatus === "partial" 
+                                   ? "bg-amber-500/10 text-amber-600 dark:text-amber-500 border-amber-500/20" 
+                                   : "bg-rose-500/10 text-rose-600 dark:text-rose-450 border-rose-500/20"
+                             }`}>
+                                {order.paymentStatus === "paid" ? "Đã Xong" : order.paymentStatus === "partial" ? "Còn Nợ" : "Chưa TT"}
+                             </span>
                              <div className="text-sm font-black text-slate-800 dark:text-slate-100 tracking-tight">
                                {formatCurrency(totalAmount)}
                              </div>
-                             <span className={`inline-flex items-center gap-1.5 text-[10px] px-2.5 py-1 rounded-full font-black tracking-wider uppercase border ${order.paymentStatus === "paid" ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20" : order.paymentStatus === "partial" ? "bg-amber-500/10 text-amber-600 dark:text-amber-500 border-amber-500/20" : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400 border-slate-200 dark:border-slate-700"}`}>
-                                {order.paymentStatus === "paid" ? "Đã Xong" : order.paymentStatus === "partial" ? "Còn Nợ" : "Chưa TT"}
-                             </span>
                           </div>
 
-                          {/* Progress bar + Đã thu */}
+                          {/* Progress bar + Đã thu - Căn phải */}
                           {totalAmount > 0 && order.paymentStatus !== "paid" && (
-                            <div className="space-y-1.5">
+                            <div className="space-y-1.5 text-right">
                               <div className="h-1.5 w-full rounded-full bg-slate-100 dark:bg-slate-700 overflow-hidden border border-slate-200/50 dark:border-slate-600/50" title={`Đã thanh toán ${paymentProgress}%`}>
                                 <div className={`h-full rounded-full transition-all duration-500 ${paymentProgress > 0 ? "bg-gradient-to-r from-blue-500 to-blue-400" : "bg-transparent"}`} style={{ width: `${Math.min(paymentProgress, 100)}%` }} />
                               </div>
-                              <div className="flex justify-between items-center text-[11px]">
+                              <div className="flex justify-end gap-2 items-center text-[11px]">
                                 <span className="font-medium text-slate-500">Thu: <strong className="text-slate-700 dark:text-slate-300">{formatCurrency(Math.max(0, paidAmount))}</strong></span>
-                                {(order.remainingAmount ?? 0) > 0 && <span className="font-bold text-amber-600 dark:text-amber-500">{formatCurrency(order.remainingAmount ?? 0)}</span>}
+                                {(order.remainingAmount ?? 0) > 0 && <span className="font-bold text-amber-650 dark:text-amber-500">Còn: {formatCurrency(order.remainingAmount ?? 0)}</span>}
                               </div>
                             </div>
                           )}
                           
                           {/* Payment details - Show deposit/partial info when applicable */}
                           {Boolean((order.depositAmount && order.depositAmount > 0) || order.paymentStatus === "partial" || (order.paymentStatus === "paid" && order.depositAmount && order.depositAmount > 0)) && (
-                            <div className="space-y-1 pt-1 border-t border-slate-100 dark:border-slate-700/50">
+                            <div className="space-y-1 pt-1 border-t border-slate-100 dark:border-slate-700/50 text-right">
                               {order.depositAmount && order.depositAmount > 0 && (
-                                <div className="flex items-center justify-between text-[11px]">
+                                <div className="flex items-center justify-end gap-2 text-[11px]">
                                   <span className="text-slate-500">Đã cọc:</span>
                                   <span className="font-medium text-slate-700 dark:text-slate-300">{formatCurrency(order.depositAmount)}</span>
                                 </div>
@@ -3215,8 +3227,8 @@ export default function ServiceManager() {
 
                           {/* Lợi nhuận - Chỉ hiển thị cho owner khi bật toggle */}
                           {isOwner && showProfit && (
-                            <div className="flex items-center justify-between text-[11px] pt-2 border-t border-dashed border-slate-200 dark:border-slate-700 mt-2">
-                              <span className="text-slate-500">Lợi nhuận</span>
+                            <div className="flex items-center justify-end gap-2 text-[11px] pt-2 border-t border-dashed border-slate-200 dark:border-slate-700 mt-2 text-right">
+                              <span className="text-slate-500">Lợi nhuận:</span>
                               <span className={`font-bold flex items-center gap-1 ${orderProfit > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-500"}`}>
                                 {orderProfit > 0 ? "+" : ""}{formatCurrency(orderProfit)}
                                 {totalAmount > 0 && <span className="text-[9px] text-slate-400 ml-0.5">({Math.round((orderProfit / totalAmount) * 100)}%)</span>}
@@ -3227,7 +3239,7 @@ export default function ServiceManager() {
                       </td>
 
                       <td
-                        className="px-4 py-5 xl:py-6 align-top overflow-visible"
+                        className="px-4 py-6 xl:py-7 align-top overflow-visible"
                         onClick={(e) => e.stopPropagation()}
                       >
                         <div className="flex items-center justify-end gap-1.5">
@@ -3237,7 +3249,7 @@ export default function ServiceManager() {
                               e.stopPropagation();
                               handleOpenModal(order);
                             }}
-                            className="w-8 h-8 inline-flex items-center justify-center rounded-full text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:text-blue-400 dark:hover:bg-blue-900/30 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+                            className="w-8 h-8 inline-flex items-center justify-center rounded-full text-slate-500 dark:text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:text-blue-400 dark:hover:bg-blue-900/30 hover:scale-110 active:scale-95 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
                             title="Xem chi tiết"
                           >
                             <Eye className="w-4 h-4" />
@@ -3248,7 +3260,7 @@ export default function ServiceManager() {
                               e.stopPropagation();
                               handlePrintOrder(order);
                             }}
-                            className="w-8 h-8 inline-flex items-center justify-center rounded-full text-slate-400 hover:text-purple-600 hover:bg-purple-50 dark:hover:text-purple-400 dark:hover:bg-purple-900/30 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500/40"
+                            className="w-8 h-8 inline-flex items-center justify-center rounded-full text-slate-500 dark:text-slate-400 hover:text-purple-600 hover:bg-purple-50 dark:hover:text-purple-400 dark:hover:bg-purple-900/30 hover:scale-110 active:scale-95 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500/40"
                             title="In phiếu"
                           >
                             <Printer className="w-4 h-4" />
@@ -3271,7 +3283,7 @@ export default function ServiceManager() {
                               }}
                               aria-haspopup="menu"
                               aria-expanded={rowActionMenuId === order.id}
-                              className="w-8 h-8 inline-flex items-center justify-center rounded-full text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+                              className="w-8 h-8 inline-flex items-center justify-center rounded-full text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 hover:scale-110 active:scale-95 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
                               title="Thêm thao tác"
                             >
                               <MoreVertical className="w-4 h-4" />

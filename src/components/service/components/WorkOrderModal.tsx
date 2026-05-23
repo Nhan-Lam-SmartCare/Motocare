@@ -408,8 +408,8 @@ const WorkOrderModal: React.FC<{
 
     const handleManualDeductInventory = async () => {
       if (!order?.id) return;
-      if (formData.paymentStatus !== "paid") {
-        showToast.warning("Phiếu chưa thanh toán đủ nên chưa thể trừ kho");
+      if (formData.paymentStatus !== "paid" && formData.status !== "Trả máy") {
+        showToast.warning("Phiếu chưa thanh toán đủ hoặc xe chưa trả nên chưa thể trừ kho");
         return;
       }
       setIsDeductingInventory(true);
@@ -2340,7 +2340,7 @@ const WorkOrderModal: React.FC<{
                   >
                     Làm mới
                   </button>
-                  {formData.paymentStatus === "paid" && inventoryTxs.length === 0 && (
+                  {(formData.paymentStatus === "paid" || formData.status === "Trả máy") && inventoryTxs.length === 0 && (
                     <button
                       type="button"
                       onClick={handleManualDeductInventory}
@@ -2369,9 +2369,16 @@ const WorkOrderModal: React.FC<{
                 <>
                   <div className="text-xs text-slate-500 dark:text-slate-400 mt-2 pl-6">
                     Xuất kho ghi nhận: {inventoryTxs.length} dòng
-                    {formData.paymentStatus !== "paid" && (
-                      <> • Chưa thanh toán đủ nên chưa trừ kho (chỉ giữ)</>
-                    )}
+                    {formData.paymentStatus !== "paid" &&
+                      !((formData as any).inventory_deducted ||
+                        (formData as any).inventoryDeducted) && (
+                        <> • Chưa thanh toán đủ nên chưa trừ kho (chỉ giữ)</>
+                      )}
+                    {((formData as any).inventory_deducted ||
+                      (formData as any).inventoryDeducted) &&
+                      formData.status === "Trả máy" && (
+                        <> • Đã trừ kho công nợ khi trả xe</>
+                      )}
                   </div>
 
                   {inventoryTxLoading ? (

@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { useStoreSettings } from '../../../hooks/useStoreSettings';
 import { showToast } from '../../../utils/toast';
 import { validatePriceAndQty } from '../../../utils/validation';
@@ -20,6 +20,7 @@ const AddProductModal: React.FC<{
     wholesalePrice: number;
     warranty: number;
     warrantyUnit: string;
+    minStock: number;
   }) => void;
 }> = ({ isOpen, onClose, onSave }) => {
   const [name, setName] = useState("");
@@ -32,6 +33,7 @@ const AddProductModal: React.FC<{
   const [wholesalePrice, setWholesalePrice] = useState<number>(0);
   const [warranty, setWarranty] = useState<number>(0);
   const [warrantyUnit, setWarrantyUnit] = useState("tháng");
+  const [minStock, setMinStock] = useState<number>(10);
   const [retailOverridden, setRetailOverridden] = useState<boolean>(false);
   const [wholesaleOverridden, setWholesaleOverridden] = useState<boolean>(false);
   const { data: categories = [] } = useCategories();
@@ -59,6 +61,7 @@ const AddProductModal: React.FC<{
       wholesalePrice: Number(wholesalePrice) || 0,
       warranty: Number(warranty) || 0,
       warrantyUnit,
+      minStock: Number(minStock) || 0,
     });
 
     // Reset form
@@ -71,6 +74,7 @@ const AddProductModal: React.FC<{
     setRetailPrice(0);
     setWholesalePrice(0);
     setWarranty(0);
+    setMinStock(10);
     setRetailOverridden(false);
     setWholesaleOverridden(false);
     setWarrantyUnit("tháng");
@@ -333,6 +337,18 @@ const AddProductModal: React.FC<{
                     <option value="ngày">ngày</option>
                   </select>
                 </div>
+              </div>
+
+              {/* Hạn mức tối thiểu */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">
+                  Tồn tối thiểu (cảnh báo)
+                </label>
+                <FormattedNumberInput
+                  value={minStock}
+                  onValue={(v) => setMinStock(Math.max(0, Math.floor(v)))}
+                  className="w-full px-3.5 py-2.5 text-sm border border-slate-200 dark:border-slate-600 rounded-xl bg-slate-50 dark:bg-slate-700/50 text-slate-900 dark:text-slate-100 text-center font-bold focus:ring-2 focus:ring-blue-500"
+                />
               </div>
             </div>
           </div>

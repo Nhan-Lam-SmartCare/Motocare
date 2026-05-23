@@ -685,13 +685,76 @@ const InventoryManagerNew: React.FC = () => {
                 }}
               />
             ) : (
-              <PurchaseOrdersList
-                onCreateNew={() => {
-                  setShowCreatePO(true);
-                }}
-                onViewDetail={(po) => setSelectedPO(po)}
-                onEdit={(po) => setEditingPO(po)}
-              />
+              <>
+                {/* Auto PO Suggestions section */}
+                {reorderGroupedBySupplier.length > 0 && (
+                  <div className="mb-6 bg-gradient-to-br from-amber-500/10 to-orange-500/5 border border-amber-500/20 dark:border-amber-500/30 rounded-2xl p-4 shadow-md">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="p-2 bg-amber-500/20 rounded-xl text-amber-500">
+                        <AlertTriangle className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-black text-amber-900 dark:text-amber-300 leading-tight uppercase tracking-wide">
+                          Đề xuất nhập hàng (Tồn khả dụng &lt; Tồn tối thiểu)
+                        </h3>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-medium">
+                          Phát hiện <span className="font-bold text-amber-650 dark:text-amber-400">{reorderAlertItems.length}</span> sản phẩm sắp hết hàng cần đặt thêm từ <span className="font-bold text-amber-650 dark:text-amber-400">{reorderGroupedBySupplier.length}</span> nhà cung cấp.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      {reorderGroupedBySupplier.map((group) => {
+                        const groupIds = group.items.map((i: any) => i.id);
+                        return (
+                          <div key={group.supplierName} className="flex items-center justify-between p-3.5 bg-white dark:bg-[#0B0F19]/40 border border-amber-500/10 rounded-xl">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">
+                                  🏪 {group.supplierName}
+                                </span>
+                                <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                                  {group.items.length} phụ tùng
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-1.5 mt-1.5 overflow-x-auto scrollbar-none py-0.5 flex-wrap">
+                                {group.items.slice(0, 5).map((item: any) => (
+                                  <span key={item.id} className="inline-block text-[10px] font-medium px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-650 dark:text-slate-400 rounded">
+                                    {item.name} (<span className="text-rose-500 font-bold">{item.stock}</span>/{item.minStockLimit})
+                                  </span>
+                                ))}
+                                {group.items.length > 5 && (
+                                  <span className="text-[10px] font-bold text-slate-400">
+                                    +{group.items.length - 5} khác
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => {
+                                setSelectedItems(groupIds);
+                                setShowCreatePO(true);
+                              }}
+                              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black uppercase tracking-wider bg-amber-600 hover:bg-amber-700 text-white shadow-md active:scale-95 transition-all whitespace-nowrap"
+                            >
+                              <ShoppingCart className="w-3.5 h-3.5" />
+                              Tạo đơn PO
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                <PurchaseOrdersList
+                  onCreateNew={() => {
+                    setShowCreatePO(true);
+                  }}
+                  onViewDetail={(po) => setSelectedPO(po)}
+                  onEdit={(po) => setEditingPO(po)}
+                />
+              </>
             )}
           </div>
         )}
@@ -1007,6 +1070,7 @@ const InventoryManagerNew: React.FC = () => {
               barcode: updatedPart.barcode,
               category: updatedPart.category,
               stock: updatedPart.stock,
+              minstock: updatedPart.minstock,
               retailPrice: updatedPart.retailPrice,
               wholesalePrice: updatedPart.wholesalePrice,
             };

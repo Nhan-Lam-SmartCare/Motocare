@@ -284,7 +284,7 @@ export const useInventoryManager = () => {
     queryFn: async () => {
       let query = supabase
         .from("parts")
-        .select("id, name, sku, category, stock, reservedstock, costPrice, retailPrice")
+        .select("id, name, sku, category, stock, reservedstock, minstock, costPrice, retailPrice")
         .order("name");
 
       if (categoryFilter && categoryFilter !== "all") {
@@ -323,10 +323,11 @@ export const useInventoryManager = () => {
       const stock = part.stock?.[branchKey] || 0;
       const reserved = part.reservedstock?.[branchKey] || 0;
       const available = Math.max(0, stock - reserved); // ✅ Calculate available stock (clamped to 0)
+      const minLimit = part.minstock?.[branchKey] ?? 10;
 
       if (available > 0) summary.inStock += 1;
       if (available === 0) summary.outOfStock += 1; // includes negative available (stock < reserved)
-      if (available > 0 && available <= LOW_STOCK_THRESHOLD) summary.lowStock += 1;
+      if (available > 0 && available < minLimit) summary.lowStock += 1;
     });
 
     return summary;
@@ -372,12 +373,14 @@ export const useInventoryManager = () => {
         if (!lastImportMap.has(tx.partId)) lastImportMap.set(tx.partId, tx);
       });
 
-    // Lọc: tồn kho ≤ 2 và đã bán ≥ 3
+    // Lọc: tồn khả dụng < min_stock (hoặc < 10 làm fallback)
     return allPartsData
       .filter((part: any) => {
-        const stock = (part.stock?.[branchKey] || 0) - (part.reservedstock?.[branchKey] || 0);
-        const sold = soldQtyMap.get(part.id) || 0;
-        return stock <= 2 && sold >= 3;
+        const stock = part.stock?.[branchKey] || 0;
+        const reserved = part.reservedstock?.[branchKey] || 0;
+        const available = Math.max(0, stock - reserved);
+        const minLimit = part.minstock?.[branchKey] ?? 10;
+        return available < minLimit;
       })
       .map((part: any) => {
         const lastTx = lastImportMap.get(part.id);
@@ -393,12 +396,18 @@ export const useInventoryManager = () => {
             supplierName = extractSupplierName(lastTx.notes) || "Chưa xác định";
           }
         }
+        const stock = part.stock?.[branchKey] || 0;
+        const reserved = part.reservedstock?.[branchKey] || 0;
+        const available = Math.max(0, stock - reserved);
+        const minLimit = part.minstock?.[branchKey] ?? 10;
+
         return {
           id: part.id,
           name: part.name,
           sku: part.sku,
           category: part.category,
-          stock: Math.max(0, (part.stock?.[branchKey] || 0) - (part.reservedstock?.[branchKey] || 0)),
+          stock: available,
+          minStockLimit: minLimit,
           soldQty: soldQtyMap.get(part.id) || 0,
           retailPrice: part.retailPrice?.[branchKey] || 0,
           supplierName,
@@ -550,8 +559,10 @@ export const useInventoryManager = () => {
 
         const availableClamped = Math.max(0, available);
         if (stockFilter === "in-stock") return availableClamped > 0;
-        if (stockFilter === "low-stock")
-          return availableClamped > 0 && availableClamped <= LOW_STOCK_THRESHOLD;
+        if (stockFilter === "low-stock") {
+          const minLimit = part.minstock?.[branchKey] ?? 10;
+          return availableClamped > 0 && availableClamped < minLimit;
+        }
         if (stockFilter === "out-of-stock") return availableClamped === 0; // includes negative available
         return true;
       });
@@ -751,6 +762,7 @@ export const useInventoryManager = () => {
                   category: item._productData.category,
                   description: item._productData.description || "",
                   stock: { [currentBranchId]: 0 }, // Stock = 0, sẽ cập nhật khi hoàn tất phiếu nhập
+                  minstock: { [currentBranchId]: 10 }, // Khởi tạo hạn mức tối thiểu mặc định là 10
                   costPrice: {
                     [currentBranchId]: item._productData.importPrice,
                   },

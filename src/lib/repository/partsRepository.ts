@@ -136,6 +136,7 @@ export async function createPart(
       name: input.name,
       sku: generatedSKU,
       stock: input.stock || { CN1: 0 },
+      minstock: input.minstock || {},
       retailPrice: input.retailPrice || { CN1: 0 },
       wholesalePrice: input.wholesalePrice || { CN1: 0 },
       category: input.category,

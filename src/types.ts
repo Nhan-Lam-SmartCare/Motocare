@@ -65,6 +65,7 @@ export interface Part {
   // Stock & pricing are branch-mapped for multi-branch future extension
   stock: { [branchId: string]: number };
   reservedstock?: { [branchId: string]: number }; // Số lượng đặt trước cho phiếu sửa chữa chưa thanh toán
+  minstock?: { [branchId: string]: number }; // Hạn mức tồn kho tối thiểu cho từng chi nhánh
   retailPrice: { [branchId: string]: number };
   wholesalePrice?: { [branchId: string]: number };
   category?: string;

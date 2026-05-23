@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useCategories, useCreateCategory } from "../../../hooks/useCategories";
 import { showToast } from "../../../utils/toast";
 import FormattedNumberInput from "../../common/FormattedNumberInput";
@@ -25,6 +25,7 @@ const EditPartModal: React.FC<EditPartModalProps> = ({
     wholesalePrice: part.wholesalePrice?.[currentBranchId] || 0,
     costPrice: part.costPrice?.[currentBranchId] || 0,
     stock: part.stock?.[currentBranchId] || 0,
+    minStock: part.minstock?.[currentBranchId] ?? 10,
   });
   const { data: categories = [] } = useCategories();
   const createCategory = useCreateCategory();
@@ -46,6 +47,10 @@ const EditPartModal: React.FC<EditPartModalProps> = ({
       stock: {
         ...(part.stock || {}),
         [currentBranchId]: formData.stock,
+      },
+      minstock: {
+        ...(part.minstock || {}),
+        [currentBranchId]: formData.minStock,
       },
       costPrice: {
         ...(part.costPrice || {}),
@@ -241,26 +246,49 @@ const EditPartModal: React.FC<EditPartModalProps> = ({
             </div>
           </div>
 
-          {/* Stock adjustment */}
-          <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-              Tồn kho hiện tại
-            </label>
-            <input
-              type="number"
-              value={formData.stock}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  stock: Number(e.target.value),
-                })
-              }
-              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
-              min="0"
-            />
-            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-              Số lượng tồn kho tại chi nhánh hiện tại
-            </p>
+          {/* Stock adjustment & Min Stock limit */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                Tồn kho hiện tại
+              </label>
+              <input
+                type="number"
+                value={formData.stock}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    stock: Number(e.target.value),
+                  })
+                }
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
+                min="0"
+              />
+              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                Tồn thực tế tại chi nhánh
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                Hạn mức tồn tối thiểu
+              </label>
+              <input
+                type="number"
+                value={formData.minStock}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    minStock: Number(e.target.value),
+                  })
+                }
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 text-center font-bold"
+                min="0"
+              />
+              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                Cảnh báo khi khả dụng dưới mức này
+              </p>
+            </div>
           </div>
 
           {/* Info */}

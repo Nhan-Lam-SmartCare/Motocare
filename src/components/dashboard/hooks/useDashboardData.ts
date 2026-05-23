@@ -657,14 +657,18 @@ export const useDashboardData = (
             [];
 
         // Hàng sắp hết
-        const lowStockParts = parts.filter(
-            (p) => (p.stock[currentBranchId] || 0) < 10
-        );
+        const lowStockParts = parts.filter((p) => {
+            const stock = p.stock?.[currentBranchId] || 0;
+            const reserved = p.reservedstock?.[currentBranchId] || 0;
+            const available = Math.max(0, stock - reserved);
+            const minLimit = p.minstock?.[currentBranchId] ?? 10;
+            return available < minLimit;
+        });
         if (lowStockParts.length > 0) {
             warnings.push({
                 type: "Tồn kho thấp",
                 message: `${lowStockParts.length} sản phẩm sắp hết hàng`,
-                color: "text-orange-600 dark:text-orange-400",
+                color: "text-rose-600 dark:text-rose-400 font-bold",
             });
         }
 
@@ -707,9 +711,13 @@ export const useDashboardData = (
     }, [workOrders]);
 
     const lowStockCount = useMemo(() => {
-        return (parts || []).filter(
-            (p: any) => (p.stock?.[currentBranchId] || 0) < 10
-        ).length;
+        return (parts || []).filter((p: any) => {
+            const stock = p.stock?.[currentBranchId] || 0;
+            const reserved = p.reservedstock?.[currentBranchId] || 0;
+            const available = Math.max(0, stock - reserved);
+            const minLimit = p.minstock?.[currentBranchId] ?? 10;
+            return available < minLimit;
+        }).length;
     }, [parts, currentBranchId]);
 
     return {

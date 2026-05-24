@@ -46,6 +46,7 @@ import {
 } from "../../utils/excelExport";
 import { ReportsManagerMobile } from "../reports/ReportsManagerMobile";
 import TaxReportExport from "../reports/TaxReportExport";
+import { useDailyFinancials } from "./hooks/useDailyFinancials";
 
 import {
   calculateFinancialSummary,
@@ -560,6 +561,12 @@ const ReportsManager: React.FC = () => {
       }
     });
   }, [revenueReport.dailyReport, cashTxData, start, end, sortColumn, sortDirection]);
+
+  const dailyFinancials = useDailyFinancials({
+    sortedDailyReport,
+    cashTxData,
+    partsCostMap,
+  });
 
   // Exclusion logic is shared (Dashboard/Analytics/Reports) to keep numbers consistent.
 
@@ -1262,49 +1269,20 @@ const ReportsManager: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {sortedDailyReport.map((day, index) => {
+                    {dailyFinancials.map((day, index) => {
                       const isExpanded = selectedDate === day.date;
-                      // Tách riêng doanh thu bán hàng và sửa chữa
-                      const salesRevenue = day.sales.reduce((sum, s) => sum + s.total, 0);
-                      const woRevenue = day.workOrders.reduce((sum, wo: any) => sum + (wo.totalPaid || wo.totalpaid || wo.total || 0), 0);
-                      // Giá vốn: COGS (bán hàng), Vật tư SC (sửa chữa)
-                      const salesCOGS = day.sales.reduce((sum, s) => {
-                        return sum + s.items.reduce((c, it: any) => {
-                          const cost = it.costPrice || partsCostMap.get(it.partId) || partsCostMap.get(it.sku) || 0;
-                          return c + cost * it.quantity;
-                        }, 0);
-                      }, 0);
-                      const woParts = day.workOrders.reduce((sum, wo: any) => {
-                        const parts = wo.partsUsed || wo.partsused || [];
-                        return sum + parts.reduce((c: number, p: any) => {
-                          const partId = p.partId || p.partid;
-                          const cost = p.costPrice || p.costprice || partsCostMap.get(partId) || partsCostMap.get(p.sku) || 0;
-                          return c + cost * (p.quantity || 0);
-                        }, 0);
-                      }, 0);
-                      const laiGop = (salesRevenue + woRevenue) - (salesCOGS + woParts);
-                      // Tính phiếu thu/chi theo ngày
-                      const dayDateStr = day.date;
-                      const thuKhac = cashTxData
-                        .filter(t => t.type === "income" && !isExcludedIncomeCategory(t.category) && getLocalDateKey(t.date) === dayDateStr)
-                        .reduce((sum, t) => sum + t.amount, 0);
-                      const chiKhac = cashTxData
-                        .filter(t => t.type === "expense" && t.amount > 0 && !isExcludedExpenseCategory(t.category) && getLocalDateKey(t.date) === dayDateStr)
-                        .reduce((sum, t) => sum + t.amount, 0);
-                      // Hoàn tiền (giá bán âm): trừ vào doanh thu, hiện thị trong Thu/Chi khác
-                      const chiHoan = cashTxData
-                        .filter(t => t.type === "expense" && t.amount > 0 && isRefundCategory(t.category) && getLocalDateKey(t.date) === dayDateStr)
-                        .reduce((sum, t) => sum + t.amount, 0);
-                      const thuChiKhac = thuKhac - chiKhac - chiHoan;
-                      const laiRong = laiGop + thuKhac - chiKhac - chiHoan;
-                      // Chi tiết giao dịch khác cho ngày (bao gồm cả hoàn tiền)
-                      const dayCashTx = cashTxData.filter(t =>
-                        getLocalDateKey(t.date) === dayDateStr &&
-                        (
-                          (!isExcludedIncomeCategory(t.category) && !isExcludedExpenseCategory(t.category)) ||
-                          (t.type === "expense" && t.amount > 0 && isRefundCategory(t.category))
-                        )
-                      );
+                      const {
+                        salesRevenue,
+                        woRevenue,
+                        salesCOGS,
+                        woParts,
+                        laiGop,
+                        thuChiKhac,
+                        laiRong,
+                        dayCashTx,
+                        sales,
+                        workOrders,
+                      } = day;
 
                       return (
                         <React.Fragment key={day.date}>

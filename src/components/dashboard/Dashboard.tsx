@@ -61,9 +61,11 @@ import TetConfetti from "../common/TetConfetti";
 
 // Hooks
 import { useDashboardData } from "./hooks/useDashboardData";
+import { useWorkOrdersRealtime } from "../../hooks/useWorkOrdersRealtime";
 
 const Dashboard: React.FC = () => {
   const { profile, signOut } = useAuth();
+  useWorkOrdersRealtime();
   const navigate = useNavigate();
   const [reportFilter, setReportFilter] = useState<string>("month");
   const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);

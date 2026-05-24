@@ -80,6 +80,7 @@ import { USER_ROLES } from "../../constants";
 
 // Import custom hooks and types
 import { useServiceStats } from "./hooks/useServiceStats";
+import { useWorkOrdersRealtime } from "../../hooks/useWorkOrdersRealtime";
 import {
   StoreSettings,
   WorkOrderStatus,
@@ -111,6 +112,7 @@ const normalizePlateSearch = (value?: string | null) =>
 
 export default function ServiceManager() {
   const queryClient = useQueryClient();
+  useWorkOrdersRealtime();
   const [searchParams, setSearchParams] = useSearchParams();
   const { profile } = useAuth(); // Get user profile early for createCustomerDebtIfNeeded
   const isOwner = profile?.role === USER_ROLES.OWNER; // Check if user is owner

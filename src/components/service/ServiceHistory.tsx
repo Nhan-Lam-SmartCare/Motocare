@@ -1,4 +1,4 @@
-﻿import React, { useState, useMemo, useEffect, useCallback } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { useAppContext } from "../../contexts/AppContext";
 import {
   formatCurrency,
@@ -1871,24 +1871,40 @@ export const ServiceHistory: React.FC<ServiceHistoryProps> = ({
             </div>
           </div>
 
-          {/* Note */}
+          {/* Note & QR Code Tra Cuu */}
           <div
             style={{
               marginTop: "4mm",
+              display: "flex",
+              alignItems: "center",
+              gap: "4mm",
               padding: "3mm",
               backgroundColor: "#fff9e6",
               border: "1px solid #ffd700",
               borderRadius: "2mm",
-              fontSize: "9pt",
-              textAlign: "center",
             }}
           >
-            <p style={{ margin: "0", fontStyle: "italic" }}>
-              Cảm ơn quý khách đã sử dụng dịch vụ!
-            </p>
-            <p style={{ margin: "1mm 0 0 0", fontStyle: "italic" }}>
-              Vui lòng giữ phiếu này để đối chiếu khi nhận xe
-            </p>
+            <div style={{ flex: 1, fontSize: "9pt" }}>
+              <p style={{ margin: "0", fontStyle: "italic", fontWeight: "bold", color: "#b7791f" }}>
+                📱 TRA CỨU TIẾN ĐỘ SỬA CHỮA ONLINE
+              </p>
+              <p style={{ margin: "1mm 0 0 0", fontSize: "8.5pt", color: "#444", lineHeight: "1.3" }}>
+                Quét mã QR bên cạnh để theo dõi trạng thái xe của bạn thời gian thực và xem đầy đủ lịch sử bảo dưỡng trước đó của xe.
+              </p>
+            </div>
+            <div style={{ flexShrink: 0 }}>
+              <img
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(
+                  window.location.origin + "/tra-cuu/" + printOrder.id
+                )}`}
+                alt="QR Tra cuu"
+                style={{
+                  height: "18mm",
+                  width: "18mm",
+                  display: "block",
+                }}
+              />
+            </div>
           </div>
 
           {/* Warranty Policy Disclaimer */}

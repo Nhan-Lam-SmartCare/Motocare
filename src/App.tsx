@@ -40,6 +40,7 @@ const DeliveryManager = lazyImport(() => import("./components/sales/DeliveryMana
 const ProductCatalog = lazyImport(() => import("./pages/shop/ProductCatalog"));
 const PromotionsPage = lazyImport(() => import("./pages/shop/PromotionsPage"));
 const MaintenanceGallery = lazyImport(() => import("./pages/shop/MaintenanceGallery"));
+const CustomerPortal = lazyImport(() => import("./pages/shop/CustomerPortal"));
 
 // Admin pages - For managing shop content
 const PromotionManager = lazyImport(() => import("./pages/admin/PromotionManager"));
@@ -452,6 +453,14 @@ export default function App() {
                           <MaintenanceGallery />
                         </Suspense>
                       </ShopLayout>
+                    }
+                  />
+                  <Route
+                    path="/tra-cuu/:orderId"
+                    element={
+                      <Suspense fallback={<PageLoader />}>
+                        <CustomerPortal />
+                      </Suspense>
                     }
                   />
 

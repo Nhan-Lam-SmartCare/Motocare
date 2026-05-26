@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Giao diện cơ bản cho ứng dụng di động -->
+    <style name="Theme.Motocare" parent="Theme.AppCompat.DayNight.NoActionBar">
+        <!-- Các tông màu đặc trưng -->
+        <item name="colorPrimary">@color/primary_blue</item>
+        <item name="colorPrimaryDark">@color/statusBarColor</item>
+        <item name="colorAccent">@color/gold</item>
+        
+        <!-- Cấu hình màu sắc của Thanh trạng thái (Status Bar) hệ thống -->
+        <item name="android:statusBarColor">@color/statusBarColor</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+</resources>

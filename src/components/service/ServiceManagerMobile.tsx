@@ -807,27 +807,7 @@ export function ServiceManagerMobile({
               )}
             </div>
 
-            {/* FAB (Floating Action Button) */}
-            <button
-              onClick={handleCreateWorkOrder}
-              disabled={isCreating}
-              className="fixed bottom-20 right-4 w-12 h-12 bg-gradient-to-br from-[#009ef7] to-[#0077b6] rounded-full shadow-lg shadow-[#009ef7]/20 flex items-center justify-center hover:scale-105 active:scale-95 transition-all z-[60] border border-white/10"
-              aria-label="Tạo phiếu mới"
-            >
-              <Plus className="w-5 h-5 text-white" />
-            </button>
 
-            {/* Floating Summary Shortcut Button */}
-            {showScrollTop && (
-              <button
-                onClick={scrollToTop}
-                className="fixed bottom-20 left-1/2 -translate-x-1/2 bg-slate-900/90 dark:bg-slate-800/95 backdrop-blur-md text-white font-extrabold px-4.5 py-2.5 rounded-full shadow-2xl hover:scale-105 active:scale-95 transition-all duration-300 z-[60] border border-slate-700/60 dark:border-slate-600/50 flex items-center gap-1.5 text-xs tracking-wide cursor-pointer"
-                aria-label="Xem doanh thu và tiến độ"
-              >
-                <BarChart3 className="w-3.5 h-3.5 text-[#009ef7] animate-pulse" />
-                <span>Xem doanh thu & tiến độ</span>
-              </button>
-            )}
           </>
         )}
 
@@ -885,13 +865,7 @@ export function ServiceManagerMobile({
               )}
             </div>
 
-            {/* FAB for Templates */}
-            <button
-              onClick={onOpenTemplates}
-              className="fixed bottom-20 right-4 w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-700 rounded-full shadow-lg shadow-purple-500/20 flex items-center justify-center hover:scale-105 active:scale-95 transition-all z-[60]"
-            >
-              <Plus className="w-5 h-5 text-white" />
-            </button>
+
           </div>
         )}
 
@@ -938,6 +912,42 @@ export function ServiceManagerMobile({
         }
       `}</style>
       </PullToRefresh>
+
+      {/* FAB and Floating Buttons outside transforms context to avoid browser clip bugs */}
+      {activeTab === "orders" && (
+        <>
+          {/* FAB (Floating Action Button) */}
+          <button
+            onClick={handleCreateWorkOrder}
+            disabled={isCreating}
+            className="fixed bottom-20 right-4 w-12 h-12 bg-gradient-to-br from-[#009ef7] to-[#0077b6] rounded-full shadow-lg shadow-[#009ef7]/20 flex items-center justify-center hover:scale-105 active:scale-95 transition-all z-[60] border border-white/10"
+            aria-label="Tạo phiếu mới"
+          >
+            <Plus className="w-5 h-5 text-white" />
+          </button>
+
+          {/* Floating Summary Shortcut Button */}
+          {showScrollTop && (
+            <button
+              onClick={scrollToTop}
+              className="fixed bottom-20 left-1/2 -translate-x-1/2 bg-slate-900/90 dark:bg-slate-800/95 backdrop-blur-md text-white font-extrabold px-4.5 py-2.5 rounded-full shadow-2xl hover:scale-105 active:scale-95 transition-all duration-300 z-[60] border border-slate-700/60 dark:border-slate-600/50 flex items-center gap-1.5 text-xs tracking-wide cursor-pointer"
+              aria-label="Xem doanh thu và tiến độ"
+            >
+              <BarChart3 className="w-3.5 h-3.5 text-[#009ef7] animate-pulse" />
+              <span>Xem doanh thu & tiến độ</span>
+            </button>
+          )}
+        </>
+      )}
+
+      {activeTab === "templates" && (
+        <button
+          onClick={onOpenTemplates}
+          className="fixed bottom-20 right-4 w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-700 rounded-full shadow-lg shadow-purple-500/20 flex items-center justify-center hover:scale-105 active:scale-95 transition-all z-[60]"
+        >
+          <Plus className="w-5 h-5 text-white" />
+        </button>
+      )}
     </div>
   );
 }

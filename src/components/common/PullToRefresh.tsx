@@ -1,22 +1,29 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useImperativeHandle, forwardRef } from "react";
 import { Loader2 } from "lucide-react";
 
 interface PullToRefreshProps {
     onRefresh: () => Promise<any>;
     children: React.ReactNode;
     disabled?: boolean;
+    onScroll?: (e: React.UIEvent<HTMLDivElement>) => void;
+    className?: string;
 }
 
-export const PullToRefresh: React.FC<PullToRefreshProps> = ({
+export const PullToRefresh = forwardRef<HTMLDivElement, PullToRefreshProps>(({
     onRefresh,
     children,
     disabled = false,
-}) => {
+    onScroll,
+    className = "",
+}, ref) => {
     const [startY, setStartY] = useState(0);
     const [currentY, setCurrentY] = useState(0);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
     const contentRef = useRef<HTMLDivElement>(null);
+
+    // Forward ref directly to containerRef element
+    useImperativeHandle(ref, () => containerRef.current!);
 
     // Threshold values
     const PULL_THRESHOLD = 80; // Distance to pull to trigger refresh
@@ -44,11 +51,6 @@ export const PullToRefresh: React.FC<PullToRefreshProps> = ({
             const dampedDiff = Math.min(diff * resistance, MAX_PULL);
 
             setCurrentY(dampedDiff);
-
-            // Prevent default scrolling behavior when pulling
-            if (e.cancelable) {
-                // e.preventDefault(); // Commenting out as it might interfere with normal scroll in some browsers
-            }
         }
     };
 
@@ -80,10 +82,11 @@ export const PullToRefresh: React.FC<PullToRefreshProps> = ({
     return (
         <div
             ref={containerRef}
-            className="h-full overflow-y-auto overscroll-contain relative"
+            className={`h-full overflow-y-auto overscroll-contain relative ${className}`}
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
+            onScroll={onScroll}
         >
             {/* Loading Indicator */}
             <div
@@ -113,4 +116,6 @@ export const PullToRefresh: React.FC<PullToRefreshProps> = ({
             </div>
         </div>
     );
-};
+});
+
+PullToRefresh.displayName = "PullToRefresh";

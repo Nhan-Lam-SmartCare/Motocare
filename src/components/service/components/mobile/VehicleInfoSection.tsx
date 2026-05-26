@@ -8,6 +8,8 @@ import {
     Wrench,
     X,
     ChevronDown,
+    Edit2,
+    Trash2,
 } from "lucide-react";
 import type { Vehicle } from "../../../../types";
 import { formatKm, type MaintenanceWarning } from "../../../../utils/maintenanceReminder";
@@ -72,6 +74,11 @@ interface VehicleInfoSectionProps {
     maintenanceWarnings: MaintenanceWarning[];
     issueDescription: string;
     setIssueDescription: (desc: string) => void;
+
+    // Edit/Delete Vehicle Props
+    editingVehicle: Vehicle | null;
+    setEditingVehicle: (vehicle: Vehicle | null) => void;
+    onDeleteVehicle: (vehicleId: string) => void;
 }
 
 export const VehicleInfoSection: React.FC<VehicleInfoSectionProps> = ({
@@ -94,6 +101,9 @@ export const VehicleInfoSection: React.FC<VehicleInfoSectionProps> = ({
     maintenanceWarnings,
     issueDescription,
     setIssueDescription,
+    editingVehicle,
+    setEditingVehicle,
+    onDeleteVehicle,
 }) => {
     return (
         <div className="px-4 pb-4 space-y-3">
@@ -146,7 +156,42 @@ export const VehicleInfoSection: React.FC<VehicleInfoSectionProps> = ({
                                                     </div>
                                                 </div>
                                             </div>
-                                            {isActive && <CheckCircle className="w-5 h-5 text-white" />}
+
+                                            <div className="flex items-center gap-1.5 shrink-0">
+                                                {isActive && <CheckCircle className="w-5 h-5 text-white mr-1.5" />}
+                                                <button
+                                                    type="button"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setNewVehiclePlate(vehicle.licensePlate);
+                                                        setNewVehicleName(vehicle.model);
+                                                        setEditingVehicle(vehicle);
+                                                    }}
+                                                    className={`p-2.5 rounded-xl transition-all ${isActive
+                                                        ? "bg-white/20 text-white hover:bg-white/30"
+                                                        : "bg-slate-100 dark:bg-slate-800 text-blue-500 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30"
+                                                        }`}
+                                                    title="Sửa xe"
+                                                    style={{ minWidth: "40px", minHeight: "40px", display: "flex", alignItems: "center", justifyContent: "center" }}
+                                                >
+                                                    <Edit2 className="w-3.5 h-3.5" />
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        onDeleteVehicle(vehicle.id);
+                                                    }}
+                                                    className={`p-2.5 rounded-xl transition-all ${isActive
+                                                        ? "bg-white/20 text-white hover:bg-white/30"
+                                                        : "bg-slate-100 dark:bg-slate-800 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30"
+                                                        }`}
+                                                    title="Xóa xe"
+                                                    style={{ minWidth: "40px", minHeight: "40px", display: "flex", alignItems: "center", justifyContent: "center" }}
+                                                >
+                                                    <Trash2 className="w-3.5 h-3.5" />
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
                                 );
@@ -156,8 +201,13 @@ export const VehicleInfoSection: React.FC<VehicleInfoSectionProps> = ({
 
                     {/* Add New Vehicle Button - Always visible when customer selected */}
                     <button
-                        onClick={() => setShowAddVehicle(true)}
-                        className="w-full py-3.5 border-2 border-dashed border-blue-500/30 hover:border-blue-500/50 hover:bg-blue-500/5 rounded-2xl text-blue-500 hover:text-blue-400 transition-all flex items-center justify-center gap-2 text-xs font-bold"
+                        onClick={() => {
+                            setNewVehiclePlate("");
+                            setNewVehicleName("");
+                            setEditingVehicle(null);
+                            setShowAddVehicle(true);
+                        }}
+                        className="w-full py-4 border-2 border-dashed border-blue-500/30 hover:border-blue-500/50 hover:bg-blue-500/5 rounded-2xl text-blue-500 hover:text-blue-400 transition-all flex items-center justify-center gap-2 text-xs font-bold"
                     >
                         <Plus className="w-4 h-4" />
                         Thêm xe mới
@@ -238,8 +288,8 @@ export const VehicleInfoSection: React.FC<VehicleInfoSectionProps> = ({
                 </div>
             )}
 
-            {/* Add Vehicle Modal */}
-            {showAddVehicle && (
+            {/* Add/Edit Vehicle Modal */}
+            {(showAddVehicle || editingVehicle) && (
                 <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[110] flex items-center justify-center p-4">
                     <div className="w-full max-w-md bg-white dark:bg-[#1e1e2d] rounded-3xl p-5 border border-slate-200 dark:border-slate-700/50 shadow-2xl transition-colors">
                         <div className="flex items-center justify-between mb-5">
@@ -248,12 +298,18 @@ export const VehicleInfoSection: React.FC<VehicleInfoSectionProps> = ({
                                     <Bike className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                                 </div>
                                 <h3 className="text-slate-900 dark:text-white font-bold text-base">
-                                    Thêm xe mới
+                                    {editingVehicle ? "Sửa thông tin xe" : "Thêm xe mới"}
                                 </h3>
                             </div>
                             <button
-                                onClick={() => setShowAddVehicle(false)}
-                                className="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 active:scale-95 transition-all"
+                                onClick={() => {
+                                    setShowAddVehicle(false);
+                                    setEditingVehicle(null);
+                                    setNewVehiclePlate("");
+                                    setNewVehicleName("");
+                                }}
+                                className="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 active:scale-95 transition-all animate-pulse"
+                                style={{ minWidth: "36px", minHeight: "36px" }}
                             >
                                 <X className="w-4 h-4" />
                             </button>
@@ -271,7 +327,7 @@ export const VehicleInfoSection: React.FC<VehicleInfoSectionProps> = ({
                                         setNewVehiclePlate(e.target.value.toUpperCase())
                                     }
                                     placeholder="59G1-123.45"
-                                    className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white text-sm font-bold uppercase focus:border-blue-500 transition-all"
+                                    className="w-full px-4 py-3.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white text-sm font-bold uppercase focus:border-blue-500 transition-all"
                                 />
                             </div>
 
@@ -288,7 +344,7 @@ export const VehicleInfoSection: React.FC<VehicleInfoSectionProps> = ({
                                     }}
                                     onFocus={() => setShowVehicleDropdown(true)}
                                     placeholder="Chọn hoặc nhập dòng xe"
-                                    className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white text-sm focus:border-blue-500 transition-all"
+                                    className="w-full px-4 py-3.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white text-sm focus:border-blue-500 transition-all"
                                 />
 
                                 {/* IMPROVED VEHICLE DROPDOWN - GROUPED BY BRAND */}
@@ -321,6 +377,7 @@ export const VehicleInfoSection: React.FC<VehicleInfoSectionProps> = ({
                                                                             setShowVehicleDropdown(false);
                                                                         }}
                                                                         className="w-full text-left px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 text-xs text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-700/30 last:border-0 transition-colors"
+                                                                        style={{ minHeight: "44px" }}
                                                                     >
                                                                         {model}
                                                                     </button>
@@ -343,16 +400,23 @@ export const VehicleInfoSection: React.FC<VehicleInfoSectionProps> = ({
 
                             <div className="flex gap-3 pt-2">
                                 <button
-                                    onClick={() => setShowAddVehicle(false)}
-                                    className="flex-1 py-3 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 rounded-xl font-bold text-xs active:scale-95 transition-all"
+                                    onClick={() => {
+                                        setShowAddVehicle(false);
+                                        setEditingVehicle(null);
+                                        setNewVehiclePlate("");
+                                        setNewVehicleName("");
+                                    }}
+                                    className="flex-1 py-3.5 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 rounded-xl font-bold text-xs active:scale-95 transition-all"
+                                    style={{ minHeight: "44px" }}
                                 >
                                     Hủy
                                 </button>
                                 <button
                                     onClick={onAddVehicle}
-                                    className="flex-1 py-3 bg-blue-600 text-white rounded-xl font-bold text-xs shadow-lg shadow-blue-500/20 active:scale-95 transition-all"
+                                    className="flex-1 py-3.5 bg-blue-600 text-white rounded-xl font-bold text-xs shadow-lg shadow-blue-500/20 active:scale-95 transition-all"
+                                    style={{ minHeight: "44px" }}
                                 >
-                                    Thêm xe
+                                    {editingVehicle ? "Lưu thay đổi" : "Thêm xe"}
                                 </button>
                             </div>
                         </div>

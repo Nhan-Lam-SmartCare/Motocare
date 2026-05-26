@@ -584,6 +584,7 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
   const [showAddVehicle, setShowAddVehicle] = useState(false);
   const [newVehiclePlate, setNewVehiclePlate] = useState("");
   const [newVehicleName, setNewVehicleName] = useState("");
+  const [editingVehicle, setEditingVehicle] = useState<Vehicle | null>(null);
   const [showAddCustomer, setShowAddCustomer] = useState(false);
   const [newCustomerName, setNewCustomerName] = useState("");
   const [newCustomerPhone, setNewCustomerPhone] = useState("");
@@ -1079,35 +1080,89 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
     setAdditionalServices(additionalServices.filter((s) => s.id !== id));
   };
 
-  const handleAddVehicle = async () => {
-    if (!newVehiclePlate || !newVehicleName) return;
-    const newVehicle: Vehicle = {
-      id: `veh-${Date.now()}`,
-      licensePlate: newVehiclePlate,
-      model: newVehicleName,
+  const handleDeleteVehicle = async (vehicleId: string) => {
+    if (!selectedCustomer) return;
+    if (!confirm("Bạn có chắc chắn muốn xóa xe này khỏi danh sách xe của khách hàng?")) return;
+
+    const updatedVehicles = (selectedCustomer.vehicles || []).filter(
+      (v: Vehicle) => v.id !== vehicleId
+    );
+
+    const updatedCustomer = {
+      ...selectedCustomer,
+      vehicles: updatedVehicles,
     };
 
-    // Add to customer vehicles
-    if (selectedCustomer) {
-      const updatedVehicles = [
-        ...(selectedCustomer.vehicles || []),
-        newVehicle,
-      ];
+    if (upsertCustomer) {
+      await upsertCustomer(updatedCustomer);
+    }
 
-      // Update customer with new vehicle and save to database
-      const updatedCustomer = {
-        ...selectedCustomer,
-        vehicles: updatedVehicles,
+    setSelectedCustomer(updatedCustomer);
+    if (selectedVehicle?.id === vehicleId) {
+      setSelectedVehicle(updatedVehicles[0] || null);
+    }
+    showToast.success("Đã xóa xe khỏi danh sách!");
+  };
+
+  const handleAddVehicle = async () => {
+    if (!newVehiclePlate || !newVehicleName) return;
+
+    if (editingVehicle) {
+      // Edit mode
+      const updatedVehicle: Vehicle = {
+        ...editingVehicle,
+        licensePlate: newVehiclePlate,
+        model: newVehicleName,
       };
 
-      // Save to database via upsertCustomer
-      if (upsertCustomer) {
-        await upsertCustomer(updatedCustomer);
-      }
+      if (selectedCustomer) {
+        const updatedVehicles = (selectedCustomer.vehicles || []).map((v: Vehicle) =>
+          v.id === editingVehicle.id ? updatedVehicle : v
+        );
 
-      // Update local state
-      setSelectedCustomer(updatedCustomer);
-      setSelectedVehicle(newVehicle);
+        const updatedCustomer = {
+          ...selectedCustomer,
+          vehicles: updatedVehicles,
+        };
+
+        if (upsertCustomer) {
+          await upsertCustomer(updatedCustomer);
+        }
+
+        setSelectedCustomer(updatedCustomer);
+        if (selectedVehicle?.id === editingVehicle.id) {
+          setSelectedVehicle(updatedVehicle);
+        }
+        showToast.success("Đã cập nhật thông tin xe!");
+      }
+      setEditingVehicle(null);
+    } else {
+      // Add mode
+      const newVehicle: Vehicle = {
+        id: `veh-${Date.now()}`,
+        licensePlate: newVehiclePlate,
+        model: newVehicleName,
+      };
+
+      if (selectedCustomer) {
+        const updatedVehicles = [
+          ...(selectedCustomer.vehicles || []),
+          newVehicle,
+        ];
+
+        const updatedCustomer = {
+          ...selectedCustomer,
+          vehicles: updatedVehicles,
+        };
+
+        if (upsertCustomer) {
+          await upsertCustomer(updatedCustomer);
+        }
+
+        setSelectedCustomer(updatedCustomer);
+        setSelectedVehicle(newVehicle);
+        showToast.success("Đã thêm xe mới thành công!");
+      }
     }
 
     setNewVehiclePlate("");
@@ -1731,6 +1786,9 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
                 maintenanceWarnings={maintenanceWarnings}
                 issueDescription={issueDescription}
                 setIssueDescription={setIssueDescription}
+                editingVehicle={editingVehicle}
+                setEditingVehicle={setEditingVehicle}
+                onDeleteVehicle={handleDeleteVehicle}
               />
 
               {/* Next Button */}

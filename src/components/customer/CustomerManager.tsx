@@ -1175,7 +1175,10 @@ const CustomerManager: React.FC = () => {
 
       {/* Main Scrollable Area */}
       {activeTab === "customers" ? (
-        <div className="flex-1 overflow-y-auto p-4 custom-scrollbar relative flex flex-col gap-4">
+        <div 
+          className="flex-1 overflow-y-auto p-4 custom-scrollbar relative flex flex-col gap-4"
+          style={{ WebkitOverflowScrolling: "touch" }}
+        >
           {/* 1. TOP KPI & MAINTENANCE ALERTS */}
           <div className="flex flex-col lg:flex-row gap-4 mb-2">
             {/* Left: KPIs */}
@@ -1479,8 +1482,11 @@ const CustomerManager: React.FC = () => {
                         key={customer.id}
                         className="group relative bg-white dark:bg-slate-800 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-xl hover:border-blue-500/30 transition-all duration-300 overflow-hidden flex flex-col"
                       >
-                        {/* Card Header */}
-                        <div className="p-5 flex items-start justify-between gap-3">
+                        {/* Card Header - Clickable for fast editing on mobile */}
+                        <div 
+                          onClick={() => setEditCustomer(customer)}
+                          className="p-5 flex items-start justify-between gap-3 cursor-pointer active:bg-slate-50 dark:active:bg-slate-800/50 transition-colors"
+                        >
                           <div className="flex items-center gap-4 min-w-0">
                             <div
                               className={`flex h-14 w-14 items-center justify-center rounded-2xl text-2xl shadow-inner ${config.avatarClass}`}
@@ -1494,6 +1500,7 @@ const CustomerManager: React.FC = () => {
                               <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500 dark:text-slate-400">
                                 <a
                                   href={`tel:${customer.phone}`}
+                                  onClick={(e) => e.stopPropagation()}
                                   className="flex items-center gap-1 bg-slate-100 dark:bg-slate-700/50 px-2 py-0.5 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 transition-all"
                                 >
                                   <Phone className="w-3 h-3" />
@@ -1594,22 +1601,22 @@ const CustomerManager: React.FC = () => {
                         <div className="mt-auto bg-slate-50/50 dark:bg-slate-900/20 p-4 flex items-center gap-2 border-t border-slate-100 dark:border-slate-700/50">
                           <button
                             onClick={() => setViewHistoryCustomer(customer)}
-                            className="flex-1 flex items-center justify-center gap-2 h-10 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-black text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all active:scale-95 shadow-sm"
+                            className="flex-1 flex items-center justify-center gap-2 h-12 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-black text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all active:scale-95 shadow-sm"
                           >
-                            <History className="w-3.5 h-3.5 text-blue-500" />
+                            <History className="w-4 h-4 text-blue-500" />
                             LỊCH SỬ
                           </button>
                           <button
                             onClick={() => setEditCustomer(customer)}
-                            className="w-10 h-10 flex items-center justify-center rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all active:scale-95 shadow-sm"
+                            className="w-12 h-12 flex items-center justify-center rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all active:scale-95 shadow-sm"
                           >
-                            <Edit2 className="w-4 h-4" />
+                            <Edit2 className="w-5 h-5" />
                           </button>
                           <button
                             onClick={() => handleDelete(customer.id)}
-                            className="w-10 h-10 flex items-center justify-center rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all active:scale-95 shadow-sm"
+                            className="w-12 h-12 flex items-center justify-center rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all active:scale-95 shadow-sm"
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Trash2 className="w-5 h-5" />
                           </button>
                         </div>
                       </div>

@@ -241,13 +241,13 @@ export const CustomerInfoSection: React.FC<CustomerInfoSectionProps> = ({
                                         setEditCustomerPhone(selectedCustomer.phone || "");
                                         setIsEditingCustomer(true);
                                     }}
-                                    className="w-9 h-9 flex items-center justify-center bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-xl active:scale-95 transition-all"
+                                    className="w-11 h-11 flex items-center justify-center bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-xl active:scale-95 transition-all"
                                 >
                                     <Edit2 className="w-4 h-4" />
                                 </button>
                                 <button
                                     onClick={onClearCustomer}
-                                    className="w-9 h-9 flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 rounded-xl active:scale-95 transition-all"
+                                    className="w-11 h-11 flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 rounded-xl active:scale-95 transition-all"
                                 >
                                     <X className="w-4 h-4" />
                                 </button>

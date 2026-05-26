@@ -497,51 +497,53 @@ export function ServiceManagerMobile({
 
   return (
     <div className="md:hidden flex flex-col h-screen bg-slate-50 dark:bg-[#151521]">
-      {/* CONTENT BASED ON TAB */}
-      <div
+      {/* Top Capsule Tabs Navigation - FIXED HEADER */}
+      <div className="px-3 pt-3 pb-1.5 flex gap-2 overflow-x-auto scrollbar-hide bg-slate-50 dark:bg-[#151521] shrink-0 z-10">
+        <button
+          onClick={() => setActiveTab("orders")}
+          className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold transition-all duration-200 border ${
+            activeTab === "orders"
+              ? "bg-[#009ef7] text-white border-[#009ef7] shadow-sm shadow-[#009ef7]/20"
+              : "bg-white dark:bg-[#1e1e2d] text-slate-600 dark:text-gray-400 border-slate-200 dark:border-gray-800 hover:bg-slate-50 dark:hover:bg-slate-800"
+          }`}
+        >
+          <ClipboardList className="w-3.5 h-3.5" />
+          <span>Phiếu sửa</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab("history")}
+          className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold transition-all duration-200 border ${
+            activeTab === "history"
+              ? "bg-[#009ef7] text-white border-[#009ef7] shadow-sm shadow-[#009ef7]/20"
+              : "bg-white dark:bg-[#1e1e2d] text-slate-600 dark:text-gray-400 border-slate-200 dark:border-gray-800 hover:bg-slate-50 dark:hover:bg-slate-800"
+          }`}
+        >
+          <History className="w-3.5 h-3.5" />
+          <span>Lịch sử</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab("templates")}
+          className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold transition-all duration-200 border ${
+            activeTab === "templates"
+              ? "bg-[#009ef7] text-white border-[#009ef7] shadow-sm shadow-[#009ef7]/20"
+              : "bg-white dark:bg-[#1e1e2d] text-slate-600 dark:text-gray-400 border-slate-200 dark:border-gray-800 hover:bg-slate-50 dark:hover:bg-slate-800"
+          }`}
+        >
+          <FileText className="w-3.5 h-3.5" />
+          <span>Mẫu</span>
+        </button>
+      </div>
+
+      {/* CONTENT BASED ON TAB - UNIFIED SCROLL CONTAINER */}
+      <PullToRefresh
         ref={scrollRef}
         onScroll={handleScroll}
-        className="flex-1 overflow-y-auto pb-24 scrollbar-hide"
+        onRefresh={onRefresh || (async () => { })}
+        disabled={activeTab !== "orders" || isLoading}
+        className="flex-1 pb-24 scrollbar-hide"
       >
-        {/* Top Capsule Tabs Navigation */}
-        <div className="px-3 pt-3 pb-1.5 flex gap-2 overflow-x-auto scrollbar-hide bg-slate-50 dark:bg-[#151521] sticky top-0 z-10">
-          <button
-            onClick={() => setActiveTab("orders")}
-            className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold transition-all duration-200 border ${
-              activeTab === "orders"
-                ? "bg-[#009ef7] text-white border-[#009ef7] shadow-sm shadow-[#009ef7]/20"
-                : "bg-white dark:bg-[#1e1e2d] text-slate-600 dark:text-gray-400 border-slate-200 dark:border-gray-800 hover:bg-slate-50 dark:hover:bg-slate-800"
-            }`}
-          >
-            <ClipboardList className="w-3.5 h-3.5" />
-            <span>Phiếu sửa</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab("history")}
-            className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold transition-all duration-200 border ${
-              activeTab === "history"
-                ? "bg-[#009ef7] text-white border-[#009ef7] shadow-sm shadow-[#009ef7]/20"
-                : "bg-white dark:bg-[#1e1e2d] text-slate-600 dark:text-gray-400 border-slate-200 dark:border-gray-800 hover:bg-slate-50 dark:hover:bg-slate-800"
-            }`}
-          >
-            <History className="w-3.5 h-3.5" />
-            <span>Lịch sử</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab("templates")}
-            className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold transition-all duration-200 border ${
-              activeTab === "templates"
-                ? "bg-[#009ef7] text-white border-[#009ef7] shadow-sm shadow-[#009ef7]/20"
-                : "bg-white dark:bg-[#1e1e2d] text-slate-600 dark:text-gray-400 border-slate-200 dark:border-gray-800 hover:bg-slate-50 dark:hover:bg-slate-800"
-            }`}
-          >
-            <FileText className="w-3.5 h-3.5" />
-            <span>Mẫu</span>
-          </button>
-        </div>
-
         {activeTab === "orders" && (
           <>
             {/* KPI CARDS */}
@@ -739,73 +741,71 @@ export function ServiceManagerMobile({
             </div>
 
             {/* DANH SÁCH PHIẾU SỬA CHỮA */}
-            <PullToRefresh onRefresh={onRefresh || (async () => { })}>
-              <div className="space-y-2.5 px-3 pt-3 pb-4 min-h-[50vh]">
-                {isLoading ? (
-                  Array.from({ length: 4 }).map((_, i) => (
-                    <div key={i} className="bg-white dark:bg-[#1e1e2d] rounded-xl border border-slate-200 dark:border-gray-800 p-4 space-y-3">
-                      <div className="flex justify-between items-start mb-2">
-                        <div className="flex gap-2">
-                          <Skeleton width={60} height={20} className="bg-slate-700/50" />
-                          <Skeleton width={80} height={20} className="bg-slate-700/50" />
-                        </div>
-                        <Skeleton width={70} height={24} className="rounded-full bg-slate-700/50" />
+            <div className="space-y-2.5 px-3 pt-3 pb-4 min-h-[50vh]">
+              {isLoading ? (
+                Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="bg-white dark:bg-[#1e1e2d] rounded-xl border border-slate-200 dark:border-gray-800 p-4 space-y-3">
+                    <div className="flex justify-between items-start mb-2">
+                      <div className="flex gap-2">
+                        <Skeleton width={60} height={20} className="bg-slate-700/50" />
+                        <Skeleton width={80} height={20} className="bg-slate-700/50" />
                       </div>
-                      <div className="space-y-2 mb-3">
-                        <div className="flex items-center gap-2">
-                          <Skeleton variant="circle" width={16} height={16} className="bg-slate-700/50" />
-                          <Skeleton width="60%" height={16} className="bg-slate-300 dark:bg-slate-700/50" />
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Skeleton variant="circle" width={16} height={16} className="bg-slate-700/50" />
-                          <Skeleton width="40%" height={16} className="bg-slate-700/50" />
-                        </div>
+                      <Skeleton width={70} height={24} className="rounded-full bg-slate-700/50" />
+                    </div>
+                    <div className="space-y-2 mb-3">
+                      <div className="flex items-center gap-2">
+                        <Skeleton variant="circle" width={16} height={16} className="bg-slate-700/50" />
+                        <Skeleton width="60%" height={16} className="bg-slate-300 dark:bg-slate-700/50" />
                       </div>
-                      <div className="flex justify-between pt-3 border-t border-slate-200 dark:border-gray-800 items-end">
-                        <div className="flex gap-2">
-                          <Skeleton width={24} height={24} className="rounded-md bg-slate-700/50" />
-                          <Skeleton width={24} height={24} className="rounded-md bg-slate-700/50" />
-                        </div>
-                        <Skeleton width={90} height={20} className="bg-slate-700/50" />
+                      <div className="flex items-center gap-2">
+                        <Skeleton variant="circle" width={16} height={16} className="bg-slate-700/50" />
+                        <Skeleton width="40%" height={16} className="bg-slate-700/50" />
                       </div>
                     </div>
-                  ))
-                ) : filteredWorkOrders.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-full text-center px-6 py-12">
-                    <div className="w-24 h-24 mb-4 flex items-center justify-center text-slate-300 dark:text-gray-600">
-                      <ClipboardList className="w-16 h-16 stroke-[1.2]" />
+                    <div className="flex justify-between pt-3 border-t border-slate-200 dark:border-gray-800 items-end">
+                      <div className="flex gap-2">
+                        <Skeleton width={24} height={24} className="rounded-md bg-slate-700/50" />
+                        <Skeleton width={24} height={24} className="rounded-md bg-slate-700/50" />
+                      </div>
+                      <Skeleton width={90} height={20} className="bg-slate-700/50" />
                     </div>
-                    <h3 className="text-base font-bold text-slate-700 dark:text-gray-300 mb-1">
-                      Chưa có phiếu sửa chữa nào!
-                    </h3>
-                    <p className="text-xs text-slate-500 dark:text-gray-500 mb-5">
-                      Hãy tạo phiếu đầu tiên để quản lý dịch vụ sửa chữa
-                    </p>
-                    <button
-                      onClick={handleCreateWorkOrder}
-                      disabled={isCreating}
-                      className="px-5 py-2.5 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl text-xs font-bold hover:from-blue-600 hover:to-blue-700 transition-all shadow-md shadow-blue-500/10 disabled:opacity-50"
-                    >
-                      + Tạo phiếu mới
-                    </button>
                   </div>
-                ) : (
-                  filteredWorkOrders.map((workOrder) => (
-                    <WorkOrderCard
-                      key={workOrder.id}
-                      workOrder={workOrder}
-                      onEdit={onEditWorkOrder}
-                      onCall={onCallCustomer}
-                      onPrint={onPrintWorkOrder}
-                      onDelete={onDeleteWorkOrder}
-                      canDelete={canDeleteWorkOrder}
-                      canViewFinancials={canViewFinancials}
-                      showFinancials={showFinancials}
-                    />
-                  ))
-                )}
-              </div>
-            </PullToRefresh>
+                ))
+              ) : filteredWorkOrders.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-full text-center px-6 py-12">
+                  <div className="w-24 h-24 mb-4 flex items-center justify-center text-slate-300 dark:text-gray-600">
+                    <ClipboardList className="w-16 h-16 stroke-[1.2]" />
+                  </div>
+                  <h3 className="text-base font-bold text-slate-700 dark:text-gray-300 mb-1">
+                    Chưa có phiếu sửa chữa nào!
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-gray-500 mb-5">
+                    Hãy tạo phiếu đầu tiên để quản lý dịch vụ sửa chữa
+                  </p>
+                  <button
+                    onClick={handleCreateWorkOrder}
+                    disabled={isCreating}
+                    className="px-5 py-2.5 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl text-xs font-bold hover:from-blue-600 hover:to-blue-700 transition-all shadow-md shadow-blue-500/10 disabled:opacity-50"
+                  >
+                    + Tạo phiếu mới
+                  </button>
+                </div>
+              ) : (
+                filteredWorkOrders.map((workOrder) => (
+                  <WorkOrderCard
+                    key={workOrder.id}
+                    workOrder={workOrder}
+                    onEdit={onEditWorkOrder}
+                    onCall={onCallCustomer}
+                    onPrint={onPrintWorkOrder}
+                    onDelete={onDeleteWorkOrder}
+                    canDelete={canDeleteWorkOrder}
+                    canViewFinancials={canViewFinancials}
+                    showFinancials={showFinancials}
+                  />
+                ))
+              )}
+            </div>
 
             {/* FAB (Floating Action Button) */}
             <button
@@ -937,7 +937,7 @@ export function ServiceManagerMobile({
           animation: slide-up 0.3s ease-out;
         }
       `}</style>
-      </div>
+      </PullToRefresh>
     </div>
   );
 }

@@ -63,7 +63,7 @@ const PrintOrderPreviewModal: React.FC<PrintOrderPreviewModalProps> = ({
             accountName: storeSettings.bank_account_holder,
             amount: amount,
             description: description,
-            template: 'compact2',
+            template: 'qr_only',
         });
     }, [isOpen, printOrder, storeSettings]);
 
@@ -844,56 +844,85 @@ const PrintOrderPreviewModal: React.FC<PrintOrderPreviewModalProps> = ({
                                 </table>
                             </div>
 
-                            {/* Dynamic QR Payment Code */}
-                            {dynamicQRUrl && (
+                            {/* Dynamic QR Payment Code (Horizontal) */}
+                            {(dynamicQRUrl || storeSettings?.bank_qr_url) && (
                                 <div
                                     style={{
                                         marginTop: "6mm",
-                                        padding: "4mm",
+                                        padding: "3.5mm",
                                         border: "2px solid #2563eb",
                                         borderRadius: "4mm",
                                         backgroundColor: "#eff6ff",
-                                        textAlign: "center",
+                                        color: "#000",
                                     }}
                                 >
                                     <p
                                         style={{
-                                            margin: "0 0 3mm 0",
-                                            fontSize: "11pt",
+                                            margin: "0 0 2.5mm 0",
+                                            fontSize: "10.5pt",
                                             fontWeight: "bold",
                                             color: "#2563eb",
+                                            textAlign: "center",
                                         }}
                                     >
                                         📱 QUÉT MÃ ĐỂ THANH TOÁN
                                     </p>
-                                    <img
-                                        src={dynamicQRUrl}
-                                        alt="QR Payment"
+                                    <div
                                         style={{
-                                            width: "40mm",
-                                            height: "40mm",
-                                            margin: "0 auto",
-                                            display: "block",
-                                        }}
-                                    />
-                                    <p
-                                        style={{
-                                            margin: "3mm 0 0 0",
-                                            fontSize: "9pt",
-                                            color: "#666",
+                                            display: "flex",
+                                            alignItems: "center",
+                                            justifyContent: "space-between",
+                                            gap: "3mm",
                                         }}
                                     >
-                                        Số tiền: <strong>{formatCurrency(printOrder.total)}</strong>
-                                    </p>
-                                    <p
-                                        style={{
-                                            margin: "1mm 0 0 0",
-                                            fontSize: "8pt",
-                                            color: "#666",
-                                        }}
-                                    >
-                                        {storeSettings?.bank_name} - {storeSettings?.bank_account_number}
-                                    </p>
+                                        {/* Left Column: Bank Details */}
+                                        <div
+                                            style={{
+                                                flex: 1,
+                                                textAlign: "left",
+                                                fontSize: "8.5pt",
+                                                color: "#000",
+                                                lineHeight: "1.35",
+                                            }}
+                                        >
+                                            <div style={{ fontSize: "9.5pt", color: "#666", marginBottom: "1mm" }}>
+                                                Số tiền: <strong style={{ color: "#2563eb", fontSize: "10.5pt" }}>{formatCurrency(printOrder.total || 0)}</strong>
+                                            </div>
+                                            <div>
+                                                Ngân hàng: <strong>{storeSettings?.bank_name}</strong>
+                                            </div>
+                                            <div>
+                                                STK: <strong style={{ color: "#2563eb", fontSize: "9.5pt" }}>{storeSettings?.bank_account_number}</strong>
+                                            </div>
+                                            {storeSettings?.bank_account_holder && (
+                                                <div style={{ fontSize: "7.5pt", color: "#555" }}>
+                                                    Chủ TK: {storeSettings.bank_account_holder}
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* Right Column: QR Code */}
+                                        <div
+                                            style={{
+                                                flexShrink: 0,
+                                                padding: "1mm",
+                                                backgroundColor: "#fff",
+                                                borderRadius: "1.5mm",
+                                                border: "1px solid #bfdbfe",
+                                            }}
+                                        >
+                                            <img
+                                                src={dynamicQRUrl || storeSettings?.bank_qr_url}
+                                                alt="QR Payment"
+                                                style={{
+                                                    width: "25mm",
+                                                    height: "25mm",
+                                                    display: "block",
+                                                    objectFit: "contain",
+                                                }}
+                                            />
+                                        </div>
+                                    </div>
                                 </div>
                             )}
 

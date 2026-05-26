@@ -780,7 +780,7 @@ export default function ServiceManager() {
       accountName: storeSettings.bank_account_holder,
       amount: amount,
       description: description,
-      template: 'compact2',
+      template: 'qr_only',
     });
 
     return qrUrl;
@@ -2341,89 +2341,84 @@ export default function ServiceManager() {
                       )}
                   </div>
 
-                  {/* Bank Info Section */}
-                  {storeSettings?.bank_name && (
+                  {/* Dynamic QR Payment Code - Mobile Viewport Optimized (Horizontal) */}
+                  {(printQRUrl || storeSettings?.bank_qr_url) && (
                     <div
                       style={{
-                        marginTop: "3mm",
-                        border: "1px solid #ddd",
-                        padding: "2mm",
-                        borderRadius: "2mm",
-                        backgroundColor: "#f0f9ff",
-                        fontSize: "9pt",
+                        marginTop: "4mm",
+                        padding: "3.5mm",
+                        border: "2px solid #2563eb",
+                        borderRadius: "4mm",
+                        backgroundColor: "#eff6ff",
+                        color: "#000",
                       }}
                     >
+                      <p
+                        style={{
+                          margin: "0 0 2.5mm 0",
+                          fontSize: "10.5pt",
+                          fontWeight: "bold",
+                          color: "#2563eb",
+                          textAlign: "center",
+                        }}
+                      >
+                        📱 QUÉT MÃ ĐỂ THANH TOÁN
+                      </p>
                       <div
                         style={{
                           display: "flex",
                           alignItems: "center",
+                          justifyContent: "space-between",
                           gap: "3mm",
                         }}
                       >
-                        <div style={{ flex: 1 }}>
-                          <div
-                            style={{
-                              fontWeight: "bold",
-                              marginBottom: "1mm",
-                              color: "#1e40af",
-                            }}
-                          >
-                            🏦 Thông tin thanh toán
+                        {/* Left Column: Bank Details */}
+                        <div
+                          style={{
+                            flex: 1,
+                            textAlign: "left",
+                            fontSize: "8.5pt",
+                            color: "#000",
+                            lineHeight: "1.35",
+                          }}
+                        >
+                          <div style={{ fontSize: "9.5pt", color: "#666", marginBottom: "1mm" }}>
+                            Số tiền: <strong style={{ color: "#2563eb", fontSize: "10.5pt" }}>{formatCurrency(printOrder.total || 0)}</strong>
                           </div>
-                          <div style={{ color: "#000" }}>
-                            Ngân hàng: {storeSettings.bank_name}
+                          <div>
+                            Ngân hàng: <strong>{storeSettings?.bank_name}</strong>
                           </div>
-                          {storeSettings.bank_account_number && (
-                            <div style={{ color: "#000" }}>
-                              STK:{" "}
-                              <strong>
-                                {storeSettings.bank_account_number}
-                              </strong>
-                            </div>
-                          )}
-                          {storeSettings.bank_account_holder && (
-                            <div style={{ color: "#000" }}>
+                          <div>
+                            STK: <strong style={{ color: "#2563eb", fontSize: "9.5pt" }}>{storeSettings?.bank_account_number}</strong>
+                          </div>
+                          {storeSettings?.bank_account_holder && (
+                            <div style={{ fontSize: "7.5pt", color: "#555" }}>
                               Chủ TK: {storeSettings.bank_account_holder}
                             </div>
                           )}
-                          {storeSettings.bank_branch && (
-                            <div style={{ color: "#666", fontSize: "8pt" }}>
-                              Chi nhánh: {storeSettings.bank_branch}
-                            </div>
-                          )}
                         </div>
-                        {/* QR Code - Dynamic */}
-                        {printQRUrl ? (
-                          <div style={{ flexShrink: 0, textAlign: 'center' }}>
-                            <img
-                              src={printQRUrl}
-                              alt="QR Banking"
-                              style={{
-                                height: "18mm",
-                                width: "18mm",
-                                objectFit: "contain",
-                              }}
-                            />
-                            <div style={{ fontSize: '6pt', color: '#666', marginTop: '1mm' }}>
-                              Quét mã thanh toán
-                            </div>
-                          </div>
-                        ) : storeSettings.bank_qr_url ? (
-                          <div style={{ flexShrink: 0, textAlign: 'center' }}>
-                            <img
-                              src={storeSettings.bank_qr_url}
-                              alt="QR Banking"
-                              style={{
-                                height: "18mm",
-                                width: "18mm",
-                                objectFit: "contain",
-                              }}
-                            />
-                            <div style={{ fontSize: '6pt', color: '#ff6b6b', marginTop: '1mm' }}>
-                              QR tĩnh (không có số tiền)
-                            </div>
-                          </div>
-                        ) : null}
+
+                        {/* Right Column: QR Code */}
+                        <div
+                          style={{
+                            flexShrink: 0,
+                            padding: "1mm",
+                            backgroundColor: "#fff",
+                            borderRadius: "1.5mm",
+                            border: "1px solid #bfdbfe",
+                          }}
+                        >
+                          <img
+                            src={printQRUrl || storeSettings?.bank_qr_url}
+                            alt="QR Payment"
+                            style={{
+                              width: "25mm",
+                              height: "25mm",
+                              display: "block",
+                              objectFit: "contain",
+                            }}
+                          />
+                        </div>
                       </div>
                     </div>
                   )}

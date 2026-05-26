@@ -1144,8 +1144,9 @@ export const ServiceHistory: React.FC<ServiceHistoryProps> = ({
           <div
             style={{
               display: "flex",
-              alignItems: "flex-start",
-              gap: "4mm",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "6mm",
               borderBottom: "2px solid #3b82f6",
               paddingBottom: "3mm",
               marginBottom: "4mm",
@@ -1166,7 +1167,7 @@ export const ServiceHistory: React.FC<ServiceHistoryProps> = ({
             )}
 
             {/* Center: Store Info */}
-            <div style={{ fontSize: "8.5pt", lineHeight: "1.4", flex: 1 }}>
+            <div style={{ fontSize: "8.5pt", lineHeight: "1.4" }}>
               <div
                 style={{
                   fontWeight: "bold",
@@ -1240,94 +1241,7 @@ export const ServiceHistory: React.FC<ServiceHistoryProps> = ({
               )}
             </div>
 
-            {/* Right: Bank Info & QR */}
-            <div
-              style={{
-                fontSize: "8pt",
-                lineHeight: "1.4",
-                textAlign: "right",
-                flexShrink: 0,
-              }}
-            >
-              {storeSettings?.bank_name && (
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "flex-end",
-                    gap: "3mm",
-                    border: "1px solid #3b82f6",
-                    borderRadius: "2mm",
-                    padding: "2mm",
-                    backgroundColor: "#eff6ff",
-                  }}
-                >
-                  {/* Bank Info */}
-                  <div style={{ textAlign: "right", flex: 1 }}>
-                    <div
-                      style={{
-                        fontWeight: "bold",
-                        marginBottom: "1mm",
-                        color: "#000",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "flex-end",
-                        gap: "1mm",
-                      }}
-                    >
-                      <svg
-                        style={{ width: "10px", height: "10px", flexShrink: 0 }}
-                        viewBox="0 0 24 24"
-                        fill="#0891b2"
-                      >
-                        <path d="M4 10h3v7H4zm6.5 0h3v7h-3zM2 19h20v3H2zm15-9h3v7h-3zm-5-9L2 6v2h20V6z" />
-                      </svg>
-                      <span>{storeSettings.bank_name}</span>
-                    </div>
-                    {storeSettings.bank_account_number && (
-                      <div
-                        style={{
-                          color: "#000",
-                          whiteSpace: "normal",
-                          overflowWrap: "anywhere",
-                          wordBreak: "break-word",
-                        }}
-                      >
-                        STK: {storeSettings.bank_account_number}
-                      </div>
-                    )}
-                    {storeSettings.bank_account_holder && (
-                      <div
-                        style={{
-                          color: "#000",
-                          fontSize: "7.5pt",
-                          whiteSpace: "normal",
-                          overflowWrap: "anywhere",
-                          wordBreak: "break-word",
-                          lineHeight: "1.25",
-                        }}
-                      >
-                        {storeSettings.bank_account_holder}
-                      </div>
-                    )}
-                  </div>
-                  {/* QR Code - Larger */}
-                  {storeSettings.bank_qr_url && (
-                    <div style={{ flexShrink: 0 }}>
-                      <img
-                        src={storeSettings.bank_qr_url}
-                        alt="QR Banking"
-                        style={{
-                          height: "18mm",
-                          width: "18mm",
-                          objectFit: "contain",
-                        }}
-                      />
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
+
           </div>
 
           {/* Title & Meta */}
@@ -1440,25 +1354,27 @@ export const ServiceHistory: React.FC<ServiceHistoryProps> = ({
           </div>
 
           {/* Issue Description */}
-          <div
-            style={{
-              border: "1px solid #ddd",
-              padding: "4mm",
-              marginBottom: "4mm",
-              borderRadius: "2mm",
-            }}
-          >
-            <div style={{ display: "flex", gap: "3mm" }}>
-              <div
-                style={{ fontWeight: "bold", minWidth: "20%", flexShrink: 0 }}
-              >
-                Mô tả sự cố:
-              </div>
-              <div style={{ flex: 1, whiteSpace: "pre-wrap" }}>
-                {printOrder.issueDescription || "Không có mô tả"}
+          {printOrder.issueDescription && printOrder.issueDescription.trim() !== "" && (
+            <div
+              style={{
+                border: "1px solid #ddd",
+                padding: "4mm",
+                marginBottom: "4mm",
+                borderRadius: "2mm",
+              }}
+            >
+              <div style={{ display: "flex", gap: "3mm" }}>
+                <div
+                  style={{ fontWeight: "bold", minWidth: "20%", flexShrink: 0 }}
+                >
+                  Mô tả sự cố:
+                </div>
+                <div style={{ flex: 1, whiteSpace: "pre-wrap" }}>
+                  {printOrder.issueDescription}
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
           {/* Parts and Services Table */}
           {((printOrder.partsUsed && printOrder.partsUsed.length > 0) ||
@@ -1755,7 +1671,7 @@ export const ServiceHistory: React.FC<ServiceHistoryProps> = ({
                       color: "#2563eb",
                     }}
                   >
-                    {formatCurrency(printOrder.total)} ₫
+                    {formatCurrency(printOrder.total)}
                   </td>
                 </tr>
                 {printOrder.totalPaid != null && printOrder.totalPaid > 0 && (

@@ -261,11 +261,12 @@ const PrintOrderPreviewModal: React.FC<PrintOrderPreviewModalProps> = ({
                             <div
                                 style={{
                                     display: "flex",
-                                    alignItems: "flex-start",
-                                    gap: "1.5mm",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    gap: "4mm",
                                     marginBottom: "3mm",
                                     borderBottom: "2px solid #3b82f6",
-                                    paddingBottom: "2mm",
+                                    paddingBottom: "2.5mm",
                                 }}
                             >
                                 {/* Left: Logo */}
@@ -284,7 +285,7 @@ const PrintOrderPreviewModal: React.FC<PrintOrderPreviewModalProps> = ({
 
                                 {/* Center: Store Info */}
                                 <div
-                                    style={{ fontSize: "8pt", lineHeight: "1.3", flex: 1 }}
+                                    style={{ fontSize: "8pt", lineHeight: "1.3" }}
                                 >
                                     <div
                                         style={{
@@ -366,120 +367,7 @@ const PrintOrderPreviewModal: React.FC<PrintOrderPreviewModalProps> = ({
                                     )}
                                 </div>
 
-                                {/* Right: Bank Info & QR */}
-                                <div
-                                    style={{
-                                        fontSize: "7.5pt",
-                                        lineHeight: "1.3",
-                                        textAlign: "right",
-                                        maxWidth: "38mm",
-                                        flexShrink: 0,
-                                    }}
-                                >
-                                    {storeSettings?.bank_name && (
-                                        <div
-                                            style={{
-                                                display: "flex",
-                                                alignItems: "center",
-                                                justifyContent: "flex-end",
-                                                gap: "1mm",
-                                                border: "1px solid #3b82f6",
-                                                borderRadius: "1.5mm",
-                                                padding: "1mm",
-                                                backgroundColor: "#eff6ff",
-                                            }}
-                                        >
-                                            {/* Bank Info */}
-                                            <div style={{ textAlign: "right", flex: 1, minWidth: 0 }}>
-                                                <div
-                                                    style={{
-                                                        fontWeight: "bold",
-                                                        marginBottom: "0.5mm",
-                                                        color: "#000",
-                                                        display: "flex",
-                                                        alignItems: "center",
-                                                        justifyContent: "flex-end",
-                                                        gap: "0.5mm",
-                                                        fontSize: "7pt",
-                                                    }}
-                                                >
-                                                    <svg
-                                                        style={{
-                                                            width: "8px",
-                                                            height: "8px",
-                                                            flexShrink: 0,
-                                                        }}
-                                                        viewBox="0 0 24 24"
-                                                        fill="#0891b2"
-                                                    >
-                                                        <path d="M4 10h3v7H4zm6.5 0h3v7h-3zM2 19h20v3H2zm15-9h3v7h-3zm-5-9L2 6v2h20V6z" />
-                                                    </svg>
-                                                    <span>{storeSettings.bank_name}</span>
-                                                </div>
-                                                {storeSettings.bank_account_number && (
-                                                    <div
-                                                        style={{
-                                                            color: "#000",
-                                                            fontSize: "7pt",
-                                                            whiteSpace: "normal",
-                                                            overflowWrap: "anywhere",
-                                                            wordBreak: "break-word",
-                                                        }}
-                                                    >
-                                                        STK: {storeSettings.bank_account_number}
-                                                    </div>
-                                                )}
-                                                {storeSettings.bank_account_holder && (
-                                                    <div
-                                                        style={{
-                                                            color: "#000",
-                                                            fontSize: "6.5pt",
-                                                            whiteSpace: "normal",
-                                                            overflowWrap: "anywhere",
-                                                            wordBreak: "break-word",
-                                                            lineHeight: "1.25",
-                                                            maxWidth: "38mm",
-                                                        }}
-                                                    >
-                                                        {storeSettings.bank_account_holder}
-                                                    </div>
-                                                )}
-                                            </div>
-                                            {/* QR Code - Dynamic with amount & description */}
-                                            {dynamicQRUrl ? (
-                                                <div style={{ flexShrink: 0, textAlign: 'center' }}>
-                                                    <img
-                                                        src={dynamicQRUrl}
-                                                        alt="QR Banking"
-                                                        style={{
-                                                            height: "18mm",
-                                                            width: "18mm",
-                                                            objectFit: "contain",
-                                                        }}
-                                                    />
-                                                    <div style={{ fontSize: '6pt', color: '#666', marginTop: '1mm' }}>
-                                                        Quét mã thanh toán
-                                                    </div>
-                                                </div>
-                                            ) : storeSettings.bank_qr_url ? (
-                                                <div style={{ flexShrink: 0, textAlign: 'center' }}>
-                                                    <img
-                                                        src={storeSettings.bank_qr_url}
-                                                        alt="QR Banking"
-                                                        style={{
-                                                            height: "18mm",
-                                                            width: "18mm",
-                                                            objectFit: "contain",
-                                                        }}
-                                                    />
-                                                    <div style={{ fontSize: '6pt', color: '#ff6b6b', marginTop: '1mm' }}>
-                                                        QR tĩnh (không có số tiền)
-                                                    </div>
-                                                </div>
-                                            ) : null}
-                                        </div>
-                                    )}
-                                </div>
+
                             </div>
 
                             {/* Title & Meta */}
@@ -565,30 +453,32 @@ const PrintOrderPreviewModal: React.FC<PrintOrderPreviewModalProps> = ({
                             </div>
 
                             {/* Issue Description */}
-                            <div
-                                style={{
-                                    border: "1px solid #ddd",
-                                    padding: "4mm",
-                                    marginBottom: "4mm",
-                                    borderRadius: "2mm",
-                                    color: "#000",
-                                }}
-                            >
-                                <div style={{ display: "flex", gap: "3mm" }}>
-                                    <div
-                                        style={{
-                                            fontWeight: "bold",
-                                            minWidth: "20%",
-                                            flexShrink: 0,
-                                        }}
-                                    >
-                                        Mô tả sự cố:
-                                    </div>
-                                    <div style={{ flex: 1, whiteSpace: "pre-wrap" }}>
-                                        {printOrder.issueDescription || "Không có mô tả"}
+                            {printOrder.issueDescription && printOrder.issueDescription.trim() !== "" && (
+                                <div
+                                    style={{
+                                        border: "1px solid #ddd",
+                                        padding: "4mm",
+                                        marginBottom: "4mm",
+                                        borderRadius: "2mm",
+                                        color: "#000",
+                                    }}
+                                >
+                                    <div style={{ display: "flex", gap: "3mm" }}>
+                                        <div
+                                            style={{
+                                                fontWeight: "bold",
+                                                minWidth: "20%",
+                                                flexShrink: 0,
+                                            }}
+                                        >
+                                            Mô tả sự cố:
+                                        </div>
+                                        <div style={{ flex: 1, whiteSpace: "pre-wrap" }}>
+                                            {printOrder.issueDescription}
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
+                            )}
 
                             {/* Parts and Services Table */}
                             {((printOrder.partsUsed && printOrder.partsUsed.length > 0) ||
@@ -871,7 +761,7 @@ const PrintOrderPreviewModal: React.FC<PrintOrderPreviewModalProps> = ({
                                                     color: "#2563eb",
                                                 }}
                                             >
-                                                {formatCurrency(printOrder.total)} ₫
+                                                {formatCurrency(printOrder.total)}
                                             </td>
                                         </tr>
                                         {printOrder.totalPaid != null &&
@@ -993,7 +883,7 @@ const PrintOrderPreviewModal: React.FC<PrintOrderPreviewModalProps> = ({
                                             color: "#666",
                                         }}
                                     >
-                                        Số tiền: <strong>{formatCurrency(printOrder.total)} ₫</strong>
+                                        Số tiền: <strong>{formatCurrency(printOrder.total)}</strong>
                                     </p>
                                     <p
                                         style={{

@@ -20,6 +20,9 @@ export interface StoreSettings {
     bank_account_holder?: string;
     bank_branch?: string;
     work_order_prefix?: string;
+    print_paper_size?: "K80" | "A5";
+    print_show_logo?: boolean;
+    print_greeting?: string;
 }
 
 // ============================================

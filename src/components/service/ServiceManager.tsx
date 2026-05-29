@@ -4194,56 +4194,85 @@ export default function ServiceManager() {
                     </table>
                   </div>
 
-                  {/* Dynamic QR Payment Code */}
+                  {/* Dynamic QR Payment Code - Horizontal Layout */}
                   {printQRUrl && (
                     <div
                       style={{
-                        marginTop: "6mm",
-                        padding: "4mm",
+                        marginTop: "4mm",
+                        padding: "3.5mm",
                         border: "2px solid #2563eb",
                         borderRadius: "4mm",
                         backgroundColor: "#eff6ff",
-                        textAlign: "center",
+                        color: "#000",
                       }}
                     >
                       <p
                         style={{
-                          margin: "0 0 3mm 0",
-                          fontSize: "11pt",
+                          margin: "0 0 2.5mm 0",
+                          fontSize: "10.5pt",
                           fontWeight: "bold",
                           color: "#2563eb",
+                          textAlign: "center",
                         }}
                       >
                         📱 QUÉT MÃ ĐỂ THANH TOÁN
                       </p>
-                      <img
-                        src={printQRUrl}
-                        alt="QR Payment"
+                      <div
                         style={{
-                          width: "40mm",
-                          height: "40mm",
-                          margin: "0 auto",
-                          display: "block",
-                        }}
-                      />
-                      <p
-                        style={{
-                          margin: "3mm 0 0 0",
-                          fontSize: "9pt",
-                          color: "#666",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          gap: "3mm",
                         }}
                       >
-                        Số tiền: <strong>{formatCurrency(printOrder.total)}</strong>
-                      </p>
-                      <p
-                        style={{
-                          margin: "1mm 0 0 0",
-                          fontSize: "8pt",
-                          color: "#666",
-                        }}
-                      >
-                        {storeSettings?.bank_name} - {storeSettings?.bank_account_number}
-                      </p>
+                        {/* Left Column: Bank Details */}
+                        <div
+                          style={{
+                            flex: 1,
+                            textAlign: "left",
+                            fontSize: "8.5pt",
+                            color: "#000",
+                            lineHeight: "1.35",
+                          }}
+                        >
+                          <div style={{ fontSize: "9.5pt", color: "#666", marginBottom: "1mm" }}>
+                            Số tiền: <strong style={{ color: "#2563eb", fontSize: "10.5pt" }}>{formatCurrency(printOrder.total || 0)}</strong>
+                          </div>
+                          <div>
+                            Ngân hàng: <strong>{storeSettings?.bank_name}</strong>
+                          </div>
+                          <div>
+                            STK: <strong style={{ color: "#2563eb", fontSize: "9.5pt" }}>{storeSettings?.bank_account_number}</strong>
+                          </div>
+                          {storeSettings?.bank_account_holder && (
+                            <div style={{ fontSize: "7.5pt", color: "#555", textTransform: "uppercase" }}>
+                              Chủ TK: {storeSettings.bank_account_holder}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Right Column: QR Code */}
+                        <div
+                          style={{
+                            flexShrink: 0,
+                            padding: "1mm",
+                            backgroundColor: "#fff",
+                            borderRadius: "1.5mm",
+                            border: "1px solid #bfdbfe",
+                          }}
+                        >
+                          <img
+                            src={printQRUrl}
+                            alt="QR Payment"
+                            style={{
+                              width: "30mm",
+                              height: "30mm",
+                              display: "block",
+                              objectFit: "contain",
+                            }}
+                          />
+                        </div>
+                      </div>
                     </div>
                   )}
 
@@ -4390,11 +4419,11 @@ export default function ServiceManager() {
           id="work-order-receipt"
           className="hidden print:block"
           style={{
-            width: "148mm",
+            width: storeSettings?.print_paper_size === "K80" ? "80mm" : "148mm",
             margin: "0 auto",
-            padding: "10mm",
+            padding: storeSettings?.print_paper_size === "K80" ? "4mm" : "10mm",
             fontFamily: "Arial, sans-serif",
-            fontSize: "11pt",
+            fontSize: storeSettings?.print_paper_size === "K80" ? "8.5pt" : "11pt",
             color: "#000",
             backgroundColor: "#fff",
           }}
@@ -4412,13 +4441,13 @@ export default function ServiceManager() {
             }}
           >
             {/* Left: Logo (if available) */}
-            {storeSettings?.logo_url && (
+            {(storeSettings?.print_show_logo !== false) && storeSettings?.logo_url && (
               <img
                 src={storeSettings.logo_url}
                 alt="Logo"
                 style={{
-                  height: "18mm",
-                  width: "18mm",
+                  height: storeSettings?.print_paper_size === "K80" ? "12mm" : "18mm",
+                  width: storeSettings?.print_paper_size === "K80" ? "12mm" : "18mm",
                   objectFit: "contain",
                   flexShrink: 0,
                 }}
@@ -4967,6 +4996,88 @@ export default function ServiceManager() {
             </table>
           </div>
 
+          {/* Dynamic QR Payment Code (Horizontal Layout) */}
+          {(printQRUrl || storeSettings?.bank_qr_url) && (
+            <div
+              style={{
+                marginTop: "4mm",
+                padding: "3.5mm",
+                border: "2px solid #2563eb",
+                borderRadius: "4mm",
+                backgroundColor: "#eff6ff",
+                color: "#000",
+              }}
+            >
+              <p
+                style={{
+                  margin: "0 0 2.5mm 0",
+                  fontSize: "10.5pt",
+                  fontWeight: "bold",
+                  color: "#2563eb",
+                  textAlign: "center",
+                }}
+              >
+                📱 QUÉT MÃ ĐỂ THANH TOÁN
+              </p>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: "3mm",
+                }}
+              >
+                {/* Left Column: Bank Details */}
+                <div
+                  style={{
+                    flex: 1,
+                    textAlign: "left",
+                    fontSize: "8.5pt",
+                    color: "#000",
+                    lineHeight: "1.35",
+                  }}
+                >
+                  <div style={{ fontSize: "9.5pt", color: "#666", marginBottom: "1mm" }}>
+                    Số tiền: <strong style={{ color: "#2563eb", fontSize: "10.5pt" }}>{formatCurrency(printOrder.total || 0)}</strong>
+                  </div>
+                  <div>
+                    Ngân hàng: <strong>{storeSettings?.bank_name}</strong>
+                  </div>
+                  <div>
+                    STK: <strong style={{ color: "#2563eb", fontSize: "9.5pt" }}>{storeSettings?.bank_account_number}</strong>
+                  </div>
+                  {storeSettings?.bank_account_holder && (
+                    <div style={{ fontSize: "7.5pt", color: "#555", textTransform: "uppercase" }}>
+                      Chủ TK: {storeSettings.bank_account_holder}
+                    </div>
+                  )}
+                </div>
+
+                {/* Right Column: QR Code */}
+                <div
+                  style={{
+                    flexShrink: 0,
+                    padding: "1mm",
+                    backgroundColor: "#fff",
+                    borderRadius: "1.5mm",
+                    border: "1px solid #bfdbfe",
+                  }}
+                >
+                  <img
+                    src={printQRUrl || storeSettings?.bank_qr_url}
+                    alt="QR Payment"
+                    style={{
+                      width: "30mm",
+                      height: "30mm",
+                      display: "block",
+                      objectFit: "contain",
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Footer */}
           <div
             style={{
@@ -5070,6 +5181,21 @@ export default function ServiceManager() {
                 thắc mắc
               </li>
             </ul>
+          </div>
+
+          {/* Custom Greeting from Settings */}
+          <div
+            style={{
+              marginTop: "4mm",
+              paddingTop: "2mm",
+              borderTop: "1.5px dashed #bbb",
+              textAlign: "center",
+              fontSize: "9pt",
+              color: "#000",
+              fontWeight: "bold",
+            }}
+          >
+            {storeSettings?.print_greeting || "Cảm ơn quý khách! Hẹn gặp lại"}
           </div>
         </div>
       )}

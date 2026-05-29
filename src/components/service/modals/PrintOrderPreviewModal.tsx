@@ -17,6 +17,9 @@ interface StoreSettings {
     bank_account_holder?: string;
     bank_branch?: string;
     work_order_prefix?: string;
+    print_paper_size?: "K80" | "A5";
+    print_show_logo?: boolean;
+    print_greeting?: string;
 }
 
 interface PrintOrderPreviewModalProps {
@@ -100,8 +103,7 @@ const PrintOrderPreviewModal: React.FC<PrintOrderPreviewModalProps> = ({
         offscreen.appendChild(element);
         element.style.transform = "none";
         element.style.marginBottom = "0";
-        element.style.width = "560px"; // ~148mm at 96dpi
-
+        element.style.width = storeSettings?.print_paper_size === "K80" ? "320px" : "560px"; // ~80mm or ~148mm at 96dpi — fixed for consistent capture
         // Wait for layout + any lazy-loaded images
         await new Promise(resolve => setTimeout(resolve, 300));
 
@@ -221,40 +223,42 @@ const PrintOrderPreviewModal: React.FC<PrintOrderPreviewModalProps> = ({
                         id="mobile-print-preview-content"
                         className="bg-white shadow-lg relative !bg-white !text-black mx-auto"
                         style={{
-                            width: "560px", // ~148mm at 96dpi — fixed for consistent capture
-                            minHeight: "210mm",
+                            width: storeSettings?.print_paper_size === "K80" ? "320px" : "560px", // ~80mm or ~148mm at 96dpi
+                            minHeight: storeSettings?.print_paper_size === "K80" ? "120mm" : "210mm",
                             color: "#000000",
                             backgroundColor: "#ffffff",
                         }}
                     >
                         {/* Watermark Logo for Print */}
-                        <div
-                            style={{
-                                position: "absolute",
-                                top: "50%",
-                                left: "50%",
-                                transform: "translate(-50%, -50%)",
-                                width: "60%",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                pointerEvents: "none",
-                                zIndex: 0,
-                            }}
-                        >
-                            <img
-                                src={storeSettings?.logo_url || "/logo-smartcare.png"}
-                                alt="watermark"
+                        {(storeSettings?.print_show_logo !== false) && (
+                            <div
                                 style={{
-                                    width: "100%",
-                                    height: "auto",
-                                    objectFit: "contain",
-                                    opacity: 0.1,
-                                    filter: "grayscale(100%)",
+                                    position: "absolute",
+                                    top: "50%",
+                                    left: "50%",
+                                    transform: "translate(-50%, -50%)",
+                                    width: "60%",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    pointerEvents: "none",
+                                    zIndex: 0,
                                 }}
-                            />
-                        </div>
-                        <div style={{ padding: "3mm" }}>
+                            >
+                                <img
+                                    src={storeSettings?.logo_url || "/logo-smartcare.png"}
+                                    alt="watermark"
+                                    style={{
+                                        width: "100%",
+                                        height: "auto",
+                                        objectFit: "contain",
+                                        opacity: 0.1,
+                                        filter: "grayscale(100%)",
+                                    }}
+                                />
+                            </div>
+                        )}
+                        <div style={{ padding: storeSettings?.print_paper_size === "K80" ? "2mm" : "3mm", fontSize: storeSettings?.print_paper_size === "K80" ? "8.5pt" : "10.5pt" }}>
                             {/* Store Info Header - Compact Layout */}
                             {/* Store Info Header - Mobile Optimized (Stacked) */}
                             {/* Store Info Header - Compact Layout (Side-by-Side) */}
@@ -270,13 +274,13 @@ const PrintOrderPreviewModal: React.FC<PrintOrderPreviewModalProps> = ({
                                 }}
                             >
                                 {/* Left: Logo */}
-                                {storeSettings?.logo_url && (
+                                {(storeSettings?.print_show_logo !== false) && storeSettings?.logo_url && (
                                     <img
                                         src={storeSettings.logo_url}
                                         alt="Logo"
                                         style={{
-                                            height: "14mm",
-                                            width: "14mm",
+                                            height: storeSettings?.print_paper_size === "K80" ? "10mm" : "14mm",
+                                            width: storeSettings?.print_paper_size === "K80" ? "10mm" : "14mm",
                                             objectFit: "contain",
                                             flexShrink: 0,
                                         }}
@@ -844,11 +848,11 @@ const PrintOrderPreviewModal: React.FC<PrintOrderPreviewModalProps> = ({
                                 </table>
                             </div>
 
-                            {/* Dynamic QR Payment Code (Horizontal) */}
+                            {/* Dynamic QR Payment Code (Horizontal Layout) */}
                             {(dynamicQRUrl || storeSettings?.bank_qr_url) && (
                                 <div
                                     style={{
-                                        marginTop: "6mm",
+                                        marginTop: "4mm",
                                         padding: "3.5mm",
                                         border: "2px solid #2563eb",
                                         borderRadius: "4mm",
@@ -872,7 +876,7 @@ const PrintOrderPreviewModal: React.FC<PrintOrderPreviewModalProps> = ({
                                             display: "flex",
                                             alignItems: "center",
                                             justifyContent: "space-between",
-                                            gap: "3mm",
+                                            gap: "4mm",
                                         }}
                                     >
                                         {/* Left Column: Bank Details */}
@@ -880,22 +884,22 @@ const PrintOrderPreviewModal: React.FC<PrintOrderPreviewModalProps> = ({
                                             style={{
                                                 flex: 1,
                                                 textAlign: "left",
-                                                fontSize: "8.5pt",
+                                                fontSize: "9pt",
                                                 color: "#000",
-                                                lineHeight: "1.35",
+                                                lineHeight: "1.4",
                                             }}
                                         >
-                                            <div style={{ fontSize: "9.5pt", color: "#666", marginBottom: "1mm" }}>
-                                                Số tiền: <strong style={{ color: "#2563eb", fontSize: "10.5pt" }}>{formatCurrency(printOrder.total || 0)}</strong>
+                                            <div style={{ fontSize: "10pt", color: "#333", marginBottom: "1.5mm" }}>
+                                                Số tiền: <strong style={{ color: "#2563eb", fontSize: "11pt" }}>{formatCurrency(printOrder.total || 0)}</strong>
                                             </div>
                                             <div>
                                                 Ngân hàng: <strong>{storeSettings?.bank_name}</strong>
                                             </div>
                                             <div>
-                                                STK: <strong style={{ color: "#2563eb", fontSize: "9.5pt" }}>{storeSettings?.bank_account_number}</strong>
+                                                STK: <strong style={{ color: "#2563eb", fontSize: "10pt" }}>{storeSettings?.bank_account_number}</strong>
                                             </div>
                                             {storeSettings?.bank_account_holder && (
-                                                <div style={{ fontSize: "7.5pt", color: "#555" }}>
+                                                <div style={{ fontSize: "8.5pt", color: "#555", textTransform: "uppercase" }}>
                                                     Chủ TK: {storeSettings.bank_account_holder}
                                                 </div>
                                             )}
@@ -915,8 +919,8 @@ const PrintOrderPreviewModal: React.FC<PrintOrderPreviewModalProps> = ({
                                                 src={dynamicQRUrl || storeSettings?.bank_qr_url}
                                                 alt="QR Payment"
                                                 style={{
-                                                    width: "25mm",
-                                                    height: "25mm",
+                                                    width: "30mm",
+                                                    height: "30mm",
                                                     display: "block",
                                                     objectFit: "contain",
                                                 }}
@@ -1029,6 +1033,21 @@ const PrintOrderPreviewModal: React.FC<PrintOrderPreviewModalProps> = ({
                                         thắc mắc
                                     </li>
                                 </ul>
+                            </div>
+
+                            {/* Custom Greeting from Settings */}
+                            <div
+                                style={{
+                                    marginTop: "4mm",
+                                    paddingTop: "2mm",
+                                    borderTop: "1.5px dashed #bbb",
+                                    textAlign: "center",
+                                    fontSize: "8.5pt",
+                                    color: "#000",
+                                    fontWeight: "bold",
+                                }}
+                            >
+                                {storeSettings?.print_greeting || "Cảm ơn quý khách! Hẹn gặp lại"}
                             </div>
                         </div>
                     </div>

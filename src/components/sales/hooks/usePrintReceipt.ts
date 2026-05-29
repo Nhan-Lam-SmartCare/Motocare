@@ -12,6 +12,9 @@ export interface StoreSettings {
     bank_account_number?: string;
     bank_account_holder?: string;
     bank_branch?: string;
+    print_paper_size?: "K80" | "A5";
+    print_show_logo?: boolean;
+    print_greeting?: string;
 }
 
 export interface UsePrintReceiptReturn {
@@ -45,7 +48,7 @@ export function usePrintReceipt(): UsePrintReceiptReturn {
                 const { data, error } = await supabase
                     .from("store_settings")
                     .select(
-                        "store_name, address, phone, email, logo_url, bank_qr_url, bank_name, bank_account_number, bank_account_holder, bank_branch"
+                        "store_name, address, phone, email, logo_url, bank_qr_url, bank_name, bank_account_number, bank_account_holder, bank_branch, print_paper_size, print_show_logo, print_greeting"
                     )
                     .order("created_at", { ascending: false })
                     .limit(1)

@@ -19,6 +19,10 @@ export interface StoreSettings {
     // Pricing markup percentages
     retail_markup_percent?: number; // % lợi nhuận giá lẻ (VD: 40 = 40%)
     wholesale_markup_percent?: number; // % lợi nhuận giá sỉ (VD: 25 = 25%)
+    // Print settings
+    print_paper_size?: "K80" | "A5";
+    print_show_logo?: boolean;
+    print_greeting?: string;
 }
 
 export const useStoreSettings = () => {

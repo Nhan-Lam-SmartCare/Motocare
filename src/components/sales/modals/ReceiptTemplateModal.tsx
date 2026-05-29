@@ -13,6 +13,9 @@ export interface StoreSettings {
     bank_account_number?: string;
     bank_account_holder?: string;
     bank_branch?: string;
+    print_paper_size?: "K80" | "A5";
+    print_show_logo?: boolean;
+    print_greeting?: string;
 }
 
 interface ReceiptTemplateModalProps {
@@ -131,7 +134,13 @@ export const ReceiptTemplateModal: React.FC<ReceiptTemplateModalProps> = ({
                         id="invoice-preview-content"
                         ref={invoicePreviewRef}
                         className="bg-white shadow-lg"
-                        style={{ width: "80mm", minHeight: "100mm", color: "#000", padding: "5mm" }}
+                        style={{
+                            width: storeSettings?.print_paper_size === "A5" ? "148mm" : "80mm",
+                            minHeight: "100mm",
+                            color: "#000",
+                            padding: storeSettings?.print_paper_size === "A5" ? "8mm" : "5mm",
+                            fontSize: storeSettings?.print_paper_size === "A5" ? "10pt" : "8.5pt",
+                        }}
                     >
                         {/* Store Info Header */}
                         <div
@@ -145,7 +154,7 @@ export const ReceiptTemplateModal: React.FC<ReceiptTemplateModalProps> = ({
                             }}
                         >
                             {/* Logo */}
-                            {storeSettings?.logo_url && (
+                            {(storeSettings?.print_show_logo !== false) && storeSettings?.logo_url && (
                                 <img
                                     src={storeSettings.logo_url}
                                     alt="Logo"
@@ -336,8 +345,7 @@ export const ReceiptTemplateModal: React.FC<ReceiptTemplateModalProps> = ({
 
                         {/* Footer */}
                         <div style={{ textAlign: "center", fontSize: "7.5pt", color: "#666", marginTop: "4mm", borderTop: "1px dashed #ccc", paddingTop: "2mm" }}>
-                            <div>Cảm ơn quý khách!</div>
-                            <div>Hẹn gặp lại</div>
+                            <div>{storeSettings?.print_greeting || "Cảm ơn quý khách! Hẹn gặp lại"}</div>
                         </div>
                     </div>
                 </div>

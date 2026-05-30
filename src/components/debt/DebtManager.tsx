@@ -438,8 +438,9 @@ const DebtManager: React.FC = () => {
         if (!workOrderStillUnpaid) return false;
       }
 
-      // If debt is linked to a sale, check if sale is fully paid
-      if (debt.saleId) {
+      // If debt is linked to a sale, only filter when unpaidSales is available.
+      // When sales remaining amount tracking is disabled, keep sale debts visible.
+      if (debt.saleId && unpaidSales.length > 0) {
         // If sale is not in unpaidSales list, it means it's fully paid
         const saleStillUnpaid = unpaidSales.some(
           (sale) => sale.id === debt.saleId

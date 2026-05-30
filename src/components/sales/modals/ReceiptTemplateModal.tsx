@@ -129,7 +129,7 @@ export const ReceiptTemplateModal: React.FC<ReceiptTemplateModalProps> = ({
                 </div>
 
                 {/* Print Preview Content */}
-                <div className="flex-1 overflow-y-auto p-4 bg-slate-100 dark:bg-slate-900 flex justify-center">
+                <div className="flex-1 overflow-y-auto p-4 bg-slate-100 dark:bg-slate-900 flex justify-center items-start">
                     <div
                         id="invoice-preview-content"
                         ref={invoicePreviewRef}

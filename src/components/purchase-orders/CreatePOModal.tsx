@@ -364,7 +364,7 @@ export const CreatePOModal: React.FC<CreatePOModalProps> = ({
 
           {/* PREVIEW MODE */}
           {showPreview ? (
-            <div className="flex-1 overflow-y-auto bg-slate-50 dark:bg-slate-900 p-4 sm:p-8 flex justify-center print:p-0 print:bg-white print:overflow-visible">
+            <div className="flex-1 overflow-y-auto bg-slate-50 dark:bg-slate-900 p-4 sm:p-8 flex justify-center items-start print:p-0 print:bg-white print:overflow-visible">
               <div ref={previewRef} className="bg-white w-full max-w-[210mm] min-h-[297mm] shadow-lg p-8 rounded-sm text-slate-900 relative print:shadow-none print:w-full print:min-h-0 print:p-0">
                 {/* Official Document Header */}
                 <div className="flex justify-between items-start border-b-2 border-slate-800 pb-4 mb-6">

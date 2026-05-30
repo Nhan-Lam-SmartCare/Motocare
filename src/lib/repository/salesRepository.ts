@@ -29,6 +29,7 @@ export async function fetchSales(): Promise<RepoResult<Sale[]>> {
       paymentMethod: sale.paymentmethod || sale.paymentMethod || "cash", // Map lowercase to camelCase
       userId: sale.userid || sale.userId,
       branchId: sale.branchid || sale.branchId,
+      cashTransactionId: sale.cashtransactionid || sale.cashTransactionId,
       note: sale.note ?? sale.notes ?? null,
     }));
 
@@ -128,6 +129,7 @@ export async function fetchSalesPaged(
         paymentMethod: sale.paymentmethod || sale.paymentMethod || "cash",
         userId: sale.userid || sale.userId,
         branchId: sale.branchid || sale.branchId,
+        cashTransactionId: sale.cashtransactionid || sale.cashTransactionId,
         note: sale.note ?? sale.notes ?? null,
       }));
       const rows: Sale[] = rowsWithUserName as Sale[];
@@ -159,6 +161,7 @@ export async function fetchSalesPaged(
         paymentMethod: sale.paymentmethod || sale.paymentMethod || "cash",
         userId: sale.userid || sale.userId,
         branchId: sale.branchid || sale.branchId,
+        cashTransactionId: sale.cashtransactionid || sale.cashTransactionId,
         note: sale.note ?? sale.notes ?? null,
       }));
 
@@ -490,6 +493,14 @@ export async function deleteSaleById(
       oldData: null,
       newData: data,
     });
+
+    // Delete any customer debts linked to this sale (by sale_id or matching description for older rows)
+    try {
+      await supabase.from("customer_debts").delete().eq("sale_id", id);
+      await supabase.from("customer_debts").delete().ilike("description", `%${id}%`);
+    } catch (debtDeleteErr) {
+      console.error("Failed to delete linked customer debts:", debtDeleteErr);
+    }
 
     return success({ id });
   } catch (e: any) {

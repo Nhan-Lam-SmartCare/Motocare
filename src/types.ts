@@ -402,6 +402,8 @@ export interface CustomerDebt {
   remainingAmount: number; // Còn nợ
   createdDate: string;
   branchId: string;
+  workOrderId?: string;
+  saleId?: string;
 }
 
 export interface SupplierDebt {

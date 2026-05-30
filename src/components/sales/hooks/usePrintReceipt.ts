@@ -82,33 +82,65 @@ export function usePrintReceipt(): UsePrintReceiptReturn {
             return;
         }
 
+        // Determine paper size from store settings for @page CSS
+        const paperSize = storeSettings?.print_paper_size || "K80";
+        const pageSize = paperSize === "A5" ? "A5" : "80mm 297mm"; // K80 = 80mm continuous roll
+
         const printWindow = window.open("", "_blank");
         if (!printWindow) {
             console.error("Could not open print window");
             return;
         }
 
+        // Use outerHTML to preserve the root element's inline styles (width, padding, fontSize)
         printWindow.document.write(`
       <!DOCTYPE html>
       <html>
         <head>
           <title>In hóa đơn</title>
           <style>
-            @page { margin: 0; }
-            body { margin: 0; padding: 0; }
+            @page {
+              size: ${pageSize};
+              margin: 0;
+            }
+            * { box-sizing: border-box; }
+            body {
+              margin: 0;
+              padding: 0;
+              display: flex;
+              justify-content: center;
+              background: #fff;
+              -webkit-print-color-adjust: exact;
+              print-color-adjust: exact;
+            }
           </style>
         </head>
         <body>
-          ${printElement.innerHTML}
+          ${printElement.outerHTML}
         </body>
       </html>
     `);
         printWindow.document.close();
-        printWindow.focus();
-        setTimeout(() => {
+
+        // Wait for all images to load before triggering print
+        const images = printWindow.document.getElementsByTagName("img");
+        const imagePromises = Array.from(images).map((img) => {
+            return new Promise<void>((resolve) => {
+                if (img.complete) {
+                    resolve();
+                } else {
+                    img.onload = () => resolve();
+                    img.onerror = () => resolve();
+                    setTimeout(() => resolve(), 5000);
+                }
+            });
+        });
+
+        Promise.all(imagePromises).then(() => {
+            printWindow.focus();
             printWindow.print();
             printWindow.close();
-        }, 250);
+        });
 
         setShowPrintPreview(false);
     };

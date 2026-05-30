@@ -227,9 +227,14 @@ const LookupManagerMobile: React.FC = () => {
                       )}
                     </div>
                     <div className="text-right flex-shrink-0">
-                      <div className="text-base font-bold text-blue-600 dark:text-blue-400">
-                        {formatCurrency(price)}
+                      <div className="text-sm font-bold text-blue-600 dark:text-blue-400">
+                        Lẻ: {formatCurrency(price)}
                       </div>
+                      {part.wholesalePrice?.[currentBranchId] ? (
+                        <div className="text-xs text-slate-500 dark:text-slate-400">
+                          Sỉ: {formatCurrency(part.wholesalePrice[currentBranchId])}
+                        </div>
+                      ) : null}
                       <div className="flex items-center gap-1 justify-end mt-1">
                         {stock <= 0 ? (
                           <span className="px-2 py-0.5 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-xs rounded">
@@ -469,22 +474,32 @@ const LookupManagerMobile: React.FC = () => {
                 </div>
               )}
 
-              <div className="grid grid-cols-2 gap-3">
-                <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">
-                  <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">
+              <div className="grid grid-cols-3 gap-2">
+                <div className="p-2.5 bg-slate-50 dark:bg-slate-800 rounded-lg">
+                  <div className="text-[10px] text-slate-500 dark:text-slate-400 mb-1">
                     Tồn kho
                   </div>
-                  <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+                  <div className="text-base font-bold text-slate-900 dark:text-slate-100">
                     {partDetails.part.stock[currentBranchId] || 0}
                   </div>
                 </div>
-                <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                  <div className="text-xs text-blue-600 dark:text-blue-400 mb-1">
-                    Giá bán lẻ
+                <div className="p-2.5 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                  <div className="text-[10px] text-blue-600 dark:text-blue-400 mb-1">
+                    Giá lẻ
                   </div>
-                  <div className="text-xl font-bold text-blue-600 dark:text-blue-400">
+                  <div className="text-sm font-bold text-blue-600 dark:text-blue-400">
                     {formatCurrency(
                       partDetails.part.retailPrice[currentBranchId] || 0
+                    )}
+                  </div>
+                </div>
+                <div className="p-2.5 bg-cyan-50 dark:bg-cyan-900/20 rounded-lg">
+                  <div className="text-[10px] text-cyan-600 dark:text-cyan-400 mb-1">
+                    Giá sỉ
+                  </div>
+                  <div className="text-sm font-bold text-cyan-600 dark:text-cyan-400">
+                    {formatCurrency(
+                      partDetails.part.wholesalePrice?.[currentBranchId] || 0
                     )}
                   </div>
                 </div>

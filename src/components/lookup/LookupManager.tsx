@@ -320,9 +320,14 @@ const LookupManager: React.FC = () => {
                         <div className="text-xs text-slate-500 dark:text-slate-400">
                           Giá bán
                         </div>
-                        <div className="text-lg font-bold text-blue-600 dark:text-blue-400">
-                          {formatCurrency(price)}
+                        <div className="text-sm font-bold text-blue-600 dark:text-blue-400">
+                          Lẻ: {formatCurrency(price)}
                         </div>
+                        {part.wholesalePrice?.[currentBranchId] ? (
+                          <div className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mt-0.5">
+                            Sỉ: {formatCurrency(part.wholesalePrice[currentBranchId])}
+                          </div>
+                        ) : null}
                       </div>
                     </div>
 
@@ -475,12 +480,12 @@ const LookupManager: React.FC = () => {
                 </div>
               )}
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-2">
                 <div>
                   <div className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
                     Tồn kho
                   </div>
-                  <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+                  <div className="text-xl font-bold text-slate-900 dark:text-slate-100">
                     {partDetails.part.stock[currentBranchId] || 0}
                   </div>
                 </div>
@@ -488,9 +493,19 @@ const LookupManager: React.FC = () => {
                   <div className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
                     Giá bán lẻ
                   </div>
-                  <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                  <div className="text-xl font-bold text-blue-600 dark:text-blue-400">
                     {formatCurrency(
                       partDetails.part.retailPrice[currentBranchId] || 0
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
+                    Giá bán sỉ
+                  </div>
+                  <div className="text-xl font-bold text-cyan-600 dark:text-cyan-400">
+                    {formatCurrency(
+                      partDetails.part.wholesalePrice?.[currentBranchId] || 0
                     )}
                   </div>
                 </div>

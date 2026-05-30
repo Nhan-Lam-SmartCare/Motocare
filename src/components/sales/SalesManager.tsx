@@ -353,6 +353,7 @@ const SalesManager: React.FC = () => {
             queryClient.invalidateQueries({ queryKey: ["partsRepo"] });
             queryClient.invalidateQueries({ queryKey: ["inventoryTxRepo"] });
             queryClient.invalidateQueries({ queryKey: ["cashTransactions"] });
+            queryClient.invalidateQueries({ queryKey: ["customer_debts"] });
 
             showToast.success("Đã xóa hóa đơn và hoàn kho/tiền thành công!");
         } catch (error: unknown) {
@@ -494,6 +495,19 @@ const SalesManager: React.FC = () => {
             return;
         }
 
+        // Validate: must select a customer for debt-based payment types
+        if (
+            (finalization.paymentType === "note" ||
+                finalization.paymentType === "partial" ||
+                finalization.paymentType === "installment") &&
+            !customer.selectedCustomer
+        ) {
+            showToast.error(
+                "Vui lòng chọn khách hàng trước khi thanh toán nợ/trả góp!"
+            );
+            return;
+        }
+
         // Validate partial payment
         if (finalization.paymentType === "partial") {
             if (finalization.partialAmount <= 0 || finalization.partialAmount > cart.total) {
@@ -625,16 +639,22 @@ const SalesManager: React.FC = () => {
             if (finalization.paymentType === "partial" || finalization.paymentType === "note") {
                 const remainingAmount = cart.total - paidAmount;
                 if (remainingAmount > 0 && customer.selectedCustomer) {
-                    await createCustomerDebt.mutateAsync({
-                        customerId: customer.selectedCustomer.id!,
-                        customerName: customer.selectedCustomer.name,
-                        totalAmount: remainingAmount,
-                        paidAmount: 0,
-                        remainingAmount: remainingAmount,
-                        description: `Nợ từ đơn hàng ${saleId}`,
-                        branchId: currentBranchId,
-                        createdDate: new Date().toISOString(),
-                    });
+                    try {
+                        await createCustomerDebt.mutateAsync({
+                            customerId: customer.selectedCustomer.id!,
+                            customerName: customer.selectedCustomer.name,
+                            totalAmount: remainingAmount,
+                            paidAmount: 0,
+                            remainingAmount: remainingAmount,
+                            description: `Nợ từ đơn hàng ${saleId}`,
+                            branchId: currentBranchId,
+                            createdDate: new Date().toISOString(),
+                            saleId: saleId,
+                        });
+                    } catch (debtError) {
+                        console.error("Failed to create customer debt:", debtError);
+                        showToast.error("Đã tạo đơn nhưng chưa ghi nhận được công nợ. Vui lòng kiểm tra trang Công nợ!");
+                    }
                 }
             } else if (finalization.paymentType === "installment" && customer.selectedCustomer) {
                 const remaining = cart.total - paidAmount;
@@ -650,16 +670,22 @@ const SalesManager: React.FC = () => {
                     description = `Chờ giải ngân - ${financeCompany} (${term} tháng) - Đơn ${saleId}`;
                 }
 
-                await createCustomerDebt.mutateAsync({
-                    customerId: customer.selectedCustomer.id!,
-                    customerName: customer.selectedCustomer.name,
-                    totalAmount: remaining,
-                    paidAmount: 0, // Haven't paid the debt yet
-                    remainingAmount: remaining,
-                    description: description,
-                    branchId: currentBranchId,
-                    createdDate: new Date().toISOString(),
-                });
+                try {
+                    await createCustomerDebt.mutateAsync({
+                        customerId: customer.selectedCustomer.id!,
+                        customerName: customer.selectedCustomer.name,
+                        totalAmount: remaining,
+                        paidAmount: 0, // Haven't paid the debt yet
+                        remainingAmount: remaining,
+                        description: description,
+                        branchId: currentBranchId,
+                        createdDate: new Date().toISOString(),
+                        saleId: saleId,
+                    });
+                } catch (debtError) {
+                    console.error("Failed to create installment debt:", debtError);
+                    showToast.error("Đã tạo đơn nhưng chưa ghi nhận được công nợ trả góp. Vui lòng kiểm tra trang Công nợ!");
+                }
             }
 
             showToast.success("Tạo đơn hàng thành công!");
@@ -680,6 +706,7 @@ const SalesManager: React.FC = () => {
             // Refresh data
             queryClient.invalidateQueries({ queryKey: ["sales"] });
             queryClient.invalidateQueries({ queryKey: ["parts"] });
+            queryClient.invalidateQueries({ queryKey: ["customer_debts"] });
         } catch (error) {
             console.error("Error creating sale:", error);
             const message = error instanceof Error ? error.message : "Không thể tạo đơn hàng. Vui lòng thử lại.";

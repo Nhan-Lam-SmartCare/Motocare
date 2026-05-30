@@ -67,7 +67,7 @@ const STATUS_CONFIG = {
 export const SalesHistoryModal: React.FC<SalesHistoryModalProps> = ({
     isOpen, onClose, sales, currentBranchId, onPrintReceipt, onEditSale,
     onDeleteSale, page, totalPages, total, hasMore, pageSize, onPrevPage,
-    onNextPage, onPageSizeChange, search: _search, onSearchChange: _onSearchChange, fromDate: _fromDate, toDate: _toDate,
+    onNextPage, onPageSizeChange, search, onSearchChange, fromDate: _fromDate, toDate: _toDate,
     onDateRangeChange, status = "all", onStatusChange, paymentMethodFilter = "all",
     onPaymentMethodFilterChange, keysetMode = false, onToggleKeyset,
     customerDebts = [], customers = [], onViewDetail, canDelete = false,
@@ -78,7 +78,6 @@ export const SalesHistoryModal: React.FC<SalesHistoryModalProps> = ({
     const [showFinancials, setShowFinancials] = useState(true);
 
     const [activeTimeFilter, setActiveTimeFilter] = useState("7days");
-    const [searchText, setSearchText] = useState("");
     const [customStartDate, setCustomStartDate] = useState("");
     const [customEndDate, setCustomEndDate] = useState("");
     const [expandedSaleIds, setExpandedSaleIds] = useState<Set<string>>(new Set());
@@ -108,8 +107,8 @@ export const SalesHistoryModal: React.FC<SalesHistoryModalProps> = ({
 
     const filteredSales = useMemo(() => {
         let filtered = sales.filter(s => s.branchId === currentBranchId || (s as any).branchid === currentBranchId);
-        if (searchText) {
-            const q = searchText.toLowerCase();
+        if (search) {
+            const q = search.toLowerCase();
             filtered = filtered.filter(s =>
                 s.id.toLowerCase().includes(q) ||
                 (s.sale_code || "").toLowerCase().includes(q) ||
@@ -119,7 +118,7 @@ export const SalesHistoryModal: React.FC<SalesHistoryModalProps> = ({
         }
         filtered.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
         return filtered;
-    }, [sales, currentBranchId, searchText]);
+    }, [sales, currentBranchId, search]);
 
     const totalRevenue = useMemo(() => filteredSales.reduce((sum, s) => sum + s.total, 0), [filteredSales]);
     
@@ -204,8 +203,8 @@ export const SalesHistoryModal: React.FC<SalesHistoryModalProps> = ({
                                     <input
                                         type="text"
                                         placeholder="Tìm mã đơn, tên khách hàng..."
-                                        value={searchText}
-                                        onChange={e => setSearchText(e.target.value)}
+                                        value={search}
+                                        onChange={e => onSearchChange(e.target.value)}
                                         className="pl-10 pr-4 py-2.5 w-72 text-sm bg-white/5 border border-white/10 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:bg-white/10 focus:ring-4 focus:ring-blue-500/10 transition-all"
                                     />
                                 </div>
@@ -334,8 +333,8 @@ export const SalesHistoryModal: React.FC<SalesHistoryModalProps> = ({
                             <input
                                 type="text"
                                 placeholder="Tìm mã đơn, khách hàng..."
-                                value={searchText}
-                                onChange={e => setSearchText(e.target.value)}
+                                value={search}
+                                onChange={e => onSearchChange(e.target.value)}
                                 className="w-full pl-10 pr-4 py-3 bg-white/10 border border-white/15 rounded-2xl text-white text-sm focus:outline-none focus:border-blue-500"
                             />
                         </div>
@@ -443,16 +442,16 @@ export const SalesHistoryModal: React.FC<SalesHistoryModalProps> = ({
                                     </thead>
                                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                                         {filteredSales.map((sale) => {
-                                            const debt = customerDebts.find(d => d.order_id === sale.id);
-                                            const hasDebt = debt && debt.remaining_amount > 0;
-                                            const remainingDebt = debt ? debt.remaining_amount : 0;
+                                            const debt = customerDebts.find(d => d.saleId === sale.id || d.sale_id === sale.id || d.order_id === sale.id);
+                                            const hasDebt = debt && (debt.remainingAmount > 0 || debt.remaining_amount > 0);
+                                            const remainingDebt = debt ? (debt.remainingAmount ?? debt.remaining_amount ?? 0) : 0;
                                             const isExpanded = expandedSaleIds.has(sale.id);
                                             const displayItems = isExpanded ? sale.items : sale.items.slice(0, 2);
                                             
                                             let statusKey: keyof typeof STATUS_CONFIG = "completed";
-                                            if (hasDebt) statusKey = "debt";
+                                            if (sale.refunded || (sale as any).status === "refunded") statusKey = "refunded";
                                             else if ((sale as any).status === "cancelled") statusKey = "cancelled";
-                                            else if ((sale as any).status === "refunded") statusKey = "refunded";
+                                            else if (hasDebt) statusKey = "debt";
                                             const statusCfg = STATUS_CONFIG[statusKey];
                                             const StatusIcon = statusCfg.icon;
 
@@ -581,14 +580,14 @@ export const SalesHistoryModal: React.FC<SalesHistoryModalProps> = ({
                             {/* ── MOBILE LIST ── */}
                             <div className="md:hidden space-y-4">
                                 {filteredSales.map((sale) => {
-                                    const debt = customerDebts.find(d => d.order_id === sale.id);
-                                    const hasDebt = debt && debt.remaining_amount > 0;
+                                    const debt = customerDebts.find(d => d.saleId === sale.id || d.sale_id === sale.id || d.order_id === sale.id);
+                                    const hasDebt = debt && (debt.remainingAmount > 0 || debt.remaining_amount > 0);
                                     const isExpanded = expandedSaleIds.has(sale.id);
 
                                     let statusKey: keyof typeof STATUS_CONFIG = "completed";
-                                    if (hasDebt) statusKey = "debt";
+                                    if (sale.refunded || (sale as any).status === "refunded") statusKey = "refunded";
                                     else if ((sale as any).status === "cancelled") statusKey = "cancelled";
-                                    else if ((sale as any).status === "refunded") statusKey = "refunded";
+                                    else if (hasDebt) statusKey = "debt";
                                     const statusCfg = STATUS_CONFIG[statusKey];
                                     const StatusIcon = statusCfg.icon;
 

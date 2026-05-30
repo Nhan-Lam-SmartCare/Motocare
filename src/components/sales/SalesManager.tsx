@@ -126,6 +126,125 @@ const SalesManager: React.FC = () => {
     const { data: employees = [] } = useEmployeesRepo();
     const history = useSalesHistory();
     const print = usePrintReceipt();
+
+    const [hasDraft, setHasDraft] = useState(false);
+    const [hasPromptedDraft, setHasPromptedDraft] = useState(false);
+
+    // Monitor if a draft is available in localStorage
+    useEffect(() => {
+        const draftKey = `sales_draft_${currentBranchId}`;
+        const savedDraft = localStorage.getItem(draftKey);
+        if (savedDraft) {
+            try {
+                const draft = JSON.parse(savedDraft);
+                setHasDraft(!!(draft && draft.items && draft.items.length > 0));
+            } catch {
+                setHasDraft(false);
+            }
+        } else {
+            setHasDraft(false);
+        }
+    }, [currentBranchId, cartItems]);
+
+    // Reset prompt state when changing branches
+    useEffect(() => {
+        setHasPromptedDraft(false);
+    }, [currentBranchId]);
+
+    // Save draft handler
+    const handleSaveDraft = () => {
+        if (cart.cartItems.length === 0) {
+            showToast.error("Giỏ hàng trống, không thể lưu nháp!");
+            return;
+        }
+        const draftData = {
+            items: cart.cartItems,
+            customerId: customer.selectedCustomer?.id || null,
+            discount: cart.orderDiscount,
+            discountType: cart.discountType,
+            discountPercent: cart.discountPercent,
+            timestamp: Date.now(),
+        };
+        localStorage.setItem(`sales_draft_${currentBranchId}`, JSON.stringify(draftData));
+        showToast.success("Đã lưu nháp giỏ hàng thành công!");
+        cart.clearCart();
+        customer.setSelectedCustomer(null);
+        customer.setCustomerSearch("");
+        setHasDraft(true);
+    };
+
+    // Manual draft restore handler
+    const handleRestoreDraftManual = () => {
+        const draftKey = `sales_draft_${currentBranchId}`;
+        const savedDraft = localStorage.getItem(draftKey);
+        if (!savedDraft) {
+            showToast.error("Không tìm thấy giỏ hàng nháp!");
+            return;
+        }
+
+        if (cartItems.length > 0 && !confirm("Giỏ hàng hiện tại đang có sản phẩm. Bạn có chắc muốn ghi đè bằng giỏ hàng nháp không?")) {
+            return;
+        }
+
+        try {
+            const draft = JSON.parse(savedDraft);
+            if (draft.items && draft.items.length > 0) {
+                setCartItems(draft.items);
+                if (draft.customerId) {
+                    const cust = customers.find((c: any) => c.id === draft.customerId);
+                    if (cust) {
+                        customer.setSelectedCustomer(cust);
+                        customer.setCustomerSearch(cust.name);
+                    }
+                }
+                cart.setOrderDiscount(draft.discount || 0);
+                if (draft.discountType) cart.setDiscountType(draft.discountType);
+                if (draft.discountPercent) cart.setDiscountPercent(draft.discountPercent);
+                showToast.success("Đã khôi phục giỏ hàng nháp thành công!");
+                localStorage.removeItem(draftKey);
+                setHasDraft(false);
+            }
+        } catch (err) {
+            console.error("Failed to manually restore sales draft:", err);
+            showToast.error("Lỗi khi khôi phục giỏ hàng nháp!");
+        }
+    };
+
+    // Restore draft useEffect (auto prompt on mount once)
+    useEffect(() => {
+        if (hasPromptedDraft) return;
+
+        const draftKey = `sales_draft_${currentBranchId}`;
+        const savedDraft = localStorage.getItem(draftKey);
+        if (savedDraft && cartItems.length === 0) {
+            try {
+                const draft = JSON.parse(savedDraft);
+                if (draft.items && draft.items.length > 0) {
+                    setHasPromptedDraft(true);
+                    setTimeout(() => {
+                        if (confirm(`Phát hiện giỏ hàng nháp chưa thanh toán từ ngày ${new Date(draft.timestamp).toLocaleDateString()}. Bạn có muốn khôi phục không?`)) {
+                            setCartItems(draft.items);
+                            if (draft.customerId) {
+                                const cust = customers.find((c: any) => c.id === draft.customerId);
+                                if (cust) {
+                                    customer.setSelectedCustomer(cust);
+                                    customer.setCustomerSearch(cust.name);
+                                }
+                            }
+                            cart.setOrderDiscount(draft.discount || 0);
+                            if (draft.discountType) cart.setDiscountType(draft.discountType);
+                            if (draft.discountPercent) cart.setDiscountPercent(draft.discountPercent);
+                            showToast.success("Đã khôi phục giỏ hàng nháp!");
+                            localStorage.removeItem(draftKey);
+                            setHasDraft(false);
+                        }
+                    }, 500);
+                }
+            } catch (err) {
+                console.error("Failed to auto restore sales draft:", err);
+            }
+        }
+    }, [currentBranchId, customers, cartItems.length, hasPromptedDraft]);
     const canCreateSale = canDo(profile?.role, "sale.create");
     const canUpdateSale = canDo(profile?.role, "sale.update");
     const canDeleteSale = canDo(profile?.role, "sale.delete");
@@ -524,7 +643,19 @@ const SalesManager: React.FC = () => {
             }
         }
 
+        if (editingSaleId) {
+            try {
+                await deleteSaleAsync({ id: editingSaleId });
+            } catch (deleteError) {
+                console.error("Failed to delete old sale during edit:", deleteError);
+                showToast.error("Không thể hoàn kho hóa đơn cũ để cập nhật. Vui lòng thử lại.");
+                return;
+            }
+        }
+
         try {
+            const dbPaymentMethod = finalization.paymentMethod === "card" ? "bank" : finalization.paymentMethod;
+
             const saleTime = finalization.useCurrentTime
                 ? new Date().toISOString()
                 : finalization.customSaleTime
@@ -540,8 +671,12 @@ const SalesManager: React.FC = () => {
                             ? finalization.installmentDetails.prepaidAmount
                             : 0;
 
-            // Construct installment note
+            // Construct installment and payment method notes
             let finalNote = finalization.orderNote || "";
+            if (finalization.paymentMethod === "card") {
+                const cardText = "[QUẸT THẺ]";
+                finalNote = finalNote ? `${cardText} ${finalNote}` : cardText;
+            }
             if (finalization.paymentType === "installment") {
                 const { financeCompany, term, interestRate } = finalization.installmentDetails;
                 const installmentText = `[TRẢ GÓP] ${financeCompany === 'Store' ? 'Cửa hàng' : financeCompany} - Trả trước: ${finalization.installmentDetails.prepaidAmount.toLocaleString()}đ - Kỳ hạn: ${term} tháng - Lãi: ${interestRate}%/tháng - Gốc+Lãi: ${finalization.installmentDetails.totalDetail.toLocaleString()}đ`;
@@ -558,7 +693,7 @@ const SalesManager: React.FC = () => {
                         phone: customer.selectedCustomer.phone || "",
                     }
                     : { name: "Khách vãng lai", phone: "" },
-                paymentMethod: finalization.paymentMethod,
+                paymentMethod: dbPaymentMethod,
                 discount: cart.effectiveDiscount, // Use recomputed discount (correct when discountType=percent)
                 branchId: currentBranchId,
                 userId: user?.id || undefined,
@@ -601,7 +736,7 @@ const SalesManager: React.FC = () => {
             }
 
             // Force update note if it wasn't saved by RPC (backup)
-            if (finalization.paymentType === "installment" && saleId) {
+            if (finalNote && saleId) {
                 await supabase.from("sales").update({ note: finalNote }).eq("id", saleId);
             }
 
@@ -614,7 +749,7 @@ const SalesManager: React.FC = () => {
                     date: saleTime,
                     notes: `Chi giá nhập - Đơn ${saleId}`,
                     branchId: currentBranchId,
-                    paymentSourceId: finalization.paymentMethod || "cash",
+                    paymentSourceId: dbPaymentMethod || "cash",
                     saleId,
                     recipient: customer.selectedCustomer?.name || "Khách hàng",
                 });
@@ -624,7 +759,7 @@ const SalesManager: React.FC = () => {
                     showToast.error("Đã tạo đơn nhưng chưa ghi được bút toán chi giá nhập");
                 } else {
                     const balanceRes = await updatePaymentSourceBalance(
-                        finalization.paymentMethod || "cash",
+                        dbPaymentMethod || "cash",
                         currentBranchId,
                         -purchaseExpenseTotal
                     );
@@ -702,6 +837,8 @@ const SalesManager: React.FC = () => {
             customer.setSelectedCustomer(null);
             customer.setCustomerSearch("");
             finalization.resetFinalizationState();
+            setEditingSaleId(null);
+            localStorage.removeItem(`sales_draft_${currentBranchId}`);
 
             // Refresh data
             queryClient.invalidateQueries({ queryKey: ["sales"] });
@@ -828,7 +965,7 @@ const SalesManager: React.FC = () => {
                     value={barcode.barcodeInput}
                     onChange={barcode.setBarcodeInput}
                     onSubmit={(e) =>
-                        barcode.handleBarcodeSubmit(e, inventory.filteredParts, (part) =>
+                        barcode.handleBarcodeSubmit(e, inventory.repoParts, (part) =>
                             handleAddToCartWithFeedback(part, "scan")
                         )
                     }
@@ -1034,6 +1171,17 @@ const SalesManager: React.FC = () => {
                                             <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8V7m0 10v1" /></svg>
                                             Sỉ
                                         </span>
+                                    )}
+                                    {hasDraft && (
+                                        <button
+                                            type="button"
+                                            onClick={handleRestoreDraftManual}
+                                            className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 rounded-full text-xs font-bold hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
+                                            title="Khôi phục giỏ hàng nháp"
+                                        >
+                                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 4.79M9 11l3 3L22 4" /></svg>
+                                            Khôi phục nháp
+                                        </button>
                                     )}
                                     <button
                                         type="button"
@@ -1430,7 +1578,7 @@ const SalesManager: React.FC = () => {
                                     {/* Action Buttons - Save Draft + Finalize */}
                                     <div className="mt-4 p-3 md:p-4 pt-0 flex gap-3">
                                         <button
-                                            onClick={cart.clearCart}
+                                            onClick={handleSaveDraft}
                                             className="flex-1 px-4 py-3 flex items-center justify-center gap-2 bg-transparent border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 font-medium rounded-xl transition-all text-sm"
                                         >
                                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" /></svg>

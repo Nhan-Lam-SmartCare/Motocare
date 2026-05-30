@@ -139,6 +139,8 @@ export interface Sale {
   estimated_delivery_date?: string; // Ngày giao dự kiến (ISO)
   actual_delivery_date?: string; // Ngày giao thực tế (ISO)
   tracking_number?: string; // Mã vận đơn (GHN, GHTK, etc.)
+  paidAmount?: number;
+  refunded?: boolean;
 }
 
 export interface WorkOrderPart {

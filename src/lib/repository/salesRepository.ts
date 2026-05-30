@@ -4,6 +4,8 @@ import { RepoResult, success, failure } from "./types";
 import { safeAudit } from "./auditLogsRepository";
 import { fetchPartBySku } from "./partsRepository";
 import { createInventoryTransaction } from "./inventoryTransactionsRepository";
+import { createCashTransaction } from "./cashTransactionsRepository";
+import { updatePaymentSourceBalance } from "./paymentSourcesRepository";
 
 const SALES_TABLE = "sales";
 
@@ -881,25 +883,34 @@ export async function completeDelivery(
       });
     }
 
-    // If COD payment, create cash transaction
+    // If COD payment, create cash transaction and update payment source balance
     if (sale.cod_amount && sale.cod_amount > 0) {
-      const { error: cashError } = await supabase
-        .from("cash_transactions")
-        .insert({
-          type: "income",
-          date: new Date().toISOString(),
-          amount: sale.cod_amount,
-          recipient: sale.customer?.name || "Khách hàng",
-          notes: `Thu tiền COD - ${sale.sale_code || saleId}`,
-          paymentsourceid: sale.paymentmethod === "bank" ? "bank" : "cash",
-          branchid: branchId,
-          category: "sale_income",
-          saleid: saleId,
-        });
+      const paymentSourceId = sale.paymentmethod === "bank" ? "bank" : "cash";
 
-      if (cashError) {
-        console.error("Failed to create COD cash transaction:", cashError);
-        // Don't fail the whole operation, just log
+      const cashRes = await createCashTransaction({
+        type: "income",
+        category: "sale_income",
+        amount: sale.cod_amount,
+        branchId: branchId,
+        paymentSourceId,
+        date: new Date().toISOString(),
+        notes: `Thu tiền COD - ${sale.sale_code || saleId}`,
+        recipient: sale.customer?.name || "Khách hàng",
+        saleId: saleId,
+      });
+
+      if (cashRes.ok) {
+        // Update payment source balance in static table
+        const balanceRes = await updatePaymentSourceBalance(
+          paymentSourceId,
+          branchId,
+          sale.cod_amount
+        );
+        if (!balanceRes.ok) {
+          console.error("Failed to update payment source balance for COD:", balanceRes.error);
+        }
+      } else {
+        console.error("Failed to create COD cash transaction:", cashRes.error);
       }
     }
 
@@ -980,25 +991,34 @@ export async function cancelDeliveredOrder(
       });
     }
 
-    // Create refund cash transaction (expense)
+    // Create refund cash transaction (expense) and update payment source balance
     if (sale.cod_amount && sale.cod_amount > 0) {
-      const { error: cashError } = await supabase
-        .from("cash_transactions")
-        .insert({
-          type: "expense",
-          date: new Date().toISOString(),
-          amount: sale.cod_amount,
-          recipient: sale.customer?.name || "Khách hàng",
-          notes: `Hoàn tiền COD - ${sale.sale_code || saleId}${refundReason ? ` - Lý do: ${refundReason}` : ""}`,
-          paymentsourceid: sale.paymentmethod === "bank" ? "bank" : "cash",
-          branchid: branchId,
-          category: "sale_refund",
-          saleid: saleId,
-        });
+      const paymentSourceId = sale.paymentmethod === "bank" ? "bank" : "cash";
 
-      if (cashError) {
-        console.error("Failed to create refund cash transaction:", cashError);
-        // Don't fail the whole operation, just log
+      const cashRes = await createCashTransaction({
+        type: "expense",
+        category: "sale_refund",
+        amount: sale.cod_amount,
+        branchId: branchId,
+        paymentSourceId,
+        date: new Date().toISOString(),
+        notes: `Hoàn tiền COD - ${sale.sale_code || saleId}${refundReason ? ` - Lý do: ${refundReason}` : ""}`,
+        recipient: sale.customer?.name || "Khách hàng",
+        saleId: saleId,
+      });
+
+      if (cashRes.ok) {
+        // Update payment source balance in static table (subtract for expense)
+        const balanceRes = await updatePaymentSourceBalance(
+          paymentSourceId,
+          branchId,
+          -sale.cod_amount
+        );
+        if (!balanceRes.ok) {
+          console.error("Failed to update payment source balance for COD refund:", balanceRes.error);
+        }
+      } else {
+        console.error("Failed to create refund cash transaction:", cashRes.error);
       }
     }
 

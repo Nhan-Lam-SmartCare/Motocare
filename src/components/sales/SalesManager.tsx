@@ -853,67 +853,20 @@ const SalesManager: React.FC = () => {
 
     return (
         <div className="min-h-screen max-w-full overflow-x-hidden bg-slate-50 dark:bg-slate-900 pb-16 md:pb-0">
-            {/* Mobile Bottom Tabs */}
-            <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 safe-area-bottom">
-                <div className="absolute inset-0 bg-white/80 dark:bg-slate-800/80 backdrop-blur-lg -z-10"></div>
-                <div className="grid grid-cols-4 gap-1 px-2 py-2">
-                    <button
-                        onClick={() => setMobileTab("products")}
-                        className={`flex flex-col items-center gap-1 px-1 py-1.5 rounded-lg transition-all duration-200 ${mobileTab === "products"
-                            ? "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30"
-                            : "text-slate-600 dark:text-slate-400 active:scale-95"
-                            }`}
-                    >
-                        <Boxes className={`w-6 h-6 ${mobileTab === "products" ? "scale-105" : ""}`} />
-                        <span className={`text-[9px] font-medium ${mobileTab === "products" ? "font-semibold" : ""}`}>
-                            Sản phẩm
-                        </span>
-                    </button>
-
+            {/* Mobile Continue to Cart */}
+            {mobileTab === "products" && cart.cartItems.length > 0 && (
+                <div className="md:hidden fixed bottom-16 left-0 right-0 z-40 px-4">
                     <button
                         onClick={() => setMobileTab("cart")}
-                        className={`flex flex-col items-center gap-1 px-1 py-1.5 rounded-lg transition-all relative ${mobileTab === "cart"
-                            ? "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30"
-                            : "text-slate-600 dark:text-slate-400"
-                            }`}
+                        className="w-full flex items-center justify-between gap-3 px-4 py-3 rounded-2xl bg-emerald-600 text-white font-bold shadow-lg shadow-emerald-600/30 active:scale-[0.99]"
                     >
-                        <ShoppingCart className={`w-6 h-6 ${mobileTab === "cart" ? "scale-105" : ""}`} />
-                        {cart.cartItems.length > 0 && (
-                            <span className="absolute top-0 right-2 bg-red-500 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center">
-                                {cart.cartItems.length}
-                            </span>
-                        )}
-                        <span className={`text-[9px] font-medium ${mobileTab === "cart" ? "font-semibold" : ""}`}>
-                            Giỏ hàng
-                        </span>
-                    </button>
-
-                    <button
-                        onClick={openQuickServiceModal}
-                        className="flex flex-col items-center gap-1 px-1 py-1.5 rounded-lg text-amber-600 dark:text-amber-400 active:scale-95"
-                    >
-                        <Zap className="w-6 h-6" />
-                        <span className="text-[9px] font-medium">DV nhanh</span>
-                    </button>
-
-                    <button
-                        onClick={() => {
-                            history.setShowSalesHistory(true);
-                            setMobileTab("history");
-                        }}
-                        className={`flex flex-col items-center gap-1 px-1 py-1.5 rounded-lg transition-all ${mobileTab === "history"
-                            ? "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30"
-                            : "text-slate-600 dark:text-slate-400"
-                            }`}
-                    >
-                        <History className={`w-6 h-6 ${mobileTab === "history" ? "scale-105" : ""}`} />
-                        <span className={`text-[9px] font-medium ${mobileTab === "history" ? "font-semibold" : ""}`}>
-                            Lịch sử
+                        <span>Tiếp tục</span>
+                        <span className="text-sm opacity-90">
+                            {cart.cartItems.length} món · {formatCurrency(cart.total)}
                         </span>
                     </button>
                 </div>
-            </div>
-
+            )}
             {/* Desktop Header */}
             <div className="hidden md:block bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-40 backdrop-blur-lg bg-white/80 dark:bg-slate-800/80">
                 <div className="mx-auto px-6 py-4 space-y-4">
@@ -984,6 +937,30 @@ const SalesManager: React.FC = () => {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* Left: Products (Desktop) / Mobile Tab Content */}
                     <div className={`lg:col-span-2 ${mobileTab !== "products" ? "hidden md:block" : ""}`}>
+                        {/* Mobile Quick Actions */}
+                        <div className="md:hidden flex items-center gap-2 mb-3">
+                            <button
+                                onClick={() => setMobileTab("cart")}
+                                className="flex-1 flex items-center justify-between gap-2 px-3 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-sm font-semibold"
+                            >
+                                <span className="flex items-center gap-2">
+                                    <ShoppingCart className="w-4 h-4" />
+                                    Giỏ hàng
+                                </span>
+                                {cart.cartItems.length > 0 && (
+                                    <span className="px-2 py-0.5 rounded-full bg-emerald-600 text-white text-xs font-bold">
+                                        {cart.cartItems.length}
+                                    </span>
+                                )}
+                            </button>
+                            <button
+                                onClick={() => history.setShowSalesHistory(true)}
+                                className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-sm font-semibold"
+                            >
+                                <History className="w-4 h-4" />
+                                Lịch sử
+                            </button>
+                        </div>
                         {/* Search Bar with Scan Button + Wholesale Toggle */}
                         <div className="mb-3 flex items-center gap-2">
                             <div className="flex-1 relative">
@@ -1134,6 +1111,25 @@ const SalesManager: React.FC = () => {
                     {/* Right: Cart (Desktop) / Mobile Tab Content */}
                     <div className={`lg:col-span-1 ${mobileTab !== "cart" ? "hidden lg:block" : ""}`}>
                         <div className={`sticky top-24 transition-all ${cartPulse ? "ring-2 ring-emerald-400/70 rounded-2xl" : ""}`}>
+                            {/* Mobile Quick Actions */}
+                            <div className="md:hidden flex items-center gap-2 mb-3">
+                                <button
+                                    onClick={() => setMobileTab("products")}
+                                    className="flex-1 flex items-center justify-between gap-2 px-3 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-sm font-semibold"
+                                >
+                                    <span className="flex items-center gap-2">
+                                        <Boxes className="w-4 h-4" />
+                                        Sản phẩm
+                                    </span>
+                                </button>
+                                <button
+                                    onClick={() => history.setShowSalesHistory(true)}
+                                    className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-sm font-semibold"
+                                >
+                                    <History className="w-4 h-4" />
+                                    Lịch sử
+                                </button>
+                            </div>
                             {editingSaleId && (
                                 <div className="mb-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg p-3 flex justify-between items-center animate-pulse">
                                     <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 font-bold">

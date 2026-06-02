@@ -2001,7 +2001,7 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
             {/* Top Sheet Container - positioned at TOP so input is always visible above keyboard */}
             <div
               className="w-full bg-slate-50 dark:bg-[#151521] rounded-b-2xl flex flex-col transition-colors"
-              style={{ maxHeight: "60vh" }}
+              style={{ maxHeight: "90vh" }}
             >
               {/* Header */}
               <div className="flex-shrink-0 p-3 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">

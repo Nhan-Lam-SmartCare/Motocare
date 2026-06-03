@@ -652,6 +652,7 @@ const InventoryManagerNew: React.FC = () => {
             <div className="sm:hidden">
               <InventoryHistorySectionMobile
                 transactions={invTx}
+                canImportInventory={canImportInventory}
                 onEdit={(receipt) => {
                   // Reconstruct the receipt object for editing
                   // We need to find the original transaction or construct a compatible object

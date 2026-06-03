@@ -1102,59 +1102,268 @@ export const useInventoryManager = () => {
   };
 
   // Handle save edited receipt
-  const handleSaveEditedReceipt = async (_updatedData: any) => {
+  const handleSaveEditedReceipt = async (updatedData: any) => {
+    if (!canImportInventory) {
+      showToast.error("Bạn không có quyền sửa phiếu nhập kho");
+      return;
+    }
+
+    if (!editingReceipt) {
+      showToast.error("Không tìm thấy phiếu nhập đang chỉnh sửa");
+      return;
+    }
+
     try {
-      // 1. Update transaction notes/date if needed (limited edit capability for now)
-      // Ideally we should update all transactions linked to this receipt
-      // But for now, we might just update the main info or trigger a re-process
-      // Since the current backend structure relies on individual transactions, 
-      // full editing is complex. We will implement a basic update for common fields.
+      // Track original item IDs to detect deletions
+      const originalItemIds = new Set(
+        editingReceipt.items.map((i: any) => i.id)
+      );
+      const updatedItemIds = new Set(
+        updatedData.items
+          .filter((i: any) => i.id && !i.id.startsWith("new-"))
+          .map((i: any) => i.id)
+      );
 
-      // For this MVP, we will focus on updating the "notes" which contains the receipt code
-      // and potentially the supplier if we can track it.
-      // However, changing items requires deleting old tx and creating new ones, which is risky.
+      // 1. Handle DELETED items - rollback stock
+      const deletedItemIds = Array.from(originalItemIds).filter(
+        (id) => !updatedItemIds.has(id)
+      );
 
-      // Let's assume EditReceiptModal handles the complexity or we just support basic updates.
-      // If EditReceiptModal returns the full new state, we might need to:
-      // 1. Delete old receipt (handleDeleteReceipt logic)
-      // 2. Create new receipt (handleSaveGoodsReceipt logic)
+      for (const deletedId of deletedItemIds) {
+        const deletedItem = editingReceipt.items.find(
+          (i: any) => i.id === deletedId
+        );
+        if (!deletedItem) continue;
 
-      // BUT, that changes the receipt code.
-      // Let's try to update in place if possible, or warn the user.
+        // Get part info
+        const { data: part, error: fetchError } = await supabase
+          .from("parts")
+          .select("stock")
+          .eq("id", deletedItem.partId)
+          .single();
 
-      // For now, let's just close the modal and show success to test the UI flow,
-      // as the actual backend logic for *editing* a complex receipt transaction set 
-      // is a larger task than just the UI.
-      // We will implement a "Delete & Re-create" approach if the user changes items.
+        if (fetchError) {
+          throw new Error(
+            `Không thể lấy thông tin phụ tùng: ${fetchError.message}`
+          );
+        }
 
-      // ACTUALLY, let's implement a safe update:
-      // If only notes/date changed -> Update DB
-      // If items changed -> Warn user to delete and re-create? 
-      // Or just implement the delete-then-create pattern here.
+        if (part) {
+          const currentStock = part.stock?.[currentBranchId] || 0;
+          const newStock = currentStock - deletedItem.quantity;
 
-      // Let's go with: Delete old -> Create new (with SAME receipt code if possible?)
-      // No, keeping same receipt code is hard if we use auto-generated ones.
-      // Let's just create a NEW receipt and delete the old one.
+          if (newStock < 0) {
+            throw new Error(
+              `Không thể xóa sản phẩm "${deletedItem.partName}" vì sẽ làm tồn kho âm`
+            );
+          }
 
-      // Wait, EditReceiptModal might already handle some logic?
-      // Let's check EditReceiptModal implementation later.
-      // For now, I'll put a placeholder implementation that logs and closes.
+          // Update stock
+          const { error: updateError } = await supabase
+            .from("parts")
+            .update({
+              stock: {
+                ...part.stock,
+                [currentBranchId]: newStock,
+              },
+            })
+            .eq("id", deletedItem.partId);
 
-      showToast.success("Đã cập nhật phiếu nhập (Simulation)");
+          if (updateError) {
+            throw new Error(
+              `Không thể cập nhật tồn kho: ${updateError.message}`
+            );
+          }
+        }
+
+        // Delete transaction
+        const { error: deleteError } = await supabase
+          .from("inventory_transactions")
+          .delete()
+          .eq("id", deletedId);
+
+        if (deleteError) {
+          throw new Error(
+            `Không thể xóa giao dịch: ${deleteError.message}`
+          );
+        }
+      }
+
+      // 2. Handle UPDATED items - update transaction and adjust stock
+      for (const item of updatedData.items) {
+        if (item.id && item.id.startsWith("new-")) continue; // Skip new items for now
+
+        const originalItem = editingReceipt.items.find(
+          (i: any) => i.id === item.id
+        );
+
+        // Update the transaction record
+        const { error } = await supabase
+          .from("inventory_transactions")
+          .update({
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+            totalPrice: item.totalPrice,
+            notes: `NV:${updatedData.items[0].notes
+              ?.split("NV:")[1]
+              ?.split("NCC:")[0]
+              ?.trim() ||
+              profile?.name ||
+              profile?.full_name ||
+              "Nhân viên"
+              } NCC:${updatedData.supplier}${updatedData.supplierPhone
+                ? ` Phone:${updatedData.supplierPhone}`
+                : ""
+              }`,
+          })
+          .eq("id", item.id);
+
+        if (error) throw error;
+
+        // If quantity changed, update parts.stock
+        if (originalItem && originalItem.quantity !== item.quantity) {
+          const quantityDiff = item.quantity - originalItem.quantity;
+
+          // Get the part to update its stock
+          const { data: part, error: fetchError } = await supabase
+            .from("parts")
+            .select("stock, id")
+            .eq("id", originalItem.partId)
+            .single();
+
+          if (fetchError) {
+            throw new Error(
+              `Không thể lấy thông tin phụ tùng: ${fetchError.message}`
+            );
+          }
+
+          if (part) {
+            const currentStock = part.stock?.[currentBranchId] || 0;
+            const newStock = currentStock + quantityDiff;
+
+            if (newStock < 0) {
+              throw new Error(
+                `Không thể giảm số lượng vì sẽ làm tồn kho âm (hiện có: ${currentStock})`
+              );
+            }
+
+            // Update stock in database
+            const { error: updateError } = await supabase
+              .from("parts")
+              .update({
+                stock: {
+                  ...part.stock,
+                  [currentBranchId]: newStock,
+                },
+              })
+              .eq("id", part.id);
+
+            if (updateError) {
+              throw new Error(
+                `Không thể cập nhật tồn kho: ${updateError.message}`
+              );
+            }
+          }
+        }
+      }
+
+      // 3. Handle NEW items - create transaction and add stock
+      const newItems = updatedData.items.filter((i: any) =>
+        !i.id || i.id.startsWith("new-")
+      );
+
+      for (const newItem of newItems) {
+        // Get part info
+        const { data: part, error: fetchError } = await supabase
+          .from("parts")
+          .select("stock, id")
+          .eq("id", newItem.partId)
+          .single();
+
+        if (fetchError) {
+          throw new Error(
+            `Không thể lấy thông tin phụ tùng: ${fetchError.message}`
+          );
+        }
+
+        if (part) {
+          const currentStock = part.stock?.[currentBranchId] || 0;
+          const newStock = currentStock + newItem.quantity;
+
+          // Update stock
+          const { error: updateError } = await supabase
+            .from("parts")
+            .update({
+              stock: {
+                ...part.stock,
+                [currentBranchId]: newStock,
+              },
+            })
+            .eq("id", part.id);
+
+          if (updateError) {
+            throw new Error(
+              `Không thể cập nhật tồn kho: ${updateError.message}`
+            );
+          }
+        }
+
+        // Create new transaction
+        const { error: insertError } = await supabase
+          .from("inventory_transactions")
+          .insert({
+            type: "Nhập kho",
+            partId: newItem.partId,
+            partName: newItem.partName,
+            quantity: newItem.quantity,
+            date: new Date(editingReceipt.date).toISOString(),
+            unitPrice: newItem.unitPrice,
+            totalPrice: newItem.totalPrice,
+            branchId: currentBranchId,
+            notes: `NV:${updatedData.items[0].notes
+              ?.split("NV:")[1]
+              ?.split("NCC:")[0]
+              ?.trim() ||
+              profile?.name ||
+              profile?.full_name ||
+              "Nhân viên"
+              } NCC:${updatedData.supplier}${updatedData.supplierPhone
+                ? ` Phone:${updatedData.supplierPhone}`
+                : ""
+              }`,
+          });
+
+        if (insertError) {
+          throw new Error(
+            `Không thể tạo giao dịch mới: ${insertError.message}`
+          );
+        }
+      }
+
+      showToast.success(
+        `Đã cập nhật phiếu nhập kho (${updatedData.items.length} sản phẩm)`
+      );
       setEditingReceipt(null);
-
-      // In a real implementation:
-      // await supabase.from('inventory_transactions').update({...}).eq('receipt_code', receiptId)...
-
+      
+      // Refresh data
       queryClient.invalidateQueries({ queryKey: ["inventoryTransactions"] });
-    } catch (error: any) {
-      console.error("Error saving edited receipt:", error);
-      showToast.error("Lỗi cập nhật phiếu nhập: " + error.message);
+      queryClient.invalidateQueries({ queryKey: ["supplierDebts"] });
+      queryClient.invalidateQueries({ queryKey: ["partsRepo"] });
+      queryClient.invalidateQueries({ queryKey: ["partsRepoPaged"] });
+      queryClient.invalidateQueries({ queryKey: ["allPartsForTotals"] });
+      refetchAllParts();
+    } catch (err: any) {
+      showToast.error(`Lỗi cập nhật: ${err.message || "Không rõ"}`);
     }
   };
 
   // Handle delete receipt
   const handleDeleteReceipt = async (receiptCode: string) => {
+    if (!canImportInventory) {
+      showToast.error("Bạn không có quyền xóa phiếu nhập kho");
+      return;
+    }
+
     const confirmed = await confirm({
       title: "Xác nhận xóa phiếu nhập",
       message: `Bạn có chắc chắn muốn xóa phiếu nhập "${receiptCode}"? Hành động này sẽ hoàn tác tồn kho và công nợ liên quan.`,
@@ -1179,23 +1388,23 @@ export const useInventoryManager = () => {
 
       // 2. Rollback stock for each part BEFORE deleting transactions
       for (const tx of transactions) {
-        if (tx.part_id && tx.quantity_change > 0) {
+        if (tx.partId && tx.quantity > 0) {
           // Get current part stock
           const { data: partData, error: partError } = await supabase
             .from("parts")
             .select("stock")
-            .eq("id", tx.part_id)
+            .eq("id", tx.partId)
             .single();
 
           if (partError || !partData) {
-            console.warn(`Could not find part ${tx.part_id}:`, partError);
+            console.warn(`Could not find part ${tx.partId}:`, partError);
             continue;
           }
 
           // Calculate new stock (deduct the import quantity)
           const currentStock = partData.stock || {};
           const branchStock = currentStock[currentBranchId] || 0;
-          const newBranchStock = Math.max(0, branchStock - tx.quantity_change);
+          const newBranchStock = Math.max(0, branchStock - tx.quantity);
 
           // Update stock
           const { error: updateError } = await supabase
@@ -1206,10 +1415,10 @@ export const useInventoryManager = () => {
                 [currentBranchId]: newBranchStock,
               },
             })
-            .eq("id", tx.part_id);
+            .eq("id", tx.partId);
 
           if (updateError) {
-            console.warn(`Could not update stock for ${tx.part_id}:`, updateError);
+            console.warn(`Could not update stock for ${tx.partId}:`, updateError);
           }
         }
       }

@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useAppContext } from '../../contexts/AppContext';
+import { canDo } from '../../utils/permissions';
 import { useQueryClient } from '@tanstack/react-query';
 import { useConfirm } from '../../hooks/useConfirm';
 import { useSupplierDebtsRepo } from '../../hooks/useDebtsRepository';
@@ -21,6 +22,7 @@ const InventoryHistorySection: React.FC<{
   transactions: InventoryTransaction[];
 }> = ({ transactions }) => {
   const { profile } = useAuth();
+  const canImportInventory = canDo(profile?.role, "inventory.import");
   const { currentBranchId: branchId } = useAppContext();
   const queryClient = useQueryClient();
   const { confirm, confirmState, handleConfirm, handleCancel } = useConfirm();
@@ -312,6 +314,11 @@ const InventoryHistorySection: React.FC<{
 
   // Xóa phiếu nhập kho đã chọn
   const handleDeleteSelectedReceipts = async () => {
+    if (!canImportInventory) {
+      showToast.error("Bạn không có quyền xóa phiếu nhập kho");
+      return;
+    }
+
     if (selectedReceipts.size === 0) {
       showToast.warning("Vui lòng chọn ít nhất một phiếu nhập kho");
       return;
@@ -559,13 +566,15 @@ const InventoryHistorySection: React.FC<{
                       <Printer className="w-4 h-4" />
                       In mã vạch ({partsForBarcodePrint.length} SP)
                     </button>
-                    <button
-                      onClick={handleDeleteSelectedReceipts}
-                      className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white text-xs sm:text-sm font-medium rounded-lg transition-colors"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                      Xóa {selectedReceipts.size} phiếu
-                    </button>
+                    {canImportInventory && (
+                      <button
+                        onClick={handleDeleteSelectedReceipts}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white text-xs sm:text-sm font-medium rounded-lg transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        Xóa {selectedReceipts.size} phiếu
+                      </button>
+                    )}
                   </>
                 )}
               </div>
@@ -775,19 +784,21 @@ const InventoryHistorySection: React.FC<{
                     )}
                   </div>
 
-                  <div className="flex flex-wrap gap-2 pt-3 border-t border-dashed border-slate-200 dark:border-slate-700">
-                    <button
-                      onClick={() =>
-                        setEditingReceipt({
-                          ...receipt,
-                          date: new Date(receipt.date),
-                        })
-                      }
-                      className="flex-1 min-w-[120px] px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-sm font-medium"
-                    >
-                      Chỉnh sửa
-                    </button>
-                  </div>
+                  {canImportInventory && (
+                    <div className="flex flex-wrap gap-2 pt-3 border-t border-dashed border-slate-200 dark:border-slate-700">
+                      <button
+                        onClick={() =>
+                          setEditingReceipt({
+                            ...receipt,
+                            date: new Date(receipt.date),
+                          })
+                        }
+                        className="flex-1 min-w-[120px] px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-sm font-medium"
+                      >
+                        Chỉnh sửa
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 {/* Desktop Grid */}
@@ -986,30 +997,32 @@ const InventoryHistorySection: React.FC<{
                       >
                         <Eye className="w-5 h-5" />
                       </button>
-                      <button
-                        onClick={() =>
-                          setEditingReceipt({
-                            ...receipt,
-                            date: new Date(receipt.date),
-                          })
-                        }
-                        className="p-1.5 text-blue-400 hover:bg-blue-500/20 rounded transition-colors"
-                        title="Chỉnh sửa"
-                      >
-                        <svg
-                          className="w-5 h-5"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
+                      {canImportInventory && (
+                        <button
+                          onClick={() =>
+                            setEditingReceipt({
+                              ...receipt,
+                              date: new Date(receipt.date),
+                            })
+                          }
+                          className="p-1.5 text-blue-400 hover:bg-blue-500/20 rounded transition-colors"
+                          title="Chỉnh sửa"
                         >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                          />
-                        </svg>
-                      </button>
+                          <svg
+                            className="w-5 h-5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                            />
+                          </svg>
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>

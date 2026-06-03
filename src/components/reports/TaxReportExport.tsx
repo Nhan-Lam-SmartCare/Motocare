@@ -4,7 +4,7 @@ import { useAppContext } from "../../contexts/AppContext";
 import { useSalesRepo } from "../../hooks/useSalesRepository";
 import { useWorkOrders } from "../../hooks/useSupabase";
 import { useCashTxRepo } from "../../hooks/useCashTransactionsRepository";
-import { useParts } from "../../hooks/useSupabase";
+import { usePartsRepo } from "../../hooks/usePartsRepository";
 import { useStoreSettings } from "../../hooks/useStoreSettings";
 import { showToast } from "../../utils/toast";
 import { formatCurrency, formatDate } from "../../utils/format";
@@ -219,7 +219,7 @@ const TaxReportExport: React.FC = () => {
   const { data: cashTxData = [] } = useCashTxRepo({
     branchId: currentBranchId,
   });
-  const { data: partsData = [] } = useParts();
+  const { data: partsData = [] } = usePartsRepo();
   const { data: storeSettings } = useStoreSettings();
 
   // State
@@ -275,13 +275,13 @@ const TaxReportExport: React.FC = () => {
     let endDate: Date;
 
     if (periodType === "month") {
-      startDate = new Date(selectedYear, selectedMonth - 1, 1);
-      endDate = new Date(selectedYear, selectedMonth, 0);
+      startDate = new Date(selectedYear, selectedMonth - 1, 1, 0, 0, 0, 0);
+      endDate = new Date(selectedYear, selectedMonth, 0, 23, 59, 59, 999);
     } else {
       // Quarter
       const quarterStartMonth = (selectedQuarter - 1) * 3;
-      startDate = new Date(selectedYear, quarterStartMonth, 1);
-      endDate = new Date(selectedYear, quarterStartMonth + 3, 0);
+      startDate = new Date(selectedYear, quarterStartMonth, 1, 0, 0, 0, 0);
+      endDate = new Date(selectedYear, quarterStartMonth + 3, 0, 23, 59, 59, 999);
     }
 
     return { startDate, endDate };

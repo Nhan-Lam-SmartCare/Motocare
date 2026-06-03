@@ -880,6 +880,7 @@ const ReportsManager: React.FC = () => {
     <div className="space-y-3">
       {/* Mobile View - New Component */}
       <ReportsManagerMobile
+        dailyFinancials={dailyFinancials}
         revenueReport={revenueReport}
         cashflowReport={cashflowReport}
         inventoryReport={inventoryReport}

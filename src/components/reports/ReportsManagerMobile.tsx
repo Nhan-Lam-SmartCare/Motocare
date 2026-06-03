@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { formatCurrency, formatDate } from "../../utils/format";
 import type { Sale } from "../../types";
+import TaxReportExport from "./TaxReportExport";
 
 import {
     isExcludedExpenseCategory,
@@ -34,6 +35,7 @@ import { useTheme } from "../../contexts/ThemeContext";
 // Exclusion logic is shared with Reports/Dashboard/Analytics.
 
 interface ReportsManagerMobileProps {
+    dailyFinancials: any[];
     revenueReport: {
         sales: Sale[];
         workOrders: any[];
@@ -92,6 +94,7 @@ interface ReportsManagerMobileProps {
 }
 
 export const ReportsManagerMobile: React.FC<ReportsManagerMobileProps> = ({
+    dailyFinancials,
     revenueReport,
     cashflowReport,
     inventoryReport,
@@ -293,52 +296,44 @@ export const ReportsManagerMobile: React.FC<ReportsManagerMobileProps> = ({
                 <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider ml-1">
                     Chi tiết theo ngày
                 </h3>
-                {[...revenueReport.dailyReport].reverse().map((day, idx) => {
-                    // Calculate daily cash flow
-                    const dailyTransactions = cashflowReport.transactions.filter(t => {
-                        const tDate = new Date(t.date);
-                        const dDate = new Date(day.date);
-                        return tDate.getDate() === dDate.getDate() &&
-                            tDate.getMonth() === dDate.getMonth() &&
-                            tDate.getFullYear() === dDate.getFullYear();
-                    });
+                {[...dailyFinancials].map((day, idx) => {
+                    const {
+                        date,
+                        salesRevenue,
+                        woRevenue,
+                        laiGop,
+                        thuKhac,
+                        chiKhac,
+                        laiRong,
+                        dayCashTx,
+                        sales,
+                        workOrders,
+                        orderCount,
+                    } = day;
 
-                    const dailyOtherIncome = dailyTransactions
-                        .filter(t => t.type === 'income' && !isExcludedIncomeCategory(t.category))
-                        .reduce((sum, t) => sum + t.amount, 0);
-
-                    const dailyOtherExpense = dailyTransactions
-                        .filter(t => t.type === 'expense' && t.amount > 0 && !isExcludedExpenseCategory(t.category))
-                        .reduce((sum, t) => sum + t.amount, 0);
-
-                    const dailyRefund = dailyTransactions
-                        .filter(t => t.type === 'expense' && t.amount > 0 && isRefundCategory(t.category))
-                        .reduce((sum, t) => sum + t.amount, 0);
-
-                    const dailyNetProfit = day.totalProfit + dailyOtherIncome - dailyOtherExpense - dailyRefund;
-                    const isExpanded = selectedDate === day.date;
+                    const isExpanded = selectedDate === date;
 
                     return (
                         <button
                             key={idx}
-                            onClick={() => onDateClick(isExpanded ? null : day.date)}
+                            onClick={() => onDateClick(isExpanded ? null : date)}
                             className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/50 p-4 rounded-xl flex flex-col gap-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 active:scale-[0.98] transition-all shadow-sm dark:shadow-none group text-left"
                         >
                             <div className="flex items-center justify-between w-full border-b border-slate-100 dark:border-slate-700/50 pb-3">
                                 <div>
                                     <div className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
                                         <Calendar className="w-4 h-4 text-slate-400" />
-                                        {formatDate(day.date)}
+                                        {formatDate(date)}
                                     </div>
                                     <div className="text-xs text-slate-500 mt-1 pl-6">
-                                        {day.orderCount} đơn hàng
+                                        {orderCount} đơn hàng
                                     </div>
                                 </div>
                                 <div className="text-right flex items-center gap-2">
                                     <div>
                                         <div className="text-[10px] text-slate-500 uppercase tracking-wider mb-0.5">Lợi nhuận ròng</div>
                                         <div className="text-sm font-bold text-slate-900 dark:text-white">
-                                            {formatCurrency(dailyNetProfit)}
+                                            {formatCurrency(laiRong)}
                                         </div>
                                     </div>
                                     <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${isExpanded ? '' : '-rotate-90 group-hover:translate-x-1'}`} />
@@ -349,25 +344,25 @@ export const ReportsManagerMobile: React.FC<ReportsManagerMobileProps> = ({
                                 <div className="flex justify-between items-center">
                                     <span className="text-xs text-slate-500">Doanh thu</span>
                                     <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                                        {formatCurrency(day.totalRevenue)}
+                                        {formatCurrency(salesRevenue + woRevenue)}
                                     </span>
                                 </div>
                                 <div className="flex justify-between items-center">
                                     <span className="text-xs text-slate-500">Lợi nhuận gộp</span>
                                     <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                                        {formatCurrency(day.totalProfit)}
+                                        {formatCurrency(laiGop)}
                                     </span>
                                 </div>
                                 <div className="flex justify-between items-center">
                                     <span className="text-xs text-slate-500">Thu khác</span>
                                     <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                                        {formatCurrency(dailyOtherIncome)}
+                                        {formatCurrency(thuKhac)}
                                     </span>
                                 </div>
                                 <div className="flex justify-between items-center">
                                     <span className="text-xs text-slate-500">Chi khác</span>
                                     <span className="text-xs font-semibold text-red-600 dark:text-red-400">
-                                        -{formatCurrency(dailyOtherExpense)}
+                                        -{formatCurrency(chiKhac)}
                                     </span>
                                 </div>
                             </div>
@@ -380,14 +375,14 @@ export const ReportsManagerMobile: React.FC<ReportsManagerMobileProps> = ({
                                         <div className="flex items-center gap-2 mb-2">
                                             <span className="text-base">📦</span>
                                             <h4 className="text-xs font-bold text-slate-800 dark:text-white uppercase tracking-wider">
-                                                Đơn bán hàng ({day.sales.length})
+                                                Đơn bán hàng ({sales.length})
                                             </h4>
                                         </div>
-                                        {day.sales.length === 0 ? (
+                                        {sales.length === 0 ? (
                                             <div className="text-xs text-slate-500 italic">Không có đơn bán hàng</div>
                                         ) : (
                                             <div className="space-y-2">
-                                                {day.sales.map((sale: any) => (
+                                                {sales.map((sale: any) => (
                                                     <div key={sale.id} className="bg-slate-50 dark:bg-slate-900/50 p-3 rounded-lg border border-slate-100 dark:border-slate-700/50">
                                                         <div className="flex justify-between items-start mb-1">
                                                             <div className="font-semibold text-slate-900 dark:text-white text-xs">{sale.customer.name}</div>
@@ -415,14 +410,14 @@ export const ReportsManagerMobile: React.FC<ReportsManagerMobileProps> = ({
                                         <div className="flex items-center gap-2 mb-2">
                                             <span className="text-base">⚙️</span>
                                             <h4 className="text-xs font-bold text-slate-800 dark:text-white uppercase tracking-wider">
-                                                Sửa chữa ({day.workOrders.length})
+                                                Sửa chữa ({workOrders.length})
                                             </h4>
                                         </div>
-                                        {day.workOrders.length === 0 ? (
+                                        {workOrders.length === 0 ? (
                                             <div className="text-xs text-slate-500 italic">Không có đơn sửa chữa</div>
                                         ) : (
                                             <div className="space-y-2">
-                                                {day.workOrders.map((wo: any) => (
+                                                {workOrders.map((wo: any) => (
                                                     <div key={wo.id} className="bg-slate-50 dark:bg-slate-900/50 p-3 rounded-lg border border-slate-100 dark:border-slate-700/50">
                                                         <div className="flex justify-between items-start">
                                                             <div>
@@ -440,19 +435,19 @@ export const ReportsManagerMobile: React.FC<ReportsManagerMobileProps> = ({
                                     </div>
 
                                     {/* Cash Transactions */}
-                                    {dailyTransactions.length > 0 && (
+                                    {dayCashTx.length > 0 && (
                                         <div className="space-y-2">
                                             <div className="flex items-center gap-2 mb-2">
                                                 <span className="text-base">💰</span>
                                                 <h4 className="text-xs font-bold text-slate-800 dark:text-white uppercase tracking-wider">
-                                                    Giao dịch khác ({dailyTransactions.length})
+                                                    Giao dịch khác ({dayCashTx.length})
                                                 </h4>
                                             </div>
                                             <div className="space-y-2">
-                                                {dailyTransactions.map((tx) => (
+                                                {dayCashTx.map((tx: any) => (
                                                     <div key={tx.id} className="flex justify-between items-center bg-slate-50 dark:bg-slate-900/50 p-2.5 rounded-lg border border-slate-100 dark:border-slate-700/50 text-xs">
                                                         <span className="text-slate-600 dark:text-slate-300 truncate mr-2">
-                                                            {(tx as any).description || tx.notes || formatCashTxCategory(tx.category || '')}
+                                                            {tx.description || tx.notes || formatCashTxCategory(tx.category || '')}
                                                         </span>
                                                         <span className={`font-bold whitespace-nowrap flex-shrink-0 ${tx.type === 'income' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                                                             {tx.type === 'income' ? '+' : '-'}{formatCurrency(Math.abs(tx.amount))}
@@ -715,6 +710,7 @@ export const ReportsManagerMobile: React.FC<ReportsManagerMobileProps> = ({
                         <p>Tính năng đang được cập nhật giao diện mobile</p>
                     </div>
                 )}
+                {activeTab === "tax" && <TaxReportExport />}
             </div>
         </div>
     );

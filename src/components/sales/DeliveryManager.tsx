@@ -6,6 +6,8 @@ import { updateDeliveryStatus, completeDelivery, cancelDeliveredOrder } from '..
 import { showToast } from '../../utils/toast';
 import { useQueryClient } from '@tanstack/react-query';
 import { useEmployeesRepo } from '../../hooks/useEmployeesRepository';
+import { useConfirm } from '../../hooks/useConfirm';
+import ConfirmModal from '../common/ConfirmModal';
 
 /**
  * Standalone Delivery Management Page
@@ -16,6 +18,7 @@ export const DeliveryManager: React.FC = () => {
     const { data: sales = [], isLoading, refetch } = useSalesRepo();
     const { data: employees = [] } = useEmployeesRepo();
     const queryClient = useQueryClient();
+    const { confirm, confirmState, handleConfirm, handleCancel } = useConfirm();
 
     const handleUpdateStatus = async (saleId: string, status: string, shipperId?: string) => {
         const result = await updateDeliveryStatus(saleId, status as any, shipperId);
@@ -44,8 +47,15 @@ export const DeliveryManager: React.FC = () => {
         const reason = prompt('Nhập lý do hoàn trả:');
         if (reason === null) return; // Cancelled
 
-        const confirmMsg = `Xác nhận hoàn trả đơn hàng này?\n\nLý do: ${reason || 'Không có'}`;
-        if (!confirm(confirmMsg)) return;
+        const confirmMsg = `Xác nhận hoàn trả đơn hàng này? Lý do: ${reason || 'Không có'}`;
+        const confirmed = await confirm({
+            title: "Xác nhận hoàn trả",
+            message: confirmMsg,
+            confirmColor: "red",
+            confirmText: "Hoàn trả",
+            cancelText: "Hủy",
+        });
+        if (!confirmed) return;
 
         const result = await cancelDeliveredOrder(saleId, currentBranchId, reason);
         if (result.ok) {
@@ -67,6 +77,16 @@ export const DeliveryManager: React.FC = () => {
                 onCompleteDelivery={handleComplete}
                 onRefund={handleRefund}
                 isLoading={isLoading}
+            />
+            <ConfirmModal
+                isOpen={confirmState.isOpen}
+                title={confirmState.title}
+                message={confirmState.message}
+                confirmText={confirmState.confirmText}
+                cancelText={confirmState.cancelText}
+                confirmColor={confirmState.confirmColor}
+                onConfirm={handleConfirm}
+                onCancel={handleCancel}
             />
         </div>
     );

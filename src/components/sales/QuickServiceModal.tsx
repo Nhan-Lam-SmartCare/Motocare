@@ -30,6 +30,8 @@ import {
 import { formatCurrency } from "../../utils/format";
 import { showToast } from "../../utils/toast";
 import { supabase } from "../../supabaseClient";
+import { useConfirm } from "../../hooks/useConfirm";
+import ConfirmModal from "../common/ConfirmModal";
 
 // Icon mapping
 const iconMap: Record<string, React.ReactNode> = {
@@ -707,6 +709,7 @@ const ServiceManagement: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   const updateMutation = useUpdateQuickService();
   const deleteMutation = useDeleteQuickService();
   const toggleMutation = useToggleQuickService();
+  const { confirm, confirmState, handleConfirm, handleCancel } = useConfirm();
 
   const [showForm, setShowForm] = useState(false);
   const [editingService, setEditingService] = useState<QuickService | null>(
@@ -778,7 +781,14 @@ const ServiceManagement: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   };
 
   const handleDelete = async (service: QuickService) => {
-    if (!confirm(`Xóa dịch vụ "${service.name}"?`)) return;
+    const confirmed = await confirm({
+      title: "Xác nhận xóa dịch vụ",
+      message: `Bạn có chắc chắn muốn xóa dịch vụ "${service.name}"?`,
+      confirmColor: "red",
+      confirmText: "Xóa",
+      cancelText: "Hủy",
+    });
+    if (!confirmed) return;
     try {
       await deleteMutation.mutateAsync(service.id);
       showToast.success("Đã xóa dịch vụ");
@@ -1058,6 +1068,16 @@ const ServiceManagement: React.FC<{ onBack: () => void }> = ({ onBack }) => {
           ))}
         </div>
       )}
+      <ConfirmModal
+        isOpen={confirmState.isOpen}
+        title={confirmState.title}
+        message={confirmState.message}
+        confirmText={confirmState.confirmText}
+        cancelText={confirmState.cancelText}
+        confirmColor={confirmState.confirmColor}
+        onConfirm={handleConfirm}
+        onCancel={handleCancel}
+      />
     </div>
   );
 };

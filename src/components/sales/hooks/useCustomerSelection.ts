@@ -312,12 +312,12 @@ export function useCustomerSelection(
             const phoneNumbers = extractPhoneNumbers(trimmedPhone);
 
             if (!trimmedName || !trimmedPhone) {
-                alert("Vui lòng nhập tên và số điện thoại");
+                showToast.error("Vui lòng nhập tên và số điện thoại");
                 return;
             }
 
             if (phoneNumbers.length === 0) {
-                alert("Số điện thoại không hợp lệ");
+                showToast.error("Số điện thoại không hợp lệ");
                 return;
             }
 

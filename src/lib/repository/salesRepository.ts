@@ -581,21 +581,12 @@ export async function refundSale(
           }
         }
         if (partId) {
-          // Cập nhật stock trực tiếp (trigger đã bị xóa, không tự update)
-          const { data: partData } = await supabase
-            .from("parts")
-            .select("stock")
-            .eq("id", partId)
-            .single();
-          if (partData) {
-            const currentStock = (partData.stock as any)?.[branchId] || 0;
-            await supabase
-              .from("parts")
-              .update({
-                stock: { ...partData.stock, [branchId]: currentStock + it.quantity },
-              })
-              .eq("id", partId);
-          }
+          // Cập nhật stock trực tiếp dùng RPC atomic adjust_part_stock
+          await supabase.rpc("adjust_part_stock", {
+            p_part_id: partId,
+            p_branch_id: branchId,
+            p_delta: it.quantity,
+          });
           // Ghi lịch sử inventory transaction
           await createInventoryTransaction({
             type: "Nhập kho",
@@ -716,21 +707,12 @@ export async function returnSaleItem(params: {
       // Skip quick_service items
       if (partId && !partId.startsWith("quick_service_")) {
         const restockBranchId = (saleRow as Sale).branchId || "CN1";
-        // Cập nhật stock trực tiếp (trigger đã bị xóa, không tự update)
-        const { data: partData } = await supabase
-          .from("parts")
-          .select("stock")
-          .eq("id", partId)
-          .single();
-        if (partData) {
-          const currentStock = (partData.stock as any)?.[restockBranchId] || 0;
-          await supabase
-            .from("parts")
-            .update({
-              stock: { ...partData.stock, [restockBranchId]: currentStock + params.quantity },
-            })
-            .eq("id", partId);
-        }
+        // Cập nhật stock trực tiếp dùng RPC atomic adjust_part_stock
+        await supabase.rpc("adjust_part_stock", {
+          p_part_id: partId,
+          p_branch_id: restockBranchId,
+          p_delta: params.quantity,
+        });
         // Ghi lịch sử inventory transaction
         await createInventoryTransaction({
           type: "Nhập kho",

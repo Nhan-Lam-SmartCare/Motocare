@@ -1,6 +1,7 @@
 import React, { useRef } from "react";
 import { formatCurrency, formatDate } from "../../../utils/format";
 import { Printer, Share2 } from "lucide-react";
+import { showToast } from "../../../utils/toast";
 
 export interface StoreSettings {
     store_name?: string;
@@ -49,7 +50,7 @@ export const ReceiptTemplateModal: React.FC<ReceiptTemplateModalProps> = ({
 
             canvas.toBlob(async (blob) => {
                 if (!blob) {
-                    alert("Không thể tạo hình ảnh hóa đơn");
+                    showToast.error("Không thể tạo hình ảnh hóa đơn");
                     return;
                 }
 
@@ -74,7 +75,7 @@ export const ReceiptTemplateModal: React.FC<ReceiptTemplateModalProps> = ({
             }, "image/png");
         } catch (err) {
             console.error(err);
-            alert("Không thể chia sẻ hình ảnh hóa đơn");
+            showToast.error("Không thể chia sẻ hình ảnh hóa đơn");
         }
     };
 

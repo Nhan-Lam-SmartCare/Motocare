@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../../../supabaseClient";
+import { showToast } from "../../../utils/toast";
 
 export interface StoreSettings {
     store_name?: string;
@@ -148,7 +149,7 @@ export function usePrintReceipt(): UsePrintReceiptReturn {
     // Handle share invoice as image (placeholder - can be extended with html2canvas)
     const handleShareInvoice = async (_sale: any) => {
         // TODO: Implement html2canvas to convert receipt to image
-        alert("Chức năng chia sẻ hóa đơn sẽ được thêm sau");
+        showToast.info("Chức năng chia sẻ hóa đơn sẽ được thêm sau");
     };
 
     return {

@@ -61,6 +61,8 @@ import { PaymentMethodSelector } from "./components/PaymentMethodSelector";
 import { BarcodeInputBar } from "./components/BarcodeInputBar";
 import AddCustomerModal from "./components/AddCustomerModal";
 import EditCustomerModal from "./components/EditCustomerModal";
+import { useConfirm } from "../../hooks/useConfirm";
+import ConfirmModal from "../common/ConfirmModal";
 
 import type { Sale, Part } from "../../types";
 
@@ -81,6 +83,7 @@ const SalesManager: React.FC = () => {
     } = useAppContext();
 
     const queryClient = useQueryClient();
+    const { confirm, confirmState, handleConfirm, handleCancel } = useConfirm();
 
     // Data fetching hooks
     const { data: customers = [] } = useCustomers();
@@ -105,6 +108,7 @@ const SalesManager: React.FC = () => {
     const [actionFeedback, setActionFeedback] = useState<string | null>(null);
     const [cartPulse, setCartPulse] = useState(false);
     const [showManualItemForm, setShowManualItemForm] = useState(false);
+    const [isProcessing, setIsProcessing] = useState(false);
     const [manualItemName, setManualItemName] = useState("");
     const [manualItemCost, setManualItemCost] = useState<number>(0);
     const [manualItemPrice, setManualItemPrice] = useState<number>(0);
@@ -174,7 +178,7 @@ const SalesManager: React.FC = () => {
     };
 
     // Manual draft restore handler
-    const handleRestoreDraftManual = () => {
+    const handleRestoreDraftManual = async () => {
         const draftKey = `sales_draft_${currentBranchId}`;
         const savedDraft = localStorage.getItem(draftKey);
         if (!savedDraft) {
@@ -182,8 +186,15 @@ const SalesManager: React.FC = () => {
             return;
         }
 
-        if (cartItems.length > 0 && !confirm("Giỏ hàng hiện tại đang có sản phẩm. Bạn có chắc muốn ghi đè bằng giỏ hàng nháp không?")) {
-            return;
+        if (cartItems.length > 0) {
+            const confirmed = await confirm({
+                title: "Xác nhận ghi đè",
+                message: "Giỏ hàng hiện tại đang có sản phẩm. Bạn có chắc muốn ghi đè bằng giỏ hàng nháp không?",
+                confirmColor: "blue",
+                confirmText: "Ghi đè",
+                cancelText: "Hủy",
+            });
+            if (!confirmed) return;
         }
 
         try {
@@ -221,8 +232,15 @@ const SalesManager: React.FC = () => {
                 const draft = JSON.parse(savedDraft);
                 if (draft.items && draft.items.length > 0) {
                     setHasPromptedDraft(true);
-                    setTimeout(() => {
-                        if (confirm(`Phát hiện giỏ hàng nháp chưa thanh toán từ ngày ${new Date(draft.timestamp).toLocaleDateString()}. Bạn có muốn khôi phục không?`)) {
+                    const askRestore = async () => {
+                        const confirmed = await confirm({
+                            title: "Khôi phục giỏ hàng nháp",
+                            message: `Phát hiện giỏ hàng nháp chưa thanh toán từ ngày ${new Date(draft.timestamp).toLocaleDateString()}. Bạn có muốn khôi phục không?`,
+                            confirmColor: "blue",
+                            confirmText: "Khôi phục",
+                            cancelText: "Hủy",
+                        });
+                        if (confirmed) {
                             setCartItems(draft.items);
                             if (draft.customerId) {
                                 const cust = customers.find((c: any) => c.id === draft.customerId);
@@ -238,13 +256,16 @@ const SalesManager: React.FC = () => {
                             localStorage.removeItem(draftKey);
                             setHasDraft(false);
                         }
+                    };
+                    setTimeout(() => {
+                        askRestore();
                     }, 500);
                 }
             } catch (err) {
                 console.error("Failed to auto restore sales draft:", err);
             }
         }
-    }, [currentBranchId, customers, cartItems.length, hasPromptedDraft]);
+    }, [currentBranchId, customers, cartItems.length, hasPromptedDraft, customer, cart, setCartItems]);
     const canCreateSale = canDo(profile?.role, "sale.create");
     const canUpdateSale = canDo(profile?.role, "sale.update");
     const canDeleteSale = canDo(profile?.role, "sale.delete");
@@ -293,7 +314,7 @@ const SalesManager: React.FC = () => {
             return;
         }
 
-        const baseId = `quick_service_manual_${Date.now()}`;
+        const baseId = `quick_service_manual_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
         const safeSku = name.replace(/\s+/g, "_").toUpperCase().slice(0, 24);
 
         setCartItems((prev) => [
@@ -403,15 +424,20 @@ const SalesManager: React.FC = () => {
     };
 
     // Handle edit sale (reopen in cart)
-    const handleEditSale = (sale: Sale) => {
+    const handleEditSale = async (sale: Sale) => {
         if (!canUpdateSale) {
             showToast.error("Bạn không có quyền sửa đơn bán hàng");
             return;
         }
 
-        if (
-            !confirm("Mở lại hóa đơn này để chỉnh sửa? Giỏ hàng hiện tại sẽ bị xóa.")
-        ) {
+        const confirmed = await confirm({
+            title: "Mở lại hóa đơn",
+            message: "Mở lại hóa đơn này để chỉnh sửa? Giỏ hàng hiện tại sẽ bị xóa.",
+            confirmColor: "blue",
+            confirmText: "Mở lại",
+            cancelText: "Hủy",
+        });
+        if (!confirmed) {
             return;
         }
 
@@ -457,7 +483,14 @@ const SalesManager: React.FC = () => {
             return;
         }
 
-        if (!confirm("Xác nhận xóa hóa đơn này? Hành động này không thể hoàn tác.")) {
+        const confirmed = await confirm({
+            title: "Xác nhận xóa hóa đơn",
+            message: "Xác nhận xóa hóa đơn này? Hành động này không thể hoàn tác.",
+            confirmColor: "red",
+            confirmText: "Xóa",
+            cancelText: "Hủy",
+        });
+        if (!confirmed) {
             return;
         }
 
@@ -487,7 +520,7 @@ const SalesManager: React.FC = () => {
         service: { id: string; name: string; price: number; category?: string },
         quantity: number,
         paymentMethod: "cash" | "bank",
-        customer: {
+        customerInfo: {
             id?: string;
             name: string;
             phone: string;
@@ -496,10 +529,13 @@ const SalesManager: React.FC = () => {
         },
         quickServiceNote?: string
     ) => {
+        if (isProcessing) return;
         if (!canCreateSale) {
             showToast.error("Bạn không có quyền tạo đơn bán hàng");
             return;
         }
+
+        setIsProcessing(true);
 
         try {
             const finalQuickServiceNote = quickServiceNote?.trim()
@@ -521,9 +557,9 @@ const SalesManager: React.FC = () => {
                     },
                 ],
                 customer: {
-                    id: customer.id,
-                    name: customer.name,
-                    phone: customer.phone,
+                    id: customerInfo.id,
+                    name: customerInfo.name,
+                    phone: customerInfo.phone,
                 },
                 paymentMethod,
                 discount: 0,
@@ -565,11 +601,14 @@ const SalesManager: React.FC = () => {
             console.error("Error creating quick service sale:", error);
             const message = error instanceof Error ? error.message : "Không thể tạo đơn dịch vụ. Vui lòng thử lại.";
             showToast.error(message);
+        } finally {
+            setIsProcessing(false);
         }
     };
 
     // Handle finalize sale
     const handleFinalize = async () => {
+        if (isProcessing) return;
         const isUpdatingSale = !!editingSaleId;
         if (isUpdatingSale && !canUpdateSale) {
             showToast.error("Bạn không có quyền cập nhật đơn bán hàng");
@@ -643,12 +682,27 @@ const SalesManager: React.FC = () => {
             }
         }
 
+        setIsProcessing(true);
+
         if (editingSaleId) {
+            // Lưu nháp phòng trường hợp tạo hóa đơn mới thất bại sau khi xóa cũ
+            const editDraft = {
+                items: cart.cartItems,
+                customerId: customer.selectedCustomer?.id || null,
+                discount: cart.orderDiscount,
+                discountType: cart.discountType,
+                discountPercent: cart.discountPercent,
+                timestamp: Date.now(),
+            };
+            localStorage.setItem(`sales_draft_${currentBranchId}`, JSON.stringify(editDraft));
+
             try {
                 await deleteSaleAsync({ id: editingSaleId });
             } catch (deleteError) {
                 console.error("Failed to delete old sale during edit:", deleteError);
                 showToast.error("Không thể hoàn kho hóa đơn cũ để cập nhật. Vui lòng thử lại.");
+                localStorage.removeItem(`sales_draft_${currentBranchId}`);
+                setIsProcessing(false);
                 return;
             }
         }
@@ -709,7 +763,7 @@ const SalesManager: React.FC = () => {
                         phone: finalization.deliveryPhone,
                         notes: finalization.deliveryNotes || undefined,
                         shipperId: finalization.shipperId || undefined,
-                        codAmount: finalization.codAmount || cart.total,
+                        codAmount: cart.total + (finalization.shippingFee || 0),
                         shippingFee: finalization.shippingFee || 0,
                         trackingNumber: finalization.trackingNumber || undefined,
                         shippingCarrier: finalization.shippingCarrier || undefined,
@@ -847,7 +901,16 @@ const SalesManager: React.FC = () => {
         } catch (error) {
             console.error("Error creating sale:", error);
             const message = error instanceof Error ? error.message : "Không thể tạo đơn hàng. Vui lòng thử lại.";
-            showToast.error(message);
+            if (editingSaleId) {
+                // Hóa đơn cũ đã bị xóa nhưng tạo mới thất bại - giữ draft để user thử lại
+                setEditingSaleId(null);
+                setHasDraft(true);
+                showToast.error("Hóa đơn cũ đã xóa nhưng tạo mới thất bại! Giỏ hàng đã lưu nháp, vui lòng bấm 'Khôi phục nháp' để thử lại.");
+            } else {
+                showToast.error(message);
+            }
+        } finally {
+            setIsProcessing(false);
         }
     };
 
@@ -1140,8 +1203,15 @@ const SalesManager: React.FC = () => {
                                         </div>
                                     </div>
                                     <button
-                                        onClick={() => {
-                                            if (confirm("Hủy sửa? Các thay đổi sẽ mất.")) {
+                                        onClick={async () => {
+                                            const confirmed = await confirm({
+                                                title: "Hủy chỉnh sửa",
+                                                message: "Hủy sửa? Các thay đổi sẽ mất.",
+                                                confirmColor: "red",
+                                                confirmText: "Hủy sửa",
+                                                cancelText: "Không",
+                                            });
+                                            if (confirmed) {
                                                 setEditingSaleId(null);
                                                 cart.clearCart();
                                                 showToast.info("Đã hủy chế độ sửa");
@@ -1582,14 +1652,14 @@ const SalesManager: React.FC = () => {
                                         </button>
                                         <button
                                             onClick={handleFinalize}
-                                            disabled={!finalization.paymentMethod || !finalization.paymentType || (editingSaleId ? !canUpdateSale : !canCreateSale)}
+                                            disabled={isProcessing || !finalization.paymentMethod || !finalization.paymentType || (editingSaleId ? !canUpdateSale : !canCreateSale)}
                                             className={`flex-[1.5] px-4 py-3 font-bold rounded-xl transition-all text-sm flex items-center justify-center gap-2 ${finalization.paymentMethod && finalization.paymentType
                                                 ? "bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-lg shadow-emerald-600/30 hover:shadow-xl hover:scale-[1.01]"
                                                 : "bg-slate-200 dark:bg-slate-700 text-slate-400 cursor-not-allowed opacity-60"
                                                 }`}
                                         >
                                             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                            {editingSaleId ? "Cập nhật" : "Xuất bán"}
+                                            {isProcessing ? "Đang xử lý..." : editingSaleId ? "Cập nhật" : "Xuất bán"}
                                         </button>
                                     </div>
                                 </>
@@ -1758,6 +1828,16 @@ const SalesManager: React.FC = () => {
                     </div>
                 </div>
             )}
+            <ConfirmModal
+                isOpen={confirmState.isOpen}
+                title={confirmState.title}
+                message={confirmState.message}
+                confirmText={confirmState.confirmText}
+                cancelText={confirmState.cancelText}
+                confirmColor={confirmState.confirmColor}
+                onConfirm={handleConfirm}
+                onCancel={handleCancel}
+            />
         </div >
     );
 };

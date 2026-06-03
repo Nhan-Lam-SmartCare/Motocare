@@ -152,7 +152,11 @@ export const useCreateSaleAtomicRepo = () => {
 export const useDeleteSaleRepo = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id }: { id: string }) => deleteSaleById(id),
+    mutationFn: async ({ id }: { id: string }) => {
+      const res = await deleteSaleById(id);
+      if (!res.ok) throw res.error;
+      return res.data;
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["salesRepo"] });
       qc.invalidateQueries({ queryKey: ["salesRepoPaged"] });
@@ -171,8 +175,11 @@ export const useDeleteSaleRepo = () => {
 export const useRefundSaleRepo = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, reason }: { id: string; reason?: string }) =>
-      refundSale(id, reason),
+    mutationFn: async ({ id, reason }: { id: string; reason?: string }) => {
+      const res = await refundSale(id, reason);
+      if (!res.ok) throw res.error;
+      return res.data;
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["salesRepo"] });
       qc.invalidateQueries({ queryKey: ["salesRepoPaged"] });
@@ -191,7 +198,7 @@ export const useRefundSaleRepo = () => {
 export const useReturnSaleItemRepo = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({
+    mutationFn: async ({
       saleId,
       itemSku,
       quantity,
@@ -201,7 +208,11 @@ export const useReturnSaleItemRepo = () => {
       itemSku: string;
       quantity: number;
       reason?: string;
-    }) => returnSaleItem({ saleId, itemSku, quantity, reason }),
+    }) => {
+      const res = await returnSaleItem({ saleId, itemSku, quantity, reason });
+      if (!res.ok) throw res.error;
+      return res.data;
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["salesRepo"] });
       qc.invalidateQueries({ queryKey: ["salesRepoPaged"] });

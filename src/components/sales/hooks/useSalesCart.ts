@@ -134,7 +134,7 @@ export function useSalesCart(
     const subtotal = useMemo(
         () =>
             initialCartItems.reduce(
-                (sum, item) => sum + item.sellingPrice * item.quantity,
+                (sum, item) => sum + (item.sellingPrice * item.quantity) - (item.discount || 0),
                 0
             ),
         [initialCartItems]

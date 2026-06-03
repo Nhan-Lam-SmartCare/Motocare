@@ -4,6 +4,8 @@ import type { Customer, Vehicle } from "../../../types";
 import { useUpdateCustomer } from "../../../hooks/useSupabase";
 import { showToast } from "../../../utils/toast";
 import { POPULAR_MOTORCYCLES } from "../../../constants/vehicleModels";
+import { useConfirm } from "../../../hooks/useConfirm";
+import ConfirmModal from "../../common/ConfirmModal";
 
 interface EditCustomerModalProps {
     isOpen: boolean;
@@ -19,6 +21,7 @@ export const EditCustomerModal: React.FC<EditCustomerModalProps> = ({
     onSaveSuccess,
 }) => {
     const updateCustomerMutation = useUpdateCustomer();
+    const { confirm, confirmState, handleConfirm, handleCancel } = useConfirm();
 
     const [name, setName] = useState(customer.name);
     const [phone, setPhone] = useState(customer.phone || "");
@@ -121,8 +124,15 @@ export const EditCustomerModal: React.FC<EditCustomerModalProps> = ({
         setEditingVehicleId(null);
     };
 
-    const handleDeleteVehicle = (id: string) => {
-        if (confirm("Chắc chắn muốn xóa xe này?")) {
+    const handleDeleteVehicle = async (id: string) => {
+        const confirmed = await confirm({
+            title: "Xác nhận xóa xe",
+            message: "Bạn có chắc chắn muốn xóa xe này khỏi danh sách?",
+            confirmColor: "red",
+            confirmText: "Xóa",
+            cancelText: "Hủy",
+        });
+        if (confirmed) {
             setVehicles(vehicles.filter(v => v.id !== id));
         }
     };
@@ -384,6 +394,17 @@ export const EditCustomerModal: React.FC<EditCustomerModalProps> = ({
                         <span>Cập nhật</span>
                     </button>
                 </div>
+                {/* Confirm Modal */}
+                <ConfirmModal
+                    isOpen={confirmState.isOpen}
+                    title={confirmState.title}
+                    message={confirmState.message}
+                    confirmText={confirmState.confirmText}
+                    cancelText={confirmState.cancelText}
+                    confirmColor={confirmState.confirmColor}
+                    onConfirm={handleConfirm}
+                    onCancel={handleCancel}
+                />
             </div>
         </div>
     );

@@ -2143,7 +2143,7 @@ const WorkOrderModal: React.FC<{
             sku: part.sku || "",
             category: part.category || "",
             quantity: 1,
-            price: part.retailPrice[currentBranchId] || 0,
+            price: part.retailPrice?.[currentBranchId] || 0,
             costPrice: part.costPrice?.[currentBranchId] || 0,
           },
         ]);
@@ -3246,7 +3246,7 @@ const WorkOrderModal: React.FC<{
                                 </div>
                                 <div className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">
                                   {formatCurrency(
-                                    part.retailPrice[currentBranchId] || 0
+                                    part.retailPrice?.[currentBranchId] || 0
                                   )}
                                 </div>
                               </button>

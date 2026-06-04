@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   fetchSuppliers,
   createSupplier,
+  createSuppliersBulk,
   updateSupplier,
   deleteSupplier,
 } from "../lib/repository/suppliersRepository";
@@ -31,6 +32,23 @@ export const useCreateSupplier = () => {
       showToast.success("Đã thêm nhà cung cấp");
     },
     onError: (e: any) => showToast.error(e?.message || "Lỗi thêm nhà cung cấp"),
+  });
+};
+
+export const useCreateSuppliersBulk = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (inputs: Partial<Supplier>[]) => {
+      const res = await createSuppliersBulk(inputs);
+      if (!res.ok) throw res.error;
+      return res.data;
+    },
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ["suppliers"] });
+      showToast.success(`Đã import ${data.length} nhà cung cấp`);
+    },
+    onError: (e: any) =>
+      showToast.error(e?.message || "Lỗi import nhà cung cấp"),
   });
 };
 

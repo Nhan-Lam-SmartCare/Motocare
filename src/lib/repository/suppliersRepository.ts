@@ -80,6 +80,49 @@ export async function createSupplier(
   }
 }
 
+export async function createSuppliersBulk(
+  inputs: Partial<Supplier>[]
+): Promise<RepoResult<Supplier[]>> {
+  try {
+    const payload = inputs
+      .filter((input) => input.name?.trim())
+      .map((input) => ({
+        id:
+          typeof crypto !== "undefined" && (crypto as any).randomUUID
+            ? (crypto as any).randomUUID()
+            : `${Math.random().toString(36).slice(2)}-${Date.now()}`,
+        name: input.name?.trim(),
+        phone: input.phone?.trim() || null,
+        address: input.address?.trim() || null,
+        created_at: new Date().toISOString(),
+      }));
+
+    if (payload.length === 0) {
+      return failure({ code: "validation", message: "Thiếu tên nhà cung cấp" });
+    }
+
+    const { data, error } = await supabase
+      .from(SUPPLIERS_TABLE)
+      .insert(payload)
+      .select();
+
+    if (error)
+      return failure({
+        code: "supabase",
+        message: error.message || "Import nhà cung cấp thất bại",
+        cause: error,
+      });
+
+    return success((data || []) as Supplier[]);
+  } catch (e: any) {
+    return failure({
+      code: "network",
+      message: "Lỗi kết nối khi import nhà cung cấp",
+      cause: e,
+    });
+  }
+}
+
 export async function updateSupplier(
   id: string,
   updates: Partial<Supplier>

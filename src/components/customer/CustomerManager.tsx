@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect } from "react";
+import Papa from "papaparse";
 import {
   Bike,
   LayoutGrid,
@@ -36,6 +37,7 @@ import {
   useSuppliers,
   useCreateSupplier,
   useDeleteSupplier,
+  useCreateSuppliersBulk,
 } from "../../hooks/useSuppliers";
 import type { Customer, Sale, WorkOrder, Vehicle } from "../../types";
 import { useSalesRepo } from "../../hooks/useSalesRepository";
@@ -1908,11 +1910,12 @@ const CustomerManager: React.FC = () => {
 
 const CustomerModal: React.FC<{
   customer: Customer;
-  onSave: (c: Partial<Customer> & { id?: string }) => void;
+  onSave: (c: Partial<Customer> & { id?: string }) => Promise<void>;
   onClose: () => void;
 }> = ({ customer, onSave, onClose }) => {
   const [name, setName] = useState(customer.name || "");
   const [phone, setPhone] = useState(customer.phone || "");
+  const [saving, setSaving] = useState(false);
 
   const initVehicles = () => {
     if (customer.vehicles && customer.vehicles.length > 0) {
@@ -1969,8 +1972,9 @@ const CustomerModal: React.FC<{
     );
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (saving) return;
     if (!name.trim()) {
       showToast.error("Vui lòng nhập tên khách hàng");
       return;
@@ -1986,15 +1990,22 @@ const CustomerModal: React.FC<{
     }
 
     const primaryVehicle = vehicles.find((v) => v.isPrimary) || vehicles[0];
-    onSave({
-      id: customer.id,
-      name: name.trim(),
-      phone: phone.trim(),
-      vehicles: vehicles,
-      vehicleModel: primaryVehicle?.model || "",
-      licensePlate: primaryVehicle?.licensePlate || "",
-    });
-    onClose();
+    setSaving(true);
+    try {
+      await onSave({
+        id: customer.id,
+        name: name.trim(),
+        phone: phone.trim(),
+        vehicles: vehicles,
+        vehicleModel: primaryVehicle?.model || "",
+        licensePlate: primaryVehicle?.licensePlate || "",
+      });
+      onClose();
+    } catch (error: any) {
+      showToast.error(error?.message || "Lưu khách hàng thất bại");
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -2203,7 +2214,8 @@ const CustomerModal: React.FC<{
           </button>
           <button
             onClick={handleSubmit}
-            className="px-8 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-all active:scale-95 shadow-lg shadow-blue-200 dark:shadow-none"
+            disabled={saving}
+            className="px-8 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold rounded-xl transition-all active:scale-95 shadow-lg shadow-blue-200 dark:shadow-none"
           >
             Lưu khách hàng
           </button>
@@ -2219,7 +2231,8 @@ const CustomerModal: React.FC<{
           </button>
           <button
             onClick={handleSubmit}
-            className="flex-[2] py-4 bg-blue-600 text-white font-bold rounded-2xl active:scale-[0.98] transition-all shadow-lg shadow-blue-500/20"
+            disabled={saving}
+            className="flex-[2] py-4 bg-blue-600 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold rounded-2xl active:scale-[0.98] transition-all shadow-lg shadow-blue-500/20"
           >
             Lưu thay đổi
           </button>
@@ -2532,6 +2545,7 @@ const ImportCSVModal: React.FC<{
   type: "customers" | "suppliers";
 }> = ({ onClose, type }) => {
   const createCustomersBulk = useCreateCustomersBulk();
+  const createSuppliersBulk = useCreateSuppliersBulk();
   const fileRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<
     Array<{ name: string; phone?: string }>
@@ -2543,39 +2557,38 @@ const ImportCSVModal: React.FC<{
     const file = e.target.files?.[0];
     if (!file) return;
     setError("");
-    const reader = new FileReader();
-    reader.onload = (evt) => {
-      const text = evt.target?.result as string;
-      if (!text) return;
-      const lines = text
-        .split("\n")
-        .map((l) => l.trim())
-        .filter(Boolean);
-      if (lines.length === 0) {
-        setError("File CSV trống.");
-        return;
-      }
-      const firstLine = lines[0].toLowerCase();
-      const hasHeader =
-        firstLine.includes("name") ||
-        firstLine.includes("phone") ||
-        firstLine.includes("tên") ||
-        firstLine.includes("sđt");
-      const dataLines = hasHeader ? lines.slice(1) : lines;
+    Papa.parse<string[]>(file, {
+      skipEmptyLines: true,
+      complete: (result) => {
+        const rows = result.data;
+        if (rows.length === 0) {
+          setError("File CSV trống.");
+          return;
+        }
 
-      const parsed: Array<{ name: string; phone?: string }> = [];
-      for (const line of dataLines) {
-        const cols = line.split(",").map((c) => c.trim());
-        if (cols.length === 0 || !cols[0]) continue;
-        parsed.push({ name: cols[0], phone: cols[1] || undefined });
-      }
-      if (parsed.length === 0) {
-        setError("Không tìm thấy dữ liệu hợp lệ trong CSV.");
-        return;
-      }
-      setPreview(parsed);
-    };
-    reader.readAsText(file);
+        const firstRow = rows[0].map((c) => c.toLowerCase().trim());
+        const hasHeader = firstRow.some((c) =>
+          ["name", "phone", "tên", "sđt", "sdt", "điện thoại"].includes(c)
+        );
+        const dataRows = hasHeader ? rows.slice(1) : rows;
+
+        const parsed = dataRows
+          .map((cols) => ({
+            name: (cols[0] || "").trim(),
+            phone: (cols[1] || "").trim() || undefined,
+          }))
+          .filter((row) => row.name);
+
+        if (parsed.length === 0) {
+          setError("Không tìm thấy dữ liệu hợp lệ trong CSV.");
+          return;
+        }
+        setPreview(parsed);
+      },
+      error: (err) => {
+        setError(err.message || "Không thể đọc file CSV.");
+      },
+    });
   };
 
   const handleImport = async () => {
@@ -2597,14 +2610,11 @@ const ImportCSVModal: React.FC<{
         await createCustomersBulk.mutateAsync(newCustomers);
         alert(`Đã import thành công ${newCustomers.length} khách hàng!`);
       } else {
-        // Import Nhà cung cấp
-        // LƯU Ý: Hiện tại chưa có hook useCreateSuppliersBulk, nên mình để tạm alert
-        // Bạn cần tạo hook này tương tự như useCreateCustomersBulk trong useSupabase.ts
-        alert(
-          "Chức năng import Nhà cung cấp đang được phát triển. Vui lòng thêm hook useCreateSuppliersBulk để kích hoạt."
-        );
-        // Ví dụ logic khi có hook:
-        // await createSuppliersBulk.mutateAsync(newSuppliers);
+        const newSuppliers = preview.map((p) => ({
+          name: p.name,
+          phone: p.phone || "",
+        }));
+        await createSuppliersBulk.mutateAsync(newSuppliers);
       }
 
       onClose();

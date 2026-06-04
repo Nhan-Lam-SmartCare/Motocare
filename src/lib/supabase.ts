@@ -89,9 +89,15 @@ export const supabaseHelpers = {
   },
 
   async updateCustomer(id: string, updates: any) {
-    // Filter out fields that don't exist in the customers table
-    // The actual DB columns are: id, name, phone, email, address, vehicles (jsonb),
-    // segment, status, loyaltyPoints, totalSpent, visitCount, notes, lastVisit, created_at
+    const vehicleModel =
+      updates?.vehicleModel !== undefined
+        ? String(updates.vehicleModel).trim()
+        : undefined;
+    const licensePlate =
+      updates?.licensePlate !== undefined
+        ? String(updates.licensePlate).trim().toUpperCase()
+        : undefined;
+
     const {
       licensePlate: _licensePlate,
       vehicleModel: _vehicleModel,
@@ -99,15 +105,29 @@ export const supabaseHelpers = {
       ...validUpdates
     } = updates;
 
+    const updateData = {
+      ...validUpdates,
+      ...(vehicleModel !== undefined ? { vehiclemodel: vehicleModel || null } : {}),
+      ...(licensePlate !== undefined ? { licenseplate: licensePlate || null } : {}),
+    };
+
     const { data, error } = await supabase
       .from("customers")
-      .update(validUpdates)
+      .update(updateData)
       .eq("id", id)
       .select()
       .single();
 
     if (error) throw error;
-    return data;
+    return {
+      ...data,
+      vehicleModel: data?.vehicleModel ?? data?.vehiclemodel ?? null,
+      licensePlate: data?.licensePlate ?? data?.licenseplate ?? null,
+      totalSpent: data?.totalSpent ?? data?.totalspent ?? 0,
+      visitCount: data?.visitCount ?? data?.visitcount ?? 0,
+      lastVisit: data?.lastVisit ?? data?.lastvisit ?? null,
+      loyaltyPoints: data?.loyaltyPoints ?? data?.loyaltypoints ?? 0,
+    };
   },
 
   async deleteCustomer(id: string) {

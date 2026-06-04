@@ -200,7 +200,7 @@ const BatchPrintBarcodeModal: React.FC<BatchPrintBarcodeModalProps> = ({
   }, [parts, searchTerm, filterCategory]);
 
   // Get stock for a part
-  const getStock = (part: Part) => part.stock[currentBranchId] || 0;
+  const getStock = (part: Part) => part.stock?.[currentBranchId] || 0;
 
   // Toggle part selection
   const togglePart = (part: Part) => {
@@ -383,7 +383,7 @@ const BatchPrintBarcodeModal: React.FC<BatchPrintBarcodeModalProps> = ({
               ${showCategory && part.category ? `<div class="label-category">${part.category}</div>` : ""}
               ${showName ? `<div class="label-name">${part.name}</div>` : ""}
               ${barcodeSVG}
-              ${showPrice ? `<div class="label-price">${formatCurrency(part.retailPrice[currentBranchId] || 0)}</div>` : ""}
+              ${showPrice ? `<div class="label-price">${formatCurrency(part.retailPrice?.[currentBranchId] || 0)}</div>` : ""}
             </div>
           </div>
         `;
@@ -1028,7 +1028,7 @@ const BatchPrintBarcodeModal: React.FC<BatchPrintBarcodeModalProps> = ({
                       {showPrice && (
                         <p className="text-xs font-bold text-slate-900 dark:text-slate-100 mt-1">
                           {formatCurrency(
-                            part.retailPrice[currentBranchId] || 0
+                            part.retailPrice?.[currentBranchId] || 0
                           )}
                         </p>
                       )}

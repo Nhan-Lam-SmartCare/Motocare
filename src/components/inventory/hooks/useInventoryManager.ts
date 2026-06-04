@@ -1,4 +1,4 @@
-import React, {
+import {
   useState,
   useMemo,
   useCallback,
@@ -7,33 +7,6 @@ import React, {
 import { useSearchParams } from "react-router-dom";
 import { useAuth } from "../../../contexts/AuthContext";
 import { canDo } from "../../../utils/permissions";
-import {
-  Boxes,
-  Package,
-  Search,
-  FileText,
-  Filter,
-  Edit,
-  Trash2,
-  Plus,
-  Repeat,
-  UploadCloud,
-  DownloadCloud,
-  MoreHorizontal,
-  ShoppingCart,
-  ScanLine,
-  Eye,
-  X,
-  AlertTriangle,
-  AlertCircle,
-  TrendingUp,
-  ChevronDown,
-  Hash,
-  Banknote,
-  Tags,
-  BarChart3,
-  Settings,
-} from "lucide-react";
 import { useAppContext } from "../../../contexts/AppContext";
 import { safeAudit } from "../../../lib/repository/auditLogsRepository";
 import { supabase } from "../../../supabaseClient";
@@ -44,20 +17,13 @@ import {
   useUpdatePartRepo,
   useDeletePartRepo,
 } from "../../../hooks/usePartsRepository";
-import { formatCurrency, formatDate, normalizeSearchText } from "../../../utils/format";
-import { getCategoryColor } from "../../../utils/categoryColors";
+import { normalizeSearchText } from "../../../utils/format";
 import {
   exportPartsToExcel,
   exportInventoryTemplate,
-  importPartsFromExcelDetailed,
 } from "../../../utils/excel";
 import { showToast } from "../../../utils/toast";
 import { useConfirm } from "../../../hooks/useConfirm";
-import ConfirmModal from "../../common/ConfirmModal";
-import CategoriesManager from "../../categories/CategoriesManager";
-import LookupManager from "../../lookup/LookupManager";
-import ExternalPartsLookup from "../../inventory/ExternalPartsLookup";
-import LookupManagerMobile from "../../lookup/LookupManagerMobile";
 import {
   useInventoryTxRepo,
   useCreateInventoryTxRepo,
@@ -73,24 +39,7 @@ import { useStoreSettings } from "../../../hooks/useStoreSettings";
 import type { Part, WorkOrder, InventoryTransaction } from "../../../types";
 import { createPart } from "../../../lib/repository/partsRepository";
 import { createCashTransaction } from "../../../lib/repository/cashTransactionsRepository";
-import InventoryHistorySectionMobile from "../../inventory/InventoryHistorySectionMobile";
-import BatchPrintBarcodeModal from "../../inventory/BatchPrintBarcodeModal";
-import BarcodeScannerModal from "../../common/BarcodeScannerModal";
-import { PurchaseOrdersList } from "../../purchase-orders/PurchaseOrdersList";
-import CreatePOModal from "../../purchase-orders/CreatePOModal";
-import { PODetailView } from "../../purchase-orders/PODetailView";
-import { ExternalDataImport } from "../../inventory/ExternalDataImport";
 import type { PurchaseOrder } from "../../../types";
-import EditReceiptModal from "../../inventory/components/EditReceiptModal";
-// Extracted modals
-import GoodsReceiptMobileWrapper from "../modals/GoodsReceiptMobileWrapper";
-import GoodsReceiptModal from "../modals/GoodsReceiptModal";
-import InventoryHistorySection from "../InventoryHistorySection";
-import ImportInventoryModal from "../modals/ImportInventoryModal";
-import EditPartModal from "../modals/EditPartModal";
-import InventoryMobileCards from "../components/InventoryMobileCards";
-import InventoryDesktopTable from "../components/InventoryDesktopTable";
-import InventoryHeader from "../components/InventoryHeader";
 
 
 const LOW_STOCK_THRESHOLD = 5;
@@ -457,7 +406,7 @@ export const useInventoryManager = () => {
       {
         id: "low-stock",
         label: "Sắp hết",
-        description: `<= ${LOW_STOCK_THRESHOLD}`,
+        description: "< Tồn tối thiểu",
         count: stockHealth.lowStock,
         variant: "warning" as const,
       },
@@ -1204,10 +1153,10 @@ export const useInventoryManager = () => {
             quantity: item.quantity,
             unitPrice: item.unitPrice,
             totalPrice: item.totalPrice,
-            notes: `NV:${updatedData.items[0].notes
+            notes: `NV:${(updatedData.items.length > 0 ? updatedData.items[0].notes
               ?.split("NV:")[1]
               ?.split("NCC:")[0]
-              ?.trim() ||
+              ?.trim() : null) ||
               profile?.name ||
               profile?.full_name ||
               "Nhân viên"
@@ -1320,10 +1269,10 @@ export const useInventoryManager = () => {
             unitPrice: newItem.unitPrice,
             totalPrice: newItem.totalPrice,
             branchId: currentBranchId,
-            notes: `NV:${updatedData.items[0].notes
+            notes: `NV:${(updatedData.items.length > 0 ? updatedData.items[0].notes
               ?.split("NV:")[1]
               ?.split("NCC:")[0]
-              ?.trim() ||
+              ?.trim() : null) ||
               profile?.name ||
               profile?.full_name ||
               "Nhân viên"
@@ -1493,7 +1442,7 @@ export const useInventoryManager = () => {
       const now = new Date();
       const filename = `ton-kho-${now.getDate()}-${now.getMonth() + 1
         }-${now.getFullYear()}.xlsx`;
-      exportPartsToExcel(repoParts, currentBranchId, filename);
+      exportPartsToExcel(allPartsData || repoParts, currentBranchId, filename);
       showToast.success("Xuất file Excel thành công!");
     } catch (error: any) {
       console.error("Export error:", error);

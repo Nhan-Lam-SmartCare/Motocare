@@ -332,7 +332,7 @@ const InventoryManagerNew: React.FC = () => {
       )}
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto p-2 sm:p-3">
+      <div className="flex-1 overflow-y-auto p-2 sm:p-3 pb-20 sm:pb-3">
         {activeTab === "stock" && (
           <div className="space-y-2">
             {showAlertsSection && (
@@ -1068,13 +1068,16 @@ const InventoryManagerNew: React.FC = () => {
             // Only send fields that are allowed in database schema
             const updates: Partial<Part> = {
               name: updatedPart.name,
-              barcode: updatedPart.barcode,
               category: updatedPart.category,
               stock: updatedPart.stock,
               minstock: updatedPart.minstock,
               retailPrice: updatedPart.retailPrice,
               wholesalePrice: updatedPart.wholesalePrice,
             };
+            // Only include barcode if explicitly provided (avoid overwriting with undefined)
+            if (updatedPart.barcode !== undefined) {
+              updates.barcode = updatedPart.barcode;
+            }
             // Try to add costPrice if it exists in schema
             if (updatedPart.costPrice) {
               updates.costPrice = updatedPart.costPrice;

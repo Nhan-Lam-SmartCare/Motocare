@@ -180,7 +180,7 @@ const GoodsReceiptModal: React.FC<{
           sku: part.sku,
           quantity: 1,
           importPrice: part.costPrice?.[currentBranchId] || 0,
-          sellingPrice: part.retailPrice[currentBranchId] || 0,
+          sellingPrice: part.retailPrice?.[currentBranchId] || 0,
           wholesalePrice: part.wholesalePrice?.[currentBranchId] || 0,
         },
       ]);
@@ -264,7 +264,7 @@ const GoodsReceiptModal: React.FC<{
             sku: foundPart.sku,
             quantity: 1,
             importPrice: foundPart.costPrice?.[currentBranchId] || 0,
-            sellingPrice: foundPart.retailPrice[currentBranchId] || 0,
+            sellingPrice: foundPart.retailPrice?.[currentBranchId] || 0,
             wholesalePrice: foundPart.wholesalePrice?.[currentBranchId] || 0,
           },
         ]);

@@ -2253,7 +2253,13 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
                   <div className="relative">
                     <NumberInput
                       value={newServiceCost}
-                      onChange={(val: number) => setNewServiceCost(val)}
+                      onChange={(val: number) => {
+                        const cost = Math.max(0, val);
+                        setNewServiceCost(cost);
+                        if (cost > 0) {
+                          setNewServicePrice(Math.round(cost * 1.4));
+                        }
+                      }}
                       placeholder="0"
                       className="w-full px-3 py-2.5 pr-7 bg-slate-50 dark:bg-[#151521] border border-slate-200 dark:border-slate-700 rounded-xl text-slate-600 dark:text-slate-400 text-sm focus:ring-1 focus:ring-slate-400 focus:border-transparent transition-all"
                     />

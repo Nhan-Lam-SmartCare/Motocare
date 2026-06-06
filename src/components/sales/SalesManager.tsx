@@ -1017,8 +1017,15 @@ const SalesManager: React.FC = () => {
                                 )}
                             </button>
                             <button
+                                onClick={openQuickServiceModal}
+                                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-sm font-semibold"
+                            >
+                                <Zap className="w-4 h-4 text-amber-500" />
+                                Bán nhanh
+                            </button>
+                            <button
                                 onClick={() => history.setShowSalesHistory(true)}
-                                className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-sm font-semibold"
+                                className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-sm font-semibold"
                             >
                                 <History className="w-4 h-4" />
                                 Lịch sử

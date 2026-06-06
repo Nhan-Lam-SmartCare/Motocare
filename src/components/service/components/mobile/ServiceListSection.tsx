@@ -102,7 +102,10 @@ export const ServiceListSection: React.FC<ServiceListSectionProps> = ({
                                             value={formatNumberWithDots(service.costPrice || 0)}
                                             onChange={(e) => {
                                                 const newCost = parseFormattedNumber(e.target.value);
-                                                onUpdateService(service.id, { costPrice: newCost });
+                                                onUpdateService(service.id, {
+                                                    costPrice: newCost,
+                                                    sellingPrice: newCost ? Math.round(newCost * 1.4) : service.sellingPrice
+                                                });
                                             }}
                                             inputMode="numeric"
                                             className="w-full bg-transparent text-xs font-medium text-slate-400 focus:outline-none"

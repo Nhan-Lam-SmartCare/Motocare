@@ -587,7 +587,7 @@ const InventoryManagerNew: React.FC = () => {
             )}
 
             {/* Stock Table + Pagination */}
-            <div className="rounded-2xl overflow-hidden bg-white/80 dark:bg-[#131926]/40 border border-slate-200 dark:border-slate-800/80 shadow-[0_4px_25px_rgba(0,0,0,0.02)] dark:shadow-[0_4px_25px_rgba(0,0,0,0.4)] backdrop-blur-md">
+            <div className="sm:rounded-2xl sm:overflow-hidden sm:bg-white/80 sm:dark:bg-[#131926]/40 sm:border sm:border-slate-200 sm:dark:border-slate-800/80 sm:shadow-[0_4px_25px_rgba(0,0,0,0.02)] sm:dark:shadow-[0_4px_25px_rgba(0,0,0,0.4)] sm:backdrop-blur-md">
               {/* Bulk Actions Bar */}
               {selectedItems.length > 0 && (
                 <div className="px-4 py-3 bg-blue-950/40 dark:bg-blue-950/40 border-b border-blue-900/40 flex items-center justify-between">

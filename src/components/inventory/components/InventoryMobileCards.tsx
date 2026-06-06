@@ -29,7 +29,7 @@ const InventoryMobileCards: React.FC<InventoryMobileCardsProps> = ({
 }) => {
   return (
     <div className="block sm:hidden">
-      <div className="space-y-4 p-4 bg-slate-50 dark:bg-[#0B0F19] text-slate-700 dark:text-slate-200">
+      <div className="space-y-4 py-2 text-slate-700 dark:text-slate-200">
         {filteredParts.map((part, index) => {
           const stock = part.stock?.[currentBranchId] || 0;
           const reserved = part.reservedstock?.[currentBranchId] || 0;

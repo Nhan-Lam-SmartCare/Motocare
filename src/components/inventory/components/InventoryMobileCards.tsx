@@ -61,56 +61,59 @@ const InventoryMobileCards: React.FC<InventoryMobileCardsProps> = ({
                           <Tags className="h-5 w-5 text-slate-400" />
                         )}
                       </div>
-                      <h3 className="min-w-0 flex-1 text-[16px] font-extrabold text-slate-900 dark:text-white leading-snug truncate tracking-tight">
+                      <h3 className="min-w-0 flex-1 text-[16px] font-extrabold text-slate-900 dark:text-white leading-snug line-clamp-2 tracking-tight">
                         {part.name}
                       </h3>
                     </div>
-                    <div className="relative shrink-0">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setMobileMenuOpenIndex(
-                            mobileMenuOpenIndex === index ? null : index
-                          );
-                        }}
-                        className="p-1.5 -m-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/30 rounded-lg transition"
-                      >
-                        <MoreHorizontal className="w-5 h-5" />
-                      </button>
-                      {mobileMenuOpenIndex === index && (
-                        <div className="absolute right-0 top-full mt-2 w-44 bg-white dark:bg-[#182030] border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl dark:shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in duration-200">
-                          <button
-                            onClick={() => {
-                              setSelectedPartDetail(part);
-                              setMobileMenuOpenIndex(null);
-                            }}
-                            className="w-full text-left px-4 py-3 text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-3 border-b border-slate-100 dark:border-b-slate-800/60"
-                          >
-                            <Eye className="w-4 h-4 text-emerald-600 dark:text-emerald-400" /> Xem chi tiết
-                          </button>
-                          <button
-                            onClick={() => {
-                              setEditingPart(part);
-                              setMobileMenuOpenIndex(null);
-                            }}
-                            className="w-full text-left px-4 py-3 text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-3 border-b border-slate-100 dark:border-b-slate-800/60"
-                          >
-                            <Edit className="w-4 h-4 text-blue-600 dark:text-blue-400" /> Chỉnh sửa
-                          </button>
-                          <button
-                            onClick={() => {
-                              handleDeleteItem(part.id);
-                              setMobileMenuOpenIndex(null);
-                            }}
-                            className="w-full text-left px-4 py-3 text-sm font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/20 flex items-center gap-3"
-                          >
-                            <Trash2 className="w-4 h-4" /> Xóa sản phẩm
-                          </button>
-                        </div>
-                      )}
+                    <div className="flex items-center gap-3 shrink-0">
+                      {/* Actions Menu */}
+                      <div className="relative">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setMobileMenuOpenIndex(
+                              mobileMenuOpenIndex === index ? null : index
+                            );
+                          }}
+                          className="p-1.5 -m-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/30 rounded-lg transition"
+                        >
+                          <MoreHorizontal className="w-5 h-5" />
+                        </button>
+                        {mobileMenuOpenIndex === index && (
+                          <div className="absolute right-0 top-full mt-2 w-44 bg-white dark:bg-[#182030] border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl dark:shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in duration-200">
+                            <button
+                              onClick={() => {
+                                setSelectedPartDetail(part);
+                                setMobileMenuOpenIndex(null);
+                              }}
+                              className="w-full text-left px-4 py-3 text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-3 border-b border-slate-100 dark:border-b-slate-800/60"
+                            >
+                              <Eye className="w-4 h-4 text-emerald-600 dark:text-emerald-400" /> Xem chi tiết
+                            </button>
+                            <button
+                              onClick={() => {
+                                setEditingPart(part);
+                                setMobileMenuOpenIndex(null);
+                              }}
+                              className="w-full text-left px-4 py-3 text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-3 border-b border-slate-100 dark:border-b-slate-800/60"
+                            >
+                              <Edit className="w-4 h-4 text-blue-600 dark:text-blue-400" /> Chỉnh sửa
+                            </button>
+                            <button
+                              onClick={() => {
+                                handleDeleteItem(part.id);
+                                setMobileMenuOpenIndex(null);
+                              }}
+                              className="w-full text-left px-4 py-3 text-sm font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/20 flex items-center gap-3"
+                            >
+                              <Trash2 className="w-4 h-4" /> Xóa sản phẩm
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 mt-2">
+                  <div className="flex flex-wrap items-center gap-2 mt-2.5">
                     <span className="text-[9px] font-bold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/50 px-2 py-0.5 rounded-lg font-mono">
                       #{part.sku || "NO SKU"}
                     </span>
@@ -120,81 +123,70 @@ const InventoryMobileCards: React.FC<InventoryMobileCardsProps> = ({
                         {part.category}
                       </span>
                     )}
+                    {/* Glowing Premium Inline Stock Badge */}
+                    <span
+                      className={`text-[9px] font-extrabold px-2 py-0.5 rounded-lg uppercase tracking-wider flex items-center gap-1.5 border transition-all ${
+                        available === 0
+                          ? "bg-rose-50 dark:bg-rose-500/10 border-rose-100 dark:border-rose-500/20 text-rose-600 dark:text-rose-400 shadow-[0_1px_4px_rgba(239,68,68,0.05)]"
+                          : available <= LOW_STOCK_THRESHOLD
+                          ? "bg-amber-50 dark:bg-amber-500/10 border-amber-100 dark:border-amber-500/20 text-amber-650 dark:text-amber-400 shadow-[0_1px_4px_rgba(245,158,11,0.05)]"
+                          : "bg-emerald-50 dark:bg-emerald-500/10 border-emerald-100 dark:border-emerald-500/20 text-emerald-650 dark:text-emerald-450 shadow-[0_1px_4px_rgba(16,185,129,0.05)]"
+                      }`}
+                    >
+                      <span
+                        className={`w-1.5 h-1.5 rounded-full ${
+                          available === 0
+                            ? "bg-rose-500 animate-pulse"
+                            : available <= LOW_STOCK_THRESHOLD
+                            ? "bg-amber-500"
+                            : "bg-emerald-500"
+                        }`}
+                      />
+                      {available} Tồn
+                    </span>
                   </div>
                 </div>
 
                 {/* Bottom row: Business Indicators — Scientific Layout */}
                 <div className="pt-3.5 border-t border-slate-200 dark:border-slate-800/50">
-                  <div className="flex items-center justify-between gap-4">
-                    {/* Price Grid wrapped in a subtle glassy inner panel */}
-                    <div className="flex-1 bg-slate-50 dark:bg-[#0B0F19]/60 border border-slate-200 dark:border-slate-800/50 rounded-xl px-3 py-2 flex items-center justify-between gap-3 shadow-inner">
-                      {/* Giá bán lẻ - Nổi bật nhất */}
-                      <div className="flex flex-col text-left">
-                        <span className="text-[8px] font-bold text-blue-600/80 dark:text-blue-400/80 uppercase tracking-widest mb-0.5">
-                          Giá Bán
-                        </span>
-                        <span className="text-[14px] font-extrabold text-blue-600 dark:text-blue-400 font-mono tracking-tight leading-none">
-                          {formatCurrency(retailPrice)}
-                        </span>
-                      </div>
-
-                      <div className="w-px h-5 bg-slate-200 dark:bg-slate-800/60 shrink-0" />
-
-                      {/* Giá sỉ */}
-                      <div className="flex flex-col text-left">
-                        <span className="text-[8px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-0.5">
-                          Giá Sỉ
-                        </span>
-                        <span className="text-[13px] font-bold text-slate-700 dark:text-slate-300 font-mono tracking-tight leading-none">
-                          {formatCurrency(wholesalePrice)}
-                        </span>
-                      </div>
-
-                      {isOwner && (
-                        <>
-                          <div className="w-px h-5 bg-slate-200 dark:bg-slate-800/60 shrink-0" />
-                          {/* Giá nhập (chỉ Owner) */}
-                          <div className="flex flex-col text-left">
-                            <span className="text-[8px] font-bold text-emerald-600/80 dark:text-emerald-400/80 uppercase tracking-widest mb-0.5">
-                              Giá Nhập
-                            </span>
-                            <span className="text-[13px] font-bold text-emerald-600 dark:text-[#34d399] font-mono tracking-tight leading-none">
-                              {formatCurrency(costPrice)}
-                            </span>
-                          </div>
-                        </>
-                      )}
+                  {/* Price Grid wrapped in a subtle glassy inner panel */}
+                  <div className="bg-slate-50 dark:bg-[#0B0F19]/60 border border-slate-200 dark:border-slate-800/50 rounded-xl px-3 py-2 flex items-center justify-between gap-3 shadow-inner">
+                    {/* Giá bán lẻ - Nổi bật nhất */}
+                    <div className="flex flex-col text-left">
+                      <span className="text-[8px] font-bold text-blue-600/80 dark:text-blue-400/80 uppercase tracking-widest mb-0.5">
+                        Giá Bán
+                      </span>
+                      <span className="text-[14px] font-extrabold text-blue-600 dark:text-blue-400 font-mono tracking-tight leading-none">
+                        {formatCurrency(retailPrice)}
+                      </span>
                     </div>
 
-                    {/* Premium Glowing Stock Badge */}
-                    <div className="flex flex-col items-center shrink-0">
-                      <div
-                        className={`relative flex items-center justify-center w-12 h-12 rounded-2xl border-2 transition-all shadow-md ${
-                          available === 0
-                            ? "bg-rose-50 dark:bg-rose-500/10 border-rose-100 dark:border-rose-500/30 text-rose-600 dark:text-rose-400 shadow-[0_2px_8px_rgba(239,68,68,0.08)] dark:shadow-[0_2px_8px_rgba(239,68,68,0.15)]"
-                            : available <= LOW_STOCK_THRESHOLD
-                            ? "bg-amber-50 dark:bg-amber-500/10 border-amber-100 dark:border-amber-500/30 text-amber-600 dark:text-amber-400 shadow-[0_2px_8px_rgba(245,158,11,0.08)] dark:shadow-[0_2px_8px_rgba(245,158,11,0.15)]"
-                            : "bg-emerald-50 dark:bg-emerald-500/10 border-emerald-100 dark:border-emerald-500/30 text-emerald-600 dark:text-emerald-400 shadow-[0_2px_8px_rgba(16,185,129,0.08)] dark:shadow-[0_2px_8px_rgba(16,185,129,0.15)]"
-                        }`}
-                      >
-                        <div className="flex flex-col items-center justify-center leading-none">
-                          <span className="text-[15px] font-extrabold">{available}</span>
-                          <span className="text-[7.5px] font-black uppercase mt-0.5 opacity-80 tracking-widest">
-                            Tồn
+                    <div className="w-px h-5 bg-slate-200 bg-slate-800/60 shrink-0" />
+
+                    {/* Giá sỉ */}
+                    <div className="flex flex-col text-left">
+                      <span className="text-[8px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-0.5">
+                        Giá Sỉ
+                      </span>
+                      <span className="text-[13px] font-bold text-slate-700 dark:text-slate-300 font-mono tracking-tight leading-none">
+                        {formatCurrency(wholesalePrice)}
+                      </span>
+                    </div>
+
+                    {isOwner && (
+                      <>
+                        <div className="w-px h-5 bg-slate-200 bg-slate-800/60 shrink-0" />
+                        {/* Giá nhập (chỉ Owner) */}
+                        <div className="flex flex-col text-left">
+                          <span className="text-[8px] font-bold text-emerald-600/80 dark:text-emerald-400/80 uppercase tracking-widest mb-0.5">
+                            Giá Nhập
+                          </span>
+                          <span className="text-[13px] font-bold text-emerald-600 dark:text-[#34d399] font-mono tracking-tight leading-none">
+                            {formatCurrency(costPrice)}
                           </span>
                         </div>
-                        {/* Small indicator dot */}
-                        <div
-                          className={`absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full border-2 border-white dark:border-[#131926] ${
-                            available === 0
-                              ? "bg-rose-500 animate-pulse"
-                              : available <= LOW_STOCK_THRESHOLD
-                              ? "bg-amber-500"
-                              : "bg-emerald-500"
-                          }`}
-                        />
-                      </div>
-                    </div>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>

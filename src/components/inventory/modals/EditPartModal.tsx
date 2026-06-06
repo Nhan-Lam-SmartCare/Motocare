@@ -211,17 +211,16 @@ const EditPartModal: React.FC<EditPartModalProps> = ({
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                 Giá nhập
               </label>
-              <input
-                type="number"
+              <FormattedNumberInput
                 value={formData.costPrice || 0}
-                onChange={(e) =>
+                onValue={(val) =>
                   setFormData({
                     ...formData,
-                    costPrice: Number(e.target.value),
+                    costPrice: val,
                   })
                 }
                 className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
-                min="0"
+                min={0}
               />
             </div>
 
@@ -229,17 +228,16 @@ const EditPartModal: React.FC<EditPartModalProps> = ({
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                 Giá bán lẻ
               </label>
-              <input
-                type="number"
-                value={formData.retailPrice}
-                onChange={(e) =>
+              <FormattedNumberInput
+                value={formData.retailPrice || 0}
+                onValue={(val) =>
                   setFormData({
                     ...formData,
-                    retailPrice: Number(e.target.value),
+                    retailPrice: val,
                   })
                 }
                 className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
-                min="0"
+                min={0}
               />
             </div>
 
@@ -247,17 +245,16 @@ const EditPartModal: React.FC<EditPartModalProps> = ({
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                 Giá bán sỉ
               </label>
-              <input
-                type="number"
-                value={formData.wholesalePrice}
-                onChange={(e) =>
+              <FormattedNumberInput
+                value={formData.wholesalePrice || 0}
+                onValue={(val) =>
                   setFormData({
                     ...formData,
-                    wholesalePrice: Number(e.target.value),
+                    wholesalePrice: val,
                   })
                 }
                 className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
-                min="0"
+                min={0}
               />
             </div>
           </div>
@@ -268,17 +265,16 @@ const EditPartModal: React.FC<EditPartModalProps> = ({
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                 Tồn kho hiện tại
               </label>
-              <input
-                type="number"
-                value={formData.stock}
-                onChange={(e) =>
+              <FormattedNumberInput
+                value={formData.stock || 0}
+                onValue={(val) =>
                   setFormData({
                     ...formData,
-                    stock: Number(e.target.value),
+                    stock: val,
                   })
                 }
                 className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
-                min="0"
+                min={0}
               />
               <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
                 Tồn thực tế tại chi nhánh
@@ -289,17 +285,16 @@ const EditPartModal: React.FC<EditPartModalProps> = ({
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                 Hạn mức tồn tối thiểu
               </label>
-              <input
-                type="number"
-                value={formData.minStock}
-                onChange={(e) =>
+              <FormattedNumberInput
+                value={formData.minStock || 0}
+                onValue={(val) =>
                   setFormData({
                     ...formData,
-                    minStock: Number(e.target.value),
+                    minStock: val,
                   })
                 }
                 className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 text-center font-bold"
-                min="0"
+                min={0}
               />
               <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
                 Cảnh báo khi khả dụng dưới mức này

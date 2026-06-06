@@ -188,6 +188,16 @@ const ProductImageUploader: React.FC<ProductImageUploaderProps> = ({
     setDragOver(false);
   };
 
+  // Bind camera stream when video element mounts in the DOM
+  React.useEffect(() => {
+    if (showCamera && streamRef.current && videoRef.current) {
+      videoRef.current.srcObject = streamRef.current;
+      videoRef.current.play().catch((err) => {
+        console.error("Failed to auto-play camera video stream:", err);
+      });
+    }
+  }, [showCamera]);
+
   // Camera functions
   const startCamera = async () => {
     try {
@@ -195,9 +205,6 @@ const ProductImageUploader: React.FC<ProductImageUploaderProps> = ({
         video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } },
       });
       streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-      }
       setShowCamera(true);
     } catch (err: any) {
       console.error("Camera error:", err);

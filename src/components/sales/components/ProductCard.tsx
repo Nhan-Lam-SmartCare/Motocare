@@ -51,14 +51,14 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             )}
 
             {/* Product Image */}
-            <div className={`h-28 w-full flex items-center justify-center border-b border-slate-100 dark:border-slate-700/50 relative overflow-hidden select-none ${
+            <div className={`aspect-square w-full flex items-center justify-center border-b border-slate-100 dark:border-slate-700/50 relative overflow-hidden select-none ${
                 part.imageUrl ? "bg-white" : "bg-slate-50 dark:bg-[#0B0F19]/40"
             }`}>
                 {part.imageUrl ? (
                     <img
                         src={part.imageUrl}
                         alt={part.name}
-                        className="w-full h-full object-contain p-2 mix-blend-multiply group-hover:scale-105 transition-transform duration-300"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
                 ) : (
                     <div className="flex flex-col items-center justify-center gap-1">

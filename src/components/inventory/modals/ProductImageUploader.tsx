@@ -283,7 +283,7 @@ const ProductImageUploader: React.FC<ProductImageUploaderProps> = ({
                 autoPlay
                 playsInline
                 muted
-                className="w-full max-h-[60vh] object-contain"
+                className="w-full aspect-square object-cover"
               />
             </div>
             <div className="flex items-center justify-center gap-4 p-4 bg-slate-50 dark:bg-slate-900">
@@ -332,7 +332,7 @@ const ProductImageUploader: React.FC<ProductImageUploaderProps> = ({
               <img
                 src={preview}
                 alt={altText}
-                className="w-full h-full object-contain p-2 mix-blend-multiply"
+                className="w-full h-full object-cover"
               />
               {uploading && (
                 <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-[1px] flex items-center justify-center">

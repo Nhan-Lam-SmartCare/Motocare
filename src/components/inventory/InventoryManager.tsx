@@ -298,6 +298,64 @@ const InventoryManagerNew: React.FC = () => {
             <span className="text-xs font-extrabold font-mono leading-none">{formatCurrency(totalStockValue)}</span>
           </div>
         </div>
+
+        {/* Sub-tabs for Mobile - Horizontally Scrollable Pills */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 -mx-4 px-4 scrollbar-none">
+          {[
+            {
+              key: "stock",
+              label: "Tồn kho",
+              icon: <Boxes className="w-3.5 h-3.5" />,
+              activeClass: "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30",
+            },
+            {
+              key: "categories",
+              label: "Danh mục",
+              icon: <Package className="w-3.5 h-3.5" />,
+              activeClass: "bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/30",
+            },
+            {
+              key: "purchase-orders",
+              label: "Đơn đặt",
+              icon: <ShoppingCart className="w-3.5 h-3.5" />,
+              activeClass: "bg-purple-500/15 text-purple-600 dark:text-purple-400 border-purple-500/30",
+            },
+            {
+              key: "lookup",
+              label: "Tra cứu",
+              icon: <Search className="w-3.5 h-3.5" />,
+              activeClass: "bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 border-cyan-500/30",
+            },
+            {
+              key: "history",
+              label: "Lịch sử",
+              icon: <FileText className="w-3.5 h-3.5" />,
+              activeClass: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30",
+            },
+            {
+              key: "external-lookup",
+              label: "Tra cứu ngoài",
+              icon: <Search className="w-3.5 h-3.5" />,
+              activeClass: "bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30",
+            },
+          ].map((tab) => {
+            const isActive = activeTab === tab.key;
+            return (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold whitespace-nowrap transition border ${
+                  isActive
+                    ? tab.activeClass
+                    : "text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-[#131926] border-slate-205 dark:border-slate-800/65"
+                }`}
+              >
+                {tab.icon}
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Desktop Filters - Compact for small screens */}
@@ -1400,95 +1458,7 @@ const InventoryManagerNew: React.FC = () => {
       />
 
 
-      {/* Custom Bottom Navigation for Inventory */}
-      <div className="sm:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 z-50 safe-area-bottom">
-        {/* Backdrop blur effect */}
-        <div className="absolute inset-0 bg-white/80 dark:bg-slate-800/80 backdrop-blur-lg -z-10"></div>
-        <div className="grid grid-cols-4 gap-1 px-2 py-2">
-          <button
-            onClick={() => setActiveTab("stock")}
-            className={`flex flex-col items-center gap-1 px-2 py-2 rounded-xl transition-all duration-200 ${activeTab === "stock"
-              ? "bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400 scale-105"
-              : "text-slate-500 dark:text-slate-400 active:scale-95"
-              }`}
-          >
-            <Boxes
-              className={`w-5 h-5 ${activeTab === "stock" ? "scale-110" : ""
-                } transition-transform`}
-            />
-            <span
-              className={`text-[10px] font-medium ${activeTab === "stock" ? "font-semibold" : ""
-                }`}
-            >
-              Tồn kho
-            </span>
-          </button>
-          <button
-            onClick={() => setActiveTab("purchase-orders")}
-            className={`flex flex-col items-center gap-1 px-2 py-2 rounded-xl transition-all duration-200 ${activeTab === "purchase-orders"
-              ? "bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-400 scale-105"
-              : "text-slate-500 dark:text-slate-400 active:scale-95"
-              }`}
-          >
-            <svg
-              className={`w-5 h-5 ${activeTab === "purchase-orders" ? "scale-110" : ""
-                } transition-transform`}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-            </svg>
-            <span
-              className={`text-[10px] font-medium ${activeTab === "purchase-orders" ? "font-semibold" : ""
-                }`}
-            >
-              Đặt hàng
-            </span>
-          </button>
-          <button
-            onClick={() => setActiveTab("external-lookup")}
-            className={`flex flex-col items-center gap-1 px-2 py-2 rounded-xl transition-all duration-200 ${activeTab === "external-lookup"
-              ? "bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 scale-105"
-              : "text-slate-500 dark:text-slate-400 active:scale-95"
-              }`}
-          >
-            <svg
-              className={`w-5 h-5 ${activeTab === "external-lookup" ? "scale-110" : ""
-                } transition-transform`}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
-            </svg>
-            <span
-              className={`text-[10px] font-medium ${activeTab === "external-lookup" ? "font-semibold" : ""
-                }`}
-            >
-              Tra cứu
-            </span>
-          </button>
-          <button
-            onClick={() => setActiveTab("history")}
-            className={`flex flex-col items-center gap-1 px-2 py-2 rounded-xl transition-all duration-200 ${activeTab === "history"
-              ? "bg-green-100 dark:bg-green-900/40 text-green-600 dark:text-green-400 scale-105"
-              : "text-slate-500 dark:text-slate-400 active:scale-95"
-              }`}
-          >
-            <FileText
-              className={`w-5 h-5 ${activeTab === "history" ? "scale-110" : ""
-                } transition-transform`}
-            />
-            <span
-              className={`text-[10px] font-medium ${activeTab === "history" ? "font-semibold" : ""
-                }`}
-            >
-              Lịch sử
-            </span>
-          </button>
-        </div>
-      </div>
+
 
       {/* Create Purchase Order Modal */}
       {(showCreatePO || editingPO) && (

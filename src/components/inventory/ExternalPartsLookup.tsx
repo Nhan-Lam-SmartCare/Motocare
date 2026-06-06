@@ -320,8 +320,8 @@ export default function ExternalPartsLookup() {
                 </div>
 
                 {/* Mobile Card View */}
-                <div className="sm:hidden flex-1 flex flex-col">
-                    <div className="flex-1 overflow-auto space-y-3 pb-20">
+                <div className="sm:hidden flex-1 flex flex-col overflow-hidden">
+                    <div className="flex-1 overflow-auto space-y-3 p-4">
                         {loading ? (
                             <div className="text-center py-12 text-slate-500 dark:text-slate-400">
                                 Đang tải dữ liệu...
@@ -346,7 +346,7 @@ export default function ExternalPartsLookup() {
                                                     className="w-16 h-16 object-cover rounded-xl border-2 border-slate-100 dark:border-slate-700"
                                                 />
                                             ) : (
-                                                <div className="w-16 h-16 bg-slate-100 dark:bg-slate-700 rounded-xl border-2 border-slate-200 dark:border-slate-600 flex items-center justify-center text-slate-400 text-xs">
+                                                <div className="w-16 h-16 bg-slate-100 dark:bg-slate-700 rounded-xl border-2 border-slate-205 dark:border-slate-600 flex items-center justify-center text-slate-400 text-xs">
                                                     No img
                                                 </div>
                                             )}
@@ -377,9 +377,9 @@ export default function ExternalPartsLookup() {
                         )}
                     </div>
 
-                    {/* Mobile Pagination - Fixed Bottom */}
-                    <div className="fixed bottom-0 left-0 right-0 bg-white/90 dark:bg-slate-800/90 backdrop-blur-lg border-t border-slate-200 dark:border-slate-700 px-4 py-3 flex items-center justify-between z-10">
-                        <div className="text-xs text-slate-600 dark:text-slate-300 font-medium">
+                    {/* Mobile Pagination - Styled Above Global Bottom Nav */}
+                    <div className="bg-white/95 dark:bg-slate-800/95 backdrop-blur-lg border-t border-slate-200 dark:border-slate-700 px-4 py-3 pb-[76px] flex items-center justify-between z-10">
+                        <div className="text-xs text-slate-600 dark:text-slate-300 font-semibold">
                             Trang {page}/{totalPages}
                         </div>
                         <div className="flex gap-2">

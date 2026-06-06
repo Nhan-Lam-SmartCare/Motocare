@@ -311,109 +311,100 @@ const ProductImageUploader: React.FC<ProductImageUploaderProps> = ({
       )}
       <canvas ref={canvasRef} className="hidden" />
 
-      {/* Main upload area */}
-      <div className="flex gap-3">
-        {/* Preview */}
+      {/* Main upload area - Centered vertical layout for mobile & desktop */}
+      <div className="flex flex-col items-center justify-center gap-4 py-2">
+        {/* Preview / Drop Zone */}
         <div
-          className={`${previewSize} shrink-0 overflow-hidden ${borderRadius} border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-900 flex items-center justify-center relative group`}
+          onDrop={handleDrop}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onClick={() => fileInputRef.current?.click()}
+          className={`
+            h-28 w-28 shrink-0 rounded-2xl border-2 flex flex-col items-center justify-center relative shadow-sm overflow-hidden select-none transition-all duration-300 cursor-pointer
+            ${preview ? "border-slate-200 dark:border-slate-700 bg-white hover:scale-[1.02]" : "border-dashed border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/30 hover:border-blue-400 dark:hover:border-blue-500"}
+            ${dragOver ? "border-blue-500 bg-blue-50/50 dark:bg-blue-950/20" : ""}
+            ${uploading ? "pointer-events-none opacity-60" : ""}
+          `}
+          title={preview ? "Click để thay đổi ảnh" : "Click để chọn ảnh"}
         >
           {preview ? (
             <>
               <img
                 src={preview}
                 alt={altText}
-                className="h-full w-full object-cover"
+                className="w-full h-full object-contain p-2 mix-blend-multiply"
               />
               {uploading && (
-                <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                  <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-[1px] flex items-center justify-center">
+                  <div className="w-6 h-6 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin" />
                 </div>
-              )}
-              {!uploading && (
-                <button
-                  type="button"
-                  onClick={removeImage}
-                  className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity shadow-md hover:bg-red-600"
-                  title="Xóa ảnh"
-                >
-                  ×
-                </button>
               )}
             </>
           ) : (
-            <span className="px-2 text-center text-xs text-slate-400">
-              Chưa có ảnh
-            </span>
-          )}
-        </div>
-
-        {/* Upload controls */}
-        <div className="min-w-0 flex-1 space-y-2">
-          {/* Drop zone + file select */}
-          <div
-            onDrop={handleDrop}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onClick={() => fileInputRef.current?.click()}
-            className={`
-              flex items-center justify-center gap-2 px-3 py-2.5 border-2 border-dashed ${borderRadius}
-              cursor-pointer transition-all text-sm
-              ${dragOver
-                ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
-                : "border-slate-300 dark:border-slate-600 hover:border-blue-400 dark:hover:border-blue-500 bg-slate-50 dark:bg-slate-700/50 hover:bg-blue-50/50 dark:hover:bg-blue-900/10"
-              }
-              ${uploading ? "pointer-events-none opacity-60" : ""}
-            `}
-          >
-            <svg className="w-4 h-4 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-            <span className="text-slate-500 dark:text-slate-400 truncate">
-              {uploading ? "Đang tải lên..." : "Chọn ảnh hoặc kéo thả vào đây"}
-            </span>
-          </div>
-
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            onChange={handleFileInput}
-            className="hidden"
-          />
-
-          {/* Action buttons row */}
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={uploading}
-              className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 text-xs font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors disabled:opacity-50"
-            >
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-              </svg>
-              Tải lên
-            </button>
-            <button
-              type="button"
-              onClick={startCamera}
-              disabled={uploading}
-              className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors disabled:opacity-50"
-            >
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+            <div className="flex flex-col items-center justify-center text-center p-2">
+              <svg className="w-7 h-7 text-slate-400 dark:text-slate-500 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
                 <circle cx="12" cy="13" r="3" />
               </svg>
-              Chụp ảnh
-            </button>
-          </div>
-
-          {uploading && (
-            <div className="h-1 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
-              <div className="h-full bg-blue-500 rounded-full animate-pulse w-2/3" />
+              <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                Chưa có ảnh
+              </span>
             </div>
           )}
         </div>
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          onChange={handleFileInput}
+          className="hidden"
+        />
+
+        {/* Action buttons row below preview */}
+        <div className="flex gap-2 w-full max-w-[280px]">
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-all disabled:opacity-50"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+            </svg>
+            Tải ảnh
+          </button>
+          <button
+            type="button"
+            onClick={startCamera}
+            disabled={uploading}
+            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-all disabled:opacity-50"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+              <circle cx="12" cy="13" r="3" />
+            </svg>
+            Chụp ảnh
+          </button>
+          {preview && !uploading && (
+            <button
+              type="button"
+              onClick={removeImage}
+              className="w-9 h-9 shrink-0 flex items-center justify-center text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800 rounded-xl hover:bg-rose-100 dark:hover:bg-rose-900/40 transition-all"
+              title="Xóa ảnh"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+            </button>
+          )}
+        </div>
+
+        {uploading && (
+          <div className="w-full max-w-[280px] h-1 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+            <div className="h-full bg-blue-500 rounded-full animate-pulse w-2/3" />
+          </div>
+        )}
       </div>
     </div>
   );

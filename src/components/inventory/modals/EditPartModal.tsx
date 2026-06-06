@@ -4,6 +4,7 @@ import { showToast } from "../../../utils/toast";
 import FormattedNumberInput from "../../common/FormattedNumberInput";
 import { validatePriceAndQty } from "../../../utils/validation";
 import type { Part } from "../../../types";
+import ProductImageUploader from "./ProductImageUploader";
 
 interface EditPartModalProps {
   part: Part;
@@ -21,6 +22,7 @@ const EditPartModal: React.FC<EditPartModalProps> = ({
   const [formData, setFormData] = useState({
     name: part.name,
     category: part.category || "",
+    imageUrl: part.imageUrl || "",
     retailPrice: part.retailPrice?.[currentBranchId] || 0,
     wholesalePrice: part.wholesalePrice?.[currentBranchId] || 0,
     costPrice: part.costPrice?.[currentBranchId] || 0,
@@ -44,6 +46,7 @@ const EditPartModal: React.FC<EditPartModalProps> = ({
       id: part.id,
       name: formData.name.trim(),
       category: formData.category.trim() || undefined,
+      imageUrl: formData.imageUrl.trim() || undefined,
       stock: {
         ...(part.stock || {}),
         [currentBranchId]: formData.stock,
@@ -109,6 +112,19 @@ const EditPartModal: React.FC<EditPartModalProps> = ({
               }
               className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
               required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+              Ảnh sản phẩm
+            </label>
+            <ProductImageUploader
+              imageUrl={formData.imageUrl}
+              onImageChange={(url) =>
+                setFormData({ ...formData, imageUrl: url })
+              }
+              altText={formData.name || "Ảnh sản phẩm"}
             />
           </div>
 

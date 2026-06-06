@@ -233,7 +233,7 @@ export const useInventoryManager = () => {
     queryFn: async () => {
       let query = supabase
         .from("parts")
-        .select("id, name, sku, category, stock, reservedstock, minstock, costPrice, retailPrice")
+        .select("id, name, sku, category, imageUrl, stock, reservedstock, minstock, costPrice, retailPrice")
         .order("name");
 
       if (categoryFilter && categoryFilter !== "all") {
@@ -637,6 +637,7 @@ export const useInventoryManager = () => {
           barcode: string;
           category: string;
           description: string;
+          imageUrl?: string;
           importPrice: number;
           retailPrice: number;
           wholesalePrice: number;
@@ -710,6 +711,7 @@ export const useInventoryManager = () => {
                   barcode: item._productData.barcode || "",
                   category: item._productData.category,
                   description: item._productData.description || "",
+                  imageUrl: item._productData.imageUrl || undefined,
                   stock: { [currentBranchId]: 0 }, // Stock = 0, sẽ cập nhật khi hoàn tất phiếu nhập
                   minstock: { [currentBranchId]: 10 }, // Khởi tạo hạn mức tối thiểu mặc định là 10
                   costPrice: {

@@ -135,6 +135,8 @@ export async function createPart(
           : `${Math.random().toString(36).slice(2)}-${Date.now()}`,
       name: input.name,
       sku: generatedSKU,
+      barcode: input.barcode,
+      imageUrl: input.imageUrl,
       stock: input.stock || { CN1: 0 },
       minstock: input.minstock || {},
       retailPrice: input.retailPrice || { CN1: 0 },
@@ -200,12 +202,14 @@ export async function updatePart(
         cause: oldErr,
       });
     }
+    console.warn("🖼️ [updatePart] Sending updates for part", id, ":", JSON.stringify(updates, null, 2));
     const { data, error } = await supabase
       .from(PARTS_TABLE)
       .update(updates)
       .eq("id", id)
       .select()
       .single();
+    console.warn("🖼️ [updatePart] Response:", { data, error });
     if (error || !data)
       return failure({
         code: "supabase",

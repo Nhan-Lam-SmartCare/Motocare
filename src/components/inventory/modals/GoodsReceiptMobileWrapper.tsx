@@ -97,6 +97,7 @@ const GoodsReceiptMobileWrapper: React.FC<{
           barcode: productData.barcode?.trim() || "",
           category: productData.category,
           description: productData.description || "",
+          imageUrl: productData.imageUrl || "",
           importPrice: productData.importPrice,
           retailPrice: productData.retailPrice,
           wholesalePrice:

@@ -982,6 +982,27 @@ const InventoryManagerNew: React.FC = () => {
             </div>
 
             <div className="flex-1 overflow-auto p-4 space-y-4">
+              <div className="flex items-center gap-4 rounded-lg bg-slate-50 dark:bg-slate-800 p-3">
+                <div className="h-24 w-24 shrink-0 overflow-hidden rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-900 flex items-center justify-center">
+                  {selectedPartDetail.imageUrl ? (
+                    <img
+                      src={selectedPartDetail.imageUrl}
+                      alt={selectedPartDetail.name}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <Package className="h-8 w-8 text-slate-400" />
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <div className="text-sm font-semibold text-slate-900 dark:text-white">
+                    {selectedPartDetail.name}
+                  </div>
+                  <div className="mt-1 break-all text-xs text-slate-500 dark:text-slate-400">
+                    {selectedPartDetail.imageUrl ? "Đã có ảnh sản phẩm" : "Chưa có ảnh sản phẩm"}
+                  </div>
+                </div>
+              </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-3">
                   <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">
@@ -1069,6 +1090,7 @@ const InventoryManagerNew: React.FC = () => {
             const updates: Partial<Part> = {
               name: updatedPart.name,
               category: updatedPart.category,
+              imageUrl: updatedPart.imageUrl,
               stock: updatedPart.stock,
               minstock: updatedPart.minstock,
               retailPrice: updatedPart.retailPrice,

@@ -49,9 +49,22 @@ const InventoryMobileCards: React.FC<InventoryMobileCardsProps> = ({
               <div className="flex flex-col space-y-3.5">
                 <div>
                   <div className="flex items-start justify-between gap-3">
-                    <h3 className="text-[16px] font-extrabold text-slate-900 dark:text-white leading-snug truncate tracking-tight flex-1">
-                       {part.name}
-                    </h3>
+                    <div className="flex min-w-0 flex-1 items-start gap-3">
+                      <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-900 flex items-center justify-center">
+                        {part.imageUrl ? (
+                          <img
+                            src={part.imageUrl}
+                            alt={part.name}
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <Tags className="h-5 w-5 text-slate-400" />
+                        )}
+                      </div>
+                      <h3 className="min-w-0 flex-1 text-[16px] font-extrabold text-slate-900 dark:text-white leading-snug truncate tracking-tight">
+                        {part.name}
+                      </h3>
+                    </div>
                     <div className="relative shrink-0">
                       <button
                         onClick={(e) => {

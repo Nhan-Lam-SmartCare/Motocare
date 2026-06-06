@@ -259,7 +259,7 @@ const InventoryDesktopTable: React.FC<InventoryDesktopTableProps> = ({
               </td>
             </tr>
           ) : (
-            filteredParts.map((part) => {
+            filteredParts.map((part, index) => {
               const branchKey = currentBranchId || "";
               const stock = part.stock?.[branchKey] || 0;
               const reserved = part.reservedstock?.[branchKey] || 0;
@@ -316,6 +316,32 @@ const InventoryDesktopTable: React.FC<InventoryDesktopTableProps> = ({
                   </td>
                   <td className="px-5 py-4">
                     <div className="flex items-center gap-4">
+                      <div className={`h-12 w-12 shrink-0 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-center relative group/img shadow-sm select-none ${
+                        part.imageUrl ? "bg-white" : "bg-slate-100 dark:bg-slate-900"
+                      }`}>
+                        {part.imageUrl ? (
+                          <>
+                            <img
+                              src={part.imageUrl}
+                              alt={part.name}
+                              className="h-full w-full object-contain p-0.5 rounded-xl mix-blend-multiply"
+                            />
+                            {/* Hover zoom preview popup */}
+                            <div className={`
+                              hidden group-hover/img:flex absolute z-[100] p-2 bg-white border border-slate-250 rounded-2xl shadow-2xl w-48 h-48 pointer-events-none items-center justify-center
+                              ${index < 2 ? "top-full left-1/2 -translate-x-1/2 mt-3" : "bottom-full left-1/2 -translate-x-1/2 mb-3"}
+                            `}>
+                              <img
+                                src={part.imageUrl}
+                                alt={part.name}
+                                className="max-w-full max-h-full object-contain rounded-xl mix-blend-multiply"
+                              />
+                            </div>
+                          </>
+                        ) : (
+                          <Package className="h-5 w-5 text-slate-400" />
+                        )}
+                      </div>
                       <div className="flex flex-col gap-1.5 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="text-sm font-black text-slate-800 dark:text-slate-100 leading-tight group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">

@@ -400,6 +400,7 @@ const GoodsReceiptModal: React.FC<{
           name: productData.name,
           sku: productSku,
           barcode: productData.barcode?.trim() || "", // Lưu lại để tìm kiếm
+          imageUrl: productData.imageUrl || undefined,
           category: productData.category,
           description: productData.description,
           stock: { [currentBranchId]: 0 }, // Stock = 0, sẽ cập nhật khi hoàn tất phiếu nhập

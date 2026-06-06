@@ -1,7 +1,7 @@
 import React from "react";
 import type { Part } from "../../../types";
 import { formatCurrency } from "../../../utils/format";
-import { ShoppingCart } from "lucide-react";
+import { ShoppingCart, Package } from "lucide-react";
 import { getAvailableStock } from "../../../lib/repository/partsRepository";
 
 interface ProductCardProps {
@@ -49,6 +49,24 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             {inCart && (
                 <div className="h-0.5 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500" />
             )}
+
+            {/* Product Image */}
+            <div className={`h-28 w-full flex items-center justify-center border-b border-slate-100 dark:border-slate-700/50 relative overflow-hidden select-none ${
+                part.imageUrl ? "bg-white" : "bg-slate-50 dark:bg-[#0B0F19]/40"
+            }`}>
+                {part.imageUrl ? (
+                    <img
+                        src={part.imageUrl}
+                        alt={part.name}
+                        className="w-full h-full object-contain p-2 mix-blend-multiply group-hover:scale-105 transition-transform duration-300"
+                    />
+                ) : (
+                    <div className="flex flex-col items-center justify-center gap-1">
+                        <Package className="w-5 h-5 text-slate-350 dark:text-slate-650" />
+                        <span className="text-[9px] font-bold text-slate-405 dark:text-slate-500 uppercase tracking-wider">No Image</span>
+                    </div>
+                )}
+            </div>
 
             <div className="p-3 md:p-4 space-y-2 md:space-y-2.5">
                 {/* Product Name */}

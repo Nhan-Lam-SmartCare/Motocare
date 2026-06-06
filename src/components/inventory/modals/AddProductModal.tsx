@@ -5,6 +5,7 @@ import { validatePriceAndQty } from '../../../utils/validation';
 import FormattedNumberInput from '../../common/FormattedNumberInput';
 import { X, Plus, ShoppingCart, Package } from 'lucide-react';
 import { useCategories, useCreateCategory } from '../../../hooks/useCategories';
+import ProductImageUploader from './ProductImageUploader';
 // Add New Product Modal Component
 const AddProductModal: React.FC<{
   isOpen: boolean;
@@ -12,6 +13,7 @@ const AddProductModal: React.FC<{
   onSave: (productData: {
     name: string;
     description: string;
+    imageUrl: string;
     barcode: string;
     category: string;
     quantity: number;
@@ -25,6 +27,7 @@ const AddProductModal: React.FC<{
 }> = ({ isOpen, onClose, onSave }) => {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
   const [barcode, setBarcode] = useState("");
   const [category, setCategory] = useState("");
   const [quantity, setQuantity] = useState<number>(1);
@@ -53,6 +56,7 @@ const AddProductModal: React.FC<{
     onSave({
       name: name.trim(),
       description: description.trim(),
+      imageUrl: imageUrl.trim(),
       barcode: barcode.trim(),
       category: category || "Chưa phân loại",
       quantity: Number(quantity) || 1,
@@ -67,6 +71,7 @@ const AddProductModal: React.FC<{
     // Reset form
     setName("");
     setDescription("");
+    setImageUrl("");
     setBarcode("");
     setCategory("");
     setQuantity(1);
@@ -163,6 +168,18 @@ const AddProductModal: React.FC<{
                   placeholder="Tùy chọn"
                 />
               </div>
+            </div>
+
+            <div className="mb-3">
+              <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">
+                Ảnh sản phẩm <span className="text-slate-400 font-normal">(tùy chọn)</span>
+              </label>
+              <ProductImageUploader
+                imageUrl={imageUrl}
+                onImageChange={(url) => setImageUrl(url)}
+                altText={name || "Ảnh sản phẩm"}
+                compact
+              />
             </div>
 
             {/* Inline category form */}

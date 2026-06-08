@@ -35,7 +35,7 @@ interface CartSectionProps {
     setShowCustomerDropdown: (show: boolean) => void;
     isSearchingCustomer: boolean;
     hasMoreCustomers: boolean;
-    onLoadMoreCustomers: () => void;
+    onLoadMoreCustomers: (e: React.MouseEvent) => void;
 
     // Cart Actions
     onUpdateCartQuantity: (partId: string, quantity: number) => void;

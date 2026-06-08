@@ -18,6 +18,7 @@ import {
 import { useDebouncedValue } from "../../../hooks/useDebouncedValue";
 import {
   CustomerVehicleSection,
+  ServiceInfoSection,
   PartsUsedSection,
   AdditionalServicesSection,
   SummarySidebar,
@@ -1886,29 +1887,38 @@ const WorkOrderModal: React.FC<{
           {/* Left Panel - Scrollable Form */}
           <div className="flex-1 px-4 py-5 md:px-6 md:py-6 space-y-5 overflow-y-auto pb-24 md:pb-6 bg-slate-50/50 dark:bg-slate-900/20">
             <div className="space-y-5">
-              {/* Section 1: Customer & Vehicle */}
-              <CustomerVehicleSection
-                formData={formData}
-                setFormData={setFormData}
-                customerSearch={customerSearch}
-                setCustomerSearch={setCustomerSearch}
-                customers={customers}
-                serverCustomers={serverCustomers}
-                isSearchingCustomer={isSearchingCustomer}
-                hasMoreCustomers={hasMoreCustomers}
-                customerPage={customerPage}
-                fetchCustomers={fetchCustomers}
-                handleLoadMoreCustomers={handleLoadMoreCustomers}
-                filteredCustomers={filteredCustomers}
-                upsertCustomer={upsertCustomer}
-                freshCustomer={freshCustomer}
-                setFreshCustomer={setFreshCustomer}
-                currentBranchId={currentBranchId}
-                storeSettings={storeSettings}
-                allCustomers={allCustomers}
-              />
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-start">
+                {/* Section 1: Customer & Vehicle */}
+                <CustomerVehicleSection
+                  formData={formData}
+                  setFormData={setFormData}
+                  customerSearch={customerSearch}
+                  setCustomerSearch={setCustomerSearch}
+                  customers={customers}
+                  serverCustomers={serverCustomers}
+                  isSearchingCustomer={isSearchingCustomer}
+                  hasMoreCustomers={hasMoreCustomers}
+                  customerPage={customerPage}
+                  fetchCustomers={fetchCustomers}
+                  handleLoadMoreCustomers={handleLoadMoreCustomers}
+                  filteredCustomers={filteredCustomers}
+                  upsertCustomer={upsertCustomer}
+                  freshCustomer={freshCustomer}
+                  setFreshCustomer={setFreshCustomer}
+                  currentBranchId={currentBranchId}
+                  storeSettings={storeSettings}
+                  allCustomers={allCustomers}
+                />
 
-              {/* Section 2: Parts Used */}
+                {/* Section 2: Service Info & Notes */}
+                <ServiceInfoSection
+                  formData={formData}
+                  setFormData={setFormData}
+                  employees={employees}
+                />
+              </div>
+
+              {/* Section 3: Parts Used */}
               <PartsUsedSection
                 parts={parts}
                 partsLoading={partsLoading}
@@ -1919,7 +1929,7 @@ const WorkOrderModal: React.FC<{
                 isOwner={isOwner}
               />
 
-              {/* Section 3: Additional Services */}
+              {/* Section 4: Additional Services */}
               <AdditionalServicesSection
                 additionalServices={additionalServices}
                 setAdditionalServices={setAdditionalServices}

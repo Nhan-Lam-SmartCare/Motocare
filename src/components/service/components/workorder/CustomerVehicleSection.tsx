@@ -832,6 +832,51 @@ export const CustomerVehicleSection: React.FC<CustomerVehicleSectionProps> = ({
             </div>
           )}
         </div>
+
+        {/* KM & Issue Description */}
+        <div className="pt-4 border-t border-slate-200 dark:border-slate-700/50 space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1.5">
+              <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+              Số KM hiện tại
+            </label>
+            <input
+              type="number"
+              placeholder="Nhập số KM hiện tại (VD: 15000)"
+              value={formData.currentKm || ""}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  currentKm: e.target.value ? parseInt(e.target.value) : undefined,
+                })
+              }
+              className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all outline-none"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1.5">
+              <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              Mô tả sự cố
+            </label>
+            <textarea
+              rows={3}
+              placeholder="Bảo dưỡng định kỳ, thay nhớt..."
+              value={formData.issueDescription || ""}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  issueDescription: e.target.value,
+                })
+              }
+              className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all outline-none resize-none"
+            />
+          </div>
+        </div>
       </div>
 
       {/* Add Customer Modal */}

@@ -15,11 +15,11 @@ interface CheckoutSectionProps {
     onDiscountTypeChange: (type: "amount" | "percent") => void;
     onDiscountPercentChange: (percent: number) => void;
 
-    paymentMethod: string;
-    paymentType: string;
+    paymentMethod: "cash" | "bank" | "card" | null;
+    paymentType: "partial" | "note" | "full" | "installment" | null;
     partialAmount: number;
-    onPaymentMethodChange: (method: string) => void;
-    onPaymentTypeChange: (type: string) => void;
+    onPaymentMethodChange: (method: "cash" | "bank" | "card" | null) => void;
+    onPaymentTypeChange: (type: "partial" | "note" | "full" | "installment" | null) => void;
     onPartialAmountChange: (amount: number) => void;
 
     showInstallmentModal: boolean;
@@ -28,8 +28,8 @@ interface CheckoutSectionProps {
     onSaveInstallmentDetails: (details: any) => void;
 
     // Delivery settings
-    deliveryMethod: string;
-    setDeliveryMethod: (method: string) => void;
+    deliveryMethod: "store_pickup" | "cod" | null;
+    setDeliveryMethod: (method: "store_pickup" | "cod" | null) => void;
     deliveryAddress: string;
     setDeliveryAddress: (address: string) => void;
     deliveryPhone: string;

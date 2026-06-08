@@ -96,7 +96,7 @@ export const PartsUsedSection: React.FC<PartsUsedSectionProps> = ({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center flex-shrink-0 shadow-sm">
-            <span className="text-xs font-bold">2</span>
+            <span className="text-xs font-bold">3</span>
           </div>
           <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">
             Phụ tùng sử dụng

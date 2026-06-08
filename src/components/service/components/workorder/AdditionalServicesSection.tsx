@@ -37,7 +37,7 @@ export const AdditionalServicesSection: React.FC<AdditionalServicesSectionProps>
     <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-5 shadow-sm space-y-4">
       <div className="flex items-center gap-2">
         <div className="w-6 h-6 rounded-full bg-purple-500 text-white flex items-center justify-center flex-shrink-0 shadow-sm">
-          <span className="text-xs font-bold">3</span>
+          <span className="text-xs font-bold">4</span>
         </div>
         <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">
           Báo giá (Gia công, Đặt hàng)

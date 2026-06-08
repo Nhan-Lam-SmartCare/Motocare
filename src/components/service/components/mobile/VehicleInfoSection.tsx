@@ -13,6 +13,8 @@ import {
 } from "lucide-react";
 import type { Vehicle } from "../../../../types";
 import { formatKm, type MaintenanceWarning } from "../../../../utils/maintenanceReminder";
+import { AddVehicleModal } from "./AddVehicleModal";
+
 
 // Organized by brand for better UX
 const VEHICLES_BY_BRAND: Record<string, string[]> = {
@@ -289,140 +291,21 @@ export const VehicleInfoSection: React.FC<VehicleInfoSectionProps> = ({
             )}
 
             {/* Add/Edit Vehicle Modal */}
-            {(showAddVehicle || editingVehicle) && (
-                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[110] flex items-center justify-center p-4">
-                    <div className="w-full max-w-md bg-white dark:bg-[#1e1e2d] rounded-3xl p-5 border border-slate-200 dark:border-slate-700/50 shadow-2xl transition-colors">
-                        <div className="flex items-center justify-between mb-5">
-                            <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center">
-                                    <Bike className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                                </div>
-                                <h3 className="text-slate-900 dark:text-white font-bold text-base">
-                                    {editingVehicle ? "Sửa thông tin xe" : "Thêm xe mới"}
-                                </h3>
-                            </div>
-                            <button
-                                onClick={() => {
-                                    setShowAddVehicle(false);
-                                    setEditingVehicle(null);
-                                    setNewVehiclePlate("");
-                                    setNewVehicleName("");
-                                }}
-                                className="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 active:scale-95 transition-all animate-pulse"
-                                style={{ minWidth: "36px", minHeight: "36px" }}
-                            >
-                                <X className="w-4 h-4" />
-                            </button>
-                        </div>
-
-                        <div className="space-y-4">
-                            <div className="space-y-1.5">
-                                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">
-                                    Biển số xe
-                                </label>
-                                <input
-                                    type="text"
-                                    value={newVehiclePlate}
-                                    onChange={(e) =>
-                                        setNewVehiclePlate(e.target.value.toUpperCase())
-                                    }
-                                    placeholder="59G1-123.45"
-                                    className="w-full px-4 py-3.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white text-sm font-bold uppercase focus:border-blue-500 transition-all"
-                                />
-                            </div>
-
-                            <div className="space-y-1.5 relative">
-                                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">
-                                    Tên xe
-                                </label>
-                                <input
-                                    type="text"
-                                    value={newVehicleName}
-                                    onChange={(e) => {
-                                        setNewVehicleName(e.target.value);
-                                        setShowVehicleDropdown(true);
-                                    }}
-                                    onFocus={() => setShowVehicleDropdown(true)}
-                                    placeholder="Chọn hoặc nhập dòng xe"
-                                    className="w-full px-4 py-3.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white text-sm focus:border-blue-500 transition-all"
-                                />
-
-                                {/* IMPROVED VEHICLE DROPDOWN - GROUPED BY BRAND */}
-                                {showVehicleDropdown && (
-                                    <div className="absolute z-20 w-full mt-1 bg-white dark:bg-[#1e1e2d] border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl max-h-[200px] overflow-y-auto scrollbar-hide">
-
-                                        {/* Filter and group vehicles */}
-                                        {(() => {
-                                            const searchTerm = newVehicleName.toLowerCase();
-                                            let hasResults = false;
-
-                                            return (
-                                                <>
-                                                    {Object.entries(VEHICLES_BY_BRAND).map(([brand, models]) => {
-                                                        const matchingModels = models.filter(m => m.toLowerCase().includes(searchTerm));
-                                                        if (matchingModels.length === 0) return null;
-                                                        hasResults = true;
-
-                                                        return (
-                                                            <div key={brand}>
-                                                                <div className="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-[10px] font-bold text-slate-500 uppercase tracking-wider sticky top-0">
-                                                                    {brand}
-                                                                </div>
-                                                                {matchingModels.map(model => (
-                                                                    <button
-                                                                        key={model}
-                                                                        type="button"
-                                                                        onClick={() => {
-                                                                            setNewVehicleName(model);
-                                                                            setShowVehicleDropdown(false);
-                                                                        }}
-                                                                        className="w-full text-left px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 text-xs text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-700/30 last:border-0 transition-colors"
-                                                                        style={{ minHeight: "44px" }}
-                                                                    >
-                                                                        {model}
-                                                                    </button>
-                                                                ))}
-                                                            </div>
-                                                        );
-                                                    })}
-
-                                                    {!hasResults && (
-                                                        <div className="px-4 py-3 text-xs text-slate-500 text-center italic">
-                                                            Không tìm thấy - nhập tên xe mới
-                                                        </div>
-                                                    )}
-                                                </>
-                                            );
-                                        })()}
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className="flex gap-3 pt-2">
-                                <button
-                                    onClick={() => {
-                                        setShowAddVehicle(false);
-                                        setEditingVehicle(null);
-                                        setNewVehiclePlate("");
-                                        setNewVehicleName("");
-                                    }}
-                                    className="flex-1 py-3.5 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 rounded-xl font-bold text-xs active:scale-95 transition-all"
-                                    style={{ minHeight: "44px" }}
-                                >
-                                    Hủy
-                                </button>
-                                <button
-                                    onClick={onAddVehicle}
-                                    className="flex-1 py-3.5 bg-blue-600 text-white rounded-xl font-bold text-xs shadow-lg shadow-blue-500/20 active:scale-95 transition-all"
-                                    style={{ minHeight: "44px" }}
-                                >
-                                    {editingVehicle ? "Lưu thay đổi" : "Thêm xe"}
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
+            <AddVehicleModal
+                isOpen={showAddVehicle || !!editingVehicle}
+                onClose={() => {
+                    setShowAddVehicle(false);
+                    setEditingVehicle(null);
+                }}
+                onAddVehicle={(licensePlate, model) => {
+                    setNewVehiclePlate(licensePlate);
+                    setNewVehicleName(model);
+                    setTimeout(() => {
+                        onAddVehicle();
+                    }, 0);
+                }}
+                editingVehicle={editingVehicle}
+            />
         </div>
     );
 };

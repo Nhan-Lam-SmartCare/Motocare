@@ -12,7 +12,6 @@
   },
   "include": ["src", "vite-env.d.ts"],
   "exclude": [
-    "src/components/__DEPRECATED_backups/**",
     "**/*.backup.ts",
     "**/*.backup.tsx",
     "**/*.old.ts",

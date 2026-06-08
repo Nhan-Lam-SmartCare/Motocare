@@ -31,7 +31,6 @@ const SalesManager = lazyImport(() => import("./components/sales/SalesManager"))
 const InventoryManager = lazyImport(
   () => import("./components/inventory/InventoryManager")
 );
-// InventoryManagerNew removed - folder moved to __DEPRECATED_backups
 
 // Delivery Manager - Standalone page for delivery orders
 const DeliveryManager = lazyImport(() => import("./components/sales/DeliveryManager").then(m => ({ default: m.DeliveryManager })));
@@ -51,7 +50,6 @@ const DeliveryTest = lazyImport(() => import("./pages/DeliveryTest").then(m => (
 const ServiceManager = lazyImport(
   () => import("./components/service/ServiceManager")
 );
-// ServiceManagerNew removed - folder moved to __DEPRECATED_backups
 const ServiceHistory = lazyImport(() =>
   import("./components/service/ServiceHistory").then((m) => ({
     default: m.ServiceHistory,
@@ -60,9 +58,7 @@ const ServiceHistory = lazyImport(() =>
 const CustomerManager = lazyImport(
   () => import("./components/customer/CustomerManager")
 );
-// CustomerManagerNew removed - folder moved to __DEPRECATED_backups
 const DebtManager = lazyImport(() => import("./components/debt/DebtManager"));
-// DebtManagerNew removed - folder moved to __DEPRECATED_backups
 const CashBook = lazyImport(() => import("./components/finance/CashBook"));
 const LoansManager = lazyImport(() => import("./components/finance/LoansManager"));
 const FinanceManager = lazyImport(
@@ -74,7 +70,6 @@ const PayrollManager = lazyImport(
 const ReportsManager = lazyImport(
   () => import("./components/reports/ReportsManager")
 );
-// ReportsManagerNew removed - folder moved to __DEPRECATED_backups
 const TaxReportExport = lazyImport(
   () => import("./components/reports/TaxReportExport")
 );
@@ -120,13 +115,11 @@ const Inventory = () => (
     <InventoryManager />
   </Suspense>
 );
-// InventoryNew removed - was using deprecated InventoryManagerNew
 const Service = () => (
   <Suspense fallback={<PageLoader />}>
     <ServiceManager />
   </Suspense>
 );
-// ServiceNew removed - was using deprecated ServiceManagerNew
 const ServiceHistoryPage = () => {
   const { currentBranchId } = useAppContext();
   return (
@@ -140,13 +133,11 @@ const Customers = () => (
     <CustomerManager />
   </Suspense>
 );
-// CustomersNew removed - was using deprecated CustomerManagerNew
 const Debt = () => (
   <Suspense fallback={<PageLoader />}>
     <DebtManager />
   </Suspense>
 );
-// DebtNew removed - was using deprecated DebtManagerNew
 const CashBookPage = () => (
   <Suspense fallback={<PageLoader />}>
     <CashBook />
@@ -172,7 +163,6 @@ const ReportsPage = () => (
     <ReportsManager />
   </Suspense>
 );
-// ReportsPageNew removed - was using deprecated ReportsManagerNew
 const TaxReportPage = () => (
   <Suspense fallback={<PageLoader />}>
     <TaxReportExport />
@@ -276,14 +266,11 @@ const MainLayout: React.FC = () => {
               </ProtectedRoute>
             }
           />
-          {/* /inventory-new route removed - deprecated */}
           <Route path="/categories" element={<CategoriesPage />} />
           <Route path="/lookup" element={<LookupPage />} />
           <Route path="/service" element={<Service />} />
-          {/* /service-new route removed - deprecated */}
           <Route path="/service-history" element={<ServiceHistoryPage />} />
           <Route path="/customers" element={<Customers />} />
-          {/* /customers-new route removed - deprecated */}
           <Route
             path="/debt"
             element={
@@ -292,7 +279,6 @@ const MainLayout: React.FC = () => {
               </ProtectedRoute>
             }
           />
-          {/* /debt-new route removed - deprecated */}
           <Route
             path="/cashbook"
             element={
@@ -349,7 +335,6 @@ const MainLayout: React.FC = () => {
               </ProtectedRoute>
             }
           />
-          {/* /reports-new route removed - deprecated */}
           <Route
             path="/tax-report"
             element={

@@ -53,14 +53,10 @@ import { useSalesHistory } from "./hooks/useSalesHistory";
 import { usePrintReceipt } from "./hooks/usePrintReceipt";
 
 // Shared Components
-import { ProductCard } from "./components/ProductCard";
-import { CartItemRow } from "./components/CartItemRow";
-import { CartSummary } from "./components/CartSummary";
-import { CustomerSelector } from "./components/CustomerSelector";
-import { PaymentMethodSelector } from "./components/PaymentMethodSelector";
 import { BarcodeInputBar } from "./components/BarcodeInputBar";
 import AddCustomerModal from "./components/AddCustomerModal";
 import EditCustomerModal from "./components/EditCustomerModal";
+import { ProductCatalogSection, CartSection, CheckoutSection } from "./components/manager";
 import { useConfirm } from "../../hooks/useConfirm";
 import ConfirmModal from "../common/ConfirmModal";
 
@@ -1031,151 +1027,24 @@ const SalesManager: React.FC = () => {
                                 Lịch sử
                             </button>
                         </div>
-                        {/* Search Bar with Scan Button + Wholesale Toggle */}
-                        <div className="mb-3 flex items-center gap-2">
-                            <div className="flex-1 relative">
-                                <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                                </svg>
-                                <input
-                                    type="text"
-                                    placeholder="Tìm sản phẩm..."
-                                    value={inventory.partSearch}
-                                    onChange={(e) => inventory.setPartSearch(e.target.value)}
-                                    className="w-full pl-10 pr-4 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-all"
-                                />
-                            </div>
-                            {/* Mobile Wholesale Toggle */}
-                            <button
-                                type="button"
-                                onClick={() => cart.setIsWholesaleMode(!cart.isWholesaleMode)}
-                                className={`md:hidden flex items-center gap-1 px-3 py-3 rounded-lg text-xs font-bold transition-all shrink-0 ${cart.isWholesaleMode
-                                    ? "bg-green-600 text-white shadow-sm"
-                                    : "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400"
-                                    }`}
-                                title="Bật/tắt giá sỉ"
-                            >
-                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                {cart.isWholesaleMode && <span>Sỉ</span>}
-                            </button>
-                            <button
-                                onClick={() => barcode.setShowBarcodeInput(!barcode.showBarcodeInput)}
-                                className="flex items-center gap-2 px-4 py-3 bg-slate-800/80 text-slate-300 rounded-lg hover:text-purple-400 hover:bg-slate-700 transition-all shrink-0 border border-slate-700/50 hover:border-purple-500/30 group"
-                            >
-                                <ScanLine className="w-5 h-5 group-hover:text-purple-400 transition-colors text-slate-400" />
-                                <span className="font-medium hidden md:inline">Quét mã</span>
-                            </button>
-                        </div>
 
-                        {actionFeedback && (
-                            <div className="mb-3 inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 text-sm font-semibold">
-                                <span className="text-base leading-none">✓</span>
-                                <span className="line-clamp-1">{actionFeedback}</span>
-                            </div>
-                        )}
-
-                        {/* Filter Pills with Counts */}
-                        <div className="bg-white/80 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-3 mb-4 flex flex-col md:flex-row md:items-center md:justify-between gap-2">
-                            <div className="text-sm text-slate-700 dark:text-slate-300 font-medium">
-                                Hiển thị {inventory.displayedParts.length} / {inventory.filteredParts.length} sản phẩm
-                                {inventory.partSearch && " theo từ khóa"}
-                            </div>
-                            <div className="flex items-center gap-2 overflow-x-auto pb-1">
-                                <button
-                                    type="button"
-                                    onClick={() => inventory.setStockFilter("all")}
-                                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${inventory.stockFilter === "all"
-                                        ? "bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400"
-                                        : "bg-slate-100 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800"
-                                        }`}
-                                >
-                                    <span>Tất cả</span>
-                                    <span
-                                        className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${inventory.stockFilter === "all"
-                                            ? "bg-blue-100 dark:bg-blue-500/20"
-                                            : "bg-slate-200 dark:bg-slate-700"
-                                            }`}
-                                    >
-                                        {inventory.repoParts.length}
-                                    </span>
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => inventory.setStockFilter("low")}
-                                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${inventory.stockFilter === "low"
-                                        ? "bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400"
-                                        : "bg-slate-100 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800"
-                                        }`}
-                                >
-                                    <span>Tồn thấp</span>
-                                    <span
-                                        className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${inventory.stockFilter === "low"
-                                            ? "bg-amber-100 dark:bg-amber-500/20"
-                                            : "bg-slate-200 dark:bg-slate-700"
-                                            }`}
-                                    >
-                                        {inventory.repoParts.filter(p => {
-                                            const stock = Number(p.stock?.[currentBranchId] ?? 0);
-                                            return stock > 0 && stock <= 5;
-                                        }).length}
-                                    </span>
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => inventory.setStockFilter("out")}
-                                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${inventory.stockFilter === "out"
-                                        ? "bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400"
-                                        : "bg-slate-100 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800"
-                                        }`}
-                                >
-                                    <span>Hết hàng</span>
-                                    <span
-                                        className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${inventory.stockFilter === "out"
-                                            ? "bg-red-100 dark:bg-red-500/20"
-                                            : "bg-slate-200 dark:bg-slate-700"
-                                            }`}
-                                    >
-                                        {inventory.repoParts.filter(p => {
-                                            const stock = Number(p.stock?.[currentBranchId] ?? 0);
-                                            return stock <= 0;
-                                        }).length}
-                                    </span>
-                                </button>
-
-                                {/* Wholesale Toggle */}
-                                <div className="hidden md:block h-6 w-px bg-slate-200 dark:bg-slate-700 mx-1"></div>
-                                <button
-                                    type="button"
-                                    onClick={() => cart.setIsWholesaleMode(!cart.isWholesaleMode)}
-                                    className={`hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${cart.isWholesaleMode
-                                        ? "bg-green-50 dark:bg-green-500/10 text-green-600 dark:text-green-400"
-                                        : "bg-slate-100 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800"
-                                        }`}
-                                    title="Bật để tự động áp dụng giá sỉ khi thêm sản phẩm"
-                                >
-                                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                    <span>Giá sỉ</span>
-                                    {cart.isWholesaleMode && (
-                                        <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-green-100 dark:bg-green-500/20">
-                                            ON
-                                        </span>
-                                    )}
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* Products Grid */}
-                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-4">
-                            {inventory.displayedParts.map((part) => (
-                                <ProductCard
-                                    key={part.id}
-                                    part={part}
-                                    currentBranchId={currentBranchId}
-                                    inCart={cart.cartItemById.has(part.id)}
-                                    onAddToCart={(p) => handleAddToCartWithFeedback(p, "tap")}
-                                />
-                            ))}
-                        </div>
+                        <ProductCatalogSection
+                            partSearch={inventory.partSearch}
+                            setPartSearch={inventory.setPartSearch}
+                            isWholesaleMode={cart.isWholesaleMode}
+                            setIsWholesaleMode={cart.setIsWholesaleMode}
+                            showBarcodeInput={barcode.showBarcodeInput}
+                            setShowBarcodeInput={barcode.setShowBarcodeInput}
+                            displayedParts={inventory.displayedParts}
+                            filteredParts={inventory.filteredParts}
+                            repoParts={inventory.repoParts}
+                            stockFilter={inventory.stockFilter}
+                            setStockFilter={inventory.setStockFilter}
+                            currentBranchId={currentBranchId}
+                            cartItemById={cart.cartItemById}
+                            onAddToCart={(p) => handleAddToCartWithFeedback(p, "tap")}
+                            actionFeedback={actionFeedback}
+                        />
                     </div>
 
                     {/* Right: Cart (Desktop) / Mobile Tab Content */}
@@ -1230,446 +1099,95 @@ const SalesManager: React.FC = () => {
                                     </button>
                                 </div>
                             )}
-                            <div className="flex items-center justify-between mb-4">
-                                <div className="flex items-center gap-2">
-                                    <svg className="w-5 h-5 text-slate-500 dark:text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" /></svg>
-                                    <h2 className="text-lg font-bold text-slate-900 dark:text-white">Giỏ hàng</h2>
-                                    {cart.cartItems.length > 0 && (
-                                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400">{cart.cartItems.length}</span>
-                                    )}
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    {cart.isWholesaleMode && (
-                                        <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-600 text-white text-[10px] font-bold rounded-full shadow-sm">
-                                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8V7m0 10v1" /></svg>
-                                            Sỉ
-                                        </span>
-                                    )}
-                                    {hasDraft && (
-                                        <button
-                                            type="button"
-                                            onClick={handleRestoreDraftManual}
-                                            className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 rounded-full text-xs font-bold hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
-                                            title="Khôi phục giỏ hàng nháp"
-                                        >
-                                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 4.79M9 11l3 3L22 4" /></svg>
-                                            Khôi phục nháp
-                                        </button>
-                                    )}
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowManualItemForm((prev) => !prev)}
-                                        className="inline-flex items-center gap-1 px-2 py-1 bg-amber-100 text-amber-800 border border-amber-300 rounded-full text-xs font-bold hover:bg-amber-200 transition-colors"
-                                    >
-                                        <Plus className="w-3 h-3" />
-                                        Ngoài kho
-                                    </button>
-                                </div>
-                            </div>
 
-                            {showManualItemForm && (
-                                <div className="mb-4 rounded-2xl border border-amber-300/80 bg-gradient-to-b from-amber-50 to-amber-100/70 dark:from-amber-900/25 dark:to-amber-900/10 dark:border-amber-700 p-3 md:p-4 space-y-3 shadow-sm">
-                                    <div className="flex items-center justify-between">
-                                        <div className="text-sm font-bold text-amber-900 dark:text-amber-200">
-                                            Thêm hàng ngoài kho
-                                        </div>
-                                        <span className="text-[10px] px-2 py-1 rounded-full bg-amber-200/80 dark:bg-amber-800/70 text-amber-900 dark:text-amber-100 font-semibold">
-                                            Mobile nhanh
-                                        </span>
-                                    </div>
+                            <CartSection
+                                cartItems={cart.cartItems}
+                                isWholesaleMode={cart.isWholesaleMode}
+                                hasDraft={hasDraft}
+                                onRestoreDraftManual={handleRestoreDraftManual}
+                                showManualItemForm={showManualItemForm}
+                                setShowManualItemForm={setShowManualItemForm}
+                                manualItemName={manualItemName}
+                                setManualItemName={setManualItemName}
+                                manualItemCost={manualItemCost}
+                                setManualItemCost={setManualItemCost}
+                                manualItemPrice={manualItemPrice}
+                                setManualItemPrice={setManualItemPrice}
+                                manualItemQty={manualItemQty}
+                                setManualItemQty={setManualItemQty}
+                                onResetManualItemForm={resetManualItemForm}
+                                onAddManualItem={handleAddManualItem}
+                                selectedCustomer={customer.selectedCustomer}
+                                filteredCustomers={customer.filteredCustomers}
+                                customerSearch={customer.customerSearch}
+                                showCustomerDropdown={customer.showCustomerDropdown}
+                                setCustomerSearch={customer.setCustomerSearch}
+                                setSelectedCustomer={customer.setSelectedCustomer}
+                                setShowAddCustomerModal={customer.setShowAddCustomerModal}
+                                setShowEditCustomerModal={customer.setShowEditCustomerModal}
+                                setShowCustomerDropdown={customer.setShowCustomerDropdown}
+                                isSearchingCustomer={customer.isSearchingCustomer}
+                                hasMoreCustomers={customer.hasMoreCustomers}
+                                onLoadMoreCustomers={customer.handleLoadMoreCustomers}
+                                onUpdateCartQuantity={cart.updateCartQuantity}
+                                onUpdateCartPrice={cart.updateCartPrice}
+                                onRemoveFromCart={cart.removeFromCart}
+                            />
 
-                                    <div>
-                                        <label className="block text-[11px] font-semibold text-amber-900 dark:text-amber-200 mb-1">
-                                            Tên hàng
-                                        </label>
-                                        <input
-                                            type="text"
-                                            value={manualItemName}
-                                            onChange={(e) => setManualItemName(e.target.value)}
-                                            placeholder="VD: Thu bình cũ"
-                                            className="w-full px-3 py-2.5 text-sm border rounded-xl bg-white dark:bg-slate-700"
-                                        />
-                                    </div>
-
-                                    <div className="grid grid-cols-2 gap-2">
-                                        <div>
-                                            <label className="block text-[11px] font-semibold text-amber-900 dark:text-amber-200 mb-1">
-                                                Giá nhập
-                                            </label>
-                                            <NumberInput
-                                                value={manualItemCost}
-                                                onChange={(value) => {
-                                                    const cost = Math.max(0, Number(value || 0));
-                                                    setManualItemCost(cost);
-                                                    setManualItemPrice(Math.round(cost * 1.4));
-                                                }}
-                                                placeholder="100000"
-                                                className="w-full px-3 py-2.5 text-sm border rounded-xl bg-white dark:bg-slate-700 text-right"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-[11px] font-semibold text-amber-900 dark:text-amber-200 mb-1">
-                                                Số lượng
-                                            </label>
-                                            <input
-                                                type="number"
-                                                min={1}
-                                                value={manualItemQty}
-                                                onChange={(e) => setManualItemQty(Math.max(1, Number(e.target.value || 1)))}
-                                                placeholder="1"
-                                                className="w-full px-3 py-2.5 text-sm border rounded-xl bg-white dark:bg-slate-700 text-right"
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-[11px] font-semibold text-amber-900 dark:text-amber-200 mb-1">
-                                            Giá bán
-                                        </label>
-                                        <NumberInput
-                                            value={manualItemPrice}
-                                            onChange={(value) => setManualItemPrice(Number(value || 0))}
-                                            allowNegative
-                                            placeholder="140000 hoặc -50000"
-                                            className="w-full px-3 py-2.5 text-sm border rounded-xl bg-white dark:bg-slate-700 text-right"
-                                        />
-                                    </div>
-
-                                    <div className="text-[11px] leading-relaxed text-amber-900/90 dark:text-amber-200/90 bg-amber-100/70 dark:bg-amber-900/20 rounded-lg px-2.5 py-2 border border-amber-200/70 dark:border-amber-800/60">
-                                        Nhập giá nhập để tự gợi ý giá bán +40%. Bạn vẫn có thể sửa tay giá bán, kể cả số âm để thu mua lại.
-                                    </div>
-
-                                    <div className="grid grid-cols-2 gap-2 pt-1">
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                setShowManualItemForm(false);
-                                                resetManualItemForm();
-                                            }}
-                                            className="w-full px-3 py-2.5 text-sm font-semibold rounded-xl border border-slate-300 bg-white hover:bg-slate-50"
-                                        >
-                                            Hủy
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={handleAddManualItem}
-                                            className="w-full px-3 py-2.5 text-sm font-semibold rounded-xl bg-amber-600 text-white hover:bg-amber-700 shadow-sm"
-                                        >
-                                            Thêm vào giỏ
-                                        </button>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Customer Selection */}
-                            <div className="mb-4">
-                                <label className="block text-sm font-semibold mb-2">Khách hàng</label>
-                                <CustomerSelector
-                                    selectedCustomer={customer.selectedCustomer}
-                                    customers={customer.filteredCustomers}
-                                    customerSearch={customer.customerSearch}
-                                    showDropdown={customer.showCustomerDropdown}
-                                    onSearchChange={customer.setCustomerSearch}
-                                    onSelect={(c) => customer.setSelectedCustomer(c)}
-                                    onClear={() => customer.setSelectedCustomer(null)}
-                                    onAddNew={() => customer.setShowAddCustomerModal(true)}
-                                    onEditCustomer={() => customer.setShowEditCustomerModal(true)}
-                                    onDropdownToggle={customer.setShowCustomerDropdown}
-                                    isSearching={customer.isSearchingCustomer}
-                                    hasMoreCustomers={customer.hasMoreCustomers}
-                                    onLoadMore={customer.handleLoadMoreCustomers}
-                                />
-                            </div>
-
-                            {/* Cart Items */}
-                            <div className="space-y-3 mb-4 max-h-[400px] overflow-y-auto">
-                                {cart.cartItems.length === 0 ? (
-                                    <div className="text-center py-8 text-slate-500">Giỏ hàng trống</div>
-                                ) : (
-                                    cart.cartItems.map((item) => (
-                                        <CartItemRow
-                                            key={item.partId}
-                                            item={item}
-                                            onUpdateQuantity={cart.updateCartQuantity}
-                                            onUpdatePrice={cart.updateCartPrice}
-                                            onRemove={cart.removeFromCart}
-                                        />
-                                    ))
-                                )}
-                            </div>
-
-                            {/* Cart Summary */}
                             {cart.cartItems.length > 0 && (
-                                <>
-                                    <CartSummary
-                                        subtotal={cart.subtotal}
-                                        discount={cart.orderDiscount}
-                                        total={cart.total}
-                                        discountType={cart.discountType}
-                                        discountPercent={cart.discountPercent}
-                                        onDiscountChange={cart.setOrderDiscount}
-                                        onDiscountTypeChange={cart.setDiscountType}
-                                        onDiscountPercentChange={cart.setDiscountPercent}
-                                    />
-
-                                    {/* Payment Selection */}
-                                    <div className="mt-4">
-                                        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4">
-                                            <PaymentMethodSelector
-                                                paymentMethod={finalization.paymentMethod}
-                                                paymentType={finalization.paymentType}
-                                                partialAmount={finalization.partialAmount}
-                                                total={cart.total}
-                                                onPaymentMethodChange={finalization.setPaymentMethod}
-                                                onPaymentTypeChange={(type) => {
-                                                    finalization.setPaymentType(type);
-                                                    if (type === "installment") {
-                                                        setShowInstallmentModal(true);
-                                                    }
-                                                }}
-                                                onPartialAmountChange={finalization.setPartialAmount}
-                                                onOpenInstallmentSetup={() => setShowInstallmentModal(true)}
-                                                installmentDetails={finalization.installmentDetails}
-                                            />
-                                        </div>
-                                    </div>
-
-                                    {/* ... Note and Time ... */}
-
-                                    <InstallmentSetupModal
-                                        isOpen={showInstallmentModal}
-                                        onClose={() => setShowInstallmentModal(false)}
-                                        totalAmount={cart.total}
-                                        onSave={finalization.setInstallmentDetails}
-                                        initialDetails={finalization.installmentDetails}
-                                    />
-                                    {/* Delivery Form Section */}
-                                    {finalization.paymentMethod && (
-                                        <div className="mt-4 border-t border-slate-200 dark:border-slate-700 pt-4">
-                                            <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2">
-                                                <Truck className="w-4 h-4" />
-                                                Giao hàng
-                                            </h4>
-
-                                            {/* Pickup vs Delivery Toggle */}
-                                            <div className="flex gap-4 mb-3">
-                                                <label className="flex items-center gap-2 cursor-pointer">
-                                                    <input
-                                                        type="radio"
-                                                        checked={finalization.deliveryMethod !== "cod"}
-                                                        onChange={() => finalization.setDeliveryMethod("store_pickup")}
-                                                        className="w-4 h-4 text-blue-600"
-                                                    />
-                                                    <span className="text-sm flex items-center gap-1.5"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 21v-7.5a.75.75 0 01.75-.75h3a.75.75 0 01.75.75V21m-4.5 0H2.36m11.14 0H18m0 0h3.64m-1.39 0V9.349m-16.5 11.65V9.35m0 0a3.001 3.001 0 003.75-.615A2.993 2.993 0 009.75 9.75c.896 0 1.7-.393 2.25-1.016a2.993 2.993 0 002.25 1.016c.896 0 1.7-.393 2.25-1.016a3.001 3.001 0 003.75.614m-16.5 0a3.004 3.004 0 01-.621-4.72L4.318 3.44A1.5 1.5 0 015.378 3h13.243a1.5 1.5 0 011.06.44l1.19 1.189a3 3 0 01-.621 4.72m-13.5 8.65h3.75a.75.75 0 00.75-.75v-2.25a.75.75 0 00-.75-.75H6.75a.75.75 0 00-.75.75v2.25c0 .414.336.75.75.75z" /></svg>Tự lấy</span>
-                                                </label>
-                                                <label className="flex items-center gap-2 cursor-pointer">
-                                                    <input
-                                                        type="radio"
-                                                        checked={finalization.deliveryMethod === "cod"}
-                                                        onChange={() => finalization.setDeliveryMethod("cod")}
-                                                        className="w-4 h-4 text-orange-600"
-                                                    />
-                                                    <span className="text-sm flex items-center gap-1.5"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-10.026 0 1.106 1.106 0 00-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12" /></svg>Giao hàng COD</span>
-                                                </label>
-                                            </div>
-
-                                            {/* Delivery Form (if COD selected) */}
-                                            {finalization.deliveryMethod === "cod" && (
-                                                <div className="space-y-2 p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-700">
-                                                    <div>
-                                                        <label className="block text-xs font-medium mb-1">
-                                                            Địa chỉ <span className="text-red-500">*</span>
-                                                        </label>
-                                                        <input
-                                                            type="text"
-                                                            value={finalization.deliveryAddress}
-                                                            onChange={(e) => finalization.setDeliveryAddress(e.target.value)}
-                                                            placeholder="Nhập địa chỉ giao hàng"
-                                                            className="w-full px-3 py-2 text-sm border rounded-lg bg-white dark:bg-slate-700"
-                                                        />
-                                                    </div>
-                                                    <div>
-                                                        <label className="block text-xs font-medium mb-1">SĐT nhận hàng</label>
-                                                        <input
-                                                            type="tel"
-                                                            value={finalization.deliveryPhone}
-                                                            onChange={(e) => finalization.setDeliveryPhone(e.target.value)}
-                                                            placeholder="Số điện thoại"
-                                                            className="w-full px-3 py-2 text-sm border rounded-lg bg-white dark:bg-slate-700"
-                                                        />
-                                                    </div>
-                                                    <div>
-                                                        <label className="block text-xs font-medium mb-1">Mã vận đơn</label>
-                                                        <input
-                                                            type="text"
-                                                            value={finalization.trackingNumber || ''}
-                                                            onChange={(e) => finalization.setTrackingNumber(e.target.value)}
-                                                            placeholder="Nhập mã vận đơn (nếu có)"
-                                                            className="w-full px-3 py-2 text-sm border rounded-lg bg-white dark:bg-slate-700 font-mono"
-                                                        />
-                                                    </div>
-                                                    <div>
-                                                        <label className="block text-xs font-medium mb-1">Đơn vị vận chuyển</label>
-                                                        <select
-                                                            value={["GHTK", "GHN", "ViettelPost", "VNPost", "J&T", "NinjaVan", "BestExpress", "ShopeeXpress", "SuperShip", "Nasco", "EMS", "Ahamove", "GrabExpress"].includes(finalization.shippingCarrier || '') ? finalization.shippingCarrier : (finalization.shippingCarrier ? "Other" : "")}
-                                                            onChange={(e) => {
-                                                                if (e.target.value === "Other") {
-                                                                    finalization.setShippingCarrier(" ");
-                                                                } else {
-                                                                    finalization.setShippingCarrier(e.target.value);
-                                                                }
-                                                            }}
-                                                            className="w-full px-3 py-2 text-sm border rounded-lg bg-white dark:bg-slate-700"
-                                                        >
-                                                            <option value="">-- Chọn đơn vị --</option>
-                                                            <option value="GHTK">Giao Hàng Tiết Kiệm (GHTK)</option>
-                                                            <option value="GHN">Giao Hàng Nhanh (GHN)</option>
-                                                            <option value="ViettelPost">Viettel Post</option>
-                                                            <option value="VNPost">VNPost</option>
-                                                            <option value="J&T">J&T Express</option>
-                                                            <option value="NinjaVan">Ninja Van</option>
-                                                            <option value="BestExpress">Best Express</option>
-                                                            <option value="ShopeeXpress">Shopee Xpress (SPX)</option>
-                                                            <option value="SuperShip">SuperShip</option>
-                                                            <option value="Nasco">Nasco Express</option>
-                                                            <option value="EMS">EMS (Bưu điện)</option>
-                                                            <option value="Ahamove">Ahamove</option>
-                                                            <option value="GrabExpress">Grab Express</option>
-                                                            <option value="Other">Khác (Nhập tay)</option>
-                                                        </select>
-                                                        {finalization.shippingCarrier && !["GHTK", "GHN", "ViettelPost", "VNPost", "J&T", "NinjaVan", "BestExpress", "ShopeeXpress", "SuperShip", "Nasco", "EMS", "Ahamove", "GrabExpress"].includes(finalization.shippingCarrier) && (
-                                                            <input
-                                                                type="text"
-                                                                autoFocus
-                                                                value={finalization.shippingCarrier.trim()}
-                                                                onChange={(e) => finalization.setShippingCarrier(e.target.value)}
-                                                                placeholder="Nhập tên đơn vị vận chuyển..."
-                                                                className="mt-2 w-full px-3 py-2 text-sm border rounded-lg bg-white dark:bg-slate-700 border-blue-500 ring-1 ring-blue-500"
-                                                            />
-                                                        )}
-                                                    </div>
-                                                    <div>
-                                                        <label className="block text-xs font-medium mb-1">Phí ship</label>
-                                                        <input
-                                                            type="number"
-                                                            value={finalization.shippingFee || ''}
-                                                            onChange={(e) => finalization.setShippingFee(Number(e.target.value))}
-                                                            placeholder="0"
-                                                            className="w-full px-3 py-2 text-sm border rounded-lg bg-white dark:bg-slate-700"
-                                                        />
-                                                    </div>
-                                                    <div className="pt-2 border-t border-orange-300 dark:border-orange-700">
-                                                        <div className="flex justify-between items-center">
-                                                            <span className="text-sm font-medium">COD cần thu:</span>
-                                                            <span className="text-lg font-bold text-orange-600 dark:text-orange-400">
-                                                                {formatCurrency(cart.total + (finalization.shippingFee || 0))}
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
-
-                                    {/* Options Section - Time, Note, Auto-print */}
-                                    {finalization.paymentMethod && finalization.paymentType && (
-                                        <div className="mt-4 px-3 md:px-4 space-y-3">
-                                            {/* Time Options */}
-                                            <div>
-                                                <div className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-2">
-                                                    Thời gian bán hàng
-                                                </div>
-                                                <div className="grid grid-cols-2 gap-2">
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => finalization.setUseCurrentTime(true)}
-                                                        className={`px-3 py-2 rounded-lg border transition-all font-semibold ${finalization.useCurrentTime
-                                                            ? "border-blue-500 bg-blue-50/50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400"
-                                                            : "border-slate-200 dark:border-slate-700 bg-transparent text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800"
-                                                            }`}
-                                                    >
-                                                        <span className="text-xs flex items-center gap-1.5"><svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>Hiện tại</span>
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => finalization.setUseCurrentTime(false)}
-                                                        className={`px-3 py-2 rounded-lg border transition-all font-semibold ${!finalization.useCurrentTime
-                                                            ? "border-blue-500 bg-blue-50/50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400"
-                                                            : "border-slate-200 dark:border-slate-700 bg-transparent text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800"
-                                                            }`}
-                                                    >
-                                                        <span className="text-xs flex items-center gap-1.5"><svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" /></svg>Tùy chỉnh</span>
-                                                    </button>
-                                                </div>
-                                                {!finalization.useCurrentTime && (
-                                                    <input
-                                                        type="datetime-local"
-                                                        value={finalization.customSaleTime}
-                                                        onChange={(e) => finalization.setCustomSaleTime(e.target.value)}
-                                                        className="mt-2 w-full px-3 py-2 text-sm border rounded-lg bg-white dark:bg-slate-700"
-                                                    />
-                                                )}
-                                            </div>
-
-                                            {/* Note & Auto-print Toggles */}
-                                            <div className="grid grid-cols-2 gap-2">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => finalization.setShowOrderNote(!finalization.showOrderNote)}
-                                                    className={`px-3 py-2 rounded-lg border transition-all font-semibold ${finalization.showOrderNote
-                                                        ? "border-emerald-500 bg-emerald-50/50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400"
-                                                        : "border-slate-200 dark:border-slate-700 bg-transparent text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800"
-                                                        }`}
-                                                >
-                                                    <span className="text-xs flex items-center gap-1.5"><svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487z" /></svg>Ghi chú</span>
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => finalization.setAutoPrintReceipt(!finalization.autoPrintReceipt)}
-                                                    className={`px-3 py-2 rounded-lg border transition-all font-semibold ${finalization.autoPrintReceipt
-                                                        ? "border-emerald-500 bg-emerald-50/50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400"
-                                                        : "border-slate-200 dark:border-slate-700 bg-transparent text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800"
-                                                        }`}
-                                                >
-                                                    <span className="text-xs flex items-center gap-1.5"><svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0110.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0l.229 2.523a1.125 1.125 0 01-1.12 1.227H7.231c-.662 0-1.18-.568-1.12-1.227L6.34 18m11.318 0h1.091A2.25 2.25 0 0021 15.75V9.456c0-1.081-.768-2.015-1.837-2.175a48.055 48.055 0 00-1.913-.247M6.34 18H5.25A2.25 2.25 0 013 15.75V9.456c0-1.081.768-2.015 1.837-2.175a48.041 48.041 0 011.913-.247m10.5 0a48.536 48.536 0 00-10.5 0m10.5 0V3.375c0-.621-.504-1.125-1.125-1.125h-8.25c-.621 0-1.125.504-1.125 1.125v3.659M18 10.5h.008v.008H18V10.5zm-3 0h.008v.008H15V10.5z" /></svg>In hoá đơn</span>
-                                                </button>
-                                            </div>
-
-                                            {/* Note Textarea */}
-                                            {finalization.showOrderNote && (
-                                                <textarea
-                                                    value={finalization.orderNote}
-                                                    onChange={(e) => finalization.setOrderNote(e.target.value)}
-                                                    placeholder="Nhập ghi chú cho đơn hàng..."
-                                                    rows={3}
-                                                    className="w-full px-3 py-2 text-sm border rounded-lg bg-white dark:bg-slate-700 resize-none"
-                                                />
-                                            )}
-                                        </div>
-                                    )}
-
-                                    {/* Action Buttons - Save Draft + Finalize */}
-                                    <div className="mt-4 p-3 md:p-4 pt-0 flex gap-3">
-                                        <button
-                                            onClick={handleSaveDraft}
-                                            className="flex-1 px-4 py-3 flex items-center justify-center gap-2 bg-transparent border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 font-medium rounded-xl transition-all text-sm"
-                                        >
-                                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" /></svg>
-                                            Lưu nháp
-                                        </button>
-                                        <button
-                                            onClick={handleFinalize}
-                                            disabled={isProcessing || !finalization.paymentMethod || !finalization.paymentType || (editingSaleId ? !canUpdateSale : !canCreateSale)}
-                                            className={`flex-[1.5] px-4 py-3 font-bold rounded-xl transition-all text-sm flex items-center justify-center gap-2 ${finalization.paymentMethod && finalization.paymentType
-                                                ? "bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-lg shadow-emerald-600/30 hover:shadow-xl hover:scale-[1.01]"
-                                                : "bg-slate-200 dark:bg-slate-700 text-slate-400 cursor-not-allowed opacity-60"
-                                                }`}
-                                        >
-                                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                            {isProcessing ? "Đang xử lý..." : editingSaleId ? "Cập nhật" : "Xuất bán"}
-                                        </button>
-                                    </div>
-                                </>
+                                <CheckoutSection
+                                    subtotal={cart.subtotal}
+                                    discount={cart.orderDiscount}
+                                    total={cart.total}
+                                    discountType={cart.discountType}
+                                    discountPercent={cart.discountPercent}
+                                    onDiscountChange={cart.setOrderDiscount}
+                                    onDiscountTypeChange={cart.setDiscountType}
+                                    onDiscountPercentChange={cart.setDiscountPercent}
+                                    paymentMethod={finalization.paymentMethod}
+                                    paymentType={finalization.paymentType}
+                                    partialAmount={finalization.partialAmount}
+                                    onPaymentMethodChange={finalization.setPaymentMethod}
+                                    onPaymentTypeChange={(type) => {
+                                        finalization.setPaymentType(type);
+                                        if (type === "installment") {
+                                            setShowInstallmentModal(true);
+                                        }
+                                    }}
+                                    onPartialAmountChange={finalization.setPartialAmount}
+                                    showInstallmentModal={showInstallmentModal}
+                                    setShowInstallmentModal={setShowInstallmentModal}
+                                    installmentDetails={finalization.installmentDetails}
+                                    onSaveInstallmentDetails={finalization.setInstallmentDetails}
+                                    deliveryMethod={finalization.deliveryMethod}
+                                    setDeliveryMethod={finalization.setDeliveryMethod}
+                                    deliveryAddress={finalization.deliveryAddress}
+                                    setDeliveryAddress={finalization.setDeliveryAddress}
+                                    deliveryPhone={finalization.deliveryPhone}
+                                    setDeliveryPhone={finalization.setDeliveryPhone}
+                                    trackingNumber={finalization.trackingNumber}
+                                    setTrackingNumber={finalization.setTrackingNumber}
+                                    shippingCarrier={finalization.shippingCarrier}
+                                    setShippingCarrier={finalization.setShippingCarrier}
+                                    shippingFee={finalization.shippingFee}
+                                    setShippingFee={finalization.setShippingFee}
+                                    useCurrentTime={finalization.useCurrentTime}
+                                    setUseCurrentTime={finalization.setUseCurrentTime}
+                                    customSaleTime={finalization.customSaleTime}
+                                    setCustomSaleTime={finalization.setCustomSaleTime}
+                                    showOrderNote={finalization.showOrderNote}
+                                    setShowOrderNote={finalization.setShowOrderNote}
+                                    autoPrintReceipt={finalization.autoPrintReceipt}
+                                    setAutoPrintReceipt={finalization.setAutoPrintReceipt}
+                                    orderNote={finalization.orderNote}
+                                    setOrderNote={finalization.setOrderNote}
+                                    onSaveDraft={handleSaveDraft}
+                                    onFinalize={handleFinalize}
+                                    isProcessing={isProcessing}
+                                    editingSaleId={editingSaleId}
+                                    canUpdateSale={canUpdateSale}
+                                    canCreateSale={canCreateSale}
+                                />
                             )}
                         </div>
                     </div>

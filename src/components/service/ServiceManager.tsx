@@ -1,56 +1,24 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
-import { Link, useLocation, useSearchParams } from "react-router-dom";
+import { useLocation, useSearchParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
-import {
-  FileText,
-  Bike,
-  Wrench,
-  Check,
-  Settings,
-  TrendingUp,
-  Search,
-  Plus,
-  Smartphone,
-  PhoneCall,
-  HandCoins,
-  Printer,
-  History,
-  ChevronDown,
-  Share2,
-  Edit2,
-  Clock,
-  AlertTriangle,
-  RefreshCw,
-  Eye,
-  EyeOff,
-  MoreVertical,
-} from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
 import { useAppContext } from "../../contexts/AppContext";
 import type {
   WorkOrder,
-  Part,
-  WorkOrderPart,
-  Vehicle,
   Customer,
 } from "../../types";
 import {
   formatCurrency,
-  formatDate,
   formatWorkOrderId,
-  formatShortWorkOrderId,
 } from "../../utils/format";
-import { getCategoryColor } from "../../utils/categoryColors";
 import {
   useCreateWorkOrderAtomicRepo,
   useUpdateWorkOrderAtomicRepo,
   useRefundWorkOrderRepo,
   useDeleteWorkOrderRepo,
-  useWorkOrdersRepo,
   useWorkOrdersFilteredRepo,
 } from "../../hooks/useWorkOrdersRepository";
 import { completeWorkOrderPayment, fetchWorkOrderById } from "../../lib/repository/workOrdersRepository";
-import type { RepairTemplate } from "../../hooks/useRepairTemplatesRepository";
 import { usePartsRepo } from "../../hooks/usePartsRepository";
 import { useEmployeesRepo } from "../../hooks/useEmployeesRepository";
 import {
@@ -58,19 +26,11 @@ import {
   useUpdateCustomerDebtRepo,
 } from "../../hooks/useDebtsRepository";
 import { showToast } from "../../utils/toast";
-import { printElementById } from "../../utils/print";
-import { generateVietQRUrl, findBankBin } from "../../utils/vietqr";
 import { supabase } from "../../supabaseClient";
 import { WorkOrderMobileModal } from "./WorkOrderMobileModal";
 import WorkOrderModal from "./components/WorkOrderModal";
 import { ServiceManagerMobile } from "./ServiceManagerMobile";
-import StatusBadge from "./components/StatusBadge";
-import { getStatusBorderColor, getQuickStatusFilters, getStatusSnapshotCards } from "./components/statusHelpers";
-import {
-  validatePhoneNumber,
-  validateDepositAmount,
-} from "../../utils/validation";
-import { NumberInput } from "../common/NumberInput";
+import { getStatusSnapshotCards } from "./components/statusHelpers";
 import {
   detectMaintenancesFromWorkOrder,
   updateVehicleMaintenances,
@@ -78,34 +38,33 @@ import {
 import { RepairTemplatesModal } from "./components/RepairTemplatesModal";
 import { USER_ROLES } from "../../constants";
 
-// Import custom hooks and types
 import { useServiceStats } from "./hooks/useServiceStats";
 import { useWorkOrdersRealtime } from "../../hooks/useWorkOrdersRealtime";
 import {
   StoreSettings,
   WorkOrderStatus,
   ServiceTabKey,
-  FilterColor,
-  FILTER_BADGE_CLASSES,
-  getDateFilterLabel,
 } from "./types/service.types";
 import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 import { useKeyboardShortcuts } from "../../hooks/useKeyboardShortcuts";
 import {
-  POPULAR_MOTORCYCLES,
   PAGE_SIZE,
-  DEFAULT_FETCH_LIMIT,
-  DEFAULT_DATE_RANGE_DAYS,
-  FILTER_INPUT_CLASS,
 } from "./constants/service.constants";
 import {
-  downloadImage,
-  formatMaskedPhone,
   handleCallCustomer as callCustomer,
+  formatMaskedPhone,
 } from "./utils/service.utils";
 import { canDo } from "../../utils/permissions";
 
-// Local types removed - now imported from ./types/service.types
+// Import manager sub-components
+import {
+  HeroStatsSection,
+  FilterActionBar,
+  WorkOrdersTable,
+  PrintPreviewModal,
+  RefundModal,
+  DeleteConfirmModal,
+} from "./components/manager";
 
 const normalizePlateSearch = (value?: string | null) =>
   (value || "").toLowerCase().replace(/[^a-z0-9]/g, "");
@@ -114,8 +73,8 @@ export default function ServiceManager() {
   const queryClient = useQueryClient();
   useWorkOrdersRealtime();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { profile } = useAuth(); // Get user profile early for createCustomerDebtIfNeeded
-  const isOwner = profile?.role === USER_ROLES.OWNER; // Check if user is owner
+  const { profile } = useAuth();
+  const isOwner = profile?.role === USER_ROLES.OWNER;
   const canCreateWorkOrder = canDo(profile?.role, "work_order.create");
   const canUpdateWorkOrder = canDo(profile?.role, "work_order.update");
   const canDeleteWorkOrder = canDo(profile?.role, "work_order.delete");
@@ -138,8 +97,6 @@ export default function ServiceManager() {
     setWorkOrders,
   } = useAppContext();
 
-  // POPULAR_MOTORCYCLES moved to constants/service.constants.ts
-
   // Fetch parts from Supabase
   const { data: fetchedParts, isLoading: partsLoading } = usePartsRepo();
 
@@ -148,8 +105,7 @@ export default function ServiceManager() {
     useEmployeesRepo();
 
   // State for date range filter
-  const [dateRangeDays, setDateRangeDays] = useState<number>(7); // Default 7 days
-
+  const [dateRangeDays, setDateRangeDays] = useState<number>(7);
   const [fetchLimit, setFetchLimit] = useState<number>(100);
 
   // Fetch work orders from Supabase with filtering (optimized)
@@ -170,26 +126,23 @@ export default function ServiceManager() {
   const [fetchedCustomers, setFetchedCustomers] = useState<any[]>([]);
   useEffect(() => {
     let isMounted = true;
-
     const fetchCustomers = async () => {
       const { data, error } = await supabase
         .from("customers")
         .select("*")
         .order("created_at", { ascending: false })
-        .limit(100); // Limit to 100 most recent customers for better mobile performance
+        .limit(100);
 
       if (!error && data && isMounted) {
         setFetchedCustomers(data);
       }
     };
     fetchCustomers();
-
     return () => {
       isMounted = false;
     };
   }, []);
 
-  // Use fetched data if available, otherwise use context
   const parts = fetchedParts || contextParts;
   const displayCustomers =
     fetchedCustomers.length > 0 ? fetchedCustomers : customers;
@@ -205,16 +158,13 @@ export default function ServiceManager() {
 
   const [showModal, setShowModal] = useState(false);
   const [showMobileModal, setShowMobileModal] = useState(false);
-  const [mobileModalViewMode, setMobileModalViewMode] = useState(false); // true = xem chi tiết, false = chỉnh sửa
+  const [mobileModalViewMode, setMobileModalViewMode] = useState(false);
   const [showTemplateModal, setShowTemplateModal] = useState(false);
   const [editingOrder, setEditingOrder] = useState<WorkOrder | undefined>(
     undefined
   );
   const [searchQuery, setSearchQuery] = useState("");
-  const debouncedSearchQuery = useDebouncedValue(searchQuery, 300); // Debounce search for better performance
-  const [statusFilter, setStatusFilter] = useState<"all" | WorkOrderStatus>(
-    "all"
-  );
+  const debouncedSearchQuery = useDebouncedValue(searchQuery, 300);
   const [activeTab, setActiveTab] = useState<ServiceTabKey>("all");
 
   // Read initial filter values from URL params
@@ -272,21 +222,15 @@ export default function ServiceManager() {
     }
     setSearchParams(newParams, { replace: true });
   }, [debouncedSearchQuery]);
-  const [showProfit, setShowProfit] = useState(false); // Toggle profit visibility
-  const [showFinancialOverview, setShowFinancialOverview] = useState(false); // Toggle revenue/profit cards visibility
-  const [rowActionMenuId, setRowActionMenuId] = useState<string | null>(null);
-  const [dropdownPosition, setDropdownPosition] = useState({
-    top: 0,
-    right: 0,
-  });
 
-  // PAGE_SIZE imported from constants
+  const [showProfit, setShowProfit] = useState(false);
+  const [showFinancialOverview, setShowFinancialOverview] = useState(false);
   const [visibleCount, setVisibleCount] = useState<number>(PAGE_SIZE);
 
   // Sync dateFilter with dateRangeDays for API query
   useEffect(() => {
     if (dateFilter === "all") {
-      setDateRangeDays(0); // 0 = load all data (no date filter)
+      setDateRangeDays(0);
     } else if (dateFilter === "today") {
       setDateRangeDays(1);
     } else if (dateFilter === "week") {
@@ -307,8 +251,6 @@ export default function ServiceManager() {
   }, [searchQuery, activeTab, dateFilter, technicianFilter, paymentFilter]);
 
   useEffect(() => {
-    // If viewing results, set a reasonable limit. If viewing ALL (0 days), increase limit to ensure we see older active orders.
-    // User already flagged "chậm hơn" (slower) so they expect it.
     if (dateRangeDays === 0) {
       setFetchLimit(500);
     } else {
@@ -323,20 +265,17 @@ export default function ServiceManager() {
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768);
     };
-
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   const location = useLocation();
 
-  // Read status filter from URL query params (e.g., ?status=pending)
+  // Read status filter from URL query params
   useEffect(() => {
     const statusParam = searchParams.get("status");
     if (statusParam === "pending") {
-      // Set to pending tab (Tiếp nhận + Đang sửa)
       setActiveTab("pending");
-      // Clear the query param after applying
       searchParams.delete("status");
       setSearchParams(searchParams, { replace: true });
     }
@@ -345,7 +284,6 @@ export default function ServiceManager() {
   // Handle navigation from ServiceHistory with editOrder state
   useEffect(() => {
     let isMounted = true;
-
     const state = location.state as { editOrder?: WorkOrder } | null;
     const openOrderFromHistory = async () => {
       if (!state?.editOrder) return;
@@ -372,13 +310,9 @@ export default function ServiceManager() {
       } else {
         setShowModal(true);
       }
-
-      // Clear the navigation state to prevent re-opening on re-render
       window.history.replaceState({}, document.title);
     };
-
     openOrderFromHistory();
-
     return () => {
       isMounted = false;
     };
@@ -390,13 +324,14 @@ export default function ServiceManager() {
   const [storeSettings, setStoreSettings] = useState<StoreSettings | null>(
     null
   );
-  const invoicePreviewRef = useRef<HTMLDivElement>(null);
-  const [isSharing, setIsSharing] = useState(false);
 
   // State for refund modal
   const [refundingOrder, setRefundingOrder] = useState<WorkOrder | null>(null);
   const [showRefundModal, setShowRefundModal] = useState(false);
-  const [refundReason, setRefundReason] = useState("");
+
+  // State for delete confirm modal
+  const [deletingOrder, setDeletingOrder] = useState<WorkOrder | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // Load store settings on mount for QR code generation
   useEffect(() => {
@@ -413,73 +348,15 @@ export default function ServiceManager() {
     loadStoreSettings();
   }, []);
 
-  // Share invoice as image function
-  const handleShareInvoice = async () => {
-    if (!invoicePreviewRef.current || !printOrder) return;
-
-    setIsSharing(true);
-    try {
-      const html2canvas = (await import("html2canvas")).default;
-      const canvas = await html2canvas(invoicePreviewRef.current, {
-        scale: 2,
-        useCORS: true,
-        allowTaint: false,
-        backgroundColor: "#ffffff",
-      });
-
-      const blob = await new Promise<Blob>((resolve, reject) => {
-        canvas.toBlob((b) => {
-          if (b) resolve(b);
-          else reject(new Error("toBlob returned null"));
-        }, "image/png", 1.0);
-      });
-
-      const fileName = `phieu-sua-chua-${formatWorkOrderId(printOrder.id)}.png`;
-
-      if (navigator.share && navigator.canShare) {
-        const file = new File([blob], fileName, { type: "image/png" });
-        if (navigator.canShare({ files: [file] })) {
-          await navigator.share({
-            files: [file],
-            title: `Phiếu sửa chữa ${formatWorkOrderId(printOrder.id)}`,
-          });
-          showToast.success("Đã chia sẻ phiếu thành công!");
-        } else {
-          downloadImage(blob, fileName);
-        }
-      } else {
-        downloadImage(blob, fileName);
-      }
-    } catch (error) {
-      if ((error as Error).name !== "AbortError") {
-        console.error("Error sharing invoice:", error);
-        showToast.error("Không thể tạo hình ảnh. Vui lòng thử lại!");
-      }
-    } finally {
-      setIsSharing(false);
-    }
-  };
-
-  // downloadImage moved to ./utils/service.utils.ts
-
-  // Open modal automatically if navigated from elsewhere with editOrder state
-
-  useEffect(() => {
-    if (!rowActionMenuId) return;
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as HTMLElement;
-      if (!target.closest(".service-row-menu")) {
-        setRowActionMenuId(null);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [rowActionMenuId]);
-
-  // Keyboard shortcuts for power users (Desktop only)
+  // Keyboard shortcuts for power users
   useKeyboardShortcuts({
-    enabled: !isMobile && !showModal && !showMobileModal && !showPrintPreview && !showRefundModal,
+    enabled:
+      !isMobile &&
+      !showModal &&
+      !showMobileModal &&
+      !showPrintPreview &&
+      !showRefundModal &&
+      !showDeleteConfirm,
     onCreateNew: () => {
       handleOpenModal();
     },
@@ -497,6 +374,8 @@ export default function ServiceManager() {
         setShowMobileModal(false);
       } else if (showTemplateModal) {
         setShowTemplateModal(false);
+      } else if (showDeleteConfirm) {
+        setShowDeleteConfirm(false);
       }
     },
   });
@@ -508,7 +387,6 @@ export default function ServiceManager() {
       filtered = filtered.filter((o) => o.status === "Trả máy");
     } else {
       filtered = filtered.filter((o) => o.status !== "Trả máy");
-
       if (activeTab === "pending")
         filtered = filtered.filter((o) => o.status === "Tiếp nhận");
       else if (activeTab === "inProgress")
@@ -517,41 +395,34 @@ export default function ServiceManager() {
         filtered = filtered.filter((o) => o.status === "Đã sửa xong");
     }
 
-    // Search filter (using debounced value)
     if (debouncedSearchQuery) {
       const query = debouncedSearchQuery.toLowerCase();
       const normalizedQuery = normalizePlateSearch(debouncedSearchQuery);
-      filtered = filtered.filter(
-        (o) => {
-          const normalizedPlate = normalizePlateSearch(o.licensePlate);
-          const plateMatched =
-            o.licensePlate?.toLowerCase().includes(query) ||
-            (!!normalizedQuery && normalizedPlate.includes(normalizedQuery));
+      filtered = filtered.filter((o) => {
+        const normalizedPlate = normalizePlateSearch(o.licensePlate);
+        const plateMatched =
+          o.licensePlate?.toLowerCase().includes(query) ||
+          (!!normalizedQuery && normalizedPlate.includes(normalizedQuery));
 
-          return (
-            o.id.toLowerCase().includes(query) || // Original ID
-            formatWorkOrderId(o.id).toLowerCase().includes(query) || // Formatted ID
-            o.customerName.toLowerCase().includes(query) ||
-            o.vehicleModel?.toLowerCase().includes(query) ||
-            plateMatched
-          );
-        }
-      );
+        return (
+          o.id.toLowerCase().includes(query) ||
+          formatWorkOrderId(o.id).toLowerCase().includes(query) ||
+          o.customerName.toLowerCase().includes(query) ||
+          o.vehicleModel?.toLowerCase().includes(query) ||
+          plateMatched
+        );
+      });
     }
 
-    // Date filter
     if (dateFilter !== "all") {
       const now = new Date();
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
       filtered = filtered.filter((o) => {
-        // ALWAYS show active orders (Tiếp nhận/Đang sửa) regardless of date filter
         if (o.status === "Tiếp nhận" || o.status === "Đang sửa") {
           return true;
         }
-
         const orderDate = new Date(o.creationDate || (o as any).creationdate);
-
         if (dateFilter === "today") {
           return orderDate >= today;
         } else if (dateFilter === "week") {
@@ -572,12 +443,10 @@ export default function ServiceManager() {
       });
     }
 
-    // Technician filter
     if (technicianFilter !== "all") {
       filtered = filtered.filter((o) => o.technicianName === technicianFilter);
     }
 
-    // Payment filter
     if (paymentFilter !== "all") {
       filtered = filtered.filter((o) => {
         const status = o.paymentStatus || (o as any).paymentstatus;
@@ -597,7 +466,7 @@ export default function ServiceManager() {
   }, [
     displayWorkOrders,
     activeTab,
-    debouncedSearchQuery, // Use debounced value to reduce re-renders
+    debouncedSearchQuery,
     dateFilter,
     customDateStart,
     customDateEnd,
@@ -616,7 +485,7 @@ export default function ServiceManager() {
   const showTableError =
     workOrdersIsError && (displayWorkOrders?.length ?? 0) === 0;
 
-  // Scroll-to-load: auto load more when sentinel becomes visible
+  // Scroll-to-load sentinel observer
   useEffect(() => {
     const sentinel = document.getElementById("service-table-scroll-sentinel");
     if (!sentinel || !hasMoreOrders || workOrdersFetching) return;
@@ -629,21 +498,15 @@ export default function ServiceManager() {
       },
       { threshold: 0.1, rootMargin: "200px" }
     );
-
     observer.observe(sentinel);
     return () => observer.disconnect();
   }, [hasMoreOrders, workOrdersFetching]);
 
-  // ========================================
-  // USE CUSTOM HOOK FOR STATS (Refactored!)
-  // ========================================
-  // Replaced 80+ lines of inline stats calculation with single hook call
   const {
     stats,
     dateFilteredOrders,
     totalOpenTickets,
     urgentTickets,
-    urgentRatio,
     completionRate,
     profitMargin,
   } = useServiceStats({
@@ -651,15 +514,6 @@ export default function ServiceManager() {
     dateFilter: dateFilter as "all" | "today" | "week" | "month",
   });
 
-  // Filter input class (kept inline for now)
-  const filterInputClass =
-    "px-4 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-700 dark:text-slate-200";
-
-  // quickStatusFilters and statusSnapshotCards moved to components
-  const quickStatusFilters = getQuickStatusFilters(
-    stats,
-    dateFilteredOrders.filter((o) => o.status !== "Trả máy" && !o.refunded).length
-  );
   const statusSnapshotCards = getStatusSnapshotCards(stats);
 
   const currentStaffTechnicianName = useMemo(() => {
@@ -683,17 +537,14 @@ export default function ServiceManager() {
     }
 
     if (order && order.id) {
-      // 🔹 FIX: Load fresh data from database to avoid stale data issues
       const result = await fetchWorkOrderById(order.id);
       if (result.ok) {
         setEditingOrder(result.data);
       } else {
-        // Fallback to cached order if fetch fails
         console.warn("[handleOpenModal] Failed to fetch fresh data, using cached:", result.error);
         setEditingOrder(order);
       }
     } else {
-      // Create empty order template
       setEditingOrder({
         id: "",
         customerName: "",
@@ -715,8 +566,8 @@ export default function ServiceManager() {
     setShowModal(true);
   };
 
-  const handleApplyTemplate = (template: any) => {
-    const partsTotal = (template.parts || []).reduce(
+  const handleApplyRepairTemplate = (template: any) => {
+    const partsTotal = template.parts.reduce(
       (sum: number, p: any) => sum + (p.price || 0) * (p.quantity || 1),
       0
     );
@@ -748,62 +599,19 @@ export default function ServiceManager() {
     setShowModal(true);
   };
 
-  // Handle print work order - show preview modal
   const handlePrintOrder = async (order: WorkOrder) => {
     setPrintOrder(order);
     setShowPrintPreview(true);
   };
 
-  // Generate dynamic VietQR for print
-  const printQRUrl = useMemo(() => {
-    if (!printOrder || !storeSettings?.bank_name || !storeSettings?.bank_account_number || !storeSettings?.bank_account_holder) {
-      console.warn('[ServiceManager] Missing info, using static QR');
-      return null;
-    }
-
-    const bankBin = findBankBin(storeSettings.bank_name);
-    if (!bankBin) {
-      console.warn('[ServiceManager] Bank BIN not found for:', storeSettings.bank_name);
-      return null;
-    }
-
-    const amount = printOrder.remainingAmount && printOrder.remainingAmount > 0
-      ? printOrder.remainingAmount
-      : printOrder.total || 0;
-
-    const orderCode = formatWorkOrderId(printOrder.id, storeSettings.work_order_prefix);
-    const description = `Thanh toan ${orderCode}`;
-
-    const qrUrl = generateVietQRUrl({
-      bankId: bankBin,
-      accountNumber: storeSettings.bank_account_number,
-      accountName: storeSettings.bank_account_holder,
-      amount: amount,
-      description: description,
-      template: 'qr_only',
-    });
-
-    return qrUrl;
-  }, [printOrder, storeSettings]);
-
-  // Handle actual print
-  const handleDoPrint = () => {
-    setTimeout(() => {
-      printElementById("work-order-receipt");
-    }, 500);
-  };
-
-  // 🔹 Handle refund work order
   const { mutateAsync: refundWorkOrderAsync } = useRefundWorkOrderRepo();
-
-  // 🔹 Handle delete work order
   const { mutateAsync: deleteWorkOrderAsync } = useDeleteWorkOrderRepo();
-
-  // 🔹 Handle create/update customer debts
+  const { mutateAsync: createWorkOrderAtomicAsync } = useCreateWorkOrderAtomicRepo();
+  const { mutateAsync: updateWorkOrderAtomicAsync } = useUpdateWorkOrderAtomicRepo();
   const createCustomerDebt = useCreateCustomerDebtRepo();
   const updateCustomerDebt = useUpdateCustomerDebtRepo();
+  const mobileSaveInFlightRef = useRef(false);
 
-  // 🔔 Helper: Create notification when work order is created
   const createWorkOrderNotification = async (
     orderId: string,
     customerName: string,
@@ -813,12 +621,11 @@ export default function ServiceManager() {
     createdByName: string
   ) => {
     try {
-      const { error } = await supabase.from("notifications").insert({
+      await supabase.from("notifications").insert({
         id: crypto.randomUUID(),
         type: "work_order",
         title: "Phiếu sửa chữa mới",
-        message: `${createdByName} tạo phiếu ${orderId} - ${customerName} (${licensePlate || vehicleModel
-          }) - ${formatCurrency(total)}`,
+        message: `${createdByName} tạo phiếu ${orderId} - ${customerName} (${licensePlate || vehicleModel}) - ${formatCurrency(total)}`,
         data: {
           workOrderId: orderId,
           customerName,
@@ -828,21 +635,16 @@ export default function ServiceManager() {
           createdBy: createdByName,
         },
         created_by: profile?.id || null,
-        recipient_role: "owner", // Gửi đến owner
+        recipient_role: "owner",
         branch_id: currentBranchId,
         is_read: false,
         created_at: new Date().toISOString(),
       });
-
-      if (error) {
-        console.error("❌ Error creating notification:", error);
-      }
     } catch (err) {
       console.error("❌ Error in createWorkOrderNotification:", err);
     }
   };
 
-  // Helper: Update vehicle currentKm and maintenance records
   const updateVehicleKmAndMaintenance = async (
     customer: Customer,
     vehicleId: string,
@@ -852,47 +654,34 @@ export default function ServiceManager() {
     issueDescription?: string
   ) => {
     try {
-      // Find the vehicle in customer's vehicles array
       const vehicle = customer.vehicles?.find((v) => v.id === vehicleId);
-      if (!vehicle) {
-        console.warn(
-          "[updateVehicleKmAndMaintenance] Vehicle not found:",
-          vehicleId
-        );
-        return;
-      }
+      if (!vehicle) return;
 
-      // Detect maintenance types from the work order
       const maintenanceTypes = detectMaintenancesFromWorkOrder(
         partsUsed,
         additionalServices,
         issueDescription
       );
 
-      // Update vehicle with new km and maintenance records
       const updatedVehicle = updateVehicleMaintenances(
         { ...vehicle, currentKm },
         maintenanceTypes,
         currentKm
       );
 
-      // Update the vehicles array
       const updatedVehicles = customer.vehicles?.map((v) =>
         v.id === vehicleId ? updatedVehicle : v
       ) || [updatedVehicle];
 
-      // Save to database via upsertCustomer
       await upsertCustomer({
         ...customer,
         vehicles: updatedVehicles,
       });
     } catch (err) {
       console.error("[updateVehicleKmAndMaintenance] Error:", err);
-      // Don't throw - this is a non-critical update
     }
   };
 
-  // Helper: Auto-create customer debt if there's remaining amount (defined early for handleMobileSave)
   const createCustomerDebtIfNeeded = async (
     workOrder: WorkOrder,
     remainingAmount: number,
@@ -909,7 +698,6 @@ export default function ServiceManager() {
         workOrder.customerPhone ||
         "Khách vãng lai";
 
-      // Tạo nội dung chi tiết từ phiếu sửa chữa
       const workOrderNumber =
         formatWorkOrderId(workOrder.id, storeSettings?.work_order_prefix)
           .split("-")
@@ -918,12 +706,10 @@ export default function ServiceManager() {
       let description = `${workOrder.vehicleModel || "Xe"
         } (Phiếu sửa chữa #${workOrderNumber})`;
 
-      // Mô tả vấn đề
       if (workOrder.issueDescription) {
         description += `\nVấn đề: ${workOrder.issueDescription}`;
       }
 
-      // Danh sách phụ tùng đã sử dụng
       if (workOrder.partsUsed && workOrder.partsUsed.length > 0) {
         description += "\n\nPhụ tùng đã thay:";
         workOrder.partsUsed.forEach((part) => {
@@ -932,7 +718,6 @@ export default function ServiceManager() {
         });
       }
 
-      // Danh sách dịch vụ bổ sung (gia công, đặt hàng)
       if (
         workOrder.additionalServices &&
         workOrder.additionalServices.length > 0
@@ -944,23 +729,19 @@ export default function ServiceManager() {
         });
       }
 
-      // Công lao động
       if (workOrder.laborCost && workOrder.laborCost > 0) {
         description += `\n\nCông lao động: ${formatCurrency(
           workOrder.laborCost
         )}`;
       }
 
-      // Giảm giá (nếu có)
       if (workOrder.discount && workOrder.discount > 0) {
         description += `\nGiảm giá: -${formatCurrency(workOrder.discount)}`;
       }
 
-      // Thông tin nhân viên tạo phiếu
       const createdByDisplay = profile?.name || profile?.full_name || "N/A";
       description += `\n\nNV: ${createdByDisplay}`;
 
-      // Thông tin nhân viên kỹ thuật
       if (workOrder.technicianName) {
         description += `\nNVKỹ thuật: ${workOrder.technicianName}`;
       }
@@ -976,7 +757,7 @@ export default function ServiceManager() {
         remainingAmount: remainingAmount,
         createdDate: new Date().toISOString().split("T")[0],
         branchId: currentBranchId,
-        workOrderId: workOrder.id, // 🔹 Link debt với work order
+        workOrderId: workOrder.id,
       };
 
       const result = await createCustomerDebt.mutateAsync(payload as any);
@@ -990,14 +771,6 @@ export default function ServiceManager() {
     }
   };
 
-  // 🔹 Handle create/update work orders (for mobile)
-  const { mutateAsync: createWorkOrderAtomicAsync } =
-    useCreateWorkOrderAtomicRepo();
-  const { mutateAsync: updateWorkOrderAtomicAsync } =
-    useUpdateWorkOrderAtomicRepo();
-  const mobileSaveInFlightRef = useRef(false);
-
-  // 🔹 Handle Mobile Save - Similar to desktop handleSave
   const handleMobileSave = async (workOrderData: any) => {
     const isUpdateMode = !!editingOrder?.id;
     if (isUpdateMode && !canUpdateWorkOrder) {
@@ -1009,27 +782,19 @@ export default function ServiceManager() {
       throw new Error("NO_PERMISSION_WORK_ORDER_CREATE");
     }
 
-    if (mobileSaveInFlightRef.current) {
-      return;
-    }
+    if (mobileSaveInFlightRef.current) return;
     mobileSaveInFlightRef.current = true;
 
     try {
-      // Validate required fields
       if (!workOrderData.customer?.name) {
-        const err = new Error("Vui lòng nhập tên khách hàng");
-        (err as any).suppressAlert = true;
-        showToast.error(err.message);
-        throw err;
+        showToast.error("Vui lòng nhập tên khách hàng");
+        throw new Error("Vui lòng nhập tên khách hàng");
       }
       if (!workOrderData.customer?.phone) {
-        const err = new Error("Vui lòng nhập số điện thoại");
-        (err as any).suppressAlert = true;
-        showToast.error(err.message);
-        throw err;
+        showToast.error("Vui lòng nhập số điện thoại");
+        throw new Error("Vui lòng nhập số điện thoại");
       }
 
-      // Extract data from workOrderData
       const {
         status,
         customer,
@@ -1044,27 +809,22 @@ export default function ServiceManager() {
         total = 0,
         depositAmount = 0,
         paymentMethod,
-        paymentType,
         totalPaid = 0,
         remainingAmount = 0,
       } = workOrderData;
 
-      // 🔹 Ensure vehicle info is saved to customer record
-      // This handles the case when a new vehicle is added during work order creation
       if (customer && vehicle && vehicle.licensePlate) {
         const existingCustomer = displayCustomers.find(
           (c: any) => c.id === customer.id || c.phone === customer.phone
         );
 
         if (existingCustomer) {
-          // Check if this vehicle already exists in customer's vehicles
           const existingVehicles = existingCustomer.vehicles || [];
           const vehicleExists = existingVehicles.some(
             (v: any) => v.licensePlate === vehicle.licensePlate
           );
 
           if (!vehicleExists) {
-            // Add new vehicle to customer
             const updatedCustomer = {
               ...existingCustomer,
               vehicles: [
@@ -1076,14 +836,11 @@ export default function ServiceManager() {
                   currentKm: currentKm > 0 ? currentKm : undefined,
                 },
               ],
-              // Also update top-level fields for legacy compatibility
               licensePlate: vehicle.licensePlate,
               vehicleModel: vehicle.model || existingCustomer.vehicleModel,
             };
-
             upsertCustomer(updatedCustomer);
           } else if (currentKm > 0) {
-            // Vehicle exists, just update currentKm if provided
             const updatedVehicles = existingVehicles.map((v: any) =>
               v.licensePlate === vehicle.licensePlate
                 ? { ...v, currentKm: currentKm }
@@ -1096,7 +853,6 @@ export default function ServiceManager() {
             upsertCustomer(updatedCustomer);
           }
         } else {
-          // Customer is new (created in modal), ensure it has vehicle info
           const newCustomer = {
             ...customer,
             vehicles: customer.vehicles || [
@@ -1114,10 +870,7 @@ export default function ServiceManager() {
         }
       }
 
-      // Determine payment status
       let paymentStatus: "unpaid" | "paid" | "partial" = "unpaid";
-      // Fix: Chỉ coi là "paid" khi total > 0 VÀ totalPaid >= total
-      // Nếu total = 0 nhưng có deposit → vẫn là "partial" (đặt cọc trước)
       if (total > 0 && totalPaid >= total) {
         paymentStatus = "paid";
       } else if (totalPaid > 0) {
@@ -1128,28 +881,20 @@ export default function ServiceManager() {
         !canCollectWorkOrderPayment &&
         (paymentStatus === "paid" || paymentStatus === "partial" || totalPaid > 0)
       ) {
-        const err = new Error("NO_PERMISSION_WORK_ORDER_PAYMENT");
-        (err as any).suppressAlert = true;
         showToast.error("Bạn không có quyền thu tiền phiếu sửa chữa");
-        throw err;
+        throw new Error("NO_PERMISSION_WORK_ORDER_PAYMENT");
       }
 
-      // Find technician name
-      const technician = displayEmployees.find(
-        (e: any) => e.id === technicianId
-      );
+      const technician = displayEmployees.find((e: any) => e.id === technicianId);
       const technicianName = technician?.name || "";
 
       let finalOrderId = "";
       let isNew = false;
       let finalOrderData: WorkOrder | null = null;
 
-      // 1. SAVE WORK ORDER (Blocking operation - must succeed first)
       if (!editingOrder?.id) {
-        // --- NEW ORDER ---
         isNew = true;
-        const orderId = `${storeSettings?.work_order_prefix || "SC"
-          }-${Date.now()}`;
+        const orderId = `${storeSettings?.work_order_prefix || "SC"}-${Date.now()}`;
         finalOrderId = orderId;
 
         const createResponse = await createWorkOrderAtomicAsync({
@@ -1186,16 +931,9 @@ export default function ServiceManager() {
           !(createResponse as any)?.inventoryDeducted
         ) {
           try {
-            await completeWorkOrderPayment(
-              orderId,
-              paymentMethod || "cash",
-              0
-            );
+            await completeWorkOrderPayment(orderId, paymentMethod || "cash", 0);
           } catch (err) {
-            console.error(
-              "[handleMobileSave] Error deducting inventory (create):",
-              err
-            );
+            console.error("[handleMobileSave] Error deducting inventory:", err);
           }
         }
 
@@ -1225,7 +963,6 @@ export default function ServiceManager() {
           creationDate: new Date().toISOString(),
         };
 
-        // Fallback: ensure additionalServices is persisted (in case RPC ignores it)
         if (additionalServices?.length) {
           try {
             await supabase
@@ -1233,16 +970,11 @@ export default function ServiceManager() {
               .update({ additionalservices: additionalServices })
               .eq("id", orderId);
           } catch (err) {
-            console.error(
-              "[handleMobileSave] Fallback update additionalServices failed (create)",
-              err
-            );
+            console.error(err);
           }
         }
-
         showToast.success("Tạo phiếu sửa chữa thành công!");
       } else {
-        // --- UPDATE ORDER ---
         finalOrderId = editingOrder.id;
 
         await updateWorkOrderAtomicAsync({
@@ -1275,16 +1007,9 @@ export default function ServiceManager() {
         const wasUnpaidOrPartial = editingOrder.paymentStatus !== "paid";
         if (paymentStatus === "paid" && wasUnpaidOrPartial && parts.length > 0) {
           try {
-            await completeWorkOrderPayment(
-              editingOrder.id,
-              paymentMethod || "cash",
-              0
-            );
+            await completeWorkOrderPayment(editingOrder.id, paymentMethod || "cash", 0);
           } catch (err) {
-            console.error(
-              "[handleMobileSave] Error deducting inventory (update):",
-              err
-            );
+            console.error("[handleMobileSave] Error deducting inventory:", err);
           }
         }
 
@@ -1311,7 +1036,6 @@ export default function ServiceManager() {
           remainingAmount: remainingAmount,
         };
 
-        // Fallback: ensure additionalServices is persisted (in case RPC ignores it)
         if (additionalServices?.length) {
           try {
             await supabase
@@ -1319,26 +1043,15 @@ export default function ServiceManager() {
               .update({ additionalservices: additionalServices })
               .eq("id", editingOrder.id);
           } catch (err) {
-            console.error(
-              "[handleMobileSave] Fallback update additionalServices failed (update)",
-              err
-            );
+            console.error(err);
           }
         }
-
         showToast.success("Cập nhật phiếu sửa chữa thành công!");
       }
 
-      // 2. PARALLEL BACKGROUND TASKS (Fire and forget from user perspective)
-      // We don't await this block to block the close modal action, 
-      // but we wrap in try-catch to ensure no unhandled promise rejections if we wanted to
-      // or just trust the individual error handling.
       if (finalOrderData) {
-        const orderForAsync = finalOrderData; // Capture for closure
-
-        // Execute auxiliary tasks in parallel
+        const orderForAsync = finalOrderData;
         Promise.all([
-          // Task A: Update Vehicle KM & Maintenance
           (async () => {
             if (currentKm > 0 && customer?.id && vehicle?.id) {
               await updateVehicleKmAndMaintenance(
@@ -1351,8 +1064,6 @@ export default function ServiceManager() {
               );
             }
           })(),
-
-          // Task B: Create Debt if needed
           (async () => {
             if (status === "Trả máy" && remainingAmount > 0) {
               await createCustomerDebtIfNeeded(
@@ -1363,8 +1074,6 @@ export default function ServiceManager() {
               );
             }
           })(),
-
-          // Task C: Create Notification (only for new orders)
           (async () => {
             if (isNew) {
               const createdByName =
@@ -1379,80 +1088,18 @@ export default function ServiceManager() {
               );
             }
           })(),
-
-          // Task D: Update Customer Stats (Total Spent)
-          (async () => {
-            if (customer.phone) {
-              try {
-                // Short delay to ensure RPC triggered DB updates/triggers have settled if any
-                await new Promise((resolve) => setTimeout(resolve, 500));
-
-                const { data: currentCustomer } = await supabase
-                  .from("customers")
-                  .select("id, totalSpent, visitCount")
-                  .eq("phone", customer.phone)
-                  .single();
-
-                if (currentCustomer) {
-                  const currentTotal = currentCustomer?.totalSpent || 0;
-                  const currentVisits = currentCustomer?.visitCount || 0;
-
-                  let newTotalSpent = currentTotal;
-                  let newVisits = currentVisits;
-
-                  if (isNew) {
-                    // New order: add total and increment visit
-                    newTotalSpent = total > 0 ? currentTotal + total : currentTotal;
-                    newVisits = currentVisits + 1;
-                  } else if (editingOrder && editingOrder.total !== total) {
-                    // Update order: adjust total
-                    const oldTotal = editingOrder.total || 0;
-                    newTotalSpent = Math.max(0, currentTotal - oldTotal + total);
-                    // visit count doesn't change on update usually, or we assume correct
-                  }
-
-                  if (newTotalSpent !== currentTotal || newVisits !== currentVisits) {
-                    await supabase
-                      .from("customers")
-                      .update({
-                        totalSpent: newTotalSpent,
-                        visitCount: newVisits,
-                        lastVisit: new Date().toISOString(),
-                      })
-                      .eq("id", currentCustomer.id);
-
-                  }
-                }
-              } catch (err) {
-                console.error("[WorkOrder] Error updating customer stats:", err);
-              }
-            }
-          })()
-        ]).catch(err => {
-          console.error("❌ Error in background parallel tasks:", err);
+        ]).catch((err) => {
+          console.error("Background task error:", err);
         });
       }
 
-      // 🔄 Force refresh data immediately after save
       queryClient.invalidateQueries({ queryKey: ["workOrdersRepo"] });
       queryClient.invalidateQueries({ queryKey: ["workOrdersFiltered"] });
 
       setShowMobileModal(false);
       setEditingOrder(undefined);
     } catch (error: any) {
-      console.error("[handleMobileSave] Error:", error);
-      if (String(error?.message || "").startsWith("NO_PERMISSION_")) {
-        return;
-      }
-      showToast.error(
-        `Lỗi: ${error.message || "Không thể lưu phiếu sửa chữa"}`
-      );
-      const err =
-        error instanceof Error
-          ? error
-          : new Error(error?.message || "Không thể lưu phiếu sửa chữa");
-      (err as any).suppressAlert = true;
-      throw err;
+      console.error(error);
     } finally {
       mobileSaveInFlightRef.current = false;
     }
@@ -1460,19 +1107,16 @@ export default function ServiceManager() {
 
   const handleRefundOrder = (order: WorkOrder) => {
     setRefundingOrder(order);
-    setRefundReason("");
     setShowRefundModal(true);
   };
 
-  const handleConfirmRefund = async () => {
+  const handleConfirmRefund = async (reason: string) => {
     if (!refundingOrder) return;
-
     if (!canCollectWorkOrderPayment) {
       showToast.error("Bạn không có quyền hoàn tiền phiếu sửa chữa");
       return;
     }
-
-    if (!refundReason.trim()) {
+    if (!reason.trim()) {
       showToast.error("Vui lòng nhập lý do hủy");
       return;
     }
@@ -1480,17 +1124,14 @@ export default function ServiceManager() {
     try {
       const result = await refundWorkOrderAsync({
         orderId: refundingOrder.id,
-        refundReason: refundReason,
+        refundReason: reason,
       });
 
-      // Check if mutation succeeded
       if (!result || (result as any).error) {
-        console.error("[handleConfirmRefund] Refund failed:", result);
         showToast.error("Không thể hủy đơn sửa chữa");
         return;
       }
 
-      // Update context cash transactions and payment sources
       if (
         result &&
         "refund_transaction_id" in result &&
@@ -1507,14 +1148,12 @@ export default function ServiceManager() {
             category: "refund",
             amount: -refundAmount,
             date: new Date().toISOString(),
-            description: `Hoàn tiền hủy phiếu #${(
-              formatWorkOrderId(
-                refundingOrder.id,
-                storeSettings?.work_order_prefix
-              ) || ""
+            description: `Hoàn tiền hủy phiếu #${formatWorkOrderId(
+              refundingOrder.id,
+              storeSettings?.work_order_prefix
             )
               .split("-")
-              .pop()} - ${refundReason}`,
+              .pop()} - ${reason}`,
             branchId: currentBranchId,
             paymentSource: refundingOrder.paymentMethod,
             reference: refundingOrder.id,
@@ -1540,7 +1179,6 @@ export default function ServiceManager() {
         }
       }
 
-      // Update work orders state
       setWorkOrders((prev) =>
         prev.map((wo) =>
           wo.id === refundingOrder.id
@@ -1552,26 +1190,10 @@ export default function ServiceManager() {
       showToast.success("Đã hủy đơn sửa chữa thành công");
       setShowRefundModal(false);
       setRefundingOrder(null);
-      setRefundReason("");
     } catch (error) {
-      console.error("Error refunding work order:", error);
+      console.error(error);
       showToast.error("Lỗi khi hủy đơn sửa chữa");
     }
-  };
-
-  // handleCallCustomer moved to ./utils/service.utils.ts
-  const handleCallCustomerWrapper = (phone: string) => callCustomer(phone);
-
-  // formatMaskedPhone moved to ./utils/service.utils.ts
-
-  const clearFilters = () => {
-    setSearchQuery("");
-    setActiveTab("all");
-    setTechnicianFilter("all");
-    setPaymentFilter("all");
-    setDateFilter("week");
-    setCustomDateStart(todayStr);
-    setCustomDateEnd(todayStr);
   };
 
   const handleLoadMore = () => {
@@ -1583,62 +1205,37 @@ export default function ServiceManager() {
     }
   };
 
-  // Handle delete work order - using hook for proper query invalidation
-  const handleDelete = async (workOrder: WorkOrder) => {
+  const handleDelete = (order: WorkOrder) => {
     if (!canDeleteWorkOrder) {
       showToast.error("Bạn không có quyền xóa phiếu sửa chữa");
       return;
     }
+    setDeletingOrder(order);
+    setShowDeleteConfirm(true);
+  };
 
-    if (!confirm(`Xác nhận xóa phiếu ${formatWorkOrderId(workOrder.id)}?`)) {
-      return;
-    }
+  const handleConfirmDelete = async () => {
+    if (!deletingOrder) return;
     try {
-      await deleteWorkOrderAsync({ id: workOrder.id });
-      // Note: Toast and query invalidation are handled by the hook's onSuccess
+      await deleteWorkOrderAsync({ id: deletingOrder.id });
     } catch (error) {
-      console.error("Error deleting work order:", error);
-      // Note: Error toast is handled by the hook's onError
+      console.error(error);
+    } finally {
+      setDeletingOrder(null);
+      setShowDeleteConfirm(false);
     }
   };
 
-  // Handle apply template
-  const handleApplyRepairTemplate = (template: RepairTemplate) => {
-    const newOrder: WorkOrder = {
-      id: "", // Empty ID to trigger creation mode
-      customerName: "",
-      customerPhone: "",
-      vehicleModel: "",
-      issueDescription: template.description || template.name,
-      status: "Tiếp nhận",
-      creationDate: new Date().toISOString(),
-      estimatedCompletion: new Date(
-        Date.now() + (template.duration || 30) * 60000
-      ).toISOString(),
-      assignedTechnician: "",
-      laborCost: template.labor_cost || 0,
-      partsUsed: (template.parts || []).map((p: any) => ({
-        partId: p.partId || "",
-        partName: p.name,
-        quantity: p.quantity,
-        price: p.price,
-        sku: p.sku || "",
-      })),
-      notes: "",
-      total: 0,
-      branchId: currentBranchId,
-    };
-    setEditingOrder(newOrder);
-
-    if (isMobile) {
-      setMobileModalViewMode(false);
-      setShowMobileModal(true);
-    } else {
-      setShowModal(true);
-    }
+  const clearFilters = () => {
+    setSearchQuery("");
+    setActiveTab("all");
+    setTechnicianFilter("all");
+    setPaymentFilter("all");
+    setDateFilter("week");
+    setCustomDateStart(todayStr);
+    setCustomDateEnd(todayStr);
   };
 
-  // Mini chart data calculation for the last 7 days
   const chartData = useMemo(() => {
     if (dateFilter !== "week") return null;
     const days = 7;
@@ -1656,20 +1253,17 @@ export default function ServiceManager() {
       const match = data.find((d) => d.date === oDate);
       if (match) {
         const rev = o.paymentStatus === "paid" ? (o.total || 0) : (o.totalPaid || 0);
-        // Cost of parts used
         const partsCost =
           o.partsUsed?.reduce(
             (s, p) => s + (p.costPrice || 0) * (p.quantity || 1),
             0
           ) || 0;
-        // Cost of additional services
         const servCost =
           o.additionalServices?.reduce(
             (s: any, svc: any) => s + (svc.costPrice || 0) * (svc.quantity || 1),
             0
           ) || 0;
         const prof = rev - partsCost - servCost;
-
         match.rev += rev;
         match.prof += prof;
       }
@@ -1680,21 +1274,22 @@ export default function ServiceManager() {
     return { data, maxRev, maxProf };
   }, [dateFilteredOrders, dateFilter]);
 
-  // Mobile view - Check screen width
   if (isMobile) {
     return (
       <>
         <ServiceManagerMobile
           workOrders={displayWorkOrders || []}
           isLoading={workOrdersLoading || workOrdersFetching}
-          onRefresh={async () => { await refetchWorkOrders(); }}
+          onRefresh={async () => {
+            await refetchWorkOrders();
+          }}
           onCreateWorkOrder={() => {
             if (!canCreateWorkOrder) {
               showToast.error("Bạn không có quyền tạo phiếu sửa chữa");
               return;
             }
             setEditingOrder(undefined);
-            setMobileModalViewMode(false); // Tạo mới = edit mode
+            setMobileModalViewMode(false);
             setShowMobileModal(true);
           }}
           onEditWorkOrder={async (workOrder) => {
@@ -1702,19 +1297,21 @@ export default function ServiceManager() {
               showToast.error("Bạn không có quyền sửa phiếu sửa chữa");
               return;
             }
-            // 🔹 FIX: Load fresh data from database to avoid stale data issues
             if (workOrder.id) {
               const result = await fetchWorkOrderById(workOrder.id);
               if (result.ok) {
                 setEditingOrder(result.data);
               } else {
-                console.warn("[onEditWorkOrder] Failed to fetch fresh data, using cached:", result.error);
+                console.warn(
+                  "[onEditWorkOrder] Failed to fetch fresh data, using cached:",
+                  result.error
+                );
                 setEditingOrder(workOrder);
               }
             } else {
               setEditingOrder(workOrder);
             }
-            setMobileModalViewMode(true); // Click vào phiếu = view mode trước
+            setMobileModalViewMode(true);
             setShowMobileModal(true);
           }}
           onDeleteWorkOrder={handleDelete}
@@ -1728,7 +1325,6 @@ export default function ServiceManager() {
           setDateRangeDays={setDateRangeDays}
         />
 
-        {/* Mobile Modal */}
         {showMobileModal && (
           <WorkOrderMobileModal
             isOpen={showMobileModal}
@@ -1751,737 +1347,22 @@ export default function ServiceManager() {
           />
         )}
 
-        {/* Mobile Print Preview Modal */}
         {showPrintPreview && printOrder && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[200] p-2">
-            <div className="bg-white dark:bg-slate-800 rounded-xl w-full max-w-full max-h-[95vh] flex flex-col">
-              {/* Modal Header */}
-              <div className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-4 py-3 flex items-center justify-between rounded-t-xl flex-shrink-0">
-                <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">
-                  Xem trước phiếu
-                </h2>
-                <div className="flex items-center gap-2">
-                  {/* Share Button - Share as Image */}
-                  <button
-                    onClick={async () => {
-                      const element = document.getElementById(
-                        "mobile-print-preview-content"
-                      );
-                      if (!element) {
-                        showToast.error("Không tìm thấy nội dung phiếu!");
-                        return;
-                      }
-
-                      showToast.info("Đang tạo hình ảnh...");
-
-                      // Move element off-screen for a clean full-scale capture
-                      const originalParent = element.parentElement!;
-                      const originalNextSibling = element.nextSibling;
-                      const originalMaxWidth = element.style.maxWidth;
-
-                      const offscreen = document.createElement("div");
-                      offscreen.style.cssText =
-                        "position:fixed;top:0;left:-9999px;z-index:-999;background:#fff;overflow:visible;";
-                      document.body.appendChild(offscreen);
-                      offscreen.appendChild(element);
-                      element.style.maxWidth = "none";
-
-                      await new Promise((r) => setTimeout(r, 300));
-
-                      try {
-                        const html2canvas = (await import("html2canvas"))
-                          .default;
-
-                        const canvas = await html2canvas(element, {
-                          scale: 2,
-                          backgroundColor: "#ffffff",
-                          useCORS: true,
-                          allowTaint: false,
-                          logging: false,
-                          width: element.scrollWidth,
-                          height: element.scrollHeight,
-                          windowWidth: element.scrollWidth + 40,
-                          windowHeight: element.scrollHeight + 40,
-                        });
-
-                        const blob = await new Promise<Blob>(
-                          (resolve, reject) => {
-                            canvas.toBlob((b) => {
-                              if (b) resolve(b);
-                              else reject(new Error("toBlob failed"));
-                            }, "image/png", 1.0);
-                          }
-                        );
-
-                        const fileName = `Phieu_${formatWorkOrderId(
-                          printOrder.id,
-                          storeSettings?.work_order_prefix
-                        )}.png`;
-
-                        if (navigator.share && navigator.canShare) {
-                          const file = new File([blob], fileName, {
-                            type: "image/png",
-                          });
-                          const shareData = {
-                            files: [file],
-                            title: `Phiếu sửa chữa - ${formatWorkOrderId(
-                              printOrder.id,
-                              storeSettings?.work_order_prefix
-                            )}`,
-                          };
-
-                          if (navigator.canShare(shareData)) {
-                            await navigator.share(shareData);
-                            showToast.success("Chia sẻ thành công!");
-                          } else {
-                            const url = URL.createObjectURL(blob);
-                            const a = document.createElement("a");
-                            a.href = url;
-                            a.download = fileName;
-                            a.click();
-                            URL.revokeObjectURL(url);
-                            showToast.success("Đã tải hình ảnh!");
-                          }
-                        } else {
-                          const url = URL.createObjectURL(blob);
-                          const a = document.createElement("a");
-                          a.href = url;
-                          a.download = fileName;
-                          a.click();
-                          URL.revokeObjectURL(url);
-                          showToast.success("Đã tải hình ảnh!");
-                        }
-                      } catch (err) {
-                        if ((err as Error)?.name !== "AbortError") {
-                          console.error("Share failed:", err);
-                          showToast.error(
-                            "Không thể tạo hình ảnh. Vui lòng thử lại!"
-                          );
-                        }
-                      } finally {
-                        element.style.maxWidth = originalMaxWidth;
-                        if (originalNextSibling) {
-                          originalParent.insertBefore(
-                            element,
-                            originalNextSibling
-                          );
-                        } else {
-                          originalParent.appendChild(element);
-                        }
-                        document.body.removeChild(offscreen);
-                      }
-                    }}
-                    className="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg flex items-center gap-1.5 transition text-sm"
-                  >
-                    <Share2 className="w-4 h-4" />
-                    Chia sẻ
-                  </button>
-                  <button
-                    onClick={handleDoPrint}
-                    className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center gap-1.5 transition text-sm"
-                  >
-                    <Printer className="w-4 h-4" />
-                    In
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowPrintPreview(false);
-                      setPrintOrder(null);
-                    }}
-                    className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 bg-slate-100 dark:bg-slate-700 rounded-lg"
-                    aria-label="Đóng"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      className="w-5 h-5"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M6 18L18 6M6 6l12 12"
-                      />
-                    </svg>
-                  </button>
-                </div>
-              </div>
-
-              {/* Print Preview Content - Mobile optimized */}
-              <div className="flex-1 overflow-y-auto p-3 bg-slate-100 dark:bg-slate-900">
-                <div
-                  id="mobile-print-preview-content"
-                  className="bg-white shadow-lg mx-auto"
-                  style={{ maxWidth: "100%", color: "#000", padding: "4mm" }}
-                >
-                  {/* Store Info Header with Logo */}
-                  <div
-                    style={{
-                      display: "flex",
-                      gap: "3mm",
-                      marginBottom: "3mm",
-                      borderBottom: "2px solid #3b82f6",
-                      paddingBottom: "2mm",
-                      alignItems: "flex-start",
-                    }}
-                  >
-                    {/* Logo */}
-                    {storeSettings?.logo_url && (
-                      <div style={{ flexShrink: 0 }}>
-                        <img
-                          src={storeSettings.logo_url}
-                          alt="Logo"
-                          style={{
-                            height: "15mm",
-                            width: "auto",
-                            objectFit: "contain",
-                          }}
-                        />
-                      </div>
-                    )}
-                    {/* Store Info */}
-                    <div style={{ flex: 1, fontSize: "9pt" }}>
-                      <div
-                        style={{
-                          fontWeight: "bold",
-                          fontSize: "12pt",
-                          color: "#1e40af",
-                          marginBottom: "1mm",
-                        }}
-                      >
-                        {storeSettings?.store_name || "Nhạn Lâm SmartCare"}
-                      </div>
-                      <div
-                        style={{
-                          color: "#000",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "1mm",
-                        }}
-                      >
-                        <svg
-                          style={{
-                            width: "10px",
-                            height: "10px",
-                            flexShrink: 0,
-                          }}
-                          viewBox="0 0 24 24"
-                          fill="#ef4444"
-                        >
-                          <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
-                        </svg>
-                        <span>
-                          {storeSettings?.address ||
-                            "Ấp Phú Lợi B, Xã Long Phú Thuận, Đông Tháp"}
-                        </span>
-                      </div>
-                      <div
-                        style={{
-                          color: "#000",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "1mm",
-                        }}
-                      >
-                        <svg
-                          style={{
-                            width: "10px",
-                            height: "10px",
-                            flexShrink: 0,
-                          }}
-                          viewBox="0 0 24 24"
-                          fill="#16a34a"
-                        >
-                          <path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z" />
-                        </svg>
-                        <span>{storeSettings?.phone || "0907.239.337"}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Title */}
-                  <div style={{ textAlign: "center", marginBottom: "3mm" }}>
-                    <h1
-                      style={{
-                        fontSize: "14pt",
-                        fontWeight: "bold",
-                        margin: "0",
-                        color: "#1e40af",
-                      }}
-                    >
-                      PHIẾU DỊCH VỤ SỬA CHỮA
-                    </h1>
-                    <div
-                      style={{
-                        fontSize: "9pt",
-                        color: "#666",
-                        marginTop: "1mm",
-                      }}
-                    >
-                      Mã:{" "}
-                      {formatWorkOrderId(
-                        printOrder.id,
-                        storeSettings?.work_order_prefix
-                      )}
-                    </div>
-                    <div style={{ fontSize: "8pt", color: "#666" }}>
-                      {new Date(printOrder.creationDate).toLocaleString(
-                        "vi-VN"
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Customer Info */}
-                  <div
-                    style={{
-                      border: "1px solid #ddd",
-                      padding: "2mm",
-                      marginBottom: "2mm",
-                      borderRadius: "2mm",
-                      backgroundColor: "#f8fafc",
-                      fontSize: "9pt",
-                    }}
-                  >
-                    <div>
-                      <strong>Khách hàng:</strong> {printOrder.customerName} -{" "}
-                      {printOrder.customerPhone}
-                    </div>
-                    <div>
-                      <strong>Xe:</strong> {printOrder.vehicleModel} -{" "}
-                      <span style={{ color: "#3b82f6" }}>
-                        {printOrder.licensePlate}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Issue Description */}
-                  {printOrder.issueDescription && (
-                    <div
-                      style={{
-                        border: "1px solid #ddd",
-                        padding: "2mm",
-                        marginBottom: "2mm",
-                        borderRadius: "2mm",
-                        fontSize: "9pt",
-                      }}
-                    >
-                      <strong>Mô tả sự cố:</strong>{" "}
-                      {printOrder.issueDescription}
-                    </div>
-                  )}
-
-                  {/* Parts and Services Table */}
-                  {((printOrder.partsUsed && printOrder.partsUsed.length > 0) ||
-                    (printOrder.additionalServices && printOrder.additionalServices.length > 0)) && (
-                      <div style={{ marginBottom: "2mm" }}>
-                        <p
-                          style={{
-                            fontWeight: "bold",
-                            margin: "0 0 1mm 0",
-                            fontSize: "10pt",
-                          }}
-                        >
-                          Phụ tùng và dịch vụ:
-                        </p>
-                        <table
-                          style={{
-                            width: "100%",
-                            borderCollapse: "collapse",
-                            border: "1px solid #ddd",
-                            fontSize: "9pt",
-                          }}
-                        >
-                          <thead>
-                            <tr style={{ backgroundColor: "#f5f5f5" }}>
-                              <th
-                                style={{
-                                  border: "1px solid #ddd",
-                                  padding: "1.5mm",
-                                  textAlign: "center",
-                                  width: "8%",
-                                }}
-                              >
-                                STT
-                              </th>
-                              <th
-                                style={{
-                                  border: "1px solid #ddd",
-                                  padding: "1.5mm",
-                                  textAlign: "left",
-                                }}
-                              >
-                                Tên
-                              </th>
-                              <th
-                                style={{
-                                  border: "1px solid #ddd",
-                                  padding: "1.5mm",
-                                  textAlign: "center",
-                                  width: "12%",
-                                }}
-                              >
-                                SL
-                              </th>
-                              <th
-                                style={{
-                                  border: "1px solid #ddd",
-                                  padding: "1.5mm",
-                                  textAlign: "right",
-                                  width: "22%",
-                                }}
-                              >
-                                Đơn giá
-                              </th>
-                              <th
-                                style={{
-                                  border: "1px solid #ddd",
-                                  padding: "1.5mm",
-                                  textAlign: "right",
-                                  width: "22%",
-                                }}
-                              >
-                                Thành tiền
-                              </th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {/* Parts */}
-                            {printOrder.partsUsed && printOrder.partsUsed.map(
-                              (part: WorkOrderPart, idx: number) => (
-                                <tr key={`part-${idx}`}>
-                                  <td
-                                    style={{
-                                      border: "1px solid #ddd",
-                                      padding: "1.5mm",
-                                      textAlign: "center",
-                                    }}
-                                  >
-                                    {idx + 1}
-                                  </td>
-                                  <td
-                                    style={{
-                                      border: "1px solid #ddd",
-                                      padding: "1.5mm",
-                                    }}
-                                  >
-                                    {part.partName}
-                                  </td>
-                                  <td
-                                    style={{
-                                      border: "1px solid #ddd",
-                                      padding: "1.5mm",
-                                      textAlign: "center",
-                                    }}
-                                  >
-                                    {part.quantity}
-                                  </td>
-                                  <td
-                                    style={{
-                                      border: "1px solid #ddd",
-                                      padding: "1.5mm",
-                                      textAlign: "right",
-                                    }}
-                                  >
-                                    {formatCurrency(part.price)}
-                                  </td>
-                                  <td
-                                    style={{
-                                      border: "1px solid #ddd",
-                                      padding: "1.5mm",
-                                      textAlign: "right",
-                                      fontWeight: "bold",
-                                    }}
-                                  >
-                                    {formatCurrency(part.price * part.quantity)}
-                                  </td>
-                                </tr>
-                              )
-                            )}
-                            {/* Additional Services */}
-                            {printOrder.additionalServices && printOrder.additionalServices.map(
-                              (service: any, idx: number) => (
-                                <tr key={`service-${idx}`}>
-                                  <td
-                                    style={{
-                                      border: "1px solid #ddd",
-                                      padding: "1.5mm",
-                                      textAlign: "center",
-                                    }}
-                                  >
-                                    {(printOrder.partsUsed?.length || 0) + idx + 1}
-                                  </td>
-                                  <td
-                                    style={{
-                                      border: "1px solid #ddd",
-                                      padding: "1.5mm",
-                                    }}
-                                  >
-                                    {service.description}
-                                  </td>
-                                  <td
-                                    style={{
-                                      border: "1px solid #ddd",
-                                      padding: "1.5mm",
-                                      textAlign: "center",
-                                    }}
-                                  >
-                                    {service.quantity || 1}
-                                  </td>
-                                  <td
-                                    style={{
-                                      border: "1px solid #ddd",
-                                      padding: "1.5mm",
-                                      textAlign: "right",
-                                    }}
-                                  >
-                                    {formatCurrency(service.price || 0)}
-                                  </td>
-                                  <td
-                                    style={{
-                                      border: "1px solid #ddd",
-                                      padding: "1.5mm",
-                                      textAlign: "right",
-                                      fontWeight: "bold",
-                                    }}
-                                  >
-                                    {formatCurrency(
-                                      (service.price || 0) * (service.quantity || 1)
-                                    )}
-                                  </td>
-                                </tr>
-                              )
-                            )}
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
-
-                  {/* Cost Summary */}
-                  <div
-                    style={{
-                      border: "1px solid #ddd",
-                      padding: "2mm",
-                      borderRadius: "2mm",
-                      backgroundColor: "#f9f9f9",
-                      fontSize: "9pt",
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        marginBottom: "1mm",
-                      }}
-                    >
-                      <span>Phí dịch vụ:</span>
-                      <span>{formatCurrency(printOrder.laborCost || 0)}</span>
-                    </div>
-                    {printOrder.discount != null && printOrder.discount > 0 && (
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          marginBottom: "1mm",
-                          color: "#e74c3c",
-                        }}
-                      >
-                        <span>Giảm giá:</span>
-                        <span>-{formatCurrency(printOrder.discount)}</span>
-                      </div>
-                    )}
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        paddingTop: "2mm",
-                        borderTop: "2px solid #3b82f6",
-                        fontSize: "12pt",
-                        fontWeight: "bold",
-                        color: "#1e40af",
-                      }}
-                    >
-                      <span>TỔNG CỘNG:</span>
-                      <span>{formatCurrency(printOrder.total || 0)}</span>
-                    </div>
-                    {printOrder.depositAmount != null &&
-                      printOrder.depositAmount > 0 && (
-                        <>
-                          <div
-                            style={{
-                              display: "flex",
-                              justifyContent: "space-between",
-                              marginTop: "1mm",
-                              color: "#16a34a",
-                            }}
-                          >
-                            <span>Đã đặt cọc:</span>
-                            <span>
-                              {formatCurrency(printOrder.depositAmount)}
-                            </span>
-                          </div>
-                          <div
-                            style={{
-                              display: "flex",
-                              justifyContent: "space-between",
-                              fontWeight: "bold",
-                              color: "#dc2626",
-                            }}
-                          >
-                            <span>Còn lại:</span>
-                            <span>
-                              {formatCurrency(
-                                printOrder.remainingAmount ||
-                                printOrder.total - printOrder.depositAmount
-                              )}
-                            </span>
-                          </div>
-                        </>
-                      )}
-                  </div>
-
-                  {/* Dynamic QR Payment Code - Mobile Viewport Optimized (Horizontal) */}
-                  {(printQRUrl || storeSettings?.bank_qr_url) && (
-                    <div
-                      style={{
-                        marginTop: "4mm",
-                        padding: "3.5mm",
-                        border: "2px solid #2563eb",
-                        borderRadius: "4mm",
-                        backgroundColor: "#eff6ff",
-                        color: "#000",
-                      }}
-                    >
-                      <p
-                        style={{
-                          margin: "0 0 2.5mm 0",
-                          fontSize: "10.5pt",
-                          fontWeight: "bold",
-                          color: "#2563eb",
-                          textAlign: "center",
-                        }}
-                      >
-                        📱 QUÉT MÃ ĐỂ THANH TOÁN
-                      </p>
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "space-between",
-                          gap: "3mm",
-                        }}
-                      >
-                        {/* Left Column: Bank Details */}
-                        <div
-                          style={{
-                            flex: 1,
-                            textAlign: "left",
-                            fontSize: "8.5pt",
-                            color: "#000",
-                            lineHeight: "1.35",
-                          }}
-                        >
-                          <div style={{ fontSize: "9.5pt", color: "#666", marginBottom: "1mm" }}>
-                            Số tiền: <strong style={{ color: "#2563eb", fontSize: "10.5pt" }}>{formatCurrency(printOrder.total || 0)}</strong>
-                          </div>
-                          <div>
-                            Ngân hàng: <strong>{storeSettings?.bank_name}</strong>
-                          </div>
-                          <div>
-                            STK: <strong style={{ color: "#2563eb", fontSize: "9.5pt" }}>{storeSettings?.bank_account_number}</strong>
-                          </div>
-                          {storeSettings?.bank_account_holder && (
-                            <div style={{ fontSize: "7.5pt", color: "#555" }}>
-                              Chủ TK: {storeSettings.bank_account_holder}
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Right Column: QR Code */}
-                        <div
-                          style={{
-                            flexShrink: 0,
-                            padding: "1mm",
-                            backgroundColor: "#fff",
-                            borderRadius: "1.5mm",
-                            border: "1px solid #bfdbfe",
-                          }}
-                        >
-                          <img
-                            src={printQRUrl || storeSettings?.bank_qr_url}
-                            alt="QR Payment"
-                            style={{
-                              width: "25mm",
-                              height: "25mm",
-                              display: "block",
-                              objectFit: "contain",
-                            }}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Note & QR Code Tra Cuu */}
-                  <div
-                    style={{
-                      marginTop: "3mm",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "3mm",
-                      padding: "2mm",
-                      backgroundColor: "#fff9e6",
-                      border: "1px solid #ffd700",
-                      borderRadius: "2mm",
-                    }}
-                  >
-                    <div style={{ flex: 1, fontSize: "8pt", textAlign: "left" }}>
-                      <p style={{ margin: "0", fontStyle: "italic", fontWeight: "bold", color: "#b7791f" }}>
-                        📱 TRA CỨU TIẾN ĐỘ SỬA CHỮA ONLINE
-                      </p>
-                      <p style={{ margin: "0.5mm 0 0 0", fontSize: "7.5pt", color: "#444", lineHeight: "1.25" }}>
-                        Quét mã QR để theo dõi tiến độ sửa chữa thời gian thực & lịch sử bảo dưỡng xe.
-                      </p>
-                    </div>
-                    <div style={{ flexShrink: 0, padding: "0.5mm", backgroundColor: "#fff", borderRadius: "1mm", border: "1px solid #ffd700" }}>
-                      <img
-                        src={`https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(
-                          window.location.origin + "/tra-cuu/" + printOrder.id
-                        )}`}
-                        alt="QR Tra cuu"
-                        style={{
-                          height: "14mm",
-                          width: "14mm",
-                          display: "block",
-                        }}
-                      />
-                    </div>
-                  </div>
-
-                  {/* KTV Info */}
-                  <div
-                    style={{
-                      marginTop: "2mm",
-                      fontSize: "9pt",
-                      textAlign: "right",
-                      color: "#666",
-                    }}
-                  >
-                    KTV: {printOrder.technicianName || "Chưa phân công"}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+          <PrintPreviewModal
+            isOpen={showPrintPreview}
+            onClose={() => {
+              setShowPrintPreview(false);
+              setPrintOrder(null);
+            }}
+            printOrder={printOrder}
+            storeSettings={storeSettings}
+          />
         )}
 
-        {/* Repair Templates Modal for Mobile */}
         <RepairTemplatesModal
           isOpen={showTemplateModal}
           onClose={() => setShowTemplateModal(false)}
           onApplyTemplate={(template) => {
-            // Convert and apply template to current work order for mobile
             const partsTotal = template.parts.reduce(
               (sum, p) => sum + (p.price || 0) * (p.quantity || 1),
               0
@@ -2515,7 +1396,7 @@ export default function ServiceManager() {
             };
             setEditingOrder(newOrder);
             setShowTemplateModal(false);
-            setShowModal(true); // Use Desktop modal
+            setShowModal(true);
           }}
           parts={fetchedParts || []}
           currentBranchId={currentBranchId}
@@ -2526,895 +1407,77 @@ export default function ServiceManager() {
 
   return (
     <div className="space-y-4">
-      {/* Cụm Thống kê (Hero Stats) - Giao diện mới Flat Grid */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-3">
-        <div>
-          <h2 className="text-xs font-black tracking-wider text-slate-800 dark:text-slate-200 uppercase flex items-center gap-2">
-            <span>Tổng quan hoạt động</span>
-            <span className="text-[9.5px] font-bold px-1.5 py-0.5 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-full border border-blue-500/20 leading-none">Thời gian thực</span>
-          </h2>
-        </div>
-        
-        {/* Tóm tắt nhanh */}
-        <div className="flex items-center gap-3 text-[11px] bg-slate-50/70 dark:bg-slate-900/60 backdrop-blur-md px-3 py-1.5 rounded-xl border border-slate-200/40 dark:border-slate-700/50 shadow-sm">
-          <div className="flex items-center gap-1">
-            <span className="text-[9px] text-slate-450 dark:text-slate-500 font-extrabold uppercase tracking-wider">Đang mở:</span>
-            <span className="font-extrabold text-slate-900 dark:text-white">{totalOpenTickets}</span>
-          </div>
-          <div className="w-px h-3 bg-slate-200/60 dark:bg-slate-700/60"></div>
-          <div className="flex items-center gap-1">
-            <span className="text-[9px] text-slate-450 dark:text-slate-500 font-extrabold uppercase tracking-wider">Cần xử lý:</span>
-            <span className="font-extrabold text-amber-600 dark:text-amber-500">{urgentTickets}</span>
-          </div>
-          <div className="w-px h-3 bg-slate-200/60 dark:bg-slate-700/60"></div>
-          <div className="flex items-center gap-1">
-            <span className="text-[9px] text-slate-450 dark:text-slate-500 font-extrabold uppercase tracking-wider">Tỷ lệ HT:</span>
-            <span className="font-extrabold text-emerald-600 dark:text-emerald-400">{totalOpenTickets > 0 ? `${completionRate}%` : "—"}</span>
-          </div>
-        </div>
-      </div>
+      {/* 1. Hero Stats Section */}
+      <HeroStatsSection
+        totalOpenTickets={totalOpenTickets}
+        urgentTickets={urgentTickets}
+        completionRate={completionRate}
+        statusSnapshotCards={statusSnapshotCards}
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        canViewServiceFinancial={canViewServiceFinancial}
+        showFinancialOverview={showFinancialOverview}
+        setShowFinancialOverview={setShowFinancialOverview}
+        filteredRevenue={stats.filteredRevenue}
+        filteredProfit={stats.filteredProfit}
+        profitMargin={profitMargin}
+        chartData={chartData}
+      />
 
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-        {/* 4 Thẻ Quy trình Trạng thái */}
-        {statusSnapshotCards.map((card) => {
-          const colors: Record<string, { dot: string; glow: string; borderHover: string; activeBg: string; activeBorder: string; hoverBg: string; text: string }> = {
-            pending: {
-              dot: "bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.6)]",
-              glow: "group-hover:shadow-[0_8px_30px_rgba(59,130,246,0.06)]",
-              borderHover: "group-hover:border-blue-500/30 dark:group-hover:border-blue-500/20",
-              activeBg: "bg-blue-50/80 dark:bg-[#141b30]/90",
-              activeBorder: "border-blue-500/50 dark:border-blue-400/40",
-              hoverBg: "hover:bg-blue-50/20 dark:hover:bg-[#141b30]/20",
-              text: "text-blue-500 dark:text-blue-400",
-            },
-            inProgress: {
-              dot: "bg-amber-500 animate-pulse shadow-[0_0_8px_rgba(245,158,11,0.6)]",
-              glow: "group-hover:shadow-[0_8px_30px_rgba(245,158,11,0.06)]",
-              borderHover: "group-hover:border-amber-500/30 dark:group-hover:border-amber-500/20",
-              activeBg: "bg-amber-50/80 dark:bg-[#281c15]/90",
-              activeBorder: "border-amber-500/50 dark:border-amber-400/40",
-              hoverBg: "hover:bg-amber-50/20 dark:hover:bg-[#281c15]/20",
-              text: "text-amber-500 dark:text-amber-400",
-            },
-            done: {
-              dot: "bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.6)]",
-              glow: "group-hover:shadow-[0_8px_30px_rgba(6,182,212,0.06)]",
-              borderHover: "group-hover:border-cyan-500/30 dark:group-hover:border-cyan-500/20",
-              activeBg: "bg-cyan-50/80 dark:bg-[#12222d]/90",
-              activeBorder: "border-cyan-500/50 dark:border-cyan-400/40",
-              hoverBg: "hover:bg-cyan-50/20 dark:hover:bg-[#12222d]/20",
-              text: "text-cyan-500 dark:text-cyan-400",
-            },
-            delivered: {
-              dot: "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]",
-              glow: "group-hover:shadow-[0_8px_30px_rgba(16,185,129,0.06)]",
-              borderHover: "group-hover:border-emerald-500/30 dark:group-hover:border-emerald-500/20",
-              activeBg: "bg-emerald-50/80 dark:bg-[#11241f]/90",
-              activeBorder: "border-emerald-500/50 dark:border-emerald-400/40",
-              hoverBg: "hover:bg-emerald-50/20 dark:hover:bg-[#11241f]/20",
-              text: "text-emerald-500 dark:text-emerald-400",
-            },
-          };
+      {/* 2. Filter & Action Bar */}
+      <FilterActionBar
+        searchInputRef={searchInputRef}
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        dateFilter={dateFilter}
+        setDateFilter={setDateFilter}
+        technicianFilter={technicianFilter}
+        setTechnicianFilter={setTechnicianFilter}
+        employees={employees}
+        paymentFilter={paymentFilter}
+        setPaymentFilter={setPaymentFilter}
+        customDateStart={customDateStart}
+        setCustomDateStart={setCustomDateStart}
+        customDateEnd={customDateEnd}
+        setCustomDateEnd={setCustomDateEnd}
+        refetchWorkOrders={refetchWorkOrders}
+        workOrdersFetching={workOrdersFetching}
+        clearFilters={clearFilters}
+        filteredOrdersCount={filteredOrders.length}
+        isOwner={isOwner}
+        showProfit={showProfit}
+        setShowProfit={setShowProfit}
+        setShowTemplateModal={setShowTemplateModal}
+        handleOpenModal={handleOpenModal}
+      />
 
-          const style = colors[card.key] || {
-            dot: "bg-slate-400 shadow-[0_0_8px_rgba(148,163,184,0.6)]",
-            glow: "group-hover:shadow-[0_8px_30px_rgba(148,163,184,0.06)]",
-            borderHover: "group-hover:border-slate-400/30",
-            activeBg: "bg-slate-50/80 dark:bg-slate-900/90",
-            activeBorder: "border-slate-500/50 dark:border-slate-400/40",
-            hoverBg: "hover:bg-slate-50/20 dark:hover:bg-slate-900/20",
-            text: "text-slate-500 dark:text-slate-400",
-          };
+      {/* 3. Work Orders Table */}
+      <WorkOrdersTable
+        paginatedOrders={paginatedOrders}
+        filteredOrders={filteredOrders}
+        showTableSkeleton={showTableSkeleton}
+        showTableError={showTableError}
+        workOrdersError={workOrdersError}
+        refetchWorkOrders={refetchWorkOrders}
+        workOrdersFetching={workOrdersFetching}
+        clearFilters={clearFilters}
+        handleOpenModal={handleOpenModal}
+        handlePrintOrder={handlePrintOrder}
+        handleRefundOrder={handleRefundOrder}
+        handleDelete={handleDelete}
+        visibleCount={visibleCount}
+        hasMoreOrders={hasMoreOrders}
+        handleLoadMore={handleLoadMore}
+        isOwner={isOwner}
+        showProfit={showProfit}
+        storeSettings={storeSettings}
+      />
 
-          const isActive = activeTab === card.key;
-
-          return (
-            <button
-              key={card.key}
-              onClick={() => setActiveTab(isActive ? "all" : card.key)}
-              className={`relative group flex flex-col justify-between p-3 rounded-2xl transition-all duration-300 focus:outline-none border text-left h-[76px] ${style.glow} hover:-translate-y-0.5 shadow-sm hover:shadow-md
-                ${isActive
-                  ? `${style.activeBg} ${style.activeBorder} ring-1 ring-slate-500/10`
-                  : `bg-white/60 dark:bg-slate-800/80 border-slate-200/40 dark:border-slate-700/60 ${style.hoverBg} ${style.borderHover}`
-                }`}
-            >
-              {/* Top line with title and status dot */}
-              <div className="w-full flex items-center justify-between gap-2 leading-none">
-                <span className="text-[9px] font-black text-slate-450 dark:text-slate-400 uppercase tracking-widest leading-none">{card.label}</span>
-                <span className={`w-1.5 h-1.5 rounded-full ${style.dot}`} />
-              </div>
-
-              {/* Metric Value */}
-              <div className="mt-1 flex items-baseline gap-1.5 w-full leading-none">
-                <span className="text-2xl font-black tracking-tight text-slate-950 dark:text-white font-mono leading-none">
-                  {card.value}
-                </span>
-                <span className="text-[9.5px] text-slate-400 dark:text-slate-500 font-semibold truncate max-w-[80px] leading-none">
-                  {card.subtitle}
-                </span>
-              </div>
-            </button>
-          );
-        })}
-
-        {/* Khối Tài chính: Doanh thu */}
-        {canViewServiceFinancial ? (
-          <div className="relative group flex flex-col justify-between p-3 rounded-2xl transition-all duration-300 border text-left h-[76px] bg-white/60 dark:bg-slate-800/80 border-slate-200/40 dark:border-blue-500/20 hover:border-blue-500/30 shadow-sm hover:shadow-md overflow-hidden">
-            <div className="absolute -top-6 -right-6 w-20 h-20 bg-blue-500/[0.03] rounded-full blur-xl pointer-events-none group-hover:bg-blue-500/[0.06] transition-all duration-500" />
-            
-            <div className="w-full flex items-center justify-between gap-2 leading-none">
-              <span className="text-[9px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest leading-none">
-                Doanh thu
-              </span>
-              <button
-                onClick={() => setShowFinancialOverview(!showFinancialOverview)}
-                className="p-1 rounded-lg bg-slate-100/40 hover:bg-slate-100/80 dark:bg-slate-800/40 dark:hover:bg-slate-700/80 transition-all border border-slate-200/10 hover:scale-105 active:scale-95 leading-none flex items-center justify-center"
-                aria-label="Ẩn/hiện doanh thu"
-              >
-                {showFinancialOverview ? <Eye className="w-3 h-3 text-slate-400" /> : <EyeOff className="w-3 h-3 text-slate-400" />}
-              </button>
-            </div>
-
-            <div className="mt-1 flex items-end justify-between w-full leading-none">
-              <span className="text-xl font-extrabold tracking-tight text-slate-950 dark:text-white leading-none">
-                {showFinancialOverview ? formatCurrency(stats.filteredRevenue) : "•••••••"}
-              </span>
-              {showFinancialOverview && chartData && (
-                <div className="h-6 w-14 flex items-end gap-[1.5px] opacity-80" aria-hidden="true">
-                  {chartData.data.map((d, i) => (
-                    <div key={i} className="flex-1 bg-blue-500/[0.06] rounded-full relative h-full">
-                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-blue-600 to-cyan-400 rounded-full" style={{ height: `${Math.max((d.rev / chartData.maxRev) * 100, 10)}%` }} />
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        ) : (
-          <div className="rounded-2xl bg-slate-50/50 dark:bg-[#080911]/40 border border-slate-200/30 dark:border-slate-800 p-2 text-[10px] text-slate-450 dark:text-slate-550 flex items-center justify-center text-center h-[76px]">
-            Ẩn tài chính
-          </div>
-        )}
-
-        {/* Khối Tài chính: Lợi nhuận */}
-        {canViewServiceFinancial ? (
-          <div className="relative group flex flex-col justify-between p-3 rounded-2xl transition-all duration-300 border text-left h-[76px] bg-white/60 dark:bg-slate-800/80 border-slate-200/40 dark:border-emerald-500/20 hover:border-emerald-500/30 shadow-sm hover:shadow-md overflow-hidden">
-            <div className="absolute -top-6 -right-6 w-20 h-20 bg-emerald-500/[0.03] rounded-full blur-xl pointer-events-none group-hover:bg-emerald-500/[0.06] transition-all duration-500" />
-            
-            <div className="w-full flex items-center justify-between gap-2 leading-none">
-              <span className="text-[9px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest leading-none">
-                Lợi nhuận
-              </span>
-              <span className="text-[8.5px] font-extrabold bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-1 py-0.5 rounded border border-emerald-200/30 dark:border-emerald-500/25 leading-none">
-                {showFinancialOverview ? `${profitMargin}%` : "••%"}
-              </span>
-            </div>
-
-            <div className="mt-1 flex items-end justify-between w-full leading-none">
-              <span className="text-xl font-extrabold tracking-tight text-slate-950 dark:text-white leading-none">
-                {showFinancialOverview ? formatCurrency(stats.filteredProfit) : "•••••••"}
-              </span>
-              {showFinancialOverview && chartData && (
-                <div className="h-6 w-14 flex items-end gap-[1.5px] opacity-80" aria-hidden="true">
-                  {chartData.data.map((d, i) => (
-                    <div key={i} className="flex-1 bg-emerald-500/[0.06] rounded-full relative h-full">
-                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-emerald-600 to-emerald-400 rounded-full" style={{ height: `${Math.max((Math.abs(d.prof) / chartData.maxProf) * 100, 10)}%` }} />
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        ) : (
-          <div className="rounded-2xl bg-slate-50/50 dark:bg-[#080911]/40 border border-slate-200/30 dark:border-slate-800 p-2 text-[10px] text-slate-450 dark:text-slate-550 flex items-center justify-center text-center h-[76px]">
-            Ẩn tài chính
-          </div>
-        )}
-      </div>
-
-      {/* Quick status filters - Hidden on desktop (lg+) since we have the stat cards above */}
-      <div className="lg:hidden bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3 flex flex-wrap items-center gap-2">
-        <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
-          Trạng thái nhanh
-        </span>
-        <div className="flex flex-wrap gap-2">
-          {quickStatusFilters.map((filter) => (
-            <button
-              key={filter.key}
-              onClick={() =>
-                setActiveTab(activeTab === filter.key ? "all" : filter.key)
-              }
-              className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm transition ${activeTab === filter.key
-                ? "border-blue-500 bg-blue-50 text-blue-600 dark:bg-blue-900/20"
-                : "border-slate-200 text-slate-600 hover:border-slate-300 dark:border-slate-700 dark:text-slate-300"
-                }`}
-            >
-              <span>{filter.label}</span>
-              <span
-                className={`text-xs font-semibold px-2 py-0.5 rounded-full ${FILTER_BADGE_CLASSES[filter.color]
-                  }`}
-              >
-                {filter.count}
-              </span>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Action Bar & Filters - Giao diện mới */}
-      <div className="sticky top-2 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md rounded-2xl px-4 py-3 border border-slate-200/80 dark:border-slate-700/80 shadow-sm flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
-        {/* Left: Search & Filters */}
-        <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto flex-1">
-          {/* Search */}
-          <div className="relative flex-1 min-w-[200px] max-w-[280px]">
-            <input
-              ref={searchInputRef}
-              type="text"
-              placeholder="Tìm mã phiếu, tên, biển số..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 bg-slate-100/50 dark:bg-slate-800/50 border-none rounded-full text-sm text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-shadow"
-            />
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" aria-hidden="true" />
-          </div>
-
-          {/* Group Dropdowns in a clean pill style */}
-          <div className="flex flex-wrap items-center gap-1.5 bg-slate-50 dark:bg-slate-800/50 p-1 rounded-full border border-slate-100 dark:border-slate-700/50 overflow-hidden">
-             <div className="relative flex items-center">
-               <select
-                 value={dateFilter}
-                 onChange={(e) => setDateFilter(e.target.value)}
-                 className="pl-3 pr-7 py-1.5 text-[13px] bg-transparent border-none text-slate-700 dark:text-slate-300 font-medium focus:outline-none focus:ring-0 cursor-pointer appearance-none hover:bg-slate-200/50 dark:hover:bg-slate-700/50 rounded-full transition-colors"
-               >
-                 <option value="today">Hôm nay</option>
-                 <option value="week">7 ngày</option>
-                 <option value="month">Tháng này</option>
-                 <option value="custom">Tùy chọn</option>
-                 <option value="all">Tất cả</option>
-               </select>
-               <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 pointer-events-none" />
-             </div>
-             
-             <div className="w-px h-4 bg-slate-200 dark:bg-slate-600"></div>
-
-             <div className="relative flex items-center">
-               <select
-                 value={technicianFilter}
-                 onChange={(e) => setTechnicianFilter(e.target.value)}
-                 className="pl-3 pr-7 py-1.5 text-[13px] bg-transparent border-none text-slate-700 dark:text-slate-300 font-medium focus:outline-none focus:ring-0 cursor-pointer appearance-none hover:bg-slate-200/50 dark:hover:bg-slate-700/50 rounded-full transition-colors"
-               >
-                 <option value="all">KTV: Tất cả</option>
-                 {employees.map((emp) => (
-                   <option key={emp.id} value={emp.name}>{emp.name}</option>
-                 ))}
-               </select>
-               <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 pointer-events-none" />
-             </div>
-
-             <div className="w-px h-4 bg-slate-200 dark:bg-slate-600"></div>
-
-             <div className="relative flex items-center">
-               <select
-                 value={paymentFilter}
-                 onChange={(e) => setPaymentFilter(e.target.value)}
-                 className="pl-3 pr-7 py-1.5 text-[13px] bg-transparent border-none text-slate-700 dark:text-slate-300 font-medium focus:outline-none focus:ring-0 cursor-pointer appearance-none hover:bg-slate-200/50 dark:hover:bg-slate-700/50 rounded-full transition-colors"
-               >
-                 <option value="all">TT: Tất cả</option>
-                 <option value="paid">Đã thu</option>
-                 <option value="unpaid">Chưa thu</option>
-                 <option value="partial">Nợ</option>
-               </select>
-               <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 pointer-events-none" />
-             </div>
-          </div>
-
-          {dateFilter === "custom" && (
-            <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800/50 p-1.5 rounded-full border border-slate-100 dark:border-slate-700/50">
-              <input type="date" value={customDateStart} onChange={(e) => setCustomDateStart(e.target.value)} className="px-2 py-1 text-xs bg-transparent border-none text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-0" />
-              <span className="text-slate-400">-</span>
-              <input type="date" value={customDateEnd} onChange={(e) => setCustomDateEnd(e.target.value)} className="px-2 py-1 text-xs bg-transparent border-none text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-0" />
-            </div>
-          )}
-
-          {/* Icon buttons for clear/refresh */}
-          <div className="flex items-center gap-1">
-             <button onClick={() => refetchWorkOrders()} disabled={workOrdersFetching} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-slate-800 rounded-full transition-colors" title="Làm mới">
-               <RefreshCw className={`w-4 h-4 ${workOrdersFetching ? "animate-spin" : ""}`} />
-             </button>
-             {(searchQuery || dateFilter !== 'week' || technicianFilter !== 'all' || paymentFilter !== 'all') && (
-               <button onClick={clearFilters} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-slate-800 rounded-full transition-colors" title="Xóa bộ lọc">
-                 <Settings className="w-4 h-4" /> {/* Settings icon as clear filter proxy or we can use generic reset text */}
-               </button>
-             )}
-          </div>
-        </div>
-
-        {/* Right: Actions */}
-        <div className="flex items-center justify-end gap-3 w-full lg:w-auto shrink-0">
-          <span className="text-[11px] text-slate-500 dark:text-slate-400 font-semibold px-2.5 py-1 bg-slate-100 dark:bg-slate-800 rounded-full border border-slate-200 dark:border-slate-700/50">
-            {filteredOrders.length} KQ
-          </span>
-          
-          <div className="flex items-center gap-1.5">
-            {isOwner && (
-              <button onClick={() => setShowProfit(!showProfit)} className={`p-2 rounded-full transition-colors ${showProfit ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800'}`} title={showProfit ? "Ẩn LN" : "Hiện LN"}>
-                {showProfit ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-              </button>
-            )}
-            <button onClick={() => setShowTemplateModal(true)} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-slate-800 rounded-full transition-colors" title="Mẫu SC">
-              <FileText className="w-4 h-4" />
-            </button>
-            <Link to="/service-history" className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-slate-800 rounded-full transition-colors" title="Lịch sử">
-              <History className="w-4 h-4" />
-            </Link>
-          </div>
-
-          <button
-            onClick={() => handleOpenModal()}
-            className="pl-3 pr-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-full text-sm font-bold flex items-center gap-2 shadow-[0_0_15px_rgba(37,99,235,0.4)] transition-all hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-blue-500/50 ml-2"
-          >
-            <div className="bg-white/25 p-1 rounded-full"><Plus className="w-3.5 h-3.5" /></div>
-            <span>{filteredOrders.length === 0 ? "Tạo Phiếu" : "Thêm Phiếu"}</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Table */}
-      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
-        {workOrdersIsError && (displayWorkOrders?.length ?? 0) > 0 && (
-          <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-700 bg-amber-50/60 dark:bg-amber-900/10 text-amber-800 dark:text-amber-200 flex items-center justify-between gap-3">
-            <div className="text-sm">
-              Không thể tải dữ liệu mới. Bạn vẫn đang xem dữ liệu cũ.
-            </div>
-            <button
-              onClick={() => refetchWorkOrders()}
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/80 dark:bg-slate-800 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-200 hover:bg-white dark:hover:bg-slate-700"
-            >
-              <RefreshCw className="w-4 h-4" /> Thử lại
-            </button>
-          </div>
-        )}
-
-        {showTableSkeleton && (
-          <div className="px-4 py-2 border-b border-slate-200 dark:border-slate-700 bg-blue-50/50 dark:bg-blue-900/10 text-sm text-slate-700 dark:text-slate-200 flex items-center gap-2">
-            <RefreshCw className="w-4 h-4 animate-spin text-blue-500" />
-            Đang tải danh sách phiếu sửa chữa...
-          </div>
-        )}
-
-        {/* Table */}
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-slate-50 dark:bg-slate-700/70">
-              <tr>
-                <th className="px-4 py-3 text-left text-xs font-bold text-slate-700 dark:text-slate-100 uppercase tracking-wide">
-                  Mã phiếu
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-bold text-slate-700 dark:text-slate-100 uppercase tracking-wide">
-                  Khách hàng
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-bold text-slate-700 dark:text-slate-100 uppercase tracking-wide">
-                  Chi tiết
-                </th>
-                <th className="hidden lg:table-cell px-4 py-3 text-right text-xs font-bold text-slate-700 dark:text-slate-100 uppercase tracking-wide">
-                  Thanh toán
-                </th>
-                <th className="px-4 py-3 text-center text-xs font-bold text-slate-700 dark:text-slate-100 uppercase tracking-wide">
-                  Thao tác
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-200 dark:divide-slate-700/80 bg-white dark:bg-slate-800" style={{ borderSpacing: '0 6px' }}>
-              {showTableSkeleton ? (
-                Array.from({ length: 6 }).map((_, idx) => (
-                  <tr key={`skeleton-${idx}`} className="animate-pulse">
-                    <td className="px-4 py-5">
-                      <div className="h-6 w-24 bg-slate-200 dark:bg-slate-700 rounded-lg mb-2" />
-                      <div className="h-3 w-28 bg-slate-200 dark:bg-slate-700 rounded" />
-                    </td>
-                    <td className="px-4 py-5">
-                      <div className="h-5 w-44 bg-slate-200 dark:bg-slate-700 rounded" />
-                      <div className="mt-2 h-3 w-24 bg-slate-200 dark:bg-slate-700 rounded" />
-                    </td>
-                    <td className="px-4 py-5">
-                      <div className="h-3 w-56 bg-slate-200 dark:bg-slate-700 rounded" />
-                      <div className="mt-2 h-3 w-40 bg-slate-200 dark:bg-slate-700 rounded" />
-                    </td>
-                    <td className="px-4 py-5">
-                      <div className="h-4 w-24 bg-slate-200 dark:bg-slate-700 rounded" />
-                      <div className="mt-2 h-2 w-56 bg-slate-200 dark:bg-slate-700 rounded" />
-                    </td>
-                    <td className="px-4 py-5 text-right">
-                      <div className="inline-flex gap-1.5">
-                        <div className="h-9 w-9 bg-slate-200 dark:bg-slate-700 rounded-lg" />
-                        <div className="h-9 w-9 bg-slate-200 dark:bg-slate-700 rounded-lg" />
-                        <div className="h-9 w-9 bg-slate-200 dark:bg-slate-700 rounded-lg" />
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              ) : showTableError ? (
-                <tr>
-                  <td colSpan={5} className="px-4 py-12">
-                    <div className="max-w-xl mx-auto text-center">
-                      <div className="text-slate-700 dark:text-slate-200 font-semibold">
-                        Không thể tải danh sách phiếu sửa chữa
-                      </div>
-                      <div className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                        {String(
-                          (workOrdersError as any)?.message ||
-                          "Vui lòng thử lại"
-                        )}
-                      </div>
-                      <div className="mt-4 flex items-center justify-center gap-2">
-                        <button
-                          onClick={() => refetchWorkOrders()}
-                          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium"
-                        >
-                          <RefreshCw className="w-4 h-4" /> Thử lại
-                        </button>
-                      </div>
-                    </div>
-                  </td>
-                </tr>
-              ) : filteredOrders.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="px-4 py-16">
-                    <div className="max-w-xl mx-auto text-center">
-                      <div className="mx-auto w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-200">
-                        <Wrench className="w-6 h-6" />
-                      </div>
-                      <div className="mt-4 text-slate-900 dark:text-slate-100 font-semibold">
-                        Không có phiếu sửa chữa nào
-                      </div>
-                      <div className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                        Thử đổi bộ lọc hoặc tạo phiếu mới.
-                      </div>
-                      <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
-                        <button
-                          onClick={() => handleOpenModal()}
-                          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium"
-                        >
-                          <Plus className="w-4 h-4" /> Tạo phiếu
-                        </button>
-                        <button
-                          onClick={clearFilters}
-                          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-700"
-                        >
-                          <RefreshCw className="w-4 h-4" /> Xóa bộ lọc
-                        </button>
-                      </div>
-                    </div>
-                  </td>
-                </tr>
-              ) : (
-                paginatedOrders.map((order) => {
-                  // Calculate costs based on actual form data structure
-                  // Tiền phụ tùng = Tổng giá phụ tùng
-                  const partsCost =
-                    order.partsUsed?.reduce(
-                      (sum, p) => sum + p.quantity * p.price,
-                      0
-                    ) || 0;
-
-                  // Gia công/Đặt hàng = additionalServices total (price * qty)
-                  const servicesTotal =
-                    order.additionalServices?.reduce(
-                      (sum: number, s: any) =>
-                        sum + (s.price || 0) * (s.quantity || 1),
-                      0
-                    ) || 0;
-
-                  // Phí dịch vụ = laborCost
-                  const laborCost = order.laborCost || 0;
-                  const totalAmount = order.total || 0;
-                  const paidAmount = totalAmount - (order.remainingAmount || 0);
-                  const paymentProgress = totalAmount
-                    ? Math.min(
-                      100,
-                      Math.round((paidAmount / totalAmount) * 100)
-                    )
-                    : 0;
-
-                  // Tính lợi nhuận cho owner
-                  // Lợi nhuận = Tổng tiền - Giá vốn phụ tùng - Giá vốn dịch vụ gia công
-                  const partsCostPrice =
-                    order.partsUsed?.reduce(
-                      (sum, p) => sum + (p.costPrice || 0) * (p.quantity || 1),
-                      0
-                    ) || 0;
-                  const servicesCostPrice =
-                    order.additionalServices?.reduce(
-                      (sum: number, s: any) =>
-                        sum + (s.costPrice || 0) * (s.quantity || 1),
-                      0
-                    ) || 0;
-                  const orderProfit =
-                    totalAmount - partsCostPrice - servicesCostPrice;
-
-                  const paymentPillClass =
-                    order.paymentStatus === "paid"
-                      ? "bg-emerald-50 text-emerald-600 border border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/30"
-                      : "bg-slate-50 text-slate-600 border border-slate-200 dark:bg-slate-500/10 dark:text-slate-400 dark:border-slate-500/30";
-                  const parts = order.partsUsed || [];
-                  const services = order.additionalServices || [];
-
-                  const partsSummary = parts
-                    .slice(0, 2)
-                    .map((p) =>
-                      `${p.partName || ""}${p.quantity > 1 ? ` x${p.quantity}` : ""
-                        }`.trim()
-                    )
-                    .filter(Boolean)
-                    .join(", ")
-                    .trim();
-                  const partsSuffix =
-                    parts.length > 2 ? ` +${parts.length - 2}` : "";
-                  const partsTitle = parts
-                    .map((p) =>
-                      `${p.partName || ""}${p.quantity > 1 ? ` x${p.quantity}` : ""
-                        }`.trim()
-                    )
-                    .filter(Boolean)
-                    .join(", ");
-
-                  const servicesSummary = services
-                    .slice(0, 2)
-                    .map((s: any) =>
-                      `${s.description || ""}${(s.quantity || 1) > 1 ? ` x${s.quantity || 1}` : ""
-                        }`.trim()
-                    )
-                    .filter(Boolean)
-                    .join(", ")
-                    .trim();
-                  const servicesSuffix =
-                    services.length > 2 ? ` +${services.length - 2}` : "";
-                  const servicesTitle = services
-                    .map((s: any) =>
-                      `${s.description || ""}${(s.quantity || 1) > 1 ? ` x${s.quantity || 1}` : ""
-                        }`.trim()
-                    )
-                    .filter(Boolean)
-                    .join(", ");
-
-                  return (
-                    <tr
-                      key={order.id}
-                      onClick={() => handleOpenModal(order)}
-                      className={`group bg-white dark:bg-slate-800/80 hover:bg-blue-50/60 dark:hover:bg-slate-700/60 cursor-pointer transition-all duration-150 hover:shadow-md focus-within:ring-2 focus-within:ring-blue-500/30`}
-                    >
-                      {/* Column 1: Mã phiếu + Status (Tăng padding-y) */}
-                      <td className="px-4 py-6 xl:py-7 align-top">
-                        <div className="space-y-3">
-                          <StatusBadge status={order.status as WorkOrderStatus} />
-                          <div className="flex flex-col gap-1.5">
-                            <div
-                              className="font-mono text-[13px] font-bold text-slate-800 dark:text-slate-200 cursor-help w-fit bg-slate-100 dark:bg-slate-700/50 px-2 py-0.5 rounded border border-slate-200/50 dark:border-slate-600/50"
-                              title={formatWorkOrderId(order.id, storeSettings?.work_order_prefix)}
-                            >
-                              {formatShortWorkOrderId(order.id, storeSettings?.work_order_prefix).short}
-                            </div>
-                            <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-                              <Clock className="w-3 h-3"/> {formatDate(order.creationDate, true)}
-                            </div>
-                            <div className="text-[11px] text-blue-600 bg-blue-50 dark:bg-blue-900/30 dark:text-blue-400 font-medium px-2 py-0.5 rounded-full w-fit">
-                              {order.technicianName || "Chưa phân công"}
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-
-                      {/* Column 2: Khách hàng (Tăng padding-y) */}
-                      <td className="px-4 py-6 xl:py-7 align-top">
-                        <div className="space-y-2">
-                          <div className="font-bold text-sm xl:text-base text-slate-900 dark:text-slate-100 truncate pr-4">
-                            {order.customerName}
-                          </div>
-                          <div className="flex flex-col gap-2">
-                            <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300">
-                              <div className="flex items-center justify-center w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-800 shrink-0">
-                                <Smartphone className="w-3.5 h-3.5 text-slate-500" />
-                              </div>
-                              <span className="font-mono font-medium">{formatMaskedPhone(order.customerPhone)}</span>
-                              {order.customerPhone && (
-                                <button
-                                  onClick={(e) => { e.stopPropagation(); callCustomer(order.customerPhone || ""); }}
-                                  className="ml-2 inline-flex items-center justify-center w-7 h-7 rounded-full text-blue-500 hover:text-white hover:bg-blue-500 dark:hover:bg-blue-600 transition-colors bg-blue-50 dark:bg-blue-900/20"
-                                >
-                                  <PhoneCall className="w-3.5 h-3.5" />
-                                </button>
-                              )}
-                            </div>
-                            <div className="text-[11px] text-slate-600 dark:text-slate-300 font-medium flex items-center gap-2 bg-slate-50 dark:bg-slate-800/50 rounded-lg p-1.5 border border-slate-100 dark:border-slate-700/60 w-fit">
-                              <div className="flex items-center justify-center w-5 h-5 rounded-md bg-white dark:bg-slate-700 shrink-0 shadow-sm border border-slate-100 dark:border-slate-600">
-                                <Bike className="w-3 h-3 text-slate-500" />
-                              </div>
-                              <span className="truncate max-w-[120px]">{order.vehicleModel || "N/A"}</span>
-                              {order.licensePlate && (
-                                <>
-                                  <span className="w-px h-3 bg-slate-300 dark:bg-slate-600"></span>
-                                  <span className="font-mono font-bold text-slate-800 dark:text-slate-200">{order.licensePlate}</span>
-                                </>
-                              )}
-                            </div>
-                          </div>
-                          {order.issueDescription && order.issueDescription !== "Không có mô tả" && (
-                             <div className="hidden xl:block text-[11px] text-slate-500 dark:text-slate-400 italic line-clamp-2 mt-1">
-                               "{order.issueDescription}"
-                             </div>
-                          )}
-                        </div>
-                      </td>
-
-                      {/* Column 3: Chi tiết - Compact format (Tăng padding-y) */}
-                      <td className="px-4 py-6 xl:py-7 align-top">
-                        <div className="space-y-2 max-w-[220px] xl:max-w-[280px]">
-                          {servicesSummary && (
-                            <div className="text-xs flex items-start gap-2 group/item" title={servicesTitle ? `Dịch vụ: ${servicesTitle}` : "Dịch vụ"}>
-                              <div className="mt-0.5 p-1 rounded-md bg-indigo-50 text-indigo-500 dark:bg-indigo-900/20 dark:text-indigo-400 shrink-0 group-hover/item:bg-indigo-100 transition-colors">
-                                <Settings className="w-3 h-3" />
-                              </div>
-                              <span className="text-slate-700 dark:text-slate-200 line-clamp-2 leading-relaxed pt-0.5">
-                                {servicesSummary}
-                                {servicesSuffix && <span className="text-indigo-500 font-medium ml-1">{servicesSuffix}</span>}
-                              </span>
-                            </div>
-                          )}
-
-                          {partsSummary && (
-                            <div className="text-xs flex items-start gap-2 group/item" title={partsTitle ? `Phụ tùng: ${partsTitle}` : "Phụ tùng"}>
-                              <div className="mt-0.5 p-1 rounded-md bg-orange-50 text-orange-500 dark:bg-orange-900/20 dark:text-orange-400 shrink-0 group-hover/item:bg-orange-100 transition-colors">
-                                <Wrench className="w-3 h-3" />
-                              </div>
-                              <span className="text-slate-700 dark:text-slate-200 line-clamp-2 leading-relaxed pt-0.5">
-                                {partsSummary}
-                                {partsSuffix && <span className="text-orange-500 font-medium ml-1">{partsSuffix}</span>}
-                              </span>
-                            </div>
-                          )}
-
-                          {!partsSummary && !servicesSummary && (
-                            <div className="text-[11px] text-slate-400 italic flex items-center justify-center py-2 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-dashed border-slate-200 dark:border-slate-700">
-                              Chưa có chi tiết
-                            </div>
-                          )}
-
-                          {/* Payment pill for tablet/mobile - show when payment column hidden */}
-                          <div className="lg:hidden mt-3">
-                            <span className={`inline-flex items-center gap-1.5 text-[10px] px-2.5 py-1 rounded-full font-black tracking-wider uppercase border ${
-                              order.paymentStatus === "paid" 
-                                ? "bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/20" 
-                                : order.paymentStatus === "partial" 
-                                  ? "bg-amber-500/10 text-amber-600 dark:text-amber-500 border-amber-500/20" 
-                                  : "bg-rose-500/10 text-rose-600 dark:text-rose-450 border-rose-500/20"
-                            }`}>
-                              {order.paymentStatus === "paid" ? "Đã Xong" : order.paymentStatus === "partial" ? "Còn Nợ" : "Chưa TT"}
-                            </span>
-                          </div>
-                        </div>
-                      </td>
-
-                      {/* Column 4: Thanh toán & trạng thái - Căn phải & màu sắc premium */}
-                      <td className="hidden lg:table-cell px-4 py-6 xl:py-7 align-top">
-                        <div className="space-y-3 min-w-[180px]">
-                          {/* Header: Tổng tiền + Nhãn TT - Căn phải */}
-                          <div className="flex items-center justify-end gap-2.5">
-                             <span className={`inline-flex items-center gap-1.5 text-[10px] px-2.5 py-1 rounded-full font-black tracking-wider uppercase border ${
-                               order.paymentStatus === "paid" 
-                                 ? "bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/20" 
-                                 : order.paymentStatus === "partial" 
-                                   ? "bg-amber-500/10 text-amber-600 dark:text-amber-500 border-amber-500/20" 
-                                   : "bg-rose-500/10 text-rose-600 dark:text-rose-450 border-rose-500/20"
-                             }`}>
-                                {order.paymentStatus === "paid" ? "Đã Xong" : order.paymentStatus === "partial" ? "Còn Nợ" : "Chưa TT"}
-                             </span>
-                             <div className="text-sm font-black text-slate-800 dark:text-slate-100 tracking-tight">
-                               {formatCurrency(totalAmount)}
-                             </div>
-                          </div>
-
-                          {/* Progress bar + Đã thu - Căn phải */}
-                          {totalAmount > 0 && order.paymentStatus !== "paid" && (
-                            <div className="space-y-1.5 text-right">
-                              <div className="h-1.5 w-full rounded-full bg-slate-100 dark:bg-slate-700 overflow-hidden border border-slate-200/50 dark:border-slate-600/50" title={`Đã thanh toán ${paymentProgress}%`}>
-                                <div className={`h-full rounded-full transition-all duration-500 ${paymentProgress > 0 ? "bg-gradient-to-r from-blue-500 to-blue-400" : "bg-transparent"}`} style={{ width: `${Math.min(paymentProgress, 100)}%` }} />
-                              </div>
-                              <div className="flex justify-end gap-2 items-center text-[11px]">
-                                <span className="font-medium text-slate-500">Thu: <strong className="text-slate-700 dark:text-slate-300">{formatCurrency(Math.max(0, paidAmount))}</strong></span>
-                                {(order.remainingAmount ?? 0) > 0 && <span className="font-bold text-amber-650 dark:text-amber-500">Còn: {formatCurrency(order.remainingAmount ?? 0)}</span>}
-                              </div>
-                            </div>
-                          )}
-                          
-                          {/* Payment details - Show deposit/partial info when applicable */}
-                          {Boolean((order.depositAmount && order.depositAmount > 0) || order.paymentStatus === "partial" || (order.paymentStatus === "paid" && order.depositAmount && order.depositAmount > 0)) && (
-                            <div className="space-y-1 pt-1 border-t border-slate-100 dark:border-slate-700/50 text-right">
-                              {order.depositAmount && order.depositAmount > 0 && (
-                                <div className="flex items-center justify-end gap-2 text-[11px]">
-                                  <span className="text-slate-500">Đã cọc:</span>
-                                  <span className="font-medium text-slate-700 dark:text-slate-300">{formatCurrency(order.depositAmount)}</span>
-                                </div>
-                              )}
-                            </div>
-                          )}
-
-                          {/* Lợi nhuận - Chỉ hiển thị cho owner khi bật toggle */}
-                          {isOwner && showProfit && (
-                            <div className="flex items-center justify-end gap-2 text-[11px] pt-2 border-t border-dashed border-slate-200 dark:border-slate-700 mt-2 text-right">
-                              <span className="text-slate-500">Lợi nhuận:</span>
-                              <span className={`font-bold flex items-center gap-1 ${orderProfit > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-500"}`}>
-                                {orderProfit > 0 ? "+" : ""}{formatCurrency(orderProfit)}
-                                {totalAmount > 0 && <span className="text-[9px] text-slate-400 ml-0.5">({Math.round((orderProfit / totalAmount) * 100)}%)</span>}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                      </td>
-
-                      <td
-                        className="px-4 py-6 xl:py-7 align-top overflow-visible"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <div className="flex items-center justify-end gap-1.5">
-                          {/* Quick action buttons - Ghost style */}
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleOpenModal(order);
-                            }}
-                            className="w-8 h-8 inline-flex items-center justify-center rounded-full text-slate-500 dark:text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:text-blue-400 dark:hover:bg-blue-900/30 hover:scale-110 active:scale-95 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
-                            title="Xem chi tiết"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </button>
-
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handlePrintOrder(order);
-                            }}
-                            className="w-8 h-8 inline-flex items-center justify-center rounded-full text-slate-500 dark:text-slate-400 hover:text-purple-600 hover:bg-purple-50 dark:hover:text-purple-400 dark:hover:bg-purple-900/30 hover:scale-110 active:scale-95 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500/40"
-                            title="In phiếu"
-                          >
-                            <Printer className="w-4 h-4" />
-                          </button>
-
-                          {/* More actions menu */}
-                          <div className="relative service-row-menu">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                const rect =
-                                  e.currentTarget.getBoundingClientRect();
-                                setDropdownPosition({
-                                  top: rect.bottom + 4,
-                                  right: window.innerWidth - rect.right,
-                                });
-                                setRowActionMenuId(
-                                  rowActionMenuId === order.id ? null : order.id
-                                );
-                              }}
-                              aria-haspopup="menu"
-                              aria-expanded={rowActionMenuId === order.id}
-                              className="w-8 h-8 inline-flex items-center justify-center rounded-full text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 hover:scale-110 active:scale-95 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
-                              title="Thêm thao tác"
-                            >
-                              <MoreVertical className="w-4 h-4" />
-                            </button>
-                            {rowActionMenuId === order.id && (
-                              <div
-                                className="fixed w-52 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 shadow-2xl z-[9999] overflow-hidden"
-                                style={{
-                                  top: dropdownPosition.top,
-                                  right: dropdownPosition.right,
-                                }}
-                              >
-                                <div className="py-1">
-                                  <button
-                                    onClick={() => {
-                                      handleOpenModal(order);
-                                      setRowActionMenuId(null);
-                                    }}
-                                    className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
-                                  >
-                                    <div className="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                                      <Edit2 className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                                    </div>
-                                    <span>Xem chi tiết</span>
-                                  </button>
-                                  <button
-                                    onClick={() => {
-                                      handlePrintOrder(order);
-                                      setRowActionMenuId(null);
-                                    }}
-                                    className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors"
-                                  >
-                                    <div className="w-8 h-8 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
-                                      <Printer className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-                                    </div>
-                                    <span>In phiếu</span>
-                                  </button>
-                                  <button
-                                    onClick={() => {
-                                      callCustomer(
-                                        order.customerPhone || ""
-                                      );
-                                      setRowActionMenuId(null);
-                                    }}
-                                    className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors"
-                                  >
-                                    <div className="w-8 h-8 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-                                      <Smartphone className="w-4 h-4 text-green-600 dark:text-green-400" />
-                                    </div>
-                                    <span>Gọi khách hàng</span>
-                                  </button>
-                                  {!order.refunded && (
-                                    <>
-                                      <div className="my-1 border-t border-slate-200 dark:border-slate-700"></div>
-                                      <button
-                                        onClick={() => {
-                                          handleRefundOrder(order);
-                                          setRowActionMenuId(null);
-                                        }}
-                                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                                      >
-                                        <div className="w-8 h-8 rounded-lg bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
-                                          <AlertTriangle className="w-4 h-4 text-red-600 dark:text-red-400" />
-                                        </div>
-                                        <span>Hủy / Hoàn tiền</span>
-                                      </button>
-                                    </>
-                                  )}
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {!showTableSkeleton && !showTableError && filteredOrders.length > 0 && (
-          <div className="px-4 py-3 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between gap-3">
-            <div className="text-xs text-slate-500 dark:text-slate-400">
-              Hiển thị {Math.min(visibleCount, filteredOrders.length)} /{" "}
-              {filteredOrders.length}
-            </div>
-            {hasMoreOrders && (
-              <button
-                onClick={handleLoadMore}
-                disabled={workOrdersFetching}
-                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50"
-              >
-                {workOrdersFetching ? (
-                  <RefreshCw className="w-4 h-4 animate-spin" />
-                ) : (
-                  <ChevronDown className="w-4 h-4" />
-                )}
-                Xem thêm (còn {filteredOrders.length - visibleCount})
-              </button>
-            )}
-          </div>
-        )}
-
-        <div
-          id="service-table-scroll-sentinel"
-          className="h-1"
-          aria-hidden="true"
-        />
-      </div>
-
-      {/* Repair Templates Modal - Component tách riêng */}
+      {/* 4. Repair Templates Modal */}
       <RepairTemplatesModal
         isOpen={showTemplateModal}
         onClose={() => setShowTemplateModal(false)}
         onApplyTemplate={(template) => {
-          // Convert and apply template to current work order
           const partsTotal = template.parts.reduce(
             (sum, p) => sum + (p.price || 0) * (p.quantity || 1),
             0
@@ -3454,7 +1517,7 @@ export default function ServiceManager() {
         currentBranchId={currentBranchId}
       />
 
-      {/* Work Order Modal */}
+      {/* 5. Work Order Modal */}
       {showModal && editingOrder && (
         <WorkOrderModal
           order={editingOrder}
@@ -3463,8 +1526,6 @@ export default function ServiceManager() {
             setEditingOrder(undefined);
           }}
           onSave={() => {
-            // React Query hooks already invalidate queries on success
-            // Also trigger refetch to ensure data is refreshed
             queryClient.invalidateQueries({ queryKey: ["workOrdersRepo"] });
             queryClient.invalidateQueries({ queryKey: ["workOrdersFiltered"] });
             setTimeout(() => refetchWorkOrders(), 100);
@@ -3482,10 +1543,8 @@ export default function ServiceManager() {
           currentBranchId={currentBranchId}
           storeSettings={storeSettings}
           invalidateWorkOrders={async () => {
-            // Invalidate queries immediately
             queryClient.invalidateQueries({ queryKey: ["workOrdersRepo"] });
             queryClient.invalidateQueries({ queryKey: ["workOrdersFiltered"] });
-            // Small delay then refetch to ensure DB has committed
             setTimeout(() => {
               refetchWorkOrders();
             }, 100);
@@ -3493,1827 +1552,45 @@ export default function ServiceManager() {
         />
       )}
 
-      {/* Mobile Work Order Modal - DISABLED */}
-      {/*
-      <WorkOrderMobileModal
-        isOpen={showMobileModal}
-        onClose={() => {
-          setShowMobileModal(false);
-          setEditingOrder(undefined);
-        }}
-        onSave={handleMobileSave}
-        workOrder={editingOrder}
-        customers={displayCustomers}
-        parts={fetchedParts || []}
-        employees={displayEmployees || []}
-        currentBranchId={currentBranchId}
-      />
-      */}
-
-      {/* Print Preview Modal */}
+      {/* 6. Print Preview Modal */}
       {showPrintPreview && printOrder && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-slate-800 rounded-xl w-full max-w-4xl max-h-[90vh] flex flex-col">
-            {/* Modal Header */}
-            <div className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-6 py-4 flex items-center justify-between rounded-t-xl flex-shrink-0">
-              <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">
-                Xem trước phiếu in
-              </h2>
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={handleShareInvoice}
-                  disabled={isSharing}
-                  className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white rounded-lg flex items-center gap-2 transition"
-                >
-                  <Share2 className="w-4 h-4" />
-                  {isSharing ? "Đang xử lý..." : "Chia sẻ"}
-                </button>
-                <button
-                  onClick={handleDoPrint}
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center gap-2 transition"
-                >
-                  <Printer className="w-4 h-4" />
-                  In phiếu
-                </button>
-                <button
-                  onClick={() => {
-                    setShowPrintPreview(false);
-                    setPrintOrder(null);
-                  }}
-                  className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
-                  aria-label="Đóng"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    className="w-5 h-5"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M6 18L18 6M6 6l12 12"
-                    />
-                  </svg>
-                </button>
-              </div>
-            </div>
-
-            {/* Print Preview Content */}
-            <div className="flex-1 overflow-y-auto p-6 bg-slate-100 dark:bg-slate-900">
-              <div
-                ref={invoicePreviewRef}
-                className="bg-white shadow-lg mx-auto"
-                style={{ width: "148mm", minHeight: "210mm", color: "#000" }}
-              >
-                <div style={{ padding: "10mm" }}>
-                  {/* Store Info Header - Compact Layout */}
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      gap: "6mm",
-                      marginBottom: "4mm",
-                      borderBottom: "2px solid #3b82f6",
-                      paddingBottom: "3mm",
-                    }}
-                  >
-                    {/* Left: Logo */}
-                    {storeSettings?.logo_url && (
-                      <img
-                        src={storeSettings.logo_url}
-                        alt="Logo"
-                        style={{
-                          height: "18mm",
-                          width: "18mm",
-                          objectFit: "contain",
-                          flexShrink: 0,
-                        }}
-                      />
-                    )}
-
-                    {/* Center: Store Info */}
-                    <div
-                      style={{ fontSize: "8.5pt", lineHeight: "1.4" }}
-                    >
-                      <div
-                        style={{
-                          fontWeight: "bold",
-                          fontSize: "11pt",
-                          marginBottom: "1mm",
-                          color: "#1e40af",
-                        }}
-                      >
-                        {storeSettings?.store_name || "Nhạn Lâm SmartCare"}
-                      </div>
-                      <div
-                        style={{
-                          color: "#000",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "1mm",
-                        }}
-                      >
-                        <svg
-                          style={{
-                            width: "10px",
-                            height: "10px",
-                            flexShrink: 0,
-                          }}
-                          viewBox="0 0 24 24"
-                          fill="#ef4444"
-                        >
-                          <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
-                        </svg>
-                        <span>
-                          {storeSettings?.address ||
-                            "Ấp Phú Lợi B, Xã Long Phú Thuận, Đông Tháp"}
-                        </span>
-                      </div>
-                      <div
-                        style={{
-                          color: "#000",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "1mm",
-                        }}
-                      >
-                        <svg
-                          style={{
-                            width: "10px",
-                            height: "10px",
-                            flexShrink: 0,
-                          }}
-                          viewBox="0 0 24 24"
-                          fill="#16a34a"
-                        >
-                          <path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z" />
-                        </svg>
-                        <span>{storeSettings?.phone || "0907.239.337"}</span>
-                      </div>
-                      {storeSettings?.email && (
-                        <div
-                          style={{
-                            color: "#000",
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "1mm",
-                          }}
-                        >
-                          <svg
-                            style={{
-                              width: "10px",
-                              height: "10px",
-                              flexShrink: 0,
-                            }}
-                            viewBox="0 0 24 24"
-                            fill="#3b82f6"
-                          >
-                            <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z" />
-                          </svg>
-                          <span>{storeSettings.email}</span>
-                        </div>
-                      )}
-                    </div>
-
-
-                  </div>
-
-                  {/* Title & Meta */}
-                  <div style={{ marginBottom: "4mm" }}>
-                    <div style={{ textAlign: "center", marginBottom: "2mm" }}>
-                      <h1
-                        style={{
-                          fontSize: "16pt",
-                          fontWeight: "bold",
-                          margin: "0",
-                          textTransform: "uppercase",
-                          color: "#1e40af",
-                        }}
-                      >
-                        PHIẾU DỊCH VỤ SỬA CHỮA
-                      </h1>
-                    </div>
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        fontSize: "9pt",
-                        color: "#666",
-                      }}
-                    >
-                      <div>
-                        {new Date(printOrder.creationDate).toLocaleString(
-                          "vi-VN",
-                          {
-                            year: "numeric",
-                            month: "2-digit",
-                            day: "2-digit",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          }
-                        )}
-                      </div>
-                      <div style={{ fontWeight: "bold" }}>
-                        Mã:{" "}
-                        {formatWorkOrderId(
-                          printOrder.id,
-                          storeSettings?.work_order_prefix
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Customer Info - Compact */}
-                  <div
-                    style={{
-                      border: "1px solid #ddd",
-                      padding: "3mm",
-                      marginBottom: "3mm",
-                      borderRadius: "2mm",
-                      backgroundColor: "#f8fafc",
-                      color: "#000",
-                      fontSize: "9pt",
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: "flex",
-                        gap: "4mm",
-                        marginBottom: "1.5mm",
-                      }}
-                    >
-                      <div style={{ flex: 1 }}>
-                        <span style={{ fontWeight: "bold" }}>Khách hàng:</span>{" "}
-                        {printOrder.customerName}
-                      </div>
-                      <div style={{ flex: "0 0 auto" }}>
-                        <span style={{ fontWeight: "bold" }}>SĐT:</span>{" "}
-                        {printOrder.customerPhone}
-                      </div>
-                    </div>
-                    <div style={{ display: "flex", gap: "4mm" }}>
-                      <div style={{ flex: 1 }}>
-                        <span style={{ fontWeight: "bold" }}>Loại xe:</span>{" "}
-                        {printOrder.vehicleModel}
-                      </div>
-                      <div style={{ flex: "0 0 auto" }}>
-                        <span style={{ fontWeight: "bold" }}>Biển số:</span>{" "}
-                        {printOrder.licensePlate}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Issue Description */}
-                  {printOrder.issueDescription && printOrder.issueDescription.trim() !== "" && (
-                    <div
-                      style={{
-                        border: "1px solid #ddd",
-                        padding: "4mm",
-                        marginBottom: "4mm",
-                        borderRadius: "2mm",
-                        color: "#000",
-                      }}
-                    >
-                      <div style={{ display: "flex", gap: "3mm" }}>
-                        <div
-                          style={{
-                            fontWeight: "bold",
-                            minWidth: "20%",
-                            flexShrink: 0,
-                          }}
-                        >
-                          Mô tả sự cố:
-                        </div>
-                        <div style={{ flex: 1, whiteSpace: "pre-wrap" }}>
-                          {printOrder.issueDescription}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Parts and Services Table */}
-                  {((printOrder.partsUsed && printOrder.partsUsed.length > 0) ||
-                    (printOrder.additionalServices && printOrder.additionalServices.length > 0)) && (
-                      <div style={{ marginBottom: "4mm", color: "#000" }}>
-                        <p
-                          style={{
-                            fontWeight: "bold",
-                            margin: "0 0 2mm 0",
-                            fontSize: "11pt",
-                            color: "#000",
-                          }}
-                        >
-                          Phụ tùng và dịch vụ:
-                        </p>
-                        <table
-                          style={{
-                            width: "100%",
-                            borderCollapse: "collapse",
-                            border: "1px solid #ddd",
-                          }}
-                        >
-                          <thead>
-                            <tr style={{ backgroundColor: "#f5f5f5" }}>
-                              <th
-                                style={{
-                                  border: "1px solid #ddd",
-                                  padding: "2mm",
-                                  textAlign: "center",
-                                  fontSize: "10pt",
-                                  width: "8%",
-                                }}
-                              >
-                                STT
-                              </th>
-                              <th
-                                style={{
-                                  border: "1px solid #ddd",
-                                  padding: "2mm",
-                                  textAlign: "left",
-                                  fontSize: "10pt",
-                                }}
-                              >
-                                Tên
-                              </th>
-                              <th
-                                style={{
-                                  border: "1px solid #ddd",
-                                  padding: "2mm",
-                                  textAlign: "center",
-                                  fontSize: "10pt",
-                                  width: "15%",
-                                }}
-                              >
-                                SL
-                              </th>
-                              <th
-                                style={{
-                                  border: "1px solid #ddd",
-                                  padding: "2mm",
-                                  textAlign: "right",
-                                  fontSize: "10pt",
-                                  width: "25%",
-                                }}
-                              >
-                                Đơn giá
-                              </th>
-                              <th
-                                style={{
-                                  border: "1px solid #ddd",
-                                  padding: "2mm",
-                                  textAlign: "right",
-                                  fontSize: "10pt",
-                                  width: "25%",
-                                }}
-                              >
-                                Thành tiền
-                              </th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {/* Parts */}
-                            {printOrder.partsUsed && printOrder.partsUsed.map(
-                              (part: WorkOrderPart, idx: number) => (
-                                <tr key={`part-${idx}`}>
-                                  <td
-                                    style={{
-                                      border: "1px solid #ddd",
-                                      padding: "2mm",
-                                      textAlign: "center",
-                                      fontSize: "10pt",
-                                    }}
-                                  >
-                                    {idx + 1}
-                                  </td>
-                                  <td
-                                    style={{
-                                      border: "1px solid #ddd",
-                                      padding: "2mm",
-                                      fontSize: "10pt",
-                                    }}
-                                  >
-                                    {part.partName}
-                                  </td>
-                                  <td
-                                    style={{
-                                      border: "1px solid #ddd",
-                                      padding: "2mm",
-                                      textAlign: "center",
-                                      fontSize: "10pt",
-                                    }}
-                                  >
-                                    {part.quantity}
-                                  </td>
-                                  <td
-                                    style={{
-                                      border: "1px solid #ddd",
-                                      padding: "2mm",
-                                      textAlign: "right",
-                                      fontSize: "10pt",
-                                    }}
-                                  >
-                                    {formatCurrency(part.price)}
-                                  </td>
-                                  <td
-                                    style={{
-                                      border: "1px solid #ddd",
-                                      padding: "2mm",
-                                      textAlign: "right",
-                                      fontSize: "10pt",
-                                      fontWeight: "bold",
-                                    }}
-                                  >
-                                    {formatCurrency(part.price * part.quantity)}
-                                  </td>
-                                </tr>
-                              )
-                            )}
-                            {/* Additional Services */}
-                            {printOrder.additionalServices && printOrder.additionalServices.map(
-                              (service: any, idx: number) => (
-                                <tr key={`service-${idx}`}>
-                                  <td
-                                    style={{
-                                      border: "1px solid #ddd",
-                                      padding: "2mm",
-                                      textAlign: "center",
-                                      fontSize: "10pt",
-                                    }}
-                                  >
-                                    {(printOrder.partsUsed?.length || 0) + idx + 1}
-                                  </td>
-                                  <td
-                                    style={{
-                                      border: "1px solid #ddd",
-                                      padding: "2mm",
-                                      fontSize: "10pt",
-                                    }}
-                                  >
-                                    {service.description}
-                                  </td>
-                                  <td
-                                    style={{
-                                      border: "1px solid #ddd",
-                                      padding: "2mm",
-                                      textAlign: "center",
-                                      fontSize: "10pt",
-                                    }}
-                                  >
-                                    {service.quantity || 1}
-                                  </td>
-                                  <td
-                                    style={{
-                                      border: "1px solid #ddd",
-                                      padding: "2mm",
-                                      textAlign: "right",
-                                      fontSize: "10pt",
-                                    }}
-                                  >
-                                    {formatCurrency(service.price || 0)}
-                                  </td>
-                                  <td
-                                    style={{
-                                      border: "1px solid #ddd",
-                                      padding: "2mm",
-                                      textAlign: "right",
-                                      fontSize: "10pt",
-                                      fontWeight: "bold",
-                                    }}
-                                  >
-                                    {formatCurrency(
-                                      (service.price || 0) * (service.quantity || 1)
-                                    )}
-                                  </td>
-                                </tr>
-                              )
-                            )}
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
-
-                  {/* Cost Summary */}
-                  <div
-                    style={{
-                      border: "1px solid #ddd",
-                      padding: "4mm",
-                      marginBottom: "4mm",
-                      borderRadius: "2mm",
-                      backgroundColor: "#f9f9f9",
-                      color: "#000",
-                    }}
-                  >
-                    <table
-                      style={{
-                        width: "100%",
-                        borderSpacing: "0",
-                        color: "#000",
-                      }}
-                    >
-                      <tbody>
-                        {/* Tổng tiền phụ tùng */}
-                        {(printOrder.partsUsed?.length || 0) > 0 && (
-                          <tr>
-                            <td style={{ fontWeight: "bold", paddingBottom: "2mm", fontSize: "10pt" }}>
-                              Tổng tiền phụ tùng:
-                            </td>
-                            <td style={{ textAlign: "right", paddingBottom: "2mm", fontSize: "10pt" }}>
-                              {formatCurrency(
-                                (printOrder.partsUsed || []).reduce(
-                                  (sum: number, p: any) => sum + (p.price || 0) * (p.quantity || 1),
-                                  0
-                                )
-                              )}
-                            </td>
-                          </tr>
-                        )}
-                        {/* Tổng dịch vụ thêm */}
-                        {(printOrder.additionalServices?.length || 0) > 0 && (
-                          <tr>
-                            <td style={{ fontWeight: "bold", paddingBottom: "2mm", fontSize: "10pt" }}>
-                              Tổng dịch vụ thêm:
-                            </td>
-                            <td style={{ textAlign: "right", paddingBottom: "2mm", fontSize: "10pt" }}>
-                              {formatCurrency(
-                                (printOrder.additionalServices || []).reduce(
-                                  (sum: number, s: any) => sum + (s.price || 0) * (s.quantity || 1),
-                                  0
-                                )
-                              )}
-                            </td>
-                          </tr>
-                        )}
-                        <tr>
-                          <td
-                            style={{
-                              fontWeight: "bold",
-                              paddingBottom: "2mm",
-                              fontSize: "10pt",
-                            }}
-                          >
-                            Phí dịch vụ:
-                          </td>
-                          <td
-                            style={{
-                              textAlign: "right",
-                              paddingBottom: "2mm",
-                              fontSize: "10pt",
-                            }}
-                          >
-                            {formatCurrency(printOrder.laborCost || 0)}
-                          </td>
-                        </tr>
-                        {printOrder.discount != null &&
-                          printOrder.discount > 0 && (
-                            <tr>
-                              <td
-                                style={{
-                                  fontWeight: "bold",
-                                  paddingBottom: "2mm",
-                                  fontSize: "10pt",
-                                  color: "#e74c3c",
-                                }}
-                              >
-                                Giảm giá:
-                              </td>
-                              <td
-                                style={{
-                                  textAlign: "right",
-                                  paddingBottom: "2mm",
-                                  fontSize: "10pt",
-                                  color: "#e74c3c",
-                                }}
-                              >
-                                -{formatCurrency(printOrder.discount)}
-                              </td>
-                            </tr>
-                          )}
-                        <tr style={{ borderTop: "2px solid #333" }}>
-                          <td
-                            style={{
-                              fontWeight: "bold",
-                              paddingTop: "2mm",
-                              fontSize: "12pt",
-                            }}
-                          >
-                            TỔNG CỘNG:
-                          </td>
-                          <td
-                            style={{
-                              textAlign: "right",
-                              paddingTop: "2mm",
-                              fontSize: "12pt",
-                              fontWeight: "bold",
-                              color: "#2563eb",
-                            }}
-                          >
-                            {formatCurrency(printOrder.total)}
-                          </td>
-                        </tr>
-                        {printOrder.totalPaid != null &&
-                          printOrder.totalPaid > 0 && (
-                            <tr>
-                              <td
-                                style={{
-                                  fontWeight: "bold",
-                                  paddingTop: "2mm",
-                                  fontSize: "10pt",
-                                  color: "#16a34a",
-                                }}
-                              >
-                                Đã thanh toán:
-                              </td>
-                              <td
-                                style={{
-                                  textAlign: "right",
-                                  paddingTop: "2mm",
-                                  fontSize: "10pt",
-                                  color: "#16a34a",
-                                }}
-                              >
-                                {formatCurrency(printOrder.totalPaid)}
-                              </td>
-                            </tr>
-                          )}
-                        {printOrder.remainingAmount != null &&
-                          printOrder.remainingAmount > 0 && (
-                            <tr>
-                              <td
-                                style={{
-                                  fontWeight: "bold",
-                                  fontSize: "11pt",
-                                  color: "#dc2626",
-                                }}
-                              >
-                                Còn lại:
-                              </td>
-                              <td
-                                style={{
-                                  textAlign: "right",
-                                  fontSize: "11pt",
-                                  fontWeight: "bold",
-                                  color: "#dc2626",
-                                }}
-                              >
-                                {formatCurrency(printOrder.remainingAmount)}
-                              </td>
-                            </tr>
-                          )}
-                        {printOrder.paymentMethod && (
-                          <tr>
-                            <td
-                              style={{
-                                paddingTop: "2mm",
-                                fontSize: "9pt",
-                                color: "#666",
-                              }}
-                            >
-                              Hình thức thanh toán:
-                            </td>
-                            <td
-                              style={{
-                                textAlign: "right",
-                                paddingTop: "2mm",
-                                fontSize: "9pt",
-                                color: "#666",
-                              }}
-                            >
-                              {printOrder.paymentMethod === "cash"
-                                ? "Tiền mặt"
-                                : printOrder.paymentMethod === "bank"
-                                  ? "Chuyển khoản"
-                                  : printOrder.paymentMethod}
-                            </td>
-                          </tr>
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-
-                  {/* Dynamic QR Payment Code - Horizontal Layout */}
-                  {printQRUrl && (
-                    <div
-                      style={{
-                        marginTop: "4mm",
-                        padding: "3.5mm",
-                        border: "2px solid #2563eb",
-                        borderRadius: "4mm",
-                        backgroundColor: "#eff6ff",
-                        color: "#000",
-                      }}
-                    >
-                      <p
-                        style={{
-                          margin: "0 0 2.5mm 0",
-                          fontSize: "10.5pt",
-                          fontWeight: "bold",
-                          color: "#2563eb",
-                          textAlign: "center",
-                        }}
-                      >
-                        📱 QUÉT MÃ ĐỂ THANH TOÁN
-                      </p>
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "space-between",
-                          gap: "3mm",
-                        }}
-                      >
-                        {/* Left Column: Bank Details */}
-                        <div
-                          style={{
-                            flex: 1,
-                            textAlign: "left",
-                            fontSize: "8.5pt",
-                            color: "#000",
-                            lineHeight: "1.35",
-                          }}
-                        >
-                          <div style={{ fontSize: "9.5pt", color: "#666", marginBottom: "1mm" }}>
-                            Số tiền: <strong style={{ color: "#2563eb", fontSize: "10.5pt" }}>{formatCurrency(printOrder.total || 0)}</strong>
-                          </div>
-                          <div>
-                            Ngân hàng: <strong>{storeSettings?.bank_name}</strong>
-                          </div>
-                          <div>
-                            STK: <strong style={{ color: "#2563eb", fontSize: "9.5pt" }}>{storeSettings?.bank_account_number}</strong>
-                          </div>
-                          {storeSettings?.bank_account_holder && (
-                            <div style={{ fontSize: "7.5pt", color: "#555", textTransform: "uppercase" }}>
-                              Chủ TK: {storeSettings.bank_account_holder}
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Right Column: QR Code */}
-                        <div
-                          style={{
-                            flexShrink: 0,
-                            padding: "1mm",
-                            backgroundColor: "#fff",
-                            borderRadius: "1.5mm",
-                            border: "1px solid #bfdbfe",
-                          }}
-                        >
-                          <img
-                            src={printQRUrl}
-                            alt="QR Payment"
-                            style={{
-                              width: "30mm",
-                              height: "30mm",
-                              display: "block",
-                              objectFit: "contain",
-                            }}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Footer - Signatures & Bank Info */}
-                  <div
-                    style={{
-                      marginTop: "8mm",
-                      paddingTop: "4mm",
-                      borderTop: "1px dashed #999",
-                      color: "#000",
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        fontSize: "10pt",
-                      }}
-                    >
-                      <div style={{ textAlign: "center", width: "45%" }}>
-                        <p
-                          style={{
-                            fontWeight: "bold",
-                            margin: "0 0 10mm 0",
-                            color: "#000",
-                          }}
-                        >
-                          Khách hàng
-                        </p>
-                        <p
-                          style={{
-                            margin: "0",
-                            fontSize: "9pt",
-                            color: "#666",
-                          }}
-                        >
-                          (Ký và ghi rõ họ tên)
-                        </p>
-                      </div>
-                      <div style={{ textAlign: "center", width: "45%" }}>
-                        <p
-                          style={{
-                            fontWeight: "bold",
-                            margin: "0 0 10mm 0",
-                            color: "#000",
-                          }}
-                        >
-                          Nhân viên
-                        </p>
-                        <p
-                          style={{
-                            margin: "0",
-                            fontSize: "9pt",
-                            color: "#666",
-                          }}
-                        >
-                          {printOrder.technicianName || "(Ký và ghi rõ họ tên)"}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Note & QR Code Tra Cuu */}
-                  <div
-                    style={{
-                      marginTop: "4mm",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "4mm",
-                      padding: "3mm",
-                      backgroundColor: "#fff9e6",
-                      border: "1px solid #ffd700",
-                      borderRadius: "2mm",
-                    }}
-                  >
-                    <div style={{ flex: 1, fontSize: "9pt", textAlign: "left" }}>
-                      <p style={{ margin: "0", fontStyle: "italic", fontWeight: "bold", color: "#b7791f" }}>
-                        📱 TRA CỨU TIẾN ĐỘ SỬA CHỮA ONLINE
-                      </p>
-                      <p style={{ margin: "1mm 0 0 0", fontSize: "8.5pt", color: "#444", lineHeight: "1.3" }}>
-                        Quét mã QR bên cạnh để theo dõi trạng thái xe của bạn thời gian thực và xem đầy đủ lịch sử bảo dưỡng trước đó của xe.
-                      </p>
-                    </div>
-                    <div style={{ flexShrink: 0, padding: "0.5mm", backgroundColor: "#fff", borderRadius: "1mm", border: "1px solid #ffd700" }}>
-                      <img
-                        src={`https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(
-                          window.location.origin + "/tra-cuu/" + printOrder.id
-                        )}`}
-                        alt="QR Tra cuu"
-                        style={{
-                          height: "18mm",
-                          width: "18mm",
-                          display: "block",
-                        }}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Warranty Policy Disclaimer */}
-                  <div
-                    style={{
-                      marginTop: "3mm",
-                      padding: "2mm",
-                      fontSize: "8pt",
-                      color: "#666",
-                      borderTop: "1px solid #e5e7eb",
-                      lineHeight: "1.4",
-                    }}
-                  >
-                    <p style={{ margin: "0 0 1mm 0", fontWeight: "bold" }}>
-                      Chính sách bảo hành:
-                    </p>
-                    <ul
-                      style={{
-                        margin: "0",
-                        paddingLeft: "5mm",
-                        listStyleType: "disc",
-                      }}
-                    >
-                      <li>
-                        Bảo hành áp dụng cho phụ tùng chính hãng và lỗi kỹ thuật
-                        do thợ
-                      </li>
-                      <li>
-                        Không bảo hành đối với va chạm, ngã xe, ngập nước sau
-                        khi nhận xe
-                      </li>
-                      <li>
-                        Mang theo phiếu này khi đến bảo hành. Liên hệ hotline
-                        nếu có thắc mắc
-                      </li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Print Template (Hidden - only for actual printing) */}
-      {printOrder && (
-        <div
-          id="work-order-receipt"
-          className="hidden print:block"
-          style={{
-            width: storeSettings?.print_paper_size === "K80" ? "80mm" : "148mm",
-            margin: "0 auto",
-            padding: storeSettings?.print_paper_size === "K80" ? "4mm" : "10mm",
-            fontFamily: "Arial, sans-serif",
-            fontSize: storeSettings?.print_paper_size === "K80" ? "8.5pt" : "11pt",
-            color: "#000",
-            backgroundColor: "#fff",
+        <PrintPreviewModal
+          isOpen={showPrintPreview}
+          onClose={() => {
+            setShowPrintPreview(false);
+            setPrintOrder(null);
           }}
-        >
-          {/* Header with Logo, Store Info and Bank Info */}
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "6mm",
-              borderBottom: "2px solid #3b82f6",
-              paddingBottom: "3mm",
-              marginBottom: "4mm",
-            }}
-          >
-            {/* Left: Logo (if available) */}
-            {(storeSettings?.print_show_logo !== false) && storeSettings?.logo_url && (
-              <img
-                src={storeSettings.logo_url}
-                alt="Logo"
-                style={{
-                  height: storeSettings?.print_paper_size === "K80" ? "12mm" : "18mm",
-                  width: storeSettings?.print_paper_size === "K80" ? "12mm" : "18mm",
-                  objectFit: "contain",
-                  flexShrink: 0,
-                }}
-              />
-            )}
-
-            {/* Center: Store Info */}
-            <div style={{ fontSize: "8.5pt", lineHeight: "1.4" }}>
-              <div
-                style={{
-                  fontWeight: "bold",
-                  fontSize: "11pt",
-                  marginBottom: "1mm",
-                  color: "#1e40af",
-                }}
-              >
-                {storeSettings?.store_name || "Nhạn Lâm SmartCare"}
-              </div>
-              <div
-                style={{
-                  color: "#000",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "1mm",
-                }}
-              >
-                <svg
-                  style={{ width: "10px", height: "10px", flexShrink: 0 }}
-                  viewBox="0 0 24 24"
-                  fill="#ef4444"
-                >
-                  <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
-                </svg>
-                <span>
-                  {storeSettings?.address ||
-                    "Ấp Phú Lợi B, Xã Long Phú Thuận, Đông Tháp"}
-                </span>
-              </div>
-              <div
-                style={{
-                  color: "#000",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "1mm",
-                }}
-              >
-                <svg
-                  style={{ width: "10px", height: "10px", flexShrink: 0 }}
-                  viewBox="0 0 24 24"
-                  fill="#16a34a"
-                >
-                  <path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z" />
-                </svg>
-                <span>{storeSettings?.phone || "0907.239.337"}</span>
-              </div>
-              {storeSettings?.email && (
-                <div
-                  style={{
-                    color: "#000",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "1mm",
-                  }}
-                >
-                  <svg
-                    style={{ width: "10px", height: "10px", flexShrink: 0 }}
-                    viewBox="0 0 24 24"
-                    fill="#3b82f6"
-                  >
-                    <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z" />
-                  </svg>
-                  <span>{storeSettings.email}</span>
-                </div>
-              )}
-            </div>
-
-
-          </div>
-
-          {/* Title & Meta */}
-          <div style={{ marginBottom: "4mm" }}>
-            <div style={{ textAlign: "center", marginBottom: "2mm" }}>
-              <h1
-                style={{
-                  fontSize: "16pt",
-                  fontWeight: "bold",
-                  margin: "0",
-                  textTransform: "uppercase",
-                  color: "#1e40af",
-                }}
-              >
-                PHIẾU DỊCH VỤ SỬA CHỮA
-              </h1>
-            </div>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                fontSize: "9pt",
-                color: "#666",
-              }}
-            >
-              <div>
-                {new Date(printOrder.creationDate).toLocaleString("vi-VN", {
-                  year: "numeric",
-                  month: "2-digit",
-                  day: "2-digit",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-              </div>
-              <div style={{ fontWeight: "bold" }}>
-                Mã:{" "}
-                {formatWorkOrderId(
-                  printOrder.id,
-                  storeSettings?.work_order_prefix
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Customer Info */}
-          <div
-            style={{
-              border: "1px solid #ddd",
-              padding: "4mm",
-              marginBottom: "4mm",
-              borderRadius: "2mm",
-            }}
-          >
-            <table style={{ width: "100%", borderSpacing: "0" }}>
-              <tbody>
-                <tr>
-                  <td
-                    style={{
-                      fontWeight: "bold",
-                      width: "20%",
-                      paddingBottom: "2mm",
-                    }}
-                  >
-                    Khách hàng:
-                  </td>
-                  <td style={{ paddingBottom: "2mm", width: "30%" }}>
-                    {printOrder.customerName}
-                  </td>
-                  <td
-                    style={{
-                      fontWeight: "bold",
-                      width: "15%",
-                      paddingBottom: "2mm",
-                      paddingLeft: "3mm",
-                    }}
-                  >
-                    SĐT:
-                  </td>
-                  <td style={{ paddingBottom: "2mm" }}>
-                    {printOrder.customerPhone}
-                  </td>
-                </tr>
-                <tr>
-                  <td
-                    style={{
-                      fontWeight: "bold",
-                      paddingBottom: "2mm",
-                    }}
-                  >
-                    Loại xe:
-                  </td>
-                  <td style={{ paddingBottom: "2mm" }}>
-                    {printOrder.vehicleModel}
-                  </td>
-                  <td
-                    style={{
-                      fontWeight: "bold",
-                      paddingBottom: "2mm",
-                      paddingLeft: "3mm",
-                    }}
-                  >
-                    Biển số:
-                  </td>
-                  <td style={{ paddingBottom: "2mm" }}>
-                    {printOrder.licensePlate}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          {/* Issue Description */}
-          {printOrder.issueDescription && printOrder.issueDescription.trim() !== "" && (
-            <div
-              style={{
-                border: "1px solid #ddd",
-                padding: "4mm",
-                marginBottom: "4mm",
-                borderRadius: "2mm",
-              }}
-            >
-              <div style={{ display: "flex", gap: "3mm" }}>
-                <div
-                  style={{ fontWeight: "bold", minWidth: "20%", flexShrink: 0 }}
-                >
-                  Mô tả sự cố:
-                </div>
-                <div style={{ flex: 1, whiteSpace: "pre-wrap" }}>
-                  {printOrder.issueDescription}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Parts and Services Table */}
-          {((printOrder.partsUsed && printOrder.partsUsed.length > 0) ||
-            (printOrder.additionalServices && printOrder.additionalServices.length > 0)) && (
-              <div style={{ marginBottom: "4mm" }}>
-                <p
-                  style={{
-                    fontWeight: "bold",
-                    margin: "0 0 2mm 0",
-                    fontSize: "11pt",
-                  }}
-                >
-                  Phụ tùng và dịch vụ:
-                </p>
-                <table
-                  style={{
-                    width: "100%",
-                    borderCollapse: "collapse",
-                    border: "1px solid #ddd",
-                  }}
-                >
-                  <thead>
-                    <tr style={{ backgroundColor: "#f5f5f5" }}>
-                      <th
-                        style={{
-                          border: "1px solid #ddd",
-                          padding: "2mm",
-                          textAlign: "center",
-                          fontSize: "10pt",
-                          width: "8%",
-                        }}
-                      >
-                        STT
-                      </th>
-                      <th
-                        style={{
-                          border: "1px solid #ddd",
-                          padding: "2mm",
-                          textAlign: "left",
-                          fontSize: "10pt",
-                        }}
-                      >
-                        Tên
-                      </th>
-                      <th
-                        style={{
-                          border: "1px solid #ddd",
-                          padding: "2mm",
-                          textAlign: "center",
-                          fontSize: "10pt",
-                          width: "15%",
-                        }}
-                      >
-                        SL
-                      </th>
-                      <th
-                        style={{
-                          border: "1px solid #ddd",
-                          padding: "2mm",
-                          textAlign: "right",
-                          fontSize: "10pt",
-                          width: "25%",
-                        }}
-                      >
-                        Đơn giá
-                      </th>
-                      <th
-                        style={{
-                          border: "1px solid #ddd",
-                          padding: "2mm",
-                          textAlign: "right",
-                          fontSize: "10pt",
-                          width: "25%",
-                        }}
-                      >
-                        Thành tiền
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {/* Parts */}
-                    {printOrder.partsUsed && printOrder.partsUsed.map(
-                      (part: WorkOrderPart, idx: number) => (
-                        <tr key={`part-${idx}`}>
-                          <td
-                            style={{
-                              border: "1px solid #ddd",
-                              padding: "2mm",
-                              textAlign: "center",
-                              fontSize: "10pt",
-                            }}
-                          >
-                            {idx + 1}
-                          </td>
-                          <td
-                            style={{
-                              border: "1px solid #ddd",
-                              padding: "2mm",
-                              fontSize: "10pt",
-                            }}
-                          >
-                            {part.partName}
-                          </td>
-                          <td
-                            style={{
-                              border: "1px solid #ddd",
-                              padding: "2mm",
-                              textAlign: "center",
-                              fontSize: "10pt",
-                            }}
-                          >
-                            {part.quantity}
-                          </td>
-                          <td
-                            style={{
-                              border: "1px solid #ddd",
-                              padding: "2mm",
-                              textAlign: "right",
-                              fontSize: "10pt",
-                            }}
-                          >
-                            {formatCurrency(part.price)}
-                          </td>
-                          <td
-                            style={{
-                              border: "1px solid #ddd",
-                              padding: "2mm",
-                              textAlign: "right",
-                              fontSize: "10pt",
-                              fontWeight: "bold",
-                            }}
-                          >
-                            {formatCurrency(part.price * part.quantity)}
-                          </td>
-                        </tr>
-                      )
-                    )}
-                    {/* Additional Services */}
-                    {printOrder.additionalServices && printOrder.additionalServices.map(
-                      (service: any, idx: number) => (
-                        <tr key={`service-${idx}`}>
-                          <td
-                            style={{
-                              border: "1px solid #ddd",
-                              padding: "2mm",
-                              textAlign: "center",
-                              fontSize: "10pt",
-                            }}
-                          >
-                            {(printOrder.partsUsed?.length || 0) + idx + 1}
-                          </td>
-                          <td
-                            style={{
-                              border: "1px solid #ddd",
-                              padding: "2mm",
-                              fontSize: "10pt",
-                            }}
-                          >
-                            {service.description}
-                          </td>
-                          <td
-                            style={{
-                              border: "1px solid #ddd",
-                              padding: "2mm",
-                              textAlign: "center",
-                              fontSize: "10pt",
-                            }}
-                          >
-                            {service.quantity || 1}
-                          </td>
-                          <td
-                            style={{
-                              border: "1px solid #ddd",
-                              padding: "2mm",
-                              textAlign: "right",
-                              fontSize: "10pt",
-                            }}
-                          >
-                            {formatCurrency(service.price || 0)}
-                          </td>
-                          <td
-                            style={{
-                              border: "1px solid #ddd",
-                              padding: "2mm",
-                              textAlign: "right",
-                              fontSize: "10pt",
-                              fontWeight: "bold",
-                            }}
-                          >
-                            {formatCurrency(
-                              (service.price || 0) * (service.quantity || 1)
-                            )}
-                          </td>
-                        </tr>
-                      )
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            )}
-
-          {/* Cost Summary */}
-          <div
-            style={{
-              border: "1px solid #ddd",
-              padding: "4mm",
-              marginBottom: "4mm",
-              borderRadius: "2mm",
-              backgroundColor: "#f9f9f9",
-            }}
-          >
-            <table style={{ width: "100%", borderSpacing: "0" }}>
-              <tbody>
-                {printOrder.discount != null && printOrder.discount > 0 && (
-                  <tr>
-                    <td
-                      style={{
-                        fontWeight: "bold",
-                        paddingBottom: "2mm",
-                        fontSize: "10pt",
-                        color: "#e74c3c",
-                      }}
-                    >
-                      Giảm giá:
-                    </td>
-                    <td
-                      style={{
-                        textAlign: "right",
-                        paddingBottom: "2mm",
-                        fontSize: "10pt",
-                        color: "#e74c3c",
-                      }}
-                    >
-                      -{formatCurrency(printOrder.discount)}
-                    </td>
-                  </tr>
-                )}
-                <tr style={{ borderTop: "2px solid #333" }}>
-                  <td
-                    style={{
-                      fontWeight: "bold",
-                      paddingTop: "2mm",
-                      fontSize: "12pt",
-                    }}
-                  >
-                    TỔNG CỘNG:
-                  </td>
-                  <td
-                    style={{
-                      textAlign: "right",
-                      paddingTop: "2mm",
-                      fontSize: "12pt",
-                      fontWeight: "bold",
-                      color: "#2563eb",
-                    }}
-                  >
-                    {formatCurrency(printOrder.total)}
-                  </td>
-                </tr>
-                {printOrder.totalPaid != null && printOrder.totalPaid > 0 && (
-                  <tr>
-                    <td
-                      style={{
-                        fontWeight: "bold",
-                        paddingTop: "2mm",
-                        fontSize: "10pt",
-                        color: "#16a34a",
-                      }}
-                    >
-                      Đã thanh toán:
-                    </td>
-                    <td
-                      style={{
-                        textAlign: "right",
-                        paddingTop: "2mm",
-                        fontSize: "10pt",
-                        color: "#16a34a",
-                      }}
-                    >
-                      {formatCurrency(printOrder.totalPaid)}
-                    </td>
-                  </tr>
-                )}
-                {printOrder.remainingAmount != null &&
-                  printOrder.remainingAmount > 0 && (
-                    <tr>
-                      <td
-                        style={{
-                          fontWeight: "bold",
-                          fontSize: "11pt",
-                          color: "#dc2626",
-                        }}
-                      >
-                        Còn lại:
-                      </td>
-                      <td
-                        style={{
-                          textAlign: "right",
-                          fontSize: "11pt",
-                          fontWeight: "bold",
-                          color: "#dc2626",
-                        }}
-                      >
-                        {formatCurrency(printOrder.remainingAmount)}
-                      </td>
-                    </tr>
-                  )}
-                {printOrder.paymentMethod && (
-                  <tr>
-                    <td
-                      style={{
-                        paddingTop: "2mm",
-                        fontSize: "9pt",
-                        color: "#666",
-                      }}
-                    >
-                      Hình thức thanh toán:
-                    </td>
-                    <td
-                      style={{
-                        textAlign: "right",
-                        paddingTop: "2mm",
-                        fontSize: "9pt",
-                        color: "#666",
-                      }}
-                    >
-                      {printOrder.paymentMethod === "cash"
-                        ? "Tiền mặt"
-                        : printOrder.paymentMethod === "bank"
-                          ? "Chuyển khoản"
-                          : printOrder.paymentMethod}
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Dynamic QR Payment Code (Horizontal Layout) */}
-          {(printQRUrl || storeSettings?.bank_qr_url) && (
-            <div
-              style={{
-                marginTop: "4mm",
-                padding: "3.5mm",
-                border: "2px solid #2563eb",
-                borderRadius: "4mm",
-                backgroundColor: "#eff6ff",
-                color: "#000",
-              }}
-            >
-              <p
-                style={{
-                  margin: "0 0 2.5mm 0",
-                  fontSize: "10.5pt",
-                  fontWeight: "bold",
-                  color: "#2563eb",
-                  textAlign: "center",
-                }}
-              >
-                📱 QUÉT MÃ ĐỂ THANH TOÁN
-              </p>
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  gap: "3mm",
-                }}
-              >
-                {/* Left Column: Bank Details */}
-                <div
-                  style={{
-                    flex: 1,
-                    textAlign: "left",
-                    fontSize: "8.5pt",
-                    color: "#000",
-                    lineHeight: "1.35",
-                  }}
-                >
-                  <div style={{ fontSize: "9.5pt", color: "#666", marginBottom: "1mm" }}>
-                    Số tiền: <strong style={{ color: "#2563eb", fontSize: "10.5pt" }}>{formatCurrency(printOrder.total || 0)}</strong>
-                  </div>
-                  <div>
-                    Ngân hàng: <strong>{storeSettings?.bank_name}</strong>
-                  </div>
-                  <div>
-                    STK: <strong style={{ color: "#2563eb", fontSize: "9.5pt" }}>{storeSettings?.bank_account_number}</strong>
-                  </div>
-                  {storeSettings?.bank_account_holder && (
-                    <div style={{ fontSize: "7.5pt", color: "#555", textTransform: "uppercase" }}>
-                      Chủ TK: {storeSettings.bank_account_holder}
-                    </div>
-                  )}
-                </div>
-
-                {/* Right Column: QR Code */}
-                <div
-                  style={{
-                    flexShrink: 0,
-                    padding: "1mm",
-                    backgroundColor: "#fff",
-                    borderRadius: "1.5mm",
-                    border: "1px solid #bfdbfe",
-                  }}
-                >
-                  <img
-                    src={printQRUrl || storeSettings?.bank_qr_url}
-                    alt="QR Payment"
-                    style={{
-                      width: "30mm",
-                      height: "30mm",
-                      display: "block",
-                      objectFit: "contain",
-                    }}
-                  />
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Footer */}
-          <div
-            style={{
-              marginTop: "8mm",
-              paddingTop: "4mm",
-              borderTop: "1px dashed #999",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                fontSize: "10pt",
-              }}
-            >
-              <div style={{ textAlign: "center", width: "45%" }}>
-                <p style={{ fontWeight: "bold", margin: "0 0 10mm 0" }}>
-                  Khách hàng
-                </p>
-                <p style={{ margin: "0", fontSize: "9pt", color: "#666" }}>
-                  (Ký và ghi rõ họ tên)
-                </p>
-              </div>
-              <div style={{ textAlign: "center", width: "45%" }}>
-                <p style={{ fontWeight: "bold", margin: "0 0 10mm 0" }}>
-                  Nhân viên
-                </p>
-                <p style={{ margin: "0", fontSize: "9pt", color: "#666" }}>
-                  {printOrder.technicianName || "(Ký và ghi rõ họ tên)"}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Note & QR Code Tra Cuu */}
-          <div
-            style={{
-              marginTop: "4mm",
-              display: "flex",
-              alignItems: "center",
-              gap: "4mm",
-              padding: "3mm",
-              backgroundColor: "#fff9e6",
-              border: "1px solid #ffd700",
-              borderRadius: "2mm",
-            }}
-          >
-            <div style={{ flex: 1, fontSize: "9pt" }}>
-              <p style={{ margin: "0", fontStyle: "italic", fontWeight: "bold", color: "#b7791f" }}>
-                📱 TRA CỨU TIẾN ĐỘ SỬA CHỮA ONLINE
-              </p>
-              <p style={{ margin: "1mm 0 0 0", fontSize: "8.5pt", color: "#444", lineHeight: "1.3" }}>
-                Quét mã QR bên cạnh để theo dõi trạng thái xe của bạn thời gian thực và xem đầy đủ lịch sử bảo dưỡng trước đó của xe.
-              </p>
-            </div>
-            <div style={{ flexShrink: 0 }}>
-              <img
-                src={`https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(
-                  window.location.origin + "/tra-cuu/" + printOrder.id
-                )}`}
-                alt="QR Tra cuu"
-                style={{
-                  height: "18mm",
-                  width: "18mm",
-                  display: "block",
-                }}
-              />
-            </div>
-          </div>
-
-          {/* Warranty Policy Disclaimer */}
-          <div
-            style={{
-              marginTop: "3mm",
-              padding: "2mm",
-              fontSize: "8pt",
-              color: "#666",
-              borderTop: "1px solid #e5e7eb",
-              lineHeight: "1.4",
-            }}
-          >
-            <p style={{ margin: "0 0 1mm 0", fontWeight: "bold" }}>
-              Chính sách bảo hành:
-            </p>
-            <ul
-              style={{
-                margin: "0",
-                paddingLeft: "5mm",
-                listStyleType: "disc",
-              }}
-            >
-              <li>
-                Bảo hành áp dụng cho phụ tùng chính hãng và lỗi kỹ thuật do thợ
-              </li>
-              <li>
-                Không bảo hành đối với va chạm, ngã xe, ngập nước sau khi nhận
-                xe
-              </li>
-              <li>
-                Mang theo phiếu này khi đến bảo hành. Liên hệ hotline nếu có
-                thắc mắc
-              </li>
-            </ul>
-          </div>
-
-          {/* Custom Greeting from Settings */}
-          <div
-            style={{
-              marginTop: "4mm",
-              paddingTop: "2mm",
-              borderTop: "1.5px dashed #bbb",
-              textAlign: "center",
-              fontSize: "9pt",
-              color: "#000",
-              fontWeight: "bold",
-            }}
-          >
-            {storeSettings?.print_greeting || "Cảm ơn quý khách! Hẹn gặp lại"}
-          </div>
-        </div>
+          printOrder={printOrder}
+          storeSettings={storeSettings}
+        />
       )}
 
-      {/* Refund Modal */}
+      {/* 7. Refund Modal */}
       {showRefundModal && refundingOrder && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-slate-800 rounded-xl w-full max-w-md">
-            <div className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-6 py-4 flex items-center justify-between rounded-t-xl">
-              <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">
-                Xác nhận hủy phiếu
-              </h2>
-              <button
-                onClick={() => {
-                  setShowRefundModal(false);
-                  setRefundingOrder(null);
-                }}
-                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
-                aria-label="Đóng"
-              >
-                ✕
-              </button>
-            </div>
+        <RefundModal
+          isOpen={showRefundModal}
+          onClose={() => {
+            setShowRefundModal(false);
+            setRefundingOrder(null);
+          }}
+          refundingOrder={refundingOrder}
+          onConfirm={handleConfirmRefund}
+          storeSettings={storeSettings}
+        />
+      )}
 
-            <div className="p-6 space-y-4">
-              <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
-                <p className="text-sm text-yellow-800 dark:text-yellow-200">
-                  <AlertTriangle className="w-4 h-4 inline-block mr-1 align-[-2px]" />
-                  <strong>Cảnh báo:</strong> Hành động này sẽ:
-                </p>
-                <ul className="mt-2 text-sm text-yellow-700 dark:text-yellow-300 list-disc list-inside space-y-1">
-                  <li>Hoàn trả tồn kho các phụ tùng đã sử dụng</li>
-                  <li>
-                    Hoàn tiền {formatCurrency(refundingOrder.totalPaid || 0)}{" "}
-                    cho khách
-                  </li>
-                  <li>Đánh dấu phiếu là "Đã hủy"</li>
-                </ul>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                  Lý do hủy phiếu <span className="text-red-500">*</span>
-                </label>
-                <textarea
-                  value={refundReason}
-                  onChange={(e) => setRefundReason(e.target.value)}
-                  placeholder="Vd: Khách hàng không đồng ý chi phí, sửa nhầm xe..."
-                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 resize-none"
-                  rows={3}
-                />
-              </div>
-
-              <div className="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-3 space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-slate-600 dark:text-slate-400">
-                    Phiếu:
-                  </span>
-                  <span className="font-medium text-slate-900 dark:text-slate-100">
-                    #
-                    {formatWorkOrderId(
-                      refundingOrder.id,
-                      storeSettings?.work_order_prefix
-                    )
-                      .split("-")
-                      .pop()}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-600 dark:text-slate-400">
-                    Khách hàng:
-                  </span>
-                  <span className="font-medium text-slate-900 dark:text-slate-100">
-                    {refundingOrder.customerName}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-600 dark:text-slate-400">
-                    Phụ tùng:
-                  </span>
-                  <span className="font-medium text-slate-900 dark:text-slate-100">
-                    {refundingOrder.partsUsed?.length || 0} món
-                  </span>
-                </div>
-                <div className="flex justify-between border-t border-slate-200 dark:border-slate-600 pt-2">
-                  <span className="text-slate-600 dark:text-slate-400">
-                    Số tiền hoàn:
-                  </span>
-                  <span className="font-bold text-red-600 dark:text-red-400">
-                    {formatCurrency(refundingOrder.totalPaid || 0)}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-slate-50 dark:bg-slate-700/50 px-6 py-4 flex justify-end gap-3 rounded-b-xl">
-              <button
-                onClick={() => {
-                  setShowRefundModal(false);
-                  setRefundingOrder(null);
-                }}
-                className="px-4 py-2 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-lg font-medium"
-              >
-                Hủy bỏ
-              </button>
-              <button
-                onClick={handleConfirmRefund}
-                disabled={!refundReason.trim()}
-                className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-300 dark:disabled:bg-red-900 text-white rounded-lg font-medium disabled:cursor-not-allowed"
-              >
-                Xác nhận hủy phiếu
-              </button>
-            </div>
-          </div>
-        </div>
+      {/* 8. Delete Confirmation Modal */}
+      {showDeleteConfirm && deletingOrder && (
+        <DeleteConfirmModal
+          isOpen={showDeleteConfirm}
+          onClose={() => {
+            setShowDeleteConfirm(false);
+            setDeletingOrder(null);
+          }}
+          onConfirm={handleConfirmDelete}
+          orderId={formatWorkOrderId(deletingOrder.id, storeSettings?.work_order_prefix)}
+        />
       )}
     </div>
   );
 }
-
-// StatusBadge component moved to ./components/StatusBadge.tsx

@@ -21,79 +21,15 @@ import { createCashTransaction } from "../../lib/repository/cashTransactionsRepo
 import { useQueryClient } from "@tanstack/react-query";
 import InstallmentList from "./components/InstallmentList";
 
-// Success Receipt Modal
-const DebtReceiptModal: React.FC<{
-  isOpen: boolean;
-  data: any;
-  onClose: () => void;
-  onPrint: () => void;
-}> = ({ isOpen, data, onClose, onPrint }) => {
-  if (!isOpen || !data) return null;
-
-  return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-[110]">
-      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl max-w-sm w-full border border-slate-200 dark:border-slate-700 overflow-hidden relative">
-        <div className="p-6 pb-2 text-center">
-          <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-            </svg>
-          </div>
-          <h2 className="text-slate-900 dark:text-white text-xl font-bold">Thanh toán thành công!</h2>
-        </div>
-
-        <div className="p-6 space-y-4">
-          <div className="text-center">
-            <p className="text-slate-500 dark:text-slate-400 text-sm mb-1">
-              {data.isCustomer ? "Người nộp tiền" : "Người thụ hưởng"}
-            </p>
-            <p className="text-slate-900 dark:text-white font-bold text-lg">
-              {data.customerName || data.supplierName}
-            </p>
-          </div>
-
-          <div className="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-4 text-center border border-slate-100 dark:border-slate-700">
-            <p className="text-slate-500 dark:text-slate-400 text-sm mb-1">Số tiền</p>
-            <p className={`text-2xl font-bold ${data.type === 'income' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-              {formatCurrency(data.amount)}
-            </p>
-            <p className="text-xs text-slate-400 mt-1">{data.paymentMethod === 'cash' ? 'Tiền mặt' : 'Chuyển khoản'}</p>
-          </div>
-
-          <p className="text-center text-xs text-slate-400">
-            {data.timestamp}
-          </p>
-
-          <div className="grid grid-cols-2 gap-3 mt-6">
-            <button
-              onClick={onPrint}
-              className="flex items-center justify-center gap-2 px-4 py-3 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg font-medium transition-colors"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
-              In Phiếu
-            </button>
-            <button
-              onClick={() => {
-                onPrint();
-                showToast.info("Hệ thống sẽ mở hộp thoại in. Bạn có thể chọn 'Lưu dưới dạng PDF' hoặc chụp ảnh màn hình để chia sẻ.");
-              }}
-              className="flex items-center justify-center gap-2 px-4 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg font-medium transition-colors shadow-sm"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" /></svg>
-              Chia sẻ
-            </button>
-          </div>
-          <button
-            onClick={onClose}
-            className="w-full py-3 text-slate-500 hover:text-slate-700 font-medium"
-          >
-            Đóng
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
+// Modals
+import { DebtReceiptModal } from "./modals/DebtReceiptModal";
+import { CollectDebtModal } from "./modals/CollectDebtModal";
+import { PaySupplierModal } from "./modals/PaySupplierModal";
+import { BulkPaymentModal } from "./modals/BulkPaymentModal";
+import { AddDebtModal } from "./modals/AddDebtModal";
+import { EditDebtModal } from "./modals/EditDebtModal";
+import { DetailDebtModal } from "./modals/DetailDebtModal";
+import { DeleteConfirmDialog } from "./modals/DeleteConfirmDialog";
 
 const DebtManager: React.FC = () => {
   const {
@@ -308,17 +244,16 @@ const DebtManager: React.FC = () => {
     const isCustomerDebt = "customerName" in debt;
 
     // Create or get print iframe
-    let iframe = document.getElementById('print-receipt-frame') as HTMLIFrameElement;
+    let iframe = document.getElementById("print-receipt-frame") as HTMLIFrameElement;
     if (!iframe) {
-      iframe = document.createElement('iframe');
-      iframe.id = 'print-receipt-frame';
-      // Hide iframe but keep it part of DOM for printing
-      iframe.style.position = 'fixed';
-      iframe.style.right = '0';
-      iframe.style.bottom = '0';
-      iframe.style.width = '0';
-      iframe.style.height = '0';
-      iframe.style.border = '0';
+      iframe = document.createElement("iframe");
+      iframe.id = "print-receipt-frame";
+      iframe.style.position = "fixed";
+      iframe.style.right = "0";
+      iframe.style.bottom = "0";
+      iframe.style.width = "0";
+      iframe.style.height = "0";
+      iframe.style.border = "0";
       document.body.appendChild(iframe);
     }
 
@@ -410,7 +345,6 @@ const DebtManager: React.FC = () => {
       doc.write(html);
       doc.close();
 
-      // Focus and print after a short delay to ensure rendering
       setTimeout(() => {
         iframe.contentWindow?.focus();
         iframe.contentWindow?.print();
@@ -426,33 +360,25 @@ const DebtManager: React.FC = () => {
 
     // 🔹 Filter out debts linked to fully paid work orders or sales
     const activeDbDebts = dbDebts.filter((debt: any) => {
-      // If debt has remainingAmount <= 0, it's already marked as paid (or overpaid)
       if ((debt.remainingAmount || 0) <= 0) return false;
 
-      // If debt is linked to a work order, check if work order is fully paid
       if (debt.workOrderId) {
-        // If work order is not in unpaidWorkOrders list, it means it's fully paid
         const workOrderStillUnpaid = unpaidWorkOrders.some(
           (wo) => wo.id === debt.workOrderId
         );
         if (!workOrderStillUnpaid) return false;
       }
 
-      // If debt is linked to a sale, only filter when unpaidSales is available.
-      // When sales remaining amount tracking is disabled, keep sale debts visible.
       if (debt.saleId && unpaidSales.length > 0) {
-        // If sale is not in unpaidSales list, it means it's fully paid
         const saleStillUnpaid = unpaidSales.some(
           (sale) => sale.id === debt.saleId
         );
         if (!saleStillUnpaid) return false;
       }
 
-      // Keep this debt in the list
       return true;
     });
 
-    // Combine with work order debts (auto-merged)
     return [...activeDbDebts, ...workOrderDebts] as any[];
   }, [
     customerDebts,
@@ -463,13 +389,10 @@ const DebtManager: React.FC = () => {
   ]);
 
   const branchSupplierDebts = useMemo(() => {
-    // FORCE SHADOW: Ensure we are using the filter.
-    // Filter: must belong to current branch AND have strictly positive remaining amount.
     return supplierDebts
       .filter((debt) => debt.branchId === currentBranchId)
       .filter((debt) => {
         const val = Number(debt.remainingAmount);
-        // Treat NaN, 0, or negative as paid
         if (isNaN(val) || val <= 0) return false;
         return true;
       });
@@ -479,7 +402,6 @@ const DebtManager: React.FC = () => {
   const filteredCustomerDebts = useMemo(() => {
     let filtered = branchCustomerDebts;
 
-    // Apply search filter
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
       filtered = filtered.filter(
@@ -491,13 +413,10 @@ const DebtManager: React.FC = () => {
       );
     }
 
-    // Sort: unpaid debts first (remainingAmount > 0), then by creation date (newest first)
     return filtered.sort((a: any, b: any) => {
-      // First priority: unpaid debts come first
       if (a.remainingAmount > 0 && b.remainingAmount === 0) return -1;
       if (a.remainingAmount === 0 && b.remainingAmount > 0) return 1;
 
-      // Second priority: sort by date (newest first)
       return (
         new Date(b.createdDate).getTime() - new Date(a.createdDate).getTime()
       );
@@ -616,8 +535,8 @@ const DebtManager: React.FC = () => {
             {/* Installment */}
             <div className="bg-white dark:bg-slate-800/80 rounded-lg p-3 text-slate-800 dark:text-white border border-slate-200 dark:border-slate-700 border-t-2 border-t-purple-500 shadow-sm">
               <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">Trả góp</div>
-              <div className="text-lg font-bold">{formatCurrency(installments.filter((i: any) => i.status === 'active').reduce((sum: number, item: any) => sum + (item.remaining_amount || 0), 0))}</div>
-              <div className="text-[10px] text-slate-400">~{installments.filter((i: any) => i.status === 'active').length} khoản</div>
+              <div className="text-lg font-bold">{formatCurrency(installments.filter((i: any) => i.status === "active").reduce((sum: number, item: any) => sum + (item.remaining_amount || 0), 0))}</div>
+              <div className="text-[10px] text-slate-400">~{installments.filter((i: any) => i.status === "active").length} khoản</div>
             </div>
           </div>
         </div>
@@ -662,7 +581,7 @@ const DebtManager: React.FC = () => {
             <CreditCard className="w-4 h-4" />
             <span>Trả góp</span>
             <span className="px-1.5 py-0.5 text-xs font-bold bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 rounded-full">
-              {installments.filter((i: any) => i.status === 'active').length}
+              {installments.filter((i: any) => i.status === "active").length}
             </span>
           </button>
         </div>
@@ -673,9 +592,7 @@ const DebtManager: React.FC = () => {
         {loadingCustomerDebts || loadingSupplierDebts ? (
           <div className="flex items-center justify-center py-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-600"></div>
-            <span className="ml-3 text-secondary-text">
-              Đang tải dữ liệu...
-            </span>
+            <span className="ml-3 text-secondary-text">Đang tải dữ liệu...</span>
           </div>
         ) : (
           <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
@@ -748,27 +665,9 @@ const DebtManager: React.FC = () => {
                         d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                       />
                     </svg>
-                    <span>
-                      {activeTab === "customer" ? "Thu nợ" : "Chi trả nợ"}
-                    </span>
+                    <span>{activeTab === "customer" ? "Thu nợ" : "Chi trả nợ"}</span>
                   </button>
                 </div>
-
-                <button className="hidden md:block p-2.5 text-secondary-text hover:text-primary-text transition-colors">
-                  <svg
-                    className="w-6 h-6"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
-                    />
-                  </svg>
-                </button>
               </>
             )}
           </div>
@@ -785,9 +684,7 @@ const DebtManager: React.FC = () => {
                 <span className="ml-3 text-secondary-text">Đang tải...</span>
               </div>
             ) : filteredCustomerDebts.length === 0 ? (
-              <div className="text-center py-12 text-tertiary-text">
-                Không có công nợ.
-              </div>
+              <div className="text-center py-12 text-tertiary-text">Không có công nợ.</div>
             ) : (
               <div className="space-y-3">
                 {/* Header Row - Hidden on Mobile */}
@@ -806,13 +703,15 @@ const DebtManager: React.FC = () => {
                   return (
                     <div
                       key={debt.id}
-                      className={`grid grid-cols-1 md:grid-cols-12 gap-2 md:gap-4 items-start bg-primary-bg border rounded-lg p-3 md:p-4 transition-all ${isPaid
-                        ? "opacity-60 cursor-not-allowed border-gray-300 dark:border-gray-600"
-                        : "hover:border-cyan-500 hover:shadow-md cursor-pointer"
-                        } ${debt.isFromWorkOrder
+                      className={`grid grid-cols-1 md:grid-cols-12 gap-2 md:gap-4 items-start bg-primary-bg border rounded-lg p-3 md:p-4 transition-all ${
+                        isPaid
+                          ? "opacity-60 cursor-not-allowed border-gray-300 dark:border-gray-600"
+                          : "hover:border-cyan-500 hover:shadow-md cursor-pointer"
+                      } ${
+                        debt.isFromWorkOrder
                           ? "border-amber-300 dark:border-amber-600 bg-amber-50/50 dark:bg-amber-900/10"
                           : "border-primary-border"
-                        }`}
+                      }`}
                       onClick={() => {
                         if (!isPaid) {
                           setSelectedDebt(debt);
@@ -824,11 +723,7 @@ const DebtManager: React.FC = () => {
                       {isPaid && (
                         <div className="col-span-full mb-2">
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-xs rounded-full font-semibold">
-                            <svg
-                              className="w-3 h-3"
-                              fill="currentColor"
-                              viewBox="0 0 20 20"
-                            >
+                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                               <path
                                 fillRule="evenodd"
                                 d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
@@ -864,20 +759,16 @@ const DebtManager: React.FC = () => {
                       <div className="col-span-1 md:col-span-4 flex items-start gap-3">
                         <input
                           type="checkbox"
-                          checked={selectedCustomerIds.includes(
-                            debt.customerId
-                          )}
+                          checked={selectedCustomerIds.includes(debt.customerId)}
                           disabled={isPaid}
                           onChange={(e) => {
-                            e.stopPropagation(); // Prevent opening modal
-                            handleCustomerCheckbox(
-                              debt.customerId,
-                              e.target.checked
-                            );
+                            e.stopPropagation();
+                            handleCustomerCheckbox(debt.customerId, e.target.checked);
                           }}
-                          onClick={(e) => e.stopPropagation()} // Prevent opening modal
-                          className={`hidden md:block mt-1 w-4 h-4 rounded border-secondary-border text-cyan-600 focus:ring-cyan-500 ${isPaid ? "cursor-not-allowed opacity-50" : ""
-                            }`}
+                          onClick={(e) => e.stopPropagation()}
+                          className={`hidden md:block mt-1 w-4 h-4 rounded border-secondary-border text-cyan-600 focus:ring-cyan-500 ${
+                            isPaid ? "cursor-not-allowed opacity-50" : ""
+                          }`}
                         />
                         <div className="flex-1 min-w-0">
                           <h3 className="text-primary-text font-semibold text-base mb-1 truncate">
@@ -885,12 +776,7 @@ const DebtManager: React.FC = () => {
                           </h3>
                           <div className="space-y-0.5 text-xs text-secondary-text">
                             <div className="flex items-center gap-1">
-                              <svg
-                                className="w-3 h-3"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path
                                   strokeLinecap="round"
                                   strokeLinejoin="round"
@@ -901,27 +787,12 @@ const DebtManager: React.FC = () => {
                               <span>{debt.phone || "--"}</span>
                             </div>
                             <div className="flex items-center gap-1">
-                              <svg
-                                className="w-3 h-3"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path
                                   strokeLinecap="round"
                                   strokeLinejoin="round"
                                   strokeWidth={2}
                                   d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z M9 22V12h6v10"
-                                />
-                                <rect
-                                  x="7"
-                                  y="5"
-                                  width="10"
-                                  height="4"
-                                  rx="1"
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
                                 />
                               </svg>
                               <span className="font-mono text-xs font-semibold">
@@ -929,12 +800,7 @@ const DebtManager: React.FC = () => {
                               </span>
                             </div>
                             <div className="flex items-center gap-1">
-                              <svg
-                                className="w-3 h-3"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path
                                   strokeLinecap="round"
                                   strokeLinejoin="round"
@@ -942,17 +808,10 @@ const DebtManager: React.FC = () => {
                                   d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
                                 />
                               </svg>
-                              <span>
-                                {formatDate(new Date(debt.createdDate))}
-                              </span>
+                              <span>{formatDate(new Date(debt.createdDate))}</span>
                             </div>
                             <div className="flex items-center gap-1 text-cyan-600 dark:text-cyan-400">
-                              <svg
-                                className="w-3 h-3"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path
                                   strokeLinecap="round"
                                   strokeLinejoin="round"
@@ -962,13 +821,11 @@ const DebtManager: React.FC = () => {
                               </svg>
                               <span>
                                 NV:{" "}
-                                {(debt as any).technicianName ||
+                                {debt.technicianName ||
                                   debt.description
                                     .match(/NVKỹ thuật:([^\n]+)/)?.[1]
                                     ?.trim() ||
-                                  debt.description
-                                    .match(/NV:([^\n]+)/)?.[1]
-                                    ?.trim() ||
+                                  debt.description.match(/NV:([^\n]+)/)?.[1]?.trim() ||
                                   "N/A"}
                               </span>
                             </div>
@@ -981,65 +838,52 @@ const DebtManager: React.FC = () => {
                         <div className="text-sm text-primary-text space-y-1">
                           {(() => {
                             const lines: string[] = String(debt.description ?? "").split("\n");
-                            // Lấy dòng đầu tiên (xe + số phiếu)
                             const firstLine = lines[0];
 
-                            // Lấy phụ tùng (nếu có)
                             const partsSection = lines.find((l) =>
                               l.includes("Phụ tùng đã thay:")
                             );
                             const partsLines = partsSection
                               ? lines
-                                .slice(
-                                  lines.indexOf(partsSection) + 1,
-                                  lines.findIndex(
-                                    (l: string, i: number) =>
-                                      i > lines.indexOf(partsSection) &&
-                                      (l.includes("Dịch vụ:") ||
-                                        l.includes("Công lao động:"))
-                                  ) || lines.length
-                                )
-                                .filter((l: string) => l.trim().startsWith("•"))
+                                  .slice(
+                                    lines.indexOf(partsSection) + 1,
+                                    lines.findIndex(
+                                      (l: string, i: number) =>
+                                        i > lines.indexOf(partsSection) &&
+                                        (l.includes("Dịch vụ:") || l.includes("Công lao động:"))
+                                    ) || lines.length
+                                  )
+                                  .filter((l: string) => l.trim().startsWith("•"))
                               : [];
 
-                            // Lấy dịch vụ (nếu có)
-                            const serviceSection = lines.find((l) =>
-                              l.includes("Dịch vụ:")
-                            );
+                            const serviceSection = lines.find((l) => l.includes("Dịch vụ:"));
                             const serviceLines = serviceSection
                               ? lines
-                                .slice(
-                                  lines.indexOf(serviceSection) + 1,
-                                  lines.findIndex(
-                                    (l: string, i: number) =>
-                                      i > lines.indexOf(serviceSection) &&
-                                      l.includes("Công lao động:")
-                                  ) || lines.length
-                                )
-                                .filter((l: string) => l.trim().startsWith("•"))
+                                  .slice(
+                                    lines.indexOf(serviceSection) + 1,
+                                    lines.findIndex(
+                                      (l: string, i: number) =>
+                                        i > lines.indexOf(serviceSection) &&
+                                        l.includes("Công lao động:")
+                                    ) || lines.length
+                                  )
+                                  .filter((l: string) => l.trim().startsWith("•"))
                               : [];
 
-                            // Lấy công lao động
-                            const laborLine = lines.find((l) =>
-                              l.includes("Công lao động:")
-                            );
+                            const laborLine = lines.find((l) => l.includes("Công lao động:"));
 
                             return (
                               <>
                                 <div className="font-medium">{firstLine}</div>
                                 {partsLines.length > 0 && (
                                   <div className="text-xs text-secondary-text">
-                                    <span className="font-semibold">
-                                      Phụ tùng:
-                                    </span>{" "}
+                                    <span className="font-semibold">Phụ tùng:</span>{" "}
                                     {partsLines.length} món
                                   </div>
                                 )}
                                 {serviceLines.length > 0 && (
                                   <div className="text-xs text-secondary-text">
-                                    <span className="font-semibold">
-                                      Dịch vụ:
-                                    </span>{" "}
+                                    <span className="font-semibold">Dịch vụ:</span>{" "}
                                     {serviceLines.length} món
                                   </div>
                                 )}
@@ -1056,21 +900,21 @@ const DebtManager: React.FC = () => {
 
                       {/* Cột 3: Số tiền (1 col) - Desktop Only */}
                       <div className="hidden md:block col-span-1 text-right">
-                        <div className="text-sm font-semibold text-primary-text">
+                        <div className="text-sm font-semibold text-primary-text font-mono">
                           {formatCurrency(debt.totalAmount)}
                         </div>
                       </div>
 
                       {/* Cột 4: Đã trả (1 col) - Desktop Only */}
                       <div className="hidden md:block col-span-1 text-right">
-                        <div className="text-sm font-semibold text-green-600 dark:text-green-400">
+                        <div className="text-sm font-semibold text-green-600 dark:text-green-400 font-mono">
                           {formatCurrency(debt.paidAmount)}
                         </div>
                       </div>
 
                       {/* Cột 5: Còn nợ (2 cols) - Desktop Only */}
                       <div className="hidden md:block col-span-1 md:col-span-2 text-right">
-                        <div className="text-lg font-bold text-red-600 dark:text-red-400">
+                        <div className="text-lg font-bold text-red-600 dark:text-red-400 font-mono">
                           {formatCurrency(debt.remainingAmount)}
                         </div>
                       </div>
@@ -1079,15 +923,21 @@ const DebtManager: React.FC = () => {
                       <div className="col-span-full md:hidden bg-slate-50 dark:bg-slate-800/50 p-3 rounded-lg mt-1 space-y-1">
                         <div className="flex justify-between text-sm">
                           <span className="text-slate-500 dark:text-slate-400">Tổng tiền:</span>
-                          <span className="font-semibold text-slate-900 dark:text-white">{formatCurrency(debt.totalAmount)}</span>
+                          <span className="font-semibold text-slate-900 dark:text-white font-mono">
+                            {formatCurrency(debt.totalAmount)}
+                          </span>
                         </div>
                         <div className="flex justify-between text-sm">
                           <span className="text-slate-500 dark:text-slate-400">Đã trả:</span>
-                          <span className="font-semibold text-green-600 dark:text-green-400">{formatCurrency(debt.paidAmount)}</span>
+                          <span className="font-semibold text-green-600 dark:text-green-400 font-mono">
+                            {formatCurrency(debt.paidAmount)}
+                          </span>
                         </div>
                         <div className="border-t border-slate-200 dark:border-slate-700 pt-2 flex justify-between items-center">
                           <span className="font-bold text-slate-700 dark:text-slate-300">Còn nợ:</span>
-                          <span className="text-xl font-bold text-red-600 dark:text-red-400">{formatCurrency(debt.remainingAmount)}</span>
+                          <span className="text-xl font-bold text-red-600 dark:text-red-400 font-mono">
+                            {formatCurrency(debt.remainingAmount)}
+                          </span>
                         </div>
                       </div>
 
@@ -1112,19 +962,13 @@ const DebtManager: React.FC = () => {
                       <div className="col-span-1 flex justify-end hidden md:flex">
                         <div className="relative debt-menu-dropdown">
                           <button
-                            onClick={() =>
-                              setOpenMenuId(
-                                openMenuId === debt.id ? null : debt.id
-                              )
-                            }
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setOpenMenuId(openMenuId === debt.id ? null : debt.id);
+                            }}
                             className="p-2 text-secondary-text hover:text-primary-text transition-colors"
                           >
-                            <svg
-                              className="w-5 h-5"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
@@ -1137,19 +981,15 @@ const DebtManager: React.FC = () => {
                           {openMenuId === debt.id && (
                             <div className="absolute right-0 mt-1 w-48 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 py-1 z-10">
                               <button
-                                onClick={() => {
+                                onClick={(e) => {
+                                  e.stopPropagation();
                                   setSelectedDebt(debt);
                                   setShowDetailModal(true);
                                   setOpenMenuId(null);
                                 }}
                                 className="w-full px-4 py-2 text-left text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2"
                               >
-                                <svg
-                                  className="w-4 h-4"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
-                                >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path
                                     strokeLinecap="round"
                                     strokeLinejoin="round"
@@ -1166,19 +1006,15 @@ const DebtManager: React.FC = () => {
                                 Xem chi tiết
                               </button>
                               <button
-                                onClick={() => {
+                                onClick={(e) => {
+                                  e.stopPropagation();
                                   setSelectedDebt(debt);
                                   setShowEditDebtModal(true);
                                   setOpenMenuId(null);
                                 }}
                                 className="w-full px-4 py-2 text-left text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2"
                               >
-                                <svg
-                                  className="w-4 h-4"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
-                                >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path
                                     strokeLinecap="round"
                                     strokeLinejoin="round"
@@ -1189,19 +1025,15 @@ const DebtManager: React.FC = () => {
                                 Sửa
                               </button>
                               <button
-                                onClick={() => {
+                                onClick={(e) => {
+                                  e.stopPropagation();
                                   setSelectedDebt(debt);
                                   setShowDeleteConfirm(true);
                                   setOpenMenuId(null);
                                 }}
                                 className="w-full px-4 py-2 text-left text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2"
                               >
-                                <svg
-                                  className="w-4 h-4"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
-                                >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path
                                     strokeLinecap="round"
                                     strokeLinejoin="round"
@@ -1224,9 +1056,7 @@ const DebtManager: React.FC = () => {
         ) : activeTab === "supplier" ? (
           <div className="p-2 md:p-6">
             {filteredSupplierDebts.length === 0 ? (
-              <div className="text-center py-12 text-tertiary-text">
-                Không có công nợ.
-              </div>
+              <div className="text-center py-12 text-tertiary-text">Không có công nợ.</div>
             ) : (
               <div className="space-y-3">
                 {/* Header Row - Hidden on Mobile */}
@@ -1255,10 +1085,7 @@ const DebtManager: React.FC = () => {
                         checked={selectedSupplierIds.includes(debt.id)}
                         onChange={(e) => {
                           e.stopPropagation();
-                          handleSupplierCheckbox(
-                            debt.id,
-                            e.target.checked
-                          );
+                          handleSupplierCheckbox(debt.id, e.target.checked);
                         }}
                         onClick={(e) => e.stopPropagation()}
                         className="hidden md:block mt-1 w-4 h-4 rounded border-secondary-border text-cyan-600 focus:ring-cyan-500"
@@ -1269,12 +1096,7 @@ const DebtManager: React.FC = () => {
                         </h3>
                         <div className="space-y-0.5 text-xs text-secondary-text">
                           <div className="flex items-center gap-1">
-                            <svg
-                              className="w-3 h-3"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
@@ -1282,9 +1104,7 @@ const DebtManager: React.FC = () => {
                                 d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
                               />
                             </svg>
-                            <span>
-                              {formatDate(new Date(debt.createdDate))}
-                            </span>
+                            <span>{formatDate(new Date(debt.createdDate))}</span>
                           </div>
                         </div>
                       </div>
@@ -1292,33 +1112,25 @@ const DebtManager: React.FC = () => {
 
                     {/* Cột 2: Nội dung (3 cols) */}
                     <div className="col-span-1 md:col-span-3">
-                      <div className="text-sm text-primary-text">
-                        {debt.description}
-                      </div>
+                      <div className="text-sm text-primary-text">{debt.description}</div>
 
                       {/* Mobile Financial Summary */}
                       <div className="md:hidden mt-1 space-y-1">
                         <div className="flex items-center gap-2 text-sm">
-                          <span className="text-secondary-text min-w-[60px]">
-                            Tổng:
-                          </span>
-                          <span className="font-medium text-primary-text">
+                          <span className="text-secondary-text min-w-[60px]">Tổng:</span>
+                          <span className="font-medium text-primary-text font-mono">
                             {formatCurrency(debt.totalAmount)}
                           </span>
                         </div>
                         <div className="flex items-center gap-2 text-sm">
-                          <span className="text-secondary-text min-w-[60px]">
-                            Đã trả:
-                          </span>
-                          <span className="font-medium text-green-600 dark:text-green-400">
+                          <span className="text-secondary-text min-w-[60px]">Đã trả:</span>
+                          <span className="font-medium text-green-600 dark:text-green-400 font-mono">
                             {formatCurrency(debt.paidAmount)}
                           </span>
                         </div>
                         <div className="flex items-center gap-2 text-sm">
-                          <span className="text-secondary-text min-w-[60px]">
-                            Còn nợ:
-                          </span>
-                          <span className="font-bold text-red-600 dark:text-red-400">
+                          <span className="text-secondary-text min-w-[60px]">Còn nợ:</span>
+                          <span className="font-bold text-red-600 dark:text-red-400 font-mono">
                             {formatCurrency(debt.remainingAmount)}
                           </span>
                         </div>
@@ -1342,30 +1154,24 @@ const DebtManager: React.FC = () => {
 
                     {/* Cột 3: Số tiền (1 col) */}
                     <div className="col-span-1 text-right md:text-right hidden md:block">
-                      <span className="md:hidden text-sm text-secondary-text">
-                        Số tiền:
-                      </span>
-                      <div className="text-sm text-primary-text font-semibold">
+                      <span className="md:hidden text-sm text-secondary-text">Số tiền:</span>
+                      <div className="text-sm text-primary-text font-semibold font-mono">
                         {formatCurrency(debt.totalAmount)}
                       </div>
                     </div>
 
                     {/* Cột 4: Đã trả (1 col) */}
                     <div className="col-span-1 text-right md:text-right hidden md:block">
-                      <span className="md:hidden text-sm text-secondary-text">
-                        Đã trả:
-                      </span>
-                      <div className="text-sm text-green-600 dark:text-green-400 font-semibold">
+                      <span className="md:hidden text-sm text-secondary-text">Đã trả:</span>
+                      <div className="text-sm text-green-600 dark:text-green-400 font-semibold font-mono">
                         {formatCurrency(debt.paidAmount)}
                       </div>
                     </div>
 
                     {/* Cột 5: Còn nợ (2 cols) */}
                     <div className="col-span-1 md:col-span-2 text-right md:text-right hidden md:block">
-                      <span className="md:hidden text-sm font-bold text-secondary-text">
-                        Còn nợ:
-                      </span>
-                      <div className="text-base text-red-600 dark:text-red-400 font-bold">
+                      <span className="md:hidden text-sm font-bold text-secondary-text">Còn nợ:</span>
+                      <div className="text-base text-red-600 dark:text-red-400 font-bold font-mono">
                         {formatCurrency(debt.remainingAmount)}
                       </div>
                     </div>
@@ -1375,18 +1181,11 @@ const DebtManager: React.FC = () => {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          setOpenMenuId(
-                            openMenuId === debt.id ? null : debt.id
-                          );
+                          setOpenMenuId(openMenuId === debt.id ? null : debt.id);
                         }}
                         className="p-1 text-secondary-text hover:text-primary-text transition-colors opacity-0 group-hover:opacity-100"
                       >
-                        <svg
-                          className="w-5 h-5"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path
                             strokeLinecap="round"
                             strokeLinejoin="round"
@@ -1407,12 +1206,7 @@ const DebtManager: React.FC = () => {
                             }}
                             className="w-full px-4 py-2 text-left text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2"
                           >
-                            <svg
-                              className="w-4 h-4"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
@@ -1437,12 +1231,7 @@ const DebtManager: React.FC = () => {
                             }}
                             className="w-full px-4 py-2 text-left text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2"
                           >
-                            <svg
-                              className="w-4 h-4"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
@@ -1461,12 +1250,7 @@ const DebtManager: React.FC = () => {
                             }}
                             className="w-full px-4 py-2 text-left text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2"
                           >
-                            <svg
-                              className="w-4 h-4"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
@@ -1489,49 +1273,34 @@ const DebtManager: React.FC = () => {
         ) : null}
       </div>
 
-
-
       {/* Fixed Bottom Button - Pay All Selected */}
       {((activeTab === "customer" && selectedCustomerIds.length > 0) ||
         (activeTab === "supplier" && selectedSupplierIds.length > 0)) && (
-          <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50">
-            <button
-              onClick={handlePaySelectedDebts}
-              className="flex items-center gap-3 px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold shadow-2xl transition-all hover:scale-105"
-            >
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-              <span>
-                Đã chọn{" "}
-                {activeTab === "customer"
-                  ? selectedCustomerIds.length
-                  : selectedSupplierIds.length}{" "}
-                đơn
-              </span>
-              <span className="mx-2">|</span>
-              <span className="text-xl font-bold">
-                Trả hết nợ (
-                {formatCurrency(
-                  activeTab === "customer"
-                    ? selectedCustomerTotal
-                    : selectedSupplierTotal
-                )}
-                )
-              </span>
-            </button>
-          </div>
-        )}
+        <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50">
+          <button
+            onClick={handlePaySelectedDebts}
+            className="flex items-center gap-3 px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold shadow-2xl transition-all hover:scale-105"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+            <span>
+              Đã chọn {activeTab === "customer" ? selectedCustomerIds.length : selectedSupplierIds.length}{" "}
+              đơn
+            </span>
+            <span className="mx-2">|</span>
+            <span className="text-xl font-bold">
+              Trả hết nợ (
+              {formatCurrency(activeTab === "customer" ? selectedCustomerTotal : selectedSupplierTotal)})
+            </span>
+          </button>
+        </div>
+      )}
 
       {/* Modals */}
       {showCollectModal && (
@@ -1542,28 +1311,18 @@ const DebtManager: React.FC = () => {
           onClose={() => setShowCollectModal(false)}
           onCollect={async (data) => {
             try {
-              // 🔹 Find the debt record to update
-              const debtToUpdate = branchCustomerDebts.find(
-                (d) => d.customerId === data.customerId
-              );
+              const debtToUpdate = branchCustomerDebts.find((d) => d.customerId === data.customerId);
 
               if (debtToUpdate) {
-                // Calculate new amounts
                 const newPaidAmount = (debtToUpdate.paidAmount || 0) + data.amount;
                 const newRemainingAmount = Math.max(0, debtToUpdate.totalAmount - newPaidAmount);
 
-                // Check if debt is from work order or regular debt table
                 if ((debtToUpdate as any).isFromWorkOrder && (debtToUpdate as any).workOrderId) {
-                  // 🔹 Work Order debt - update work_orders table directly
                   await supabase
                     .from("work_orders")
-                    .update({
-                      remainingamount: newRemainingAmount,
-                      // Also track payment
-                    })
+                    .update({ remainingamount: newRemainingAmount })
                     .eq("id", (debtToUpdate as any).workOrderId);
                 } else {
-                  // 🔹 Regular debt - update customer_debts table
                   await updateCustomerDebt.mutateAsync({
                     id: debtToUpdate.id,
                     updates: {
@@ -1572,7 +1331,6 @@ const DebtManager: React.FC = () => {
                     },
                   });
 
-                  // Also update linked work order if exists
                   if ((debtToUpdate as any).workOrderId) {
                     await supabase
                       .from("work_orders")
@@ -1580,7 +1338,6 @@ const DebtManager: React.FC = () => {
                       .eq("id", (debtToUpdate as any).workOrderId);
                   }
 
-                  // Also update linked sale if exists
                   if ((debtToUpdate as any).saleId) {
                     await supabase
                       .from("sales")
@@ -1589,13 +1346,11 @@ const DebtManager: React.FC = () => {
                   }
                 }
 
-                // Invalidate queries to refresh UI
                 queryClient.invalidateQueries({ queryKey: ["workOrdersRepo"] });
                 queryClient.invalidateQueries({ queryKey: ["workOrdersFiltered"] });
                 queryClient.invalidateQueries({ queryKey: ["salesRepo"] });
               }
 
-              // 💰 Tạo giao dịch thu trong Sổ quỹ (INSERT vào database)
               const cashTxResult = await createCashTransaction({
                 type: "income",
                 amount: data.amount,
@@ -1612,15 +1367,13 @@ const DebtManager: React.FC = () => {
                 console.error("❌ Lỗi ghi sổ quỹ:", cashTxResult.error);
               }
 
-              // Show success modal
               setReceiptData({
                 ...data,
                 type: "income",
-                isCustomer: true
+                isCustomer: true,
               });
               setShowReceiptModal(true);
 
-              // Auto print if checked
               if (data.shouldPrint) {
                 const debtForPrint = {
                   customerName: data.customerName,
@@ -1653,41 +1406,25 @@ const DebtManager: React.FC = () => {
           }}
           selectedDebts={
             activeTab === "customer"
-              ? branchCustomerDebts.filter((d) =>
-                selectedCustomerIds.includes(d.customerId)
-              )
-              : branchSupplierDebts.filter((d) =>
-                selectedSupplierIds.includes(d.id)
-              )
+              ? branchCustomerDebts.filter((d) => selectedCustomerIds.includes(d.customerId))
+              : branchSupplierDebts.filter((d) => selectedSupplierIds.includes(d.id))
           }
-          totalAmount={
-            activeTab === "customer"
-              ? selectedCustomerTotal
-              : selectedSupplierTotal
-          }
+          totalAmount={activeTab === "customer" ? selectedCustomerTotal : selectedSupplierTotal}
           debtType={activeTab === "installment" ? "customer" : activeTab}
           onConfirm={async (paymentMethod, paymentTime, shouldPrint) => {
             try {
-              const totalAmount =
-                activeTab === "customer"
-                  ? selectedCustomerTotal
-                  : selectedSupplierTotal;
+              const totalAmount = activeTab === "customer" ? selectedCustomerTotal : selectedSupplierTotal;
 
               if (activeTab === "customer") {
-                // Thu nợ hàng loạt từ khách hàng
                 for (const customerId of selectedCustomerIds) {
-                  const debt = branchCustomerDebts.find(
-                    (d) => d.customerId === customerId
-                  );
+                  const debt = branchCustomerDebts.find((d) => d.customerId === customerId);
                   if (debt) {
-                    // Check if debt is from work order
                     if ((debt as any).isFromWorkOrder && (debt as any).workOrderId) {
                       await supabase
                         .from("work_orders")
                         .update({ remainingamount: 0 })
                         .eq("id", (debt as any).workOrderId);
                     } else {
-                      // Update debt record
                       await updateCustomerDebt.mutateAsync({
                         id: debt.id,
                         updates: {
@@ -1696,7 +1433,6 @@ const DebtManager: React.FC = () => {
                         },
                       });
 
-                      // If debt is linked to work order, update work order too
                       if ((debt as any).workOrderId) {
                         await supabase
                           .from("work_orders")
@@ -1704,7 +1440,6 @@ const DebtManager: React.FC = () => {
                           .eq("id", (debt as any).workOrderId);
                       }
 
-                      // If debt is linked to sale, update sale too
                       if ((debt as any).saleId) {
                         await supabase
                           .from("sales")
@@ -1715,21 +1450,16 @@ const DebtManager: React.FC = () => {
                   }
                 }
 
-                // 🔹 Determine notes text: if single debt with sale/work order link, show code
                 let notesText = `Thu nợ hàng loạt - ${selectedCustomerIds.length} khách hàng`;
                 let recipientText = `${selectedCustomerIds.length} khách hàng`;
 
                 if (selectedCustomerIds.length === 1) {
-                  const singleDebt = branchCustomerDebts.find(
-                    (d) => d.customerId === selectedCustomerIds[0]
-                  );
+                  const singleDebt = branchCustomerDebts.find((d) => d.customerId === selectedCustomerIds[0]);
 
                   if (singleDebt) {
-                    // Extract sale_code from description (format: BH-YYYYMMDD-XXX or similar)
                     const saleCodeMatch = singleDebt.description?.match(/[A-Z]+-\d{8}-\d{3}/);
                     const saleCode = saleCodeMatch ? saleCodeMatch[0] : null;
 
-                    // Check if debt has sale link
                     if (saleCode) {
                       notesText = `Thu nợ từ đơn hàng ${saleCode}`;
                       recipientText = singleDebt.customerName;
@@ -1745,7 +1475,6 @@ const DebtManager: React.FC = () => {
 
                 setSelectedCustomerIds([]);
 
-                // 💰 Ghi sổ quỹ THU nợ khách hàng
                 const cashTxResult = await createCashTransaction({
                   type: "income",
                   amount: totalAmount,
@@ -1761,18 +1490,14 @@ const DebtManager: React.FC = () => {
                   console.error("❌ Lỗi ghi sổ quỹ:", cashTxResult.error);
                 }
 
-                // Invalidate queries to refresh UI
                 queryClient.invalidateQueries({ queryKey: ["workOrdersRepo"] });
                 queryClient.invalidateQueries({ queryKey: ["workOrdersFiltered"] });
                 queryClient.invalidateQueries({ queryKey: ["salesRepo"] });
                 queryClient.invalidateQueries({ queryKey: ["cashTransactions"] });
                 queryClient.invalidateQueries({ queryKey: ["paymentSources"] });
               } else {
-                // Trả nợ hàng loạt cho nhà cung cấp
                 for (const debtId of selectedSupplierIds) {
-                  const debt = branchSupplierDebts.find(
-                    (d) => d.id === debtId
-                  );
+                  const debt = branchSupplierDebts.find((d) => d.id === debtId);
                   if (debt) {
                     await updateSupplierDebt.mutateAsync({
                       id: debt.id,
@@ -1785,7 +1510,6 @@ const DebtManager: React.FC = () => {
                 }
                 setSelectedSupplierIds([]);
 
-                // 💰 Ghi sổ quỹ CHI trả nợ nhà cung cấp
                 const cashTxResult = await createCashTransaction({
                   type: "expense",
                   amount: totalAmount,
@@ -1804,28 +1528,21 @@ const DebtManager: React.FC = () => {
 
               setShowBulkPaymentModal(false);
 
-              // Show success message
               showToast.success(
-                `Đã thanh toán thành công ${formatCurrency(totalAmount)} qua ${paymentMethod === "cash" ? "Tiền mặt" : "Chuyển khoản"
+                `Đã thanh toán thành công ${formatCurrency(totalAmount)} qua ${
+                  paymentMethod === "cash" ? "Tiền mặt" : "Chuyển khoản"
                 }`
               );
 
-              // Trigger print if enabled
               if (shouldPrint) {
                 const bulkDebtForPrint = {
-                  customerName: activeTab === "customer"
-                    ? `${selectedCustomerIds.length} khách hàng`
-                    : undefined,
-                  supplierName: activeTab === "supplier"
-                    ? `${selectedSupplierIds.length} nhà cung cấp`
-                    : undefined,
+                  customerName: activeTab === "customer" ? `${selectedCustomerIds.length} khách hàng` : undefined,
+                  supplierName: activeTab === "supplier" ? `${selectedSupplierIds.length} nhà cung cấp` : undefined,
                   totalAmount: totalAmount,
                   remainingAmount: 0,
                   paidAmount: totalAmount,
                   createdDate: new Date().toISOString(),
-                  description: activeTab === "customer"
-                    ? "Thu nợ hàng loạt"
-                    : "Trả nợ hàng loạt",
+                  description: activeTab === "customer" ? "Thu nợ hàng loạt" : "Trả nợ hàng loạt",
                 };
                 setTimeout(() => handlePrintDebt(bulkDebtForPrint as any), 500);
               }
@@ -1844,17 +1561,12 @@ const DebtManager: React.FC = () => {
           onClose={() => setShowPaymentModal(false)}
           onPay={async (data) => {
             try {
-              // 🔹 Find the debt record to update
-              const debtToUpdate = branchSupplierDebts.find(
-                (d) => d.supplierId === data.supplierId
-              );
+              const debtToUpdate = branchSupplierDebts.find((d) => d.supplierId === data.supplierId);
 
               if (debtToUpdate) {
-                // Calculate new amounts
                 const newPaidAmount = (debtToUpdate.paidAmount || 0) + data.amount;
                 const newRemainingAmount = Math.max(0, debtToUpdate.totalAmount - newPaidAmount);
 
-                // 🔹 Update the supplier debt record in database
                 await updateSupplierDebt.mutateAsync({
                   id: debtToUpdate.id,
                   updates: {
@@ -1864,7 +1576,6 @@ const DebtManager: React.FC = () => {
                 });
               }
 
-              // 💰 Tạo giao dịch chi trong Sổ quỹ (INSERT vào database)
               const cashTxResult = await createCashTransaction({
                 type: "expense",
                 amount: data.amount,
@@ -1884,15 +1595,13 @@ const DebtManager: React.FC = () => {
                 console.error("❌ Lỗi ghi sổ quỹ:", cashTxResult.error);
               }
 
-              // Show success modal
               setReceiptData({
                 ...data,
                 type: "expense",
-                isCustomer: false
+                isCustomer: false,
               });
               setShowReceiptModal(true);
 
-              // Auto print if checked
               if (data.shouldPrint) {
                 const debtForPrint = {
                   supplierName: data.supplierName,
@@ -1930,7 +1639,9 @@ const DebtManager: React.FC = () => {
               remainingAmount: 0,
               paidAmount: receiptData.amount,
               createdDate: new Date().toISOString(),
-              description: receiptData.isCustomer ? "Thu nợ (Thanh toán)" : "Chi trả nợ (Thanh toán)",
+              description: receiptData.isCustomer
+                ? "Thu nợ (Thanh toán)"
+                : "Chi trả nợ (Thanh toán)",
             };
             handlePrintDebt(debtForPrint as any);
           }}
@@ -2015,1629 +1726,12 @@ const DebtManager: React.FC = () => {
             }
             setShowDeleteConfirm(false);
             setSelectedDebt(null);
-            // Invalidate to ensure other components (like dashboard) stay in sync
+
             queryClient.invalidateQueries({ queryKey: ["customer_debts"] });
             queryClient.invalidateQueries({ queryKey: ["supplier_debts"] });
           }}
         />
       )}
-    </div>
-  );
-};
-
-// Modal Thu nợ khách hàng
-const CollectDebtModal: React.FC<{
-  customers: any[];
-  customerDebts: CustomerDebt[];
-  initialDebt?: CustomerDebt | null;
-  onClose: () => void;
-  onCollect?: (data: {
-    customerName: string;
-    customerId: string;
-    amount: number;
-    paymentMethod: "cash" | "bank";
-    timestamp: string;
-    shouldPrint?: boolean;
-  }) => void;
-}> = ({ customers, customerDebts, initialDebt, onClose, onCollect }) => {
-  const [selectedCustomerId, setSelectedCustomerId] = useState(initialDebt?.customerId || "");
-  const [paymentAmount, setPaymentAmount] = useState(initialDebt ? initialDebt.remainingAmount.toString() : "0");
-  const [paymentMethod, setPaymentMethod] = useState<"cash" | "bank">("cash");
-  const [createTime, setCreateTime] = useState(
-    new Date()
-      .toLocaleString("sv-SE", {
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-      })
-      .replace(" ", " ")
-  );
-
-  const selectedDebt = useMemo(() => {
-    return customerDebts.find((d) => d.customerId === selectedCustomerId);
-  }, [selectedCustomerId, customerDebts]);
-
-  const remainingAmount = selectedDebt?.remainingAmount ?? initialDebt?.remainingAmount ?? 0;
-  const [isPrintChecked, setIsPrintChecked] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (isSubmitting) return;
-
-    const paymentAmountNum = parseFloat(paymentAmount);
-
-    // Validation: số tiền thanh toán không được vượt quá số nợ còn lại
-    if (paymentAmountNum <= 0) {
-      showToast.error("Số tiền thanh toán phải lớn hơn 0");
-      return;
-    }
-
-    if (paymentAmountNum > remainingAmount) {
-      showToast.error(
-        `Số tiền thanh toán không được vượt quá số nợ còn lại (${formatCurrency(
-          remainingAmount
-        )})`
-      );
-      return;
-    }
-
-    const customer = customers.find((c) => c.id === selectedCustomerId);
-    if (customer && onCollect) {
-      setIsSubmitting(true);
-      try {
-        await onCollect({
-          customerName: customer.name,
-          customerId: customer.id,
-          amount: paymentAmountNum,
-          paymentMethod,
-          timestamp: createTime,
-          shouldPrint: isPrintChecked,
-        });
-      } catch (error) {
-        console.error(error);
-        setIsSubmitting(false); // Only re-enable if error/not closed
-      }
-    } else {
-      onClose();
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end md:items-center justify-center p-0 md:p-4 z-[100]">
-      <div className="bg-secondary-bg rounded-t-xl md:rounded-xl shadow-2xl max-w-lg w-full border-x border-t border-primary-border max-h-[85vh] mb-20 md:mb-0 flex flex-col">
-        <div className="px-4 py-3 border-b border-primary-border flex items-center justify-between flex-none">
-          <h2 className="text-lg font-semibold text-primary-text">
-            Thu nợ khách hàng
-          </h2>
-          <button onClick={onClose} className="text-secondary-text hover:text-primary-text">
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-          </button>
-        </div>
-
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          <form id="collect-debt-form" onSubmit={handleSubmit} className="space-y-4">
-            {/* Customer Selection */}
-            <div>
-              <label className="block text-sm font-medium text-secondary-text mb-2">
-                Tìm kiếm và chọn một khách hàng đang nợ
-              </label>
-              {initialDebt ? (
-                <div className="w-full px-4 py-3 bg-slate-100 dark:bg-slate-700/50 border border-secondary-border rounded-lg text-primary-text font-medium flex items-center justify-between">
-                  <span>{initialDebt.customerName}</span>
-                  <span className="text-sm text-secondary-text font-normal">
-                    (Nợ: {formatCurrency(initialDebt.remainingAmount)})
-                  </span>
-                </div>
-              ) : (
-                <select
-                  value={selectedCustomerId}
-                  onChange={(e) => setSelectedCustomerId(e.target.value)}
-                  className="w-full px-4 py-3 bg-primary-bg border border-secondary-border rounded-lg text-primary-text focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
-                >
-                  <option value="">Chọn khách hàng...</option>
-                  {customerDebts.map((debt) => (
-                    <option key={debt.customerId} value={debt.customerId}>
-                      {debt.customerName} - {formatCurrency(debt.remainingAmount)}
-                    </option>
-                  ))}
-                </select>
-              )}
-            </div>
-
-            {/* Payment Amount */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className="block text-sm font-medium text-secondary-text">
-                  Nhập số tiền thanh toán
-                </label>
-                <span className="text-cyan-600 dark:text-cyan-400 text-sm">
-                  {formatCurrency(parseFloat(paymentAmount) || 0)}
-                </span>
-              </div>
-              <input
-                type="number"
-                value={paymentAmount}
-                onChange={(e) => setPaymentAmount(e.target.value)}
-                className="w-full px-4 py-3 bg-primary-bg border border-secondary-border rounded-lg text-primary-text focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
-              />
-            </div>
-
-            {/* Remaining Amount */}
-            <div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-tertiary-text">Còn nợ:</span>
-                <span className="text-red-600 dark:text-red-400 font-bold text-base">
-                  {formatCurrency(remainingAmount)}
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={() => setPaymentAmount(remainingAmount.toString())}
-                className="text-cyan-600 dark:text-cyan-400 hover:text-cyan-700 dark:hover:text-cyan-300 text-sm mt-1"
-              >
-                Điền số còn nợ
-              </button>
-            </div>
-
-            {/* Payment Method */}
-            {/* Payment Method - Card Style */}
-            <div>
-              <label className="block text-sm font-medium text-secondary-text mb-3">
-                Hình thức thanh toán:
-              </label>
-              <div className="grid grid-cols-2 gap-3">
-                <label className={`cursor-pointer border rounded-lg p-3 flex items-center justify-center gap-2 transition-all ${paymentMethod === 'cash' ? 'bg-cyan-50 dark:bg-cyan-900/20 border-cyan-500 text-cyan-700 dark:text-cyan-400' : 'border-secondary-border hover:bg-primary-bg'}`}>
-                  <input
-                    type="radio"
-                    name="paymentMethod"
-                    value="cash"
-                    checked={paymentMethod === "cash"}
-                    onChange={(e) => setPaymentMethod(e.target.value as "cash")}
-                    className="hidden"
-                  />
-                  <span className="font-medium">Tiền mặt</span>
-                </label>
-                <label className={`cursor-pointer border rounded-lg p-3 flex items-center justify-center gap-2 transition-all ${paymentMethod === 'bank' ? 'bg-cyan-50 dark:bg-cyan-900/20 border-cyan-500 text-cyan-700 dark:text-cyan-400' : 'border-secondary-border hover:bg-primary-bg'}`}>
-                  <input
-                    type="radio"
-                    name="paymentMethod"
-                    value="bank"
-                    checked={paymentMethod === "bank"}
-                    onChange={(e) => setPaymentMethod(e.target.value as "bank")}
-                    className="hidden"
-                  />
-                  <span className="font-medium">Chuyển khoản</span>
-                </label>
-              </div>
-            </div>
-
-            {/* Create Time */}
-            <div>
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="print-receipt-customer"
-                  checked={isPrintChecked}
-                  onChange={(e) => setIsPrintChecked(e.target.checked)}
-                  className="w-4 h-4 rounded border-secondary-border text-cyan-600 focus:ring-cyan-500"
-                />
-                <label htmlFor="print-receipt-customer" className="text-sm font-medium text-primary-text select-none cursor-pointer">
-                  In phiếu thu ngay sau khi tạo
-                </label>
-              </div>
-
-              <label className="block text-sm font-medium text-secondary-text mb-2">
-                Thời gian tạo phiếu thu
-              </label>
-              <input
-                type="text"
-                value={createTime}
-                onChange={(e) => setCreateTime(e.target.value)}
-                className="w-full px-4 py-3 bg-primary-bg border border-secondary-border rounded-lg text-primary-text focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
-              />
-            </div>
-
-            {/* Submit Button */}
-          </form>
-        </div>
-
-        {/* Fixed Footer */}
-        <div className="px-4 py-3 border-t border-primary-border bg-secondary-bg flex items-center gap-3 justify-end flex-none rounded-b-xl">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 text-secondary-text hover:text-primary-text transition-colors font-medium"
-          >
-            Đóng
-          </button>
-          <button
-            type="submit"
-            form="collect-debt-form"
-            disabled={!selectedCustomerId || parseFloat(paymentAmount) <= 0 || isSubmitting}
-            className="flex-1 md:flex-none px-6 py-2 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white shadow-lg shadow-cyan-500/30 rounded-lg font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
-          >
-            {isSubmitting ? "Đang xử lý..." : "Tạo phiếu thu"}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// Modal Chi trả nợ nhà cung cấp
-const PaySupplierModal: React.FC<{
-  suppliers: any[];
-  supplierDebts: SupplierDebt[];
-  initialDebt?: SupplierDebt | null;
-  onClose: () => void;
-  onPay?: (data: {
-    supplierName: string;
-    supplierId: string;
-    amount: number;
-    paymentMethod: "cash" | "bank";
-    timestamp: string;
-    shouldPrint?: boolean;
-  }) => void;
-}> = ({ suppliers, supplierDebts, initialDebt, onClose, onPay }) => {
-  const [selectedSupplierId, setSelectedSupplierId] = useState(initialDebt?.supplierId || "");
-  const [paymentAmount, setPaymentAmount] = useState(initialDebt ? initialDebt.remainingAmount.toString() : "0");
-  const [paymentMethod, setPaymentMethod] = useState<"cash" | "bank">("cash");
-  const [createTime, setCreateTime] = useState(
-    new Date()
-      .toLocaleString("sv-SE", {
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-      })
-      .replace(" ", " ")
-  );
-
-  const selectedDebt = useMemo(() => {
-    return supplierDebts.find((d) => d.supplierId === selectedSupplierId);
-  }, [selectedSupplierId, supplierDebts]);
-
-  const remainingAmount = selectedDebt?.remainingAmount ?? initialDebt?.remainingAmount ?? 0;
-  const [isPrintChecked, setIsPrintChecked] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (isSubmitting) return;
-
-    const paymentAmountNum = parseFloat(paymentAmount);
-
-    // Validation: số tiền thanh toán không được vượt quá số nợ còn lại
-    if (paymentAmountNum <= 0) {
-      showToast.error("Số tiền thanh toán phải lớn hơn 0");
-      return;
-    }
-
-    if (paymentAmountNum > remainingAmount) {
-      showToast.error(
-        `Số tiền thanh toán không được vượt quá số nợ còn lại (${formatCurrency(
-          remainingAmount
-        )})`
-      );
-      return;
-    }
-
-    const supplier = suppliers.find((s) => s.id === selectedSupplierId);
-    if (supplier && onPay) {
-      setIsSubmitting(true);
-      try {
-        await onPay({
-          supplierName: supplier.name,
-          supplierId: supplier.id,
-          amount: paymentAmountNum,
-          paymentMethod,
-          timestamp: createTime,
-          shouldPrint: isPrintChecked,
-        });
-      } catch (error) {
-        console.error(error);
-        setIsSubmitting(false);
-      }
-    } else {
-      onClose();
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end md:items-center justify-center p-0 md:p-4 z-[100]">
-      <div className="bg-secondary-bg rounded-t-xl md:rounded-xl shadow-2xl max-w-lg w-full border-x border-t border-primary-border max-h-[85vh] mb-20 md:mb-0 flex flex-col">
-        <div className="px-4 py-3 border-b border-primary-border flex items-center justify-between flex-none">
-          <h2 className="text-lg font-semibold text-primary-text">
-            Chi trả nợ nhà cung cấp
-          </h2>
-          <button onClick={onClose} className="text-secondary-text hover:text-primary-text">
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-          </button>
-        </div>
-
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          <form id="pay-supplier-form" onSubmit={handleSubmit} className="space-y-4">
-            {/* Supplier Selection */}
-            <div>
-              <label className="block text-sm font-medium text-secondary-text mb-2">
-                Tìm kiếm và chọn một nhà cung cấp đang nợ
-              </label>
-              {initialDebt ? (
-                <div className="w-full px-4 py-3 bg-slate-100 dark:bg-slate-700/50 border border-secondary-border rounded-lg text-primary-text font-medium flex items-center justify-between">
-                  <span>{initialDebt.supplierName}</span>
-                  <span className="text-sm text-secondary-text font-normal">
-                    (Nợ: {formatCurrency(initialDebt.remainingAmount)})
-                  </span>
-                </div>
-              ) : (
-                <select
-                  value={selectedSupplierId}
-                  onChange={(e) => setSelectedSupplierId(e.target.value)}
-                  className="w-full px-4 py-3 bg-primary-bg border border-secondary-border rounded-lg text-primary-text focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
-                >
-                  <option value="">Chọn nhà cung cấp...</option>
-                  {supplierDebts.map((debt) => (
-                    <option key={debt.supplierId} value={debt.supplierId}>
-                      {debt.supplierName} - {formatCurrency(debt.remainingAmount)}
-                    </option>
-                  ))}
-                </select>
-              )}
-            </div>
-
-            {/* Payment Amount */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className="block text-sm font-medium text-secondary-text">
-                  Nhập số tiền thanh toán
-                </label>
-                <span className="text-cyan-600 dark:text-cyan-400 text-sm">
-                  {formatCurrency(parseFloat(paymentAmount) || 0)}
-                </span>
-              </div>
-              <input
-                type="number"
-                value={paymentAmount}
-                onChange={(e) => setPaymentAmount(e.target.value)}
-                className="w-full px-4 py-3 bg-primary-bg border border-secondary-border rounded-lg text-primary-text focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
-              />
-            </div>
-
-            {/* Remaining Amount */}
-            <div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-tertiary-text">Còn nợ:</span>
-                <span className="text-red-600 dark:text-red-400 font-bold text-base">
-                  {formatCurrency(remainingAmount)}
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={() => setPaymentAmount(remainingAmount.toString())}
-                className="text-cyan-600 dark:text-cyan-400 hover:text-cyan-700 dark:hover:text-cyan-300 text-sm mt-1"
-              >
-                Điền số còn nợ
-              </button>
-            </div>
-
-            {/* Payment Method */}
-            {/* Payment Method - Card Style */}
-            <div>
-              <label className="block text-sm font-medium text-secondary-text mb-3">
-                Hình thức thanh toán:
-              </label>
-              <div className="grid grid-cols-2 gap-3">
-                <label className={`cursor-pointer border rounded-lg p-3 flex items-center justify-center gap-2 transition-all ${paymentMethod === 'cash' ? 'bg-cyan-50 dark:bg-cyan-900/20 border-cyan-500 text-cyan-700 dark:text-cyan-400' : 'border-secondary-border hover:bg-primary-bg'}`}>
-                  <input
-                    type="radio"
-                    name="paymentMethod"
-                    value="cash"
-                    checked={paymentMethod === "cash"}
-                    onChange={(e) => setPaymentMethod(e.target.value as "cash")}
-                    className="hidden"
-                  />
-                  <span className="font-medium">Tiền mặt</span>
-                </label>
-                <label className={`cursor-pointer border rounded-lg p-3 flex items-center justify-center gap-2 transition-all ${paymentMethod === 'bank' ? 'bg-cyan-50 dark:bg-cyan-900/20 border-cyan-500 text-cyan-700 dark:text-cyan-400' : 'border-secondary-border hover:bg-primary-bg'}`}>
-                  <input
-                    type="radio"
-                    name="paymentMethod"
-                    value="bank"
-                    checked={paymentMethod === "bank"}
-                    onChange={(e) => setPaymentMethod(e.target.value as "bank")}
-                    className="hidden"
-                  />
-                  <span className="font-medium">Chuyển khoản</span>
-                </label>
-              </div>
-            </div>
-
-            {/* Create Time */}
-            <div>
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="print-receipt-supplier"
-                  checked={isPrintChecked}
-                  onChange={(e) => setIsPrintChecked(e.target.checked)}
-                  className="w-4 h-4 rounded border-secondary-border text-red-600 focus:ring-red-500"
-                />
-                <label htmlFor="print-receipt-supplier" className="text-sm font-medium text-primary-text select-none cursor-pointer">
-                  In phiếu chi ngay sau khi tạo
-                </label>
-              </div>
-
-              <label className="block text-sm font-medium text-secondary-text mb-2">
-                Thời gian tạo phiếu chi
-              </label>
-              <input
-                type="text"
-                value={createTime}
-                onChange={(e) => setCreateTime(e.target.value)}
-                className="w-full px-4 py-3 bg-primary-bg border border-secondary-border rounded-lg text-primary-text focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
-              />
-            </div>
-
-            {/* Submit Button */}
-          </form>
-        </div>
-
-        {/* Fixed Footer */}
-        <div className="px-4 py-3 border-t border-primary-border bg-secondary-bg flex items-center gap-3 justify-end flex-none rounded-b-xl">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 text-secondary-text hover:text-primary-text transition-colors font-medium"
-          >
-            Đóng
-          </button>
-          <button
-            type="submit"
-            form="pay-supplier-form"
-            disabled={!selectedSupplierId || parseFloat(paymentAmount) <= 0}
-            className="flex-1 md:flex-none px-6 py-2 bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700 text-white shadow-lg shadow-red-500/30 rounded-lg font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
-          >
-            Tạo phiếu chi
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// Bulk Payment Modal Component
-interface BulkPaymentModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  selectedDebts: (CustomerDebt | SupplierDebt)[];
-  totalAmount: number;
-  debtType: "customer" | "supplier";
-  onConfirm: (paymentMethod: "cash" | "bank", paymentTime: string, shouldPrint: boolean) => void;
-}
-
-const BulkPaymentModal: React.FC<BulkPaymentModalProps> = ({
-  isOpen,
-  onClose,
-  selectedDebts,
-  totalAmount,
-  debtType,
-  onConfirm,
-}) => {
-  const [paymentMethod, setPaymentMethod] = useState<"cash" | "bank" | null>(
-    null
-  );
-  const [paymentTime, setPaymentTime] = useState(() => {
-    const now = new Date();
-    const day = String(now.getDate()).padStart(2, "0");
-    const month = String(now.getMonth() + 1).padStart(2, "0");
-    const year = now.getFullYear();
-    const hours = String(now.getHours()).padStart(2, "0");
-    const minutes = String(now.getMinutes()).padStart(2, "0");
-    return `${day}-${month}-${year} ${hours}:${minutes}`;
-  });
-  const [isPrintChecked, setIsPrintChecked] = useState(true);
-
-  if (!isOpen) return null;
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!paymentMethod) {
-      showToast.warning("Vui lòng chọn hình thức thanh toán");
-      return;
-    }
-
-    // Convert paymentTime to ISO string for storage
-    const [datePart, timePart] = paymentTime.split(" ");
-    const [day, month, year] = datePart.split("-");
-    const [hours, minutes] = timePart.split(":");
-    const isoTimestamp = new Date(
-      parseInt(year),
-      parseInt(month) - 1,
-      parseInt(day),
-      parseInt(hours),
-      parseInt(minutes)
-    ).toISOString();
-
-    onConfirm(paymentMethod, isoTimestamp, isPrintChecked);
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-secondary-bg rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-primary-border">
-          <div className="flex items-center gap-2">
-            <svg
-              className="w-6 h-6 text-red-500"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-            <h2 className="text-xl font-semibold text-primary-text">
-              Trả hết nợ (
-              {debtType === "customer"
-                ? "nhiều đơn hàng"
-                : "nhiều nhà cung cấp"}
-              )
-            </h2>
-          </div>
-          <button
-            onClick={onClose}
-            className="text-secondary-text hover:text-primary-text transition-colors"
-          >
-            <svg
-              className="w-6 h-6"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-          </button>
-        </div>
-
-        {/* Content */}
-        <form onSubmit={handleSubmit} className="p-6">
-          {/* Selected Debts List */}
-          <div className="mb-6">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-medium text-secondary-text">-</span>
-              <span className="text-sm font-medium text-secondary-text">
-                Chi tiết
-              </span>
-              <span className="text-sm font-medium text-secondary-text">
-                Số tiền
-              </span>
-            </div>
-
-            <div className="space-y-2 max-h-60 overflow-y-auto">
-              {selectedDebts.map((debt, index) => {
-                const isCustomerDebt = "customerName" in debt;
-                const name = isCustomerDebt
-                  ? (debt as CustomerDebt).customerName
-                  : (debt as SupplierDebt).supplierName;
-                const detail = isCustomerDebt
-                  ? (debt as CustomerDebt).description
-                  : (debt as SupplierDebt).description;
-
-                return (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between py-2 px-3 bg-tertiary-bg rounded"
-                  >
-                    <span className="text-sm text-tertiary-text">
-                      {index + 1}
-                    </span>
-                    <div className="flex-1 mx-3">
-                      <div className="text-sm font-medium text-primary-text">
-                        {detail}
-                      </div>
-                      <div className="text-xs text-tertiary-text">{name}</div>
-                    </div>
-                    <span className="text-sm font-semibold text-primary-text">
-                      {formatCurrency(debt.remainingAmount)}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Total */}
-            <div className="flex items-center justify-between mt-3 pt-3 border-t border-primary-border">
-              <span className="font-semibold text-primary-text">TỔNG</span>
-              <span className="text-lg font-bold text-red-500">
-                {formatCurrency(totalAmount)}
-              </span>
-            </div>
-          </div>
-
-          {/* Payment Method */}
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-secondary-text mb-3">
-              Hình thức thanh toán:
-            </label>
-            <div className="flex gap-6">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="radio"
-                  name="paymentMethod"
-                  value="cash"
-                  checked={paymentMethod === "cash"}
-                  onChange={(e) =>
-                    setPaymentMethod(e.target.value as "cash" | "bank")
-                  }
-                  className="w-4 h-4 text-blue-600 focus:ring-blue-500"
-                />
-                <span className="text-primary-text">Tiền mặt</span>
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="radio"
-                  name="paymentMethod"
-                  value="bank"
-                  checked={paymentMethod === "bank"}
-                  onChange={(e) =>
-                    setPaymentMethod(e.target.value as "cash" | "bank")
-                  }
-                  className="w-4 h-4 text-blue-600 focus:ring-blue-500"
-                />
-                <span className="text-primary-text">Chuyển khoản</span>
-              </label>
-            </div>
-          </div>
-
-          {/* Payment Time */}
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-secondary-text mb-2">
-              Thời gian tạo phiếu thu
-            </label>
-            <div className="flex items-center gap-2 px-4 py-3 bg-primary-bg border border-secondary-border rounded-lg">
-              <input
-                type="text"
-                value={paymentTime}
-                onChange={(e) => setPaymentTime(e.target.value)}
-                className="flex-1 bg-transparent text-primary-text outline-none"
-              />
-              <svg
-                className="w-5 h-5 text-tertiary-text"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                />
-              </svg>
-              <svg
-                className="w-5 h-5 text-tertiary-text"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-            </div>
-          </div>
-
-          {/* Print Checkbox */}
-          <div className="mb-6">
-            <div className="flex items-center gap-3">
-              <input
-                type="checkbox"
-                id="print-receipt-bulk"
-                checked={isPrintChecked}
-                onChange={(e) => setIsPrintChecked(e.target.checked)}
-                className="w-5 h-5 rounded border-secondary-border text-cyan-600 focus:ring-cyan-500"
-              />
-              <label htmlFor="print-receipt-bulk" className="text-sm font-medium text-primary-text select-none cursor-pointer flex items-center gap-2">
-                <svg className="w-5 h-5 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-                </svg>
-                In phiếu thu ngay sau khi tạo
-              </label>
-            </div>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex gap-3">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 px-4 py-3 border border-secondary-border text-secondary-text rounded-lg hover:bg-primary-bg transition-colors font-medium"
-            >
-              ĐÓNG
-            </button>
-            <button
-              type="submit"
-              disabled={!paymentMethod}
-              className="flex-1 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-blue-600"
-            >
-              TẠO PHIẾU THU
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-};
-
-// Add Debt Modal
-const AddDebtModal: React.FC<{
-  activeTab: "customer" | "supplier";
-  customers: any[];
-  suppliers: any[];
-  currentBranchId: string;
-  onClose: () => void;
-  onSave: (debt: any) => void;
-}> = ({
-  activeTab,
-  customers,
-  suppliers,
-  currentBranchId,
-  onClose,
-  onSave,
-}) => {
-    const [formData, setFormData] = useState({
-      customerId: "",
-      supplierId: "",
-      description: "",
-      totalAmount: 0,
-      phone: "",
-      licensePlate: "",
-    });
-
-    const handleSubmit = (e: React.FormEvent) => {
-      e.preventDefault();
-
-      if (activeTab === "customer") {
-        const customer = customers.find((c) => c.id === formData.customerId);
-        if (!customer) {
-          showToast.error("Vui lòng chọn khách hàng");
-          return;
-        }
-
-        onSave({
-          customerId: formData.customerId,
-          customerName: customer.name,
-          phone: formData.phone || customer.phone,
-          licensePlate: formData.licensePlate || customer.licensePlate,
-          description: formData.description,
-          totalAmount: formData.totalAmount,
-          paidAmount: 0,
-          remainingAmount: formData.totalAmount,
-          createdDate: new Date().toISOString(),
-          branchId: currentBranchId,
-        });
-      } else {
-        const supplier = suppliers.find((s) => s.id === formData.supplierId);
-        if (!supplier) {
-          showToast.error("Vui lòng chọn nhà cung cấp");
-          return;
-        }
-
-        onSave({
-          supplierId: formData.supplierId,
-          supplierName: supplier.name,
-          description: formData.description,
-          totalAmount: formData.totalAmount,
-          paidAmount: 0,
-          remainingAmount: formData.totalAmount,
-          createdDate: new Date().toISOString(),
-          branchId: currentBranchId,
-        });
-      }
-    };
-
-    return (
-      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl max-w-lg w-full border border-slate-200 dark:border-slate-700">
-          <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-            <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
-              Thêm công nợ{" "}
-              {activeTab === "customer" ? "khách hàng" : "nhà cung cấp"}
-            </h2>
-          </div>
-
-          <form onSubmit={handleSubmit} className="p-6 space-y-4">
-            {activeTab === "customer" ? (
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                  Khách hàng <span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={formData.customerId}
-                  onChange={(e) =>
-                    setFormData({ ...formData, customerId: e.target.value })
-                  }
-                  required
-                  className="w-full px-4 py-3 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white"
-                >
-                  <option value="">Chọn khách hàng...</option>
-                  {customers.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name} - {c.phone}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            ) : (
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                  Nhà cung cấp <span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={formData.supplierId}
-                  onChange={(e) =>
-                    setFormData({ ...formData, supplierId: e.target.value })
-                  }
-                  required
-                  className="w-full px-4 py-3 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white"
-                >
-                  <option value="">Chọn nhà cung cấp...</option>
-                  {suppliers.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-
-            {activeTab === "customer" && (
-              <>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                    Số điện thoại
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.phone}
-                    onChange={(e) =>
-                      setFormData({ ...formData, phone: e.target.value })
-                    }
-                    className="w-full px-4 py-3 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                    Biển số xe
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.licensePlate}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        licensePlate: e.target.value.toUpperCase(),
-                      })
-                    }
-                    className="w-full px-4 py-3 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white"
-                  />
-                </div>
-              </>
-            )}
-
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                Nội dung công nợ <span className="text-red-500">*</span>
-              </label>
-              <textarea
-                value={formData.description}
-                onChange={(e) =>
-                  setFormData({ ...formData, description: e.target.value })
-                }
-                required
-                rows={3}
-                className="w-full px-4 py-3 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white"
-                placeholder="Mô tả chi tiết công nợ..."
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                Số tiền <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="number"
-                value={formData.totalAmount || ""}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    totalAmount: Number(e.target.value),
-                  })
-                }
-                required
-                min="0"
-                className="w-full px-4 py-3 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white"
-                placeholder="0"
-              />
-              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-                {formatCurrency(formData.totalAmount || 0)}
-              </p>
-            </div>
-
-            <div className="flex gap-3 pt-4">
-              <button
-                type="button"
-                onClick={onClose}
-                className="flex-1 px-4 py-3 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors font-medium"
-              >
-                Hủy
-              </button>
-              <button
-                type="submit"
-                className="flex-1 px-4 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors font-medium"
-              >
-                Thêm công nợ
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    );
-  };
-
-// Edit Debt Modal
-const EditDebtModal: React.FC<{
-  debt: CustomerDebt | SupplierDebt;
-  activeTab: "customer" | "supplier";
-  customers: any[];
-  suppliers: any[];
-  onClose: () => void;
-  onSave: (updates: any) => void;
-}> = ({ debt, activeTab: _activeTab, customers: _customers, suppliers: _suppliers, onClose, onSave }) => {
-  const isCustomerDebt = "customerName" in debt;
-  const [formData, setFormData] = useState({
-    description: debt.description,
-    totalAmount: debt.totalAmount,
-    paidAmount: debt.paidAmount,
-    phone: isCustomerDebt ? (debt as CustomerDebt).phone : "",
-    licensePlate: isCustomerDebt ? (debt as CustomerDebt).licensePlate : "",
-  });
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-
-    const remainingAmount = formData.totalAmount - formData.paidAmount;
-
-    if (formData.paidAmount > formData.totalAmount) {
-      showToast.error("Số tiền đã trả không được lớn hơn tổng tiền!");
-      return;
-    }
-
-    onSave({
-      description: formData.description,
-      totalAmount: formData.totalAmount,
-      paidAmount: formData.paidAmount,
-      remainingAmount,
-      ...(isCustomerDebt && {
-        phone: formData.phone,
-        licensePlate: formData.licensePlate,
-      }),
-    });
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl max-w-lg w-full border border-slate-200 dark:border-slate-700">
-        <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-          <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
-            Sửa công nợ
-          </h2>
-        </div>
-
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          <div className="bg-slate-100 dark:bg-slate-700 rounded-lg p-3">
-            <p className="text-sm font-medium text-slate-900 dark:text-white">
-              {isCustomerDebt
-                ? (debt as CustomerDebt).customerName
-                : (debt as SupplierDebt).supplierName}
-            </p>
-          </div>
-
-          {isCustomerDebt && (
-            <>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                  Số điện thoại
-                </label>
-                <input
-                  type="text"
-                  value={formData.phone}
-                  onChange={(e) =>
-                    setFormData({ ...formData, phone: e.target.value })
-                  }
-                  className="w-full px-4 py-3 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                  Biển số xe
-                </label>
-                <input
-                  type="text"
-                  value={formData.licensePlate}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      licensePlate: e.target.value.toUpperCase(),
-                    })
-                  }
-                  className="w-full px-4 py-3 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white"
-                />
-              </div>
-            </>
-          )}
-
-          <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-              Nội dung công nợ
-            </label>
-            <textarea
-              value={formData.description}
-              onChange={(e) =>
-                setFormData({ ...formData, description: e.target.value })
-              }
-              rows={3}
-              className="w-full px-4 py-3 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-              Tổng tiền
-            </label>
-            <input
-              type="number"
-              value={formData.totalAmount}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  totalAmount: Number(e.target.value),
-                })
-              }
-              min="0"
-              className="w-full px-4 py-3 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-              Đã trả
-            </label>
-            <input
-              type="number"
-              value={formData.paidAmount}
-              onChange={(e) =>
-                setFormData({ ...formData, paidAmount: Number(e.target.value) })
-              }
-              min="0"
-              max={formData.totalAmount}
-              className="w-full px-4 py-3 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-white"
-            />
-          </div>
-
-          <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3">
-            <p className="text-sm text-blue-800 dark:text-blue-300">
-              Còn nợ:{" "}
-              <span className="font-bold">
-                {formatCurrency(formData.totalAmount - formData.paidAmount)}
-              </span>
-            </p>
-          </div>
-
-          <div className="flex gap-3 pt-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 px-4 py-3 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors font-medium"
-            >
-              Hủy
-            </button>
-            <button
-              type="submit"
-              className="flex-1 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium"
-            >
-              Lưu thay đổi
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-};
-
-// Detail Debt Modal
-const DetailDebtModal: React.FC<{
-  debt: CustomerDebt | SupplierDebt;
-  activeTab: "customer" | "supplier";
-  storeSettings: any;
-  onClose: () => void;
-}> = ({ debt, activeTab: _activeTab, storeSettings, onClose }) => {
-  const isCustomerDebt = "customerName" in debt;
-
-  // State for fetched receipt items
-  const [receiptItems, setReceiptItems] = React.useState<any[]>([]);
-  const [loadingItems, setLoadingItems] = React.useState(false);
-
-  // Parse receipt code from description (e.g., "Phiếu NH-20251223-135")
-  React.useEffect(() => {
-    const fetchReceiptItems = async () => {
-      // Extract receipt code pattern from description
-      const receiptCodeMatch = debt.description?.match(/NH-\d{8}-\d+/);
-      if (!receiptCodeMatch) return;
-
-      const receiptCode = receiptCodeMatch[0];
-      setLoadingItems(true);
-
-      try {
-        // Fetch items from inventory_transactions where notes contains the receipt code
-        const { data, error } = await supabase
-          .from("inventory_transactions")
-          .select("*")
-          .ilike("notes", `%${receiptCode}%`)
-          .eq("type", "Nhập kho")
-          .order("created_at", { ascending: true });
-
-        if (error) throw error;
-        setReceiptItems(data || []);
-      } catch (err) {
-        console.error("Error fetching receipt items:", err);
-      } finally {
-        setLoadingItems(false);
-      }
-    };
-
-    if (!isCustomerDebt) {
-      fetchReceiptItems();
-    }
-  }, [debt.description, isCustomerDebt]);
-
-  return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end md:items-center justify-center p-0 md:p-4 z-[100]">
-      <div className="bg-white dark:bg-slate-800 rounded-t-xl md:rounded-xl shadow-2xl max-w-2xl w-full border-x border-t border-slate-200 dark:border-slate-700 max-h-[80vh] mb-20 md:mb-0 flex flex-col">
-        <div className="px-4 py-2 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between flex-none">
-          <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
-            Chi tiết công nợ
-          </h2>
-          <button
-            onClick={onClose}
-            className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
-          >
-            <svg
-              className="w-6 h-6"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-          </button>
-        </div>
-
-        <div className="p-3 space-y-3 overflow-y-auto flex-1 min-h-0">
-          {/* Basic Info */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                {isCustomerDebt ? "Khách hàng" : "Nhà cung cấp"}
-              </p>
-              <p className="text-base font-semibold text-slate-900 dark:text-white">
-                {isCustomerDebt
-                  ? (debt as CustomerDebt).customerName
-                  : (debt as SupplierDebt).supplierName}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Ngày tạo
-              </p>
-              <p className="text-base font-semibold text-slate-900 dark:text-white">
-                {formatDate(new Date(debt.createdDate))}
-              </p>
-            </div>
-          </div>
-
-          {isCustomerDebt && (
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Số điện thoại
-                </p>
-                <p className="text-base font-semibold text-slate-900 dark:text-white">
-                  {(debt as CustomerDebt).phone || "--"}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Biển số xe
-                </p>
-                <p className="text-base font-semibold text-slate-900 dark:text-white">
-                  {(debt as CustomerDebt).licensePlate || "--"}
-                </p>
-              </div>
-            </div>
-          )}
-
-
-          <div>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">
-              Nội dung
-            </p>
-            <div className="bg-slate-100 dark:bg-slate-700 rounded-lg p-4">
-              <p className="text-slate-900 dark:text-white whitespace-pre-line leading-relaxed">
-                {debt.description}
-              </p>
-            </div>
-          </div>
-
-          {/* Receipt Items List (for supplier debts) */}
-          {!isCustomerDebt && (
-            <div>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mb-2 flex items-center gap-2">
-                <span>📦 Danh sách hàng nhập</span>
-                {receiptItems.length > 0 && (
-                  <span className="px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full text-[10px] font-bold">
-                    {receiptItems.length} sản phẩm
-                  </span>
-                )}
-              </p>
-              {loadingItems ? (
-                <div className="flex items-center justify-center py-4">
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
-                  <span className="ml-2 text-sm text-slate-500">Đang tải...</span>
-                </div>
-              ) : receiptItems.length > 0 ? (
-                <div className="bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
-                  <table className="w-full text-sm">
-                    <thead className="bg-slate-100 dark:bg-slate-800">
-                      <tr>
-                        <th className="text-left py-2 px-3 text-xs font-semibold text-slate-500 dark:text-slate-400">Sản phẩm</th>
-                        <th className="text-right py-2 px-3 text-xs font-semibold text-slate-500 dark:text-slate-400">SL</th>
-                        <th className="text-right py-2 px-3 text-xs font-semibold text-slate-500 dark:text-slate-400">Giá nhập</th>
-                        <th className="text-right py-2 px-3 text-xs font-semibold text-slate-500 dark:text-slate-400">Thành tiền</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-                      {receiptItems.map((item, index) => (
-                        <tr key={item.id || index} className="hover:bg-slate-100 dark:hover:bg-slate-800/50">
-                          <td className="py-2 px-3">
-                            <div className="font-medium text-slate-900 dark:text-white">{item.partName}</div>
-                          </td>
-                          <td className="py-2 px-3 text-right text-slate-700 dark:text-slate-300">{item.quantity}</td>
-                          <td className="py-2 px-3 text-right text-slate-700 dark:text-slate-300">{formatCurrency(item.unitPrice)}</td>
-                          <td className="py-2 px-3 text-right font-medium text-slate-900 dark:text-white">{formatCurrency(item.totalPrice)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <div className="text-center py-4 text-slate-400 text-sm bg-slate-50 dark:bg-slate-900/30 rounded-lg">
-                  Không tìm thấy chi tiết hàng nhập
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Financial Summary */}
-          <div className="border-t border-slate-200 dark:border-slate-700 pt-4">
-            <div className="grid grid-cols-3 gap-2 md:gap-4 divide-x divide-slate-100 dark:divide-slate-700">
-              <div className="text-center">
-                <p className="text-sm text-slate-500 dark:text-slate-400 mb-1">
-                  Tổng tiền
-                </p>
-                <p className="text-xl font-bold text-slate-900 dark:text-white">
-                  {formatCurrency(debt.totalAmount)}
-                </p>
-              </div>
-              <div className="text-center">
-                <p className="text-sm text-slate-500 dark:text-slate-400 mb-1">
-                  Đã trả
-                </p>
-                <p className="text-xl font-bold text-green-600 dark:text-green-400">
-                  {formatCurrency(debt.paidAmount)}
-                </p>
-              </div>
-              <div className="text-center">
-                <p className="text-sm text-slate-500 dark:text-slate-400 mb-1">
-                  Còn nợ
-                </p>
-                <p className="text-lg md:text-2xl font-bold text-red-600 dark:text-red-400">
-                  {formatCurrency(debt.remainingAmount)}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Progress Bar */}
-          <div>
-            <div className="flex justify-between text-sm text-slate-600 dark:text-slate-400 mb-2">
-              <span>Tiến độ thanh toán</span>
-              <span>
-                {Math.round((debt.paidAmount / debt.totalAmount) * 100)}%
-              </span>
-            </div>
-            <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-3">
-              <div
-                className="bg-green-600 h-3 rounded-full transition-all"
-                style={{
-                  width: `${(debt.paidAmount / debt.totalAmount) * 100}%`,
-                }}
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className="px-4 py-2 border-t border-slate-200 dark:border-slate-700 flex justify-between flex-none bg-white dark:bg-slate-800 rounded-b-xl">
-          <button
-            onClick={() => {
-              const printContent = document.getElementById("debt-print-area");
-              if (printContent) {
-                const printWindow = window.open("", "_blank");
-                if (printWindow) {
-                  printWindow.document.write(`
-                    <html>
-                      <head>
-                        <title>Phiếu Công Nợ - ${isCustomerDebt
-                      ? (debt as CustomerDebt).customerName
-                      : (debt as SupplierDebt).supplierName
-                    }</title>
-                        <style>
-                          body { font-family: Arial, sans-serif; padding: 20px; max-width: 800px; margin: 0 auto; }
-                          .store-header { text-align: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 2px solid #ddd; }
-                          .store-header h2 { margin: 0 0 10px 0; font-size: 24px; color: #0ea5e9; }
-                          .store-header p { margin: 5px 0; color: #666; }
-                          h1 { text-align: center; margin-bottom: 20px; }
-                          .info { margin-bottom: 15px; }
-                          .info label { font-weight: bold; }
-                          .description { white-space: pre-line; margin: 20px 0; padding: 15px; background: #f5f5f5; border-radius: 8px; }
-                          .amounts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin: 20px 0; }
-                          .amount-box { padding: 15px; border: 1px solid #ddd; border-radius: 8px; text-align: center; }
-                          .amount-box label { display: block; font-size: 12px; color: #666; margin-bottom: 5px; }
-                          .amount-box .value { font-size: 20px; font-weight: bold; }
-                          .total { color: #1e40af; }
-                          .paid { color: #16a34a; }
-                          .remaining { color: #dc2626; }
-                          .bank-info { margin-top: 30px; padding: 20px; background: #f0f9ff; border: 2px solid #0ea5e9; border-radius: 8px; }
-                          .bank-info h3 { margin: 0 0 15px 0; color: #0369a1; text-align: center; }
-                          .bank-info p { margin: 8px 0; }
-                          .bank-info strong { display: inline-block; min-width: 150px; }
-                          .bank-qr { text-align: center; margin-top: 15px; }
-                          .bank-qr img { max-width: 200px; border: 1px solid #ddd; padding: 10px; background: white; }
-                          @media print { button { display: none; } }
-                        </style>
-                      </head>
-                      <body>
-                        ${storeSettings
-                      ? `
-                        <div class="store-header">
-                          <h2>${storeSettings.store_name || "MOTOCARE"}</h2>
-                          ${storeSettings.address
-                        ? `<p><svg style="width:12px;height:12px;vertical-align:middle;margin-right:4px" viewBox="0 0 24 24" fill="#ef4444"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>${storeSettings.address}</p>`
-                        : ""
-                      }
-                          ${storeSettings.phone
-                        ? `<p><svg style="width:12px;height:12px;vertical-align:middle;margin-right:4px" viewBox="0 0 24 24" fill="#16a34a"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>${storeSettings.phone}</p>`
-                        : ""
-                      }
-                        </div>
-                        `
-                      : ""
-                    }
-                        ${printContent.innerHTML}
-                        ${storeSettings &&
-                      (storeSettings.bank_name ||
-                        storeSettings.bank_account_number)
-                      ? `
-                        <div class="bank-info">
-                          <h3><svg style="width:14px;height:14px;vertical-align:middle;margin-right:4px" viewBox="0 0 24 24" fill="#0891b2"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H4V6h16v12zM4 0h16v2H4zm0 22h16v2H4zm8-10c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm-4 4h8v-1c0-1.33-2.67-2-4-2s-4 .67-4 2v1z"/></svg>THÔNG TIN CHUYỂN KHOẢN</h3>
-                          ${storeSettings.bank_name
-                        ? `<p><strong>Ngân hàng:</strong> ${storeSettings.bank_name}</p>`
-                        : ""
-                      }
-                          ${storeSettings.bank_account_number
-                        ? `<p><strong>Số tài khoản:</strong> ${storeSettings.bank_account_number}</p>`
-                        : ""
-                      }
-                          ${storeSettings.bank_account_holder
-                        ? `<p><strong>Chủ tài khoản:</strong> ${storeSettings.bank_account_holder}</p>`
-                        : ""
-                      }
-                          ${storeSettings.bank_branch
-                        ? `<p><strong>Chi nhánh:</strong> ${storeSettings.bank_branch}</p>`
-                        : ""
-                      }
-                          ${storeSettings.bank_qr_url
-                        ? `<div class="bank-qr"><img src="${storeSettings.bank_qr_url}" alt="QR Code" /></div>`
-                        : ""
-                      }
-                        </div>
-                        `
-                      : ""
-                    }
-                        <div style="margin-top: 30px; text-align: center;">
-                          <button onclick="window.print()" style="padding: 10px 20px; background: #0ea5e9; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 16px;">In Phiếu</button>
-                        </div>
-                      </body>
-                    </html>
-                  `);
-                  printWindow.document.close();
-                }
-              }
-            }}
-            className="px-6 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg transition-colors font-medium flex items-center gap-2"
-          >
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"
-              />
-            </svg>
-            In phiếu
-          </button>
-          <button
-            onClick={onClose}
-            className="px-6 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded-lg transition-colors font-medium"
-          >
-            Đóng
-          </button>
-        </div>
-
-        {/* Hidden print area */}
-        <div id="debt-print-area" style={{ display: "none" }}>
-          <h1>PHIẾU CÔNG NỢ</h1>
-          <div className="info">
-            <label>{isCustomerDebt ? "Khách hàng:" : "Nhà cung cấp:"}</label>{" "}
-            {isCustomerDebt
-              ? (debt as CustomerDebt).customerName
-              : (debt as SupplierDebt).supplierName}
-          </div>
-          {isCustomerDebt && (
-            <>
-              <div className="info">
-                <label>Số điện thoại:</label>{" "}
-                {(debt as CustomerDebt).phone || "Chưa có"}
-              </div>
-              <div className="info">
-                <label>Biển số xe:</label>{" "}
-                {(debt as CustomerDebt).licensePlate || "Chưa có"}
-              </div>
-            </>
-          )}
-          <div className="info">
-            <label>Ngày tạo:</label> {formatDate(new Date(debt.createdDate))}
-          </div>
-          <div className="description">
-            <strong>Nội dung:</strong>
-            <br />
-            {debt.description}
-          </div>
-          <div className="amounts">
-            <div className="amount-box">
-              <label>Tổng tiền</label>
-              <div className="value total">
-                {formatCurrency(debt.totalAmount)}
-              </div>
-            </div>
-            <div className="amount-box">
-              <label>Đã trả</label>
-              <div className="value paid">
-                {formatCurrency(debt.paidAmount)}
-              </div>
-            </div>
-            <div className="amount-box">
-              <label>Còn nợ</label>
-              <div className="value remaining">
-                {formatCurrency(debt.remainingAmount)}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// Delete Confirm Dialog
-const DeleteConfirmDialog: React.FC<{
-  debt: CustomerDebt | SupplierDebt;
-  activeTab: "customer" | "supplier";
-  onClose: () => void;
-  onConfirm: () => void;
-}> = ({ debt, activeTab: _activeTab, onClose, onConfirm }) => {
-  const isCustomerDebt = "customerName" in debt;
-  const name = isCustomerDebt
-    ? (debt as CustomerDebt).customerName
-    : (debt as SupplierDebt).supplierName;
-
-  return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl max-w-md w-full border border-slate-200 dark:border-slate-700">
-        <div className="p-6">
-          <div className="flex items-center justify-center w-12 h-12 mx-auto bg-red-100 dark:bg-red-900/20 rounded-full mb-4">
-            <svg
-              className="w-6 h-6 text-red-600 dark:text-red-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-              />
-            </svg>
-          </div>
-
-          <h3 className="text-lg font-semibold text-center text-slate-900 dark:text-white mb-2">
-            Xác nhận xóa công nợ
-          </h3>
-
-          <p className="text-center text-slate-600 dark:text-slate-400 mb-6">
-            Bạn có chắc chắn muốn xóa công nợ của{" "}
-            <span className="font-semibold">{name}</span>?
-            <br />
-            <span className="text-red-600 dark:text-red-400 font-medium">
-              Số tiền: {formatCurrency(debt.remainingAmount)}
-            </span>
-            <br />
-            <span className="text-sm">Hành động này không thể hoàn tác!</span>
-          </p>
-
-          <div className="flex gap-3">
-            <button
-              onClick={onClose}
-              className="flex-1 px-4 py-3 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors font-medium"
-            >
-              Hủy
-            </button>
-            <button
-              onClick={onConfirm}
-              className="flex-1 px-4 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors font-medium"
-            >
-              Xóa
-            </button>
-          </div>
-        </div>
-      </div>
     </div>
   );
 };

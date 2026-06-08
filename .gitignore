@@ -45,3 +45,36 @@ yarn-error.log*
 # Misc
 *.local
 *.bak
+
+# ESLint reports & inventory
+eslint-report*.json
+.eslint-inventory.*
+
+# Data dumps (should not be in repo)
+external_parts.json
+parts_dump.json
+phatthinh_parts.json
+bando_parts.json
+
+# Temp fix/debug scripts
+fix*.cjs
+fix_*.cjs
+debug*.js
+debug*.html
+setupUI.js
+update-colors.cjs
+rewrite.cjs
+test-rewrite.cjs
+check-columns.mjs
+
+# Backup files
+*.backup.ts
+*.backup.tsx
+*.old.ts
+*.old.tsx
+*.legacy.ts
+*.legacy.tsx
+*_backup.txt
+
+# Deprecated code backups
+__DEPRECATED_backups/

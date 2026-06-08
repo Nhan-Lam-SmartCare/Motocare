@@ -762,7 +762,7 @@ const SalesManager: React.FC = () => {
                         codAmount: cart.total + (finalization.shippingFee || 0),
                         shippingFee: finalization.shippingFee || 0,
                         trackingNumber: finalization.trackingNumber || undefined,
-                        shippingCarrier: finalization.shippingCarrier || undefined,
+                        shippingCarrier: finalization.shippingCarrier === "other" ? undefined : (finalization.shippingCarrier || undefined),
                         estimatedDeliveryDate: finalization.estimatedDeliveryDate || undefined,
                     }
                     : undefined,

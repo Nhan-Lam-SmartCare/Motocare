@@ -229,7 +229,7 @@ export const CheckoutSection: React.FC<CheckoutSectionProps> = ({
                                     value={["GHTK", "GHN", "ViettelPost", "VNPost", "J&T", "NinjaVan", "BestExpress", "ShopeeXpress", "SuperShip", "Nasco", "EMS", "Ahamove", "GrabExpress"].includes(shippingCarrier || '') ? shippingCarrier : (shippingCarrier ? "Other" : "")}
                                     onChange={(e) => {
                                         if (e.target.value === "Other") {
-                                            setShippingCarrier(" ");
+                                            setShippingCarrier("other");
                                         } else {
                                             setShippingCarrier(e.target.value);
                                         }
@@ -256,8 +256,11 @@ export const CheckoutSection: React.FC<CheckoutSectionProps> = ({
                                     <input
                                         type="text"
                                         autoFocus
-                                        value={shippingCarrier.trim()}
-                                        onChange={(e) => setShippingCarrier(e.target.value)}
+                                        value={shippingCarrier === "other" ? "" : shippingCarrier}
+                                        onChange={(e) => {
+                                            const val = e.target.value;
+                                            setShippingCarrier(val === "" ? "other" : val);
+                                        }}
                                         placeholder="Nhập tên đơn vị vận chuyển..."
                                         className="mt-2 w-full px-3 py-2 text-sm border rounded-lg bg-white dark:bg-slate-700 border-blue-500 ring-1 ring-blue-500"
                                     />

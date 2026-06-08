@@ -46,7 +46,7 @@ interface ServiceHistoryProps {
 export const ServiceHistory: React.FC<ServiceHistoryProps> = ({
   currentBranchId,
 }) => {
-  const { workOrders: contextWorkOrders, setWorkOrders } = useAppContext();
+  const { workOrders: contextWorkOrders, setWorkOrders, employees } = useAppContext();
   const { data: fetchedWorkOrders } = useWorkOrdersRepo();
   const workOrders = fetchedWorkOrders || contextWorkOrders;
   const navigate = useNavigate();
@@ -510,8 +510,20 @@ export const ServiceHistory: React.FC<ServiceHistoryProps> = ({
             className="flex-1 md:flex-none px-3 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-xs md:text-sm text-slate-700 dark:text-slate-200"
           >
             <option value="all">Tất cả KTV</option>
-            <option value="KTV 1">KTV 1</option>
-            <option value="KTV 2">KTV 2</option>
+            {employees
+              ?.filter(
+                (emp) =>
+                  emp.status === "active" &&
+                  (emp.department?.toLowerCase().includes("kỹ thuật") ||
+                    emp.position?.toLowerCase().includes("kỹ thuật") ||
+                    emp.department?.toLowerCase().includes("ky thuat") ||
+                    emp.position?.toLowerCase().includes("ky thuat"))
+              )
+              .map((emp) => (
+                <option key={emp.id} value={emp.name}>
+                  {emp.name}
+                </option>
+              ))}
           </select>
 
           <select

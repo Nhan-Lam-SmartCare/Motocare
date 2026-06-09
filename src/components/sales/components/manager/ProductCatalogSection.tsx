@@ -58,14 +58,14 @@ export const ProductCatalogSection: React.FC<ProductCatalogSectionProps> = ({
                 <button
                     type="button"
                     onClick={() => setIsWholesaleMode(!isWholesaleMode)}
-                    className={`md:hidden flex items-center gap-1 px-3 py-3 rounded-lg text-xs font-bold transition-all shrink-0 ${isWholesaleMode
-                        ? "bg-green-600 text-white shadow-sm"
-                        : "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400"
+                    className={`md:hidden flex items-center gap-1.5 px-3 py-3 rounded-xl text-xs font-bold transition-all shrink-0 border ${isWholesaleMode
+                        ? "bg-emerald-600 text-white border-emerald-600 shadow-sm"
+                        : "bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700"
                         }`}
                     title="Bật/tắt giá sỉ"
                 >
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                    {isWholesaleMode && <span>Sỉ</span>}
+                    <span>Giá sỉ</span>
                 </button>
                 <button
                     onClick={() => setShowBarcodeInput(!showBarcodeInput)}

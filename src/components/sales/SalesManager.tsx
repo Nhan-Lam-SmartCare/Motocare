@@ -95,7 +95,7 @@ const SalesManager: React.FC = () => {
     const createCustomerDebt = useCreateCustomerDebtRepo();
 
     // Mobile tab state
-    const [mobileTab, setMobileTab] = useState<"products" | "cart" | "history">(
+    const [mobileTab, setMobileTab] = useState<"products" | "cart">(
         "products"
     );
     const [showQuickServiceModal, setShowQuickServiceModal] = useState(false);
@@ -912,18 +912,63 @@ const SalesManager: React.FC = () => {
 
     return (
         <div className="min-h-screen max-w-full overflow-x-hidden bg-slate-50 dark:bg-slate-900 pb-16 md:pb-0">
-            {/* Mobile Continue to Cart */}
+            {/* Mobile Continue to Cart (on Products tab) */}
             {mobileTab === "products" && cart.cartItems.length > 0 && (
                 <div className="md:hidden fixed bottom-16 left-0 right-0 z-40 px-4">
                     <button
                         onClick={() => setMobileTab("cart")}
-                        className="w-full flex items-center justify-between gap-3 px-4 py-3 rounded-2xl bg-emerald-600 text-white font-bold shadow-lg shadow-emerald-600/30 active:scale-[0.99]"
+                        className="w-full flex items-center justify-between gap-3 px-4 py-3.5 rounded-2xl bg-emerald-600 text-white font-black uppercase tracking-wider shadow-lg shadow-emerald-600/30 active:scale-[0.99] transition-transform duration-200"
                     >
                         <span>Tiếp tục</span>
-                        <span className="text-sm opacity-90">
+                        <span className="text-sm opacity-95">
                             {cart.cartItems.length} món · {formatCurrency(cart.total)}
                         </span>
                     </button>
+                </div>
+            )}
+
+            {/* Mobile Sticky Checkout Bar (on Cart tab) */}
+            {mobileTab === "cart" && cart.cartItems.length > 0 && (
+                <div className="md:hidden fixed bottom-16 left-0 right-0 z-40 px-4">
+                    <div className="bg-white/95 dark:bg-slate-800/95 border border-slate-200 dark:border-slate-700 p-3 rounded-2xl shadow-xl backdrop-blur-md flex items-center justify-between gap-3">
+                        <div className="flex flex-col pl-1">
+                            <span className="text-[9px] text-slate-500 dark:text-slate-400 uppercase font-black tracking-wider leading-none">Tổng thanh toán</span>
+                            <span className="text-base font-black text-emerald-600 dark:text-emerald-400 mt-1 leading-none">
+                                {formatCurrency(cart.total)}
+                            </span>
+                        </div>
+                        <button
+                            onClick={() => {
+                                const canFinalize = finalization.paymentMethod && finalization.paymentType && !isProcessing;
+                                if (canFinalize) {
+                                    handleFinalize();
+                                } else {
+                                    document.getElementById("checkout-payment-section")?.scrollIntoView({ behavior: "smooth" });
+                                    showToast.info("Vui lòng chọn phương thức thanh toán!");
+                                }
+                            }}
+                            disabled={isProcessing}
+                            className={`px-4 py-2.5 text-xs font-black uppercase tracking-wider text-white rounded-xl shadow-md active:scale-95 transition-all flex items-center gap-1.5 ${
+                                finalization.paymentMethod && finalization.paymentType
+                                    ? "bg-gradient-to-r from-emerald-600 to-teal-600 shadow-emerald-600/20"
+                                    : "bg-blue-600 shadow-blue-500/20"
+                            }`}
+                        >
+                            {isProcessing ? (
+                                "Đang xử lý..."
+                            ) : finalization.paymentMethod && finalization.paymentType ? (
+                                <>
+                                    Xuất bán
+                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4" /></svg>
+                                </>
+                            ) : (
+                                <>
+                                    Chọn thanh toán
+                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 13l-7 7-7-7" /></svg>
+                                </>
+                            )}
+                        </button>
+                    </div>
                 </div>
             )}
             {/* Desktop Header */}
@@ -993,41 +1038,71 @@ const SalesManager: React.FC = () => {
                 {/* <div className="md:hidden">
                     <TetBanner compact />
                 </div> */}
+
+                {/* Mobile Unified Tabs & Quick Actions */}
+                <div className="md:hidden space-y-3">
+                    {/* Unified Tabs */}
+                    <div className="flex items-center bg-slate-100 dark:bg-[#2b2b40]/60 p-1.5 rounded-2xl border border-slate-200/50 dark:border-gray-800/40 shadow-sm">
+                        <button
+                            onClick={() => setMobileTab("products")}
+                            className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-200 ${
+                                mobileTab === "products"
+                                    ? "bg-blue-600 text-white shadow-md shadow-blue-500/20"
+                                    : "text-slate-500 dark:text-gray-400 hover:text-slate-750 dark:hover:text-gray-200"
+                            }`}
+                        >
+                            <Boxes className="w-4.5 h-4.5" />
+                            Sản phẩm
+                        </button>
+                        <button
+                            onClick={() => setMobileTab("cart")}
+                            className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-200 relative ${
+                                mobileTab === "cart"
+                                    ? "bg-blue-600 text-white shadow-md shadow-blue-500/20"
+                                    : "text-slate-500 dark:text-gray-400 hover:text-slate-750 dark:hover:text-gray-200"
+                            }`}
+                        >
+                            <ShoppingCart className="w-4.5 h-4.5" />
+                            Giỏ hàng
+                            {cart.cartItems.length > 0 && (
+                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
+                                    mobileTab === "cart" ? "bg-white text-blue-600" : "bg-emerald-600 text-white"
+                                }`}>
+                                    {cart.cartItems.length}
+                                </span>
+                            )}
+                        </button>
+                    </div>
+
+                    {/* Quick actions (3 items) */}
+                    <div className="grid grid-cols-3 gap-2">
+                        <button
+                            onClick={openQuickServiceModal}
+                            className="flex flex-col items-center justify-center gap-1 py-2 px-1.5 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-[11px] font-bold shadow-sm active:scale-95 hover:border-amber-300 dark:hover:border-amber-500/30 transition-all"
+                        >
+                            <Zap className="w-4.5 h-4.5 text-amber-500" />
+                            Bán nhanh
+                        </button>
+                        <button
+                            onClick={() => setShowDeliveryModal(true)}
+                            className="flex flex-col items-center justify-center gap-1 py-2 px-1.5 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-[11px] font-bold shadow-sm active:scale-95 hover:border-emerald-300 dark:hover:border-emerald-500/30 transition-all"
+                        >
+                            <Truck className="w-4.5 h-4.5 text-emerald-500" />
+                            Giao hàng
+                        </button>
+                        <button
+                            onClick={() => history.setShowSalesHistory(true)}
+                            className="flex flex-col items-center justify-center gap-1 py-2 px-1.5 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-[11px] font-bold shadow-sm active:scale-95 hover:border-blue-300 dark:hover:border-blue-500/30 transition-all"
+                        >
+                            <History className="w-4.5 h-4.5 text-blue-500" />
+                            Lịch sử
+                        </button>
+                    </div>
+                </div>
+
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* Left: Products (Desktop) / Mobile Tab Content */}
                     <div className={`lg:col-span-2 ${mobileTab !== "products" ? "hidden md:block" : ""}`}>
-                        {/* Mobile Quick Actions */}
-                        <div className="md:hidden flex items-center gap-2 mb-3">
-                            <button
-                                onClick={() => setMobileTab("cart")}
-                                className="flex-1 flex items-center justify-between gap-2 px-3 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-sm font-semibold"
-                            >
-                                <span className="flex items-center gap-2">
-                                    <ShoppingCart className="w-4 h-4" />
-                                    Giỏ hàng
-                                </span>
-                                {cart.cartItems.length > 0 && (
-                                    <span className="px-2 py-0.5 rounded-full bg-emerald-600 text-white text-xs font-bold">
-                                        {cart.cartItems.length}
-                                    </span>
-                                )}
-                            </button>
-                            <button
-                                onClick={openQuickServiceModal}
-                                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-sm font-semibold"
-                            >
-                                <Zap className="w-4 h-4 text-amber-500" />
-                                Bán nhanh
-                            </button>
-                            <button
-                                onClick={() => history.setShowSalesHistory(true)}
-                                className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-sm font-semibold"
-                            >
-                                <History className="w-4 h-4" />
-                                Lịch sử
-                            </button>
-                        </div>
-
                         <ProductCatalogSection
                             partSearch={inventory.partSearch}
                             setPartSearch={inventory.setPartSearch}
@@ -1050,25 +1125,6 @@ const SalesManager: React.FC = () => {
                     {/* Right: Cart (Desktop) / Mobile Tab Content */}
                     <div className={`lg:col-span-1 ${mobileTab !== "cart" ? "hidden lg:block" : ""}`}>
                         <div className={`sticky top-24 transition-all ${cartPulse ? "ring-2 ring-emerald-400/70 rounded-2xl" : ""}`}>
-                            {/* Mobile Quick Actions */}
-                            <div className="md:hidden flex items-center gap-2 mb-3">
-                                <button
-                                    onClick={() => setMobileTab("products")}
-                                    className="flex-1 flex items-center justify-between gap-2 px-3 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-sm font-semibold"
-                                >
-                                    <span className="flex items-center gap-2">
-                                        <Boxes className="w-4 h-4" />
-                                        Sản phẩm
-                                    </span>
-                                </button>
-                                <button
-                                    onClick={() => history.setShowSalesHistory(true)}
-                                    className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-sm font-semibold"
-                                >
-                                    <History className="w-4 h-4" />
-                                    Lịch sử
-                                </button>
-                            </div>
                             {editingSaleId && (
                                 <div className="mb-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg p-3 flex justify-between items-center animate-pulse">
                                     <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 font-bold">

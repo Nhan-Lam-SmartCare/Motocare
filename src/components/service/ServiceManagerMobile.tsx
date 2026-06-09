@@ -295,10 +295,10 @@ const WorkOrderCard = React.memo(({
               e.stopPropagation();
               onCall(workOrder.customerPhone || "");
             }}
-            className="w-7 h-7 rounded-full flex items-center justify-center bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 text-blue-600 transition-colors border border-blue-100 dark:border-blue-900/30 shadow-sm"
+            className="w-8 h-8 rounded-full flex items-center justify-center bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 text-blue-600 transition-colors border border-blue-100 dark:border-blue-900/30 shadow-sm"
             aria-label="Gọi"
           >
-            <Phone className="w-3.5 h-3.5" />
+            <Phone className="w-4 h-4" />
           </button>
           
           <button
@@ -306,10 +306,10 @@ const WorkOrderCard = React.memo(({
               e.stopPropagation();
               onPrint(workOrder);
             }}
-            className="w-7 h-7 rounded-full flex items-center justify-center bg-slate-100 dark:bg-gray-800 hover:bg-slate-200 text-slate-500 dark:text-gray-400 transition-colors border border-slate-200 dark:border-gray-700 shadow-sm"
+            className="w-8 h-8 rounded-full flex items-center justify-center bg-slate-100 dark:bg-gray-800 hover:bg-slate-200 text-slate-500 dark:text-gray-400 transition-colors border border-slate-200 dark:border-gray-700 shadow-sm"
             aria-label="In"
           >
-            <Printer className="w-3.5 h-3.5" />
+            <Printer className="w-4 h-4" />
           </button>
           
           <button
@@ -317,10 +317,10 @@ const WorkOrderCard = React.memo(({
               e.stopPropagation();
               onEdit(workOrder);
             }}
-            className="w-7 h-7 rounded-full flex items-center justify-center bg-[#009ef7]/10 hover:bg-[#009ef7]/20 text-[#009ef7] transition-colors border border-[#009ef7]/20 shadow-sm"
+            className="w-8 h-8 rounded-full flex items-center justify-center bg-[#009ef7]/10 hover:bg-[#009ef7]/20 text-[#009ef7] transition-colors border border-[#009ef7]/20 shadow-sm"
             aria-label="Sửa"
           >
-            <Edit2 className="w-3.5 h-3.5" />
+            <Edit2 className="w-4 h-4" />
           </button>
           
           {canDelete && (
@@ -329,10 +329,10 @@ const WorkOrderCard = React.memo(({
                 e.stopPropagation();
                 onDelete(workOrder);
               }}
-              className="w-7 h-7 rounded-full flex items-center justify-center bg-[#f1416c]/10 hover:bg-[#f1416c]/20 text-[#f1416c] transition-colors border border-[#f1416c]/20 shadow-sm"
+              className="w-8 h-8 rounded-full flex items-center justify-center bg-[#f1416c]/10 hover:bg-[#f1416c]/20 text-[#f1416c] transition-colors border border-[#f1416c]/20 shadow-sm"
               aria-label="Xóa"
             >
-              <Trash2 className="w-3.5 h-3.5" />
+              <Trash2 className="w-4 h-4" />
             </button>
           )}
         </div>
@@ -630,14 +630,14 @@ export function ServiceManagerMobile({
                       <span className="text-xs font-extrabold text-slate-800 dark:text-white leading-tight">
                         Báo cáo tài chính
                       </span>
-                      <span className="px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-gray-800 text-slate-500 dark:text-gray-400 text-[9px] font-bold uppercase tracking-wider scale-[0.9] origin-left">
+                      <span className="px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-gray-800 text-slate-500 dark:text-gray-400 text-[9px] font-bold uppercase tracking-wider flex items-center justify-center h-4.5">
                         {getDateLabel()}
                       </span>
                     </div>
                     <div className="flex items-center gap-1">
                       <button
                         onClick={() => setShowFinancials(!showFinancials)}
-                        className="p-1.5 hover:bg-slate-100 dark:hover:bg-gray-800/80 text-slate-400 dark:text-gray-500 hover:text-slate-700 dark:hover:text-gray-300 rounded-lg transition-colors"
+                        className="p-1.5 hover:bg-slate-100 dark:hover:bg-gray-800/80 text-slate-400 dark:text-gray-500 hover:text-slate-700 dark:hover:text-gray-300 rounded-lg transition-colors flex items-center justify-center"
                         title="Ẩn/hiện doanh số"
                       >
                         {showFinancials ? (
@@ -648,7 +648,7 @@ export function ServiceManagerMobile({
                       </button>
                       <button
                         onClick={() => setCollapseFinance(!collapseFinance)}
-                        className="p-1.5 hover:bg-slate-100 dark:hover:bg-gray-800/80 text-slate-400 dark:text-gray-500 hover:text-slate-700 dark:hover:text-gray-300 rounded-lg transition-colors"
+                        className="p-1.5 hover:bg-slate-100 dark:hover:bg-gray-800/80 text-slate-400 dark:text-gray-500 hover:text-slate-700 dark:hover:text-gray-300 rounded-lg transition-colors flex items-center justify-center"
                       >
                         {collapseFinance ? (
                           <ChevronDown className="w-3.5 h-3.5" />
@@ -730,7 +730,7 @@ export function ServiceManagerMobile({
                     key={option.value}
                     onClick={() => setDateFilter(option.value)}
                     className={`flex-1 py-1.5 rounded-lg text-[10px] font-bold transition-all duration-200 ${dateFilter === option.value
-                      ? "bg-white dark:bg-gray-800 text-[#009ef7] shadow-sm"
+                      ? "bg-white dark:bg-[#32324d] text-[#009ef7] shadow-sm border border-slate-200/50 dark:border-slate-700/30"
                       : "text-slate-500 dark:text-gray-400 hover:text-slate-700 dark:hover:text-gray-300"
                       }`}
                   >
@@ -741,7 +741,7 @@ export function ServiceManagerMobile({
             </div>
 
             {/* DANH SÁCH PHIẾU SỬA CHỮA */}
-            <div className="space-y-2.5 px-3 pt-3 pb-4 min-h-[50vh]">
+            <div className="space-y-2.5 px-3 pt-3 pb-28 min-h-[50vh]">
               {isLoading ? (
                 Array.from({ length: 4 }).map((_, i) => (
                   <div key={i} className="bg-white dark:bg-[#1e1e2d] rounded-xl border border-slate-200 dark:border-gray-800 p-4 space-y-3">

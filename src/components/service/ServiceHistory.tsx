@@ -770,7 +770,7 @@ export const ServiceHistory: React.FC<ServiceHistoryProps> = ({
             Không có phiếu sửa chữa nào.
           </div>
         ) : (
-          <div className="divide-y divide-slate-700">
+          <div className="divide-y divide-slate-200 dark:divide-slate-700/80">
             {filteredOrders.map((order) => {
               const partsCost =
                 order.partsUsed?.reduce(
@@ -790,55 +790,55 @@ export const ServiceHistory: React.FC<ServiceHistoryProps> = ({
               return (
                 <div
                   key={order.id}
-                  className="px-4 py-4 bg-slate-900 dark:bg-slate-950 hover:bg-slate-800 dark:hover:bg-slate-900 transition-colors"
+                  className="px-4 py-4 bg-white dark:bg-slate-800/40 hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors"
                 >
                   <div className="flex items-start gap-4">
                     {/* Left: Checkbox + Icon */}
                     <div className="w-16 flex flex-col items-center gap-2 pt-1">
                       <input
                         type="checkbox"
-                        className="rounded border-slate-600"
+                        className="rounded border-slate-300 dark:border-slate-600"
                       />
-                      <div className="w-10 h-10 bg-slate-800 dark:bg-slate-700 rounded flex items-center justify-center flex-shrink-0">
-                        <Calendar className="w-5 h-5 text-slate-400" />
+                      <div className="w-10 h-10 bg-slate-100 dark:bg-slate-700 rounded flex items-center justify-center flex-shrink-0">
+                        <Calendar className="w-5 h-5 text-slate-500 dark:text-slate-400" />
                       </div>
                     </div>
 
                     {/* Column 1: Mã phiếu */}
                     <div className="flex-1 min-w-[180px]">
-                      <div className="font-mono font-bold text-blue-400 text-sm mb-1">
+                      <div className="font-mono font-bold text-blue-600 dark:text-blue-400 text-sm mb-1">
                         {formatWorkOrderId(
                           order.id,
                           storeSettings?.work_order_prefix
                         )}
                       </div>
-                      <div className="text-xs text-slate-400">
+                      <div className="text-xs text-slate-500 dark:text-slate-400">
                         <span>Ngày: </span>
-                        <span className="text-slate-300">
+                        <span className="text-slate-700 dark:text-slate-350">
                           {formatDate(order.creationDate, true)}
                         </span>
                       </div>
-                      <div className="text-xs text-cyan-400">
+                      <div className="text-xs text-cyan-600 dark:text-cyan-400 font-semibold">
                         NV: {order.technicianName || "Chưa phân công"}
                       </div>
                     </div>
 
                     {/* Column 2: Khách hàng */}
                     <div className="flex-1 min-w-[180px]">
-                      <div className="font-semibold text-base text-white mb-1">
+                      <div className="font-semibold text-base text-slate-900 dark:text-white mb-1">
                         {order.customerName}
                       </div>
-                      <div className="text-xs text-slate-400">
+                      <div className="text-xs text-slate-500 dark:text-slate-400">
                         {order.customerPhone}
                       </div>
-                      <div className="text-xs text-slate-400">
+                      <div className="text-xs text-slate-500 dark:text-slate-400">
                         <span className="font-medium">Xe: </span>
                         <span>{order.vehicleModel || "N/A"}</span>
                         {order.licensePlate && (
                           <span className="ml-1">- {order.licensePlate}</span>
                         )}
                       </div>
-                      <div className="text-xs text-slate-500 italic mt-1">
+                      <div className="text-xs text-slate-500 dark:text-slate-400/80 italic mt-1">
                         {order.issueDescription || "Không có mô tả"}
                       </div>
                     </div>
@@ -849,14 +849,14 @@ export const ServiceHistory: React.FC<ServiceHistoryProps> = ({
                         {/* Phụ tùng */}
                         {order.partsUsed && order.partsUsed.length > 0 && (
                           <div className="mb-2">
-                            <div className="text-xs font-medium text-slate-400 mb-0.5">
+                            <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-0.5">
                               Phụ tùng:
                             </div>
                             <div className="space-y-0.5">
                               {order.partsUsed.map((part, idx) => (
                                 <div
                                   key={idx}
-                                  className="text-xs text-slate-300"
+                                  className="text-xs text-slate-700 dark:text-slate-300"
                                 >
                                   • {part.partName} x{part.quantity}
                                 </div>
@@ -869,14 +869,14 @@ export const ServiceHistory: React.FC<ServiceHistoryProps> = ({
                         {order.additionalServices &&
                           order.additionalServices.length > 0 && (
                             <div className="mb-2">
-                              <div className="text-xs font-medium text-slate-400 mb-0.5">
+                              <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-0.5">
                                 Gia công/Đặt hàng:
                               </div>
                               <div className="space-y-0.5">
                                 {order.additionalServices.map((svc, idx) => (
                                   <div
                                     key={idx}
-                                    className="text-xs text-slate-300"
+                                    className="text-xs text-slate-700 dark:text-slate-300"
                                   >
                                     • {svc.description} x{svc.quantity || 1}
                                   </div>
@@ -907,7 +907,7 @@ export const ServiceHistory: React.FC<ServiceHistoryProps> = ({
                         {laborCost > 0 && (
                           <div className="flex justify-between">
                             <span className="text-slate-500">Tiền công:</span>
-                            <span className="text-slate-300">
+                            <span className="text-slate-700 dark:text-slate-350">
                               {formatCurrency(laborCost)}
                             </span>
                           </div>
@@ -917,7 +917,7 @@ export const ServiceHistory: React.FC<ServiceHistoryProps> = ({
                             <span className="text-slate-500">
                               Tiền phụ tùng:
                             </span>
-                            <span className="text-blue-400 font-medium">
+                            <span className="text-blue-600 dark:text-blue-400 font-medium">
                               {formatCurrency(partsCost)}
                             </span>
                           </div>
@@ -927,17 +927,17 @@ export const ServiceHistory: React.FC<ServiceHistoryProps> = ({
                             <span className="text-slate-500">
                               Giá công/Đặt hàng:
                             </span>
-                            <span className="text-slate-300">
+                            <span className="text-slate-700 dark:text-slate-350">
                               {formatCurrency(servicesTotal)}
                             </span>
                           </div>
                         )}
                         {order.total > 0 && (
-                          <div className="flex justify-between pt-2 border-t border-slate-700 text-sm">
-                            <span className="text-slate-300 font-bold">
+                          <div className="flex justify-between pt-2 border-t border-slate-200 dark:border-slate-700 text-sm">
+                            <span className="text-slate-800 dark:text-slate-300 font-bold">
                               Tổng cộng:
                             </span>
-                            <span className="text-blue-400 font-bold text-sm">
+                            <span className="text-blue-600 dark:text-blue-400 font-bold text-sm">
                               {formatCurrency(order.total)}
                             </span>
                           </div>
@@ -1022,7 +1022,7 @@ export const ServiceHistory: React.FC<ServiceHistoryProps> = ({
       {/* Mobile Card View */}
       <div className="md:hidden space-y-3">
         {filteredOrders.length === 0 ? (
-          <div className="bg-slate-800 rounded-xl p-8 text-center text-slate-400">
+          <div className="bg-white dark:bg-slate-800 rounded-xl p-8 text-center text-slate-400 border border-slate-200 dark:border-slate-700">
             Không có phiếu sửa chữa nào.
           </div>
         ) : (
@@ -1042,25 +1042,25 @@ export const ServiceHistory: React.FC<ServiceHistoryProps> = ({
             return (
               <div
                 key={order.id}
-                className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden"
+                className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700/80 overflow-hidden shadow-sm"
               >
                 {/* Card Header */}
-                <div className="px-4 py-3 bg-slate-700/50 border-b border-slate-700 flex items-center justify-between">
+                <div className="px-4 py-3 bg-slate-50 dark:bg-slate-700/40 border-b border-slate-100 dark:border-slate-700/50 flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-slate-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <Calendar className="w-5 h-5 text-slate-300" />
+                    <div className="w-10 h-10 bg-slate-100 dark:bg-slate-700 rounded-lg flex items-center justify-center flex-shrink-0 text-slate-500 dark:text-slate-300">
+                      <Calendar className="w-5 h-5" />
                     </div>
                     <div>
-                      <div className="font-mono font-bold text-blue-400 text-sm">
+                      <div className="font-mono font-bold text-blue-500 dark:text-blue-400 text-sm">
                         {formatWorkOrderId(
                           order.id,
                           storeSettings?.work_order_prefix
                         )}
                       </div>
-                      <div className="text-xs text-slate-400">
+                      <div className="text-xs text-slate-500 dark:text-slate-400">
                         Ngày: {formatDate(order.creationDate, true)}
                       </div>
-                      <div className="text-xs text-cyan-400">
+                      <div className="text-xs text-cyan-600 dark:text-cyan-400 font-semibold">
                         NV: {order.technicianName || "Chưa phân công"}
                       </div>
                     </div>
@@ -1069,19 +1069,19 @@ export const ServiceHistory: React.FC<ServiceHistoryProps> = ({
                 </div>
 
                 {/* Customer Info */}
-                <div className="px-4 py-3 border-b border-slate-700">
-                  <div className="font-semibold text-white text-base">
+                <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-700/50">
+                  <div className="font-bold text-slate-900 dark:text-white text-base">
                     {order.customerName}
                   </div>
-                  <div className="text-sm text-slate-400">
+                  <div className="text-sm text-slate-600 dark:text-slate-400 font-medium">
                     {order.customerPhone}
                   </div>
-                  <div className="text-sm text-slate-400 mt-1">
+                  <div className="text-xs text-slate-500 dark:text-slate-400 mt-1 font-semibold">
                     Xe: {order.vehicleModel || "N/A"} -{" "}
                     {order.licensePlate || "N/A"}
                   </div>
                   {order.issueDescription && (
-                    <div className="text-xs text-slate-500 italic mt-1">
+                    <div className="text-xs text-slate-500 dark:text-slate-450 italic mt-1.5 pl-2 border-l border-slate-300 dark:border-slate-600">
                       {order.issueDescription}
                     </div>
                   )}
@@ -1090,39 +1090,39 @@ export const ServiceHistory: React.FC<ServiceHistoryProps> = ({
                 {/* Price Summary */}
                 <div className="px-4 py-3 space-y-2">
                   {order.laborCost > 0 && (
-                    <div className="flex justify-between text-sm">
-                      <span className="text-slate-400">Tiền công:</span>
-                      <span className="text-slate-300">
+                    <div className="flex justify-between text-xs font-semibold">
+                      <span className="text-slate-500">Tiền công:</span>
+                      <span className="text-slate-700 dark:text-slate-300">
                         {formatCurrency(order.laborCost)}
                       </span>
                     </div>
                   )}
                   {partsCost > 0 && (
-                    <div className="flex justify-between text-sm">
-                      <span className="text-slate-400">Phụ tùng:</span>
-                      <span className="text-blue-400">
+                    <div className="flex justify-between text-xs font-semibold">
+                      <span className="text-slate-500">Phụ tùng:</span>
+                      <span className="text-blue-600 dark:text-blue-400">
                         {formatCurrency(partsCost)}
                       </span>
                     </div>
                   )}
                   {servicesTotal > 0 && (
-                    <div className="flex justify-between text-sm">
-                      <span className="text-slate-400">Gia công:</span>
-                      <span className="text-slate-300">
+                    <div className="flex justify-between text-xs font-semibold">
+                      <span className="text-slate-500">Gia công:</span>
+                      <span className="text-slate-700 dark:text-slate-300">
                         {formatCurrency(servicesTotal)}
                       </span>
                     </div>
                   )}
-                  <div className="flex justify-between text-sm font-bold pt-2 border-t border-slate-700">
-                    <span className="text-slate-300">Tổng cộng:</span>
-                    <span className="text-green-400">
+                  <div className="flex justify-between text-sm font-bold pt-2 border-t border-slate-100 dark:border-slate-700/50">
+                    <span className="text-slate-800 dark:text-slate-300">Tổng cộng:</span>
+                    <span className="text-green-600 dark:text-green-400">
                       {formatCurrency(order.total)}
                     </span>
                   </div>
                   {(order.remainingAmount || 0) > 0 && (
                     <div className="flex justify-between text-sm">
-                      <span className="text-slate-400">Còn phải thu:</span>
-                      <span className="text-red-400 font-bold">
+                      <span className="text-slate-500">Còn phải thu:</span>
+                      <span className="text-red-500 dark:text-red-400 font-bold">
                         {formatCurrency(order.remainingAmount || 0)}
                       </span>
                     </div>
@@ -1133,26 +1133,26 @@ export const ServiceHistory: React.FC<ServiceHistoryProps> = ({
                 </div>
 
                 {/* Actions */}
-                <div className="px-4 py-3 bg-slate-700/30 border-t border-slate-700 flex items-center gap-2">
+                <div className="px-4 py-3 bg-slate-50/50 dark:bg-slate-800/20 border-t border-slate-100 dark:border-slate-700/50 flex items-center gap-2">
                   <button
                     onClick={() => handleEditOrder(order)}
-                    className="flex-1 px-3 py-2 bg-cyan-500 hover:bg-cyan-600 text-white text-sm rounded-lg transition-colors flex items-center justify-center gap-1"
+                    className="flex-1 px-3 py-2 bg-cyan-500 hover:bg-cyan-600 text-white text-xs font-bold rounded-lg transition-colors flex items-center justify-center gap-1 shadow-sm"
                   >
-                    <Edit2 className="w-4 h-4" />
+                    <Edit2 className="w-3.5 h-3.5" />
                     <span>Sửa</span>
                   </button>
                   <button
                     onClick={() => handlePrintOrder(order)}
-                    className="flex-1 px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded-lg transition-colors flex items-center justify-center gap-1"
+                    className="flex-1 px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold rounded-lg transition-colors flex items-center justify-center gap-1 shadow-sm"
                   >
-                    <Printer className="w-4 h-4" />
+                    <Printer className="w-3.5 h-3.5" />
                     <span>In</span>
                   </button>
                   <button
                     onClick={() => handlePrintOrder(order)}
-                    className="px-3 py-2 bg-slate-600 hover:bg-slate-500 text-white text-sm rounded-lg transition-colors flex items-center justify-center"
+                    className="px-3 py-2 bg-slate-100 dark:bg-[#2b2b40] text-slate-500 dark:text-slate-300 border border-slate-200/50 dark:border-slate-750/30 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-bold rounded-lg transition-colors flex items-center justify-center"
                   >
-                    <ChevronRight className="w-4 h-4" />
+                    <ChevronRight className="w-3.5 h-3.5" />
                   </button>
                 </div>
               </div>

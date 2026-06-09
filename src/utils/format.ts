@@ -18,9 +18,9 @@
  * ```
  */
 export const formatCurrency = (v: number) =>
-  new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(
-    v
-  );
+  new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" })
+    .format(v)
+    .replace(/\u20AB/g, "đ");
 
 /**
  * Formats a number with thousand separators (Vietnamese style: dots)

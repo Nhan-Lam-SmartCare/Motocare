@@ -88,23 +88,23 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
                 {/* Price & Stock */}
                 <div className="pt-2 border-t border-slate-100 dark:border-slate-700/50">
-                    <div className="flex items-end justify-between">
-                        <div className="flex flex-col">
-                            <span className="text-base font-bold text-emerald-600 dark:text-emerald-400 leading-none">
+                    <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-1.5">
+                        <div className="flex flex-col min-w-0">
+                            <span className="text-sm sm:text-base font-bold text-emerald-600 dark:text-emerald-400 leading-none truncate">
                                 {formatCurrency(price)}
                             </span>
                             {wholesalePrice > 0 && wholesalePrice !== price && (
-                                <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+                                <span className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 mt-1 truncate">
                                     Sỉ: {formatCurrency(wholesalePrice)}
                                 </span>
                             )}
                         </div>
                         <span
-                            className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${isOutOfStock
+                            className={`text-[10px] sm:text-[11px] font-bold px-1.5 sm:px-2 py-0.5 rounded-full self-start sm:self-auto whitespace-nowrap ${isOutOfStock
                                 ? "text-red-50 bg-red-500 dark:bg-red-600"
                                 : isLowStock
                                     ? "text-amber-50 bg-amber-500 dark:bg-amber-600"
-                                    : "text-slate-500 dark:text-slate-400 font-semibold"
+                                    : "text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/50 font-semibold"
                                 }`}
                         >
                             {isOutOfStock ? "Hết hàng" : isLowStock ? `Còn ${stock}` : `Tồn: ${stock}`}

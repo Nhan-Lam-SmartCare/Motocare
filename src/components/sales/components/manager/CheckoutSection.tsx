@@ -129,7 +129,7 @@ export const CheckoutSection: React.FC<CheckoutSectionProps> = ({
             />
 
             {/* Payment Selection */}
-            <div className="mt-4">
+            <div className="mt-4" id="checkout-payment-section">
                 <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4">
                     <PaymentMethodSelector
                         paymentMethod={paymentMethod}

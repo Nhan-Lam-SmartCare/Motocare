@@ -21,6 +21,7 @@ import {
     ShoppingBag,
     Ban,
     RefreshCw,
+    SlidersHorizontal,
 } from "lucide-react";
 
 export interface SalesHistoryModalProps {
@@ -76,6 +77,7 @@ export const SalesHistoryModal: React.FC<SalesHistoryModalProps> = ({
     const { profile } = useAuth();
     const isOwner = profile?.role === "owner";
     const [showFinancials, setShowFinancials] = useState(true);
+    const [showMobileFilters, setShowMobileFilters] = useState(false);
 
     const [activeTimeFilter, setActiveTimeFilter] = useState("7days");
     const [customStartDate, setCustomStartDate] = useState("");
@@ -283,10 +285,10 @@ export const SalesHistoryModal: React.FC<SalesHistoryModalProps> = ({
                     </div>
 
                     {/* Mobile Header */}
-                    <div className="md:hidden bg-gradient-to-b from-slate-900 to-slate-800 p-4 pb-2">
+                    <div className="md:hidden bg-slate-900 p-4 pb-3 border-b border-white/5">
                         <div className="flex items-center justify-between mb-4">
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center">
+                                <div className="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center border border-blue-400/20 shadow-inner">
                                     <History className="w-5 h-5 text-blue-400" />
                                 </div>
                                 <div>
@@ -301,60 +303,75 @@ export const SalesHistoryModal: React.FC<SalesHistoryModalProps> = ({
                             {isOwner && (
                                 <button 
                                     onClick={() => setShowFinancials(!showFinancials)}
-                                    className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/10 text-slate-300 ml-2"
+                                    className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 border border-white/10 text-slate-300 ml-2 active:scale-95 transition-transform"
                                 >
                                     {showFinancials ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
                                 </button>
                             )}
-                            <button onClick={onClose} className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/10 text-slate-300 ml-auto">
+                            <button onClick={onClose} className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 border border-white/10 text-slate-300 ml-auto active:scale-95 transition-transform">
                                 <X className="w-6 h-6" />
                             </button>
                         </div>
-                        {/* Summary Mobile Cards (Only for Owner) */}
+                        {/* Summary Mobile Cards (Only for Owner) - Styled with rich gradients */}
                         {isOwner && (
                             <div className="grid grid-cols-2 gap-2 mb-4">
-                                <div className="bg-white/5 border border-white/10 rounded-xl p-2">
-                                    <div className="text-[9px] text-slate-400 uppercase font-black tracking-widest">Doanh thu</div>
-                                    <div className="text-sm font-black text-emerald-400">
+                                <div className="bg-gradient-to-br from-emerald-500/10 to-emerald-600/5 border border-emerald-500/20 rounded-2xl p-3 shadow-md shadow-emerald-950/10">
+                                    <div className="text-[9px] text-slate-400 uppercase font-black tracking-widest mb-1">Doanh thu</div>
+                                    <div className="text-sm font-black text-emerald-400 leading-tight">
                                         {showFinancials ? formatCurrency(totalRevenue) : "••••••"}
                                     </div>
                                 </div>
-                                <div className="bg-white/5 border border-white/10 rounded-xl p-2">
-                                    <div className="text-[9px] text-slate-400 uppercase font-black tracking-widest">Biên LN</div>
-                                    <div className="text-sm font-black text-purple-400">
+                                <div className="bg-gradient-to-br from-purple-500/10 to-pink-500/5 border border-purple-500/20 rounded-2xl p-3 shadow-md shadow-purple-950/10">
+                                    <div className="text-[9px] text-slate-400 uppercase font-black tracking-widest mb-1">Biên LN</div>
+                                    <div className="text-sm font-black text-purple-400 leading-tight">
                                         {showFinancials ? `${profitMargin.toFixed(1)}%` : "•••%"}
                                     </div>
                                 </div>
                             </div>
                         )}
-                        {/* Search mobile */}
-                        <div className="relative mb-3">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-                            <input
-                                type="text"
-                                placeholder="Tìm mã đơn, khách hàng..."
-                                value={search}
-                                onChange={e => onSearchChange(e.target.value)}
-                                className="w-full pl-10 pr-4 py-3 bg-white/10 border border-white/15 rounded-2xl text-white text-sm focus:outline-none focus:border-blue-500"
-                            />
+                        {/* Search and Filter Toggle mobile */}
+                        <div className="flex gap-2 mb-3">
+                            <div className="relative flex-1">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                                <input
+                                    type="text"
+                                    placeholder="Tìm mã đơn, khách hàng..."
+                                    value={search}
+                                    onChange={e => onSearchChange(e.target.value)}
+                                    className="w-full pl-10 pr-4 py-2.5 bg-white/5 border border-white/10 rounded-2xl text-white text-sm focus:outline-none focus:border-blue-500 transition-colors"
+                                />
+                            </div>
+                            <button
+                                onClick={() => setShowMobileFilters(!showMobileFilters)}
+                                className={`px-3.5 rounded-2xl border flex items-center justify-center gap-1.5 transition-all text-xs font-bold ${
+                                    showMobileFilters
+                                        ? "bg-blue-600 border-blue-500 text-white shadow-md shadow-blue-500/20"
+                                        : "bg-white/5 border-white/10 text-slate-350 active:scale-95"
+                                }`}
+                            >
+                                <SlidersHorizontal className="w-4 h-4" />
+                                <span>Lọc</span>
+                            </button>
                         </div>
-                        {/* Time filter mobile */}
-                        <div className="flex gap-1 overflow-x-auto scrollbar-hide">
-                            {TIME_FILTERS.map(f => (
-                                <button
-                                    key={f.id}
-                                    onClick={() => setActiveTimeFilter(f.id)}
-                                    className={`px-4 py-2 text-[10px] font-black uppercase tracking-wider rounded-xl whitespace-nowrap transition-all ${activeTimeFilter === f.id
-                                        ? "bg-blue-600 text-white shadow-lg shadow-blue-900/40"
-                                        : "bg-white/10 text-slate-400"
-                                    }`}
-                                >{f.label}</button>
-                            ))}
-                        </div>
+                        {/* Time filter mobile - Premium horizontal chips (toggled) */}
+                        {showMobileFilters && (
+                            <div className="flex gap-1.5 overflow-x-auto scrollbar-hide pb-0.5 animate-in slide-in-from-top duration-200">
+                                {TIME_FILTERS.map(f => (
+                                    <button
+                                        key={f.id}
+                                        onClick={() => setActiveTimeFilter(f.id)}
+                                        className={`px-3.5 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-xl whitespace-nowrap transition-all border ${activeTimeFilter === f.id
+                                            ? "bg-blue-600 border-blue-500 text-white shadow-md shadow-blue-500/20 scale-[1.02]"
+                                            : "bg-white/5 border-white/10 text-slate-400 active:scale-95"
+                                        }`}
+                                    >{f.label}</button>
+                                ))}
+                            </div>
+                        )}
                     </div>
 
-                    {/* ── FILTERS BAR ── */}
-                    <div className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4 md:px-6 py-3 flex flex-wrap items-center gap-3">
+                    {/* ── FILTERS BAR ── (responsive collapse) */}
+                    <div className={`${showMobileFilters ? "flex" : "hidden md:flex"} bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4 md:px-6 py-3 flex-wrap items-center gap-3 transition-all duration-200`}>
                         <div className="flex gap-1 flex-wrap">
                             {STATUS_FILTERS.map(f => (
                                 <button
@@ -380,7 +397,7 @@ export const SalesHistoryModal: React.FC<SalesHistoryModalProps> = ({
                                     key={f.id}
                                     onClick={() => onPaymentMethodFilterChange?.(f.id as "all" | "cash" | "bank")}
                                     className={`px-4 py-1.5 text-[11px] font-black uppercase tracking-wider rounded-full border transition-all flex items-center gap-2 ${paymentMethodFilter === f.id
-                                        ? "bg-slate-900 dark:bg-white text-white dark:text-slate-900 border-slate-900 dark:border-white shadow-md"
+                                        ? "bg-blue-600 text-white border-blue-600 shadow-sm"
                                         : "bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:border-slate-400"
                                     }`}
                                 >
@@ -592,28 +609,28 @@ export const SalesHistoryModal: React.FC<SalesHistoryModalProps> = ({
                                     const StatusIcon = statusCfg.icon;
 
                                     return (
-                                        <div key={sale.id} className="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden active:scale-[0.98] transition-all">
-                                            <div className="p-5">
-                                                <div className="flex items-start justify-between mb-4">
-                                                    <div className="space-y-1.5">
-                                                        <span className="px-2.5 py-1 rounded-lg text-[10px] font-black font-mono bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-800/50">
+                                        <div key={sale.id} className="bg-white dark:bg-[#1e1e2d] rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden active:scale-[0.99] transition-all">
+                                            <div className="p-4">
+                                                <div className="flex items-start justify-between mb-3">
+                                                    <div className="space-y-1.5 flex-1 min-w-0">
+                                                        <span className="inline-block px-2 py-0.5 rounded text-[9px] font-black font-mono bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-800/50">
                                                             {sale.sale_code || "#" + sale.id.slice(0, 8)}
                                                         </span>
-                                                        <div className="text-lg font-black text-slate-900 dark:text-white tracking-tight leading-none">{sale.customer.name}</div>
-                                                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{formatDate(new Date(sale.date))}</div>
+                                                        <div className="text-base font-black text-slate-900 dark:text-white tracking-tight leading-tight truncate">{sale.customer.name}</div>
+                                                        <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{formatDate(new Date(sale.date))}</div>
                                                     </div>
-                                                    <div className="text-right">
-                                                        <div className="text-xl font-black text-slate-950 dark:text-white leading-none">{formatCurrency(sale.total)}</div>
-                                                        <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-widest border mt-2 ${statusCfg.bg} ${statusCfg.color} ${statusCfg.border}`}>
+                                                    <div className="text-right shrink-0">
+                                                        <div className="text-lg font-black text-slate-950 dark:text-white leading-none">{formatCurrency(sale.total)}</div>
+                                                        <div className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded border mt-1.5 text-[9px] font-black uppercase tracking-widest ${statusCfg.bg} ${statusCfg.color} ${statusCfg.border}`}>
                                                             <StatusIcon className="w-2.5 h-2.5" />{statusCfg.label}
                                                         </div>
                                                     </div>
                                                 </div>
 
-                                                <div className="bg-slate-50 dark:bg-slate-800/40 rounded-2xl p-4 border border-slate-100 dark:border-slate-800/50 space-y-2">
+                                                <div className="bg-slate-50 dark:bg-slate-800/20 rounded-xl p-3 border border-slate-100 dark:border-slate-800/50 space-y-1.5">
                                                     {(isExpanded ? sale.items : sale.items.slice(0, 2)).map((item, idx) => (
-                                                        <div key={idx} className="flex items-center gap-3">
-                                                            <div className="w-6 h-6 rounded-lg bg-white dark:bg-slate-700 flex items-center justify-center text-[10px] font-black text-blue-600 border border-slate-200 dark:border-slate-600 flex-shrink-0">
+                                                        <div key={idx} className="flex items-center gap-2">
+                                                            <div className="w-5.5 h-5.5 rounded-lg bg-white dark:bg-slate-700 flex items-center justify-center text-[10px] font-black text-blue-600 border border-slate-200 dark:border-slate-600 flex-shrink-0">
                                                                 {item.quantity}
                                                             </div>
                                                             <span className="text-xs font-bold text-slate-700 dark:text-slate-300 flex-1 truncate">{item.partName}</span>
@@ -621,18 +638,77 @@ export const SalesHistoryModal: React.FC<SalesHistoryModalProps> = ({
                                                         </div>
                                                     ))}
                                                     {sale.items.length > 2 && (
-                                                        <button onClick={() => toggleExpand(sale.id)} className="w-full text-center text-[10px] font-black uppercase tracking-widest text-blue-500 pt-2 border-t border-slate-200 dark:border-slate-700/50 mt-1">
+                                                        <button onClick={() => toggleExpand(sale.id)} className="w-full text-center text-[10px] font-black uppercase tracking-widest text-blue-500 pt-1.5 border-t border-slate-200 dark:border-slate-750/50 mt-1">
                                                             {isExpanded ? "Thu gọn" : `+${sale.items.length - 2} sản phẩm nữa`}
                                                         </button>
                                                     )}
                                                 </div>
                                             </div>
 
-                                            <div className="flex bg-slate-50 dark:bg-slate-800/20 border-t border-slate-100 dark:border-slate-800">
-                                                <button onClick={() => onViewDetail(sale)} className="flex-1 py-4 text-[11px] font-black uppercase tracking-widest text-blue-500 border-r border-slate-100 dark:border-slate-800 active:bg-blue-50 transition-colors">Chi tiết</button>
-                                                <button onClick={() => onPrintReceipt(sale)} className="flex-1 py-4 text-[11px] font-black uppercase tracking-widest text-slate-500 border-r border-slate-100 dark:border-slate-800 active:bg-slate-100 transition-colors">In</button>
-                                                {canEdit && <button onClick={() => onEditSale(sale)} className="flex-1 py-4 text-[11px] font-black uppercase tracking-widest text-amber-600 border-r border-slate-100 dark:border-slate-800 active:bg-amber-50 transition-colors">Sửa</button>}
-                                                {canDelete && <button onClick={() => onDeleteSale(sale.id)} className="flex-1 py-4 text-[11px] font-black uppercase tracking-widest text-rose-500 active:bg-rose-50 transition-colors">Xóa</button>}
+                                            <div className="px-4 py-2.5 bg-slate-50/50 dark:bg-slate-800/15 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center">
+                                                {/* Payment Method Badge */}
+                                                <div className="flex items-center gap-1.5">
+                                                    {sale.paymentMethod === "cash" ? (
+                                                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 font-extrabold text-[9px] uppercase tracking-wider">
+                                                            💵 Tiền mặt
+                                                        </span>
+                                                    ) : (
+                                                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 font-extrabold text-[9px] uppercase tracking-wider">
+                                                            💳 Ck khoản
+                                                        </span>
+                                                    )}
+                                                </div>
+
+                                                {/* Right Circle Buttons */}
+                                                <div className="flex items-center gap-2">
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            onViewDetail(sale);
+                                                        }}
+                                                        className="w-8 h-8 rounded-full flex items-center justify-center bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 text-blue-650 dark:text-blue-400 transition-colors border border-blue-100 dark:border-blue-900/30 shadow-sm active:scale-95"
+                                                        title="Chi tiết"
+                                                    >
+                                                        <Eye className="w-4 h-4" />
+                                                    </button>
+
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            onPrintReceipt(sale);
+                                                        }}
+                                                        className="w-8 h-8 rounded-full flex items-center justify-center bg-slate-100 dark:bg-gray-800 hover:bg-slate-200 text-slate-550 dark:text-gray-400 transition-colors border border-slate-200 dark:border-gray-700 shadow-sm active:scale-95"
+                                                        title="In"
+                                                    >
+                                                        <Printer className="w-4 h-4" />
+                                                    </button>
+
+                                                    {canEdit && (
+                                                        <button
+                                                            onClick={(e) => {
+                                                                 e.stopPropagation();
+                                                                 onEditSale(sale);
+                                                            }}
+                                                            className="w-8 h-8 rounded-full flex items-center justify-center bg-[#009ef7]/10 hover:bg-[#009ef7]/20 text-[#009ef7] transition-colors border border-[#009ef7]/20 shadow-sm active:scale-95"
+                                                            title="Sửa"
+                                                        >
+                                                            <Edit2 className="w-4 h-4" />
+                                                        </button>
+                                                    )}
+
+                                                    {canDelete && (
+                                                        <button
+                                                            onClick={(e) => {
+                                                                 e.stopPropagation();
+                                                                 onDeleteSale(sale.id);
+                                                            }}
+                                                            className="w-8 h-8 rounded-full flex items-center justify-center bg-[#f1416c]/10 hover:bg-[#f1416c]/20 text-[#f1416c] transition-colors border border-[#f1416c]/20 shadow-sm active:scale-95"
+                                                            title="Xóa"
+                                                        >
+                                                            <Trash2 className="w-4 h-4" />
+                                                        </button>
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
                                     );

@@ -198,7 +198,7 @@ export const BottomNav: React.FC = () => {
       to: "/service",
       icon: <Wrench className="w-5 h-5" />,
       label: "Phiếu SC",
-      color: "violet" as ColorKey,
+      color: "blue" as ColorKey,
     },
     {
       to: "/sales",

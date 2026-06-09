@@ -650,6 +650,8 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
     };
   }, [isOpen]);
 
+  const isKeyboardOpen = typeof window !== 'undefined' && viewportHeight ? viewportHeight < window.innerHeight - 150 : false;
+
   // Handle Save with Haptics and Validation
   const handleSaveInternal = async () => {
     // Prevent duplicate taps before React state is flushed
@@ -1388,29 +1390,33 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
                   <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">
                     Kỹ thuật viên phụ trách
                   </label>
-                  <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide -mx-1 px-1">
-                    {employees
-                      .filter(emp => !["Nguyễn Xuân Nhạn", "Võ Thanh Lâm"].includes(emp.name))
-                      .map((emp) => {
-                        const isActive = selectedTechnicianId === emp.id;
-                        return (
-                          <button
-                            key={emp.id}
-                            onClick={() => setSelectedTechnicianId(emp.id)}
-                            className={`flex-shrink-0 flex items-center gap-2 px-3 py-2 rounded-xl border transition-all ${isActive
-                              ? "bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-500/20 scale-[1.02]"
-                              : "bg-white dark:bg-[#1e1e2d] border-slate-200 dark:border-slate-700/50 text-slate-500 dark:text-slate-400 hover:border-slate-400 dark:hover:border-slate-600"
-                              }`}
-                          >
-                            <div className={`w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-bold ${isActive ? "bg-white/20 text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-500"
-                              }`}>
-                              {emp.name.split(" ").pop()?.charAt(0) || "T"}
-                            </div>
-                            <span className="text-xs font-bold whitespace-nowrap">{emp.name}</span>
-                            {isActive && <Check className="w-3 h-3" />}
-                          </button>
-                        );
-                      })}
+                  <div className="relative">
+                    <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide -mx-1 px-1">
+                      {employees
+                        .filter(emp => !["Nguyễn Xuân Nhạn", "Võ Thanh Lâm"].includes(emp.name))
+                        .map((emp) => {
+                          const isActive = selectedTechnicianId === emp.id;
+                          return (
+                            <button
+                              key={emp.id}
+                              onClick={() => setSelectedTechnicianId(emp.id)}
+                              className={`flex-shrink-0 flex items-center gap-2 px-3 py-2 rounded-xl border transition-all ${isActive
+                                ? "bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-500/20 scale-[1.02]"
+                                : "bg-white dark:bg-[#1e1e2d] border-slate-200 dark:border-slate-700/50 text-slate-500 dark:text-slate-400 hover:border-slate-400 dark:hover:border-slate-600"
+                                }`}
+                            >
+                              <div className={`w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-bold ${isActive ? "bg-white/20 text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-500"
+                                }`}>
+                                {emp.name.split(" ").pop()?.charAt(0) || "T"}
+                              </div>
+                              <span className="text-xs font-bold whitespace-nowrap">{emp.name}</span>
+                              {isActive && <Check className="w-3 h-3" />}
+                            </button>
+                          );
+                        })}
+                    </div>
+                    {/* Shadow overlay/gradient to show it's scrollable */}
+                    <div className="absolute top-0 right-0 bottom-1 w-10 bg-gradient-to-l from-slate-50 dark:from-[#151521] to-transparent pointer-events-none" />
                   </div>
                 </div>
               </div>
@@ -1585,7 +1591,7 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
         {/* STICKY FOOTER - Action Buttons */}
         <div className="flex-shrink-0 bg-white dark:bg-[#1e1e2d] border-t border-slate-200 dark:border-slate-700 p-3">
           {/* Row 1: Print/Share buttons - only show when editing existing order */}
-          {workOrder?.id && (
+          {workOrder?.id && !isKeyboardOpen && (
             <div className="flex gap-2 mb-2">
               <button
                 onClick={() => {

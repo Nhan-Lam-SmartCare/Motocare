@@ -1258,16 +1258,28 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
     }
   };
 
-  // Hide bottom navigation when modal is open
+  // Hide bottom navigation when modal is open and handle scroll reset
   useEffect(() => {
     if (isOpen) {
       document.body.classList.add("hide-bottom-nav");
     } else {
       document.body.classList.remove("hide-bottom-nav");
+      // Reset scroll position to fix mobile keyboard layout shift
+      window.scrollTo(0, 0);
+      document.body.scrollTop = 0;
+      if (document.documentElement) {
+        document.documentElement.scrollTop = 0;
+      }
     }
 
     return () => {
       document.body.classList.remove("hide-bottom-nav");
+      // Reset scroll position on cleanup/unmount
+      window.scrollTo(0, 0);
+      document.body.scrollTop = 0;
+      if (document.documentElement) {
+        document.documentElement.scrollTop = 0;
+      }
     };
   }, [isOpen]);
 

@@ -626,8 +626,12 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
 
   // --- KEYBOARD & VIEWPORT HANDLING ---
   // Fix for mobile keyboard covering the Save button
-  // We use window.visualViewport to detect the actual visible height
+  // We use window.visualViewport to detect the actual visible height and position the modal correctly
   const [viewportHeight, setViewportHeight] = useState<number | null>(null);
+  const [viewportStyle, setViewportStyle] = useState<React.CSSProperties>({
+    top: 0,
+    height: "100vh",
+  });
 
   useEffect(() => {
     if (!isOpen) return;
@@ -635,6 +639,10 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
     const handleResize = () => {
       if (window.visualViewport) {
         setViewportHeight(window.visualViewport.height);
+        setViewportStyle({
+          top: `${window.visualViewport.offsetTop}px`,
+          height: `${window.visualViewport.height}px`,
+        });
       }
     };
 
@@ -1279,11 +1287,13 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
 
   // EDIT MODE - Form chỉnh sửa (code cũ)
   return (
-    <div className="fixed inset-0 bg-black/50 z-[100] flex items-end md:items-center justify-center">
+    <div 
+      className="fixed inset-x-0 bg-black/50 z-[100] flex items-start md:items-center justify-center"
+      style={viewportStyle}
+    >
       {/* Mobile Full Screen */}
       <div
-        className="md:hidden w-full bg-slate-50 dark:bg-[#151521] flex flex-col transition-colors"
-        style={{ height: viewportHeight ? `${viewportHeight}px` : '100vh' }}
+        className="md:hidden w-full h-full bg-slate-50 dark:bg-[#151521] flex flex-col transition-colors"
       >
         {/* Header */}
         <div className="flex-shrink-0 bg-white dark:bg-[#1e1e2d] px-4 py-4 flex items-center justify-between border-b border-slate-200 dark:border-slate-700/50">

@@ -1295,22 +1295,39 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
       <div
         className="md:hidden w-full h-full bg-slate-50 dark:bg-[#151521] flex flex-col transition-colors"
       >
-        {/* Header */}
-        <div className="flex-shrink-0 bg-white dark:bg-[#1e1e2d] px-4 py-4 flex items-center justify-between border-b border-slate-200 dark:border-slate-700/50">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={onClose}
-              className="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 active:scale-95 transition-all"
-            >
-              <X className="w-5 h-5" />
-            </button>
-            <h2 className="text-sm font-bold text-slate-900 dark:text-white">
-              {workOrder
-                ? `Sửa phiếu #${formatWorkOrderId(workOrder.id)}`
-                : "Tạo phiếu mới"}
-            </h2>
+        {/* Header containing Tabs directly to save space */}
+        <div className="flex-shrink-0 bg-white dark:bg-[#1e1e2d] px-3 py-2 flex items-center gap-3 border-b border-slate-200 dark:border-slate-700/50">
+          <button
+            onClick={onClose}
+            className="w-9 h-9 flex-shrink-0 flex items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 active:scale-95 transition-all"
+            aria-label="Close"
+          >
+            <X className="w-5 h-5" />
+          </button>
+
+          <div className="flex-1 grid grid-cols-3 gap-1 bg-slate-50 dark:bg-[#151521] p-1 rounded-xl">
+            {[
+              { id: 'info' as const, label: 'THÔNG TIN', icon: User },
+              { id: 'parts' as const, label: 'PHỤ TÙNG', icon: Package },
+              { id: 'payment' as const, label: 'T.TOÁN', icon: Banknote },
+            ].map((tab) => {
+              const isActive = activeTab === tab.id;
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center justify-center gap-1 py-1.5 px-1 rounded-lg transition-all active:scale-[0.98] ${isActive
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+                    }`}
+                >
+                  <Icon className="w-3.5 h-3.5" />
+                  <span className="text-[10px] font-bold tracking-tight">{tab.label}</span>
+                </button>
+              );
+            })}
           </div>
-          <div className="w-9"></div>
         </div>
 
         {isOrderPaid && (
@@ -1325,36 +1342,6 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
             </div>
           </div>
         )}
-
-        {/* Tab Navigation Bar */}
-        <div className="flex-shrink-0 bg-white dark:bg-[#1e1e2d] border-b border-slate-200 dark:border-slate-700/50">
-          <div className="grid grid-cols-3 gap-0">
-            {[
-              { id: 'info' as const, label: 'THÔNG TIN', icon: User },
-              { id: 'parts' as const, label: 'PHỤ TÙNG', icon: Package },
-              { id: 'payment' as const, label: 'T.TOÁN', icon: Banknote },
-            ].map((tab) => {
-              const isActive = activeTab === tab.id;
-              const Icon = tab.icon;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`relative flex flex-col items-center justify-center py-2.5 transition-all ${isActive
-                    ? 'text-blue-600 dark:text-blue-400'
-                    : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'
-                    }`}
-                >
-                  <Icon className={`w-4 h-4 mb-0.5 ${isActive ? 'text-blue-600 dark:text-blue-400' : ''}`} />
-                  <span className="text-[9px] font-bold tracking-tight">{tab.label}</span>
-                  {isActive && (
-                    <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-blue-600 dark:bg-blue-400 rounded-full" />
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        </div>
 
         {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto pb-32">

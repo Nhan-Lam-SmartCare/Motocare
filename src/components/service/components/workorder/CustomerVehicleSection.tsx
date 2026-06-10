@@ -259,7 +259,7 @@ export const CustomerVehicleSection: React.FC<CustomerVehicleSectionProps> = ({
         </h3>
       </div>
 
-      <div className="grid gap-5 xl:grid-cols-2">
+      <div className="space-y-4">
         <div>
           <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
             Khách hàng <span className="text-red-500">*</span>

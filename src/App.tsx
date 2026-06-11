@@ -220,7 +220,7 @@ const MainLayout: React.FC = () => {
   const isShopPage = ['/san-pham', '/khuyen-mai', '/thu-vien'].includes(location.pathname);
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 transition-colors pb-20 md:pb-0 relative overflow-hidden">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 transition-colors pb-20 md:pb-0 relative overflow-x-clip">
       {/* <TetTheme /> */}
       {!isShopPage && <Nav />}
       <main

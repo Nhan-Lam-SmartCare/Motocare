@@ -68,8 +68,6 @@ const Dashboard: React.FC = () => {
   useWorkOrdersRealtime();
   const navigate = useNavigate();
   const [reportFilter, setReportFilter] = useState<string>("month");
-  const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
-  const [selectedQuarter, setSelectedQuarter] = useState<number>(Math.ceil((new Date().getMonth() + 1) / 3));
   const [isLoading, setIsLoading] = useState(true);
   const [showBalance, setShowBalance] = useState(false);
   const [showRevenue, setShowRevenue] = useState(false);
@@ -91,8 +89,6 @@ const Dashboard: React.FC = () => {
     unpaidWorkOrdersCount,
     lowStockCount,
   } = useDashboardData(reportFilter);
-
-  // ... (existing code)
 
   useEffect(() => {
     // Simulate loading
@@ -144,11 +140,24 @@ const Dashboard: React.FC = () => {
     <div className="space-y-3 md:space-y-4">
       {/* <TetConfetti duration={6000} count={40} /> */}
       {/* <TetBanner /> */}
-      <div className="relative md:hidden bg-[#0B0F19] min-h-screen -mx-4 -mt-4 px-6 py-5 pb-24 space-y-6 font-sans text-slate-200 overflow-hidden">
+      <div className="relative md:hidden bg-[#0B0F19] min-h-screen px-4 py-5 pb-24 space-y-6 font-sans text-slate-200 overflow-hidden">
         {/* Ambient Glowing Background Backdrops */}
         <div className="absolute top-0 left-1/4 w-72 h-72 bg-emerald-500/10 rounded-full blur-[100px] pointer-events-none" />
         <div className="absolute top-[35%] right-1/4 w-72 h-72 bg-blue-500/10 rounded-full blur-[100px] pointer-events-none" />
         <div className="absolute bottom-[20%] left-10 w-56 h-56 bg-rose-500/5 rounded-full blur-[80px] pointer-events-none" />
+
+        {/* Mobile Page Title */}
+        <div className="relative z-10 flex items-center gap-3 border-b border-slate-800/60 pb-3">
+          <img
+            src="/logo-smartcare.png"
+            alt="SmartCare Logo"
+            className="w-10 h-10 rounded-xl shadow-md ring-1 ring-slate-800"
+          />
+          <div>
+            <h1 className="text-base font-extrabold text-white tracking-tight leading-none">Nhạn Lâm SmartCare</h1>
+            <p className="text-[10px] text-slate-400 font-medium mt-1">Hệ thống quản lý cửa hàng</p>
+          </div>
+        </div>
 
         {/* Báo cáo (Tháng này) */}
         <div className="relative z-10 space-y-3">
@@ -254,6 +263,99 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
 
+        {/* Doanh thu 7 ngày (Mobile Chart) */}
+        <div className="relative z-10 space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-base font-bold text-white tracking-wide">Xu hướng doanh thu</h2>
+            <span className="text-xs text-slate-400 font-medium bg-slate-800/40 px-2.5 py-0.5 rounded-full">7 ngày qua</span>
+          </div>
+          <div className="bg-gradient-to-br from-[#182030] to-[#111723] rounded-2xl border border-slate-800/80 p-4 shadow-[0_4px_20px_rgba(0,0,0,0.4)]">
+            <div className="h-44 -ml-4">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={last7DaysRevenue} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" opacity={0.3} />
+                  <XAxis 
+                    dataKey="date" 
+                    fontSize={10} 
+                    tickLine={false} 
+                    axisLine={false}
+                    tick={{ fill: '#94a3b8' }}
+                  />
+                  <YAxis
+                    fontSize={10}
+                    tickLine={false}
+                    axisLine={false}
+                    tick={{ fill: '#94a3b8' }}
+                    tickFormatter={(val) =>
+                      val >= 1000000 ? `${(val / 1000000).toFixed(0)}M` : `${(val / 1000).toFixed(0)}K`
+                    }
+                  />
+                  <Tooltip
+                    formatter={(value: any) => formatCurrency(value)}
+                    contentStyle={{ 
+                      backgroundColor: '#1e293b', 
+                      borderColor: '#334155', 
+                      borderRadius: '0.75rem',
+                      color: '#fff',
+                      fontSize: '11px'
+                    }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="revenue"
+                    name="Doanh thu"
+                    stroke="#3b82f6"
+                    strokeWidth={2.5}
+                    dot={{ r: 3, fill: '#3b82f6', strokeWidth: 0 }}
+                    activeDot={{ r: 5 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
+
+        {/* Top Sản phẩm (Mobile) */}
+        <div className="relative z-10 space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-base font-bold text-white tracking-wide">Top sản phẩm bán chạy</h2>
+            <span className="text-xs text-slate-400 font-medium bg-slate-800/40 px-2.5 py-0.5 rounded-full">Tháng này</span>
+          </div>
+          <div className="bg-gradient-to-br from-[#182030] to-[#111723] rounded-2xl border border-slate-800/80 p-4 space-y-3 shadow-[0_4px_20px_rgba(0,0,0,0.4)]">
+            {topProducts.length === 0 ? (
+              <div className="text-center py-4 text-xs text-slate-500">
+                Chưa có dữ liệu sản phẩm bán chạy
+              </div>
+            ) : (
+              topProducts.slice(0, 5).map((product, idx) => (
+                <div key={idx} className="flex items-center justify-between text-left">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div
+                      className={`w-7 h-7 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 ${
+                        idx === 0
+                          ? "bg-amber-500/20 text-amber-400 border border-amber-500/30"
+                          : idx === 1
+                            ? "bg-slate-400/20 text-slate-300 border border-slate-400/30"
+                            : idx === 2
+                              ? "bg-orange-500/20 text-orange-400 border border-orange-500/30"
+                              : "bg-slate-800 text-slate-400 border border-slate-700/50"
+                      }`}
+                    >
+                      {idx + 1}
+                    </div>
+                    <span className="text-sm font-medium text-white truncate">
+                      {product.name}
+                    </span>
+                  </div>
+                  <span className="text-xs font-bold text-blue-400 bg-blue-950/40 border border-blue-500/20 px-2 py-0.5 rounded-md shrink-0 ml-2">
+                    SL: {product.quantity}
+                  </span>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
         {/* Cần xử lý (Ưu tiên) */}
         <div className="relative z-10 space-y-3">
           <div className="flex items-center justify-between">
@@ -298,6 +400,38 @@ const Dashboard: React.FC = () => {
               </div>
               <ChevronRight className="w-5 h-5 text-slate-500 shrink-0" />
             </Link>
+
+            {/* Dynamic Alerts for Mobile (Loans, Low balance) */}
+            {alerts.filter(a => a.type !== "Tồn kho thấp").map((alert, idx) => {
+              const isLoan = alert.type === "Nợ đến hạn";
+              const toPath = isLoan ? "/loans" : "/finance";
+              const IconComponent = isLoan ? Landmark : Wallet;
+              const bgClass = isLoan 
+                ? "bg-rose-950/40 border-rose-500/20" 
+                : "bg-amber-950/40 border-amber-500/20";
+              const textIconClass = isLoan ? "text-rose-400" : "text-amber-500";
+              
+              return (
+                <Link
+                  key={idx}
+                  to={toPath}
+                  className="flex items-center justify-between bg-gradient-to-br from-[#182030] to-[#111723] rounded-2xl p-4 border border-slate-800/80 active:from-[#202b40] active:to-[#171f30] transition shadow-[0_4px_20px_rgba(0,0,0,0.4)]"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`w-10 h-10 rounded-xl ${bgClass} flex items-center justify-center shrink-0 border`}>
+                      <IconComponent className={`w-5 h-5 ${textIconClass}`} />
+                    </div>
+                    <div className="flex flex-col text-left">
+                      <span className="text-sm font-bold text-white">{alert.type}</span>
+                      <span className="text-xs text-slate-400 mt-0.5">
+                        {alert.message}
+                      </span>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-5 h-5 text-slate-500 shrink-0" />
+                </Link>
+              );
+            })}
           </div>
         </div>
 

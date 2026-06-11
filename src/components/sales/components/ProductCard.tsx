@@ -1,7 +1,7 @@
 import React from "react";
 import type { Part } from "../../../types";
 import { formatCurrency } from "../../../utils/format";
-import { ShoppingCart, Package, X } from "lucide-react";
+import { ShoppingCart, Package } from "lucide-react";
 import { getAvailableStock } from "../../../lib/repository/partsRepository";
 
 interface ProductCardProps {
@@ -25,7 +25,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     const wholesalePrice = part.wholesalePrice?.[currentBranchId] ?? 0;
     const isOutOfStock = stock <= 0;
     const isLowStock = stock > 0 && stock <= 5;
-    const [showZoom, setShowZoom] = React.useState(false);
 
     return (
         <div
@@ -59,11 +58,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                     <img
                         src={part.imageUrl}
                         alt={part.name}
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            setShowZoom(true);
-                        }}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 cursor-zoom-in"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
                 ) : (
                     <div className="flex flex-col items-center justify-center gap-1">
@@ -123,48 +118,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                 <div className="absolute inset-0 bg-blue-500/[0.03] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
             )}
 
-            {/* Zoom Overlay Modal */}
-            {showZoom && part.imageUrl && (
-                <div
-                    className="fixed inset-0 bg-black/90 z-[9999] flex flex-col items-center justify-center p-4"
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        setShowZoom(false);
-                    }}
-                >
-                    {/* Close button */}
-                    <button
-                        className="absolute top-4 right-4 p-2 rounded-full bg-slate-800/80 hover:bg-slate-700 text-white z-10"
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            setShowZoom(false);
-                        }}
-                        aria-label="Đóng ảnh"
-                    >
-                        <X className="w-6 h-6" />
-                    </button>
-                    
-                    {/* Zoomed Image Container */}
-                    <div className="relative max-w-full max-h-[80vh] flex items-center justify-center rounded-2xl overflow-hidden bg-slate-900 border border-slate-700 shadow-2xl p-2 animate-[scaleIn_0.25s_ease-out_1]">
-                        <img
-                            src={part.imageUrl}
-                            alt={part.name}
-                            className="max-w-full max-h-[75vh] object-contain rounded-xl"
-                            onClick={(e) => e.stopPropagation()}
-                        />
-                    </div>
-                    
-                    {/* Product Name */}
-                    <div className="mt-4 text-center max-w-md px-4">
-                        <h4 className="text-white font-bold text-sm line-clamp-2 leading-snug">
-                            {part.name}
-                        </h4>
-                        <p className="text-slate-400 text-xs mt-1">
-                            Nhấn bất kỳ đâu để đóng
-                        </p>
-                    </div>
-                </div>
-            )}
         </div>
     );
 };

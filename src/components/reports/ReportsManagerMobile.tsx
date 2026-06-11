@@ -73,6 +73,7 @@ interface ReportsManagerMobileProps {
         totalSupplierDebt: number;
         netDebt: number;
     };
+    employees: any[];
     dateRange: string;
     setDateRange: (range: any) => void;
     activeTab: string;
@@ -98,8 +99,9 @@ export const ReportsManagerMobile: React.FC<ReportsManagerMobileProps> = ({
     revenueReport,
     cashflowReport,
     inventoryReport,
-    payrollReport: _payrollReport,
-    debtReport: _debtReport,
+    payrollReport,
+    debtReport,
+    employees,
     dateRange,
     setDateRange,
     activeTab,
@@ -118,6 +120,7 @@ export const ReportsManagerMobile: React.FC<ReportsManagerMobileProps> = ({
     const { theme } = useTheme();
     const [showFilters, setShowFilters] = useState(false);
     const [showReportMenu, setShowReportMenu] = useState(false);
+    const [debtSubTab, setDebtSubTab] = useState<"customer" | "supplier">("customer");
 
     // Helper to get tab label
     const getTabLabel = (tab: string) => {
@@ -581,6 +584,229 @@ export const ReportsManagerMobile: React.FC<ReportsManagerMobileProps> = ({
         </div>
     );
 
+    const renderDebtTab = () => (
+        <div className="space-y-4 pb-20 animate-in fade-in duration-200">
+            {/* Summary Cards */}
+            <div className="grid grid-cols-2 gap-3">
+                <div className="bg-gradient-to-br from-emerald-50 to-emerald-100/60 dark:from-emerald-950/20 dark:to-emerald-900/20 border border-emerald-100 dark:border-emerald-500/20 p-4 rounded-2xl">
+                    <div className="text-[10px] text-emerald-600 dark:text-emerald-300 font-bold uppercase tracking-wider mb-1">
+                        Phải thu KH
+                    </div>
+                    <div className="text-sm font-extrabold text-emerald-600 dark:text-emerald-400 font-mono">
+                        {formatCurrency(debtReport.totalCustomerDebt)}
+                    </div>
+                </div>
+                <div className="bg-gradient-to-br from-rose-50 to-rose-100/60 dark:from-rose-950/20 dark:to-rose-900/20 border border-rose-100 dark:border-rose-500/20 p-4 rounded-2xl">
+                    <div className="text-[10px] text-rose-600 dark:text-rose-300 font-bold uppercase tracking-wider mb-1">
+                        Phải trả NCC
+                    </div>
+                    <div className="text-sm font-extrabold text-rose-600 dark:text-rose-400 font-mono">
+                        {formatCurrency(debtReport.totalSupplierDebt)}
+                    </div>
+                </div>
+            </div>
+
+            {/* Net Debt Card */}
+            <div className="bg-gradient-to-br from-blue-50 to-blue-100/60 dark:from-blue-950/20 dark:to-blue-900/20 border border-blue-100 dark:border-blue-500/20 p-4 rounded-2xl">
+                <div className="text-[10px] text-blue-600 dark:text-blue-300 font-bold uppercase tracking-wider mb-1">
+                    Dư nợ ròng
+                </div>
+                <div className="text-lg font-black text-blue-600 dark:text-blue-400 font-mono">
+                    {formatCurrency(debtReport.netDebt)}
+                </div>
+                <div className="text-[9px] text-slate-500 dark:text-slate-400 mt-1">
+                    Chênh lệch Phải thu - Phải trả
+                </div>
+            </div>
+
+            {/* Switch Tabs (Khách hàng vs Nhà cung cấp) */}
+            <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
+                <button
+                    type="button"
+                    onClick={() => setDebtSubTab("customer")}
+                    className={`flex-1 py-2 text-xs font-extrabold rounded-lg transition-all ${
+                        debtSubTab === "customer"
+                            ? "bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm"
+                            : "text-slate-500 dark:text-slate-400"
+                    }`}
+                >
+                    Khách hàng ({debtReport.customerDebts.length})
+                </button>
+                <button
+                    type="button"
+                    onClick={() => setDebtSubTab("supplier")}
+                    className={`flex-1 py-2 text-xs font-extrabold rounded-lg transition-all ${
+                        debtSubTab === "supplier"
+                            ? "bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm"
+                            : "text-slate-500 dark:text-slate-400"
+                    }`}
+                >
+                    Nhà cung cấp ({debtReport.supplierDebts.length})
+                </button>
+            </div>
+
+            {/* List */}
+            <div className="space-y-2">
+                {debtSubTab === "customer" ? (
+                    debtReport.customerDebts.length === 0 ? (
+                        <div className="text-center py-8 text-slate-400 dark:text-slate-500 text-xs italic">
+                            Không phát sinh công nợ khách hàng
+                        </div>
+                    ) : (
+                        debtReport.customerDebts.map((item, idx) => (
+                            <div
+                                key={idx}
+                                className="flex items-center justify-between p-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/50 rounded-xl shadow-sm hover:scale-[1.01] active:scale-[0.99] transition-all"
+                            >
+                                <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-500/20 flex items-center justify-center text-xs font-extrabold text-emerald-600 dark:text-emerald-400">
+                                        {(item.name || "K").charAt(0).toUpperCase()}
+                                    </div>
+                                    <span className="text-xs font-extrabold text-slate-800 dark:text-slate-200">
+                                        {item.name}
+                                    </span>
+                                </div>
+                                <span className="text-xs font-black text-emerald-600 dark:text-emerald-400 font-mono">
+                                    {formatCurrency(item.debt)}
+                                </span>
+                            </div>
+                        ))
+                    )
+                ) : (
+                    debtReport.supplierDebts.length === 0 ? (
+                        <div className="text-center py-8 text-slate-400 dark:text-slate-500 text-xs italic">
+                            Không phát sinh công nợ nhà cung cấp
+                        </div>
+                    ) : (
+                        debtReport.supplierDebts.map((item, idx) => (
+                            <div
+                                key={idx}
+                                className="flex items-center justify-between p-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/50 rounded-xl shadow-sm hover:scale-[1.01] active:scale-[0.99] transition-all"
+                            >
+                                <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 rounded-lg bg-rose-50 dark:bg-rose-500/10 border border-rose-100 dark:border-rose-500/20 flex items-center justify-center text-xs font-extrabold text-rose-600 dark:text-rose-400">
+                                        {(item.name || "N").charAt(0).toUpperCase()}
+                                    </div>
+                                    <span className="text-xs font-extrabold text-slate-800 dark:text-slate-200">
+                                        {item.name}
+                                    </span>
+                                </div>
+                                <span className="text-xs font-black text-rose-650 dark:text-rose-400 font-mono">
+                                    {formatCurrency(item.debt)}
+                                </span>
+                            </div>
+                        ))
+                    )
+                )}
+            </div>
+        </div>
+    );
+
+    const renderPayrollTab = () => (
+        <div className="space-y-4 pb-20 animate-in fade-in duration-200">
+            {/* Summary Grid */}
+            <div className="grid grid-cols-2 gap-3">
+                <div className="bg-gradient-to-br from-blue-50 to-blue-100/60 dark:from-blue-950/20 dark:to-blue-900/20 border border-blue-100 dark:border-blue-500/20 p-4 rounded-2xl">
+                    <div className="text-[10px] text-blue-600 dark:text-blue-300 font-bold uppercase tracking-wider mb-1">
+                        Tổng quỹ lương
+                    </div>
+                    <div className="text-sm font-extrabold text-blue-600 dark:text-blue-400 font-mono">
+                        {formatCurrency(payrollReport.totalSalary)}
+                    </div>
+                </div>
+
+                <div className="bg-gradient-to-br from-emerald-50 to-emerald-100/60 dark:from-emerald-950/20 dark:to-emerald-900/20 border border-emerald-100 dark:border-emerald-500/20 p-4 rounded-2xl">
+                    <div className="text-[10px] text-emerald-600 dark:text-emerald-300 font-bold uppercase tracking-wider mb-1">
+                        Đã thanh toán
+                    </div>
+                    <div className="text-sm font-extrabold text-emerald-600 dark:text-emerald-400 font-mono">
+                        {formatCurrency(payrollReport.paidSalary)}
+                    </div>
+                </div>
+
+                <div className="bg-gradient-to-br from-rose-50 to-rose-100/60 dark:from-rose-950/20 dark:to-rose-900/20 border border-rose-100 dark:border-rose-500/20 p-4 rounded-2xl">
+                    <div className="text-[10px] text-rose-600 dark:text-rose-300 font-bold uppercase tracking-wider mb-1">
+                        Lương còn nợ
+                    </div>
+                    <div className="text-sm font-extrabold text-rose-600 dark:text-rose-400 font-mono">
+                        {formatCurrency(payrollReport.unpaidSalary)}
+                    </div>
+                </div>
+
+                <div className="bg-gradient-to-br from-purple-50 to-purple-100/60 dark:from-purple-950/20 dark:to-purple-900/20 border border-purple-100 dark:border-purple-500/20 p-4 rounded-2xl">
+                    <div className="text-[10px] text-purple-600 dark:text-purple-300 font-bold uppercase tracking-wider mb-1">
+                        Nhân viên
+                    </div>
+                    <div className="text-sm font-extrabold text-purple-600 dark:text-purple-400 font-mono">
+                        {payrollReport.employeeCount}
+                    </div>
+                </div>
+            </div>
+
+            {/* List Header */}
+            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">
+                Chi tiết lương nhân viên
+            </h3>
+
+            {/* List */}
+            <div className="space-y-3">
+                {payrollReport.records.length === 0 ? (
+                    <div className="text-center py-8 text-slate-400 dark:text-slate-500 text-xs italic">
+                        Không có ghi nhận bảng lương
+                    </div>
+                ) : (
+                    payrollReport.records.map((record) => {
+                        const employee = employees?.find((e) => e.id === record.employeeId);
+                        const isPaid = record.paymentStatus === "paid";
+                        return (
+                            <div
+                                key={record.id}
+                                className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/50 p-4 rounded-xl shadow-sm flex flex-col gap-3 hover:scale-[1.01] transition-all"
+                            >
+                                <div className="flex justify-between items-start">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-650 flex items-center justify-center text-xs font-black text-slate-600 dark:text-slate-300">
+                                            {(record.employeeName || employee?.name || "N").charAt(0).toUpperCase()}
+                                        </div>
+                                        <div>
+                                            <div className="text-xs font-extrabold text-slate-900 dark:text-white">
+                                                {record.employeeName || employee?.name || "N/A"}
+                                            </div>
+                                            <div className="text-[10px] text-slate-500 mt-0.5">
+                                                Tháng: {record.month}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <span
+                                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-black uppercase border tracking-wider ${
+                                            isPaid
+                                                ? "bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20"
+                                                : "bg-amber-50 text-amber-600 border-amber-250 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20"
+                                        }`}
+                                    >
+                                        <span
+                                            className={`inline-block w-1.5 h-1.5 rounded-full mr-1.5 animate-pulse ${
+                                                isPaid ? "bg-emerald-500 dark:bg-emerald-400" : "bg-amber-500 dark:bg-amber-400"
+                                            }`}
+                                        />
+                                        {isPaid ? "Đã trả" : "Chưa trả"}
+                                    </span>
+                                </div>
+                                <div className="flex justify-between items-center border-t border-slate-100 dark:border-slate-700/50 pt-2 text-xs">
+                                    <span className="text-slate-500">Lương thực nhận:</span>
+                                    <span className="font-extrabold text-slate-800 dark:text-slate-100 font-mono">
+                                        {formatCurrency(record.netSalary)}
+                                    </span>
+                                </div>
+                            </div>
+                        );
+                    })
+                )}
+            </div>
+        </div>
+    );
+
     return (
         <div className="md:hidden min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white transition-colors">
             {/* Header with Dropdown Selector */}
@@ -698,18 +924,8 @@ export const ReportsManagerMobile: React.FC<ReportsManagerMobileProps> = ({
                 {activeTab === "revenue" && renderRevenueTab()}
                 {activeTab === "cashflow" && renderCashflowTab()}
                 {activeTab === "inventory" && renderInventoryTab()}
-                {activeTab === "debt" && (
-                    <div className="text-center py-10 text-slate-500">
-                        <ClipboardList className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                        <p>Tính năng đang được cập nhật giao diện mobile</p>
-                    </div>
-                )}
-                {activeTab === "payroll" && (
-                    <div className="text-center py-10 text-slate-500">
-                        <BriefcaseBusiness className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                        <p>Tính năng đang được cập nhật giao diện mobile</p>
-                    </div>
-                )}
+                {activeTab === "debt" && renderDebtTab()}
+                {activeTab === "payroll" && renderPayrollTab()}
                 {activeTab === "tax" && <TaxReportExport />}
             </div>
         </div>

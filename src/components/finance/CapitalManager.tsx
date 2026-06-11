@@ -452,16 +452,16 @@ const CapitalModal: React.FC<{
             </label>
             <div className="grid grid-cols-3 gap-3">
               {[
-                { value: "owner", label: "👤 Vốn chủ", color: "blue" },
-                { value: "investor", label: "💼 Đầu tư", color: "green" },
-                { value: "loan", label: "🏦 Vay", color: "orange" },
+                { value: "owner", label: "👤 Vốn chủ", colorClasses: "border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300" },
+                { value: "investor", label: "💼 Đầu tư", colorClasses: "border-green-500 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300" },
+                { value: "loan", label: "🏦 Vay", colorClasses: "border-orange-500 bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-300" },
               ].map((option) => (
                 <button
                   key={option.value}
                   type="button"
                   onClick={() => setType(option.value as Capital["type"])}
                   className={`px-4 py-3 rounded-lg border-2 font-medium transition-all ${type === option.value
-                      ? `border-${option.color}-500 bg-${option.color}-50 dark:bg-${option.color}-900/20 text-${option.color}-700 dark:text-${option.color}-300`
+                      ? option.colorClasses
                       : "border-slate-300 dark:border-slate-600 hover:border-slate-400 dark:hover:border-slate-500"
                     }`}
                 >

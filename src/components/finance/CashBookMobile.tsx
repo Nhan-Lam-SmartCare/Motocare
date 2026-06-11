@@ -14,7 +14,7 @@ import { useUpdatePaymentSourceBalanceRepo } from "../../hooks/usePaymentSources
 import { supabase } from "../../supabaseClient";
 import { Plus, Search, Filter, Wallet, ArrowUpCircle, ArrowDownCircle, MoreVertical, Edit2, Trash2 } from "lucide-react";
 import { AddTransactionModal, EditTransactionModal, DeleteConfirmModal } from "./CashBookModals";
-import { getCategoryLabel } from "./cashBookHelpers";
+import { getCategoryLabel, isIncomeTx } from "./cashBookHelpers";
 
 
 export const CashBookMobile: React.FC = () => {
@@ -126,45 +126,7 @@ export const CashBookMobile: React.FC = () => {
         searchQuery,
     ]);
 
-    const INCOME_CATEGORIES = new Set([
-        "sale_income",
-        "service_income",
-        "other_income",
-        "debt_collection",
-        "service_deposit",
-        "employee_advance_repayment",
-        "general_income",
-        "deposit",
-    ]);
-    const EXPENSE_CATEGORIES = new Set([
-        "inventory_purchase",
-        "supplier_payment",
-        "debt_payment",
-        "salary",
-        "employee_advance",
-        "loan_payment",
-        "rent",
-        "utilities",
-        "outsourcing",
-        "service_cost",
-        "sale_refund",
-        "other_expense",
-        "general_expense",
-    ]);
 
-    // ✅ FIX: Refactored transaction type detection with clear priority (consistent with CashBook.tsx)
-    const isIncomeTx = (tx: CashTransaction) => {
-        const normalizedCategory = String(tx.category || "").trim().toLowerCase();
-
-        // Priority 1: Check expense categories first (more specific)
-        if (EXPENSE_CATEGORIES.has(normalizedCategory)) return false;
-
-        // Priority 2: Check income categories
-        if (INCOME_CATEGORIES.has(normalizedCategory)) return true;
-
-        // Priority 3: Fallback to type field only if category not recognized
-        return tx.type === "income" || tx.type === "deposit";
-    };
 
     // Get initial balances
     const savedInitialCash =
@@ -271,7 +233,7 @@ export const CashBookMobile: React.FC = () => {
                         <Wallet className="w-24 h-24 text-slate-900 dark:text-white" />
                     </div>
                     <div className="relative z-10">
-                        <p className="text-slate-550 dark:text-slate-400 text-sm font-medium mb-1">Tổng số dư thực tế</p>
+                        <p className="text-slate-500 dark:text-slate-400 text-sm font-medium mb-1">Tổng số dư thực tế</p>
                         <h3 className="text-3xl font-bold text-slate-800 dark:text-white mb-4">
                             {formatCurrency(actualBalance.totalBalance)}
                         </h3>
@@ -291,7 +253,7 @@ export const CashBookMobile: React.FC = () => {
                 {/* Income/Expense Summary - Show filtered summary */}
                 <div className="snap-center shrink-0 w-[85vw] bg-white dark:bg-[#1e1e2d] rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm dark:shadow-lg">
                     <div className="flex items-center justify-between mb-3">
-                        <h4 className="text-slate-550 dark:text-slate-400 text-sm font-medium">Thu chi trong kỳ</h4>
+                        <h4 className="text-slate-500 dark:text-slate-400 text-sm font-medium">Thu chi trong kỳ</h4>
                         {isFilteredView && (
                             <span className="text-xs text-blue-600 dark:text-blue-400 font-semibold">
                                 ({filteredTransactions.length} GD)
@@ -329,7 +291,7 @@ export const CashBookMobile: React.FC = () => {
                                     <Wallet className="w-6 h-6 text-blue-600 dark:text-blue-500" />
                                 </div>
                                 <div>
-                                    <p className="text-slate-550 dark:text-slate-400 text-xs">Chênh lệch</p>
+                                    <p className="text-slate-500 dark:text-slate-400 text-xs">Chênh lệch</p>
                                     <p className={`font-bold ${filteredSummary.balance >= 0 ? "text-blue-600 dark:text-blue-500" : "text-red-650 dark:text-red-500"
                                         }`}>
                                         {formatCurrency(filteredSummary.balance)}
@@ -410,7 +372,7 @@ export const CashBookMobile: React.FC = () => {
 
             {/* Transactions List */}
             <div className="px-4 space-y-3">
-                <h3 className="text-slate-550 dark:text-slate-400 text-sm font-medium">Giao dịch gần đây</h3>
+                <h3 className="text-slate-500 dark:text-slate-400 text-sm font-medium">Giao dịch gần đây</h3>
                 {isCashTxLoading ? (
                     <div className="text-center py-8 text-slate-500">
                         <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto mb-2"></div>
@@ -447,7 +409,7 @@ export const CashBookMobile: React.FC = () => {
                                     <p className={`font-bold ${isIncomeTx(tx) ? 'text-green-600 dark:text-green-500' : 'text-red-650 dark:text-red-500'}`}>
                                         {isIncomeTx(tx) ? '+' : '-'}{formatCurrency(Math.abs(tx.amount))}
                                     </p>
-                                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-550 dark:text-slate-400 inline-block mt-1">
+                                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 inline-block mt-1">
                                         {tx.paymentSourceId === 'bank' ? 'Ngân hàng' : 'Tiền mặt'}
                                     </span>
                                 </div>

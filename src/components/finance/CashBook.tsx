@@ -20,7 +20,7 @@ import {
   EditTransactionModal,
   DeleteConfirmModal
 } from "./CashBookModals";
-import { getCategoryLabel } from "./cashBookHelpers";
+import { getCategoryLabel, isIncomeTx } from "./cashBookHelpers";
 import {
   Wallet,
   Building2,
@@ -181,45 +181,7 @@ const CashBook: React.FC = () => {
     searchQuery,
   ]);
 
-  const INCOME_CATEGORIES = new Set([
-    "sale_income",
-    "service_income",
-    "other_income",
-    "debt_collection",
-    "service_deposit",
-    "employee_advance_repayment",
-    "general_income",
-    "deposit",
-  ]);
-  const EXPENSE_CATEGORIES = new Set([
-    "inventory_purchase",
-    "supplier_payment",
-    "debt_payment",
-    "salary",
-    "employee_advance",
-    "loan_payment",
-    "rent",
-    "utilities",
-    "outsourcing",
-    "service_cost",
-    "sale_refund",
-    "other_expense",
-    "general_expense",
-  ]);
 
-  // ✅ FIX: Refactored transaction type detection with clear priority
-  const isIncomeTx = (tx: CashTransaction) => {
-    const normalizedCategory = String(tx.category || "").trim().toLowerCase();
-
-    // Priority 1: Check expense categories first (more specific)
-    if (EXPENSE_CATEGORIES.has(normalizedCategory)) return false;
-
-    // Priority 2: Check income categories
-    if (INCOME_CATEGORIES.has(normalizedCategory)) return true;
-
-    // Priority 3: Fallback to type field only if category not recognized
-    return tx.type === "income" || tx.type === "deposit";
-  };
 
   // Calculate ACTUAL BALANCE (from ALL transactions, not filtered)
   const actualBalance = useMemo(() => {
@@ -401,7 +363,7 @@ const CashBook: React.FC = () => {
               </div>
               <div className="p-6 space-y-4">
                 <div>
-                  <label className="block text-xs font-black uppercase tracking-wider text-slate-550 dark:text-slate-400 mb-2">
+                  <label className="block text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
                     💵 Tiền mặt
                   </label>
                   <input
@@ -422,7 +384,7 @@ const CashBook: React.FC = () => {
                   </p>
                 </div>
                 <div>
-                  <label className="block text-xs font-black uppercase tracking-wider text-slate-550 dark:text-slate-400 mb-2">
+                  <label className="block text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
                     🏦 Ngân hàng
                   </label>
                   <input
@@ -591,7 +553,7 @@ const CashBook: React.FC = () => {
         {isFilteredView && (
           <div className="flex items-center justify-between gap-4 flex-wrap bg-white dark:bg-[#131926]/30 border border-slate-200 dark:border-slate-800/60 p-3.5 rounded-2xl shadow-sm dark:shadow-[0_4px_20px_rgb(0,0,0,0.15)]">
             <div className="flex items-center gap-2.5">
-              <div className="p-1.5 rounded-lg bg-blue-55 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-500/20">
+              <div className="p-1.5 rounded-lg bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-500/20">
                 <Activity className="w-4 h-4" />
               </div>
               <h3 className="text-xs font-black text-slate-800 dark:text-slate-200 tracking-wide uppercase">
@@ -605,28 +567,28 @@ const CashBook: React.FC = () => {
             <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs">
               <div className="flex items-center gap-1.5">
                 <span className="text-slate-500 dark:text-slate-400 font-medium uppercase tracking-wider text-[10px]">Thu:</span>
-                <span className="font-mono text-emerald-650 dark:text-green-400 font-bold">{formatCurrency(filteredSummary.income)}</span>
+                <span className="font-mono text-emerald-600 dark:text-green-400 font-bold">{formatCurrency(filteredSummary.income)}</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <span className="text-slate-500 dark:text-slate-400 font-medium uppercase tracking-wider text-[10px]">Chi:</span>
-                <span className="font-mono text-rose-655 dark:text-red-400 font-bold">{formatCurrency(filteredSummary.expense)}</span>
+                <span className="font-mono text-rose-600 dark:text-red-400 font-bold">{formatCurrency(filteredSummary.expense)}</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <span className="text-slate-500 dark:text-slate-400 font-medium uppercase tracking-wider text-[10px]">Chênh lệch:</span>
-                <span className={`font-mono font-bold ${filteredSummary.balance >= 0 ? "text-blue-600 dark:text-blue-400 shadow-sm" : "text-rose-655 dark:text-red-400 shadow-sm"}`}>
+                <span className={`font-mono font-bold ${filteredSummary.balance >= 0 ? "text-blue-600 dark:text-blue-400 shadow-sm" : "text-rose-600 dark:text-red-400 shadow-sm"}`}>
                   {filteredSummary.balance > 0 ? "+" : ""}{formatCurrency(filteredSummary.balance)}
                 </span>
               </div>
               <div className="h-4 w-px bg-slate-200 dark:bg-slate-800 hidden md:block"></div>
               <div className="flex items-center gap-1.5">
                 <span className="text-slate-500 dark:text-slate-400 font-medium uppercase tracking-wider text-[10px]">TM:</span>
-                <span className={`font-mono font-bold ${filteredSummary.cashBalance >= 0 ? "text-slate-800 dark:text-slate-200" : "text-rose-655 dark:text-red-400"}`}>
+                <span className={`font-mono font-bold ${filteredSummary.cashBalance >= 0 ? "text-slate-800 dark:text-slate-200" : "text-rose-600 dark:text-red-400"}`}>
                   {filteredSummary.cashBalance > 0 ? "+" : ""}{formatCurrency(filteredSummary.cashBalance)}
                 </span>
               </div>
               <div className="flex items-center gap-1.5">
                 <span className="text-slate-500 dark:text-slate-400 font-medium uppercase tracking-wider text-[10px]">NH:</span>
-                <span className={`font-mono font-bold ${filteredSummary.bankBalance >= 0 ? "text-slate-800 dark:text-slate-200" : "text-rose-655 dark:text-red-400"}`}>
+                <span className={`font-mono font-bold ${filteredSummary.bankBalance >= 0 ? "text-slate-800 dark:text-slate-200" : "text-rose-600 dark:text-red-400"}`}>
                   {filteredSummary.bankBalance > 0 ? "+" : ""}{formatCurrency(filteredSummary.bankBalance)}
                 </span>
               </div>
@@ -723,9 +685,9 @@ const CashBook: React.FC = () => {
                 let activeStyle = "";
                 if (filterType === option.value) {
                   if (option.value === "income") {
-                    activeStyle = "bg-emerald-50 text-emerald-650 border-emerald-250 shadow-sm dark:bg-emerald-500/20 dark:text-emerald-400 dark:border-emerald-500/35 dark:shadow-[0_2px_8px_rgba(16,185,129,0.15)]";
+                    activeStyle = "bg-emerald-50 text-emerald-600 border-emerald-200 shadow-sm dark:bg-emerald-500/20 dark:text-emerald-400 dark:border-emerald-500/35 dark:shadow-[0_2px_8px_rgba(16,185,129,0.15)]";
                   } else if (option.value === "expense") {
-                    activeStyle = "bg-rose-50 text-rose-655 border-rose-250 shadow-sm dark:bg-rose-500/20 dark:text-rose-400 dark:border-rose-500/35 dark:shadow-[0_2px_8px_rgba(244,63,94,0.15)]";
+                    activeStyle = "bg-rose-50 text-rose-600 border-rose-200 shadow-sm dark:bg-rose-500/20 dark:text-rose-400 dark:border-rose-500/35 dark:shadow-[0_2px_8px_rgba(244,63,94,0.15)]";
                   } else {
                     activeStyle = "bg-blue-50 text-blue-600 border-blue-250 shadow-sm dark:bg-blue-500/20 dark:text-blue-400 dark:border-blue-500/35 dark:shadow-[0_2px_8px_rgba(59,130,246,0.15)]";
                   }
@@ -1007,8 +969,8 @@ const CashBook: React.FC = () => {
                         <td className="px-4 py-5 text-sm border-y border-slate-200 dark:border-[#222E45]/50 bg-white dark:bg-[#121929]/50 backdrop-blur-xl group-hover:bg-slate-50/80 dark:group-hover:bg-[#1C263B]/65 group-hover:border-slate-300 dark:group-hover:border-[#354363]/60 transition-all duration-300">
                           <span
                             className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider border shadow-sm ${txIsIncome
-                              ? "bg-emerald-50 text-emerald-650 border-emerald-250 shadow-[0_0_10px_rgba(16,185,129,0.05)] dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/30 dark:shadow-[0_0_10px_rgba(16,185,129,0.15)]"
-                              : "bg-rose-50 text-rose-655 border-rose-250 shadow-[0_0_10px_rgba(244,63,94,0.05)] dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/30 dark:shadow-[0_0_10px_rgba(244,63,94,0.15)]"
+                              ? "bg-emerald-50 text-emerald-600 border-emerald-200 shadow-[0_0_10px_rgba(16,185,129,0.05)] dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/30 dark:shadow-[0_0_10px_rgba(16,185,129,0.15)]"
+                              : "bg-rose-50 text-rose-600 border-rose-200 shadow-[0_0_10px_rgba(244,63,94,0.05)] dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/30 dark:shadow-[0_0_10px_rgba(244,63,94,0.15)]"
                               }`}
                           >
                             <span className={`w-1.5 h-1.5 rounded-full ${txIsIncome ? "bg-emerald-500 dark:bg-emerald-400 shadow-[0_0_6px_#10B981]" : "bg-rose-500 dark:bg-rose-400 shadow-[0_0_6px_#F43F5E]"}`} />
@@ -1030,7 +992,7 @@ const CashBook: React.FC = () => {
                             {(targetName || formattedRef) && (
                               <div className="flex items-center gap-2 flex-wrap">
                                 {targetName && (
-                                  <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-slate-50 dark:bg-slate-800/30 border border-slate-200 dark:border-[#2B354A]/30 text-[11px] text-slate-550 dark:text-slate-400 font-semibold leading-none shadow-sm">
+                                  <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-slate-50 dark:bg-slate-800/30 border border-slate-200 dark:border-[#2B354A]/30 text-[11px] text-slate-500 dark:text-slate-400 font-semibold leading-none shadow-sm">
                                     👤 {targetName}
                                   </span>
                                 )}
@@ -1078,8 +1040,8 @@ const CashBook: React.FC = () => {
                         {/* Số tiền - Bold monospace cash figures with neon drop shadows */}
                         <td
                           className={`px-4 py-5 text-right text-[16px] font-extrabold font-mono tracking-tight border-y border-slate-200 dark:border-[#222E45]/50 bg-white dark:bg-[#121929]/50 backdrop-blur-xl group-hover:bg-slate-50/80 dark:group-hover:bg-[#1C263B]/65 group-hover:border-slate-300 dark:group-hover:border-[#354363]/60 transition-all duration-300 ${txIsIncome
-                            ? "text-emerald-650 dark:text-emerald-400 dark:drop-shadow-[0_2px_4px_rgba(16,185,129,0.2)] font-black"
-                            : "text-rose-655 dark:text-rose-400 dark:drop-shadow-[0_2px_4px_rgba(244,63,94,0.2)]"
+                            ? "text-emerald-600 dark:text-emerald-400 dark:drop-shadow-[0_2px_4px_rgba(16,185,129,0.2)] font-black"
+                            : "text-rose-600 dark:text-rose-400 dark:drop-shadow-[0_2px_4px_rgba(244,63,94,0.2)]"
                             }`}
                         >
                           {txIsIncome ? "+" : "-"}
@@ -1169,14 +1131,14 @@ const CashBook: React.FC = () => {
                           <span className="font-sans uppercase text-[9px] font-extrabold text-slate-500 tracking-wider">Thu:</span>
                           <span>+{formatCurrency(filteredSummary.income)}</span>
                         </div>
-                        <div className="flex items-center justify-between w-36 text-[11px] font-bold text-rose-655 dark:text-rose-400/90 font-mono tracking-tight">
+                        <div className="flex items-center justify-between w-36 text-[11px] font-bold text-rose-600 dark:text-rose-400/90 font-mono tracking-tight">
                           <span className="font-sans uppercase text-[9px] font-extrabold text-slate-500 tracking-wider">Chi:</span>
                           <span>-{formatCurrency(filteredSummary.expense)}</span>
                         </div>
                         <div className="w-36 h-px bg-slate-200 dark:bg-slate-800 my-0.5"></div>
                         <div className={`flex items-center justify-between w-36 text-xs font-black font-mono tracking-tight ${filteredSummary.balance >= 0
                           ? "text-blue-600 dark:text-blue-400"
-                          : "text-rose-655 dark:text-rose-400"
+                          : "text-rose-600 dark:text-rose-400"
                           }`}>
                           <span className="font-sans uppercase text-[9px] font-extrabold text-slate-500 dark:text-slate-400 tracking-wider">Dư:</span>
                           <span>{formatCurrency(filteredSummary.balance)}</span>

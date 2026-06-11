@@ -4,6 +4,7 @@ import { NumberInput } from "../../../common/NumberInput";
 import { formatCurrency, normalizeSearchText } from "../../../../utils/format";
 import { getCategoryColor } from "../../../../utils/categoryColors";
 import { showToast } from "../../../../utils/toast";
+import { Package } from "lucide-react";
 
 interface PartsUsedSectionProps {
   parts: Part[];
@@ -173,26 +174,51 @@ export const PartsUsedSection: React.FC<PartsUsedSectionProps> = ({
                       }}
                       className="w-full px-4 py-2.5 text-left hover:bg-slate-100 dark:hover:bg-slate-600 flex items-center justify-between border-b border-slate-100 dark:border-slate-600 last:border-b-0"
                     >
-                      <div className="flex-1 min-w-0">
-                        <div className="text-sm font-medium text-slate-900 dark:text-slate-100">
-                          {part.name}
-                        </div>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          <span className="text-[10px] text-blue-600 dark:text-blue-400 font-mono">
-                            {part.sku}
-                          </span>
-                          <span className="text-[10px] text-orange-600 dark:text-orange-400 font-medium">
-                            Tồn: {stock}
-                          </span>
-                          {part.category && (
-                            <span
-                              className={`inline-flex items-center px-1.5 py-0 rounded-full text-[9px] font-medium ${
-                                getCategoryColor(part.category).bg
-                              } ${getCategoryColor(part.category).text}`}
-                            >
-                              {part.category}
-                            </span>
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        {/* Product Image Thumbnail */}
+                        <div className="w-10 h-10 rounded-lg bg-slate-50 dark:bg-slate-800 flex items-center justify-center flex-shrink-0 border border-slate-200 dark:border-slate-700 relative group/img-preview">
+                          {part.imageUrl ? (
+                            <>
+                              <img
+                                src={part.imageUrl}
+                                alt={part.name}
+                                className="w-full h-full object-cover rounded-lg"
+                              />
+                              {/* Hover zoom preview popup */}
+                              <div className="hidden group-hover/img-preview:flex absolute left-full top-1/2 -translate-y-1/2 ml-3 z-[200] p-2 bg-white dark:bg-slate-850 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl w-48 h-48 pointer-events-none items-center justify-center">
+                                <img
+                                  src={part.imageUrl}
+                                  alt={part.name}
+                                  className="max-w-full max-h-full object-contain rounded-xl"
+                                />
+                              </div>
+                            </>
+                          ) : (
+                            <Package className="w-5 h-5 text-slate-400 dark:text-slate-500" />
                           )}
+                        </div>
+
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                            {part.name}
+                          </div>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <span className="text-[10px] text-blue-600 dark:text-blue-400 font-mono">
+                              {part.sku}
+                            </span>
+                            <span className="text-[10px] text-orange-600 dark:text-orange-400 font-medium">
+                              Tồn: {stock}
+                            </span>
+                            {part.category && (
+                              <span
+                                className={`inline-flex items-center px-1.5 py-0 rounded-full text-[9px] font-medium ${
+                                  getCategoryColor(part.category).bg
+                                } ${getCategoryColor(part.category).text}`}
+                              >
+                                {part.category}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
                       <div className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">

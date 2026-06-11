@@ -65,51 +65,51 @@ export const RevenueReport: React.FC<RevenueReportProps> = ({
         {/* Card 1: Tổng doanh thu */}
         <div className="bg-white dark:bg-slate-800/90 backdrop-blur-xl border border-slate-200 dark:border-slate-700/80 hover:border-slate-350 dark:hover:border-slate-600/80 shadow-sm dark:shadow-[0_8px_30px_rgba(0,0,0,0.25)] hover:shadow-md dark:hover:shadow-[0_15px_45px_rgba(0,0,0,0.4)] transition-all duration-300 rounded-2xl p-5 relative overflow-hidden group">
           <div className="flex items-center justify-between mb-4">
-            <span className="text-[11px] font-black uppercase tracking-wider text-slate-555 dark:text-slate-300">
+            <span className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-300">
               Tổng doanh thu
             </span>
             <div className="p-2.5 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 shadow-[0_0_15px_rgba(59,130,246,0.15)] group-hover:scale-110 transition-transform duration-300">
               <DollarSign className="w-5 h-5" />
             </div>
           </div>
-          <div className="text-2xl font-black text-slate-900 dark:text-white leading-none font-mono tracking-tight group-hover:text-blue-650 dark:group-hover:text-blue-400 transition-colors">
+          <div className="text-2xl font-black text-slate-900 dark:text-white leading-none font-mono tracking-tight group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
             {formatCurrency(combinedRevenue).replace("₫", "")}
           </div>
-          <div className="text-[11px] text-slate-555 dark:text-slate-355 mt-3 leading-relaxed border-t border-slate-200 dark:border-slate-700 pt-2.5">
-            Bán hàng: <span className="font-mono text-slate-850 dark:text-white font-bold">{formatCurrency(revenueReport.totalRevenue)}</span> <br/>
-            Phiếu thu: <span className="font-mono text-slate-850 dark:text-white font-bold">{formatCurrency(cashTotals.totalIncome)}</span>
+          <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-3 leading-relaxed border-t border-slate-200 dark:border-slate-700 pt-2.5">
+            Bán hàng: <span className="font-mono text-slate-800 dark:text-white font-bold">{formatCurrency(revenueReport.totalRevenue)}</span> <br/>
+            Phiếu thu: <span className="font-mono text-slate-800 dark:text-white font-bold">{formatCurrency(cashTotals.totalIncome)}</span>
           </div>
         </div>
 
         {/* Card 2: Tổng chi phí */}
         <div className="bg-white dark:bg-slate-800/90 backdrop-blur-xl border border-slate-200 dark:border-slate-700/80 hover:border-slate-350 dark:hover:border-slate-600/80 shadow-sm dark:shadow-[0_8px_30px_rgba(0,0,0,0.25)] hover:shadow-md dark:hover:shadow-[0_15px_45px_rgba(0,0,0,0.4)] transition-all duration-300 rounded-2xl p-5 relative overflow-hidden group">
           <div className="flex items-center justify-between mb-4">
-            <span className="text-[11px] font-black uppercase tracking-wider text-slate-555 dark:text-slate-300">
+            <span className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-300">
               Tổng chi phí
             </span>
-            <div className="p-2.5 rounded-xl bg-rose-500/10 text-rose-650 dark:text-rose-400 border border-rose-500/20 shadow-[0_0_15px_rgba(244,63,94,0.15)] group-hover:scale-110 transition-transform duration-300">
+            <div className="p-2.5 rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20 shadow-[0_0_15px_rgba(244,63,94,0.15)] group-hover:scale-110 transition-transform duration-300">
               <Wallet className="w-5 h-5" />
             </div>
           </div>
-          <div className="text-2xl font-black text-slate-900 dark:text-white leading-none font-mono tracking-tight group-hover:text-rose-650 dark:group-hover:text-rose-400 transition-colors">
+          <div className="text-2xl font-black text-slate-900 dark:text-white leading-none font-mono tracking-tight group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors">
             {formatCurrency(revenueReport.totalCost + cashTotals.totalExpense).replace("₫", "")}
           </div>
-          <div className="text-[11px] text-slate-555 dark:text-slate-355 mt-3 leading-relaxed border-t border-slate-200 dark:border-slate-700 pt-2.5">
-            Giá vốn: <span className="font-mono text-slate-850 dark:text-white font-bold">{formatCurrency(revenueReport.totalCost)}</span> <br/>
-            Phiếu chi: <span className="font-mono text-slate-850 dark:text-white font-bold">{formatCurrency(cashTotals.totalExpense)}</span>
+          <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-3 leading-relaxed border-t border-slate-200 dark:border-slate-700 pt-2.5">
+            Giá vốn: <span className="font-mono text-slate-800 dark:text-white font-bold">{formatCurrency(revenueReport.totalCost)}</span> <br/>
+            Phiếu chi: <span className="font-mono text-slate-800 dark:text-white font-bold">{formatCurrency(cashTotals.totalExpense)}</span>
           </div>
         </div>
 
         {/* Card 3: Lợi nhuận thuần */}
         <div className="bg-white dark:bg-slate-800/90 backdrop-blur-xl border border-slate-200 dark:border-slate-700/80 hover:border-slate-350 dark:hover:border-slate-600/80 shadow-sm dark:shadow-[0_8px_30px_rgba(0,0,0,0.25)] hover:shadow-md dark:hover:shadow-[0_15px_45px_rgba(0,0,0,0.4)] transition-all duration-300 rounded-2xl p-5 relative overflow-hidden group">
           <div className="flex items-center justify-between mb-4">
-            <span className="text-[11px] font-black uppercase tracking-wider text-slate-555 dark:text-slate-300">
+            <span className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-300">
               Lợi nhuận thuần
             </span>
             <div className={`p-2.5 rounded-xl border group-hover:scale-110 transition-transform duration-300 ${
               netProfit >= 0
                 ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 shadow-[0_0_15px_rgba(16,185,129,0.15)]"
-                : "bg-rose-500/10 text-rose-650 dark:text-rose-400 border-rose-500/20 shadow-[0_0_15px_rgba(244,63,94,0.15)]"
+                : "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20 shadow-[0_0_15px_rgba(244,63,94,0.15)]"
             }`}>
               <TrendingUp className="w-5 h-5" />
             </div>
@@ -121,28 +121,30 @@ export const RevenueReport: React.FC<RevenueReportProps> = ({
           }`}>
             {formatCurrency(netProfit).replace("₫", "")}
           </div>
-          <div className="text-[11px] text-slate-555 dark:text-slate-355 mt-3 leading-relaxed border-t border-slate-200 dark:border-slate-700 pt-2.5">
-            Lãi gộp: <span className="font-mono text-slate-850 dark:text-white font-bold">{formatCurrency(revenueReport.totalProfit)}</span> <br/>
-            Chi phí khác: <span className="font-mono text-slate-850 dark:text-white font-bold">{formatCurrency(cashTotals.totalExpense)}</span>
+          <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-3 leading-relaxed border-t border-slate-200 dark:border-slate-700 pt-2.5">
+            Lãi gộp: <span className="font-mono text-slate-800 dark:text-white font-bold">{formatCurrency(revenueReport.totalProfit)}</span> <br/>
+            {cashTotals.totalIncome > 0 && (<>Thu khác: <span className="font-mono text-slate-800 dark:text-white font-bold">{formatCurrency(cashTotals.totalIncome)}</span> <br/></>)}
+            {cashTotals.totalRefund > 0 && (<>Hoàn tiền: <span className="font-mono text-rose-600 dark:text-rose-400 font-bold">-{formatCurrency(cashTotals.totalRefund)}</span> <br/></>)}
+            Chi phí khác: <span className="font-mono text-slate-800 dark:text-white font-bold">{formatCurrency(cashTotals.totalExpense)}</span>
           </div>
         </div>
 
         {/* Card 4: Tỷ suất lợi nhuận */}
         <div className="bg-white dark:bg-slate-800/90 backdrop-blur-xl border border-slate-200 dark:border-slate-700/80 hover:border-slate-350 dark:hover:border-slate-600/80 shadow-sm dark:shadow-[0_8px_30px_rgba(0,0,0,0.25)] hover:shadow-md dark:hover:shadow-[0_15px_45px_rgba(0,0,0,0.4)] transition-all duration-300 rounded-2xl p-5 relative overflow-hidden group">
           <div className="flex items-center justify-between mb-4">
-            <span className="text-[11px] font-black uppercase tracking-wider text-slate-555 dark:text-slate-300">
+            <span className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-300">
               Tỷ suất lợi nhuận
             </span>
             <div className="p-2.5 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 shadow-[0_0_15px_rgba(168,85,247,0.15)] group-hover:scale-110 transition-transform duration-300">
               <BadgePercent className="w-5 h-5" />
             </div>
           </div>
-          <div className="text-2xl font-black text-slate-900 dark:text-white leading-none font-mono tracking-tight group-hover:text-purple-650 dark:group-hover:text-purple-400 transition-colors">
+          <div className="text-2xl font-black text-slate-900 dark:text-white leading-none font-mono tracking-tight group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
             {combinedRevenue > 0
               ? ((netProfit / combinedRevenue) * 100).toFixed(1)
               : "0.0"}%
           </div>
-          <div className="text-[11px] text-slate-555 dark:text-slate-355 mt-3 leading-relaxed border-t border-slate-200 dark:border-slate-700 pt-2.5">
+          <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-3 leading-relaxed border-t border-slate-200 dark:border-slate-700 pt-2.5">
             Lợi nhuận ròng / Tổng doanh thu
           </div>
         </div>
@@ -156,14 +158,14 @@ export const RevenueReport: React.FC<RevenueReportProps> = ({
             <div className="p-2 rounded-xl bg-blue-500/10 text-blue-500 dark:text-blue-400 border border-blue-500/20 shadow-[0_0_15px_rgba(59,130,246,0.2)]">
               <Calendar className="w-4 h-4" />
             </div>
-            <h3 className="text-sm font-black text-slate-850 dark:text-slate-200 tracking-wide uppercase">
+            <h3 className="text-sm font-black text-slate-800 dark:text-slate-200 tracking-wide uppercase">
               Chi tiết theo ngày
             </h3>
-            <span className="px-2.5 py-0.5 bg-amber-555/20 text-amber-600 dark:text-amber-400 text-[10px] font-black uppercase rounded-full border border-amber-500/30">
+            <span className="px-2.5 py-0.5 bg-amber-500/20 text-amber-600 dark:text-amber-400 text-[10px] font-black uppercase rounded-full border border-amber-500/30">
               {revenueReport.dailyReport.length} ngày
             </span>
           </div>
-          <span className="text-[11px] text-slate-555 italic hidden sm:block">
+          <span className="text-[11px] text-slate-500 italic hidden sm:block">
             Nhấn vào ngày để xem chi tiết
           </span>
         </div>
@@ -192,28 +194,28 @@ export const RevenueReport: React.FC<RevenueReportProps> = ({
                 </th>
                 {/* DOANH THU group */}
                 <th colSpan={2} className="px-2 py-1.5 text-center text-[10px] font-bold uppercase tracking-widest bg-slate-50 dark:bg-slate-800/30 border-l border-slate-200 dark:border-slate-700/50">
-                  <span className="text-slate-650 dark:text-slate-300">DOANH THU</span>
+                  <span className="text-slate-600 dark:text-slate-300">DOANH THU</span>
                 </th>
                 {/* GIÁ VỐN HÀNG BÁN group */}
                 <th colSpan={2} className="px-2 py-1.5 text-center text-[10px] font-bold uppercase tracking-widest bg-slate-50 dark:bg-slate-800/30 border-l border-slate-200 dark:border-slate-700/50">
-                  <span className="text-slate-650 dark:text-slate-300">GIÁ VỐN HÀNG BÁN</span>
+                  <span className="text-slate-600 dark:text-slate-300">GIÁ VỐN HÀNG BÁN</span>
                 </th>
                 {/* LỢI NHUẬN group */}
                 <th colSpan={3} className="px-2 py-1.5 text-center text-[10px] font-bold uppercase tracking-widest bg-slate-50 dark:bg-slate-800/30 border-l border-slate-200 dark:border-slate-700/50">
-                  <span className="text-slate-650 dark:text-slate-300">LỢI NHUẬN</span>
+                  <span className="text-slate-600 dark:text-slate-300">LỢI NHUẬN</span>
                 </th>
               </tr>
               <tr className="border-b border-slate-200 dark:border-slate-700/70 bg-slate-100/40 dark:bg-slate-800/40">
                 {/* DOANH THU sub-columns */}
-                <th className="px-2 py-1.5 text-right text-[11px] font-bold text-slate-650 dark:text-slate-300 border-l border-slate-200 dark:border-slate-700/50">Bán hàng</th>
-                <th className="px-2 py-1.5 text-right text-[11px] font-bold text-slate-650 dark:text-slate-300">Sửa chữa</th>
+                <th className="px-2 py-1.5 text-right text-[11px] font-bold text-slate-600 dark:text-slate-300 border-l border-slate-200 dark:border-slate-700/50">Bán hàng</th>
+                <th className="px-2 py-1.5 text-right text-[11px] font-bold text-slate-600 dark:text-slate-300">Sửa chữa</th>
                 {/* GIÁ VỐN sub-columns */}
-                <th className="px-2 py-1.5 text-right text-[11px] font-bold text-slate-650 dark:text-slate-300 border-l border-slate-200 dark:border-slate-700/50">Vốn BH</th>
-                <th className="px-2 py-1.5 text-right text-[11px] font-bold text-slate-650 dark:text-slate-300">Vật tư SC</th>
+                <th className="px-2 py-1.5 text-right text-[11px] font-bold text-slate-600 dark:text-slate-300 border-l border-slate-200 dark:border-slate-700/50">Vốn BH</th>
+                <th className="px-2 py-1.5 text-right text-[11px] font-bold text-slate-600 dark:text-slate-300">Vật tư SC</th>
                 {/* LỢI NHUẬN sub-columns */}
-                <th className="px-2 py-1.5 text-right text-[11px] font-bold text-slate-650 dark:text-slate-300 border-l border-slate-200 dark:border-slate-700/50">Lãi gộp</th>
-                <th className="px-2 py-1.5 text-right text-[11px] font-bold text-slate-650 dark:text-slate-300">Thu/Chi khác</th>
-                <th className="px-2 py-1.5 text-right text-[11px] font-black text-slate-850 dark:text-white">Lãi ròng</th>
+                <th className="px-2 py-1.5 text-right text-[11px] font-bold text-slate-600 dark:text-slate-300 border-l border-slate-200 dark:border-slate-700/50">Lãi gộp</th>
+                <th className="px-2 py-1.5 text-right text-[11px] font-bold text-slate-600 dark:text-slate-300">Thu/Chi khác</th>
+                <th className="px-2 py-1.5 text-right text-[11px] font-black text-slate-800 dark:text-white">Lãi ròng</th>
               </tr>
             </thead>
             <tbody>
@@ -239,7 +241,7 @@ export const RevenueReport: React.FC<RevenueReportProps> = ({
                       onClick={() => setSelectedDate(isExpanded ? null : day.date)}
                       title="Nhấn để xem chi tiết"
                     >
-                      <td className="px-2 py-2.5 text-center text-xs font-medium text-slate-555">
+                      <td className="px-2 py-2.5 text-center text-xs font-medium text-slate-500">
                         {isExpanded ? (
                           <span className="text-amber-500 dark:text-amber-400 text-[10px]">▼</span>
                         ) : (
@@ -289,7 +291,7 @@ export const RevenueReport: React.FC<RevenueReportProps> = ({
                               <div className="bg-white dark:bg-[#0D121F]/80 backdrop-blur-xl border border-slate-200 dark:border-slate-800/80 shadow-sm dark:shadow-2xl rounded-2xl p-5 relative overflow-hidden group transition-all duration-300 hover:scale-[1.01]">
                                 {/* Ambient Glow */}
                                 <div className="absolute -right-10 -bottom-10 w-24 h-24 bg-emerald-500/5 blur-2xl rounded-full pointer-events-none" />
-                                <h4 className="text-xs font-black text-slate-850 dark:text-slate-200 uppercase tracking-wider mb-4 flex items-center gap-2.5">
+                                <h4 className="text-xs font-black text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-4 flex items-center gap-2.5">
                                   <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-500 dark:text-emerald-400 border border-emerald-500/20 shadow-[0_0_12px_rgba(16,185,129,0.15)] group-hover:scale-110 transition-transform duration-300">
                                     <TrendingUp className="w-4 h-4" />
                                   </div>
@@ -329,7 +331,7 @@ export const RevenueReport: React.FC<RevenueReportProps> = ({
                               <div className="bg-white dark:bg-[#0D121F]/80 backdrop-blur-xl border border-slate-200 dark:border-slate-800/80 shadow-sm dark:shadow-2xl rounded-2xl p-5 relative overflow-hidden group transition-all duration-300 hover:scale-[1.01]">
                                 {/* Ambient Glow */}
                                 <div className="absolute -right-10 -bottom-10 w-24 h-24 bg-blue-500/5 blur-2xl rounded-full pointer-events-none" />
-                                <h4 className="text-xs font-black text-slate-850 dark:text-slate-200 uppercase tracking-wider mb-4 flex items-center gap-2.5">
+                                <h4 className="text-xs font-black text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-4 flex items-center gap-2.5">
                                   <div className="p-1.5 rounded-lg bg-blue-500/10 text-blue-500 dark:text-blue-400 border border-blue-500/20 shadow-[0_0_12px_rgba(59,130,246,0.15)] group-hover:scale-110 transition-transform duration-300">
                                     <ShoppingBag className="w-4 h-4" />
                                   </div>
@@ -374,7 +376,7 @@ export const RevenueReport: React.FC<RevenueReportProps> = ({
                                             </div>
                                             <div className="text-[10px] text-slate-500 font-medium mb-2.5 pb-2 border-b border-slate-200 dark:border-slate-800/40 flex justify-between">
                                               <span>{sale.sale_code || "---"}</span>
-                                              <span className="px-1.5 py-0.2 bg-slate-100 dark:bg-[#0D121F] rounded text-[9px] font-black uppercase text-slate-650 dark:text-slate-400 border border-slate-200 dark:border-slate-800">
+                                              <span className="px-1.5 py-0.2 bg-slate-100 dark:bg-[#0D121F] rounded text-[9px] font-black uppercase text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800">
                                                 {sale.paymentMethod === "bank" ? "CK" : "TM"}
                                               </span>
                                             </div>
@@ -402,7 +404,7 @@ export const RevenueReport: React.FC<RevenueReportProps> = ({
                                 <div className="bg-white dark:bg-[#0D121F]/80 backdrop-blur-xl border border-slate-200 dark:border-slate-800/80 shadow-sm dark:shadow-2xl rounded-2xl p-5 relative overflow-hidden group transition-all duration-300 hover:scale-[1.01]">
                                   {/* Ambient Glow */}
                                   <div className="absolute -right-10 -bottom-10 w-24 h-24 bg-violet-500/5 blur-2xl rounded-full pointer-events-none" />
-                                  <h4 className="text-xs font-black text-slate-850 dark:text-slate-200 uppercase tracking-wider mb-4 flex items-center gap-2.5">
+                                  <h4 className="text-xs font-black text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-4 flex items-center gap-2.5">
                                     <div className="p-1.5 rounded-lg bg-violet-500/10 text-violet-500 dark:text-violet-400 border border-violet-500/20 shadow-[0_0_12px_rgba(139,92,246,0.15)] group-hover:scale-110 transition-transform duration-300">
                                       <Wrench className="w-4 h-4" />
                                     </div>
@@ -462,7 +464,7 @@ export const RevenueReport: React.FC<RevenueReportProps> = ({
                                 <div className="bg-white dark:bg-[#0D121F]/80 backdrop-blur-xl border border-slate-200 dark:border-slate-800/80 shadow-sm dark:shadow-2xl rounded-2xl p-5 relative overflow-hidden group transition-all duration-300 hover:scale-[1.01]">
                                   {/* Ambient Glow */}
                                   <div className="absolute -right-10 -bottom-10 w-24 h-24 bg-amber-500/5 blur-2xl rounded-full pointer-events-none" />
-                                  <h4 className="text-xs font-black text-slate-850 dark:text-slate-200 uppercase tracking-wider mb-4 flex items-center gap-2.5">
+                                  <h4 className="text-xs font-black text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-4 flex items-center gap-2.5">
                                     <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-500 dark:text-amber-400 border border-amber-500/20 shadow-[0_0_12px_rgba(245,158,11,0.15)] group-hover:scale-110 transition-transform duration-300">
                                       <ArrowRightLeft className="w-4 h-4" />
                                     </div>
@@ -513,25 +515,25 @@ export const RevenueReport: React.FC<RevenueReportProps> = ({
                     <td colSpan={2} className="px-3 py-2.5 text-left text-xs font-black text-slate-800 dark:text-white uppercase tracking-wider">
                       Tổng:
                     </td>
-                    <td className={`px-2 py-2.5 text-right text-xs font-bold border-l border-slate-200 dark:border-slate-700/50 ${totalSalesRev === 0 ? "text-slate-400 dark:text-slate-650" : "text-slate-700 dark:text-slate-300"}`}>
+                    <td className={`px-2 py-2.5 text-right text-xs font-bold border-l border-slate-200 dark:border-slate-700/50 ${totalSalesRev === 0 ? "text-slate-400 dark:text-slate-600" : "text-slate-700 dark:text-slate-300"}`}>
                       {formatCurrency(totalSalesRev)}
                     </td>
-                    <td className={`px-2 py-2.5 text-right text-xs font-bold ${totalWoRev === 0 ? "text-slate-400 dark:text-slate-650" : "text-slate-700 dark:text-slate-300"}`}>
+                    <td className={`px-2 py-2.5 text-right text-xs font-bold ${totalWoRev === 0 ? "text-slate-400 dark:text-slate-600" : "text-slate-700 dark:text-slate-300"}`}>
                       {formatCurrency(totalWoRev)}
                     </td>
-                    <td className={`px-2 py-2.5 text-right text-xs font-bold border-l border-slate-200 dark:border-slate-700/50 ${totalSalesCOGS === 0 ? "text-slate-400 dark:text-slate-650" : "text-slate-650 dark:text-slate-300"}`}>
+                    <td className={`px-2 py-2.5 text-right text-xs font-bold border-l border-slate-200 dark:border-slate-700/50 ${totalSalesCOGS === 0 ? "text-slate-400 dark:text-slate-600" : "text-slate-600 dark:text-slate-300"}`}>
                       {formatCurrency(totalSalesCOGS)}
                     </td>
-                    <td className={`px-2 py-2.5 text-right text-xs font-bold ${totalWoParts === 0 ? "text-slate-400 dark:text-slate-650" : "text-slate-650 dark:text-slate-300"}`}>
+                    <td className={`px-2 py-2.5 text-right text-xs font-bold ${totalWoParts === 0 ? "text-slate-400 dark:text-slate-600" : "text-slate-600 dark:text-slate-300"}`}>
                       {formatCurrency(totalWoParts)}
                     </td>
-                    <td className={`px-2 py-2.5 text-right text-xs font-bold border-l border-slate-200 dark:border-slate-700/50 ${totalLaiGop === 0 ? "text-slate-400 dark:text-slate-650" : "text-slate-800 dark:text-slate-200"}`}>
+                    <td className={`px-2 py-2.5 text-right text-xs font-bold border-l border-slate-200 dark:border-slate-700/50 ${totalLaiGop === 0 ? "text-slate-400 dark:text-slate-600" : "text-slate-800 dark:text-slate-200"}`}>
                       {formatCurrency(totalLaiGop)}
                     </td>
-                    <td className={`px-2 py-2.5 text-right text-xs font-bold ${totalThuChiKhac === 0 ? "text-slate-400 dark:text-slate-650" : "text-slate-700 dark:text-slate-300"}`}>
+                    <td className={`px-2 py-2.5 text-right text-xs font-bold ${totalThuChiKhac === 0 ? "text-slate-400 dark:text-slate-600" : "text-slate-700 dark:text-slate-300"}`}>
                       {totalThuChiKhac === 0 ? "-" : (totalThuChiKhac > 0 ? "+" : "") + formatCurrency(totalThuChiKhac)}
                     </td>
-                    <td className={`px-2 py-2.5 text-right text-xs font-black border-l border-slate-200 dark:border-slate-700/50 ${netProfit === 0 ? "text-slate-400 dark:text-slate-650" : netProfit > 0 ? "text-emerald-600 dark:text-green-400" : "text-rose-600 dark:text-red-400"}`}>
+                    <td className={`px-2 py-2.5 text-right text-xs font-black border-l border-slate-200 dark:border-slate-700/50 ${netProfit === 0 ? "text-slate-400 dark:text-slate-600" : netProfit > 0 ? "text-emerald-600 dark:text-green-400" : "text-rose-600 dark:text-red-400"}`}>
                       {netProfit > 0 ? "+" : ""}{formatCurrency(netProfit)}
                     </td>
                   </tr>

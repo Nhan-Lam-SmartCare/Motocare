@@ -530,7 +530,7 @@ const ReportsManager: React.FC = () => {
       .reduce((sum, t) => sum + t.amount, 0);
 
     // Debug log
-    console.warn("[ReportsManager] Cash totals:", {
+    console.debug("[ReportsManager] Cash totals:", {
       totalTransactions: filteredTransactions.length,
       incomeAfterFilter: totalIncome,
       expense: totalExpense,
@@ -792,6 +792,7 @@ const ReportsManager: React.FC = () => {
         inventoryReport={inventoryReport}
         payrollReport={payrollReport}
         debtReport={debtReport}
+        employees={employees}
         dateRange={dateRange}
         setDateRange={setDateRange}
         activeTab={activeTab}
@@ -827,7 +828,7 @@ const ReportsManager: React.FC = () => {
                   iconColorSchema = isActive ? "bg-white/20 text-white" : "bg-amber-500/10 text-amber-600 dark:text-amber-400 group-hover:bg-amber-500/20";
                   break;
                 case "payroll":
-                  iconColorSchema = isActive ? "bg-white/20 text-white" : "bg-violet-500/10 text-violet-655 dark:text-violet-400 group-hover:bg-violet-500/20";
+                  iconColorSchema = isActive ? "bg-white/20 text-white" : "bg-violet-500/10 text-violet-600 dark:text-violet-400 group-hover:bg-violet-500/20";
                   break;
                 case "debt":
                   iconColorSchema = isActive ? "bg-white/20 text-white" : "bg-rose-500/10 text-rose-600 dark:text-rose-400 group-hover:bg-rose-500/20";
@@ -951,7 +952,7 @@ const ReportsManager: React.FC = () => {
                   className={`px-3 py-1.5 rounded-lg font-bold text-[10px] uppercase tracking-wider transition-all duration-200 ${
                     dateRange === range
                       ? "bg-blue-600 text-white shadow-[0_0_12px_rgba(37,99,235,0.4)]"
-                      : "text-slate-550 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-800/40"
+                      : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-800/40"
                   }`}
                 >
                   {range === "today"
@@ -998,7 +999,7 @@ const ReportsManager: React.FC = () => {
                 onChange={(e) => setStartDate(e.target.value)}
                 className="px-2.5 py-1 border border-slate-200 dark:border-slate-800/85 rounded-lg bg-white dark:bg-[#0F172A] text-slate-900 dark:text-slate-100 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-blue-500"
               />
-              <span className="text-slate-550 dark:text-slate-500 text-xs font-bold">→</span>
+              <span className="text-slate-500 dark:text-slate-500 text-xs font-bold">→</span>
               <input
                 type="date"
                 value={endDate}

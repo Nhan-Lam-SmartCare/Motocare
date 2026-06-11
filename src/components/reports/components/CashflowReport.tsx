@@ -106,7 +106,7 @@ export const CashflowReport: React.FC<CashflowReportProps> = ({
         {/* Card 1: Tổng thu */}
         <div className="bg-white dark:bg-slate-800/90 backdrop-blur-xl border border-slate-200 dark:border-slate-700/80 hover:border-slate-350 dark:hover:border-slate-600/80 shadow-[0_8px_30px_rgba(0,0,0,0.2)] hover:shadow-[0_15px_45px_rgba(0,0,0,0.4)] transition-all duration-300 rounded-2xl p-5 relative overflow-hidden group">
           <div className="flex items-center justify-between mb-4">
-            <span className="text-[11px] font-black uppercase tracking-wider text-slate-555 dark:text-slate-300">
+            <span className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-300">
               Tổng thu
             </span>
             <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-[0_0_15px_rgba(16,185,129,0.15)] group-hover:scale-110 transition-transform duration-300">
@@ -116,7 +116,7 @@ export const CashflowReport: React.FC<CashflowReportProps> = ({
           <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400 leading-none font-mono tracking-tight drop-shadow-[0_0_10px_rgba(16,185,129,0.15)]">
             {formatCurrency(cashflowReport.totalIncome).replace("₫", "")}
           </div>
-          <div className="text-[10px] text-slate-555 dark:text-slate-355 mt-3 leading-relaxed border-t border-slate-200 dark:border-slate-700 pt-2.5">
+          <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-3 leading-relaxed border-t border-slate-200 dark:border-slate-700 pt-2.5">
             Tổng hợp tất cả khoản thu thực tế <br/>
             (Đã bao gồm doanh thu bán hàng & dịch vụ)
           </div>
@@ -125,7 +125,7 @@ export const CashflowReport: React.FC<CashflowReportProps> = ({
         {/* Card 2: Tổng chi */}
         <div className="bg-white dark:bg-slate-800/90 backdrop-blur-xl border border-slate-200 dark:border-slate-700/80 hover:border-slate-350 dark:hover:border-slate-600/80 shadow-[0_8px_30px_rgba(0,0,0,0.2)] hover:shadow-[0_15px_45px_rgba(0,0,0,0.4)] transition-all duration-300 rounded-2xl p-5 relative overflow-hidden group">
           <div className="flex items-center justify-between mb-4">
-            <span className="text-[11px] font-black uppercase tracking-wider text-slate-555 dark:text-slate-300">
+            <span className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-300">
               Tổng chi
             </span>
             <div className="p-2.5 rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/20 shadow-[0_0_15px_rgba(244,63,94,0.15)] group-hover:scale-110 transition-transform duration-300">
@@ -135,7 +135,7 @@ export const CashflowReport: React.FC<CashflowReportProps> = ({
           <div className="text-2xl font-black text-rose-600 dark:text-rose-400 leading-none font-mono tracking-tight drop-shadow-[0_0_10px_rgba(244,63,94,0.15)]">
             {formatCurrency(cashflowReport.totalExpense).replace("₫", "")}
           </div>
-          <div className="text-[10px] text-slate-555 dark:text-slate-355 mt-3 leading-relaxed border-t border-slate-200 dark:border-slate-700 pt-2.5">
+          <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-3 leading-relaxed border-t border-slate-200 dark:border-slate-700 pt-2.5">
             Tổng hợp tất cả khoản chi thực tế <br/>
             (Chi phí nhập kho, vận hành, lương, mặt bằng...)
           </div>
@@ -144,7 +144,7 @@ export const CashflowReport: React.FC<CashflowReportProps> = ({
         {/* Card 3: Dòng tiền ròng */}
         <div className="bg-white dark:bg-slate-800/90 backdrop-blur-xl border border-slate-200 dark:border-slate-700/80 hover:border-slate-350 dark:hover:border-slate-600/80 shadow-[0_8px_30px_rgba(0,0,0,0.2)] hover:shadow-[0_15px_45px_rgba(0,0,0,0.4)] transition-all duration-300 rounded-2xl p-5 relative overflow-hidden group">
           <div className="flex items-center justify-between mb-4">
-            <span className="text-[11px] font-black uppercase tracking-wider text-slate-555 dark:text-slate-300">
+            <span className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-300">
               Dòng tiền ròng
             </span>
             <div className={`p-2.5 rounded-xl border group-hover:scale-110 transition-transform duration-300 ${
@@ -157,12 +157,12 @@ export const CashflowReport: React.FC<CashflowReportProps> = ({
           </div>
           <div className={`text-2xl font-black leading-none font-mono tracking-tight ${
             cashflowReport.netCashFlow >= 0
-              ? "text-blue-650 dark:text-blue-400"
-              : "text-amber-650 dark:text-amber-400"
+              ? "text-blue-600 dark:text-blue-400"
+              : "text-amber-600 dark:text-amber-400"
           }`}>
             {formatCurrency(cashflowReport.netCashFlow).replace("₫", "")}
           </div>
-          <div className="text-[10px] text-slate-555 dark:text-slate-355 mt-3 leading-relaxed border-t border-slate-200 dark:border-slate-700 pt-2.5">
+          <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-3 leading-relaxed border-t border-slate-200 dark:border-slate-700 pt-2.5">
             Chênh lệch Thu - Chi thực tế của cửa hàng <br/>
             (Phản ánh tính thanh khoản dòng tiền mặt/chuyển khoản)
           </div>
@@ -174,7 +174,7 @@ export const CashflowReport: React.FC<CashflowReportProps> = ({
         {/* Ambient Glow */}
         <div className="absolute -right-12 -bottom-12 w-32 h-32 bg-emerald-500/5 blur-3xl rounded-full pointer-events-none" />
 
-        <h3 className="text-sm font-black text-slate-850 dark:text-slate-200 tracking-wide uppercase mb-5 flex items-center gap-3">
+        <h3 className="text-sm font-black text-slate-800 dark:text-slate-200 tracking-wide uppercase mb-5 flex items-center gap-3">
           <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shadow-[0_0_15px_rgba(16,185,129,0.2)]">
             <Wallet className="w-4 h-4" />
           </div>
@@ -225,7 +225,7 @@ export const CashflowReport: React.FC<CashflowReportProps> = ({
 
                 {/* Center: Share Track */}
                 <div className="hidden md:flex flex-col flex-1 max-w-xs lg:max-w-md mx-8 gap-1.5">
-                  <div className="flex justify-between text-[9px] font-black uppercase text-slate-555 dark:text-slate-400 tracking-wider">
+                  <div className="flex justify-between text-[9px] font-black uppercase text-slate-500 dark:text-slate-400 tracking-wider">
                     <span>Tỉ lệ trong tổng {isIncome ? "thu" : "chi"}</span>
                     <span className="font-mono text-slate-700 dark:text-slate-300">{percentage.toFixed(1)}%</span>
                   </div>
@@ -261,14 +261,14 @@ export const CashflowReport: React.FC<CashflowReportProps> = ({
                 <DollarSign className="w-4 h-4" />
               </div>
               <div>
-                <div className="text-[10px] font-black uppercase tracking-wider text-slate-555 dark:text-slate-400">Dòng tiền ròng (Thu − Chi)</div>
+                <div className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Dòng tiền ròng (Thu − Chi)</div>
                 <div className="text-[9px] text-slate-500 dark:text-slate-600 mt-0.5">Tổng thu thực tế trừ tổng chi thực tế</div>
               </div>
             </div>
             <div className={`font-black font-mono text-base ${
               cashflowReport.netCashFlow >= 0
-                ? "text-emerald-650 dark:text-emerald-400"
-                : "text-rose-650 dark:text-rose-400"
+                ? "text-emerald-600 dark:text-emerald-400"
+                : "text-rose-600 dark:text-rose-400"
             }`}>
               {cashflowReport.netCashFlow >= 0 ? "+" : ""}{formatCurrency(cashflowReport.netCashFlow)}
             </div>

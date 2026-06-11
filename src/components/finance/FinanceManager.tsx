@@ -1,8 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Banknote,
   Wallet,
-  PiggyBank,
   Building2,
   CircleDollarSign,
   LayoutDashboard,
@@ -78,6 +77,13 @@ const TAB_CONFIGS: Record<Tab, TabConfig> = {
 const FinanceManager: React.FC = () => {
   const [activeTab, setActiveTab] = useState<Tab>("cashbook");
   const { profile } = useAuth();
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   if (!canDo(profile?.role, "finance.view")) {
     return (
@@ -87,10 +93,12 @@ const FinanceManager: React.FC = () => {
     );
   }
 
+  if (isMobile) {
+    return <FinanceManagerMobile />;
+  }
+
   return (
-    <>
-      <FinanceManagerMobile />
-      <div className="hidden md:block space-y-6">
+    <div className="space-y-6">
         {/* Header with Toggle Buttons - Premium Glass Capsule Dock */}
         <div className="bg-white/80 dark:bg-gradient-to-r dark:from-[#141C30]/85 dark:to-[#0D1222]/95 border border-slate-200 dark:border-[#2B3B5C]/65 shadow-sm dark:shadow-[0_15px_40px_rgba(0,0,0,0.5)] backdrop-blur-2xl p-2.5 rounded-2xl flex items-center justify-between gap-4">
           <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
@@ -165,8 +173,7 @@ const FinanceManager: React.FC = () => {
           {activeTab === "assets" && <FixedAssetsManager />}
           {activeTab === "capital" && <CapitalManager />}
         </div>
-      </div>
-    </>
+    </div>
   );
 };
 

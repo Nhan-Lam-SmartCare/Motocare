@@ -1217,7 +1217,7 @@ const LoanPaymentModal: React.FC<{
                   value="cash"
                   checked={paymentMethod === "cash"}
                   onChange={(e) => setPaymentMethod(e.target.value as "cash")}
-                  className="w-4 h-4 text-blue-600 focus:ring-blue-500 dark:bg-slate-900 border-slate-300 dark:border-slate-650 cursor-pointer"
+                  className="w-4 h-4 text-blue-600 focus:ring-blue-500 dark:bg-slate-900 border-slate-300 dark:border-slate-700 cursor-pointer"
                 />
                 <span className="text-sm font-semibold text-slate-750 dark:text-slate-200 group-hover:text-slate-900 dark:group-hover:text-white transition-colors flex items-center gap-1.5">
                   <Wallet className="w-4 h-4 text-slate-400" />
@@ -1230,7 +1230,7 @@ const LoanPaymentModal: React.FC<{
                   value="bank"
                   checked={paymentMethod === "bank"}
                   onChange={(e) => setPaymentMethod(e.target.value as "bank")}
-                  className="w-4 h-4 text-blue-600 focus:ring-blue-500 dark:bg-slate-900 border-slate-300 dark:border-slate-650 cursor-pointer"
+                  className="w-4 h-4 text-blue-600 focus:ring-blue-500 dark:bg-slate-900 border-slate-300 dark:border-slate-700 cursor-pointer"
                 />
                 <span className="text-sm font-semibold text-slate-750 dark:text-slate-200 group-hover:text-slate-900 dark:group-hover:text-white transition-colors flex items-center gap-1.5">
                   <CreditCard className="w-4 h-4 text-slate-400" />
@@ -1419,7 +1419,7 @@ const LoanDetailModal: React.FC<{
                 <div className="text-xs text-slate-400 dark:text-slate-500 font-semibold mb-0.5 uppercase tracking-wider">
                   Gốc đã trả
                 </div>
-                <div className="text-sm font-bold text-slate-850 dark:text-slate-250">
+                <div className="text-sm font-bold text-slate-800 dark:text-slate-200">
                   {formatCurrency(totalPaidPrincipal)}
                 </div>
               </div>
@@ -1427,7 +1427,7 @@ const LoanDetailModal: React.FC<{
                 <div className="text-xs text-slate-400 dark:text-slate-500 font-semibold mb-0.5 uppercase tracking-wider">
                   Lãi đã trả
                 </div>
-                <div className="text-sm font-bold text-slate-850 dark:text-slate-250">
+                <div className="text-sm font-bold text-slate-800 dark:text-slate-200">
                   {formatCurrency(totalPaidInterest)}
                 </div>
               </div>
@@ -1435,7 +1435,7 @@ const LoanDetailModal: React.FC<{
                 <div className="text-xs text-slate-400 dark:text-slate-500 font-semibold mb-0.5 uppercase tracking-wider">
                   Số lần trả
                 </div>
-                <div className="text-sm font-bold text-slate-850 dark:text-slate-250">
+                <div className="text-sm font-bold text-slate-800 dark:text-slate-200">
                   {payments.length} lần
                 </div>
               </div>
@@ -1525,7 +1525,7 @@ const LoanDetailModal: React.FC<{
                     )}
                     <div className="mt-2.5 text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
                       <span>Dư nợ còn lại sau trả:</span>
-                      <span className="text-xs font-bold text-slate-650 dark:text-slate-350 tracking-normal normal-case">
+                      <span className="text-xs font-bold text-slate-600 dark:text-slate-400 tracking-normal normal-case">
                         {formatCurrency(payment.remainingAmount)}
                       </span>
                     </div>

@@ -2,6 +2,9 @@ import { useState, useMemo } from "react";
 import type { Part } from "../../../types";
 import { getCategoryColor } from "../utils/categoryColors";
 import { getAvailableStock } from "../../../lib/repository/partsRepository";
+import { useSalesRepo } from "../../../hooks/useSalesRepository";
+import { useWorkOrdersRepo } from "../../../hooks/useWorkOrdersRepository";
+import { getPartsPopularityMap } from "../../../utils/partsPopularity";
 
 export type StockFilter = "all" | "low" | "out";
 
@@ -36,6 +39,14 @@ export function usePartInventory(
 ): UsePartInventoryReturn {
     const [partSearch, setPartSearch] = useState("");
     const [stockFilter, setStockFilter] = useState<StockFilter>("all");
+
+    // Fetch sales and work orders for calculating parts popularity
+    const { data: sales = [] } = useSalesRepo();
+    const { data: workOrders = [] } = useWorkOrdersRepo();
+
+    const popularityMap = useMemo(() => {
+        return getPartsPopularityMap(sales, workOrders);
+    }, [sales, workOrders]);
 
     // Filter parts by search
     const filteredParts = useMemo(() => {
@@ -81,10 +92,15 @@ export function usePartInventory(
                 const bStock = getAvailableStock(b, currentBranchId);
                 const weightDiff = weight(aStock) - weight(bStock);
                 if (weightDiff !== 0) return weightDiff;
+                
+                const aPop = popularityMap.get(a.id) || 0;
+                const bPop = popularityMap.get(b.id) || 0;
+                if (bPop !== aPop) return bPop - aPop;
+                
                 return a.name.localeCompare(b.name);
             })
             .slice(0, 36);
-    }, [filteredParts, stockFilter, currentBranchId]);
+    }, [filteredParts, stockFilter, currentBranchId, popularityMap]);
 
     return {
         // State

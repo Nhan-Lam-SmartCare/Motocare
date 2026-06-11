@@ -1,10 +1,13 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
-import { X, Search, ScanBarcode } from "lucide-react";
+import { X, Search, ScanBarcode, Package } from "lucide-react";
 import BarcodeScannerModal from "../../../common/BarcodeScannerModal";
 import { formatCurrency, normalizeSearchText } from "../../../../utils/format";
 import { getCategoryColor } from "../../../../utils/categoryColors";
 import { showToast } from "../../../../utils/toast";
 import type { Part } from "../../../../types";
+import { useSalesRepo } from "../../../../hooks/useSalesRepository";
+import { useWorkOrdersRepo } from "../../../../hooks/useWorkOrdersRepository";
+import { getPartsPopularityMap } from "../../../../utils/partsPopularity";
 
 interface PartSearchSheetProps {
   isOpen: boolean;
@@ -25,6 +28,15 @@ export const PartSearchSheet: React.FC<PartSearchSheetProps> = ({
   const [partCategoryFilter, setPartCategoryFilter] = useState<string>("");
   const [isScanning, setIsScanning] = useState(false);
   const partResultsRef = useRef<HTMLDivElement>(null);
+  const [zoomedImage, setZoomedImage] = useState<{ url: string; name: string } | null>(null);
+
+  // Fetch sales and work orders for calculating parts popularity
+  const { data: sales = [] } = useSalesRepo();
+  const { data: workOrders = [] } = useWorkOrdersRepo();
+
+  const popularityMap = useMemo(() => {
+    return getPartsPopularityMap(sales, workOrders);
+  }, [sales, workOrders]);
 
   // Filtered parts - first filter by stock > 0 (matching desktop behavior)
   const availableParts = useMemo(() => {
@@ -38,7 +50,7 @@ export const PartSearchSheet: React.FC<PartSearchSheetProps> = ({
     const normalizedQuery = normalizeSearchText(partSearchTerm.trim());
     const queryWords = normalizedQuery.split(/\s+/).filter(Boolean);
 
-    return availableParts.filter((p) => {
+    const filtered = availableParts.filter((p) => {
       if (partCategoryFilter && (p.category || "") !== partCategoryFilter) {
         return false;
       }
@@ -51,7 +63,15 @@ export const PartSearchSheet: React.FC<PartSearchSheetProps> = ({
       ].join(" ");
       return queryWords.every((word) => combined.includes(word));
     });
-  }, [availableParts, partSearchTerm, partCategoryFilter]);
+
+    // Sort by popularity (descending) first, then alphabetical by name
+    return filtered.sort((a, b) => {
+      const aPop = popularityMap.get(a.id) || 0;
+      const bPop = popularityMap.get(b.id) || 0;
+      if (bPop !== aPop) return bPop - aPop;
+      return a.name.localeCompare(b.name, "vi");
+    });
+  }, [availableParts, partSearchTerm, partCategoryFilter, popularityMap]);
 
   const availablePartCategories = useMemo(() => {
     const unique = new Set<string>();
@@ -201,36 +221,66 @@ export const PartSearchSheet: React.FC<PartSearchSheetProps> = ({
               return (
                 <div
                   key={part.id}
-                  onClick={() => {
-                    if (stock <= 0) {
-                      showToast.error("Sản phẩm đã hết hàng!");
-                      return;
-                    }
-                    onAddPart(part);
-                  }}
-                  className="p-2.5 bg-white dark:bg-[#1e1e2d] rounded-lg cursor-pointer hover:bg-slate-100 dark:hover:bg-[#2b2b40] active:bg-blue-600/20 transition-colors"
+                  className="p-2.5 bg-white dark:bg-[#1e1e2d] rounded-lg border border-slate-100 dark:border-slate-800/80 flex items-center justify-between gap-3 active:bg-blue-600/20 transition-colors"
                 >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1 min-w-0 pr-2">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    {/* Thumbnail Image */}
+                    <div className="w-10 h-10 rounded-lg bg-slate-50 dark:bg-slate-800 flex items-center justify-center flex-shrink-0 border border-slate-200 dark:border-slate-700 relative">
+                      {part.imageUrl ? (
+                        <img
+                          src={part.imageUrl}
+                          alt={part.name}
+                          onClick={() => setZoomedImage({ url: part.imageUrl!, name: part.name })}
+                          className="w-full h-full object-cover rounded-lg cursor-zoom-in"
+                        />
+                      ) : (
+                        <Package className="w-5 h-5 text-slate-400 dark:text-slate-500" />
+                      )}
+                    </div>
+
+                    <div
+                      className="flex-1 min-w-0 cursor-pointer"
+                      onClick={() => {
+                        if (stock <= 0) {
+                          showToast.error("Sản phẩm đã hết hàng!");
+                          return;
+                        }
+                        onAddPart(part);
+                      }}
+                    >
                       <div className="text-slate-900 dark:text-white font-medium text-xs truncate">
                         {part.name}
                       </div>
-                      <div className="text-[11px] text-blue-400 font-mono mt-0.5">
-                        SKU: {part.sku} • Tồn: {stock}
-                      </div>
-                      {part.category && (
-                        <span
-                          className={`inline-flex items-center px-1.5 py-0.5 mt-1 rounded-full text-[9px] font-medium ${
-                            getCategoryColor(part.category).bg
-                          } ${getCategoryColor(part.category).text}`}
-                        >
-                          {part.category}
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className="text-[10px] text-blue-400 font-mono">
+                          SKU: {part.sku}
                         </span>
-                      )}
+                        <span className="text-[10px] text-orange-400 font-medium">
+                          Tồn: {stock}
+                        </span>
+                        {part.category && (
+                          <span
+                            className={`inline-flex items-center px-1.5 py-0 rounded-full text-[9px] font-medium ${
+                              getCategoryColor(part.category).bg
+                            } ${getCategoryColor(part.category).text}`}
+                          >
+                            {part.category}
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    <div className="text-[#50cd89] font-bold text-xs flex-shrink-0">
-                      {formatCurrency(price)}
-                    </div>
+                  </div>
+                  <div
+                    className="text-[#50cd89] font-bold text-xs flex-shrink-0 cursor-pointer"
+                    onClick={() => {
+                      if (stock <= 0) {
+                        showToast.error("Sản phẩm đã hết hàng!");
+                        return;
+                      }
+                      onAddPart(part);
+                    }}
+                  >
+                    {formatCurrency(price)}
                   </div>
                 </div>
               );
@@ -252,6 +302,43 @@ export const PartSearchSheet: React.FC<PartSearchSheetProps> = ({
           setPartSearchTerm("");
         }}
       />
+
+      {/* Zoom Overlay Modal */}
+      {zoomedImage && (
+        <div
+          className="fixed inset-0 bg-black/90 z-[9999] flex flex-col items-center justify-center p-4"
+          onClick={() => setZoomedImage(null)}
+        >
+          {/* Close button */}
+          <button
+            className="absolute top-4 right-4 p-2 rounded-full bg-slate-800/80 hover:bg-slate-700 text-white z-10"
+            onClick={() => setZoomedImage(null)}
+            aria-label="Đóng ảnh"
+          >
+            <X className="w-6 h-6" />
+          </button>
+          
+          {/* Zoomed Image Container */}
+          <div className="relative max-w-full max-h-[80vh] flex items-center justify-center rounded-2xl overflow-hidden bg-slate-900 border border-slate-700 shadow-2xl p-2 animate-[scaleIn_0.25s_ease-out_1]">
+            <img
+              src={zoomedImage.url}
+              alt={zoomedImage.name}
+              className="max-w-full max-h-[75vh] object-contain rounded-xl"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
+          
+          {/* Product Name */}
+          <div className="mt-4 text-center max-w-md px-4">
+            <h4 className="text-white font-bold text-sm line-clamp-2 leading-snug">
+              {zoomedImage.name}
+            </h4>
+            <p className="text-slate-400 text-xs mt-1">
+              Nhấn bất kỳ đâu để đóng
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

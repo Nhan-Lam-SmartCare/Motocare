@@ -33,6 +33,9 @@ import {
   type MaintenanceWarning,
 } from "../../utils/maintenanceReminder";
 import { WORK_ORDER_STATUS, type WorkOrderStatus } from "../../constants";
+import { useSalesRepo } from "../../hooks/useSalesRepository";
+import { useWorkOrdersRepo } from "../../hooks/useWorkOrdersRepository";
+import { getPartsPopularityMap } from "../../utils/partsPopularity";
 import { NumberInput } from "../common/NumberInput";
 import { showToast } from "../../utils/toast";
 import { supabase } from "../../supabaseClient";
@@ -872,6 +875,14 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
     return filtered;
   }, [customers, serverCustomers, customerSearchTerm]);
 
+  // Fetch sales and work orders for calculating parts popularity
+  const { data: sales = [] } = useSalesRepo();
+  const { data: workOrders = [] } = useWorkOrdersRepo();
+
+  const popularityMap = useMemo(() => {
+    return getPartsPopularityMap(sales, workOrders);
+  }, [sales, workOrders]);
+
   // Filtered parts - first filter by stock > 0 (matching desktop behavior)
   const availableParts = useMemo(() => {
     return parts.filter((part) => {
@@ -884,7 +895,7 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
     const normalizedQuery = normalizeSearchText(partSearchTerm.trim());
     const queryWords = normalizedQuery.split(/\s+/).filter(Boolean);
 
-    return availableParts.filter((p) => {
+    const filtered = availableParts.filter((p) => {
       if (partCategoryFilter && (p.category || "") !== partCategoryFilter) {
         return false;
       }
@@ -897,7 +908,15 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
       ].join(" ");
       return queryWords.every((word) => combined.includes(word));
     });
-  }, [availableParts, partSearchTerm, partCategoryFilter]);
+
+    // Sort by popularity (descending) first, then alphabetical by name
+    return filtered.sort((a, b) => {
+      const aPop = popularityMap.get(a.id) || 0;
+      const bPop = popularityMap.get(b.id) || 0;
+      if (bPop !== aPop) return bPop - aPop;
+      return a.name.localeCompare(b.name, "vi");
+    });
+  }, [availableParts, partSearchTerm, partCategoryFilter, popularityMap]);
 
   const availablePartCategories = useMemo(() => {
     const unique = new Set<string>();

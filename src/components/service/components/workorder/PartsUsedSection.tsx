@@ -4,7 +4,11 @@ import { NumberInput } from "../../../common/NumberInput";
 import { formatCurrency, normalizeSearchText } from "../../../../utils/format";
 import { getCategoryColor } from "../../../../utils/categoryColors";
 import { showToast } from "../../../../utils/toast";
-import { Package } from "lucide-react";
+import { Package, X } from "lucide-react";
+import { useSalesRepo } from "../../../../hooks/useSalesRepository";
+import { useWorkOrdersRepo } from "../../../../hooks/useWorkOrdersRepository";
+import { getPartsPopularityMap } from "../../../../utils/partsPopularity";
+
 
 interface PartsUsedSectionProps {
   parts: Part[];
@@ -28,6 +32,15 @@ export const PartsUsedSection: React.FC<PartsUsedSectionProps> = ({
   const [showPartSearch, setShowPartSearch] = useState(false);
   const [searchPart, setSearchPart] = useState("");
   const [searchPartCategory, setSearchPartCategory] = useState<string>("");
+  const [zoomedImage, setZoomedImage] = useState<{ url: string; name: string } | null>(null);
+
+  // Fetch sales and work orders for calculating parts popularity
+  const { data: sales = [] } = useSalesRepo();
+  const { data: workOrders = [] } = useWorkOrdersRepo();
+
+  const popularityMap = useMemo(() => {
+    return getPartsPopularityMap(sales, workOrders);
+  }, [sales, workOrders]);
 
   // Filter parts available at current branch with stock
   const availableParts = useMemo(() => {
@@ -51,7 +64,7 @@ export const PartsUsedSection: React.FC<PartsUsedSectionProps> = ({
     const normalizedQuery = normalizeSearchText(searchPart.trim());
     const queryWords = normalizedQuery.split(/\s+/).filter(Boolean);
 
-    return availableParts.filter((p) => {
+    const filtered = availableParts.filter((p) => {
       if (searchPartCategory && (p.category || "") !== searchPartCategory) {
         return false;
       }
@@ -64,7 +77,15 @@ export const PartsUsedSection: React.FC<PartsUsedSectionProps> = ({
       ].join(" ");
       return queryWords.every((word) => combined.includes(word));
     });
-  }, [availableParts, searchPart, searchPartCategory]);
+
+    // Sort by popularity (descending) first, then alphabetical by name
+    return filtered.sort((a, b) => {
+      const aPop = popularityMap.get(a.id) || 0;
+      const bPop = popularityMap.get(b.id) || 0;
+      if (bPop !== aPop) return bPop - aPop;
+      return a.name.localeCompare(b.name, "vi");
+    });
+  }, [availableParts, searchPart, searchPartCategory, popularityMap]);
 
   const handleAddPart = (part: Part) => {
     const existing = selectedParts.find((p) => p.partId === part.id);
@@ -182,7 +203,11 @@ export const PartsUsedSection: React.FC<PartsUsedSectionProps> = ({
                               <img
                                 src={part.imageUrl}
                                 alt={part.name}
-                                className="w-full h-full object-cover rounded-lg"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setZoomedImage({ url: part.imageUrl!, name: part.name });
+                                }}
+                                className="w-full h-full object-cover rounded-lg cursor-zoom-in"
                               />
                               {/* Hover zoom preview popup */}
                               <div className="hidden group-hover/img-preview:flex absolute left-full top-1/2 -translate-y-1/2 ml-3 z-[200] p-2 bg-white dark:bg-slate-850 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl w-48 h-48 pointer-events-none items-center justify-center">
@@ -382,6 +407,43 @@ export const PartsUsedSection: React.FC<PartsUsedSectionProps> = ({
           </tbody>
         </table>
       </div>
+
+      {/* Zoom Overlay Modal */}
+      {zoomedImage && (
+        <div
+          className="fixed inset-0 bg-black/90 z-[9999] flex flex-col items-center justify-center p-4"
+          onClick={() => setZoomedImage(null)}
+        >
+          {/* Close button */}
+          <button
+            className="absolute top-4 right-4 p-2 rounded-full bg-slate-800/80 hover:bg-slate-700 text-white z-10"
+            onClick={() => setZoomedImage(null)}
+            aria-label="Đóng ảnh"
+          >
+            <X className="w-6 h-6" />
+          </button>
+          
+          {/* Zoomed Image Container */}
+          <div className="relative max-w-full max-h-[80vh] flex items-center justify-center rounded-2xl overflow-hidden bg-slate-900 border border-slate-700 shadow-2xl p-2 animate-[scaleIn_0.25s_ease-out_1]">
+            <img
+              src={zoomedImage.url}
+              alt={zoomedImage.name}
+              className="max-w-full max-h-[75vh] object-contain rounded-xl"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
+          
+          {/* Product Name */}
+          <div className="mt-4 text-center max-w-md px-4">
+            <h4 className="text-white font-bold text-sm line-clamp-2 leading-snug">
+              {zoomedImage.name}
+            </h4>
+            <p className="text-slate-400 text-xs mt-1">
+              Nhấn bất kỳ đâu để đóng
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -1,5 +1,5 @@
 import React from "react";
-import { MoreHorizontal, Eye, Edit, Trash2, Tags, Banknote } from "lucide-react";
+import { MoreHorizontal, Eye, Edit, Trash2, Tags, Banknote, X } from "lucide-react";
 import { formatCurrency } from "../../../utils/format";
 
 interface InventoryMobileCardsProps {
@@ -27,6 +27,8 @@ const InventoryMobileCards: React.FC<InventoryMobileCardsProps> = ({
   LOW_STOCK_THRESHOLD,
   isOwner,
 }) => {
+  const [zoomedImage, setZoomedImage] = React.useState<{ url: string; name: string } | null>(null);
+
   return (
     <div className="block sm:hidden">
       <div className="space-y-4 py-2 text-slate-700 dark:text-slate-200">
@@ -55,7 +57,11 @@ const InventoryMobileCards: React.FC<InventoryMobileCardsProps> = ({
                           <img
                             src={part.imageUrl}
                             alt={part.name}
-                            className="h-full w-full object-cover"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setZoomedImage({ url: part.imageUrl!, name: part.name });
+                            }}
+                            className="h-full w-full object-cover cursor-zoom-in"
                           />
                         ) : (
                           <Tags className="h-5 w-5 text-slate-400" />
@@ -194,6 +200,43 @@ const InventoryMobileCards: React.FC<InventoryMobileCardsProps> = ({
           );
         })}
       </div>
+
+      {/* Zoom Overlay Modal */}
+      {zoomedImage && (
+        <div
+          className="fixed inset-0 bg-black/90 z-[9999] flex flex-col items-center justify-center p-4"
+          onClick={() => setZoomedImage(null)}
+        >
+          {/* Close button */}
+          <button
+            className="absolute top-4 right-4 p-2 rounded-full bg-slate-800/80 hover:bg-slate-700 text-white z-10"
+            onClick={() => setZoomedImage(null)}
+            aria-label="Đóng ảnh"
+          >
+            <X className="w-6 h-6" />
+          </button>
+          
+          {/* Zoomed Image Container */}
+          <div className="relative max-w-full max-h-[80vh] flex items-center justify-center rounded-2xl overflow-hidden bg-slate-900 border border-slate-700 shadow-2xl p-2 animate-[scaleIn_0.25s_ease-out_1]">
+            <img
+              src={zoomedImage.url}
+              alt={zoomedImage.name}
+              className="max-w-full max-h-[75vh] object-contain rounded-xl"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
+          
+          {/* Product Name */}
+          <div className="mt-4 text-center max-w-md px-4">
+            <h4 className="text-white font-bold text-sm line-clamp-2 leading-snug">
+              {zoomedImage.name}
+            </h4>
+            <p className="text-slate-400 text-xs mt-1">
+              Nhấn bất kỳ đâu để đóng
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -14,6 +14,9 @@ import {
   useDeleteRepairTemplate,
 } from "../../../hooks/useRepairTemplatesRepository";
 import type { Part } from "../../../types";
+import { useSalesRepo } from "../../../hooks/useSalesRepository";
+import { useWorkOrdersRepo } from "../../../hooks/useWorkOrdersRepository";
+import { getPartsPopularityMap } from "../../../utils/partsPopularity";
 
 interface TemplatePart {
   name: string;
@@ -54,6 +57,14 @@ export function RepairTemplatesModal({
   const updateTemplateMutation = useUpdateRepairTemplate();
   const deleteTemplateMutation = useDeleteRepairTemplate();
 
+  // Fetch sales and work orders for calculating parts popularity
+  const { data: sales = [] } = useSalesRepo();
+  const { data: workOrders = [] } = useWorkOrdersRepo();
+
+  const popularityMap = useMemo(() => {
+    return getPartsPopularityMap(sales, workOrders);
+  }, [sales, workOrders]);
+
   // Local state
   const [showEditor, setShowEditor] = useState(false);
   const [editingTemplate, setEditingTemplate] =
@@ -87,16 +98,25 @@ export function RepairTemplatesModal({
   // Filter parts for search - tìm theo tên hoặc SKU
   const filteredParts = useMemo(() => {
     const term = partSearchTerm.toLowerCase().trim();
-    if (!term) return parts.slice(0, 20);
-    return parts
-      .filter(
-        (p) =>
-          p.name.toLowerCase().includes(term) ||
-          p.sku?.toLowerCase().includes(term) ||
-          p.barcode?.toLowerCase().includes(term)
-      )
+    const filtered = term
+      ? parts.filter(
+          (p) =>
+            p.name.toLowerCase().includes(term) ||
+            p.sku?.toLowerCase().includes(term) ||
+            p.barcode?.toLowerCase().includes(term)
+        )
+      : parts;
+
+    // Sort by popularity (descending) first, then alphabetical by name
+    return filtered
+      .sort((a, b) => {
+        const aPop = popularityMap.get(a.id) || 0;
+        const bPop = popularityMap.get(b.id) || 0;
+        if (bPop !== aPop) return bPop - aPop;
+        return a.name.localeCompare(b.name, "vi");
+      })
       .slice(0, 20);
-  }, [parts, partSearchTerm]);
+  }, [parts, partSearchTerm, popularityMap]);
 
   // Handlers
   const handleCreateTemplate = () => {

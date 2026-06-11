@@ -6,7 +6,7 @@ import type { CardColorKey } from "./statCard.constants";
 interface StatCardProps {
     title: string;
     value: string | number;
-    subtitle?: string;
+    subtitle?: React.ReactNode;
     colorKey: CardColorKey;
     icon: LucideIcon;
 }
@@ -36,7 +36,7 @@ const StatCard: React.FC<StatCardProps> = ({
                         </h3>
                     </div>
                     {subtitle && (
-                        <p className={`text-xs mt-1 ${colors.accent}`}>{subtitle}</p>
+                        <div className={`text-xs mt-1 ${colors.accent}`}>{subtitle}</div>
                     )}
                 </div>
             </div>

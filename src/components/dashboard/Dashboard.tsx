@@ -31,6 +31,7 @@ import {
   ArrowDownToLine,
   Pencil,
   UserPlus,
+  X,
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import {
@@ -70,7 +71,8 @@ const Dashboard: React.FC = () => {
   const [reportFilter, setReportFilter] = useState<string>("month");
   const [isLoading, setIsLoading] = useState(true);
   const [showBalance, setShowBalance] = useState(false);
-  const [showRevenue, setShowRevenue] = useState(false);
+  const [showPartsDetailModal, setShowPartsDetailModal] = useState(false);
+  const [partsSearchQuery, setPartsSearchQuery] = useState("");
 
   // Load data using custom hook
   const {
@@ -165,19 +167,34 @@ const Dashboard: React.FC = () => {
             <h2 className="text-base font-bold text-white tracking-wide">Báo cáo</h2>
             <span className="text-xs text-slate-400 font-medium bg-slate-800/40 px-2.5 py-0.5 rounded-full">Tháng này</span>
           </div>
-          <div className="grid grid-cols-2 gap-3.5">
-            <div className="bg-gradient-to-br from-[#182030] to-[#111723] rounded-2xl p-4 border border-slate-800/80 flex flex-col space-y-1 shadow-[0_4px_20px_rgba(0,0,0,0.4)]">
-              <span className="text-xs text-slate-400 font-medium">Doanh thu</span>
-              <span className="text-xl font-extrabold text-blue-400 tracking-tight">
-                {formatCurrency(filteredStats.revenue)}
-              </span>
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3.5">
+              <div className="bg-gradient-to-br from-[#182030] to-[#111723] rounded-2xl p-4 border border-slate-800/80 flex flex-col space-y-1 shadow-[0_4px_20px_rgba(0,0,0,0.4)]">
+                <span className="text-xs text-slate-400 font-medium">Doanh thu</span>
+                <span className="text-xl font-extrabold text-blue-400 tracking-tight">
+                  {formatCurrency(filteredStats.revenue)}
+                </span>
+              </div>
+              <div className="bg-gradient-to-br from-[#182030] to-[#111723] rounded-2xl p-4 border border-slate-800/80 flex flex-col space-y-1 shadow-[0_4px_20px_rgba(0,0,0,0.4)]">
+                <span className="text-xs text-slate-400 font-medium">Lợi nhuận</span>
+                <span className="text-xl font-extrabold text-[#34d399] tracking-tight">
+                  {formatCurrency(filteredStats.profit)}
+                </span>
+              </div>
             </div>
-            <div className="bg-gradient-to-br from-[#182030] to-[#111723] rounded-2xl p-4 border border-slate-800/80 flex flex-col space-y-1 shadow-[0_4px_20px_rgba(0,0,0,0.4)]">
-              <span className="text-xs text-slate-400 font-medium">Lợi nhuận</span>
-              <span className="text-xl font-extrabold text-[#34d399] tracking-tight">
-                {formatCurrency(filteredStats.profit)}
+            
+            <button 
+              onClick={() => setShowPartsDetailModal(true)}
+              className="w-full bg-gradient-to-br from-[#182030] to-[#111723] rounded-2xl p-3 px-4 border border-slate-800/80 flex items-center justify-between shadow-[0_4px_20px_rgba(0,0,0,0.4)] active:from-[#202b40] active:to-[#171f30] transition text-left"
+            >
+              <span className="text-xs text-slate-400 font-medium flex items-center gap-1.5">
+                Phụ tùng đã bán
+                <ChevronRight className="w-3.5 h-3.5 text-slate-500" />
               </span>
-            </div>
+              <span className="text-sm font-bold text-[#60a5fa] bg-slate-800/60 border border-slate-700/30 px-3 py-1 rounded-xl">
+                {filteredStats.partsSold} cái
+              </span>
+            </button>
           </div>
         </div>
 
@@ -576,17 +593,26 @@ const Dashboard: React.FC = () => {
         <StatCard
           title="Doanh thu"
           value={formatCurrency(filteredStats.revenue)}
-          subtitle={`${filteredStats.orderCount} đơn bán, ${todayStats.workOrdersCount} phiếu DV`}
+          subtitle={`${filteredStats.salesCount} hóa đơn, ${filteredStats.workOrdersCount} phiếu dịch vụ`}
           colorKey="blue"
           icon={DollarSign}
         />
         <StatCard
           title="Lợi nhuận"
           value={formatCurrency(filteredStats.profit)}
-          subtitle={`Biên LN: ${filteredStats.revenue > 0
-            ? Math.round((filteredStats.profit / filteredStats.revenue) * 100)
-            : 0
-            }%`}
+          subtitle={
+            <div className="flex items-center justify-between w-full">
+              <span>
+                LN: {filteredStats.revenue > 0 ? Math.round((filteredStats.profit / filteredStats.revenue) * 100) : 0}%
+              </span>
+              <button 
+                onClick={() => setShowPartsDetailModal(true)}
+                className="text-[10px] text-blue-600 dark:text-blue-400 hover:underline font-semibold ml-2"
+              >
+                Chi tiết: {filteredStats.partsSold} cái
+              </button>
+            </div>
+          }
           colorKey="emerald"
           icon={TrendingUp}
         />
@@ -818,6 +844,218 @@ const Dashboard: React.FC = () => {
           Xóa dữ liệu
         </button>
       </div>
+
+      {showPartsDetailModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-4xl max-h-[85vh] flex flex-col shadow-2xl border border-slate-200 dark:border-slate-800">
+            {/* Modal Header */}
+            <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                  Chi tiết phụ tùng đã bán
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                  Lọc theo: {
+                    reportFilter === "today" && "Hôm nay" ||
+                    reportFilter === "7days" && "7 ngày qua" ||
+                    reportFilter === "week" && "Tuần này" ||
+                    reportFilter === "month" && "Tháng này" ||
+                    reportFilter === "year" && "Năm nay" ||
+                    reportFilter.startsWith("month") && `Tháng ${reportFilter.slice(5)}` ||
+                    reportFilter.startsWith("q") && `Quý ${reportFilter.slice(1)}` ||
+                    "Tháng này"
+                  }
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  setShowPartsDetailModal(false);
+                  setPartsSearchQuery("");
+                }}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Search and Total Summary */}
+            <div className="p-5 pb-0 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="relative flex-1 max-w-md">
+                <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Search className="w-4 h-4 text-slate-400" />
+                </span>
+                <input
+                  type="text"
+                  placeholder="Tìm theo tên hoặc mã SKU..."
+                  value={partsSearchQuery}
+                  onChange={(e) => setPartsSearchQuery(e.target.value)}
+                  className="w-full pl-9 pr-4 py-2 border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 rounded-xl text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                />
+              </div>
+              <div className="flex items-center gap-4 text-xs font-semibold text-slate-500 dark:text-slate-400">
+                <div>Tổng phụ tùng: <span className="text-blue-600 dark:text-blue-400">{filteredStats.partsSold} cái</span></div>
+                <div className="hidden sm:block">Mặt hàng khác nhau: <span className="text-emerald-600 dark:text-emerald-400">{(filteredStats.detailedPartsSold || []).length}</span></div>
+              </div>
+            </div>
+
+            {/* Modal Content - Scrollable List */}
+            <div className="px-5 pb-5 pt-0 flex-1 overflow-y-auto min-h-0">
+              {/* Mobile View: Cards */}
+              <div className="block md:hidden space-y-3 mt-4">
+                {(filteredStats.detailedPartsSold || [])
+                  .filter((p: any) => 
+                    p.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes(partsSearchQuery.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")) ||
+                    p.sku.toLowerCase().includes(partsSearchQuery.toLowerCase())
+                  ).length === 0 ? (
+                    <div className="text-center py-8 text-slate-500 text-sm">
+                      Không tìm thấy phụ tùng phù hợp
+                    </div>
+                  ) : (
+                    (filteredStats.detailedPartsSold || [])
+                      .filter((p: any) => 
+                        p.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes(partsSearchQuery.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")) ||
+                        p.sku.toLowerCase().includes(partsSearchQuery.toLowerCase())
+                      )
+                      .map((part: any, idx: number) => (
+                        <div key={idx} className="bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800/80 p-3.5 rounded-xl space-y-2.5">
+                          <div className="flex justify-between items-start gap-2">
+                            <div className="min-w-0">
+                              <h4 className="text-sm font-bold text-slate-900 dark:text-white truncate">
+                                {part.name}
+                              </h4>
+                              <span className="text-[10px] text-slate-400 font-mono tracking-wider">
+                                SKU: {part.sku || "N/A"}
+                              </span>
+                            </div>
+                            <div className="flex flex-col items-end gap-1 shrink-0">
+                              <span className="bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-xs font-extrabold px-2.5 py-0.5 rounded-lg">
+                                SL: {part.quantity} cái
+                              </span>
+                              {part.prevQuantity !== undefined && (
+                                <span className="text-[9px] text-slate-400">
+                                  Kỳ trước: {part.prevQuantity} {
+                                    part.prevQuantity === 0 ? (
+                                      <span className="text-emerald-500 font-extrabold bg-emerald-500/10 dark:bg-emerald-500/20 px-1 rounded text-[8px] uppercase">Mới</span>
+                                    ) : part.quantity > part.prevQuantity ? (
+                                      <span className="text-emerald-500 font-bold">▲{part.quantity - part.prevQuantity}</span>
+                                    ) : part.quantity < part.prevQuantity ? (
+                                      <span className="text-rose-500 font-bold">▼{part.prevQuantity - part.quantity}</span>
+                                    ) : (
+                                      <span className="text-slate-400 font-bold">=</span>
+                                    )
+                                  }
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-2 text-xs border-t border-slate-100 dark:border-slate-800/60 pt-2 text-slate-500 dark:text-slate-400">
+                            <div>
+                              Doanh thu: <span className="font-semibold text-slate-800 dark:text-slate-200">{formatCurrency(part.revenue)}</span>
+                            </div>
+                            <div>
+                              Lợi nhuận: <span className="font-semibold text-[#34d399]">{formatCurrency(part.profit)}</span>
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                  )}
+              </div>
+
+              {/* Desktop View: Table */}
+              <div className="hidden md:block border border-slate-100 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 mt-4">
+                <table className="w-full text-left text-sm border-collapse">
+                  <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-800">
+                    <tr className="bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-bold border-b border-slate-100 dark:border-slate-800">
+                      <th className="py-3 px-4 w-12 text-center rounded-tl-xl">STT</th>
+                      <th className="py-3 px-4">Tên phụ tùng / SKU</th>
+                      <th className="py-3 px-4 text-center">Số lượng bán</th>
+                      <th className="py-3 px-4 text-right">Doanh thu</th>
+                      <th className="py-3 px-4 text-right">Lợi nhuận</th>
+                      <th className="py-3 px-4 text-center rounded-tr-xl">Biên LN</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                    {(filteredStats.detailedPartsSold || [])
+                      .filter((p: any) => 
+                        p.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes(partsSearchQuery.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")) ||
+                        p.sku.toLowerCase().includes(partsSearchQuery.toLowerCase())
+                      ).length === 0 ? (
+                        <tr>
+                          <td colSpan={6} className="text-center py-12 text-slate-500">
+                            Không tìm thấy phụ tùng phù hợp
+                          </td>
+                        </tr>
+                      ) : (
+                        (filteredStats.detailedPartsSold || [])
+                          .filter((p: any) => 
+                            p.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes(partsSearchQuery.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")) ||
+                            p.sku.toLowerCase().includes(partsSearchQuery.toLowerCase())
+                          )
+                          .map((part: any, idx: number) => {
+                            const margin = part.revenue > 0 ? Math.round((part.profit / part.revenue) * 100) : 0;
+                            return (
+                              <tr key={idx} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/20 text-slate-700 dark:text-slate-300">
+                                <td className="py-3 px-4 text-center font-medium text-slate-400">{idx + 1}</td>
+                                <td className="py-3 px-4">
+                                  <p className="font-bold text-slate-900 dark:text-white">{part.name}</p>
+                                  <span className="text-[10px] text-slate-400 font-mono tracking-wider">SKU: {part.sku || "N/A"}</span>
+                                </td>
+                                <td className="py-3 px-4">
+                                  <div className="flex flex-col items-center justify-center">
+                                    <span className="font-bold text-blue-600 dark:text-blue-400">{part.quantity}</span>
+                                    {part.prevQuantity !== undefined && (
+                                      <div className="flex items-center gap-1 mt-0.5 text-[10px]">
+                                        <span className="text-slate-400">Kỳ trước: {part.prevQuantity}</span>
+                                        {part.prevQuantity === 0 ? (
+                                          <span className="text-emerald-500 font-extrabold bg-emerald-500/10 dark:bg-emerald-500/20 px-1 rounded text-[8px] uppercase">Mới</span>
+                                        ) : part.quantity > part.prevQuantity ? (
+                                          <span className="text-emerald-500 font-bold text-[9px]">▲{part.quantity - part.prevQuantity}</span>
+                                        ) : part.quantity < part.prevQuantity ? (
+                                          <span className="text-rose-500 font-bold text-[9px]">▼{part.prevQuantity - part.quantity}</span>
+                                        ) : (
+                                          <span className="text-slate-400 font-bold">=</span>
+                                        )}
+                                      </div>
+                                    )}
+                                  </div>
+                                </td>
+                                <td className="py-3 px-4 text-right font-medium">{formatCurrency(part.revenue)}</td>
+                                <td className="py-3 px-4 text-right font-bold text-[#34d399]">{formatCurrency(part.profit)}</td>
+                                <td className="py-3 px-4 text-center">
+                                  <span className={`px-2 py-0.5 rounded-md text-xs font-bold ${
+                                    margin >= 40 
+                                      ? "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400" 
+                                      : margin >= 20 
+                                        ? "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400"
+                                        : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400"
+                                  }`}>
+                                    {margin}%
+                                  </span>
+                                </td>
+                              </tr>
+                            );
+                          })
+                      )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            
+            {/* Modal Footer */}
+            <div className="p-5 border-t border-slate-100 dark:border-slate-800 flex justify-end">
+              <button
+                onClick={() => {
+                  setShowPartsDetailModal(false);
+                  setPartsSearchQuery("");
+                }}
+                className="px-5 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-sm font-semibold transition"
+              >
+                Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

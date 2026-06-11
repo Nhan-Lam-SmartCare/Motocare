@@ -7,7 +7,7 @@ import { useCashBalance } from "../../../hooks/useCashBalance";
 import { useLoansRepo } from "../../../hooks/useLoansRepository";
 import { useAppContext } from "../../../contexts/AppContext";
 
-import { calculateFinancialSummary } from "../../../lib/reports/financialSummary";
+import { calculateFinancialSummary, buildPartsCostMap, getPartCost } from "../../../lib/reports/financialSummary";
 
 export const useDashboardData = (
     reportFilter: string,
@@ -170,6 +170,147 @@ export const useDashboardData = (
         const woRevenue = summary.woRevenue;
         const woProfit = summary.woGrossProfit;
 
+        const partsSold = 
+            summary.filteredSales.reduce((sum: number, sale: any) => {
+                const items = sale.items || [];
+                return sum + items.reduce((iSum: number, item: any) => iSum + (Number(item.quantity) || 0), 0);
+            }, 0) +
+            summary.filteredWorkOrders.reduce((sum: number, wo: any) => {
+                const partsUsed = wo.partsUsed || wo.partsused || wo.parts || wo.items || [];
+                return sum + partsUsed.reduce((pSum: number, part: any) => pSum + (Number(part.quantity) || Number(part.qty) || 0), 0);
+            }, 0);
+
+        // Calculate previous period for MoM comparison
+        const getPreviousPeriod = (start: Date, end: Date, filter: string) => {
+            const prevStart = new Date(start);
+            const prevEnd = new Date(end);
+            
+            if (filter === "today") {
+                prevStart.setDate(prevStart.getDate() - 1);
+                prevEnd.setDate(prevEnd.getDate() - 1);
+            } else if (filter === "7days" || filter === "week") {
+                prevStart.setDate(prevStart.getDate() - 7);
+                prevEnd.setDate(prevEnd.getDate() - 7);
+            } else if (filter === "month") {
+                prevStart.setMonth(prevStart.getMonth() - 1);
+                prevEnd.setMonth(prevEnd.getMonth() - 1);
+                if (prevEnd.getMonth() === prevStart.getMonth() && end.getDate() !== prevEnd.getDate()) {
+                    prevEnd.setDate(0);
+                }
+            } else if (filter.startsWith("month")) {
+                prevStart.setMonth(prevStart.getMonth() - 1);
+                prevEnd.setDate(0);
+            } else if (filter.startsWith("q")) {
+                prevStart.setMonth(prevStart.getMonth() - 3);
+                prevEnd.setMonth(prevEnd.getMonth() - 3);
+                prevEnd.setDate(0);
+            } else if (filter === "year") {
+                prevStart.setFullYear(prevStart.getFullYear() - 1);
+                prevEnd.setFullYear(prevEnd.getFullYear() - 1);
+            } else {
+                const diff = end.getTime() - start.getTime();
+                prevStart.setTime(prevStart.getTime() - diff - 24*60*60*1000);
+                prevEnd.setTime(prevStart.getTime() + diff);
+            }
+            return { start: prevStart, end: prevEnd };
+        };
+
+        const { start: prevStart, end: prevEnd } = getPreviousPeriod(startDate, endDate, reportFilter);
+        prevStart.setHours(0, 0, 0, 0);
+        prevEnd.setHours(23, 59, 59, 999);
+
+        const prevSummary = calculateFinancialSummary({
+            sales,
+            workOrders,
+            parts,
+            cashTransactions,
+            branchId: currentBranchId,
+            start: prevStart,
+            end: prevEnd,
+        });
+
+        const prevPartsMap: Record<string, number> = {};
+        
+        prevSummary.filteredSales.forEach((sale: any) => {
+            const items = sale.items || [];
+            items.forEach((item: any) => {
+                if (item.isService) return;
+                const pId = item.partId || item.id;
+                const qty = Number(item.quantity) || 0;
+                if (pId) {
+                    prevPartsMap[pId] = (prevPartsMap[pId] || 0) + qty;
+                }
+            });
+        });
+
+        prevSummary.filteredWorkOrders.forEach((wo: any) => {
+            const partsUsed = wo.partsUsed || wo.partsused || wo.parts || wo.items || [];
+            partsUsed.forEach((part: any) => {
+                const pId = part.partId || part.partid || part.id;
+                const qty = Number(part.quantity) || 0;
+                if (pId) {
+                    prevPartsMap[pId] = (prevPartsMap[pId] || 0) + qty;
+                }
+            });
+        });
+
+        const partsCostMap = buildPartsCostMap(parts, currentBranchId);
+        const partsMap: Record<string, { id: string; name: string; sku: string; quantity: number; revenue: number; cost: number; profit: number }> = {};
+        
+        summary.filteredSales.forEach((sale: any) => {
+            const items = sale.items || [];
+            items.forEach((item: any) => {
+                if (item.isService) return;
+                const pId = item.partId || item.id;
+                const pName = item.partName || "Sản phẩm không xác định";
+                const sku = item.sku || "";
+                const qty = Number(item.quantity) || 0;
+                const price = Number(item.sellingPrice ?? item.price ?? item.unitPrice ?? item.unitprice) || 0;
+                const rawCost = item.costPrice ?? item.costprice ?? item.cost_price ?? item.giaNhap ?? item.gia_nhap;
+                const fallbackCost = Number(rawCost) || 0;
+                const cost = getPartCost(partsCostMap, pId, sku, fallbackCost);
+
+                if (pId) {
+                    if (!partsMap[pId]) {
+                        partsMap[pId] = { id: pId, name: pName, sku, quantity: 0, revenue: 0, cost: 0, profit: 0 };
+                    }
+                    partsMap[pId].quantity += qty;
+                    partsMap[pId].revenue += qty * price;
+                    partsMap[pId].cost += qty * cost;
+                    partsMap[pId].profit += qty * (price - cost);
+                }
+            });
+        });
+
+        summary.filteredWorkOrders.forEach((wo: any) => {
+            const partsUsed = wo.partsUsed || wo.partsused || wo.parts || wo.items || [];
+            partsUsed.forEach((part: any) => {
+                const pId = part.partId || part.partid || part.id;
+                const pName = part.partName || part.partname || part.name || "Phụ tùng không xác định";
+                const sku = part.sku || "";
+                const qty = Number(part.quantity) || 0;
+                const price = Number(part.price ?? part.sellingPrice ?? part.unitPrice ?? part.unitprice) || 0;
+                const rawCost = part.costPrice ?? part.costprice ?? part.cost_price ?? part.giaNhap ?? part.gia_nhap;
+                const fallbackCost = Number(rawCost) || 0;
+                const cost = getPartCost(partsCostMap, pId, sku, fallbackCost);
+
+                if (pId) {
+                    if (!partsMap[pId]) {
+                        partsMap[pId] = { id: pId, name: pName, sku, quantity: 0, revenue: 0, cost: 0, profit: 0 };
+                    }
+                    partsMap[pId].quantity += qty;
+                    partsMap[pId].revenue += qty * price;
+                    partsMap[pId].cost += qty * cost;
+                    partsMap[pId].profit += qty * (price - cost);
+                }
+            });
+        });
+
+        const detailedPartsSold = Object.values(partsMap).map((part) => ({
+            ...part,
+            prevQuantity: prevPartsMap[part.id] || 0
+        })).sort((a, b) => b.quantity - a.quantity);
+
         return {
             revenue,
             profit,
@@ -182,6 +323,10 @@ export const useDashboardData = (
             salesProfit,
             woRevenue,
             woProfit,
+            salesCount: summary.salesCount,
+            workOrdersCount: summary.workOrdersCount,
+            partsSold,
+            detailedPartsSold,
         };
     }, [sales, workOrders, parts, cashTransactions, reportFilter, currentBranchId]); // Added getPartCost to dependencyoanh thu 7 ngày gần nhất (bao gồm cả Sales và Work Orders)
     const last7DaysRevenue = useMemo(() => {

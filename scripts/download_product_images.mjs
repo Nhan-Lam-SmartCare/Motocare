@@ -155,6 +155,9 @@ if (missing.length === 0) {
 
   for (const part of batch) {
     let query = part.name;
+    if (part.sku) {
+      query += ` ${part.sku}`;
+    }
     if (part.category && part.category !== "Hàng Công Ty" && part.category !== "Khác") {
       query += ` ${part.category}`;
     }

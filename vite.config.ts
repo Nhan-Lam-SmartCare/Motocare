@@ -173,78 +173,73 @@ export default defineConfig(({ mode }) => {
         input: path.resolve(process.cwd(), "index.html"),
         output: {
           manualChunks(id) {
-            if (!id.includes("node_modules")) return;
+            const normalizedId = id.replace(/\\/g, "/");
+            if (!normalizedId.includes("node_modules")) return;
 
             // --- React ecosystem (must be ONE chunk to avoid circular init issues) ---
             // Broad match for /node_modules/react/ and /node_modules/react-*/ catches
             // react-dom, react-is, react-toastify, react-native-webview, etc.
             if (
-              id.includes("/node_modules/react/") ||
-              id.includes("/node_modules/react-dom/") ||
-              id.includes("/node_modules/react-is/") ||
-              id.includes("/node_modules/react-toastify/") ||
-              id.includes("/node_modules/react-native-webview/") ||
-              id.includes("/node_modules/scheduler/") ||
-              id.includes("/node_modules/use-sync-external-store/") ||
-              id.includes("/node_modules/@reduxjs/") ||
-              id.includes("/node_modules/prop-types/") ||
-              id.includes("/node_modules/clsx/") ||
-              id.includes("/node_modules/goober/")
+              normalizedId.includes("node_modules/react/") ||
+              normalizedId.includes("node_modules/react-dom/") ||
+              normalizedId.includes("node_modules/react-is/") ||
+              normalizedId.includes("node_modules/scheduler/") ||
+              normalizedId.includes("node_modules/use-sync-external-store/")
             ) {
               return "vendor-react";
             }
 
             // React Router (after react ecosystem to avoid circular)
-            if (id.includes("react-router-dom") || id.includes("react-router") || id.includes("@remix-run")) {
+            if (normalizedId.includes("react-router-dom") || normalizedId.includes("react-router") || normalizedId.includes("@remix-run")) {
               return "vendor-router";
             }
 
-            if (id.includes("@supabase")) {
+            if (normalizedId.includes("@supabase")) {
               return "vendor-supabase";
             }
 
-            if (id.includes("@tanstack/react-query")) {
+            if (normalizedId.includes("@tanstack/react-query")) {
               return "vendor-query";
             }
 
-            if (id.includes("lucide-react")) {
+            if (normalizedId.includes("lucide-react")) {
               return "vendor-icons";
             }
 
-            if (id.includes("html5-qrcode")) {
+            if (normalizedId.includes("html5-qrcode")) {
               return "vendor-qr";
             }
 
-            if (id.includes("recharts") || id.includes("d3-")) {
+            if (normalizedId.includes("recharts") || normalizedId.includes("d3-")) {
               return "vendor-charts";
             }
 
-            if (id.includes("xlsx")) {
+            if (normalizedId.includes("xlsx")) {
               return "vendor-xlsx";
             }
 
-            if (id.includes("jspdf") || id.includes("jspdf-autotable")) {
+            if (normalizedId.includes("jspdf") || normalizedId.includes("jspdf-autotable")) {
               return "vendor-pdf";
             }
 
-            if (id.includes("html2canvas")) {
+            if (normalizedId.includes("html2canvas")) {
               return "vendor-canvas";
             }
 
             // --- New dedicated chunks to reduce catch-all size ---
-            if (id.includes("date-fns")) {
+            if (normalizedId.includes("date-fns")) {
               return "vendor-datefns";
             }
 
-            if (id.includes("papaparse")) {
+            if (normalizedId.includes("papaparse")) {
               return "vendor-csv";
             }
 
-            if (id.includes("jsbarcode")) {
+            if (normalizedId.includes("jsbarcode")) {
               return "vendor-barcode";
             }
 
-            if (id.includes("@capacitor")) {
+            if (normalizedId.includes("@capacitor")) {
               return "vendor-capacitor";
             }
 

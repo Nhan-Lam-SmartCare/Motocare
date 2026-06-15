@@ -1,6 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import * as client from "../../src/supabaseClient";
-import { createSaleAtomic } from "../../src/lib/repository/salesRepository";
+import {
+  createSaleAtomic,
+  updateSaleAtomic,
+} from "../../src/lib/repository/salesRepository";
 
 const mockRpc = vi.fn();
 const mockAuth = {
@@ -124,5 +127,124 @@ describe("salesRepository.createSaleAtomic", () => {
     } as any);
     expect(res.ok).toBe(false);
     if (!res.ok) expect(res.error.code).toBe("validation");
+  });
+});
+
+describe("salesRepository.updateSaleAtomic", () => {
+  it("returns success when RPC updates sale json", async () => {
+    const fakeSale: any = {
+      id: "S1",
+      date: new Date().toISOString(),
+      items: [
+        {
+          partId: "p1",
+          partName: "A",
+          sku: "SKU1",
+          quantity: 2,
+          sellingPrice: 100000,
+          stockSnapshot: 10,
+        },
+      ],
+      subtotal: 200000,
+      discount: 0,
+      total: 200000,
+      customer: { name: "Khách lẻ" },
+      paymentMethod: "cash",
+      userId: "u1",
+      userName: "User 1",
+      branchId: "CN1",
+      note: "updated",
+    };
+    mockRpc.mockResolvedValue({
+      data: { sale: fakeSale, cashTransactionId: "C2", inventoryTxCount: 1 },
+      error: null,
+    });
+
+    const res = await updateSaleAtomic(fakeSale as any);
+
+    expect(mockRpc).toHaveBeenCalledWith("sale_update_atomic", {
+      p_sale_id: "S1",
+      p_items: fakeSale.items,
+      p_discount: 0,
+      p_customer: fakeSale.customer,
+      p_payment_method: "cash",
+      p_user_id: null,
+      p_user_name: "User 1",
+      p_branch_id: "CN1",
+      p_note: "updated",
+    });
+    expect(res.ok).toBe(true);
+    if (res.ok) {
+      expect(res.data.id).toBe("S1");
+      expect((res.data as any).cashTransactionId).toBe("C2");
+    }
+  });
+
+  it("maps sale not found error", async () => {
+    mockRpc.mockResolvedValue({
+      data: null,
+      error: { message: "SALE_NOT_FOUND:S404" },
+    });
+
+    const res = await updateSaleAtomic({
+      id: "S404",
+      items: [
+        {
+          partId: "p",
+          partName: "X",
+          sku: "SKU",
+          quantity: 1,
+          sellingPrice: 1,
+          stockSnapshot: 1,
+        },
+      ],
+      customer: { name: "A" },
+      paymentMethod: "cash",
+      userName: "U",
+      branchId: "CN1",
+      subtotal: 1,
+      discount: 0,
+      total: 1,
+    } as any);
+
+    expect(res.ok).toBe(false);
+    if (!res.ok) expect(res.error.code).toBe("not_found");
+  });
+
+  it("maps insufficient stock error", async () => {
+    mockRpc.mockResolvedValue({
+      data: null,
+      error: {
+        message:
+          'INSUFFICIENT_STOCK:[{"partId":"p","partName":"X","available":1,"requested":2}]',
+      },
+    });
+
+    const res = await updateSaleAtomic({
+      id: "S5",
+      items: [
+        {
+          partId: "p",
+          partName: "X",
+          sku: "SKU",
+          quantity: 2,
+          sellingPrice: 1,
+          stockSnapshot: 1,
+        },
+      ],
+      customer: { name: "A" },
+      paymentMethod: "cash",
+      userName: "U",
+      branchId: "CN1",
+      subtotal: 2,
+      discount: 0,
+      total: 2,
+    } as any);
+
+    expect(res.ok).toBe(false);
+    if (!res.ok) {
+      expect(res.error.code).toBe("validation");
+      expect(res.error.message).toContain("X");
+    }
   });
 });

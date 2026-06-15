@@ -13,7 +13,7 @@ import TopProgressBar from "./components/common/TopProgressBar";
 import { AppProvider } from "./contexts/AppContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { AuthProvider } from "./contexts/AuthContext";
-import "./index.css";
+// CSS is imported once in main.tsx – no duplicate import needed here
 import { LoginPage } from "./components/auth/LoginPage";
 import { ResetPasswordPage } from "./components/auth/ResetPasswordPage";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
@@ -21,7 +21,8 @@ import { RoleBasedRedirect } from "./components/auth/RoleBasedRedirect";
 import { useAppContext } from "./contexts/AppContext";
 import { BottomNav, Nav } from "./components/layout";
 import { ShopLayout } from "./components/layout/ShopLayout";
-import Dashboard from "./components/dashboard/Dashboard";
+// Dashboard is now lazy-loaded to keep recharts (~229 KB) out of the critical path
+const Dashboard = lazyImport(() => import("./components/dashboard/Dashboard"));
 import RepoErrorPanel from "./components/common/RepoErrorPanel";
 import TetTheme from "./components/common/TetTheme";
 import { lazyImport } from "./utils/lazyImport";
@@ -233,7 +234,9 @@ const MainLayout: React.FC = () => {
             path="/dashboard"
             element={
               <ProtectedRoute requiredRoles={["owner", "manager"]}>
-                <Dashboard />
+                <Suspense fallback={<PageLoader />}>
+                  <Dashboard />
+                </Suspense>
               </ProtectedRoute>
             }
           />

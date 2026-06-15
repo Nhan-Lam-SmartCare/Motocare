@@ -4,6 +4,7 @@ import React, {
   useState,
   useCallback,
   useEffect,
+  useRef,
 } from "react";
 import type {
   Part,
@@ -220,26 +221,46 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     fetchPaymentSources();
   }, []);
 
-  // --- Persist to localStorage ---
+  // --- Persist to localStorage (debounced to avoid blocking main thread) ---
+  const persistTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isFirstRenderRef = useRef(true);
+
   useEffect(() => {
-    const data = {
-      parts,
-      customers,
-      suppliers,
-      sales,
-      workOrders,
-      cartItems,
-      paymentSources,
-      cashTransactions,
-      inventoryTransactions,
-      employees,
-      payrollRecords,
-      loans,
-      loanPayments,
-      customerDebts,
-      supplierDebts,
+    // Skip initial mount (data was just read from localStorage)
+    if (isFirstRenderRef.current) {
+      isFirstRenderRef.current = false;
+      return;
+    }
+
+    if (persistTimerRef.current) clearTimeout(persistTimerRef.current);
+    persistTimerRef.current = setTimeout(() => {
+      const data = {
+        parts,
+        customers,
+        suppliers,
+        sales,
+        workOrders,
+        cartItems,
+        paymentSources,
+        cashTransactions,
+        inventoryTransactions,
+        employees,
+        payrollRecords,
+        loans,
+        loanPayments,
+        customerDebts,
+        supplierDebts,
+      };
+      try {
+        localStorage.setItem("motocare-data", JSON.stringify(data));
+      } catch (e) {
+        console.warn("[AppContext] Failed to persist data to localStorage:", e);
+      }
+    }, 500);
+
+    return () => {
+      if (persistTimerRef.current) clearTimeout(persistTimerRef.current);
     };
-    localStorage.setItem("motocare-data", JSON.stringify(data));
   }, [
     parts,
     customers,

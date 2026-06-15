@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback } from "react";
 import {
   DollarSign,
   TrendingUp,
@@ -69,7 +69,7 @@ const Dashboard: React.FC = () => {
   useWorkOrdersRealtime();
   const navigate = useNavigate();
   const [reportFilter, setReportFilter] = useState<string>("month");
-  const [isLoading, setIsLoading] = useState(true);
+
   const [showBalance, setShowBalance] = useState(false);
   const [showPartsDetailModal, setShowPartsDetailModal] = useState(false);
   const [partsSearchQuery, setPartsSearchQuery] = useState("");
@@ -92,13 +92,7 @@ const Dashboard: React.FC = () => {
     lowStockCount,
   } = useDashboardData(reportFilter);
 
-  useEffect(() => {
-    // Simulate loading
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 1000);
-    return () => clearTimeout(timer);
-  }, []);
+  // Fake loading delay removed – data is fetched by useDashboardData hooks
 
   const handleLoadDemo = useCallback(async () => {
     if (window.confirm("Bạn có chắc muốn nạp dữ liệu mẫu?")) {
@@ -130,13 +124,7 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-96">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
+
 
   return (
     <div className="space-y-3 md:space-y-4">

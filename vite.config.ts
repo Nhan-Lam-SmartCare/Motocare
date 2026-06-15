@@ -175,23 +175,28 @@ export default defineConfig(({ mode }) => {
           manualChunks(id) {
             if (!id.includes("node_modules")) return;
 
-            // React Router must be in its own chunk so React fully initialises first
-            if (id.includes("react-router-dom") || id.includes("react-router") || id.includes("@remix-run")) {
-              return "vendor-router";
-            }
-
-            // ALL React-ecosystem packages (react, react-dom, react-redux, react-is,
-            // scheduler, use-sync-external-store, etc.) must live together so their
-            // module-init code never runs before React exports are populated.
+            // --- React ecosystem (must be ONE chunk to avoid circular init issues) ---
+            // Broad match for /node_modules/react/ and /node_modules/react-*/ catches
+            // react-dom, react-is, react-toastify, react-native-webview, etc.
             if (
-              id.includes("/node_modules/react") ||
+              id.includes("/node_modules/react/") ||
+              id.includes("/node_modules/react-dom/") ||
+              id.includes("/node_modules/react-is/") ||
+              id.includes("/node_modules/react-toastify/") ||
+              id.includes("/node_modules/react-native-webview/") ||
               id.includes("/node_modules/scheduler/") ||
               id.includes("/node_modules/use-sync-external-store/") ||
               id.includes("/node_modules/@reduxjs/") ||
-              id.includes("/node_modules/react-is/") ||
-              id.includes("/node_modules/prop-types/")
+              id.includes("/node_modules/prop-types/") ||
+              id.includes("/node_modules/clsx/") ||
+              id.includes("/node_modules/goober/")
             ) {
               return "vendor-react";
+            }
+
+            // React Router (after react ecosystem to avoid circular)
+            if (id.includes("react-router-dom") || id.includes("react-router") || id.includes("@remix-run")) {
+              return "vendor-router";
             }
 
             if (id.includes("@supabase")) {
@@ -206,15 +211,11 @@ export default defineConfig(({ mode }) => {
               return "vendor-icons";
             }
 
-            if (id.includes("react-toastify")) {
-              return "vendor-toast";
-            }
-
             if (id.includes("html5-qrcode")) {
               return "vendor-qr";
             }
 
-            if (id.includes("recharts")) {
+            if (id.includes("recharts") || id.includes("d3-")) {
               return "vendor-charts";
             }
 
@@ -228,6 +229,23 @@ export default defineConfig(({ mode }) => {
 
             if (id.includes("html2canvas")) {
               return "vendor-canvas";
+            }
+
+            // --- New dedicated chunks to reduce catch-all size ---
+            if (id.includes("date-fns")) {
+              return "vendor-datefns";
+            }
+
+            if (id.includes("papaparse")) {
+              return "vendor-csv";
+            }
+
+            if (id.includes("jsbarcode")) {
+              return "vendor-barcode";
+            }
+
+            if (id.includes("@capacitor")) {
+              return "vendor-capacitor";
             }
 
             return "vendor";

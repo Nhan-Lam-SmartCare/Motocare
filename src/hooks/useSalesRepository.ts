@@ -9,6 +9,7 @@ import {
   fetchSalesPaged,
   createSale,
   createSaleAtomic,
+  updateSaleAtomic,
   deleteSaleById,
   refundSale,
   returnSaleItem,
@@ -144,6 +145,29 @@ export const useCreateSaleAtomicRepo = () => {
       if ((data as any)?.inventoryTxCount) {
         showToast.info(`Xuất kho: ${(data as any).inventoryTxCount} dòng`);
       }
+    },
+    onError: (err: any) => showToast.error(mapRepoErrorForUser(err)),
+  });
+};
+
+// Atomic update hook (sửa hóa đơn an toàn trong 1 transaction)
+export const useUpdateSaleAtomicRepo = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: Partial<Sale>) => {
+      const res = await updateSaleAtomic(input);
+      if (!res.ok) throw res.error;
+      return res.data;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["salesRepo"] });
+      qc.invalidateQueries({ queryKey: ["salesRepoPaged"] });
+      qc.invalidateQueries({ queryKey: ["salesRepoKeyset"] });
+      qc.invalidateQueries({ queryKey: ["partsRepo"] });
+      qc.invalidateQueries({ queryKey: ["partsRepoPaged"] });
+      qc.invalidateQueries({ queryKey: ["inventoryTxRepo"] });
+      qc.invalidateQueries({ queryKey: ["cashTransactions"] });
+      qc.invalidateQueries({ queryKey: ["paymentSources"] });
     },
     onError: (err: any) => showToast.error(mapRepoErrorForUser(err)),
   });

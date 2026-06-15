@@ -120,64 +120,81 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const loadUserProfile = async (userId: string) => {
     try {
-      // Ưu tiên bảng profiles trước, sau đó fallback sang user_profiles nếu không có hoặc bảng không tồn tại
-      let { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", userId)
-        .maybeSingle();
-
-      if (error && (error as any).code !== "PGRST116") {
-        // Lỗi khác PGRST116 (table not found) => ném lỗi để hiển thị
-        throw error;
-      }
-
-      if (!data) {
-        const alt = await supabase
-          .from("user_profiles")
+      // Fire profiles + permissions queries in parallel to cut startup latency
+      const [profileResult, permissionResult] = await Promise.allSettled([
+        // Profile: try 'profiles' table first
+        supabase
+          .from("profiles")
           .select("*")
           .eq("id", userId)
-          .maybeSingle();
-        data = alt.data as any;
-        error = alt.error as any;
-        if (error && (error as any).code !== "PGRST116") throw error;
+          .maybeSingle(),
+        // Permissions: can run concurrently
+        supabase
+          .from("staff_permissions")
+          .select("permissions")
+          .eq("user_id", userId)
+          .maybeSingle(),
+      ]);
+
+      // --- Handle profile ---
+      let profileData: any = null;
+      if (profileResult.status === "fulfilled") {
+        const { data, error } = profileResult.value;
+        if (error && (error as any).code !== "PGRST116") {
+          throw error;
+        }
+        profileData = data;
       }
 
-      if (error) throw error;
-      if (!data) {
-        // Nếu không có profile, tạo một profile mặc định để tránh stuck
+      // Fallback to user_profiles if profiles table had no data
+      if (!profileData) {
+        try {
+          const alt = await supabase
+            .from("user_profiles")
+            .select("*")
+            .eq("id", userId)
+            .maybeSingle();
+          if (alt.error && (alt.error as any).code !== "PGRST116") throw alt.error;
+          profileData = alt.data;
+        } catch {
+          // table may not exist, ignore
+        }
+      }
+
+      if (!profileData) {
+        // No profile found – create default to avoid stuck loading
         console.warn('No profile found for user, creating default profile');
         const defaultProfile: UserProfile = {
           id: userId,
           email: user?.email || 'unknown',
-          role: 'staff', // default role
+          role: 'staff',
           created_at: new Date().toISOString(),
         };
         setProfile(defaultProfile);
         setCurrentPermissionOverrides(null);
       } else {
-        setProfile(data as any);
+        setProfile(profileData as any);
 
-        // Load fine-grained permission overrides if table exists.
-        const { data: permissionData, error: permissionError } = await supabase
-          .from("staff_permissions")
-          .select("permissions")
-          .eq("user_id", userId)
-          .maybeSingle();
-
+        // --- Handle permissions (already fetched in parallel) ---
         const missingTableCodes = new Set(["PGRST116", "PGRST205", "42P01"]);
-        if (permissionError && !missingTableCodes.has((permissionError as any).code)) {
-          console.warn("Unable to load staff permissions:", permissionError);
-          setCurrentPermissionOverrides(null);
+        if (permissionResult.status === "fulfilled") {
+          const { data: permissionData, error: permissionError } = permissionResult.value;
+          if (permissionError && !missingTableCodes.has((permissionError as any).code)) {
+            console.warn("Unable to load staff permissions:", permissionError);
+            setCurrentPermissionOverrides(null);
+          } else {
+            setCurrentPermissionOverrides(
+              normalizePermissionOverrides(permissionData?.permissions)
+            );
+          }
         } else {
-          setCurrentPermissionOverrides(
-            normalizePermissionOverrides(permissionData?.permissions)
-          );
+          // Permission query failed entirely
+          console.warn("Permission query rejected:", permissionResult.reason);
+          setCurrentPermissionOverrides(null);
         }
       }
     } catch (error) {
       console.error("Error loading user profile:", error);
-      // Tạo profile mặc định thay vì set null để tránh stuck
       const defaultProfile: UserProfile = {
         id: userId,
         email: user?.email || 'unknown',

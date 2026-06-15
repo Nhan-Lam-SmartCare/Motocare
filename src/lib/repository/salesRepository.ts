@@ -453,6 +453,173 @@ export async function createSaleAtomic(
   }
 }
 
+// Atomic update: hoàn kho đơn cũ + trừ kho đơn mới + ghi đè trong 1 transaction.
+// Tránh rủi ro "xóa cũ trước, tạo mới sau" làm mất hóa đơn nếu bước tạo mới lỗi.
+export async function updateSaleAtomic(
+  input: Partial<Sale>
+): Promise<
+  RepoResult<Sale & { cashTransactionId?: string; inventoryTxCount?: number }>
+> {
+  try {
+    if (!input.id)
+      return failure({ code: "validation", message: "Thiếu ID hóa đơn" });
+    if (!input.items || !input.items.length)
+      return failure({
+        code: "validation",
+        message: "Thiếu danh sách hàng hóa",
+      });
+    if (!input.paymentMethod)
+      return failure({
+        code: "validation",
+        message: "Thiếu phương thức thanh toán",
+      });
+
+    const validUserId =
+      input.userId &&
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+          input.userId
+        )
+        ? input.userId
+        : null;
+
+    const noteValue = typeof input.note === "string" ? input.note.trim() : null;
+
+    const payload = {
+      p_sale_id: input.id,
+      p_items: input.items as any,
+      p_discount: input.discount ?? 0,
+      p_customer: input.customer ?? { name: "Khách lẻ" },
+      p_payment_method: input.paymentMethod,
+      p_user_id: validUserId,
+      p_user_name: input.userName || "Unknown",
+      p_branch_id: input.branchId || "CN1",
+      p_note: noteValue,
+    } as any;
+
+    const { data, error } = await supabase.rpc("sale_update_atomic", payload);
+
+    if (error || !data) {
+      const rawDetails = error?.details || error?.message || "";
+      const upper = rawDetails.toUpperCase();
+      if (upper.includes("INSUFFICIENT_STOCK")) {
+        let items: any[] = [];
+        const colon = rawDetails.indexOf(":");
+        if (colon !== -1) {
+          const jsonStr = rawDetails.slice(colon + 1).trim();
+          try {
+            items = JSON.parse(jsonStr);
+          } catch (_e) {
+            void _e;
+          }
+        }
+        const list = Array.isArray(items)
+          ? items
+            .map(
+              (d: any) =>
+                `${d.partName || d.partId || "?"} (còn ${d.available}, cần ${d.requested})`
+            )
+            .join(", ")
+          : "";
+        return failure({
+          code: "validation",
+          message: list
+            ? `Thiếu tồn kho: ${list}`
+            : "Tồn kho không đủ cho một hoặc nhiều sản phẩm",
+          cause: error,
+        });
+      }
+      if (upper.includes("SALE_NOT_FOUND"))
+        return failure({
+          code: "not_found",
+          message: "Không tìm thấy hóa đơn để cập nhật",
+          cause: error,
+        });
+      if (upper.includes("PART_NOT_FOUND"))
+        return failure({
+          code: "validation",
+          message: "Không tìm thấy phụ tùng trong kho",
+          cause: error,
+        });
+      if (upper.includes("INVALID_ITEM"))
+        return failure({
+          code: "validation",
+          message: "Dữ liệu sản phẩm không hợp lệ",
+          cause: error,
+        });
+      if (upper.includes("EMPTY_ITEMS"))
+        return failure({
+          code: "validation",
+          message: "Danh sách hàng hóa trống",
+          cause: error,
+        });
+      if (upper.includes("INVALID_PAYMENT_METHOD"))
+        return failure({
+          code: "validation",
+          message: "Phương thức thanh toán không hợp lệ",
+          cause: error,
+        });
+      if (upper.includes("UNAUTHORIZED"))
+        return failure({
+          code: "supabase",
+          message: "Bạn không có quyền sửa hóa đơn",
+          cause: error,
+        });
+      if (upper.includes("BRANCH_MISMATCH"))
+        return failure({
+          code: "validation",
+          message: "Chi nhánh không khớp với quyền hiện tại",
+          cause: error,
+        });
+
+      const rawMessage =
+        error?.message || error?.details || error?.hint || "Lỗi không xác định";
+      return failure({
+        code: "supabase",
+        message: `Cập nhật hóa đơn (atomic) thất bại: ${rawMessage}`,
+        cause: error,
+      });
+    }
+
+    const saleRow = (data as any).sale as Sale | undefined;
+    const cashTransactionId = (data as any).cashTransactionId as
+      | string
+      | undefined;
+    const inventoryTxCount = (data as any).inventoryTxCount as
+      | number
+      | undefined;
+    if (!saleRow) {
+      return failure({ code: "unknown", message: "Kết quả RPC không hợp lệ" });
+    }
+
+    let userId: string | null = null;
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      userId = userData?.user?.id || null;
+    } catch (_e) {
+      void _e;
+    }
+    await safeAudit(userId, {
+      action: "sale.update",
+      tableName: SALES_TABLE,
+      recordId: (saleRow as any).id,
+      oldData: null,
+      newData: saleRow,
+    });
+
+    return success({
+      ...(saleRow as any),
+      cashTransactionId,
+      inventoryTxCount,
+    });
+  } catch (e: any) {
+    return failure({
+      code: "network",
+      message: "Lỗi kết nối khi cập nhật hóa đơn (atomic)",
+      cause: e,
+    });
+  }
+}
+
 export async function deleteSaleById(
   id: string
 ): Promise<RepoResult<{ id: string }>> {

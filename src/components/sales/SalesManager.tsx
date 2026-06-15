@@ -17,6 +17,7 @@ import { usePartsRepo } from "../../hooks/usePartsRepository";
 import {
     useSalesPagedRepo,
     useCreateSaleAtomicRepo,
+    useUpdateSaleAtomicRepo,
     useDeleteSaleRepo,
 } from "../../hooks/useSalesRepository";
 import { showToast } from "../../utils/toast";
@@ -91,6 +92,7 @@ const SalesManager: React.FC = () => {
     } = usePartsRepo();
     const { data: customerDebts = [] } = useCustomerDebtsRepo();
     const { mutateAsync: createSaleAtomicAsync } = useCreateSaleAtomicRepo();
+    const { mutateAsync: updateSaleAtomicAsync } = useUpdateSaleAtomicRepo();
     const { mutateAsync: deleteSaleAsync } = useDeleteSaleRepo();
     const createCustomerDebt = useCreateCustomerDebtRepo();
 
@@ -568,24 +570,7 @@ const SalesManager: React.FC = () => {
                 note: finalQuickServiceNote,
             };
 
-            const createdQuickSale = await createSaleAtomicAsync(saleData as unknown as Partial<Sale>);
-            const quickSaleId = createdQuickSale?.id || saleData.id;
-
-            // Backup update: ensure customer snapshot is persisted correctly
-            if (quickSaleId) {
-                await supabase
-                    .from("sales")
-                    .update({ customer: saleData.customer })
-                    .eq("id", quickSaleId);
-            }
-
-            // Backup update: atomic RPC may not persist note field
-            if (quickSaleId && finalQuickServiceNote) {
-                await supabase
-                    .from("sales")
-                    .update({ note: finalQuickServiceNote })
-                    .eq("id", quickSaleId);
-            }
+            await createSaleAtomicAsync(saleData as unknown as Partial<Sale>);
 
             showToast.success("Tạo đơn dịch vụ nhanh thành công!");
 
@@ -680,29 +665,6 @@ const SalesManager: React.FC = () => {
 
         setIsProcessing(true);
 
-        if (editingSaleId) {
-            // Lưu nháp phòng trường hợp tạo hóa đơn mới thất bại sau khi xóa cũ
-            const editDraft = {
-                items: cart.cartItems,
-                customerId: customer.selectedCustomer?.id || null,
-                discount: cart.orderDiscount,
-                discountType: cart.discountType,
-                discountPercent: cart.discountPercent,
-                timestamp: Date.now(),
-            };
-            localStorage.setItem(`sales_draft_${currentBranchId}`, JSON.stringify(editDraft));
-
-            try {
-                await deleteSaleAsync({ id: editingSaleId });
-            } catch (deleteError) {
-                console.error("Failed to delete old sale during edit:", deleteError);
-                showToast.error("Không thể hoàn kho hóa đơn cũ để cập nhật. Vui lòng thử lại.");
-                localStorage.removeItem(`sales_draft_${currentBranchId}`);
-                setIsProcessing(false);
-                return;
-            }
-        }
-
         try {
             const dbPaymentMethod = finalization.paymentMethod === "card" ? "bank" : finalization.paymentMethod;
 
@@ -734,7 +696,7 @@ const SalesManager: React.FC = () => {
             }
 
             const saleData = {
-                id: crypto.randomUUID(),
+                id: editingSaleId || crypto.randomUUID(),
                 items: cart.cartItems,
                 customer: customer.selectedCustomer
                     ? {
@@ -774,21 +736,10 @@ const SalesManager: React.FC = () => {
                 return cost > 0 ? sum + cost * item.quantity : sum;
             }, 0);
 
-            const newSale = await createSaleAtomicAsync(saleData as unknown as Partial<Sale>);
+            const newSale = editingSaleId
+                ? await updateSaleAtomicAsync(saleData as unknown as Partial<Sale>)
+                : await createSaleAtomicAsync(saleData as unknown as Partial<Sale>);
             const saleId = newSale?.id;
-
-            // Backup update: ensure customer snapshot is persisted correctly
-            if (saleId) {
-                await supabase
-                    .from("sales")
-                    .update({ customer: saleData.customer })
-                    .eq("id", saleId);
-            }
-
-            // Force update note if it wasn't saved by RPC (backup)
-            if (finalNote && saleId) {
-                await supabase.from("sales").update({ note: finalNote }).eq("id", saleId);
-            }
 
             // Auto record cash expense for purchase cost lines (manual/out-of-stock intake)
             if (purchaseExpenseTotal > 0 && saleId) {
@@ -873,7 +824,7 @@ const SalesManager: React.FC = () => {
                 }
             }
 
-            showToast.success("Tạo đơn hàng thành công!");
+            showToast.success(editingSaleId ? "Cập nhật đơn hàng thành công!" : "Tạo đơn hàng thành công!");
             triggerCartFeedback("Thanh toán thành công");
 
             // Auto print if enabled
@@ -890,21 +841,18 @@ const SalesManager: React.FC = () => {
             setEditingSaleId(null);
             localStorage.removeItem(`sales_draft_${currentBranchId}`);
 
-            // Refresh data
-            queryClient.invalidateQueries({ queryKey: ["sales"] });
-            queryClient.invalidateQueries({ queryKey: ["parts"] });
+            // Refresh data (dùng đúng query key của repo; các mutation hook cũng đã tự invalidate)
+            queryClient.invalidateQueries({ queryKey: ["salesRepoPaged"] });
+            queryClient.invalidateQueries({ queryKey: ["salesRepoKeyset"] });
+            queryClient.invalidateQueries({ queryKey: ["salesRepo"] });
+            queryClient.invalidateQueries({ queryKey: ["partsRepo"] });
+            queryClient.invalidateQueries({ queryKey: ["partsRepoPaged"] });
             queryClient.invalidateQueries({ queryKey: ["customer_debts"] });
         } catch (error) {
-            console.error("Error creating sale:", error);
-            const message = error instanceof Error ? error.message : "Không thể tạo đơn hàng. Vui lòng thử lại.";
-            if (editingSaleId) {
-                // Hóa đơn cũ đã bị xóa nhưng tạo mới thất bại - giữ draft để user thử lại
-                setEditingSaleId(null);
-                setHasDraft(true);
-                showToast.error("Hóa đơn cũ đã xóa nhưng tạo mới thất bại! Giỏ hàng đã lưu nháp, vui lòng bấm 'Khôi phục nháp' để thử lại.");
-            } else {
-                showToast.error(message);
-            }
+            console.error(editingSaleId ? "Error updating sale:" : "Error creating sale:", error);
+            const message = error instanceof Error ? error.message : "Không thể lưu đơn hàng. Vui lòng thử lại.";
+            // Với update atomic, nếu lỗi thì toàn bộ transaction rollback -> hóa đơn cũ còn nguyên.
+            showToast.error(message);
         } finally {
             setIsProcessing(false);
         }

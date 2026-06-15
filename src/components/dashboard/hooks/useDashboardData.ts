@@ -535,7 +535,7 @@ export const useDashboardData = (
         const startDateStr = formatLocalDate(startDate);
         const endDateStr = formatLocalDate(endDate);
 
-        console.warn(`[TopProducts] Filter range: ${startDateStr} to ${endDateStr}`);
+
 
         const productSales: Record<string, { name: string; quantity: number }> = {};
 
@@ -563,7 +563,7 @@ export const useDashboardData = (
             });
         });
 
-        console.warn(`[TopProducts] Processed ${filteredSales.length} sales`);
+
 
         // From work orders (filtered)
         const filteredWOs = workOrders.filter((wo: any) => {
@@ -598,13 +598,13 @@ export const useDashboardData = (
             }
         });
 
-        console.warn(`[TopProducts] Processed ${filteredWOs.length} work orders`);
+
 
         const result = Object.values(productSales)
             .sort((a, b) => b.quantity - a.quantity)
             .slice(0, 10); // Show top 10
 
-        console.warn("[TopProducts] Result:", result);
+
         return result;
 
     }, [sales, workOrders, reportFilter]);

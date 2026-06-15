@@ -7,13 +7,7 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes"
     />
-    <!-- Cache control - không cache HTML để luôn tải assets mới nhất -->
-    <meta
-      http-equiv="Cache-Control"
-      content="no-cache, no-store, must-revalidate"
-    />
-    <meta http-equiv="Pragma" content="no-cache" />
-    <meta http-equiv="Expires" content="0" />
+    <!-- Vite uses content-hash filenames for cache-busting, no need for no-cache headers -->
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta
@@ -23,27 +17,37 @@
     <meta name="theme-color" content="#1e293b" />
     <title>MotoCare • SmartCare</title>
     <link rel="icon" type="image/png" href="/logo-smartcare.png" />
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="apple-touch-icon" href="/logo-smartcare.png" />
     <meta
       name="description"
       content="MotoCare SmartCare - Nền tảng quản lý cửa hàng xe máy"
     />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Non-render-blocking font loading: paint first, swap fonts when ready -->
     <link
       href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Be+Vietnam+Pro:wght@300;400;500;600;700&display=swap"
       rel="stylesheet"
+      media="print"
+      onload="this.media='all'"
     />
-    <script type="module" crossorigin src="/assets/index-BlJtklYv.js"></script>
-    <link rel="modulepreload" crossorigin href="/assets/vendor-CJ1CKtED.js">
-    <link rel="modulepreload" crossorigin href="/assets/vendor-react-Cj6I1n54.js">
-    <link rel="modulepreload" crossorigin href="/assets/vendor-pdf-B_R3VUIC.js">
-    <link rel="modulepreload" crossorigin href="/assets/vendor-query-DBOekLEo.js">
-    <link rel="modulepreload" crossorigin href="/assets/vendor-supabase-ii3Q-CpP.js">
-    <link rel="modulepreload" crossorigin href="/assets/vendor-icons-DyK-wdNh.js">
-    <link rel="modulepreload" crossorigin href="/assets/vendor-router-CWglRh3V.js">
-    <link rel="modulepreload" crossorigin href="/assets/vendor-charts-2026fTQI.js">
+    <noscript>
+      <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Be+Vietnam+Pro:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet"
+      />
+    </noscript>
+    <script type="module" crossorigin src="/assets/index-qZYLvTS-.js"></script>
+    <link rel="modulepreload" crossorigin href="/assets/vendor-VEKHzQfs.js">
+    <link rel="modulepreload" crossorigin href="/assets/vendor-react-DeJ_wBAn.js">
+    <link rel="modulepreload" crossorigin href="/assets/vendor-pdf-CZdZSgqW.js">
+    <link rel="modulepreload" crossorigin href="/assets/vendor-query-DCqjNWlR.js">
+    <link rel="modulepreload" crossorigin href="/assets/vendor-supabase-BUUZ3nvR.js">
+    <link rel="modulepreload" crossorigin href="/assets/vendor-icons-MgRU4NOw.js">
+    <link rel="modulepreload" crossorigin href="/assets/vendor-router-D0R1mnyY.js">
     <link rel="stylesheet" crossorigin href="/assets/vendor-react-VYesxZYF.css">
-    <link rel="stylesheet" crossorigin href="/assets/index-Blpd_smn.css">
+    <link rel="stylesheet" crossorigin href="/assets/index-BWhZkU4d.css">
   </head>
   <body
     class="bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-200"

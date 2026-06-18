@@ -64,6 +64,35 @@ export const SummarySidebar: React.FC<SummarySidebarProps> = ({
   totalDeposit,
   totalAdditionalPayment,
 }) => {
+  const [cashReceived, setCashReceived] = React.useState(0);
+
+  const paymentDueNow = React.useMemo(() => {
+    if (showDepositInput && !order?.depositAmount) {
+      return Math.max(0, depositAmount);
+    }
+
+    if (formData.status === "Trả máy") {
+      return showPartialPayment
+        ? Math.min(Math.max(0, partialPayment), maxAdditionalPayment)
+        : Math.max(0, remainingAmount);
+    }
+
+    return Math.max(0, total);
+  }, [
+    depositAmount,
+    formData.status,
+    maxAdditionalPayment,
+    order?.depositAmount,
+    partialPayment,
+    remainingAmount,
+    showDepositInput,
+    showPartialPayment,
+    total,
+  ]);
+
+  const changeAmount = Math.max(0, cashReceived - paymentDueNow);
+  const missingAmount = Math.max(0, paymentDueNow - cashReceived);
+
   return (
     <div className="hidden lg:flex lg:flex-col lg:w-80 xl:w-96 border-l border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-900/50 overflow-y-auto flex-shrink-0">
       <div className="p-4 space-y-4 flex flex-col h-full">
@@ -440,6 +469,62 @@ export const SummarySidebar: React.FC<SummarySidebarProps> = ({
             <p className="text-[10px] text-slate-400/80 dark:text-slate-500 italic leading-relaxed">
               * Thanh toán khi trả xe chỉ khả dụng khi trạng thái là "Trả máy"
             </p>
+          )}
+
+          {formData.paymentMethod === "cash" && paymentDueNow > 0 && (
+            <div className="pt-3 border-t border-slate-200/50 dark:border-slate-800/50 space-y-2">
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-slate-500 dark:text-slate-400 font-semibold">
+                  Cần thu
+                </span>
+                <span className="font-bold text-slate-800 dark:text-slate-100">
+                  {formatCurrency(paymentDueNow)}
+                </span>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wide">
+                  Khách đưa
+                </label>
+                <NumberInput
+                  placeholder="Nhập số tiền khách đưa"
+                  value={cashReceived || ""}
+                  onChange={(val) => setCashReceived(Math.max(0, val))}
+                  allowNegative={false}
+                  allowDecimal={false}
+                  className="w-full px-3.5 py-2 border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/40 text-slate-800 dark:text-slate-200 text-sm rounded-xl focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 shadow-inner placeholder-slate-400 dark:placeholder-slate-600 transition"
+                />
+              </div>
+
+              <div
+                className={`rounded-xl border px-3 py-2 ${
+                  cashReceived > 0 && missingAmount > 0
+                    ? "bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800"
+                    : "bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800"
+                }`}
+              >
+                <div className="flex justify-between items-center">
+                  <span
+                    className={`text-sm font-bold ${
+                      cashReceived > 0 && missingAmount > 0
+                        ? "text-amber-700 dark:text-amber-300"
+                        : "text-emerald-700 dark:text-emerald-300"
+                    }`}
+                  >
+                    {cashReceived > 0 && missingAmount > 0 ? "Còn thiếu" : "Tiền thối lại"}
+                  </span>
+                  <span
+                    className={`text-lg font-black ${
+                      cashReceived > 0 && missingAmount > 0
+                        ? "text-amber-700 dark:text-amber-300"
+                        : "text-emerald-700 dark:text-emerald-300"
+                    }`}
+                  >
+                    {formatCurrency(cashReceived > 0 && missingAmount > 0 ? missingAmount : changeAmount)}
+                  </span>
+                </div>
+              </div>
+            </div>
           )}
         </div>
 

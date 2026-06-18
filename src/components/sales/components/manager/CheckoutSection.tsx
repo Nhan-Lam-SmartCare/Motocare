@@ -3,6 +3,7 @@ import { Truck } from "lucide-react";
 import { CartSummary } from "../CartSummary";
 import { PaymentMethodSelector } from "../PaymentMethodSelector";
 import { InstallmentSetupModal } from "../../modals/InstallmentSetupModal";
+import { NumberInput } from "../../../common/NumberInput";
 import { formatCurrency } from "../../../../utils/format";
 
 interface CheckoutSectionProps {
@@ -115,6 +116,37 @@ export const CheckoutSection: React.FC<CheckoutSectionProps> = ({
     canUpdateSale,
     canCreateSale,
 }) => {
+    const [cashReceived, setCashReceived] = React.useState(0);
+
+    const paymentDueNow = React.useMemo(() => {
+        if (!paymentType || paymentType === "note") {
+            return 0;
+        }
+
+        if (paymentType === "partial") {
+            return Math.max(0, Math.min(partialAmount || 0, total));
+        }
+
+        if (paymentType === "installment") {
+            return Math.max(0, Math.min(installmentDetails?.prepaidAmount || 0, total));
+        }
+
+        const fullPaymentTotal =
+            deliveryMethod === "cod" ? total + Math.max(0, shippingFee || 0) : total;
+
+        return Math.max(0, fullPaymentTotal);
+    }, [
+        deliveryMethod,
+        installmentDetails?.prepaidAmount,
+        partialAmount,
+        paymentType,
+        shippingFee,
+        total,
+    ]);
+
+    const changeAmount = Math.max(0, cashReceived - paymentDueNow);
+    const missingAmount = Math.max(0, paymentDueNow - cashReceived);
+
     return (
         <>
             <CartSummary
@@ -147,6 +179,62 @@ export const CheckoutSection: React.FC<CheckoutSectionProps> = ({
                         onOpenInstallmentSetup={() => setShowInstallmentModal(true)}
                         installmentDetails={installmentDetails}
                     />
+
+                    {paymentMethod === "cash" && paymentDueNow > 0 && (
+                        <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700 space-y-3">
+                            <div className="flex justify-between items-center text-xs">
+                                <span className="text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">
+                                    Cần thu
+                                </span>
+                                <span className="font-black text-slate-900 dark:text-white">
+                                    {formatCurrency(paymentDueNow)}
+                                </span>
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <label className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                                    Khách đưa
+                                </label>
+                                <NumberInput
+                                    placeholder="Nhập số tiền khách đưa"
+                                    value={cashReceived || ""}
+                                    onChange={(val) => setCashReceived(Math.max(0, val))}
+                                    allowNegative={false}
+                                    allowDecimal={false}
+                                    className="w-full px-4 py-2.5 text-right text-sm font-black bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600"
+                                />
+                            </div>
+
+                            <div
+                                className={`rounded-2xl border px-4 py-3 ${
+                                    cashReceived > 0 && missingAmount > 0
+                                        ? "bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800"
+                                        : "bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800"
+                                }`}
+                            >
+                                <div className="flex justify-between items-center">
+                                    <span
+                                        className={`text-sm font-black uppercase tracking-wide ${
+                                            cashReceived > 0 && missingAmount > 0
+                                                ? "text-amber-700 dark:text-amber-300"
+                                                : "text-emerald-700 dark:text-emerald-300"
+                                        }`}
+                                    >
+                                        {cashReceived > 0 && missingAmount > 0 ? "Còn thiếu" : "Tiền thối lại"}
+                                    </span>
+                                    <span
+                                        className={`text-xl font-black ${
+                                            cashReceived > 0 && missingAmount > 0
+                                                ? "text-amber-700 dark:text-amber-300"
+                                                : "text-emerald-700 dark:text-emerald-300"
+                                        }`}
+                                    >
+                                        {formatCurrency(cashReceived > 0 && missingAmount > 0 ? missingAmount : changeAmount)}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
 

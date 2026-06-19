@@ -11,6 +11,7 @@ interface AdditionalService {
   quantity: number;
   price: number;
   costPrice?: number;
+  isFree?: boolean;
 }
 
 interface AdditionalServicesSectionProps {
@@ -94,9 +95,16 @@ export const AdditionalServicesSection: React.FC<AdditionalServicesSectionProps>
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-slate-800/40 bg-white/40 dark:bg-slate-900/10">
             {additionalServices.map((service) => (
-              <tr key={service.id} className="hover:bg-slate-500/[0.02] transition-colors">
+              <tr key={service.id} className={`hover:bg-slate-500/[0.02] transition-colors ${service.isFree ? 'bg-emerald-500/[0.04]' : ''}`}>
                 <td className="px-4 py-3 text-sm font-medium text-slate-800 dark:text-slate-200">
-                  {service.description}
+                  <div className="flex items-center gap-1.5">
+                    {service.description}
+                    {service.isFree && (
+                      <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                        🎁 Tặng
+                      </span>
+                    )}
+                  </div>
                 </td>
                 <td className="px-4 py-3 text-center">
                   <input
@@ -153,43 +161,83 @@ export const AdditionalServicesSection: React.FC<AdditionalServicesSectionProps>
                     placeholder="0"
                   />
                 </td>
-                <td className="px-4 py-3 text-right text-sm font-semibold text-slate-800 dark:text-slate-200">
-                  {formatCurrency(service.price * service.quantity)}
+                <td className="px-4 py-3 text-right text-sm font-semibold">
+                  {service.isFree ? (
+                    <div className="flex flex-col items-end">
+                      <span className="line-through text-slate-400 dark:text-slate-500 text-xs">
+                        {formatCurrency(service.price * service.quantity)}
+                      </span>
+                      <span className="text-emerald-600 dark:text-emerald-400 font-bold text-xs">
+                        Tặng
+                      </span>
+                    </div>
+                  ) : (
+                    <span className="text-slate-800 dark:text-slate-200">
+                      {formatCurrency(service.price * service.quantity)}
+                    </span>
+                  )}
                 </td>
                 <td className="px-4 py-3 text-center">
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      const newServices = additionalServices.filter((s) => s.id !== service.id);
-                      setAdditionalServices(newServices);
-
-                      if (newServices.length === 0 && order?.id) {
-                        try {
-                          await supabase
-                            .from("work_orders")
-                            .update({ additionalservices: null })
-                            .eq("id", order.id);
-                          showToast.success("Đã xóa phần gia công/đặt hàng");
-                        } catch (error) {
-                          console.error("[WorkOrderModal] Error clearing additionalServices:", error);
-                          showToast.error("Lỗi khi xóa phần gia công/đặt hàng");
-                        }
-                      }
-                    }}
-                    className="text-slate-400 hover:text-red-500 hover:bg-red-500/10 p-1.5 rounded-lg transition-colors flex items-center justify-center mx-auto"
-                    aria-label="Xóa dịch vụ"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      className="w-4 h-4"
+                  <div className="flex items-center justify-center gap-1">
+                    <button
+                      type="button"
+                      title={service.isFree ? "Bỏ tặng" : "Đánh dấu tặng miễn phí"}
+                      onClick={() => {
+                        setAdditionalServices(
+                          additionalServices.map((s) =>
+                            s.id === service.id ? { ...s, isFree: !s.isFree } : s
+                          )
+                        );
+                      }}
+                      className={`p-1.5 rounded-lg transition-colors ${
+                        service.isFree
+                          ? "text-emerald-500 bg-emerald-500/10 hover:bg-emerald-500/20"
+                          : "text-slate-400 hover:text-emerald-500 hover:bg-emerald-500/10"
+                      }`}
+                      aria-label={service.isFree ? "Bỏ tặng" : "Tặng miễn phí"}
                     >
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 6h18M9 6V4h6v2m-7 4v8m4-8v8m4-8v8" />
-                    </svg>
-                  </button>
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+                        <rect x="3" y="8" width="18" height="4" rx="1" />
+                        <path d="M12 8v13" />
+                        <path d="M19 12v7a2 2 0 01-2 2H7a2 2 0 01-2-2v-7" />
+                        <path d="M7.5 8a2.5 2.5 0 010-5C9 3 12 8 12 8" />
+                        <path d="M16.5 8a2.5 2.5 0 000-5C15 3 12 8 12 8" />
+                      </svg>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        const newServices = additionalServices.filter((s) => s.id !== service.id);
+                        setAdditionalServices(newServices);
+
+                        if (newServices.length === 0 && order?.id) {
+                          try {
+                            await supabase
+                              .from("work_orders")
+                              .update({ additionalservices: null })
+                              .eq("id", order.id);
+                            showToast.success("Đã xóa phần gia công/đặt hàng");
+                          } catch (error) {
+                            console.error("[WorkOrderModal] Error clearing additionalServices:", error);
+                            showToast.error("Lỗi khi xóa phần gia công/đặt hàng");
+                          }
+                        }
+                      }}
+                      className="text-slate-400 hover:text-red-500 hover:bg-red-500/10 p-1.5 rounded-lg transition-colors flex items-center justify-center"
+                      aria-label="Xóa dịch vụ"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        className="w-4 h-4"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 6h18M9 6V4h6v2m-7 4v8m4-8v8m4-8v8" />
+                      </svg>
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}

@@ -11,6 +11,7 @@ interface AddServiceModalProps {
     costPrice: number;
     sellingPrice: number;
     quantity: number;
+    isFree?: boolean;
   }) => void;
 }
 

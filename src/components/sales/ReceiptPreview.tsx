@@ -129,8 +129,8 @@ const ReceiptPreview: React.FC<Props> = ({
               <tr key={idx}>
                 <td style={{ padding: 8 }}>{it.partName}</td>
                 <td style={{ padding: 8, textAlign: "center" }}>{it.quantity}</td>
-                <td style={{ padding: 8, textAlign: "right" }}>
-                  {formatCurrency((it.sellingPrice || 0) * (it.quantity || 0))}
+                <td style={{ padding: 8, textAlign: "right", color: (it.sellingPrice || 0) === 0 ? "#16a34a" : "inherit", fontWeight: (it.sellingPrice || 0) === 0 ? "bold" : "normal" }}>
+                  {(it.sellingPrice || 0) === 0 ? "Tặng" : formatCurrency((it.sellingPrice || 0) * (it.quantity || 0))}
                 </td>
               </tr>
             ))}

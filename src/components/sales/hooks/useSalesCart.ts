@@ -17,6 +17,7 @@ export interface UseSalesCartReturn {
     removeFromCart: (partId: string) => void;
     updateCartQuantity: (partId: string, quantity: number) => void;
     updateCartPrice: (partId: string, newPrice: number) => void;
+    updateCartDiscount: (partId: string, discount: number) => void;
     setOrderDiscount: (discount: number) => void;
     setDiscountType: (type: "amount" | "percent") => void;
     setDiscountPercent: (percent: number) => void;
@@ -26,6 +27,7 @@ export interface UseSalesCartReturn {
 
     // Computed
     subtotal: number;
+    lineDiscountTotal: number;
     total: number;
     cartItemById: Map<string, CartItem>;
 }
@@ -112,7 +114,13 @@ export function useSalesCart(
 
             setGlobalCartItems((prev) =>
                 prev.map((item) =>
-                    item.partId === partId ? { ...item, quantity } : item
+                    item.partId === partId
+                        ? {
+                            ...item,
+                            quantity,
+                            discount: Math.min(item.discount || 0, item.sellingPrice * quantity),
+                        }
+                        : item
                 )
             );
         },
@@ -123,21 +131,52 @@ export function useSalesCart(
         (partId: string, newPrice: number) => {
             setGlobalCartItems((prev) =>
                 prev.map((item) =>
-                    item.partId === partId ? { ...item, sellingPrice: newPrice } : item
+                    item.partId === partId
+                        ? {
+                            ...item,
+                            sellingPrice: newPrice,
+                            discount: Math.min(item.discount || 0, Math.max(0, newPrice * item.quantity)),
+                        }
+                        : item
                 )
             );
         },
         [setGlobalCartItems]
     );
 
+    const updateCartDiscount = useCallback(
+        (partId: string, discount: number) => {
+            setGlobalCartItems((prev) =>
+                prev.map((item) => {
+                    if (item.partId !== partId) return item;
+                    const lineTotal = Math.max(0, item.sellingPrice * item.quantity);
+                    return {
+                        ...item,
+                        discount: Math.max(0, Math.min(discount || 0, lineTotal)),
+                    };
+                })
+            );
+        },
+        [setGlobalCartItems]
+    );
+
     // Calculate totals
-    const subtotal = useMemo(
+    const lineDiscountTotal = useMemo(
         () =>
             initialCartItems.reduce(
-                (sum, item) => sum + (item.sellingPrice * item.quantity) - (item.discount || 0),
+                (sum, item) => sum + (item.discount || 0),
                 0
             ),
         [initialCartItems]
+    );
+
+    const subtotal = useMemo(
+        () =>
+            initialCartItems.reduce(
+                (sum, item) => sum + item.sellingPrice * item.quantity,
+                0
+            ) - lineDiscountTotal,
+        [initialCartItems, lineDiscountTotal]
     );
 
     // BUG fix: always recompute effectiveDiscount from discountPercent when type is "percent"
@@ -174,6 +213,7 @@ export function useSalesCart(
         removeFromCart,
         updateCartQuantity,
         updateCartPrice,
+        updateCartDiscount,
         setOrderDiscount,
         setDiscountType,
         setDiscountPercent,
@@ -183,6 +223,7 @@ export function useSalesCart(
 
         // Computed
         subtotal,
+        lineDiscountTotal,
         total,
         effectiveDiscount,
         cartItemById,

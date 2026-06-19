@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useRef } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import { Share2, Printer, X } from "lucide-react";
 import { WorkOrder, WorkOrderPart } from "../../../../types";
 import { formatCurrency, formatWorkOrderId } from "../../../../utils/format";
@@ -38,6 +38,15 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
 }) => {
   const [isSharing, setIsSharing] = useState(false);
   const invoicePreviewRef = useRef<HTMLDivElement>(null);
+  const previewScrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      requestAnimationFrame(() => {
+        previewScrollRef.current?.scrollTo({ top: 0, left: 0 });
+      });
+    }
+  }, [isOpen, printOrder.id]);
 
   // Generate dynamic VietQR for print
   const printQRUrl = useMemo(() => {
@@ -171,10 +180,13 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
           </div>
 
           {/* Preview Container */}
-          <div className="flex-1 overflow-y-auto p-3 md:p-6 bg-slate-100 dark:bg-slate-900 flex justify-center">
+          <div
+            ref={previewScrollRef}
+            className="flex-1 overflow-auto p-3 md:p-6 bg-slate-100 dark:bg-slate-900 flex items-start justify-center"
+          >
             <div
               ref={invoicePreviewRef}
-              className="bg-white shadow-xl mx-auto w-full md:w-[148mm] min-h-[210mm] text-slate-950 p-[5mm] md:p-[10mm]"
+              className="bg-white shadow-xl mx-auto w-full md:w-[148mm] min-h-[210mm] flex-shrink-0 text-slate-950 p-[5mm] md:p-[10mm]"
               style={{ color: "#000", fontFamily: "Arial, sans-serif" }}
             >
               {/* Store Header */}
@@ -330,19 +342,51 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
                           <td style={{ border: "1px solid #ddd", padding: "1.5mm", textAlign: "center" }}>{idx + 1}</td>
                           <td style={{ border: "1px solid #ddd", padding: "1.5mm" }}>{part.partName}</td>
                           <td style={{ border: "1px solid #ddd", padding: "1.5mm", textAlign: "center" }}>{part.quantity}</td>
-                          <td style={{ border: "1px solid #ddd", padding: "1.5mm", textAlign: "right" }}>{formatCurrency(part.price)}</td>
-                          <td style={{ border: "1px solid #ddd", padding: "1.5mm", textAlign: "right", fontWeight: "bold" }}>{formatCurrency(part.price * part.quantity)}</td>
+                          <td style={{ border: "1px solid #ddd", padding: "1.5mm", textAlign: "right", color: part.price === 0 ? "#16a34a" : "inherit", fontWeight: part.price === 0 ? "bold" : "normal" }}>
+                            {part.price === 0 ? "Tặng" : formatCurrency(part.price)}
+                          </td>
+                          <td style={{ border: "1px solid #ddd", padding: "1.5mm", textAlign: "right", fontWeight: "bold", color: part.price === 0 ? "#16a34a" : "inherit" }}>
+                            {part.price === 0 ? "Tặng" : formatCurrency(part.price * part.quantity)}
+                          </td>
                         </tr>
                       ))}
-                      {printOrder.additionalServices?.map((service: any, idx: number) => (
-                        <tr key={`service-${idx}`}>
-                          <td style={{ border: "1px solid #ddd", padding: "1.5mm", textAlign: "center" }}>{(printOrder.partsUsed?.length || 0) + idx + 1}</td>
-                          <td style={{ border: "1px solid #ddd", padding: "1.5mm" }}>{service.description}</td>
-                          <td style={{ border: "1px solid #ddd", padding: "1.5mm", textAlign: "center" }}>{service.quantity || 1}</td>
-                          <td style={{ border: "1px solid #ddd", padding: "1.5mm", textAlign: "right" }}>{formatCurrency(service.price || 0)}</td>
-                          <td style={{ border: "1px solid #ddd", padding: "1.5mm", textAlign: "right", fontWeight: "bold" }}>{formatCurrency((service.price || 0) * (service.quantity || 1))}</td>
-                        </tr>
-                      ))}
+                      {printOrder.additionalServices?.map((service: any, idx: number) => {
+                        const serviceIsFree = service.isFree || service.isfree;
+                        const servicePrice = service.price || 0;
+                        const serviceTotal = servicePrice * (service.quantity || 1);
+                        return (
+                          <tr key={`service-${idx}`}>
+                            <td style={{ border: "1px solid #ddd", padding: "1.5mm", textAlign: "center" }}>{(printOrder.partsUsed?.length || 0) + idx + 1}</td>
+                            <td style={{ border: "1px solid #ddd", padding: "1.5mm" }}>
+                              {service.description}
+                              {serviceIsFree && (
+                                <span style={{ marginLeft: "4px", color: "#16a34a", fontWeight: "bold", fontSize: "8pt" }}>
+                                  (Tặng)
+                                </span>
+                              )}
+                            </td>
+                            <td style={{ border: "1px solid #ddd", padding: "1.5mm", textAlign: "center" }}>{service.quantity || 1}</td>
+                            <td style={{ border: "1px solid #ddd", padding: "1.5mm", textAlign: "right" }}>
+                              {serviceIsFree ? (
+                                <span style={{ textDecoration: "line-through", color: "#999" }}>{formatCurrency(servicePrice)}</span>
+                              ) : servicePrice === 0 ? (
+                                <span style={{ color: "#16a34a", fontWeight: "bold" }}>Tặng</span>
+                              ) : formatCurrency(servicePrice)}
+                            </td>
+                            <td style={{ border: "1px solid #ddd", padding: "1.5mm", textAlign: "right", fontWeight: "bold" }}>
+                              {serviceIsFree ? (
+                                <div>
+                                  <span style={{ textDecoration: "line-through", color: "#999", fontWeight: "normal", fontSize: "8pt" }}>{formatCurrency(serviceTotal)}</span>
+                                  <br />
+                                  <span style={{ color: "#16a34a", fontWeight: "bold" }}>Tặng</span>
+                                </div>
+                              ) : servicePrice === 0 ? (
+                                <span style={{ color: "#16a34a", fontWeight: "bold" }}>Tặng</span>
+                              ) : formatCurrency(serviceTotal)}
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -536,18 +580,50 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
                 <tr key={`part-${idx}`}>
                   <td style={{ border: "1px solid #ddd", padding: "1.5mm" }}>{part.partName}</td>
                   <td style={{ border: "1px solid #ddd", padding: "1.5mm", textAlign: "center" }}>{part.quantity}</td>
-                  <td style={{ border: "1px solid #ddd", padding: "1.5mm", textAlign: "right" }}>{formatCurrency(part.price)}</td>
-                  <td style={{ border: "1px solid #ddd", padding: "1.5mm", textAlign: "right", fontWeight: "bold" }}>{formatCurrency(part.price * part.quantity)}</td>
+                  <td style={{ border: "1px solid #ddd", padding: "1.5mm", textAlign: "right", color: part.price === 0 ? "#16a34a" : "inherit", fontWeight: part.price === 0 ? "bold" : "normal" }}>
+                    {part.price === 0 ? "Tặng" : formatCurrency(part.price)}
+                  </td>
+                  <td style={{ border: "1px solid #ddd", padding: "1.5mm", textAlign: "right", fontWeight: "bold", color: part.price === 0 ? "#16a34a" : "inherit" }}>
+                    {part.price === 0 ? "Tặng" : formatCurrency(part.price * part.quantity)}
+                  </td>
                 </tr>
               ))}
-              {printOrder.additionalServices?.map((service: any, idx: number) => (
-                <tr key={`service-${idx}`}>
-                  <td style={{ border: "1px solid #ddd", padding: "1.5mm" }}>{service.description}</td>
-                  <td style={{ border: "1px solid #ddd", padding: "1.5mm", textAlign: "center" }}>{service.quantity || 1}</td>
-                  <td style={{ border: "1px solid #ddd", padding: "1.5mm", textAlign: "right" }}>{formatCurrency(service.price || 0)}</td>
-                  <td style={{ border: "1px solid #ddd", padding: "1.5mm", textAlign: "right", fontWeight: "bold" }}>{formatCurrency((service.price || 0) * (service.quantity || 1))}</td>
-                </tr>
-              ))}
+              {printOrder.additionalServices?.map((service: any, idx: number) => {
+                const serviceIsFree = service.isFree || service.isfree;
+                const servicePrice = service.price || 0;
+                const serviceTotal = servicePrice * (service.quantity || 1);
+                return (
+                  <tr key={`service-${idx}`}>
+                    <td style={{ border: "1px solid #ddd", padding: "1.5mm" }}>
+                      {service.description}
+                      {serviceIsFree && (
+                        <span style={{ marginLeft: "3px", color: "#16a34a", fontWeight: "bold", fontSize: "7pt" }}>
+                          (Tặng)
+                        </span>
+                      )}
+                    </td>
+                    <td style={{ border: "1px solid #ddd", padding: "1.5mm", textAlign: "center" }}>{service.quantity || 1}</td>
+                    <td style={{ border: "1px solid #ddd", padding: "1.5mm", textAlign: "right" }}>
+                      {serviceIsFree ? (
+                        <span style={{ textDecoration: "line-through", color: "#999" }}>{formatCurrency(servicePrice)}</span>
+                      ) : servicePrice === 0 ? (
+                        <span style={{ color: "#16a34a", fontWeight: "bold" }}>Tặng</span>
+                      ) : formatCurrency(servicePrice)}
+                    </td>
+                    <td style={{ border: "1px solid #ddd", padding: "1.5mm", textAlign: "right", fontWeight: "bold" }}>
+                      {serviceIsFree ? (
+                        <div>
+                          <span style={{ textDecoration: "line-through", color: "#999", fontWeight: "normal", fontSize: "7.5pt" }}>{formatCurrency(serviceTotal)}</span>
+                          <br />
+                          <span style={{ color: "#16a34a", fontWeight: "bold" }}>Tặng</span>
+                        </div>
+                      ) : servicePrice === 0 ? (
+                        <span style={{ color: "#16a34a", fontWeight: "bold" }}>Tặng</span>
+                      ) : formatCurrency(serviceTotal)}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         )}

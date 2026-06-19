@@ -8,6 +8,7 @@ interface CartItemRowProps {
     item: CartItem;
     onUpdateQuantity: (partId: string, quantity: number) => void;
     onUpdatePrice: (partId: string, price: number) => void;
+    onUpdateDiscount: (partId: string, discount: number) => void;
     onRemove: (partId: string) => void;
 }
 
@@ -18,9 +19,12 @@ export const CartItemRow: React.FC<CartItemRowProps> = ({
     item,
     onUpdateQuantity,
     onUpdatePrice,
+    onUpdateDiscount,
     onRemove,
 }) => {
-    const itemTotal = item.sellingPrice * item.quantity;
+    const grossItemTotal = item.sellingPrice * item.quantity;
+    const itemDiscount = Math.min(item.discount || 0, grossItemTotal);
+    const itemTotal = Math.max(0, grossItemTotal - itemDiscount);
 
     return (
         <div className="group relative p-3 border border-slate-100 dark:border-slate-800 rounded-2xl bg-white dark:bg-slate-900/50 hover:border-blue-300 dark:hover:border-blue-700/50 hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all duration-300">
@@ -93,9 +97,33 @@ export const CartItemRow: React.FC<CartItemRowProps> = ({
 
                 {/* Item Total */}
                 <div className="text-right min-w-[90px]">
+                    {itemDiscount > 0 && (
+                        <span className="block text-[10px] font-bold text-slate-400 line-through">
+                            {formatCurrency(grossItemTotal)}
+                        </span>
+                    )}
                     <span className="text-sm font-black text-slate-900 dark:text-white tracking-tight">
                         {formatCurrency(itemTotal)}
                     </span>
+                </div>
+            </div>
+
+            <div className="mt-3 grid grid-cols-[1fr_auto] items-center gap-3 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/30 px-3 py-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">
+                    Giảm dòng
+                </label>
+                <div className="flex items-center gap-2">
+                    <NumberInput
+                        value={itemDiscount}
+                        onChange={(val: number) => onUpdateDiscount(item.partId, val || 0)}
+                        className="w-28 px-2 py-1.5 text-xs font-black text-rose-500 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-right outline-none focus:border-rose-400 focus:ring-2 focus:ring-rose-500/10"
+                        placeholder="0"
+                    />
+                    {itemDiscount > 0 && (
+                        <span className="text-[10px] font-bold text-rose-500 whitespace-nowrap">
+                            -{formatCurrency(itemDiscount)}
+                        </span>
+                    )}
                 </div>
             </div>
         </div>

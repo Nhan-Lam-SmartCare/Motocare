@@ -228,6 +228,7 @@ const WorkOrderModal: React.FC<{
       quantity: number;
       price: number;
       costPrice?: number;
+      isFree?: boolean;
     }>
   >([]);
 
@@ -527,7 +528,7 @@ const WorkOrderModal: React.FC<{
   // Totals calculations
   const partsTotal = selectedParts.reduce((sum, p) => sum + (p.price || 0) * (p.quantity || 0), 0);
   const servicesTotal = additionalServices.reduce(
-    (sum, s) => sum + (s.price || 0) * (s.quantity || 0),
+    (sum, s) => sum + (s.isFree ? 0 : (s.price || 0) * (s.quantity || 0)),
     0
   );
   const subtotal = (formData.laborCost || 0) + partsTotal + servicesTotal;

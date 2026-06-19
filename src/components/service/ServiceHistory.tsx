@@ -781,7 +781,7 @@ export const ServiceHistory: React.FC<ServiceHistoryProps> = ({
               const servicesTotal =
                 order.additionalServices?.reduce(
                   (sum: number, s: any) =>
-                    sum + (s.price || 0) * (s.quantity || 1),
+                    sum + (s.isFree || s.isfree ? 0 : (s.price || 0) * (s.quantity || 1)),
                   0
                 ) || 0;
 
@@ -1035,7 +1035,7 @@ export const ServiceHistory: React.FC<ServiceHistoryProps> = ({
             const servicesTotal =
               order.additionalServices?.reduce(
                 (sum: number, s: any) =>
-                  sum + (s.price || 0) * (s.quantity || 1),
+                  sum + (s.isFree || s.isfree ? 0 : (s.price || 0) * (s.quantity || 1)),
                 0
               ) || 0;
 
@@ -1561,7 +1561,11 @@ export const ServiceHistory: React.FC<ServiceHistoryProps> = ({
                     )
                   )}
                   {/* Additional Services */}
-                  {printOrder.additionalServices && printOrder.additionalServices.map((service, idx) => (
+                  {printOrder.additionalServices && printOrder.additionalServices.map((service, idx) => {
+                    const serviceIsFree = service.isFree || (service as any).isfree;
+                    const servicePrice = service.price || 0;
+                    const serviceTotal = servicePrice * (service.quantity || 1);
+                    return (
                     <tr key={`service-${idx}`}>
                       <td
                         style={{
@@ -1581,6 +1585,11 @@ export const ServiceHistory: React.FC<ServiceHistoryProps> = ({
                         }}
                       >
                         {service.description}
+                        {serviceIsFree && (
+                          <span style={{ marginLeft: "4px", color: "#16a34a", fontWeight: "bold", fontSize: "8pt" }}>
+                            Tặng
+                          </span>
+                        )}
                       </td>
                       <td
                         style={{
@@ -1600,7 +1609,15 @@ export const ServiceHistory: React.FC<ServiceHistoryProps> = ({
                           fontSize: "10pt",
                         }}
                       >
-                        {formatCurrency(service.price || 0)}
+                        {serviceIsFree ? (
+                          <span style={{ textDecoration: "line-through", color: "#999" }}>
+                            {formatCurrency(servicePrice)}
+                          </span>
+                        ) : servicePrice === 0 ? (
+                          <span style={{ color: "#16a34a", fontWeight: "bold" }}>Tặng</span>
+                        ) : (
+                          formatCurrency(servicePrice)
+                        )}
                       </td>
                       <td
                         style={{
@@ -1611,10 +1628,23 @@ export const ServiceHistory: React.FC<ServiceHistoryProps> = ({
                           fontWeight: "bold",
                         }}
                       >
-                        {formatCurrency((service.price || 0) * (service.quantity || 1))}
+                        {serviceIsFree ? (
+                          <div>
+                            <span style={{ textDecoration: "line-through", color: "#999", fontWeight: "normal", fontSize: "8pt" }}>
+                              {formatCurrency(serviceTotal)}
+                            </span>
+                            <br />
+                            <span style={{ color: "#16a34a", fontWeight: "bold" }}>Tặng</span>
+                          </div>
+                        ) : servicePrice === 0 ? (
+                          <span style={{ color: "#16a34a", fontWeight: "bold" }}>Tặng</span>
+                        ) : (
+                          formatCurrency(serviceTotal)
+                        )}
                       </td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -1657,7 +1687,8 @@ export const ServiceHistory: React.FC<ServiceHistoryProps> = ({
                     <td style={{ textAlign: "right", paddingBottom: "2mm", fontSize: "10pt" }}>
                       {formatCurrency(
                         (printOrder.additionalServices || []).reduce(
-                          (sum: number, s: any) => sum + (s.price || 0) * (s.quantity || 1),
+                          (sum: number, s: any) =>
+                            sum + (s.isFree || s.isfree ? 0 : (s.price || 0) * (s.quantity || 1)),
                           0
                         )
                       )}

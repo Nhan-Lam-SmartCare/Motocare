@@ -177,6 +177,7 @@ export interface WorkOrder {
     quantity: number;
     price: number;
     costPrice?: number; // Giá nhập
+    isFree?: boolean; // Tặng miễn phí (hiển thị giá gạch ngang trên hóa đơn, không tính vào tổng)
   }>; // Báo giá (Gia công, Đặt hàng)
   notes?: string;
   total: number; // labor + parts - discount

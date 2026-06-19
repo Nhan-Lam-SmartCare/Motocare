@@ -870,6 +870,7 @@ export const exportS1aHKD = (
     // Tính tiền dịch vụ gia công từ additionalServices
     const additionalServices = wo.additionalServices || wo.additionalservices || [];
     const servicesTotal = additionalServices.reduce((sum: number, s: any) => {
+      if (s.isFree || s.isfree) return sum; // Bỏ qua dịch vụ tặng miễn phí
       const price = parseFloat(s.price || 0);
       const qty = parseFloat(s.quantity || 1);
       return sum + (price * qty);

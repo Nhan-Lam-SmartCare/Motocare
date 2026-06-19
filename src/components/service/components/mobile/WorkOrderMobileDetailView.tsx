@@ -218,7 +218,10 @@ export const WorkOrderMobileDetailView: React.FC<WorkOrderMobileDetailViewProps>
                   DỊCH VỤ ({workOrder.additionalServices.length})
                 </h3>
                 <div className="space-y-2">
-                  {workOrder.additionalServices.map((svc, idx) => (
+                  {workOrder.additionalServices.map((svc, idx) => {
+                    const serviceIsFree = svc.isFree || (svc as any).isfree;
+                    const serviceTotal = svc.price * (svc.quantity || 1);
+                    return (
                     <div
                       key={idx}
                       className="bg-white dark:bg-[#1e1e2d] rounded-xl p-3 flex items-center justify-between border border-slate-200 dark:border-transparent"
@@ -233,11 +236,21 @@ export const WorkOrderMobileDetailView: React.FC<WorkOrderMobileDetailViewProps>
                           </div>
                         )}
                       </div>
-                      <div className="text-sm font-bold text-purple-600 dark:text-purple-400 flex-shrink-0">
-                        {formatCurrency(svc.price * (svc.quantity || 1))}
-                      </div>
+                      {serviceIsFree ? (
+                        <div className="flex-shrink-0 text-right">
+                          <div className="text-xs text-slate-400 line-through">
+                            {formatCurrency(serviceTotal)}
+                          </div>
+                          <div className="text-sm font-bold text-emerald-500">Tặng</div>
+                        </div>
+                      ) : (
+                        <div className="text-sm font-bold text-purple-600 dark:text-purple-400 flex-shrink-0">
+                          {formatCurrency(serviceTotal)}
+                        </div>
+                      )}
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -274,7 +287,8 @@ export const WorkOrderMobileDetailView: React.FC<WorkOrderMobileDetailViewProps>
                 <span className="text-slate-900 dark:text-white font-medium text-sm">
                   {formatCurrency(
                     workOrder.additionalServices?.reduce(
-                      (s, svc) => s + svc.price * (svc.quantity || 1),
+                      (s, svc) =>
+                        s + (svc.isFree || (svc as any).isfree ? 0 : svc.price * (svc.quantity || 1)),
                       0
                     ) || 0
                   )}

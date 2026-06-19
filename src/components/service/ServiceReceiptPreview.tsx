@@ -62,19 +62,20 @@ const ServiceReceiptPreview: React.FC<Props> = ({
           </tr>
         </thead>
         <tbody>
-          {items.map((it: any, idx: number) => (
-            <tr key={idx}>
-              <td style={{ padding: 8 }}>{it.name || it.partName}</td>
-              <td style={{ padding: 8, textAlign: "center" }}>
-                {it.quantity || 1}
-              </td>
-              <td style={{ padding: 8, textAlign: "right" }}>
-                {formatCurrency(
-                  (it.price || it.sellingPrice || 0) * (it.quantity || 1)
-                )}
-              </td>
-            </tr>
-          ))}
+          {items.map((it: any, idx: number) => {
+            const price = it.price || it.sellingPrice || 0;
+            return (
+              <tr key={idx}>
+                <td style={{ padding: 8 }}>{it.name || it.partName}</td>
+                <td style={{ padding: 8, textAlign: "center" }}>
+                  {it.quantity || 1}
+                </td>
+                <td style={{ padding: 8, textAlign: "right", color: price === 0 ? "#16a34a" : "inherit", fontWeight: price === 0 ? "bold" : "normal" }}>
+                  {price === 0 ? "Tặng" : formatCurrency(price * (it.quantity || 1))}
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
 

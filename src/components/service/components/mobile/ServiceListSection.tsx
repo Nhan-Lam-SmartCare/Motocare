@@ -1,5 +1,5 @@
 import React from "react";
-import { Trash2, Plus } from "lucide-react";
+import { Gift, Trash2, Plus } from "lucide-react";
 import { formatCurrency, formatNumberWithDots, parseFormattedNumber } from "../../../../utils/format";
 
 interface ServiceItem {
@@ -8,6 +8,7 @@ interface ServiceItem {
     quantity: number;
     sellingPrice: number;
     costPrice?: number;
+    isFree?: boolean;
 }
 
 interface ServiceListSectionProps {
@@ -51,7 +52,9 @@ export const ServiceListSection: React.FC<ServiceListSectionProps> = ({
                     {additionalServices.map((service) => (
                         <div
                             key={service.id}
-                            className="p-3 bg-[#1e1e2d] border border-gray-800 rounded-xl shadow-sm relative group overflow-hidden"
+                            className={`p-3 bg-[#1e1e2d] border rounded-xl shadow-sm relative group overflow-hidden ${
+                                service.isFree ? "border-emerald-500/40" : "border-gray-800"
+                            }`}
                         >
                             <div className="flex items-start justify-between gap-3 mb-3">
                                 <div className="flex-1 min-w-0">
@@ -59,8 +62,27 @@ export const ServiceListSection: React.FC<ServiceListSectionProps> = ({
                                         <div className="text-base font-bold text-white break-words leading-tight">
                                             {service.name}
                                         </div>
+                                        {service.isFree && (
+                                            <span className="mt-1 inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-400">
+                                                <Gift className="h-3 w-3" />
+                                                Tặng
+                                            </span>
+                                        )}
                                     </div>
                                 </div>
+                                <button
+                                    onClick={() => onUpdateService(service.id, { isFree: !service.isFree })}
+                                    disabled={!canEditPriceAndParts}
+                                    className={`p-2 rounded-lg transition-colors ${service.isFree
+                                            ? "text-emerald-400 bg-emerald-400/10 hover:bg-emerald-400/20"
+                                            : canEditPriceAndParts
+                                                ? "text-slate-500 hover:text-emerald-400 hover:bg-emerald-400/10"
+                                                : "text-slate-600 opacity-50 cursor-not-allowed"
+                                        }`}
+                                    aria-label={service.isFree ? "Bỏ tặng" : "Tặng miễn phí"}
+                                >
+                                    <Gift className="w-4 h-4" />
+                                </button>
                                 <button
                                     onClick={() => onRemoveService(service.id)}
                                     disabled={!canEditPriceAndParts}
@@ -119,9 +141,18 @@ export const ServiceListSection: React.FC<ServiceListSectionProps> = ({
                                 <span className="text-[10px] text-slate-500 font-medium">
                                     SL: {service.quantity || 1}
                                 </span>
-                                <span className="text-sm font-bold text-orange-400">
-                                    {formatCurrency(service.sellingPrice * (service.quantity || 1))}
-                                </span>
+                                {service.isFree ? (
+                                    <span className="text-right">
+                                        <span className="block text-xs text-slate-500 line-through">
+                                            {formatCurrency(service.sellingPrice * (service.quantity || 1))}
+                                        </span>
+                                        <span className="block text-sm font-bold text-emerald-400">Tặng</span>
+                                    </span>
+                                ) : (
+                                    <span className="text-sm font-bold text-orange-400">
+                                        {formatCurrency(service.sellingPrice * (service.quantity || 1))}
+                                    </span>
+                                )}
                             </div>
                         </div>
                     ))}

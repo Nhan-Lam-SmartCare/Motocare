@@ -132,7 +132,7 @@ function removeTrackedProductsFromTaxData(
 
       const partsTotal = partsUsed.reduce((sum: number, p: any) => sum + getLineAmount(p), 0);
       const servicesTotal = additionalServices.reduce(
-        (sum: number, s: any) => sum + getLineAmount(s),
+        (sum: number, s: any) => sum + ((s.isFree || s.isfree) ? 0 : getLineAmount(s)),
         0
       );
       const laborCost = Number(wo?.laborCost ?? wo?.laborcost ?? wo?.labor_cost ?? 0) || 0;

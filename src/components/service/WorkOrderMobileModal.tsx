@@ -264,6 +264,7 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
           quantity: s.quantity || 1,
           costPrice: s.costPrice || 0,
           sellingPrice: s.price || 0,
+          isFree: s.isFree || (s as any).isfree || false,
         })) || []
       );
       setSelectedCustomer(initialCustomer);
@@ -409,6 +410,7 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
       quantity: number;
       costPrice: number;
       sellingPrice: number;
+      isFree?: boolean;
     }>
   >(
     workOrder?.additionalServices?.map((s) => ({
@@ -417,6 +419,7 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
       quantity: s.quantity || 1,
       costPrice: s.costPrice || 0,
       sellingPrice: s.price || 0,
+      isFree: s.isFree || (s as any).isfree || false,
     })) || []
   );
   const [laborCost, setLaborCost] = useState(workOrder?.laborCost || 0);
@@ -696,6 +699,7 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
         quantity: s.quantity,
         price: s.sellingPrice,
         costPrice: s.costPrice,
+        isFree: s.isFree || false,
       }));
 
       // BUG 9 fix: also validate deposit when total === 0 (no charge but deposit was set)
@@ -984,7 +988,7 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
   }, [selectedParts]);
 
   const servicesTotal = useMemo(() => {
-    return additionalServices.reduce((sum, s) => sum + s.sellingPrice * s.quantity, 0);
+    return additionalServices.reduce((sum, s) => sum + ((s as any).isFree ? 0 : s.sellingPrice * s.quantity), 0);
   }, [additionalServices]);
 
   const subtotal = partsTotal + servicesTotal + laborCost;
@@ -1734,6 +1738,7 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
               quantity: service.quantity,
               costPrice: service.costPrice,
               sellingPrice: service.sellingPrice,
+              isFree: service.isFree || false,
             },
           ]);
         }}

@@ -1090,6 +1090,18 @@ const GoodsReceiptModal: React.FC<{
         onClose={() => setShowAddProductModal(false)}
         onSave={handleAddNewProduct}
       />
+
+      {/* Add Supplier Modal */}
+      <SupplierModal
+        isOpen={showSupplierModal}
+        onClose={() => setShowSupplierModal(false)}
+        onSave={(newSupplier) => {
+          if (newSupplier?.id) {
+            setSelectedSupplier(newSupplier.id);
+          }
+        }}
+        mode="add"
+      />
     </>
   );
 };

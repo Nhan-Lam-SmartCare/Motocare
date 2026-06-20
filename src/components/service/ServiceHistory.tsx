@@ -774,7 +774,7 @@ export const ServiceHistory: React.FC<ServiceHistoryProps> = ({
             {filteredOrders.map((order) => {
               const partsCost =
                 order.partsUsed?.reduce(
-                  (sum, p) => sum + p.quantity * p.price,
+                  (sum, p) => sum + (p.isFree || (p as any).isfree ? 0 : p.quantity * p.price - (p.discount || 0)),
                   0
                 ) || 0;
 
@@ -859,6 +859,7 @@ export const ServiceHistory: React.FC<ServiceHistoryProps> = ({
                                   className="text-xs text-slate-700 dark:text-slate-300"
                                 >
                                   • {part.partName} x{part.quantity}
+                                  {part.isFree || (part as any).isfree ? " (Tặng)" : part.discount ? ` (Giảm -${formatCurrency(part.discount)})` : ""}
                                 </div>
                               ))}
                             </div>
@@ -878,7 +879,7 @@ export const ServiceHistory: React.FC<ServiceHistoryProps> = ({
                                     key={idx}
                                     className="text-xs text-slate-700 dark:text-slate-300"
                                   >
-                                    • {svc.description} x{svc.quantity || 1}
+                                    • {svc.description} x{svc.quantity || 1}{svc.isFree || (svc as any).isfree ? " (Tặng)" : ""}
                                   </div>
                                 ))}
                               </div>
@@ -1029,7 +1030,7 @@ export const ServiceHistory: React.FC<ServiceHistoryProps> = ({
           filteredOrders.map((order) => {
             const partsCost =
               order.partsUsed?.reduce(
-                (sum, p) => sum + p.quantity * p.price,
+                (sum, p) => sum + (p.isFree || (p as any).isfree ? 0 : p.quantity * p.price - (p.discount || 0)),
                 0
               ) || 0;
             const servicesTotal =
@@ -1505,60 +1506,95 @@ export const ServiceHistory: React.FC<ServiceHistoryProps> = ({
                 <tbody>
                   {/* Parts */}
                   {printOrder.partsUsed && printOrder.partsUsed.map(
-                    (part: WorkOrderPart, idx: number) => (
-                      <tr key={`part-${idx}`}>
-                        <td
-                          style={{
-                            border: "1px solid #ddd",
-                            padding: "2mm",
-                            textAlign: "center",
-                            fontSize: "10pt",
-                          }}
-                        >
-                          {idx + 1}
-                        </td>
-                        <td
-                          style={{
-                            border: "1px solid #ddd",
-                            padding: "2mm",
-                            fontSize: "10pt",
-                          }}
-                        >
-                          {part.partName}
-                        </td>
-                        <td
-                          style={{
-                            border: "1px solid #ddd",
-                            padding: "2mm",
-                            textAlign: "center",
-                            fontSize: "10pt",
-                          }}
-                        >
-                          {part.quantity}
-                        </td>
-                        <td
-                          style={{
-                            border: "1px solid #ddd",
-                            padding: "2mm",
-                            textAlign: "right",
-                            fontSize: "10pt",
-                          }}
-                        >
-                          {formatCurrency(part.price)}
-                        </td>
-                        <td
-                          style={{
-                            border: "1px solid #ddd",
-                            padding: "2mm",
-                            textAlign: "right",
-                            fontSize: "10pt",
-                            fontWeight: "bold",
-                          }}
-                        >
-                          {formatCurrency(part.price * part.quantity)}
-                        </td>
-                      </tr>
-                    )
+                    (part: WorkOrderPart, idx: number) => {
+                      const partIsFree = part.isFree || (part as any).isfree;
+                      const partPrice = part.price || 0;
+                      const partDiscount = part.discount || 0;
+                      const partOriginalTotal = partPrice * (part.quantity || 1);
+                      const partTotal = partIsFree ? 0 : partOriginalTotal - partDiscount;
+                      return (
+                        <tr key={`part-${idx}`}>
+                          <td
+                            style={{
+                              border: "1px solid #ddd",
+                              padding: "2mm",
+                              textAlign: "center",
+                              fontSize: "10pt",
+                            }}
+                          >
+                            {idx + 1}
+                          </td>
+                          <td
+                            style={{
+                              border: "1px solid #ddd",
+                              padding: "2mm",
+                              fontSize: "10pt",
+                            }}
+                          >
+                            {part.partName}
+                            {partIsFree && (
+                              <span style={{ marginLeft: "4px", color: "#16a34a", fontWeight: "bold", fontSize: "8pt" }}>
+                                (Tặng)
+                              </span>
+                            )}
+                            {!partIsFree && partDiscount > 0 && (
+                              <div style={{ color: "#ef4444", fontSize: "8.5pt", marginTop: "1px" }}>
+                                (Giảm -{formatCurrency(partDiscount)})
+                              </div>
+                            )}
+                          </td>
+                          <td
+                            style={{
+                              border: "1px solid #ddd",
+                              padding: "2mm",
+                              textAlign: "center",
+                              fontSize: "10pt",
+                            }}
+                          >
+                            {part.quantity}
+                          </td>
+                          <td
+                            style={{
+                              border: "1px solid #ddd",
+                              padding: "2mm",
+                              textAlign: "right",
+                              fontSize: "10pt",
+                            }}
+                          >
+                            {partIsFree ? (
+                              <span style={{ textDecoration: "line-through", color: "#999" }}>{formatCurrency(partPrice)}</span>
+                            ) : partPrice === 0 ? (
+                              <span style={{ color: "#16a34a", fontWeight: "bold" }}>Tặng</span>
+                            ) : formatCurrency(partPrice)}
+                          </td>
+                          <td
+                            style={{
+                              border: "1px solid #ddd",
+                              padding: "2mm",
+                              textAlign: "right",
+                              fontSize: "10pt",
+                              fontWeight: "bold",
+                            }}
+                          >
+                            {partIsFree ? (
+                              <div>
+                                <span style={{ textDecoration: "line-through", color: "#999", fontWeight: "normal", fontSize: "8pt" }}>{formatCurrency(partOriginalTotal)}</span>
+                                <br />
+                                <span style={{ color: "#16a34a", fontWeight: "bold" }}>Tặng</span>
+                              </div>
+                            ) : partPrice === 0 ? (
+                              <span style={{ color: "#16a34a", fontWeight: "bold" }}>Tặng</span>
+                            ) : partDiscount > 0 ? (
+                              <div>
+                                <span style={{ textDecoration: "line-through", color: "#999", fontWeight: "normal", fontSize: "8pt" }}>{formatCurrency(partOriginalTotal)}</span>
+                                <br />
+                                <span>{formatCurrency(partTotal)}</span>
+                              </div>
+                            ) : formatCurrency(partTotal)}
+                          </td>
+                        </tr>
+                      );
+                    }
                   )}
                   {/* Additional Services */}
                   {printOrder.additionalServices && printOrder.additionalServices.map((service, idx) => {
@@ -1671,7 +1707,7 @@ export const ServiceHistory: React.FC<ServiceHistoryProps> = ({
                     <td style={{ textAlign: "right", paddingBottom: "2mm", fontSize: "10pt" }}>
                       {formatCurrency(
                         (printOrder.partsUsed || []).reduce(
-                          (sum: number, p: any) => sum + (p.price || 0) * (p.quantity || 1),
+                          (sum: number, p: any) => sum + (p.isFree || p.isfree ? 0 : (p.price || 0) * (p.quantity || 1) - (p.discount || 0)),
                           0
                         )
                       )}

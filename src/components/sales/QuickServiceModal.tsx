@@ -152,78 +152,56 @@ const QuickServiceModal: React.FC<QuickServiceModalProps> = ({
         .replace(/[-\s.]/g, "")
         .toUpperCase();
 
-      // Bước 1: Tìm trực tiếp theo biển số / SĐT / tên (DB dùng lowercase columns)
-      const directResult = await supabase
-        .from("customers")
-        .select("id, name, phone, licenseplate, totalspent, vehicles")
-        .or(
-          `licenseplate.ilike.%${searchText}%,phone.ilike.%${searchText}%,name.ilike.%${searchText}%`
-        )
-        .limit(20);
-      let directMatch = directResult.data;
-      const directError = directResult.error;
-
-      // Bước 2: Nếu không tìm thấy, lấy tất cả customers và filter vehicles
-      if (!directMatch || directMatch.length === 0 || directError) {
-        // Lấy customers có vehicles (không rỗng)
-        const { data: allCustomers, error: allError } = await supabase
-          .from("customers")
-          .select("id, name, phone, licenseplate, totalspent, vehicles")
-          .not("vehicles", "is", null)
-          .limit(1000);
-
-        if (allCustomers && !allError) {
-          // Filter ở client side
-          directMatch = allCustomers.filter((customer) => {
-            const customerPhone = (customer.phone || "").replace(/\D/g, "");
-            const customerName = (customer.name || "").toLowerCase();
-            const customerPlate = (customer.licenseplate || "")
-              .replace(/[-\s.]/g, "")
-              .toUpperCase();
-
-            const matchedByPhone =
-              normalizedPhone.length >= 6 &&
-              customerPhone.includes(normalizedPhone);
-            const matchedByName =
-              searchTextLower.length >= 2 &&
-              customerName.includes(searchTextLower);
-            const matchedByPlate =
-              customerPlate &&
-              (customerPlate.includes(normalizedPlate) ||
-                normalizedPlate.includes(customerPlate));
-
-            if (!customer.vehicles || !Array.isArray(customer.vehicles))
-              return matchedByPhone || matchedByName || matchedByPlate;
-
-            const matchedByVehiclePlate = customer.vehicles.some((v: any) => {
-              const vPlate = (v.licensePlate || "")
-                .replace(/[-\s.]/g, "")
-                .toUpperCase();
-              return (
-                vPlate &&
-                (vPlate.includes(normalizedPlate) ||
-                  normalizedPlate.includes(vPlate))
-              );
-            });
-
-            return (
-              matchedByPhone ||
-              matchedByName ||
-              matchedByPlate ||
-              matchedByVehiclePlate
-            );
-          });
+      // Tạo các biến thể của biển số xe để tìm kiếm chính xác trong mảng JSONB
+      const getPlateVariations = (kw: string) => {
+        const cleaned = kw.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
+        const variations = [kw, kw.toUpperCase(), kw.toLowerCase(), cleaned];
+        if (cleaned.length >= 7 && cleaned.length <= 9) {
+          variations.push(`${cleaned.slice(0, 4)}-${cleaned.slice(4)}`);
         }
+        return Array.from(new Set(variations)).filter(Boolean);
+      };
+
+      const orConditions = [
+        `licenseplate.ilike.%${searchText}%`,
+        `name.ilike.%${searchText}%`
+      ];
+      
+      if (normalizedPhone) {
+        orConditions.push(`phone.ilike.%${normalizedPhone}%`);
       }
 
-      // Tìm customer có biển số khớp nhất
+      // Tìm kiếm sâu trong cột JSONB vehicles
+      const plateVariations = getPlateVariations(searchText);
+      plateVariations.forEach((val) => {
+        const safeVal = val.replace(/"/g, '\\"');
+        orConditions.push(`vehicles.cs.[{"licensePlate": "${safeVal}"}]`);
+      });
+
+      const safeModel = searchText.replace(/"/g, '\\"');
+      orConditions.push(
+        `vehicles.cs.[{"model": "${safeModel}"}]`,
+        `vehicles.cs.[{"model": "${safeModel.toUpperCase()}"}]`,
+        `vehicles.cs.[{"model": "${safeModel.toLowerCase()}"}]`
+      );
+
+      const { data: matchedCustomers, error } = await supabase
+        .from("customers")
+        .select("id, name, phone, licenseplate, totalspent, vehicles")
+        .or(orConditions.join(","))
+        .limit(50);
+
+      if (error) throw error;
+
+      // Tìm customer phù hợp nhất từ kết quả trả về
       let matchedCustomer = null;
       let matchedVehicle: any = null;
 
-      for (const customer of directMatch || []) {
+      for (const customer of matchedCustomers || []) {
         const customerPhone = (customer.phone || "").replace(/\D/g, "");
         const customerName = (customer.name || "").toLowerCase();
 
+        // Ưu tiên 1: Khớp số điện thoại
         if (normalizedPhone.length >= 6 && customerPhone.includes(normalizedPhone)) {
           matchedCustomer = customer;
           matchedVehicle = {
@@ -233,23 +211,13 @@ const QuickServiceModal: React.FC<QuickServiceModalProps> = ({
           break;
         }
 
-        if (searchTextLower.length >= 2 && customerName.includes(searchTextLower)) {
-          matchedCustomer = customer;
-          matchedVehicle = {
-            model: "",
-            licensePlate: customer.licenseplate,
-          };
-          break;
-        }
-
-        // Kiểm tra licenseplate trực tiếp (DB column lowercase)
+        // Ưu tiên 2: Khớp biển số xe chính
         const customerPlate = (customer.licenseplate || "")
           .replace(/[-\s.]/g, "")
           .toUpperCase();
         if (
           customerPlate &&
-          (customerPlate.includes(normalizedPlate) ||
-            normalizedPlate.includes(customerPlate))
+          customerPlate.includes(normalizedPlate)
         ) {
           matchedCustomer = customer;
           matchedVehicle = {
@@ -259,24 +227,34 @@ const QuickServiceModal: React.FC<QuickServiceModalProps> = ({
           break;
         }
 
-        // Kiểm tra trong mảng vehicles
+        // Ưu tiên 3: Khớp biển số xe trong mảng vehicles
         if (customer.vehicles && Array.isArray(customer.vehicles)) {
+          let foundVehicle = null;
           for (const vehicle of customer.vehicles) {
             const vPlate = (vehicle.licensePlate || "")
               .replace(/[-\s.]/g, "")
               .toUpperCase();
-            if (
-              vPlate &&
-              (vPlate.includes(normalizedPlate) ||
-                normalizedPlate.includes(vPlate))
-            ) {
-              matchedCustomer = customer;
-              matchedVehicle = vehicle;
+            if (vPlate && vPlate.includes(normalizedPlate)) {
+              foundVehicle = vehicle;
               break;
             }
           }
+          if (foundVehicle) {
+            matchedCustomer = customer;
+            matchedVehicle = foundVehicle;
+            break;
+          }
         }
-        if (matchedCustomer) break;
+
+        // Ưu tiên 4: Khớp tên
+        if (searchTextLower.length >= 2 && customerName.includes(searchTextLower)) {
+          matchedCustomer = customer;
+          matchedVehicle = {
+            model: "",
+            licensePlate: customer.licenseplate,
+          };
+          break;
+        }
       }
 
       if (matchedCustomer) {

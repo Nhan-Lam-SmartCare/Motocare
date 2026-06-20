@@ -862,6 +862,7 @@ export const exportS1aHKD = (
     // Tính tiền phụ tùng từ partsUsed (không có field totalPrice trong WorkOrder!)
     const partsUsed = wo.partsUsed || wo.partsused || [];
     const partsTotal = partsUsed.reduce((sum: number, p: any) => {
+      if (p.isFree || p.isfree) return sum;
       const price = parseFloat(p.price || p.sellingPrice || p.sellingprice || 0);
       const qty = parseFloat(p.quantity || 1);
       return sum + (price * qty);

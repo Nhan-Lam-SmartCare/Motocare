@@ -454,12 +454,50 @@ const WorkOrderModal: React.FC<{
       const from = page * CUSTOMER_PAGE_SIZE;
       const to = from + CUSTOMER_PAGE_SIZE - 1;
 
+      // Extract digits for better phone search
+      const searchDigits = searchTerm.replace(/\D/g, "");
+      const plateTerm = searchTerm.toLowerCase().replace(/[^a-z0-9]/g, "");
+
+      const getPlateVariations = (kw: string) => {
+        const cleaned = kw.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
+        const variations = [kw, kw.toUpperCase(), kw.toLowerCase(), cleaned];
+        if (cleaned.length >= 7 && cleaned.length <= 9) {
+          variations.push(`${cleaned.slice(0, 4)}-${cleaned.slice(4)}`);
+        }
+        return Array.from(new Set(variations)).filter(Boolean);
+      };
+
+      const orConditions = [
+        `name.ilike.%${searchTerm}%`,
+        `vehiclemodel.ilike.%${searchTerm}%`,
+        `licenseplate.ilike.%${searchTerm}%`
+      ];
+
+      if (searchDigits.length > 0) {
+        orConditions.push(`phone.ilike.%${searchDigits}%`);
+      }
+      if (plateTerm && plateTerm !== searchTerm.toLowerCase()) {
+        orConditions.push(`licenseplate.ilike.%${plateTerm}%`);
+      }
+
+      // Query inside the JSONB vehicles column
+      const plateVariations = getPlateVariations(searchTerm);
+      plateVariations.forEach((val) => {
+        const safeVal = val.replace(/"/g, '\\"');
+        orConditions.push(`vehicles.cs.[{"licensePlate": "${safeVal}"}]`);
+      });
+
+      const safeModel = searchTerm.replace(/"/g, '\\"');
+      orConditions.push(
+        `vehicles.cs.[{"model": "${safeModel}"}]`,
+        `vehicles.cs.[{"model": "${safeModel.toUpperCase()}"}]`,
+        `vehicles.cs.[{"model": "${safeModel.toLowerCase()}"}]`
+      );
+
       const { data, error, count } = await supabase
         .from("customers")
         .select("*", { count: "exact", head: false })
-        .or(
-          `name.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%,vehiclemodel.ilike.%${searchTerm}%,licenseplate.ilike.%${searchTerm}%`
-        )
+        .or(orConditions.join(","))
         .range(from, to);
 
       if (!error && data) {
@@ -526,7 +564,7 @@ const WorkOrderModal: React.FC<{
   }, [allCustomers, customerSearch]);
 
   // Totals calculations
-  const partsTotal = selectedParts.reduce((sum, p) => sum + (p.price || 0) * (p.quantity || 0), 0);
+  const partsTotal = selectedParts.reduce((sum, p) => sum + (p.isFree ? 0 : (p.price || 0) * (p.quantity || 0) - (p.discount || 0)), 0);
   const servicesTotal = additionalServices.reduce(
     (sum, s) => sum + (s.isFree ? 0 : (s.price || 0) * (s.quantity || 0)),
     0

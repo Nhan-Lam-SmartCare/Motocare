@@ -13,16 +13,16 @@ describe("formatCurrency", () => {
   it("should format positive numbers as VND currency", () => {
     const result = formatCurrency(1500000);
 
-    // Should contain the number and VND symbol (₫)
+    // Should contain the number and VND symbol (đ)
     expect(result).toMatch(/1[.,]500[.,]000/);
-    expect(result).toContain("₫");
+    expect(result).toContain("đ");
   });
 
   it("should format zero", () => {
     const result = formatCurrency(0);
 
     expect(result).toContain("0");
-    expect(result).toContain("₫");
+    expect(result).toContain("đ");
   });
 
   it("should format negative numbers", () => {

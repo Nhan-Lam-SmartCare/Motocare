@@ -220,7 +220,7 @@ export const WorkOrdersTable: React.FC<WorkOrdersTableProps> = ({
                 const services = order.additionalServices || [];
 
                 const partsCost =
-                  parts.reduce((sum: number, p: WorkOrderPart) => sum + p.quantity * p.price, 0) || 0;
+                  parts.reduce((sum: number, p: WorkOrderPart) => sum + (p.isFree ? 0 : p.quantity * p.price - (p.discount || 0)), 0) || 0;
 
                 const servicesTotal =
                   services.reduce(

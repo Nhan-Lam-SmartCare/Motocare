@@ -63,15 +63,47 @@ const ServiceReceiptPreview: React.FC<Props> = ({
         </thead>
         <tbody>
           {items.map((it: any, idx: number) => {
-            const price = it.price || it.sellingPrice || 0;
+            const isFree = it.isFree || it.isfree;
+            const discount = it.discount || 0;
+            const displayPrice = it.price || it.sellingPrice || 0;
+            const originalTotal = displayPrice * (it.quantity || 1);
+            const finalTotal = isFree ? 0 : originalTotal - discount;
             return (
               <tr key={idx}>
-                <td style={{ padding: 8 }}>{it.name || it.partName}</td>
+                <td style={{ padding: 8 }}>
+                  {it.name || it.partName}
+                  {isFree && (
+                    <span style={{ marginLeft: "4px", color: "#16a34a", fontWeight: "bold" }}>
+                      (Tặng)
+                    </span>
+                  )}
+                  {!isFree && discount > 0 && (
+                    <div style={{ color: "#ef4444", fontSize: "10px", marginTop: "2px" }}>
+                      (Giảm -{formatCurrency(discount)})
+                    </div>
+                  )}
+                </td>
                 <td style={{ padding: 8, textAlign: "center" }}>
                   {it.quantity || 1}
                 </td>
-                <td style={{ padding: 8, textAlign: "right", color: price === 0 ? "#16a34a" : "inherit", fontWeight: price === 0 ? "bold" : "normal" }}>
-                  {price === 0 ? "Tặng" : formatCurrency(price * (it.quantity || 1))}
+                <td style={{ padding: 8, textAlign: "right", color: isFree || finalTotal === 0 ? "#16a34a" : "inherit", fontWeight: isFree || finalTotal === 0 || discount > 0 ? "bold" : "normal" }}>
+                  {isFree ? (
+                    <div>
+                      <span style={{ textDecoration: "line-through", color: "#999", fontWeight: "normal", fontSize: "10px" }}>
+                        {formatCurrency(originalTotal)}
+                      </span>
+                      <br />
+                      <span>Tặng</span>
+                    </div>
+                  ) : discount > 0 ? (
+                    <div>
+                      <span style={{ textDecoration: "line-through", color: "#999", fontWeight: "normal", fontSize: "10px" }}>
+                        {formatCurrency(originalTotal)}
+                      </span>
+                      <br />
+                      <span>{formatCurrency(finalTotal)}</span>
+                    </div>
+                  ) : displayPrice === 0 ? "Tặng" : formatCurrency(finalTotal)}
                 </td>
               </tr>
             );

@@ -118,6 +118,8 @@ export interface WorkOrderPart {
   quantity: number;
   price: number;
   costPrice?: number;
+  isFree?: boolean;
+  discount?: number;
 }
 
 export interface WorkOrderService {

@@ -162,7 +162,6 @@ export const WorkOrderMobileDetailView: React.FC<WorkOrderMobileDetailViewProps>
             </div>
           )}
 
-          {/* Phụ tùng */}
           {workOrder.partsUsed && workOrder.partsUsed.length > 0 && (
             <div className="p-3 border-b border-slate-200 dark:border-slate-700">
               <h3 className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 mb-2 flex items-center gap-1.5">
@@ -170,41 +169,72 @@ export const WorkOrderMobileDetailView: React.FC<WorkOrderMobileDetailViewProps>
                 PHỤ TÙNG ({workOrder.partsUsed.length})
               </h3>
               <div className="space-y-2">
-                {workOrder.partsUsed.map((part, idx) => (
-                  <div key={idx} className="bg-white dark:bg-[#1e1e2d] rounded-xl p-3 border border-slate-200 dark:border-transparent">
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1 min-w-0 pr-2">
-                        <div className="text-sm text-slate-900 dark:text-white font-medium truncate">
-                          {part.partName || "Phụ tùng"}
+                {workOrder.partsUsed.map((part, idx) => {
+                  const partIsFree = part.isFree || (part as any).isfree;
+                  return (
+                    <div key={idx} className={`bg-white dark:bg-[#1e1e2d] rounded-xl p-3 border ${partIsFree ? 'border-emerald-500/40 bg-emerald-500/[0.02]' : 'border-slate-200 dark:border-transparent'}`}>
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1 min-w-0 pr-2">
+                          <div className="text-sm text-slate-900 dark:text-white font-medium truncate flex items-center gap-1.5">
+                            {part.partName || "Phụ tùng"}
+                            {partIsFree && (
+                              <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                                🎁 Tặng
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-xs text-slate-500 dark:text-slate-400">
+                            SL: {part.quantity} {part.sku && `• ${part.sku}`}
+                          </div>
                         </div>
-                        <div className="text-xs text-slate-500 dark:text-slate-400">
-                          SL: {part.quantity} {part.sku && `• {part.sku}`}
-                        </div>
-                      </div>
-                      <div className="text-right flex-shrink-0">
-                        <div className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
-                          {formatCurrency(part.price * part.quantity)}
-                        </div>
-                        <div className="text-xs text-slate-500">
-                          {formatCurrency(part.price)}/cái
-                        </div>
-                      </div>
-                    </div>
-                    {isOwner && (
-                      <div className="mt-1 text-[10px] text-slate-400 dark:text-slate-500 flex justify-between">
-                        <span>
-                          Giá vốn: {formatCurrency(part.costPrice || 0)}/cái
-                        </span>
-                        <span className="text-yellow-600 dark:text-yellow-400">
-                          Lãi:{" "}
-                          {formatCurrency(
-                            (part.price - (part.costPrice || 0)) * part.quantity
+                        <div className="text-right flex-shrink-0">
+                          {partIsFree ? (
+                            <>
+                              <div className="text-xs text-slate-400 line-through">
+                                {formatCurrency(part.price * part.quantity)}
+                              </div>
+                              <div className="text-sm font-bold text-emerald-500">Tặng</div>
+                            </>
+                          ) : part.discount && part.discount > 0 ? (
+                            <>
+                              <div className="text-xs text-slate-400 line-through">
+                                {formatCurrency(part.price * part.quantity)}
+                              </div>
+                              <div className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
+                                {formatCurrency(part.price * part.quantity - part.discount)}
+                              </div>
+                              <div className="text-[10px] text-red-500 font-bold">
+                                Giảm -{formatCurrency(part.discount)}
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              <div className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
+                                {formatCurrency(part.price * part.quantity)}
+                              </div>
+                              <div className="text-xs text-slate-500">
+                                {formatCurrency(part.price)}/cái
+                              </div>
+                            </>
                           )}
-                        </span>
+                        </div>
                       </div>
-                    )}
-                  </div>
-                ))}
+                      {isOwner && (
+                        <div className="mt-1 text-[10px] text-slate-400 dark:text-slate-500 flex justify-between">
+                          <span>
+                            Giá vốn: {formatCurrency(part.costPrice || 0)}/cái
+                          </span>
+                          <span className="text-yellow-600 dark:text-yellow-400">
+                            Lãi:{" "}
+                            {formatCurrency(
+                              (part.price - (part.costPrice || 0)) * part.quantity - (part.discount || 0)
+                            )}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -276,7 +306,7 @@ export const WorkOrderMobileDetailView: React.FC<WorkOrderMobileDetailViewProps>
                 <span className="text-slate-900 dark:text-white font-medium text-sm">
                   {formatCurrency(
                     workOrder.partsUsed?.reduce(
-                      (s, p) => s + p.price * p.quantity,
+                      (s, p) => s + (p.isFree || (p as any).isfree ? 0 : p.price * p.quantity - (p.discount || 0)),
                       0
                     ) || 0
                   )}

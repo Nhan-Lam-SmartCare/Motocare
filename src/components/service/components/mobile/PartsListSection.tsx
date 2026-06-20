@@ -11,6 +11,7 @@ interface SelectedPart {
     costPrice?: number;
     sku?: string;
     category?: string;
+    discount?: number;
     // Optional Part fields for backward compatibility
     id?: string;
     name?: string;
@@ -25,6 +26,7 @@ interface PartsListSectionProps {
     onRemovePart: (partId: string) => void;
     onUpdatePartQuantity: (partId: string, delta: number) => void;
     onUpdatePartPrice: (partId: string, newPrice: number) => void;
+    onUpdatePartDiscount: (partId: string, newDiscount: number | undefined) => void;
     onShowPartSearch: () => void;
     canEditPriceAndParts: boolean;
 }
@@ -36,6 +38,7 @@ export const PartsListSection: React.FC<PartsListSectionProps> = ({
     onRemovePart,
     onUpdatePartQuantity,
     onUpdatePartPrice,
+    onUpdatePartDiscount,
     onShowPartSearch,
     canEditPriceAndParts,
 }) => {
@@ -138,12 +141,47 @@ export const PartsListSection: React.FC<PartsListSectionProps> = ({
                                 </div>
                             </div>
 
+                            {/* Discount Input Row */}
+                            <div className="mt-3 flex items-center gap-3">
+                                <div className="flex-1 relative">
+                                    <label className="text-[10px] text-slate-500 absolute -top-2 left-2 bg-[#1e1e2d] px-1">Giảm giá</label>
+                                    <div className="flex items-center px-3 py-2 bg-slate-900/50 border border-gray-700 rounded-lg focus-within:border-blue-500/50 focus-within:bg-slate-900 transition-colors">
+                                        <input
+                                            type="text"
+                                            value={part.discount ? formatNumberWithDots(part.discount) : ""}
+                                            onChange={(e) => {
+                                                const val = parseFormattedNumber(e.target.value);
+                                                onUpdatePartDiscount(partKey, val || undefined);
+                                            }}
+                                            placeholder="Nhập số tiền giảm..."
+                                            inputMode="numeric"
+                                            disabled={!canEditPriceAndParts}
+                                            className={`w-full bg-transparent text-sm font-bold text-orange-450 focus:outline-none ${!canEditPriceAndParts ? "opacity-50 cursor-not-allowed" : ""}`}
+                                        />
+                                        <span className="text-xs text-slate-500 ml-1">đ</span>
+                                    </div>
+                                </div>
+                            </div>
+
                             {/* Total - Bottom highlight */}
                             <div className="mt-3 pt-2 border-t border-dashed border-gray-800 flex justify-between items-center">
                                 <span className="text-[10px] text-slate-500 font-medium">Thành tiền</span>
-                                <span className="text-sm font-bold text-emerald-400">
-                                    {formatCurrency(part.quantity * part.sellingPrice)}
-                                </span>
+                                <div className="flex flex-col items-end">
+                                    {part.discount && part.discount > 0 ? (
+                                        <>
+                                            <span className="line-through text-slate-500 text-[10px]">
+                                                {formatCurrency(part.quantity * part.sellingPrice)}
+                                            </span>
+                                            <span className="text-sm font-bold text-emerald-400">
+                                                {formatCurrency(part.quantity * part.sellingPrice - part.discount)}
+                                            </span>
+                                        </>
+                                    ) : (
+                                        <span className="text-sm font-bold text-emerald-400">
+                                            {formatCurrency(part.quantity * part.sellingPrice)}
+                                        </span>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     );

@@ -391,6 +391,7 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
       costPrice?: number;
       sku?: string;
       category?: string;
+      discount?: number;
     }>
   >(
     workOrder?.partsUsed?.map((p) => ({
@@ -401,6 +402,7 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
       costPrice: p.costPrice || 0,
       sku: p.sku || "",
       category: p.category || "",
+      discount: p.discount,
     })) || []
   );
   const [additionalServices, setAdditionalServices] = useState<
@@ -691,6 +693,7 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
         costPrice: p.costPrice || 0,
         sku: p.sku || "",
         category: p.category || "",
+        discount: p.discount,
       }));
 
       const transformedServices = additionalServices.map((s) => ({
@@ -982,7 +985,7 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
   // Calculations
   const partsTotal = useMemo(() => {
     return selectedParts.reduce(
-      (sum, p) => sum + p.quantity * p.sellingPrice,
+      (sum, p) => sum + p.quantity * p.sellingPrice - (p.discount || 0),
       0
     );
   }, [selectedParts]);
@@ -1538,6 +1541,13 @@ export const WorkOrderMobileModal: React.FC<WorkOrderMobileModalProps> = ({
                       setSelectedParts(
                         selectedParts.map((p) =>
                           p.partId === partId ? { ...p, sellingPrice: newPrice } : p
+                        )
+                      );
+                    }}
+                    onUpdatePartDiscount={(partId, newDiscount) => {
+                      setSelectedParts(
+                        selectedParts.map((p) =>
+                          p.partId === partId ? { ...p, discount: newDiscount } : p
                         )
                       );
                     }}

@@ -151,6 +151,8 @@ export interface WorkOrderPart {
   quantity: number;
   price: number; // Selling price snapshot
   costPrice?: number; // Cost price for profit calculation
+  isFree?: boolean; // Tặng miễn phí
+  discount?: number; // Giảm giá từng dòng
 }
 
 export interface WorkOrder {

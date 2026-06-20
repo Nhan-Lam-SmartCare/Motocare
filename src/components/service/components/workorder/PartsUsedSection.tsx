@@ -4,7 +4,7 @@ import { NumberInput } from "../../../common/NumberInput";
 import { formatCurrency, normalizeSearchText } from "../../../../utils/format";
 import { getCategoryColor } from "../../../../utils/categoryColors";
 import { showToast } from "../../../../utils/toast";
-import { Package, X } from "lucide-react";
+import { Package, X, Gift } from "lucide-react";
 import { useSalesRepo } from "../../../../hooks/useSalesRepository";
 import { useWorkOrdersRepo } from "../../../../hooks/useWorkOrdersRepository";
 import { getPartsPopularityMap } from "../../../../utils/partsPopularity";
@@ -263,39 +263,47 @@ export const PartsUsedSection: React.FC<PartsUsedSectionProps> = ({
         </div>
       )}
 
-      <div className="border border-slate-200/60 dark:border-slate-800/40 rounded-xl overflow-hidden shadow-sm bg-slate-500/[0.01] backdrop-blur-sm">
-        <table className="w-full">
+      <div className="border border-slate-200/60 dark:border-slate-800/40 rounded-xl overflow-x-auto shadow-sm bg-slate-500/[0.01] backdrop-blur-sm">
+        <table className="w-full min-w-[650px] md:min-w-0">
           <thead className="bg-slate-100/50 dark:bg-slate-900/40 border-b border-slate-200/50 dark:border-slate-800/50">
             <tr>
               <th className="px-4 py-3 text-left text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                 Tên
               </th>
-              <th className="px-4 py-3 text-center text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+              <th className="px-2 py-3 text-center text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider w-16">
                 SL
               </th>
-              <th className="px-4 py-3 text-right text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+              <th className="px-2 py-3 text-right text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider w-28">
                 Đ.Giá
               </th>
-              <th className="px-4 py-3 text-right text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+              <th className="px-2 py-3 text-right text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider w-28">
+                Giảm
+              </th>
+              <th className="px-2 py-3 text-right text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider w-24">
                 T.Tiền
               </th>
-              <th className="px-4 py-3 text-center text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider w-12"></th>
+              <th className="px-2 py-3 text-center text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider w-20"></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-slate-800/40 bg-white/40 dark:bg-slate-900/10">
             {selectedParts.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-sm text-slate-400 dark:text-slate-500">
+                <td colSpan={6} className="px-4 py-8 text-center text-sm text-slate-400 dark:text-slate-500">
                   Chưa có phụ tùng nào
                 </td>
               </tr>
             ) : (
               selectedParts.map((part, idx) => (
-                <tr key={idx} className="hover:bg-slate-500/[0.02] transition-colors">
+                <tr key={idx} className={`hover:bg-slate-500/[0.02] transition-colors ${part.isFree ? 'bg-emerald-500/[0.04]' : ''}`}>
                   <td className="px-4 py-3">
                     <div className="relative group/part">
-                      <div className="text-sm text-slate-800 dark:text-slate-200 font-semibold cursor-default">
+                      <div className="text-sm text-slate-800 dark:text-slate-200 font-semibold cursor-default flex items-center gap-1.5">
                         {part.partName}
+                        {part.isFree && (
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                            🎁 Tặng
+                          </span>
+                        )}
                       </div>
                       {isOwner && (() => {
                         const snapshotCost = (part as any).costPrice ?? (part as any).costprice;
@@ -337,7 +345,7 @@ export const PartsUsedSection: React.FC<PartsUsedSectionProps> = ({
                       )}
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-center">
+                  <td className="px-2 py-3 text-center">
                     <input
                       type="number"
                       min="1"
@@ -349,12 +357,12 @@ export const PartsUsedSection: React.FC<PartsUsedSectionProps> = ({
                           selectedParts.map((p, i) => (i === idx ? { ...p, quantity: newQty } : p))
                         );
                       }}
-                      className={`w-16 px-2 py-1 border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/30 text-slate-800 dark:text-slate-200 rounded-lg text-center transition-all focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 focus:outline-none ${
+                      className={`w-12 px-1 py-1 border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/30 text-slate-800 dark:text-slate-200 rounded-lg text-center transition-all focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 focus:outline-none ${
                         !canEditPriceAndParts ? "opacity-50 cursor-not-allowed" : ""
                       }`}
                     />
                   </td>
-                  <td className="px-4 py-3 text-right">
+                  <td className="px-2 py-3 text-right">
                     <NumberInput
                       placeholder="Đơn giá"
                       value={part.price || ""}
@@ -364,42 +372,101 @@ export const PartsUsedSection: React.FC<PartsUsedSectionProps> = ({
                         );
                       }}
                       disabled={!canEditPriceAndParts}
-                      className={`w-28 px-2 py-1 border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/30 text-slate-800 dark:text-slate-200 rounded-lg text-right transition-all focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 focus:outline-none text-sm ${
+                      className={`w-24 px-2 py-1 border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/30 text-slate-800 dark:text-slate-200 rounded-lg text-right transition-all focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 focus:outline-none text-sm ${
                         !canEditPriceAndParts ? "opacity-50 cursor-not-allowed" : ""
                       }`}
                     />
                   </td>
-                  <td className="px-4 py-3 text-right text-sm font-semibold text-slate-800 dark:text-slate-200">
-                    {formatCurrency(part.price * part.quantity)}
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    <button
-                      type="button"
-                      onClick={() => setSelectedParts(selectedParts.filter((_, i) => i !== idx))}
-                      disabled={!canEditPriceAndParts}
-                      className={`p-1.5 rounded-lg transition-colors flex items-center justify-center mx-auto ${
-                        canEditPriceAndParts
-                          ? "text-slate-400 hover:text-red-500 hover:bg-red-500/10"
-                          : "text-slate-300 dark:text-slate-650 cursor-not-allowed"
+                  <td className="px-2 py-3 text-right">
+                    <NumberInput
+                      placeholder="Giảm giá"
+                      value={part.isFree ? "" : (part.discount || "")}
+                      onChange={(val) => {
+                        setSelectedParts(
+                          selectedParts.map((p, i) => (i === idx ? { ...p, discount: val || undefined } : p))
+                        );
+                      }}
+                      disabled={!canEditPriceAndParts || part.isFree}
+                      className={`w-24 px-2 py-1 border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/30 text-slate-800 dark:text-slate-200 rounded-lg text-right transition-all focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 focus:outline-none text-sm ${
+                        !canEditPriceAndParts || part.isFree ? "opacity-50 cursor-not-allowed" : ""
                       }`}
-                      aria-label="Xóa phụ tùng"
-                      title={
-                        canEditPriceAndParts
-                          ? "Xóa phụ tùng"
-                          : "Không thể xóa phụ tùng cho phiếu đã thanh toán"
-                      }
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2050/svg"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        className="w-4 h-4"
+                    />
+                  </td>
+                  <td className="px-2 py-3 text-right text-sm font-semibold text-slate-800 dark:text-slate-200">
+                    {part.isFree ? (
+                      <div className="flex flex-col items-end">
+                        <span className="line-through text-slate-400 dark:text-slate-500 text-xs">
+                          {formatCurrency(part.price * part.quantity)}
+                        </span>
+                        <span className="text-emerald-600 dark:text-emerald-400 font-bold text-xs">
+                          Tặng
+                        </span>
+                      </div>
+                    ) : part.discount && part.discount > 0 ? (
+                      <div className="flex flex-col items-end">
+                        <span className="line-through text-slate-400 dark:text-slate-500 text-xs">
+                          {formatCurrency(part.price * part.quantity)}
+                        </span>
+                        <span className="text-slate-800 dark:text-slate-200">
+                          {formatCurrency(part.price * part.quantity - part.discount)}
+                        </span>
+                      </div>
+                    ) : (
+                      <span>{formatCurrency(part.price * part.quantity)}</span>
+                    )}
+                  </td>
+                  <td className="px-2 py-3 text-center">
+                    <div className="flex items-center justify-center gap-1.5">
+                      <button
+                        type="button"
+                        title={part.isFree ? "Bỏ tặng" : "Đánh dấu tặng miễn phí"}
+                        onClick={() => {
+                          setSelectedParts(
+                            selectedParts.map((p, i) =>
+                              i === idx ? { ...p, isFree: !p.isFree, discount: !p.isFree ? undefined : p.discount } : p
+                            )
+                          );
+                        }}
+                        disabled={!canEditPriceAndParts}
+                        className={`p-1.5 rounded-lg transition-colors ${
+                          part.isFree
+                            ? "text-emerald-500 bg-emerald-500/10 hover:bg-emerald-500/20"
+                            : canEditPriceAndParts
+                            ? "text-slate-400 hover:text-emerald-500 hover:bg-emerald-500/10"
+                            : "text-slate-300 dark:text-slate-650 cursor-not-allowed"
+                        }`}
+                        aria-label={part.isFree ? "Bỏ tặng" : "Tặng miễn phí"}
                       >
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 6h18M9 6V4h6v2m-7 4v8m4-8v8m4-8v8" />
-                      </svg>
-                    </button>
+                        <Gift className="w-4 h-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedParts(selectedParts.filter((_, i) => i !== idx))}
+                        disabled={!canEditPriceAndParts}
+                        className={`p-1.5 rounded-lg transition-colors flex items-center justify-center ${
+                          canEditPriceAndParts
+                            ? "text-slate-400 hover:text-red-500 hover:bg-red-500/10"
+                            : "text-slate-300 dark:text-slate-650 cursor-not-allowed"
+                        }`}
+                        aria-label="Xóa phụ tùng"
+                        title={
+                          canEditPriceAndParts
+                            ? "Xóa phụ tùng"
+                            : "Không thể xóa phụ tùng cho phiếu đã thanh toán"
+                        }
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          className="w-4 h-4"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M3 6h18M9 6V4h6v2m-7 4v8m4-8v8m4-8v8" />
+                        </svg>
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))

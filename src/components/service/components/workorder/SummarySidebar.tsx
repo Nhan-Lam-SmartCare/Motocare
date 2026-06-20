@@ -318,7 +318,15 @@ export const SummarySidebar: React.FC<SummarySidebarProps> = ({
             <div className="grid grid-cols-2 gap-3">
               <button
                 type="button"
-                onClick={() => setFormData({ ...formData, paymentMethod: "cash" })}
+                onClick={() => {
+                  setFormData({ ...formData, paymentMethod: "cash" });
+                  if (formData.status === "Trả máy" && !showPartialPayment) {
+                    setShowDepositInput(false);
+                    setDepositAmount(0);
+                    setShowPartialPayment(true);
+                    setPartialPayment(maxAdditionalPayment);
+                  }
+                }}
                 className={`group relative flex flex-col items-center justify-center gap-2 p-3.5 rounded-xl text-sm font-medium border transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] ${
                   formData.paymentMethod === "cash"
                     ? "bg-gradient-to-br from-emerald-500/10 to-teal-500/10 border-emerald-500/80 text-emerald-600 dark:text-emerald-400 shadow-sm shadow-emerald-500/10 ring-1 ring-emerald-500/30"
@@ -334,7 +342,7 @@ export const SummarySidebar: React.FC<SummarySidebarProps> = ({
                 <div
                   className={`p-2 rounded-lg transition-colors ${
                     formData.paymentMethod === "cash"
-                      ? "bg-emerald-500/15 text-emerald-500"
+                      ? "bg-emerald-50/15 text-emerald-500"
                       : "bg-slate-100 dark:bg-slate-800/60 text-slate-400 group-hover:text-slate-500 dark:group-hover:text-slate-300"
                   }`}
                 >
@@ -353,7 +361,15 @@ export const SummarySidebar: React.FC<SummarySidebarProps> = ({
               </button>
               <button
                 type="button"
-                onClick={() => setFormData({ ...formData, paymentMethod: "bank" })}
+                onClick={() => {
+                  setFormData({ ...formData, paymentMethod: "bank" });
+                  if (formData.status === "Trả máy" && !showPartialPayment) {
+                    setShowDepositInput(false);
+                    setDepositAmount(0);
+                    setShowPartialPayment(true);
+                    setPartialPayment(maxAdditionalPayment);
+                  }
+                }}
                 className={`group relative flex flex-col items-center justify-center gap-2 p-3.5 rounded-xl text-sm font-medium border transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] ${
                   formData.paymentMethod === "bank"
                     ? "bg-gradient-to-br from-blue-500/10 to-indigo-500/10 border-blue-500/80 text-blue-600 dark:text-blue-400 shadow-sm shadow-blue-500/10 ring-1 ring-blue-500/30"

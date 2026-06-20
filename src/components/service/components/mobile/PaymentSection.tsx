@@ -223,7 +223,16 @@ export const PaymentSection: React.FC<PaymentSectionProps> = ({
                 {/* Method Selection */}
                 <div className="grid grid-cols-2 gap-3">
                     <button
-                        onClick={() => setPaymentMethod("cash")}
+                        onClick={() => {
+                            if (!canEditPriceAndParts) return;
+                            setPaymentMethod("cash");
+                            if ((status === "Trả máy" || status === "Delivered") && !showPaymentInput) {
+                                setIsDeposit(false);
+                                setDepositAmount(0);
+                                setShowPaymentInput(true);
+                                setPartialAmount(total);
+                            }
+                        }}
                         disabled={!canEditPriceAndParts}
                         className={`relative p-3 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${paymentMethod === "cash"
                             ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
@@ -237,7 +246,16 @@ export const PaymentSection: React.FC<PaymentSectionProps> = ({
                         )}
                     </button>
                     <button
-                        onClick={() => setPaymentMethod("bank")}
+                        onClick={() => {
+                            if (!canEditPriceAndParts) return;
+                            setPaymentMethod("bank");
+                            if ((status === "Trả máy" || status === "Delivered") && !showPaymentInput) {
+                                setIsDeposit(false);
+                                setDepositAmount(0);
+                                setShowPaymentInput(true);
+                                setPartialAmount(total);
+                            }
+                        }}
                         disabled={!canEditPriceAndParts}
                         className={`relative p-3 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${paymentMethod === "bank"
                             ? "border-blue-500 bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400"

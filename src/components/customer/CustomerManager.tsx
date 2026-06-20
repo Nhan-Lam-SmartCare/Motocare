@@ -95,6 +95,16 @@ const CustomerManager: React.FC = () => {
       const keywordDigits = keyword.replace(/\D/g, "");
       const plateKeyword = normalizePlate(keyword);
       const normalizedKeyword = normalizeSearchText(keyword);
+
+      const getPlateVariations = (kw: string) => {
+        const cleaned = kw.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
+        const variations = [kw, kw.toUpperCase(), kw.toLowerCase(), cleaned];
+        if (cleaned.length >= 7 && cleaned.length <= 9) {
+          variations.push(`${cleaned.slice(0, 4)}-${cleaned.slice(4)}`);
+        }
+        return Array.from(new Set(variations)).filter(Boolean);
+      };
+
       const orParts = [
         `name.ilike.%${keyword}%`,
         `phone.ilike.%${keyword}%`,
@@ -114,6 +124,20 @@ const CustomerManager: React.FC = () => {
           `vehiclemodel.ilike.%${normalizedKeyword}%`
         );
       }
+
+      // Query inside the JSONB vehicles column
+      const plateVariations = getPlateVariations(keyword);
+      plateVariations.forEach((val) => {
+        const safeVal = val.replace(/"/g, '\\"');
+        orParts.push(`vehicles.cs.[{"licensePlate": "${safeVal}"}]`);
+      });
+
+      const safeModel = keyword.replace(/"/g, '\\"');
+      orParts.push(
+        `vehicles.cs.[{"model": "${safeModel}"}]`,
+        `vehicles.cs.[{"model": "${safeModel.toUpperCase()}"}]`,
+        `vehicles.cs.[{"model": "${safeModel.toLowerCase()}"}]`
+      );
 
       setIsSearchingServer(true);
       try {
@@ -417,17 +441,14 @@ const CustomerManager: React.FC = () => {
       if (!index) return false;
 
       if (searchDigits.length > 0 && index.phoneDigits) {
-        if (
-          index.phoneDigits.includes(searchDigits) ||
-          searchDigits.includes(index.phoneDigits)
-        ) {
+        if (index.phoneDigits.includes(searchDigits)) {
           return true;
         }
       }
 
       if (searchPlate.length > 0 && index.plateCompacts.length > 0) {
         const plateMatched = index.plateCompacts.some(
-          (p) => p.includes(searchPlate) || searchPlate.includes(p)
+          (p) => p.includes(searchPlate)
         );
         if (plateMatched) return true;
       }

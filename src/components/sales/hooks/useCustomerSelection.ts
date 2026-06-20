@@ -109,6 +109,15 @@ export function useCustomerSelection(
             const plateTerm = normalizePlate(searchTerm);
 
             // Build OR query - search by name, phone, vehicle model, license plate
+            const getPlateVariations = (kw: string) => {
+                const cleaned = kw.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
+                const variations = [kw, kw.toUpperCase(), kw.toLowerCase(), cleaned];
+                if (cleaned.length >= 7 && cleaned.length <= 9) {
+                    variations.push(`${cleaned.slice(0, 4)}-${cleaned.slice(4)}`);
+                }
+                return Array.from(new Set(variations)).filter(Boolean);
+            };
+
             const orConditions = [
                 `name.ilike.%${searchTerm}%`,
                 `vehiclemodel.ilike.%${searchTerm}%`,
@@ -127,6 +136,20 @@ export function useCustomerSelection(
             if (plateTerm && plateTerm !== searchTerm.toLowerCase()) {
                 orConditions.push(`licenseplate.ilike.%${plateTerm}%`);
             }
+
+            // Query inside the JSONB vehicles column
+            const plateVariations = getPlateVariations(searchTerm);
+            plateVariations.forEach((val) => {
+                const safeVal = val.replace(/"/g, '\\"');
+                orConditions.push(`vehicles.cs.[{"licensePlate": "${safeVal}"}]`);
+            });
+
+            const safeModel = searchTerm.replace(/"/g, '\\"');
+            orConditions.push(
+                `vehicles.cs.[{"model": "${safeModel}"}]`,
+                `vehicles.cs.[{"model": "${safeModel.toUpperCase()}"}]`,
+                `vehicles.cs.[{"model": "${safeModel.toLowerCase()}"}]`
+            );
 
             const { data, error, count } = await supabase
                 .from("customers")

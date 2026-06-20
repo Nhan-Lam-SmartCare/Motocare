@@ -1135,6 +1135,7 @@ const SalesManager: React.FC = () => {
                                 onLoadMoreCustomers={customer.handleLoadMoreCustomers}
                                 onUpdateCartQuantity={cart.updateCartQuantity}
                                 onUpdateCartPrice={cart.updateCartPrice}
+                                onUpdateCartDiscount={cart.updateCartDiscount}
                                 onRemoveFromCart={cart.removeFromCart}
                             />
 

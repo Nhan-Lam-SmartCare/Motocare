@@ -73,6 +73,7 @@ export function Nav() {
   } as const;
 
   return (
+    <>
     <nav className="bg-slate-900 sticky top-0 z-50 md:border-b md:border-slate-800 hidden md:block">
       <div className="max-w-[1600px] mx-auto px-2 md:px-4 py-1 md:py-1.5 hidden md:block">
         <div className="flex items-center justify-between">
@@ -364,6 +365,7 @@ export function Nav() {
           </div>
         </div>
       </div>
+    </nav>
 
       {/* Mobile Menu Drawer - For Secondary Functions */}
       {showMobileMenu && (
@@ -550,6 +552,6 @@ export function Nav() {
           </div>
         </>
       )}
-    </nav>
+    </>
   );
 }

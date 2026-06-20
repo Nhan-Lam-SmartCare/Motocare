@@ -264,7 +264,7 @@ export const PartsUsedSection: React.FC<PartsUsedSectionProps> = ({
       )}
 
       <div className="border border-slate-200/60 dark:border-slate-800/40 rounded-xl overflow-x-auto shadow-sm bg-slate-500/[0.01] backdrop-blur-sm">
-        <table className="w-full min-w-[650px] md:min-w-0">
+        <table className="w-full min-w-[580px] md:min-w-0">
           <thead className="bg-slate-100/50 dark:bg-slate-900/40 border-b border-slate-200/50 dark:border-slate-800/50">
             <tr>
               <th className="px-4 py-3 text-left text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
@@ -273,16 +273,16 @@ export const PartsUsedSection: React.FC<PartsUsedSectionProps> = ({
               <th className="px-2 py-3 text-center text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider w-16">
                 SL
               </th>
-              <th className="px-2 py-3 text-right text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider w-28">
+              <th className="px-2 py-3 text-right text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider w-24">
                 Đ.Giá
               </th>
-              <th className="px-2 py-3 text-right text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider w-28">
+              <th className="px-2 py-3 text-right text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider w-24">
                 Giảm
               </th>
-              <th className="px-2 py-3 text-right text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider w-24">
+              <th className="px-2 py-3 text-right text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider w-20">
                 T.Tiền
               </th>
-              <th className="px-2 py-3 text-center text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider w-20"></th>
+              <th className="px-2 py-3 text-center text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider w-16"></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-slate-800/40 bg-white/40 dark:bg-slate-900/10">
@@ -372,14 +372,14 @@ export const PartsUsedSection: React.FC<PartsUsedSectionProps> = ({
                         );
                       }}
                       disabled={!canEditPriceAndParts}
-                      className={`w-24 px-2 py-1 border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/30 text-slate-800 dark:text-slate-200 rounded-lg text-right transition-all focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 focus:outline-none text-sm ${
+                      className={`w-20 px-1.5 py-1 border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/30 text-slate-800 dark:text-slate-200 rounded-lg text-right transition-all focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 focus:outline-none text-sm ${
                         !canEditPriceAndParts ? "opacity-50 cursor-not-allowed" : ""
                       }`}
                     />
                   </td>
                   <td className="px-2 py-3 text-right">
                     <NumberInput
-                      placeholder="Giảm giá"
+                      placeholder="Giảm"
                       value={part.isFree ? "" : (part.discount || "")}
                       onChange={(val) => {
                         setSelectedParts(
@@ -387,7 +387,7 @@ export const PartsUsedSection: React.FC<PartsUsedSectionProps> = ({
                         );
                       }}
                       disabled={!canEditPriceAndParts || part.isFree}
-                      className={`w-24 px-2 py-1 border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/30 text-slate-800 dark:text-slate-200 rounded-lg text-right transition-all focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 focus:outline-none text-sm ${
+                      className={`w-20 px-1.5 py-1 border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/30 text-slate-800 dark:text-slate-200 rounded-lg text-right transition-all focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 focus:outline-none text-sm ${
                         !canEditPriceAndParts || part.isFree ? "opacity-50 cursor-not-allowed" : ""
                       }`}
                     />

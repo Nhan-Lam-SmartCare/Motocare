@@ -40,6 +40,7 @@ interface CartSectionProps {
     // Cart Actions
     onUpdateCartQuantity: (partId: string, quantity: number) => void;
     onUpdateCartPrice: (partId: string, price: number) => void;
+    onUpdateCartDiscount: (partId: string, discount: number) => void;
     onRemoveFromCart: (partId: string) => void;
 }
 
@@ -76,6 +77,7 @@ export const CartSection: React.FC<CartSectionProps> = ({
 
     onUpdateCartQuantity,
     onUpdateCartPrice,
+    onUpdateCartDiscount,
     onRemoveFromCart,
 }) => {
     return (
@@ -242,6 +244,7 @@ export const CartSection: React.FC<CartSectionProps> = ({
                             item={item}
                             onUpdateQuantity={onUpdateCartQuantity}
                             onUpdatePrice={onUpdateCartPrice}
+                            onUpdateDiscount={onUpdateCartDiscount}
                             onRemove={onRemoveFromCart}
                         />
                     ))

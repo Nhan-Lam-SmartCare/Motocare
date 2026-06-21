@@ -92,6 +92,7 @@ import InventoryMobileCards from "./components/InventoryMobileCards";
 import InventoryDesktopTable from "./components/InventoryDesktopTable";
 import InventoryHeader from "./components/InventoryHeader";
 import { useInventoryManager } from "./hooks/useInventoryManager";
+import BestSellerRestockPanel from "./components/BestSellerRestockPanel";
 
 const LOW_STOCK_THRESHOLD = 5;
 
@@ -99,7 +100,7 @@ const LOW_STOCK_THRESHOLD = 5;
 // Main Inventory Manager Component (New)
 const InventoryManagerNew: React.FC = () => {
   const {
-    searchParams, setSearchParams, activeTab, setActiveTab, showGoodsReceipt, setShowGoodsReceipt, showCreatePO, setShowCreatePO, selectedPO, setSelectedPO, editingPO, setEditingPO, searchInput, setSearchInput, search, setSearch, categoryFilter, setCategoryFilter, stockFilter, setStockFilter, showDuplicatesOnly, setShowDuplicatesOnly, showBarcodeScanner, setShowBarcodeScanner, page, setPage, pageSize, setPageSize, sortField, setSortField, sortDirection, setSortDirection, selectedItems, setSelectedItems, editingPart, setEditingPart, selectedPartDetail, setSelectedPartDetail, editingReceipt, setEditingReceipt, showImportModal, setShowImportModal, reservedInfoPartId, setReservedInfoPartId, showExternalImport, setShowExternalImport, showBatchPrintModal, setShowBatchPrintModal, mobileMenuOpenIndex, setMobileMenuOpenIndex, showAdvancedFilters, setShowAdvancedFilters, showAlertsSection, setShowAlertsSection, openActionRow, setOpenActionRow, inventoryDropdownPos, setInventoryDropdownPos, showReorderAlert, setShowReorderAlert, reorderSelectedIds, setReorderSelectedIds, currentBranchId, createInventoryTxAsync, updateWorkOrderAtomic, invTx, storeSettings, confirm, confirmState, handleConfirm, handleCancel, workOrders, suppliers, allPartsData, refetchAllParts, duplicatePartsData, allCategories, profile, createReceiptAtomicMutation, retailMarkup, wholesaleMarkup, allImports, lastImport, extractSupplierName, getAvatarColor, isSearching, effectivePage, effectivePageSize, partsLoading, refetchInventory, activeReservedByPartId, repoParts, totalParts, totalPages, stockHealth, reorderAlertItems, reorderGroupedBySupplier, stockQuickFilters, duplicateSkus, hasDuplicateSku, filteredParts, totalStockQuantity, totalStockValue, queryClient, updatePartMutation, createPartMutation, deletePartMutation, canImportInventory, canUpdatePart, canDeletePart, handleSaveGoodsReceipt, handleSelectAll, handleSelectItem, handleDeleteItem, handleBulkDelete, handleSaveEditedReceipt, handleDeleteReceipt, handleStockFilterChange, handleCategoryFilterChange, handleSort, shouldShowLowStockBanner, handleExportExcel, handleDownloadTemplate
+    searchParams, setSearchParams, activeTab, setActiveTab, showGoodsReceipt, setShowGoodsReceipt, showCreatePO, setShowCreatePO, selectedPO, setSelectedPO, editingPO, setEditingPO, searchInput, setSearchInput, search, setSearch, categoryFilter, setCategoryFilter, stockFilter, setStockFilter, showDuplicatesOnly, setShowDuplicatesOnly, showBarcodeScanner, setShowBarcodeScanner, page, setPage, pageSize, setPageSize, sortField, setSortField, sortDirection, setSortDirection, selectedItems, setSelectedItems, editingPart, setEditingPart, selectedPartDetail, setSelectedPartDetail, editingReceipt, setEditingReceipt, showImportModal, setShowImportModal, reservedInfoPartId, setReservedInfoPartId, showExternalImport, setShowExternalImport, showBatchPrintModal, setShowBatchPrintModal, mobileMenuOpenIndex, setMobileMenuOpenIndex, showAdvancedFilters, setShowAdvancedFilters, showAlertsSection, setShowAlertsSection, openActionRow, setOpenActionRow, inventoryDropdownPos, setInventoryDropdownPos, showReorderAlert, setShowReorderAlert, reorderSelectedIds, setReorderSelectedIds, currentBranchId, createInventoryTxAsync, updateWorkOrderAtomic, invTx, storeSettings, confirm, confirmState, handleConfirm, handleCancel, workOrders, suppliers, allPartsData, refetchAllParts, duplicatePartsData, allCategories, profile, createReceiptAtomicMutation, retailMarkup, wholesaleMarkup, allImports, lastImport, extractSupplierName, getAvatarColor, isSearching, effectivePage, effectivePageSize, partsLoading, refetchInventory, activeReservedByPartId, repoParts, totalParts, totalPages, stockHealth, reorderAlertItems, reorderGroupedBySupplier, stockQuickFilters, duplicateSkus, hasDuplicateSku, filteredParts, totalStockQuantity, totalStockValue, queryClient, updatePartMutation, createPartMutation, deletePartMutation, canImportInventory, canUpdatePart, canDeletePart, handleSaveGoodsReceipt, handleSelectAll, handleSelectItem, handleDeleteItem, handleBulkDelete, handleSaveEditedReceipt, handleDeleteReceipt, handleStockFilterChange, handleCategoryFilterChange, handleSort, shouldShowLowStockBanner, handleExportExcel, handleDownloadTemplate, bestSellerRestock
   } = useInventoryManager();
   return (
     <div className="h-full flex flex-col bg-slate-50 dark:bg-[#0B0F19]">
@@ -373,6 +374,7 @@ const InventoryManagerNew: React.FC = () => {
           isSearching={isSearching}
           reorderGroupedBySupplierLength={reorderGroupedBySupplier.length}
           duplicateSkusSize={duplicateSkus.size}
+          bestSellerSuggestionsCount={bestSellerRestock.suggestions.length}
           showAlertsSection={showAlertsSection}
           setShowAlertsSection={setShowAlertsSection}
           showAdvancedFilters={showAdvancedFilters}
@@ -395,6 +397,22 @@ const InventoryManagerNew: React.FC = () => {
           <div className="space-y-2">
             {showAlertsSection && (
               <>
+                {/* 🔥 Best-Seller Restock Suggestions */}
+                {bestSellerRestock.suggestions.length > 0 && (
+                  <BestSellerRestockPanel
+                    suggestions={bestSellerRestock.suggestions}
+                    summary={bestSellerRestock.summary}
+                    period={bestSellerRestock.period}
+                    setPeriod={bestSellerRestock.setPeriod}
+                    restockCycle={bestSellerRestock.restockCycle}
+                    setRestockCycle={bestSellerRestock.setRestockCycle}
+                    onCreatePO={(partIds) => {
+                      setSelectedItems(partIds);
+                      setShowCreatePO(true);
+                    }}
+                  />
+                )}
+
                 {/* Reorder Alert Banner */}
             {reorderGroupedBySupplier.length > 0 && (
               <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-600 rounded-lg overflow-hidden">

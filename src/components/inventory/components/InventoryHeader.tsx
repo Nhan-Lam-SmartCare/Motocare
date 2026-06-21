@@ -23,6 +23,7 @@ interface InventoryHeaderProps {
   isSearching: boolean;
   reorderGroupedBySupplierLength: number;
   duplicateSkusSize: number;
+  bestSellerSuggestionsCount: number;
   showAlertsSection: boolean;
   setShowAlertsSection: React.Dispatch<React.SetStateAction<boolean>>;
   showAdvancedFilters: boolean;
@@ -51,6 +52,7 @@ const InventoryHeader: React.FC<InventoryHeaderProps> = ({
   isSearching,
   reorderGroupedBySupplierLength,
   duplicateSkusSize,
+  bestSellerSuggestionsCount,
   showAlertsSection,
   setShowAlertsSection,
   showAdvancedFilters,
@@ -145,7 +147,7 @@ const InventoryHeader: React.FC<InventoryHeaderProps> = ({
             </div>
           </div>
           {/* Alert button */}
-          {(reorderGroupedBySupplierLength > 0 || duplicateSkusSize > 0) && (
+          {(reorderGroupedBySupplierLength > 0 || duplicateSkusSize > 0 || bestSellerSuggestionsCount > 0) && (
             <button
               onClick={() => setShowAlertsSection((prev) => !prev)}
               className={`flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold rounded-lg border transition flex-shrink-0 ${

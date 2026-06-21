@@ -40,6 +40,7 @@ import type { Part, WorkOrder, InventoryTransaction } from "../../../types";
 import { createPart } from "../../../lib/repository/partsRepository";
 import { createCashTransaction } from "../../../lib/repository/cashTransactionsRepository";
 import type { PurchaseOrder } from "../../../types";
+import { useBestSellerRestock } from "./useBestSellerRestock";
 
 
 const LOW_STOCK_THRESHOLD = 5;
@@ -383,6 +384,15 @@ export const useInventoryManager = () => {
     });
     return Array.from(map.values());
   }, [reorderAlertItems]);
+
+  // === BEST-SELLER RESTOCK SUGGESTIONS ===
+  const bestSellerRestock = useBestSellerRestock({
+    allPartsData,
+    invTx,
+    workOrders,
+    suppliers,
+    currentBranchId: currentBranchId || "",
+  });
 
   const [showReorderAlert, setShowReorderAlert] = useState(false);
   const [reorderSelectedIds, setReorderSelectedIds] = useState<Set<string>>(new Set());
@@ -1596,5 +1606,6 @@ export const useInventoryManager = () => {
     shouldShowLowStockBanner,
     handleExportExcel,
     handleDownloadTemplate,
+    bestSellerRestock,
   };
 };

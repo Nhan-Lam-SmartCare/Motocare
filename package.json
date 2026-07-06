@@ -12,7 +12,8 @@
     "lint:strict": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "lint:fix": "eslint src --ext ts,tsx --fix",
     "test": "vitest run --environment jsdom",
-    "test:watch": "vitest --environment jsdom"
+    "test:watch": "vitest --environment jsdom",
+    "db:backup": "node scripts/maintenance/export-all-tables.mjs"
   },
   "dependencies": {
     "@capacitor/android": "^8.3.4",

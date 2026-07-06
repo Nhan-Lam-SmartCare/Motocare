@@ -154,7 +154,16 @@ export function useBestSellerRestock({
       const lastTx = lastImportMap.get(part.id);
       let supplierName = "Chưa xác định";
       let supplierId = "";
-      if (lastTx) {
+
+      if (part.preferred_supplier_id) {
+        const found = suppliers.find((s: any) => s.id === part.preferred_supplier_id);
+        if (found) {
+          supplierName = found.name;
+          supplierId = found.id;
+        }
+      }
+
+      if (!supplierId && lastTx) {
         if (lastTx.supplierId) {
           const found = suppliers.find(
             (s: any) => s.id === lastTx.supplierId

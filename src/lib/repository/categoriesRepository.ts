@@ -41,6 +41,8 @@ export async function createCategory(
       name: input.name,
       icon: input.icon,
       color: input.color,
+      parent_id: input.parent_id,
+      sku_prefix: input.sku_prefix,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };

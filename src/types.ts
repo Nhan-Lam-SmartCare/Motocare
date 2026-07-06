@@ -71,6 +71,7 @@ export interface Part {
   category?: string;
   description?: string;
   warrantyPeriod?: string;
+  preferred_supplier_id?: string; // Default supplier reference
   // Tax & costing extensions (for future real data integration)
   costPrice?: { [branchId: string]: number };
   vatRate?: number; // e.g. 0.1 for 10%
@@ -92,6 +93,8 @@ export interface Category {
   name: string;
   icon?: string; // UI icon key
   color?: string; // Hex color
+  parent_id?: string; // Parent category reference
+  sku_prefix?: string; // Suggested SKU prefix
   created_at?: string;
   updated_at?: string;
 }

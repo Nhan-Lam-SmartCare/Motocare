@@ -144,6 +144,7 @@ export async function createPart(
       category: input.category,
       description: input.description,
       warrantyPeriod: input.warrantyPeriod,
+      preferred_supplier_id: input.preferred_supplier_id,
       // costPrice, vatRate không có trong schema parts của bản hiện tại => không insert
     };
     const { data, error } = await supabase

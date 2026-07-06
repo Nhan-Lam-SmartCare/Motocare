@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useCategories, useCreateCategory } from "../../../hooks/useCategories";
+import { useSuppliers } from "../../../hooks/useSuppliers";
 import { showToast } from "../../../utils/toast";
 import FormattedNumberInput from "../../common/FormattedNumberInput";
 import { validatePriceAndQty } from "../../../utils/validation";
@@ -21,6 +22,8 @@ const EditPartModal: React.FC<EditPartModalProps> = ({
 }) => {
   const [formData, setFormData] = useState({
     name: part.name,
+    sku: part.sku || "",
+    barcode: part.barcode || "",
     category: part.category || "",
     imageUrl: part.imageUrl || "",
     retailPrice: part.retailPrice?.[currentBranchId] || 0,
@@ -28,8 +31,10 @@ const EditPartModal: React.FC<EditPartModalProps> = ({
     costPrice: part.costPrice?.[currentBranchId] || 0,
     stock: part.stock?.[currentBranchId] || 0,
     minStock: part.minstock?.[currentBranchId] ?? 10,
+    preferred_supplier_id: part.preferred_supplier_id || "",
   });
   const { data: categories = [] } = useCategories();
+  const { data: suppliers = [] } = useSuppliers();
   const createCategory = useCreateCategory();
   const [showInlineCat, setShowInlineCat] = useState(false);
   const [inlineCatName, setInlineCatName] = useState("");
@@ -45,8 +50,11 @@ const EditPartModal: React.FC<EditPartModalProps> = ({
     onSave({
       id: part.id,
       name: formData.name.trim(),
+      sku: formData.sku.trim(),
+      barcode: formData.barcode.trim() || undefined,
       category: formData.category.trim() || undefined,
       imageUrl: formData.imageUrl.trim() || undefined,
+      preferred_supplier_id: formData.preferred_supplier_id || undefined,
       stock: {
         ...(part.stock || {}),
         [currentBranchId]: formData.stock,
@@ -113,6 +121,53 @@ const EditPartModal: React.FC<EditPartModalProps> = ({
               className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
               required
             />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                Mã SKU <span className="text-red-500">*</span>
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={formData.sku}
+                  onChange={(e) =>
+                    setFormData({ ...formData, sku: e.target.value.toUpperCase() })
+                  }
+                  className="flex-1 px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 font-mono"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    const selectedCat = categories.find((c: any) => c.name === formData.category);
+                    const prefix = selectedCat?.sku_prefix || "GEN";
+                    const suffix = Math.floor(1000 + Math.random() * 9000);
+                    setFormData({ ...formData, sku: `${prefix}-${suffix}` });
+                  }}
+                  className="px-3 py-2 bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 text-xs font-semibold text-slate-700 dark:text-slate-300"
+                  title="Tự động tạo mã SKU mới"
+                >
+                  Tạo lại mã
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                Mã vạch (Barcode)
+              </label>
+              <input
+                type="text"
+                value={formData.barcode}
+                onChange={(e) =>
+                  setFormData({ ...formData, barcode: e.target.value })
+                }
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
+                placeholder="Tùy chọn"
+              />
+            </div>
           </div>
 
           <div>
@@ -300,6 +355,27 @@ const EditPartModal: React.FC<EditPartModalProps> = ({
                 Cảnh báo khi khả dụng dưới mức này
               </p>
             </div>
+          </div>
+
+          {/* Nhà cung cấp mặc định */}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+              Nhà cung cấp mặc định (tùy chọn)
+            </label>
+            <select
+              value={formData.preferred_supplier_id}
+              onChange={(e) =>
+                setFormData({ ...formData, preferred_supplier_id: e.target.value })
+              }
+              className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
+            >
+              <option value="">-- Chọn nhà cung cấp mặc định --</option>
+              {suppliers.map((s: any) => (
+                <option key={s.id} value={s.id}>
+                  {s.name} {s.phone ? `(${s.phone})` : ""}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* Info */}

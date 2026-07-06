@@ -234,7 +234,7 @@ export const useInventoryManager = () => {
     queryFn: async () => {
       let query = supabase
         .from("parts")
-        .select("id, name, sku, category, imageUrl, stock, reservedstock, minstock, costPrice, retailPrice")
+        .select("id, name, sku, category, imageUrl, stock, reservedstock, minstock, costPrice, retailPrice, preferred_supplier_id")
         .order("name");
 
       if (categoryFilter && categoryFilter !== "all") {
@@ -334,10 +334,19 @@ export const useInventoryManager = () => {
       })
       .map((part: any) => {
         const lastTx = lastImportMap.get(part.id);
-        // Lấy tên NCC từ supplier list (supplierId) hoặc từ notes
+        // Lấy tên NCC từ preferred_supplier_id hoặc từ supplier list (supplierId) / notes làm fallback
         let supplierName = "Chưa xác định";
         let supplierId = "";
-        if (lastTx) {
+
+        if (part.preferred_supplier_id) {
+          const found = suppliers.find((s: any) => s.id === part.preferred_supplier_id);
+          if (found) {
+            supplierName = found.name;
+            supplierId = found.id;
+          }
+        }
+
+        if (!supplierId && lastTx) {
           if (lastTx.supplierId) {
             const found = suppliers.find((s: any) => s.id === lastTx.supplierId);
             supplierName = found?.name || extractSupplierName(lastTx.notes) || "Chưa xác định";

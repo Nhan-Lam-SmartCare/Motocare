@@ -51,6 +51,8 @@ const CategoriesManager: React.FC = () => {
   const [newCategoryName, setNewCategoryName] = useState("");
   const [selectedColor, setSelectedColor] = useState("#3b82f6");
   const [selectedIcon, setSelectedIcon] = useState("package");
+  const [selectedParentId, setSelectedParentId] = useState("");
+  const [skuPrefix, setSkuPrefix] = useState("");
 
   // Confirm dialog hook
   const { confirm, confirmState, handleConfirm, handleCancel } = useConfirm();
@@ -80,6 +82,8 @@ const CategoriesManager: React.FC = () => {
         name: c.name,
         icon: c.icon || "package",
         color: c.color || "#3b82f6",
+        parent_id: c.parent_id,
+        sku_prefix: c.sku_prefix,
         count: categoryParts.length,
         totalStock,
         totalValue,
@@ -93,30 +97,87 @@ const CategoriesManager: React.FC = () => {
     });
   }, [categoriesData, parts, currentBranchId]);
 
-  const handleAddCategory = async () => {
+  // Hierarchical display ordering
+  const orderedCategories = useMemo(() => {
+    const rootCats = categories.filter((c) => !c.parent_id);
+    const result: Array<typeof categories[0] & { level: number }> = [];
+
+    const addChildren = (parent: typeof categories[0], level: number) => {
+      result.push({ ...parent, level });
+      const children = categories.filter((c) => c.parent_id === parent.id);
+      children.forEach((child) => addChildren(child, level + 1));
+    };
+
+    rootCats.forEach((cat) => addChildren(cat, 0));
+
+    // Orphan check (just in case)
+    const addedIds = new Set(result.map((r) => r.id));
+    categories.forEach((cat) => {
+      if (!addedIds.has(cat.id)) {
+        result.push({ ...cat, level: 0 });
+      }
+    });
+
+    return result;
+  }, [categories]);
+
+  const [editingCategoryObj, setEditingCategoryObj] = useState<any | null>(null);
+
+  const startEditCategory = (category: any) => {
+    setEditingCategoryObj(category);
+    setNewCategoryName(category.name);
+    setSelectedParentId(category.parent_id || "");
+    setSkuPrefix(category.sku_prefix || "");
+    setSelectedColor(category.color || "#3b82f6");
+    setSelectedIcon(category.icon || "package");
+    setShowAddModal(true);
+  };
+
+  const closeModal = () => {
+    setNewCategoryName("");
+    setSelectedParentId("");
+    setSkuPrefix("");
+    setSelectedColor("#3b82f6");
+    setSelectedIcon("package");
+    setEditingCategoryObj(null);
+    setShowAddModal(false);
+  };
+
+  const handleSubmitCategory = async () => {
     if (!newCategoryName.trim()) {
       showToast.warning("Vui lòng nhập tên danh mục");
       return;
     }
 
-    const exists = categories.some(
-      (cat) => cat.name.toLowerCase() === newCategoryName.toLowerCase()
-    );
-    if (exists) {
-      showToast.warning("Danh mục này đã tồn tại");
-      return;
-    }
-
-    // Since categories are derived from parts only, create a placeholder part row (or instruct user)
-    // Safer approach: create minimal hidden part to persist category existence (optional)
     try {
-      await createCategory.mutateAsync({
-        name: newCategoryName,
-        icon: selectedIcon,
-        color: selectedColor,
-      });
-      setNewCategoryName("");
-      setShowAddModal(false);
+      if (editingCategoryObj) {
+        await updateCategory.mutateAsync({
+          id: editingCategoryObj.id,
+          updates: {
+            name: newCategoryName.trim(),
+            icon: selectedIcon,
+            color: selectedColor,
+            parent_id: selectedParentId || null as any,
+            sku_prefix: skuPrefix.trim() || null as any,
+          },
+        });
+      } else {
+        const exists = categories.some(
+          (cat) => cat.name.toLowerCase() === newCategoryName.toLowerCase()
+        );
+        if (exists) {
+          showToast.warning("Danh mục này đã tồn tại");
+          return;
+        }
+        await createCategory.mutateAsync({
+          name: newCategoryName.trim(),
+          icon: selectedIcon,
+          color: selectedColor,
+          parent_id: selectedParentId || undefined,
+          sku_prefix: skuPrefix.trim() || undefined,
+        });
+      }
+      closeModal();
     } catch (e: any) {
       showToast.error(mapRepoErrorForUser(e));
     }
@@ -291,7 +352,7 @@ const CategoriesManager: React.FC = () => {
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-[#1e293b] divide-y divide-slate-200 dark:divide-slate-700">
-              {categories.map((category) => {
+              {orderedCategories.map((category) => {
                 const IconComponent =
                   iconMap[category.icon] || iconMap["package"];
                 const categoryColor = category.color || "#3b82f6";
@@ -310,7 +371,7 @@ const CategoriesManager: React.FC = () => {
                     className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer group"
                   >
                     {/* Category Name with Icon */}
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3" style={{ paddingLeft: `${category.level * 24 + 16}px` }}>
                       <div className="flex items-center gap-3">
                         <div
                           className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
@@ -348,8 +409,14 @@ const CategoriesManager: React.FC = () => {
                             className="flex-1 px-2 py-1 border-2 border-blue-500 rounded-lg text-sm font-semibold text-slate-900 dark:text-slate-100 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
                           />
                         ) : (
-                          <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                          <span className="text-sm font-semibold text-slate-900 dark:text-slate-100 flex items-center">
+                            {category.level > 0 && <span className="text-slate-400 font-mono mr-1.5">└──</span>}
                             {category.name}
+                            {category.sku_prefix && (
+                              <span className="ml-2 px-1.5 py-0.5 rounded text-[10px] font-mono bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400">
+                                {category.sku_prefix}
+                              </span>
+                            )}
                           </span>
                         )}
                       </div>
@@ -420,9 +487,9 @@ const CategoriesManager: React.FC = () => {
                     >
                       <div className="flex items-center justify-center gap-2">
                         <button
-                          onClick={() => setEditingCategory(category.name)}
+                          onClick={() => startEditCategory(category)}
                           className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
-                          title="Đổi tên"
+                          title="Chỉnh sửa"
                         >
                           <Edit2 className="w-4 h-4" />
                         </button>
@@ -470,10 +537,10 @@ const CategoriesManager: React.FC = () => {
           <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl max-w-md w-full">
             <div className="flex items-center justify-between p-6 border-b border-slate-200 dark:border-slate-700">
               <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">
-                Thêm danh mục mới
+                {editingCategoryObj ? "Chỉnh sửa danh mục" : "Thêm danh mục mới"}
               </h2>
               <button
-                onClick={() => setShowAddModal(false)}
+                onClick={closeModal}
                 className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
               >
                 <svg
@@ -495,7 +562,7 @@ const CategoriesManager: React.FC = () => {
             <div className="p-6 space-y-4">
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                  Tên danh mục
+                  Tên danh mục <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -509,12 +576,47 @@ const CategoriesManager: React.FC = () => {
 
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                  Danh mục cha <span className="text-xs text-slate-500">(Để trống nếu là danh mục chính)</span>
+                </label>
+                <select
+                  value={selectedParentId}
+                  onChange={(e) => setSelectedParentId(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-slate-100"
+                >
+                  <option value="">-- Không chọn (Là danh mục chính) --</option>
+                  {categories
+                    .filter((c) => !c.parent_id && c.id !== editingCategoryObj?.id)
+                    .map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                  Tiền tố SKU <span className="text-xs text-slate-500">(VD: LOP, NHO...)</span>
+                </label>
+                <input
+                  type="text"
+                  value={skuPrefix}
+                  onChange={(e) => setSkuPrefix(e.target.value.toUpperCase())}
+                  placeholder="VD: NHO"
+                  maxLength={6}
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-slate-100 uppercase font-mono"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                   Biểu tượng
                 </label>
                 <div className="grid grid-cols-6 gap-2">
                   {icons.map((icon) => (
                     <button
                       key={icon}
+                      type="button"
                       onClick={() => setSelectedIcon(icon)}
                       className={`p-3 border rounded-lg transition-colors flex items-center justify-center ${
                         selectedIcon === icon
@@ -536,6 +638,7 @@ const CategoriesManager: React.FC = () => {
                   {colors.map((color) => (
                     <button
                       key={color.value}
+                      type="button"
                       onClick={() => setSelectedColor(color.value)}
                       className={`p-3 rounded-lg border-2 transition-all ${
                         selectedColor === color.value
@@ -554,16 +657,18 @@ const CategoriesManager: React.FC = () => {
 
             <div className="flex justify-end gap-3 p-6 border-t border-slate-200 dark:border-slate-700">
               <button
-                onClick={() => setShowAddModal(false)}
+                type="button"
+                onClick={closeModal}
                 className="px-4 py-2 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
               >
                 Hủy
               </button>
               <button
-                onClick={handleAddCategory}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                type="button"
+                onClick={handleSubmitCategory}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-semibold"
               >
-                Thêm danh mục
+                {editingCategoryObj ? "Lưu thay đổi" : "Thêm danh mục"}
               </button>
             </div>
           </div>

@@ -5,6 +5,7 @@ import { validatePriceAndQty } from '../../../utils/validation';
 import FormattedNumberInput from '../../common/FormattedNumberInput';
 import { X, Plus, ShoppingCart, Package } from 'lucide-react';
 import { useCategories, useCreateCategory } from '../../../hooks/useCategories';
+import { useSuppliers } from '../../../hooks/useSuppliers';
 import ProductImageUploader from './ProductImageUploader';
 // Add New Product Modal Component
 const AddProductModal: React.FC<{
@@ -23,6 +24,7 @@ const AddProductModal: React.FC<{
     warranty: number;
     warrantyUnit: string;
     minStock: number;
+    preferred_supplier_id?: string;
   }) => void;
 }> = ({ isOpen, onClose, onSave }) => {
   const [name, setName] = useState("");
@@ -37,15 +39,28 @@ const AddProductModal: React.FC<{
   const [warranty, setWarranty] = useState<number>(0);
   const [warrantyUnit, setWarrantyUnit] = useState("tháng");
   const [minStock, setMinStock] = useState<number>(10);
+  const [preferredSupplierId, setPreferredSupplierId] = useState("");
   const [retailOverridden, setRetailOverridden] = useState<boolean>(false);
   const [wholesaleOverridden, setWholesaleOverridden] = useState<boolean>(false);
   const { data: categories = [] } = useCategories();
+  const { data: suppliers = [] } = useSuppliers();
   const { data: storeSettings } = useStoreSettings();
   const retailMarkup = (storeSettings?.retail_markup_percent ?? 40) / 100 + 1; // VD: 40% => 1.4
   const wholesaleMarkup = (storeSettings?.wholesale_markup_percent ?? 25) / 100 + 1; // VD: 25% => 1.25
   const createCategory = useCreateCategory();
   const [showInlineCat, setShowInlineCat] = useState(false);
   const [inlineCatName, setInlineCatName] = useState("");
+
+  const handleCategoryChange = (catName: string) => {
+    setCategory(catName);
+    if (!barcode.trim()) {
+      const selectedCat = categories.find((c: any) => c.name === catName);
+      if (selectedCat && selectedCat.sku_prefix) {
+        const suffix = Math.floor(1000 + Math.random() * 9000);
+        setBarcode(`${selectedCat.sku_prefix}-${suffix}`);
+      }
+    }
+  };
 
   const handleSubmit = () => {
     if (!name.trim()) {
@@ -66,6 +81,7 @@ const AddProductModal: React.FC<{
       warranty: Number(warranty) || 0,
       warrantyUnit,
       minStock: Number(minStock) || 0,
+      preferred_supplier_id: preferredSupplierId || undefined,
     });
 
     // Reset form
@@ -80,6 +96,7 @@ const AddProductModal: React.FC<{
     setWholesalePrice(0);
     setWarranty(0);
     setMinStock(10);
+    setPreferredSupplierId("");
     setRetailOverridden(false);
     setWholesaleOverridden(false);
     setWarrantyUnit("tháng");
@@ -138,7 +155,7 @@ const AddProductModal: React.FC<{
                 <div className="flex gap-1.5">
                   <select
                     value={category}
-                    onChange={(e) => setCategory(e.target.value)}
+                    onChange={(e) => handleCategoryChange(e.target.value)}
                     className="flex-1 min-w-0 px-2.5 py-2.5 text-sm border border-slate-200 dark:border-slate-600 rounded-xl bg-slate-50 dark:bg-slate-700/50 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">-- Chọn --</option>
@@ -366,6 +383,23 @@ const AddProductModal: React.FC<{
                   onValue={(v) => setMinStock(Math.max(0, Math.floor(v)))}
                   className="w-full px-3.5 py-2.5 text-sm border border-slate-200 dark:border-slate-600 rounded-xl bg-slate-50 dark:bg-slate-700/50 text-slate-900 dark:text-slate-100 text-center font-bold focus:ring-2 focus:ring-blue-500"
                 />
+              </div>
+
+              {/* Nhà cung cấp mặc định */}
+              <div className="col-span-2 mt-1">
+                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">
+                  Nhà cung cấp mặc định (tùy chọn)
+                </label>
+                <select
+                  value={preferredSupplierId}
+                  onChange={(e) => setPreferredSupplierId(e.target.value)}
+                  className="w-full px-3.5 py-2.5 text-sm border border-slate-200 dark:border-slate-600 rounded-xl bg-slate-50 dark:bg-slate-700/50 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">-- Chọn nhà cung cấp mặc định --</option>
+                  {suppliers.map((s: any) => (
+                    <option key={s.id} value={s.id}>{s.name} {s.phone ? `(${s.phone})` : ''}</option>
+                  ))}
+                </select>
               </div>
             </div>
           </div>

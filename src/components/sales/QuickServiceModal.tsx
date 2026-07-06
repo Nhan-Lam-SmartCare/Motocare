@@ -297,7 +297,7 @@ const QuickServiceModal: React.FC<QuickServiceModalProps> = ({
       ? customerSearchText.trim().toUpperCase()
       : "";
     const customer: CustomerInfo = foundCustomer || {
-      name: "Khách vãng lai",
+      name: "Người tiêu dùng",
       phone: "",
       vehicleModel: "",
       licensePlate: fallbackLicensePlate,
@@ -670,7 +670,7 @@ const QuickServiceModal: React.FC<QuickServiceModalProps> = ({
                   ? `Khách: ${foundCustomer.name}`
                   : isLikelyLicensePlate(customerSearchText)
                     ? `Biển số: ${customerSearchText.toUpperCase()}`
-                    : "Khách vãng lai"}
+                    : "Người tiêu dùng"}
               </p>
             </div>
           </div>

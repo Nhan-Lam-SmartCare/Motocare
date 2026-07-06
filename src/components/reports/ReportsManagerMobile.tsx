@@ -424,7 +424,7 @@ export const ReportsManagerMobile: React.FC<ReportsManagerMobileProps> = ({
                                                     <div key={wo.id} className="bg-slate-50 dark:bg-slate-900/50 p-3 rounded-lg border border-slate-100 dark:border-slate-700/50">
                                                         <div className="flex justify-between items-start">
                                                             <div>
-                                                                <div className="font-semibold text-slate-900 dark:text-white text-xs">{wo.customerName || wo.customername || 'Khách vãng lai'}</div>
+                                                                <div className="font-semibold text-slate-900 dark:text-white text-xs">{wo.customerName || wo.customername || 'Người tiêu dùng'}</div>
                                                                 <div className="text-[10px] text-slate-500 mt-0.5">{wo.vehicleModel || wo.vehiclemodel || ''} {wo.licensePlate || wo.licenseplate || ''}</div>
                                                             </div>
                                                             <div className="font-bold text-purple-600 dark:text-purple-400 text-xs">

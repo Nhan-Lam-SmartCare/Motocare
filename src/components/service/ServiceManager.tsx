@@ -696,7 +696,7 @@ export default function ServiceManager() {
       const safeCustomerName =
         workOrder.customerName?.trim() ||
         workOrder.customerPhone ||
-        "Khách vãng lai";
+        "Người tiêu dùng";
 
       const workOrderNumber =
         formatWorkOrderId(workOrder.id, storeSettings?.work_order_prefix)

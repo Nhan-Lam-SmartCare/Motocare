@@ -669,7 +669,7 @@ const ReportsManager: React.FC = () => {
         return {
           id: `WO-${wo.id}`,
           customerId: wo.customerphone || wo.id,
-          customerName: wo.customername || "Khách vãng lai",
+          customerName: wo.customername || "Người tiêu dùng",
           phone: wo.customerphone || null,
           totalAmount: wo.total || 0,
           paidAmount: totalPaid,

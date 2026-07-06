@@ -867,7 +867,7 @@ export default function SalesScreen() {
 
     if (!found) {
       setQuickFoundCustomer(null);
-      Alert.alert('Không tìm thấy', 'Không tìm thấy khách phù hợp, sẽ tạo đơn cho khách vãng lai.');
+      Alert.alert('Không tìm thấy', 'Không tìm thấy khách phù hợp, sẽ tạo đơn cho Người tiêu dùng.');
       return;
     }
 
@@ -1155,7 +1155,7 @@ export default function SalesScreen() {
         : '';
 
       const customerSnapshot = customerFromSearch || {
-        name: 'Khách vãng lai',
+        name: 'Người tiêu dùng',
         phone: '',
         licensePlate: fallbackPlate,
       };
@@ -2239,7 +2239,7 @@ export default function SalesScreen() {
                   <Text style={styles.quickHintText}>
                     {isLikelyLicensePlate(quickCustomerSearch)
                       ? `Không thấy khách, sẽ lưu biển số: ${quickCustomerSearch.toUpperCase()}`
-                      : 'Mặc định tạo đơn cho khách vãng lai nếu không tìm thấy.'}
+                      : 'Mặc định tạo đơn cho Người tiêu dùng nếu không tìm thấy.'}
                   </Text>
                 )}
 

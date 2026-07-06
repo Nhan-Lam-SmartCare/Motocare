@@ -457,7 +457,7 @@ export default function MoreFeatureScreen() {
             id: String(row.id),
             total: amount,
             saleCode: String(row.saleCode || row.salecode || row.sale_code || `SALE-${row.id}`),
-            customerName: String(row.customerName || row.customername || row.customer?.name || 'Khach vang lai'),
+            customerName: String(row.customerName || row.customername || row.customer?.name || 'Nguoi tieu dung'),
             items: saleItems,
           };
           day.sales.push(saleRow);
@@ -481,7 +481,7 @@ export default function MoreFeatureScreen() {
           day.workOrders.push({
             id: String(row.id),
             total: amount,
-            customerName: String(row.customerName || row.customername || 'Khach vang lai'),
+            customerName: String(row.customerName || row.customername || 'Nguoi tieu dung'),
             vehicleModel: String(row.vehicleModel || row.vehiclemodel || ''),
             licensePlate: String(row.licensePlate || row.licenseplate || ''),
           });

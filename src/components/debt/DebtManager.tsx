@@ -188,7 +188,7 @@ const DebtManager: React.FC = () => {
         return {
           id: `WO-${wo.id}`, // Prefix to distinguish from regular debts
           customerId: wo.customerphone || wo.id,
-          customerName: wo.customername || "Khách vãng lai",
+          customerName: wo.customername || "Người tiêu dùng",
           phone: wo.customerphone || null,
           licensePlate: wo.licenseplate || null,
           description: description,

@@ -704,7 +704,7 @@ const SalesManager: React.FC = () => {
                         name: customer.selectedCustomer.name,
                         phone: customer.selectedCustomer.phone || "",
                     }
-                    : { name: "Khách vãng lai", phone: "" },
+                    : { name: "Người tiêu dùng", phone: "" },
                 paymentMethod: dbPaymentMethod,
                 discount: cart.effectiveDiscount, // Use recomputed discount (correct when discountType=percent)
                 branchId: currentBranchId,

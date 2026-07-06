@@ -598,7 +598,7 @@ const WorkOrderModal: React.FC<{
     try {
       const safeCustomerId = workOrder.customerPhone || workOrder.id || `CUST-ANON-${Date.now()}`;
       const safeCustomerName =
-        workOrder.customerName?.trim() || workOrder.customerPhone || "Khách vãng lai";
+        workOrder.customerName?.trim() || workOrder.customerPhone || "Người tiêu dùng";
 
       const workOrderNumber =
         formatWorkOrderId(workOrder.id, storeSettings?.work_order_prefix).split("-").pop() || "";

@@ -365,7 +365,7 @@ export const RevenueReport: React.FC<RevenueReportProps> = ({
                                                 <div className="p-1 rounded-md bg-blue-500/10 text-blue-500 dark:text-blue-400 border border-blue-500/20">
                                                   <Users className="w-3 h-3" />
                                                 </div>
-                                                <span className="font-extrabold text-slate-800 dark:text-slate-200 text-xs">{sale.customer?.name || "Khách vãng lai"}</span>
+                                                <span className="font-extrabold text-slate-800 dark:text-slate-200 text-xs">{sale.customer?.name || "Người tiêu dùng"}</span>
                                               </div>
                                               <div className="text-right">
                                                 <div className="font-black text-slate-800 dark:text-slate-200 text-xs font-mono">{formatCurrency(sale.total)}</div>

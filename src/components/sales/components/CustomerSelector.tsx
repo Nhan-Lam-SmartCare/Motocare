@@ -1,6 +1,7 @@
 import React from "react";
 import type { Customer } from "../../../types";
 import { Search, UserPlus, X, Bike, Loader2 } from "lucide-react";
+import { useUpdateCustomer } from "../../../hooks/useSupabase";
 
 interface CustomerSelectorProps {
     selectedCustomer: Customer | null;
@@ -36,6 +37,30 @@ export const CustomerSelector: React.FC<CustomerSelectorProps> = ({
     hasMoreCustomers = false,
     onLoadMore,
 }) => {
+    const updateCustomerMutation = useUpdateCustomer();
+
+    const handleSelectVehicle = async (vehicleId: string, e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!selectedCustomer) return;
+
+        const updatedVehicles = (selectedCustomer.vehicles || []).map((v) => ({
+            ...v,
+            isPrimary: v.id === vehicleId
+        }));
+
+        try {
+            const updatedCustomerFromApi = await updateCustomerMutation.mutateAsync({
+                id: selectedCustomer.id,
+                updates: { vehicles: updatedVehicles }
+            });
+            const finalCustomer = updatedCustomerFromApi || { ...selectedCustomer, vehicles: updatedVehicles };
+            onSelect(finalCustomer as Customer);
+        } catch (error) {
+            console.error("Error setting primary vehicle:", error);
+        }
+    };
+
     return (
         <div className="relative customer-dropdown-container">
             {/* Selected Customer Display or Search Input */}
@@ -55,31 +80,26 @@ export const CustomerSelector: React.FC<CustomerSelectorProps> = ({
                             const vehicles = (selectedCustomer.vehicles || []).filter(v => v.model || v.licensePlate);
                             if (vehicles.length === 0) return null;
 
-                            const displayVehicles = vehicles.slice(0, 3);
-                            const hasMore = vehicles.length > 3;
-
                             return (
                                 <div className="flex flex-wrap gap-1.5 mt-2">
-                                    {displayVehicles.map((vehicle, idx) => (
-                                        <div
+                                    {vehicles.map((vehicle, idx) => (
+                                        <button
                                             key={vehicle.id || idx}
-                                            className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium border ${vehicle.isPrimary
-                                                ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400'
-                                                : 'bg-slate-100 dark:bg-slate-700 border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-300'
+                                            type="button"
+                                            onClick={(e) => handleSelectVehicle(vehicle.id, e)}
+                                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all duration-200 cursor-pointer ${vehicle.isPrimary
+                                                ? 'bg-amber-50 dark:bg-amber-900/25 border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-400 ring-2 ring-amber-400/20'
+                                                : 'bg-slate-150 dark:bg-slate-700/50 border-slate-250 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-650 hover:border-slate-350'
                                                 }`}
+                                            title={vehicle.isPrimary ? "Xe mặc định" : "Đặt làm xe mặc định"}
                                         >
-                                            <Bike className="w-3 h-3" />
-                                            <span className="font-semibold">{vehicle.model || "Không rõ"}</span>
+                                            <Bike className="w-3.5 h-3.5" />
+                                            <span>{vehicle.model || "Không rõ"}</span>
                                             {vehicle.licensePlate && (
-                                                <span className="text-[10px] opacity-75">• {vehicle.licensePlate}</span>
+                                                <span className="text-[10px] opacity-75 font-mono">• {vehicle.licensePlate}</span>
                                             )}
-                                        </div>
+                                        </button>
                                     ))}
-                                    {hasMore && (
-                                        <div className="inline-flex items-center px-2 py-1 rounded-md text-xs font-bold bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-400">
-                                            +{vehicles.length - 3}
-                                        </div>
-                                    )}
                                 </div>
                             );
                         })()}
@@ -153,8 +173,6 @@ export const CustomerSelector: React.FC<CustomerSelectorProps> = ({
                         <>
                             {customers.map((customer) => {
                                 const vehicles = (customer.vehicles || []).filter(v => v.model || v.licensePlate);
-                                const displayVehicles = vehicles.slice(0, 2); // Show max 2 vehicles
-                                const hasMoreVehicles = vehicles.length > 2;
 
                                 return (
                                     <button
@@ -175,9 +193,9 @@ export const CustomerSelector: React.FC<CustomerSelectorProps> = ({
                                             </p>
                                         )}
                                         {/* Vehicle List */}
-                                        {displayVehicles.length > 0 && (
+                                        {vehicles.length > 0 && (
                                             <div className="flex flex-wrap gap-1.5 mt-2">
-                                                {displayVehicles.map((vehicle, idx) => (
+                                                {vehicles.map((vehicle, idx) => (
                                                     <div
                                                         key={vehicle.id || idx}
                                                         className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium border ${vehicle.isPrimary
@@ -192,11 +210,6 @@ export const CustomerSelector: React.FC<CustomerSelectorProps> = ({
                                                         )}
                                                     </div>
                                                 ))}
-                                                {hasMoreVehicles && (
-                                                    <div className="inline-flex items-center px-2 py-1 rounded-md text-xs font-bold bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-600">
-                                                        +{vehicles.length - 2}
-                                                    </div>
-                                                )}
                                             </div>
                                         )}
                                     </button>

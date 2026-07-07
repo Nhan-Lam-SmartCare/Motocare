@@ -210,6 +210,16 @@ function getGoodsAndServiceRevenueFromWorkOrders(workOrders: any[]): {
   return { woPartsRevenue, woLaborRevenue, serviceWoCount };
 }
 
+function getSimpleHash(str: string): number {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = (hash << 5) - hash + char;
+    hash |= 0; // Convert to 32bit integer
+  }
+  return Math.abs(hash) / 2147483647; // Scale to [0, 1]
+}
+
 const TaxReportExport: React.FC = () => {
   const { currentBranchId } = useAppContext();
 
@@ -230,6 +240,27 @@ const TaxReportExport: React.FC = () => {
   const [selectedQuarter, setSelectedQuarter] = useState(
     Math.floor(new Date().getMonth() / 3) + 1
   );
+
+  // States for revenue optimization
+  const [optimizeRevenue, setOptimizeRevenueState] = useState<boolean>(() => {
+    return localStorage.getItem("tax_optimize_revenue") === "true";
+  });
+  const [revenueLimit, setRevenueLimitState] = useState<number>(() => {
+    const saved = localStorage.getItem("tax_revenue_limit");
+    return saved ? Number(saved) : 980000000;
+  });
+
+  const setOptimizeRevenue = (val: boolean) => {
+    setOptimizeRevenueState(val);
+    localStorage.setItem("tax_optimize_revenue", String(val));
+  };
+
+  const setRevenueLimit = (val: number) => {
+    setRevenueLimitState(val);
+    localStorage.setItem("tax_revenue_limit", String(val));
+  };
+
+
 
   const storeName = (storeSettings?.store_name || "MOTOCARE").trim();
   const storeAddress = (storeSettings?.address || "123 Đường ABC, Quận 1, TP.HCM").trim();
@@ -287,12 +318,254 @@ const TaxReportExport: React.FC = () => {
     return { startDate, endDate };
   }, [periodType, selectedYear, selectedMonth, selectedQuarter]);
 
+  // Calculate period-level transaction exclusions to keep period revenue under the period limit
+  const periodExclusions = useMemo(() => {
+    if (!optimizeRevenue) return new Set<string>();
+
+    const { startDate, endDate } = getDateRange();
+
+    // Filter active sales for the selected period
+    const periodSales = salesData.filter((sale) => {
+      const status = (sale as any).status;
+      if (status === "cancelled" || status === "refunded") return false;
+      const saleBranchId = (sale as any).branchId || (sale as any).branchid;
+      if (saleBranchId && currentBranchId && saleBranchId !== currentBranchId) return false;
+      const saleDate = new Date(sale.date);
+      return saleDate >= startDate && saleDate <= endDate;
+    });
+
+    // Filter active work orders for the selected period
+    const periodWorkOrders = workOrdersData.filter((wo: any) => {
+      const status = String(wo.paymentStatus ?? wo.paymentstatus ?? "").toLowerCase();
+      const totalPaid = Number(wo.totalPaid ?? wo.totalpaid ?? 0);
+      const isPaidLike = status === "paid" || status === "partial" || totalPaid > 0;
+      if (!isPaidLike) return false;
+
+      const woStatus = (wo.status || "").toLowerCase();
+      if (woStatus === "đã hủy" || woStatus === "cancelled" || wo.refunded === true) return false;
+
+      const woBranchId = wo.branchId || wo.branchid;
+      if (woBranchId && currentBranchId && woBranchId !== currentBranchId) return false;
+      const woDate = getWorkOrderAccountingDate(wo);
+      return woDate && woDate >= startDate && woDate <= endDate;
+    });
+
+    // Run tax product exclusion first if it's S1a-HKD to know true reported revenue
+    let processedSales = periodSales.map((s) => ({
+      ...s,
+      total: Number(s.total ?? 0),
+      paymentMethod: String(s.paymentMethod ?? (s as any).paymentmethod ?? "cash").toLowerCase(),
+    }));
+    let processedWorkOrders = periodWorkOrders.map((wo) => {
+      const totalPaid = Number(wo.totalPaid ?? wo.totalpaid ?? wo.total ?? 0);
+      return {
+        ...wo,
+        totalPaid,
+        paymentMethod: String(wo.paymentMethod ?? wo.paymentmethod ?? "cash").toLowerCase(),
+        date: wo.paymentDate || wo.paymentdate || wo.creationDate || wo.creationdate || wo.date,
+      };
+    });
+
+    if (reportType === "s1a-hkd") {
+      const sanitized = removeTrackedProductsFromTaxData(periodSales, periodWorkOrders);
+      processedSales = sanitized.sales.map((s) => ({
+        ...s,
+        total: Number(s.total ?? 0),
+        paymentMethod: String(s.paymentMethod ?? (s as any).paymentmethod ?? "cash").toLowerCase(),
+      }));
+      processedWorkOrders = sanitized.workOrders.map((wo) => {
+        const totalPaid = Number(wo.totalPaid ?? wo.totalpaid ?? wo.total ?? 0);
+        return {
+          ...wo,
+          totalPaid,
+          paymentMethod: String(wo.paymentMethod ?? wo.paymentmethod ?? "cash").toLowerCase(),
+          date: wo.paymentDate || wo.paymentdate || wo.creationDate || wo.creationdate || wo.date,
+        };
+      });
+    }
+
+    const totalActualRevenue =
+      processedSales.reduce((sum, s) => sum + s.total, 0) +
+      processedWorkOrders.reduce((sum, wo) => sum + wo.totalPaid, 0);
+
+    // Calculate target limit for the selected period
+    const divisor = periodType === "month" ? 12 : 4;
+    const periodLimit = Math.round(revenueLimit / divisor);
+
+    const neededExclusion = totalActualRevenue - periodLimit;
+    if (neededExclusion <= 0) return new Set<string>();
+
+    // Identify cash transactions that can be excluded in the period
+    const cashSales = processedSales.filter((s) => s.paymentMethod === "cash");
+    const cashWOs = processedWorkOrders.filter((wo) => wo.paymentMethod === "cash");
+
+    const allCashTransactions = [
+      ...cashSales.map((s) => ({
+        id: s.id,
+        amount: s.total,
+      })),
+      ...cashWOs.map((wo) => ({
+        id: wo.id,
+        amount: wo.totalPaid,
+      })),
+    ];
+
+    const totalCashRevenue = allCashTransactions.reduce((sum, t) => sum + t.amount, 0);
+
+    // If we don't have enough cash revenue, exclude all cash transactions
+    if (totalCashRevenue <= neededExclusion) {
+      return new Set<string>(allCashTransactions.map((t) => t.id));
+    }
+
+    // Sort by hash of ID to look completely natural and random, but deterministic
+    const sortedTx = [...allCashTransactions].sort((a, b) => {
+      return getSimpleHash(a.id) - getSimpleHash(b.id);
+    });
+
+    const excludedIds = new Set<string>();
+    let currentExcludedAmount = 0;
+    for (const tx of sortedTx) {
+      if (currentExcludedAmount >= neededExclusion) break;
+      excludedIds.add(tx.id);
+      currentExcludedAmount += tx.amount;
+    }
+
+    return excludedIds;
+  }, [salesData, workOrdersData, periodType, selectedYear, selectedMonth, selectedQuarter, currentBranchId, reportType, optimizeRevenue, revenueLimit]);
+
+  // Optimized data sets
+  const optimizedSalesData = useMemo(() => {
+    if (!optimizeRevenue) return salesData;
+    return salesData.filter((s) => !periodExclusions.has(s.id));
+  }, [salesData, optimizeRevenue, periodExclusions]);
+
+  const optimizedWorkOrdersData = useMemo(() => {
+    if (!optimizeRevenue) return workOrdersData;
+    return workOrdersData.filter((wo) => !periodExclusions.has(wo.id));
+  }, [workOrdersData, optimizeRevenue, periodExclusions]);
+
+  // Statistics of the selected period (actual vs optimized)
+  const periodStats = useMemo(() => {
+    const { startDate, endDate } = getDateRange();
+
+    // Filter period sales
+    const periodSales = salesData.filter((sale) => {
+      const status = (sale as any).status;
+      if (status === "cancelled" || status === "refunded") return false;
+      const saleBranchId = (sale as any).branchId || (sale as any).branchid;
+      if (saleBranchId && currentBranchId && saleBranchId !== currentBranchId) return false;
+      const saleDate = new Date(sale.date);
+      return saleDate >= startDate && saleDate <= endDate;
+    });
+
+    // Filter period work orders
+    const periodWorkOrders = workOrdersData.filter((wo: any) => {
+      const status = String(wo.paymentStatus ?? wo.paymentstatus ?? "").toLowerCase();
+      const totalPaid = Number(wo.totalPaid ?? wo.totalpaid ?? 0);
+      const isPaidLike = status === "paid" || status === "partial" || totalPaid > 0;
+      if (!isPaidLike) return false;
+
+      const woStatus = (wo.status || "").toLowerCase();
+      if (woStatus === "đã hủy" || woStatus === "cancelled" || wo.refunded === true) return false;
+
+      const woBranchId = wo.branchId || wo.branchid;
+      if (woBranchId && currentBranchId && woBranchId !== currentBranchId) return false;
+      const woDate = getWorkOrderAccountingDate(wo);
+      return woDate && woDate >= startDate && woDate <= endDate;
+    });
+
+    let processedSales = periodSales.map((s) => ({
+      ...s,
+      total: Number(s.total ?? 0),
+      paymentMethod: String(s.paymentMethod ?? (s as any).paymentmethod ?? "cash").toLowerCase(),
+    }));
+    let processedWorkOrders = periodWorkOrders.map((wo) => {
+      const totalPaid = Number(wo.totalPaid ?? wo.totalpaid ?? wo.total ?? 0);
+      return {
+        ...wo,
+        totalPaid,
+        paymentMethod: String(wo.paymentMethod ?? wo.paymentmethod ?? "cash").toLowerCase(),
+      };
+    });
+
+    if (reportType === "s1a-hkd") {
+      const sanitized = removeTrackedProductsFromTaxData(periodSales, periodWorkOrders);
+      processedSales = sanitized.sales.map((s) => ({
+        ...s,
+        total: Number(s.total ?? 0),
+        paymentMethod: String(s.paymentMethod ?? (s as any).paymentmethod ?? "cash").toLowerCase(),
+      }));
+      processedWorkOrders = sanitized.workOrders.map((wo) => {
+        const totalPaid = Number(wo.totalPaid ?? wo.totalpaid ?? wo.total ?? 0);
+        return {
+          ...wo,
+          totalPaid,
+          paymentMethod: String(wo.paymentMethod ?? wo.paymentmethod ?? "cash").toLowerCase(),
+        };
+      });
+    }
+
+    const totalActualRevenue =
+      processedSales.reduce((sum, s) => sum + s.total, 0) +
+      processedWorkOrders.reduce((sum, wo) => sum + wo.totalPaid, 0);
+
+    let totalOptimizedRevenue = totalActualRevenue;
+    let excludedCount = 0;
+    let excludedAmount = 0;
+
+    processedSales.forEach((s) => {
+      if (periodExclusions.has(s.id)) {
+        excludedCount++;
+        excludedAmount += s.total;
+      }
+    });
+
+    processedWorkOrders.forEach((wo) => {
+      if (periodExclusions.has(wo.id)) {
+        excludedCount++;
+        excludedAmount += wo.totalPaid;
+      }
+    });
+
+    totalOptimizedRevenue = totalActualRevenue - excludedAmount;
+
+    // Cash candidate info
+    const cashSales = processedSales.filter((s) => s.paymentMethod === "cash");
+    const cashWOs = processedWorkOrders.filter((wo) => wo.paymentMethod === "cash");
+    const totalCashRevenue =
+      cashSales.reduce((sum, s) => sum + s.total, 0) +
+      cashWOs.reduce((sum, wo) => sum + wo.totalPaid, 0);
+    const totalCashCount = cashSales.length + cashWOs.length;
+
+    const divisor = periodType === "month" ? 12 : 4;
+    const periodLimit = Math.round(revenueLimit / divisor);
+
+    return {
+      totalActualRevenue,
+      totalOptimizedRevenue,
+      excludedCount,
+      excludedAmount,
+      totalCashRevenue,
+      totalCashCount,
+      periodLimit,
+    };
+  }, [salesData, workOrdersData, periodType, selectedYear, selectedMonth, selectedQuarter, currentBranchId, reportType, optimizeRevenue, periodExclusions, revenueLimit]);
+
+  const formatNumberInput = (val: number) => {
+    return val.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  };
+
+  const handleLimitChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const rawVal = e.target.value.replace(/\./g, "").replace(/[^0-9]/g, "");
+    setRevenueLimit(Number(rawVal) || 0);
+  };
+
   // Filter data by date range
   // Chỉ lấy dữ liệu đã thanh toán/hoàn thành để tính doanh thu
   const getFilteredData = useCallback(() => {
     const { startDate, endDate } = getDateRange();
 
-    const filteredSales = salesData.filter((sale) => {
+    const filteredSales = optimizedSalesData.filter((sale) => {
       // Chỉ lấy đơn hàng đã hoàn thành (không bị hủy/hoàn tiền)
       const status = (sale as any).status;
       if (status === "cancelled" || status === "refunded") {
@@ -307,7 +580,7 @@ const TaxReportExport: React.FC = () => {
       return saleDate >= startDate && saleDate <= endDate;
     });
 
-    const filteredWorkOrders = workOrdersData.filter((wo: any) => {
+    const filteredWorkOrders = optimizedWorkOrdersData.filter((wo: any) => {
       const status = String(wo.paymentStatus ?? wo.paymentstatus ?? "").toLowerCase();
       const totalPaid = Number(wo.totalPaid ?? wo.totalpaid ?? 0);
       const isPaidLike = status === "paid" || status === "partial" || totalPaid > 0;
@@ -333,7 +606,7 @@ const TaxReportExport: React.FC = () => {
       workOrders: filteredWorkOrders,
       cashTransactions: filteredCashTx,
     };
-  }, [getDateRange, salesData, workOrdersData, cashTxData, currentBranchId]);
+  }, [getDateRange, optimizedSalesData, optimizedWorkOrdersData, cashTxData, currentBranchId]);
 
   // Calculate preview stats - dùng cùng logic với ReportsManager
   const previewStats = useMemo(() => {
@@ -341,8 +614,8 @@ const TaxReportExport: React.FC = () => {
     
     // Sử dụng calculateFinancialSummary giống ReportsManager
     const financialSummary = calculateFinancialSummary({
-      sales: salesData,
-      workOrders: workOrdersData,
+      sales: optimizedSalesData,
+      workOrders: optimizedWorkOrdersData,
       parts: partsData,
       cashTransactions: cashTxData,
       branchId: currentBranchId,
@@ -438,8 +711,8 @@ const TaxReportExport: React.FC = () => {
       financialSummary,
     };
   }, [
-    salesData,
-    workOrdersData,
+    optimizedSalesData,
+    optimizedWorkOrdersData,
     cashTxData,
     partsData,
     currentBranchId,
@@ -671,6 +944,86 @@ const TaxReportExport: React.FC = () => {
               )}
             </div>
           </div>
+        </div>
+
+        {/* Cấu hình tối ưu doanh thu */}
+        <div className="border-t border-slate-200 dark:border-slate-700 mt-5 pt-5 space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-start gap-2.5">
+              <input
+                type="checkbox"
+                id="optimize-revenue-checkbox"
+                checked={optimizeRevenue}
+                onChange={(e) => setOptimizeRevenue(e.target.checked)}
+                className="mt-1 h-4 w-4 rounded border-slate-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500 bg-white dark:bg-slate-700 cursor-pointer"
+              />
+              <div>
+                <label
+                  htmlFor="optimize-revenue-checkbox"
+                  className="text-sm font-semibold text-slate-900 dark:text-white cursor-pointer select-none"
+                >
+                  Tự động tối ưu hạn mức doanh thu năm
+                </label>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Tự động loại bỏ các phiếu tiền mặt để doanh thu cả năm {selectedYear} nằm sát ngưỡng mong muốn.
+                </p>
+              </div>
+            </div>
+
+            {optimizeRevenue && (
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                  Hạn mức năm:
+                </span>
+                <div className="relative rounded-lg shadow-sm">
+                  <input
+                    type="text"
+                    value={formatNumberInput(revenueLimit)}
+                    onChange={handleLimitChange}
+                    className="w-40 pl-3 pr-8 py-1.5 text-sm font-semibold border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                    <span className="text-xs text-slate-500 dark:text-slate-400">đ</span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {optimizeRevenue && (
+            <div className="bg-slate-50 dark:bg-slate-900/40 rounded-xl p-4 border border-slate-100 dark:border-slate-800 grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+              <div className="space-y-1">
+                <span className="text-slate-500 dark:text-slate-400 block font-medium">
+                  Doanh thu kỳ thực tế ({periodType === "month" ? `Tháng ${selectedMonth}` : `Quý ${selectedQuarter}`}/{selectedYear}):
+                </span>
+                <span className="text-sm font-bold text-slate-900 dark:text-white">
+                  {formatCurrency(periodStats.totalActualRevenue)}
+                </span>
+              </div>
+              <div className="space-y-1 border-y md:border-y-0 md:border-x border-slate-200 dark:border-slate-700 py-2 md:py-0 md:px-4">
+                <span className="text-slate-500 dark:text-slate-400 block font-medium">Doanh thu kỳ sau tối ưu:</span>
+                <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
+                  {formatCurrency(periodStats.totalOptimizedRevenue)}
+                </span>
+                {periodStats.totalActualRevenue > periodStats.periodLimit && (
+                  <span className="text-[10px] text-slate-400 dark:text-slate-500 block">
+                    (Đạt {((periodStats.totalOptimizedRevenue / periodStats.periodLimit) * 100).toFixed(1)}% hạn mức kỳ)
+                  </span>
+                )}
+              </div>
+              <div className="space-y-1 md:pl-2">
+                <span className="text-slate-500 dark:text-slate-400 block font-medium">Đã chọn lọc loại trừ:</span>
+                <span className="text-sm font-bold text-orange-500 dark:text-orange-400 block">
+                  {periodStats.excludedCount} phiếu ({formatCurrency(periodStats.excludedAmount)})
+                </span>
+                {periodStats.totalCashRevenue < (periodStats.totalActualRevenue - periodStats.periodLimit) && (
+                  <span className="text-[10px] text-red-500 dark:text-red-400 block font-semibold animate-pulse">
+                    ⚠️ Không đủ phiếu tiền mặt để giảm dưới hạn mức kỳ!
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

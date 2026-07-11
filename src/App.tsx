@@ -22,7 +22,7 @@ import { useAppContext } from "./contexts/AppContext";
 import { BottomNav, Nav } from "./components/layout";
 import { ShopLayout } from "./components/layout/ShopLayout";
 // Dashboard is now lazy-loaded to keep recharts (~229 KB) out of the critical path
-const Dashboard = lazyImport(() => import("./components/dashboard/Dashboard"));
+const Dashboard = lazyImport(() => import("./components/dashboard/CommandCenter"));
 import RepoErrorPanel from "./components/common/RepoErrorPanel";
 import TetTheme from "./components/common/TetTheme";
 import { lazyImport } from "./utils/lazyImport";
@@ -92,6 +92,9 @@ const SettingsManager = lazyImport(() =>
   import("./components/settings/SettingsManager").then((m) => ({
     default: m.SettingsManager,
   }))
+);
+const MarketingManager = lazyImport(() =>
+  import("./components/marketing/MarketingManager")
 );
 const StaffDashboard = lazyImport(() =>
   import("./components/dashboard/StaffDashboard").then((m) => ({
@@ -353,6 +356,16 @@ const MainLayout: React.FC = () => {
             element={
               <ProtectedRoute requiredRoles={["owner", "manager", "staff"]}>
                 <SettingsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/marketing"
+            element={
+              <ProtectedRoute requiredRoles={["owner", "manager"]}>
+                <Suspense fallback={<PageLoader />}>
+                  <MarketingManager />
+                </Suspense>
               </ProtectedRoute>
             }
           />

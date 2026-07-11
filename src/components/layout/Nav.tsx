@@ -32,6 +32,7 @@ import {
   Tag,
   ChevronDown,
   MoreHorizontal,
+  Clapperboard,
 } from "lucide-react";
 
 export function Nav() {
@@ -70,6 +71,7 @@ export function Nav() {
     viewInventory: isOwnerOrManager,
     viewDashboard: isOwnerOrManager,
     viewReports: isOwnerOrManager,
+    viewMarketing: isOwnerOrManager,
   } as const;
 
   return (
@@ -231,7 +233,7 @@ export function Nav() {
                 to="/dashboard"
                 colorKey="blue"
                 icon={<LayoutDashboard className="w-4 h-4" />}
-                label="Tổng quan"
+                label="🚀 Command Center"
               />
             )}
             <NavLink
@@ -274,6 +276,14 @@ export function Nav() {
                 colorKey="rose"
                 icon={<Landmark className="w-4 h-4" />}
                 label="Tài chính"
+              />
+            )}
+            {can.viewMarketing && (
+              <NavLink
+                to="/marketing"
+                colorKey="fuchsia"
+                icon={<Clapperboard className="w-4 h-4" />}
+                label="Marketing"
               />
             )}
 
@@ -439,6 +449,15 @@ export function Nav() {
                       icon={<HandCoins className="w-5 h-5" />}
                       label="Công nợ"
                       color="orange"
+                      onClick={() => setShowMobileMenu(false)}
+                    />
+                  )}
+                  {can.viewMarketing && (
+                    <MobileDrawerLink
+                      to="/marketing"
+                      icon={<Clapperboard className="w-5 h-5" />}
+                      label="Marketing"
+                      color="fuchsia"
                       onClick={() => setShowMobileMenu(false)}
                     />
                   )}

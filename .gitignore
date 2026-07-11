@@ -2,7 +2,11 @@
 node_modules
 
 # Environment variables - NEVER commit these!
+# Ignore every .env* EXCEPT the sanitized *.example templates.
 .env
+.env.*
+!.env.example
+!.env.production.example
 .env.local
 .env.development
 .env.development.local
@@ -10,6 +14,7 @@ node_modules
 .env.test.local
 .env.production
 .env.production.local
+.env.demo
 
 # Build output
 dist
@@ -63,6 +68,8 @@ debug*.js
 debug*.html
 setupUI.js
 update-colors.cjs
+extract_*.js
+refactor_*.js
 rewrite.cjs
 test-rewrite.cjs
 check-columns.mjs
@@ -78,3 +85,14 @@ check-columns.mjs
 
 # Deprecated code backups
 __DEPRECATED_backups/
+
+# Database backups & data dumps — may contain customer PII / financial data. NEVER commit.
+backups/
+exports/
+scratch/
+
+# Build caches / temp build dirs (not source)
+*_buildtmp/
+**/.gradle/
+android/.gradle/
+MotocareAndroid/.gradle/

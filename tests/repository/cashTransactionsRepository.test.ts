@@ -6,33 +6,36 @@ import {
 } from "../../src/lib/repository/cashTransactionsRepository";
 
 // Mocks
+// fetchCashTransactions builds a chainable query: .select().order().eq?/.gte?/.lte?.range()
+// and awaits the terminal .range(); createCashTransaction does .insert().select().single().
 const mockFrom = vi.fn();
-const mockSelect = vi.fn();
-const mockInsert = vi.fn();
+let nextSelectResult: { data: any; error: any } | null = null;
+
+function makeSelectQuery() {
+  const result = nextSelectResult ?? { data: [], error: null };
+  nextSelectResult = null;
+  const q: any = {
+    select: () => q,
+    order: () => q,
+    eq: () => q,
+    gte: () => q,
+    lte: () => q,
+    range: () => Promise.resolve(result),
+  };
+  return q;
+}
 
 vi.spyOn(client, "supabase", "get").mockReturnValue({ from: mockFrom } as any);
 
-mockFrom.mockImplementation((table: string) => {
-  return {
-    select: () => mockSelect(table),
-    insert: (rows: any[]) => mockInsert(table, rows),
-  } as any;
-});
-
-// Success defaults
-mockSelect.mockImplementation((_table: string) => ({
-  data: [],
-  error: null,
-  order: () => ({ data: [], error: null }),
-}));
-mockInsert.mockImplementation((_table: string, rows: any[]) => ({
-  select: () => ({ single: () => ({ data: rows[0], error: null }) }),
+mockFrom.mockImplementation((_table: string) => ({
+  select: () => makeSelectQuery(),
+  insert: (rows: any[]) => ({
+    select: () => ({ single: () => ({ data: rows[0], error: null }) }),
+  }),
 }));
 
 function injectSelectErrorOnce(errorMsg: string) {
-  mockSelect.mockImplementationOnce((_table: string) => ({
-    order: () => ({ data: null, error: { message: errorMsg } }),
-  }));
+  nextSelectResult = { data: null, error: { message: errorMsg } };
 }
 
 describe("cashTransactionsRepository", () => {

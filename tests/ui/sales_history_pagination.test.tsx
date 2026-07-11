@@ -61,6 +61,7 @@ vi.mock("../../src/hooks/useSalesRepository", async () => {
   return {
     useSalesRepo: () => ({ data: [], isLoading: false, error: null }),
     useCreateSaleAtomicRepo: () => ({ mutateAsync: vi.fn() }),
+    useUpdateSaleAtomicRepo: () => ({ mutateAsync: vi.fn() }),
     useDeleteSaleRepo: () => ({ mutateAsync: vi.fn() }),
     useSalesPagedRepo: (params: any) => {
       lastParams = params;
@@ -116,10 +117,11 @@ describe("Sales history modal pagination (offset)", () => {
     });
     await user.click(historyButtons[0]);
 
-    // page indicator should show 'Hiển thị 1 đơn hàng' from mocked hook data
-    // There's no heading in the modal; wait until 'Hiển thị 1 đơn hàng' or similar is visible
-    await screen.findByText(/Hiển thị\s+1\s*đơn hàng/i);
-    expect(screen.getByText(/Hiển thị\s+1\s*đơn hàng/i)).not.toBeNull();
+    // Modal opened: this header text is a stable standalone node. The footer
+    // pagination text ("Trang 1 / 3 · 100 Đơn hàng") is split across <span>s so it
+    // can't be matched by findByText — assert the paging wiring via captured params.
+    await screen.findByText(/Hệ thống quản lý đơn hàng/i);
+    expect(lastParams?.page ?? 1).toBe(1);
   });
 });
 

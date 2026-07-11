@@ -39,8 +39,6 @@ import TaxReportExport from "../reports/TaxReportExport";
 import { useDailyFinancials } from "./hooks/useDailyFinancials";
 import {
   calculateFinancialSummary,
-  REPORTS_EXCLUDED_EXPENSE_CATEGORIES,
-  REPORTS_EXCLUDED_INCOME_CATEGORIES,
   isExcludedExpenseCategory,
   isExcludedIncomeCategory,
   isRefundCategory,
@@ -529,21 +527,6 @@ const ReportsManager: React.FC = () => {
       .filter((t) => t.type === "expense" && t.amount > 0 && isRefundCategory(t.category))
       .reduce((sum, t) => sum + t.amount, 0);
 
-    // Debug log
-    console.debug("[ReportsManager] Cash totals:", {
-      totalTransactions: filteredTransactions.length,
-      incomeAfterFilter: totalIncome,
-      expense: totalExpense,
-      excludedIncomeCategories: REPORTS_EXCLUDED_INCOME_CATEGORIES,
-      excludedExpenseCategories: REPORTS_EXCLUDED_EXPENSE_CATEGORIES,
-      expenseByCategory: filteredTransactions
-        .filter((t) => t.type === "expense")
-        .reduce((acc, t) => {
-          const cat = t.category || "unknown";
-          acc[cat] = (acc[cat] || 0) + t.amount;
-          return acc;
-        }, {} as Record<string, number>),
-    });
 
     return { totalIncome, totalExpense, totalRefund };
   }, [cashTxData, start, end]);

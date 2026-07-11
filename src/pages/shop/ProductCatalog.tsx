@@ -55,9 +55,10 @@ export default function ProductCatalog() {
       try {
         console.warn('🔍 [Shop] Bắt đầu fetch sản phẩm...');
 
-        // Select only existing columns: id, name, sku, category, stock, retailPrice, wholesalePrice
+        // Public catalog reads the safe view `public_parts` (no costPrice/giá vốn),
+        // NOT the base `parts` table — see sql/2026-07-09_A5_public_exposure_hardening.sql
         const { data, error } = await supabase
-          .from('parts')
+          .from('public_parts')
           .select('id, name, sku, category, stock, retailPrice, wholesalePrice')
           .order('name');
 

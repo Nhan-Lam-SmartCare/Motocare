@@ -160,7 +160,22 @@ export default defineConfig(({ mode }) => {
     server: { port: 4310, host: "0.0.0.0" },
     plugins: [react(), createStaffApiPlugin(env)],
     test: {
-      exclude: ["e2e/**", "node_modules/**"],
+      // Exclude nested node_modules (MotocareMobile has its own installed deps whose
+      // *.test.js files were being collected → ~40 phantom failed suites), plus e2e,
+      // build output and the mobile/android sub-projects.
+      exclude: [
+        "**/node_modules/**",
+        "e2e/**",
+        "dist/**",
+        "MotocareMobile/**",
+        "MotocareMobile_buildtmp/**",
+        "MotocareAndroid/**",
+        "android/**",
+        // Integration tests hit a LIVE Supabase with the service-role key and can
+        // mutate data — excluded by default / in CI so they never touch production.
+        // Run explicitly against a throwaway test project: `npm run test:integration`.
+        ...(process.env.RUN_INTEGRATION ? [] : ["tests/integration/**"]),
+      ],
     },
     resolve: {
       alias: { "@": path.resolve(process.cwd(), "src") },

@@ -129,6 +129,18 @@ const SalesManager: React.FC = () => {
     const history = useSalesHistory();
     const print = usePrintReceipt();
 
+    const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null);
+
+    // Default selectedEmployeeId to current logged-in user's employee record
+    useEffect(() => {
+        if (!selectedEmployeeId && user && employees.length > 0) {
+            const match = employees.find(
+                (e: any) => e.user_id === user.id || e.id === user.id
+            );
+            if (match) setSelectedEmployeeId(match.id);
+        }
+    }, [user, employees, selectedEmployeeId]);
+
     const [hasDraft, setHasDraft] = useState(false);
     const [hasPromptedDraft, setHasPromptedDraft] = useState(false);
 
@@ -1192,6 +1204,9 @@ const SalesManager: React.FC = () => {
                                     editingSaleId={editingSaleId}
                                     canUpdateSale={canUpdateSale}
                                     canCreateSale={canCreateSale}
+                                    selectedEmployeeId={selectedEmployeeId}
+                                    employees={employees as any[]}
+                                    onEmployeeChange={setSelectedEmployeeId}
                                 />
                             )}
                         </div>

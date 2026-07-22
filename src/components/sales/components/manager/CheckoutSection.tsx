@@ -61,6 +61,11 @@ interface CheckoutSectionProps {
     editingSaleId: string | null;
     canUpdateSale: boolean;
     canCreateSale: boolean;
+
+    // Employee selection
+    selectedEmployeeId: string | null;
+    employees: { id: string; full_name?: string; name?: string; is_active?: boolean }[];
+    onEmployeeChange: (id: string | null) => void;
 }
 
 export const CheckoutSection: React.FC<CheckoutSectionProps> = ({
@@ -115,6 +120,9 @@ export const CheckoutSection: React.FC<CheckoutSectionProps> = ({
     editingSaleId,
     canUpdateSale,
     canCreateSale,
+    selectedEmployeeId,
+    employees,
+    onEmployeeChange,
 }) => {
     const [cashReceived, setCashReceived] = React.useState(0);
 
@@ -159,6 +167,29 @@ export const CheckoutSection: React.FC<CheckoutSectionProps> = ({
                 onDiscountTypeChange={onDiscountTypeChange}
                 onDiscountPercentChange={onDiscountPercentChange}
             />
+
+            {/* Employee Selection */}
+            <div className="mt-4">
+                <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4">
+                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
+                        Nhân viên bán
+                    </label>
+                    <select
+                        value={selectedEmployeeId || ""}
+                        onChange={(e) => onEmployeeChange(e.target.value || null)}
+                        className="w-full px-3 py-2 text-sm border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all"
+                    >
+                        <option value="">-- Chọn nhân viên --</option>
+                        {employees
+                            .filter((e) => e.is_active !== false)
+                            .map((emp) => (
+                                <option key={emp.id} value={emp.id}>
+                                    {emp.full_name || emp.name || emp.id}
+                                </option>
+                            ))}
+                    </select>
+                </div>
+            </div>
 
             {/* Payment Selection */}
             <div className="mt-4" id="checkout-payment-section">

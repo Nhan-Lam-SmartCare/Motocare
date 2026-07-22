@@ -79,8 +79,8 @@ export interface UseSalesFinalizationReturn {
  */
 export function useSalesFinalization(): UseSalesFinalizationReturn {
     // Payment state
-    const [paymentMethod, setPaymentMethod] = useState<"cash" | "bank" | "card" | null>(null);
-    const [paymentType, setPaymentType] = useState<"full" | "partial" | "note" | "installment" | null>(null);
+    const [paymentMethod, setPaymentMethod] = useState<"cash" | "bank" | "card" | null>("cash");
+    const [paymentType, setPaymentType] = useState<"full" | "partial" | "note" | "installment" | null>("full");
     const [partialAmount, setPartialAmount] = useState(0);
     const [autoPrintReceipt, setAutoPrintReceipt] = useState(false);
     const [useCurrentTime, setUseCurrentTime] = useState(true);
@@ -112,8 +112,8 @@ export function useSalesFinalization(): UseSalesFinalizationReturn {
 
     // Reset all finalization state
     const resetFinalizationState = () => {
-        setPaymentMethod(null);
-        setPaymentType(null);
+        setPaymentMethod("cash");
+        setPaymentType("full");
         setPartialAmount(0);
         setCustomSaleTime("");
         setOrderNote("");

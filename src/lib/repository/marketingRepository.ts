@@ -265,6 +265,18 @@ export async function deleteIdea(id: string): Promise<RepoResult<void>> {
   }
 }
 
+export async function deleteIdeasBulk(ids: string[]): Promise<RepoResult<void>> {
+  try {
+    const { error } = await supabase.from("ideas").delete().in("id", ids);
+    if (error) {
+      return failure({ code: "supabase", message: "Không thể xóa các ý tưởng", cause: error });
+    }
+    return success(undefined);
+  } catch (e: any) {
+    return failure({ code: "network", message: "Lỗi kết nối khi xóa danh sách ý tưởng", cause: e });
+  }
+}
+
 // =============================================
 // SCRIPTS
 // =============================================

@@ -28,7 +28,7 @@ import { updatePaymentSourceBalance } from "../lib/repository/paymentSourcesRepo
 import { showToast } from "../utils/toast";
 import { mapRepoErrorForUser } from "../utils/errorMapping";
 import { safeAudit } from "../lib/repository/auditLogsRepository";
-import { supabase } from "../supabaseClient";
+import { supabase, supabaseV1 } from "../supabaseClient";
 
 interface AppContextType {
   parts: Part[];
@@ -167,8 +167,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     const fetchPaymentSources = async () => {
       try {
         const [paymentSourcesRes, payrollRes] = await Promise.all([
-          supabase.from("payment_sources").select("*"),
-          supabase.from("payroll_records").select("*"),
+          supabaseV1.from("payment_sources").select("*"),
+          supabaseV1.from("payroll_records").select("*"),
         ]);
 
         if (!paymentSourcesRes.error && Array.isArray(paymentSourcesRes.data)) {
@@ -176,7 +176,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
             setPaymentSources(paymentSourcesRes.data);
           } else {
             console.warn('[AppContext] ⚠️ payment_sources empty on first fetch, retrying once...');
-            const retryRes = await supabase.from("payment_sources").select("*");
+            const retryRes = await supabaseV1.from("payment_sources").select("*");
             if (!retryRes.error && Array.isArray(retryRes.data) && retryRes.data.length > 0) {
               setPaymentSources(retryRes.data);
             } else {

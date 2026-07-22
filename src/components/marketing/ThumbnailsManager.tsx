@@ -32,9 +32,11 @@ export const ThumbnailsManager: React.FC<ThumbnailsManagerProps> = ({
   const deleteThumbnailMutation = useDeleteMarketingThumbnail();
 
   const handleConfirmAiThumbnail = (data: any) => {
+    const videoObj = videos.find((v) => v.id === formData.videoId);
+    const videoTitle = videoObj ? videoObj.title : "";
     setFormData((prev) => ({
       ...prev,
-      title: `[AI Gợi ý: ${data.overlayText}] ${prev.title || "Mới"}`,
+      title: `[AI: ${data.overlayText || "Click ngay"}] ${prev.title || videoTitle || "Mới"}`,
     }));
     showToast.success("Đã ghi nhận gợi ý thiết kế: " + data.overlayText);
   };
@@ -215,23 +217,36 @@ export const ThumbnailsManager: React.FC<ThumbnailsManagerProps> = ({
 
             {/* Form */}
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">
-                  Liên kết video <span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={formData.videoId}
-                  onChange={(e) => setFormData({ ...formData, videoId: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-fuchsia-500"
-                  required
-                >
-                  <option value="">-- Chọn video được thiết kế hình thu nhỏ --</option>
-                  {videos.map((video) => (
-                    <option key={video.id} value={video.id}>
-                      {video.title}
-                    </option>
-                  ))}
-                </select>
+              <div className="flex gap-2 items-end">
+                <div className="flex-1">
+                  <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">
+                    Liên kết video <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={formData.videoId}
+                    onChange={(e) => setFormData({ ...formData, videoId: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-fuchsia-500"
+                    required
+                  >
+                    <option value="">-- Chọn video được thiết kế hình thu nhỏ --</option>
+                    {videos.map((video) => (
+                      <option key={video.id} value={video.id}>
+                        {video.title}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                {formData.videoId && (
+                  <button
+                    type="button"
+                    onClick={() => setAiModalOpen(true)}
+                    className="flex items-center gap-1.5 px-3 py-2 bg-purple-650 hover:bg-purple-750 text-white rounded-lg text-xs font-bold h-[38px] transition-colors shadow"
+                    title="AI gợi ý thiết kế thumbnail dựa trên tiêu đề video"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-white" />
+                    <span>AI Gợi ý</span>
+                  </button>
+                )}
               </div>
 
               <div>
@@ -308,7 +323,9 @@ export const ThumbnailsManager: React.FC<ThumbnailsManagerProps> = ({
         feature="thumbnail"
         title="✨ AI Thumbnail Advisor"
         description="AI gợi ý cách thiết kế ảnh bìa (Thumbnail) tối ưu tỷ lệ click: từ tiêu đề phụ họa, cách bố trí chủ thể thợ/máy, đến cách phối tương phản màu."
-        variables={{ videoTitle: "Bảo dưỡng nồi Honda Vision lì máy hao xăng" }}
+        variables={{
+          videoTitle: videos.find((v) => v.id === formData.videoId)?.title || "Bảo dưỡng xe ga Honda"
+        }}
       />
     </div>
   );

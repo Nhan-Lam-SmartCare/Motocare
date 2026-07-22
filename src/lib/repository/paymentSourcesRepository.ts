@@ -1,6 +1,9 @@
-import { supabase } from "../../supabaseClient";
+import { supabaseV1 } from "../../supabaseClient";
 import type { PaymentSource } from "../../types";
 import { RepoResult, success, failure } from "./types";
+
+// Payment sources are shared reference data — always use V1.
+const supabase = supabaseV1;
 import { safeAudit } from "./auditLogsRepository";
 
 const TABLE = "payment_sources";

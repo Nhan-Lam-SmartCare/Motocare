@@ -24,6 +24,7 @@ import { ShopLayout } from "./components/layout/ShopLayout";
 // Dashboard is now lazy-loaded to keep recharts (~229 KB) out of the critical path
 const Dashboard = lazyImport(() => import("./components/dashboard/CommandCenter"));
 import RepoErrorPanel from "./components/common/RepoErrorPanel";
+import V2EnvironmentBanner from "./components/V2EnvironmentBanner";
 import TetTheme from "./components/common/TetTheme";
 import { lazyImport } from "./utils/lazyImport";
 
@@ -416,6 +417,7 @@ export default function App() {
           <AppProvider>
             <BrowserRouter>
               <ErrorBoundary>
+                <V2EnvironmentBanner />
                 <TopProgressBar />
                 <Routes>
                   {/* Public Routes - No authentication */}

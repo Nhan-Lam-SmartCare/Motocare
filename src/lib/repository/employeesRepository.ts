@@ -1,6 +1,9 @@
-import { supabase } from "../../supabaseClient";
+import { supabaseV1 } from "../../supabaseClient";
 import type { Employee } from "../../types";
 import { RepoResult, success, failure } from "./types";
+
+// Employees are master/reference data — always read from V1 even in V2 mode.
+const supabase = supabaseV1;
 
 const EMPLOYEES_TABLE = "employees";
 

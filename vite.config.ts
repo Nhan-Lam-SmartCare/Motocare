@@ -173,8 +173,9 @@ export default defineConfig(({ mode }) => {
         "android/**",
         // Integration tests hit a LIVE Supabase with the service-role key and can
         // mutate data — excluded by default / in CI so they never touch production.
-        // Run explicitly against a throwaway test project: `npm run test:integration`.
-        ...(process.env.RUN_INTEGRATION ? [] : ["tests/integration/**"]),
+        // Run explicitly against a throwaway test project: `npm run test:integration`
+        // (which passes `--mode integration`).
+        ...(mode === "integration" ? [] : ["tests/integration/**"]),
       ],
     },
     resolve: {

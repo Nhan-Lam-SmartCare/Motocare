@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   FileText,
   Search,
@@ -24,12 +24,16 @@ interface ScriptsManagerProps {
   scripts: MarketingScript[];
   ideas: MarketingIdea[];
   videos: MarketingVideo[];
+  initialIdeaId?: string;
+  onClearInitialIdeaId?: () => void;
 }
 
 export const ScriptsManager: React.FC<ScriptsManagerProps> = ({
   scripts = [],
   ideas = [],
   videos = [],
+  initialIdeaId,
+  onClearInitialIdeaId,
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [showModal, setShowModal] = useState(false);
@@ -42,7 +46,7 @@ export const ScriptsManager: React.FC<ScriptsManagerProps> = ({
   const deleteScriptMutation = useDeleteMarketingScript();
 
   const handleConfirmAiScript = async (data: any) => {
-    let scriptData = {
+    const scriptData = {
       hook: "",
       introduction: "",
       content: "",
@@ -51,49 +55,110 @@ export const ScriptsManager: React.FC<ScriptsManagerProps> = ({
     };
 
     if (typeof data === "string") {
-      // Try JSON parse first
+      let parsedJson: any = null;
       try {
         const cleaned = data.replace(/^```[a-z]*\n?/i, "").replace(/```\s*$/i, "").trim();
-        const parsed = JSON.parse(cleaned);
-        scriptData.hook = parsed.hook || "";
-        scriptData.introduction = parsed.problem || "";
-        scriptData.content = [parsed.story, parsed.solution].filter(Boolean).join("\n\nGiải pháp: ");
-        scriptData.cta = [parsed.cta, parsed.callToComment].filter(Boolean).join("\n");
-        scriptData.duration = parsed.estimatedDuration || 45;
+        parsedJson = JSON.parse(cleaned);
       } catch {
-        // Parse markdown/text: extract sections by **Header** pattern
-        const sections: Record<string, string> = {};
-        let currentKey = "";
-        const lines = data.split("\n");
+        try {
+          const jsonMatch = data.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            parsedJson = JSON.parse(jsonMatch[0].trim());
+          }
+        } catch {
+          /* ignore and fallback to markdown */
+        }
+      }
 
-        for (const line of lines) {
-          const headerMatch = line.match(/\*\*(\w+)\*\*/i);
-          if (headerMatch) {
-            currentKey = headerMatch[1].toLowerCase();
-            // Extract inline content after the header on the same line
-            const afterHeader = line.replace(/.*\*\*\w+\*\*[|\s:]*/, "").trim();
-            if (afterHeader) {
-              sections[currentKey] = (sections[currentKey] ? sections[currentKey] + "\n" : "") + afterHeader;
+      if (parsedJson) {
+        scriptData.hook = parsedJson.hook || "";
+        scriptData.introduction = parsedJson.problem || parsedJson.introduction || parsedJson.intro || "";
+        
+        const contentParts = [];
+        if (parsedJson.story) contentParts.push(parsedJson.story);
+        if (parsedJson.solution) contentParts.push(parsedJson.solution);
+        if (parsedJson.content) contentParts.push(parsedJson.content);
+        scriptData.content = contentParts.join("\n\nGiải pháp:\n");
+        
+        const ctaParts = [];
+        if (parsedJson.cta) ctaParts.push(parsedJson.cta);
+        if (parsedJson.callToComment) ctaParts.push(parsedJson.callToComment);
+        scriptData.cta = ctaParts.join("\n");
+        
+        scriptData.duration = Number(parsedJson.estimatedDuration) || Number(parsedJson.duration) || 45;
+      } else {
+        let hasTable = false;
+
+        if (data.includes("|")) {
+          let foundRows = 0;
+          const lines = data.split("\n");
+          for (const line of lines) {
+            const cells = line.split("|").map(c => c.trim());
+            if (cells.length >= 4) {
+              const stage = cells[1].toLowerCase();
+              const visual = cells[2];
+              const audio = cells[3] || "";
+
+              if (stage.includes("thời gian") || stage.includes("---") || stage.trim() === "") {
+                continue;
+              }
+
+              const formattedContent = `* **Visual:** ${visual}\n* **Audio:** ${audio}`;
+
+              if (stage.includes("hook") || stage.includes("mở đầu") || stage.includes("0-3s") || stage.includes("0-5s")) {
+                scriptData.hook = formattedContent;
+                foundRows++;
+              } else if (stage.includes("intro") || stage.includes("giới thiệu") || stage.includes("mở bài") || stage.includes("problem")) {
+                scriptData.introduction = formattedContent;
+                foundRows++;
+              } else if (stage.includes("cta") || stage.includes("kêu gọi") || stage.includes("kết bài")) {
+                scriptData.cta = formattedContent;
+                foundRows++;
+              } else {
+                scriptData.content = (scriptData.content ? scriptData.content + "\n\n" : "") + `[Phân đoạn: ${cells[1].replace(/\*\*/g, "")}]\n${formattedContent}`;
+                foundRows++;
+              }
             }
-          } else if (currentKey && line.trim()) {
-            sections[currentKey] = (sections[currentKey] ? sections[currentKey] + "\n" : "") + line.trim();
+          }
+          if (foundRows > 0) {
+            hasTable = true;
           }
         }
 
-        scriptData.hook = sections["hook"] || "";
-        scriptData.introduction = sections["problem"] || sections["intro"] || sections["introduction"] || "";
-        scriptData.content = [
-          sections["story"] || sections["content"] || sections["body"] || "",
-          sections["solution"] ? `\nGiải pháp: ${sections["solution"]}` : "",
-        ].filter(Boolean).join("\n");
-        scriptData.cta = [
-          sections["cta"] || "",
-          sections["call"] || sections["calltocomment"] || "",
-        ].filter(Boolean).join("\n");
+        if (!hasTable) {
+          // Parse markdown/text: extract sections by **Header** pattern
+          const sections: Record<string, string> = {};
+          let currentKey = "";
+          const lines = data.split("\n");
 
-        // Try to extract duration
-        const durationMatch = data.match(/(\d+)\s*[-–]\s*(\d+)\s*s/i) || data.match(/(\d+)\s*giây/i) || data.match(/(\d+)\s*s\b/i);
-        scriptData.duration = durationMatch ? parseInt(durationMatch[durationMatch.length > 2 ? 2 : 1]) : 45;
+          for (const line of lines) {
+            const headerMatch = line.match(/\*\*(\w+)\*\*/i);
+            if (headerMatch) {
+              currentKey = headerMatch[1].toLowerCase();
+              const afterHeader = line.replace(/.*\*\*\w+\*\*[|\s:]*/, "").trim();
+              if (afterHeader) {
+                sections[currentKey] = (sections[currentKey] ? sections[currentKey] + "\n" : "") + afterHeader;
+              }
+            } else if (currentKey && line.trim()) {
+              sections[currentKey] = (sections[currentKey] ? sections[currentKey] + "\n" : "") + line.trim();
+            }
+          }
+
+          scriptData.hook = sections["hook"] || "";
+          scriptData.introduction = sections["problem"] || sections["intro"] || sections["introduction"] || "";
+          scriptData.content = [
+            sections["story"] || sections["content"] || sections["body"] || "",
+            sections["solution"] ? `\nGiải pháp: ${sections["solution"]}` : "",
+          ].filter(Boolean).join("\n");
+          scriptData.cta = [
+            sections["cta"] || "",
+            sections["call"] || sections["calltocomment"] || "",
+          ].filter(Boolean).join("\n");
+        }
+
+        // Try to extract duration cleanly
+        const durationLineMatch = data.match(/(?:thời lượng|duration|thời gian)\s*:[|\s]*(\d+)/i) || data.match(/(\d+)\s*giây/i) || data.match(/estimatedduration\s*:\s*(\d+)/i);
+        scriptData.duration = durationLineMatch ? parseInt(durationLineMatch[1]) : 45;
 
         // If nothing was parsed, use entire text as content
         if (!scriptData.hook && !scriptData.content) {
@@ -102,10 +167,31 @@ export const ScriptsManager: React.FC<ScriptsManagerProps> = ({
       }
     } else if (data && typeof data === "object") {
       scriptData.hook = data.hook || "";
-      scriptData.introduction = data.problem || "";
-      scriptData.content = [data.story, data.solution ? `Giải pháp: ${data.solution}` : ""].filter(Boolean).join("\n\n");
-      scriptData.cta = [data.cta, data.callToComment].filter(Boolean).join("\n");
-      scriptData.duration = data.estimatedDuration || 45;
+      scriptData.introduction = data.problem || data.introduction || data.intro || "";
+      const contentParts = [];
+      if (data.story) contentParts.push(data.story);
+      if (data.solution) contentParts.push(data.solution);
+      if (data.content) contentParts.push(data.content);
+      scriptData.content = contentParts.join("\n\nGiải pháp:\n");
+      const ctaParts = [];
+      if (data.cta) ctaParts.push(data.cta);
+      if (data.callToComment) ctaParts.push(data.callToComment);
+      scriptData.cta = ctaParts.join("\n");
+      scriptData.duration = Number(data.estimatedDuration) || Number(data.duration) || 45;
+    }
+
+    if (showModal) {
+      // Modal is open, populate fields in the form instead of autosaving to DB
+      setFormData((prev) => ({
+        ...prev,
+        hook: scriptData.hook,
+        introduction: scriptData.introduction,
+        content: scriptData.content,
+        cta: scriptData.cta,
+        duration: scriptData.duration,
+      }));
+      showToast.success("🎬 Đã nạp kịch bản gợi ý từ AI vào Form!");
+      return;
     }
 
     // Auto-save directly without opening the form
@@ -134,6 +220,24 @@ export const ScriptsManager: React.FC<ScriptsManagerProps> = ({
       setShowModal(true);
     }
   };
+
+  useEffect(() => {
+    if (initialIdeaId) {
+      setEditingScript(null);
+      setFormData({
+        ideaId: initialIdeaId,
+        hook: "",
+        introduction: "",
+        content: "",
+        cta: "",
+        duration: 30,
+      });
+      setShowModal(true);
+      if (onClearInitialIdeaId) {
+        onClearInitialIdeaId();
+      }
+    }
+  }, [initialIdeaId]);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -376,22 +480,35 @@ export const ScriptsManager: React.FC<ScriptsManagerProps> = ({
 
             {/* Form */}
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">
-                  Liên kết ý tưởng
-                </label>
-                <select
-                  value={formData.ideaId}
-                  onChange={(e) => setFormData({ ...formData, ideaId: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-fuchsia-500"
-                >
-                  <option value="">-- Chọn ý tưởng kịch bản (không bắt buộc) --</option>
-                  {ideas.map((idea) => (
-                    <option key={idea.id} value={idea.id}>
-                      [{idea.topic || "Khác"}] {idea.title}
-                    </option>
-                  ))}
-                </select>
+              <div className="flex gap-2 items-end">
+                <div className="flex-1">
+                  <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">
+                    Liên kết ý tưởng
+                  </label>
+                  <select
+                    value={formData.ideaId}
+                    onChange={(e) => setFormData({ ...formData, ideaId: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-fuchsia-500"
+                  >
+                    <option value="">-- Chọn ý tưởng kịch bản (không bắt buộc) --</option>
+                    {ideas.map((idea) => (
+                      <option key={idea.id} value={idea.id}>
+                        [{idea.topic || "Khác"}] {idea.title}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                {formData.ideaId && (
+                  <button
+                    type="button"
+                    onClick={() => setAiModalOpen(true)}
+                    className="flex items-center gap-1.5 px-3 py-2 bg-purple-650 hover:bg-purple-750 text-white rounded-lg text-xs font-bold h-[38px] transition-colors shadow"
+                    title="AI tự động soạn kịch bản dựa theo ý tưởng đang chọn"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-white" />
+                    <span>AI viết kịch bản</span>
+                  </button>
+                )}
               </div>
 
               <div>
@@ -489,7 +606,10 @@ export const ScriptsManager: React.FC<ScriptsManagerProps> = ({
         feature="script"
         title="✨ AI Script Writer"
         description="AI tự viết kịch bản quảng bá, chia đoạn Hook, Problem, Story, Solution, CTA thu hút người xem."
-        variables={{ duration: 45, ideaTitle: "Bảo dưỡng nồi Honda Vision" }}
+        variables={{
+          duration: formData.duration || 45,
+          ideaTitle: ideas.find((i) => i.id === formData.ideaId)?.title || "Bảo dưỡng xe ga Honda"
+        }}
       />
     </div>
   );

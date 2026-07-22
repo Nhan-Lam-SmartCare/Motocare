@@ -22,6 +22,7 @@ import {
   createIdea,
   updateIdea,
   deleteIdea,
+  deleteIdeasBulk,
   fetchScripts,
   createScript,
   updateScript,
@@ -129,6 +130,21 @@ export function useDeleteMarketingIdea() {
   return useMutation({
     mutationFn: async (id: string) => {
       const res = await deleteIdea(id);
+      if (!res.ok) throw new Error(res.error.message);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["marketing-ideas", currentBranchId] });
+    },
+  });
+}
+
+export function useDeleteMarketingIdeasBulk() {
+  const queryClient = useQueryClient();
+  const { currentBranchId } = useAppContext();
+
+  return useMutation({
+    mutationFn: async (ids: string[]) => {
+      const res = await deleteIdeasBulk(ids);
       if (!res.ok) throw new Error(res.error.message);
     },
     onSuccess: () => {

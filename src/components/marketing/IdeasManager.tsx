@@ -10,6 +10,7 @@ import {
   X,
   AlertCircle,
   CheckCircle,
+  FileText,
 } from "lucide-react";
 import { MarketingIdea } from "../../types/marketing";
 import { useAuth } from "../../contexts/AuthContext";
@@ -19,15 +20,17 @@ import {
   useCreateMarketingIdea,
   useUpdateMarketingIdea,
   useDeleteMarketingIdea,
+  useDeleteMarketingIdeasBulk,
 } from "../../hooks/useMarketingRepository";
 import { AiPreviewModal } from "./AiPreviewModal";
 import { Sparkles } from "lucide-react";
 
 interface IdeasManagerProps {
   ideas: MarketingIdea[];
+  onWriteScript?: (ideaId: string) => void;
 }
 
-export const IdeasManager: React.FC<IdeasManagerProps> = ({ ideas = [] }) => {
+export const IdeasManager: React.FC<IdeasManagerProps> = ({ ideas = [], onWriteScript }) => {
   const { profile } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedBrand, setSelectedBrand] = useState("");
@@ -36,11 +39,13 @@ export const IdeasManager: React.FC<IdeasManagerProps> = ({ ideas = [] }) => {
   const [showModal, setShowModal] = useState(false);
   const [editingIdea, setEditingIdea] = useState<MarketingIdea | null>(null);
   const [aiModalOpen, setAiModalOpen] = useState(false);
+  const [deletingAll, setDeletingAll] = useState(false);
 
   // Queries / Mutations
   const createIdeaMutation = useCreateMarketingIdea();
   const updateIdeaMutation = useUpdateMarketingIdea();
   const deleteIdeaMutation = useDeleteMarketingIdea();
+  const deleteIdeasBulkMutation = useDeleteMarketingIdeasBulk();
 
   const handleConfirmAiIdeas = (data: any) => {
     let ideasArray: any[] = [];
@@ -65,14 +70,14 @@ export const IdeasManager: React.FC<IdeasManagerProps> = ({ ideas = [] }) => {
         lines.forEach((line) => {
           const text = line.trim();
           // Remove list indicators like "1.", "1)", "-", "*", "+"
-          const listMatch = text.match(/^(?:\d+[\.\)]|[\-\*\+])\s*(.*)$/);
+          const listMatch = text.match(/^(?:\d+[.)]|[-*+])\s*(.*)$/);
           if (!listMatch) return;
           
-          let contentStr = listMatch[1].trim();
+          const contentStr = listMatch[1].trim();
           if (!contentStr) return;
 
           let title = "";
-          let topic = "baoduong";
+          const topic = "baoduong";
 
           // Extract title enclosed in bold tags
           if (contentStr.startsWith("**")) {
@@ -84,7 +89,7 @@ export const IdeasManager: React.FC<IdeasManagerProps> = ({ ideas = [] }) => {
 
           // Fallback if no bold tags found: split by colon or dash
           if (!title) {
-            const splitIndex = contentStr.search(/[:\-\—\=]/);
+            const splitIndex = contentStr.search(/[:—=-]/);
             if (splitIndex !== -1) {
               title = contentStr.substring(0, splitIndex).trim();
             } else {
@@ -227,6 +232,26 @@ export const IdeasManager: React.FC<IdeasManagerProps> = ({ ideas = [] }) => {
     }
   };
 
+  const handleDeleteAll = async () => {
+    if (filteredIdeas.length === 0) {
+      showToast.info("Không có ý tưởng nào để xóa!");
+      return;
+    }
+
+    if (confirm(`Bạn có chắc chắn muốn xóa TẤT CẢ ${filteredIdeas.length} ý tưởng đang hiển thị không?`)) {
+      setDeletingAll(true);
+      try {
+        const ids = filteredIdeas.map((idea) => idea.id);
+        await deleteIdeasBulkMutation.mutateAsync(ids);
+        showToast.success("Đã xóa tất cả ý tưởng thành công!");
+      } catch (err: any) {
+        showToast.error("Không thể xóa danh sách ý tưởng.");
+      } finally {
+        setDeletingAll(false);
+      }
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.title.trim()) {
@@ -340,6 +365,17 @@ export const IdeasManager: React.FC<IdeasManagerProps> = ({ ideas = [] }) => {
             <Plus className="w-4 h-4" />
             <span>Thêm ý tưởng</span>
           </button>
+
+          {filteredIdeas.length > 0 && (
+            <button
+              onClick={handleDeleteAll}
+              disabled={deletingAll}
+              className="flex items-center gap-1.5 px-4 py-2 bg-red-600 hover:bg-red-750 text-white rounded-lg text-xs font-semibold shadow transition-colors disabled:opacity-50"
+            >
+              <Trash2 className="w-4 h-4" />
+              <span>{deletingAll ? "Đang xóa..." : "Xóa tất cả"}</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -398,6 +434,15 @@ export const IdeasManager: React.FC<IdeasManagerProps> = ({ ideas = [] }) => {
                 </span>
 
                 <div className="flex gap-2.5">
+                  {onWriteScript && (
+                    <button
+                      onClick={() => onWriteScript(idea.id)}
+                      className="p-1 hover:text-fuchsia-500 text-slate-400 transition-colors"
+                      title="Viết kịch bản cho ý tưởng này"
+                    >
+                      <FileText className="w-4 h-4" />
+                    </button>
+                  )}
                   <button
                     onClick={() => handleClone(idea)}
                     className="p-1 hover:text-indigo-500 text-slate-400 transition-colors"

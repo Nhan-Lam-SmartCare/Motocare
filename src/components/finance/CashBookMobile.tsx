@@ -20,14 +20,25 @@ import { getCategoryLabel, isIncomeTx } from "./cashBookHelpers";
 export const CashBookMobile: React.FC = () => {
     const {
         paymentSources,
+        cashTransactions: contextCashTransactions,
         currentBranchId,
         setCashTransactions,
         setPaymentSources,
     } = useAppContext();
 
-    // Fetch cash transactions
-    const { data: cashTransactions = [], isLoading: isCashTxLoading } =
+    // Fetch cash transactions from database
+    const { data: fetchedCashTransactions, isLoading: isCashTxLoading } =
         useCashTxRepo({ branchId: currentBranchId });
+
+    // Use fetched data, fall back to context (localStorage) while loading or empty
+    const cashTransactions = fetchedCashTransactions ?? contextCashTransactions;
+
+    // Sync fetched data to context
+    useEffect(() => {
+        if (fetchedCashTransactions) {
+            setCashTransactions(fetchedCashTransactions);
+        }
+    }, [fetchedCashTransactions, setCashTransactions]);
     const createCashTxRepo = useCreateCashTxRepo();
     const updateCashTxRepo = useUpdateCashTxRepo();
     const deleteCashTxRepo = useDeleteCashTxRepo();

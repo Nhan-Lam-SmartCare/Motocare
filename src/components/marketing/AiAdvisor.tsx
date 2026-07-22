@@ -113,28 +113,29 @@ export const AiAdvisor: React.FC = () => {
     let featureName = "";
     let vars: Record<string, any> = {};
 
+    const branchSales = sales.filter((s) => (s.branchId || s.branchid) === currentBranchId);
+    const branchWorkOrders = workOrders.filter((w) => (w.branchId || w.branchid) === currentBranchId);
+
+    // Compute 30 days consumption count for each part SKU
+    const partConsumption30d: Record<string, number> = {};
+    branchSales.forEach((s) => {
+      s.items?.forEach((item: CartItem) => {
+        if (item.sku) {
+          partConsumption30d[item.sku] = (partConsumption30d[item.sku] || 0) + item.quantity;
+        }
+      });
+    });
+    branchWorkOrders.forEach((w) => {
+      w.partsUsed?.forEach((p: WorkOrderPart) => {
+        const matchedPart = parts.find((pt) => pt.id === p.partId || pt.name === p.partName);
+        if (matchedPart?.sku) {
+          partConsumption30d[matchedPart.sku] = (partConsumption30d[matchedPart.sku] || 0) + p.quantity;
+        }
+      });
+    });
+
     if (tabKey === "purchasing") {
       featureName = "purchasing_advisor";
-      const branchSales = sales.filter((s) => (s.branchId || s.branchid) === currentBranchId);
-      const branchWorkOrders = workOrders.filter((w) => (w.branchId || w.branchid) === currentBranchId);
-
-      // Compute 30 days consumption count for each part SKU
-      const partConsumption30d: Record<string, number> = {};
-      branchSales.forEach((s) => {
-        s.items?.forEach((item: CartItem) => {
-          if (item.sku) {
-            partConsumption30d[item.sku] = (partConsumption30d[item.sku] || 0) + item.quantity;
-          }
-        });
-      });
-      branchWorkOrders.forEach((w) => {
-        w.partsUsed?.forEach((p: WorkOrderPart) => {
-          const matchedPart = parts.find((pt) => pt.id === p.partId || pt.name === p.partName);
-          if (matchedPart?.sku) {
-            partConsumption30d[matchedPart.sku] = (partConsumption30d[matchedPart.sku] || 0) + p.quantity;
-          }
-        });
-      });
 
       const lowStockParts = parts
         .filter((p) => {
@@ -142,18 +143,26 @@ export const AiAdvisor: React.FC = () => {
           const min = p.minstock?.[currentBranchId] ?? 5;
           return qty <= min;
         })
-        .slice(0, 15)
         .map((p) => {
           const qty = p.stock?.[currentBranchId] ?? 0;
           const min = p.minstock?.[currentBranchId] ?? 5;
+          const salesVol = partConsumption30d[p.sku] ?? 0;
+          // Priority score: higher sales volume and lower current stock means higher priority
+          const priority = salesVol * 10 - qty;
+          const supplierObj = suppliers.find((s) => s.id === p.preferred_supplier_id);
           return {
             name: p.name,
             sku: p.sku,
             currentStock: qty,
             minStock: min,
-            salesVolume30d: partConsumption30d[p.sku] ?? 0,
+            salesVolume30d: salesVol,
+            priority,
+            preferredSupplier: supplierObj ? supplierObj.name : undefined,
           };
-        });
+        })
+        .sort((a, b) => b.priority - a.priority)
+        .slice(0, 15);
+
       const availableSuppliers = suppliers.map((s) => ({
         id: s.id,
         name: s.name,
@@ -161,8 +170,6 @@ export const AiAdvisor: React.FC = () => {
       vars = { lowStockParts, suppliers: availableSuppliers, branchId: currentBranchId };
     } else if (tabKey === "sales") {
       featureName = "sales_advisor";
-      const branchSales = sales.filter((s) => (s.branchId || s.branchid) === currentBranchId);
-      const branchWorkOrders = workOrders.filter((w) => (w.branchId || w.branchid) === currentBranchId);
 
       const itemsCount: Record<string, number> = {};
       branchSales.forEach((s) => {
@@ -206,7 +213,20 @@ export const AiAdvisor: React.FC = () => {
       });
 
       const topSoldItems = Object.entries(itemsCount)
-        .map(([name, qty]) => ({ name, quantity: qty, price: priceMap[name] ?? 0 }))
+        .map(([name, qty]) => {
+          const matchedPart = parts.find((pt) => pt.name === name);
+          const cost = matchedPart ? (matchedPart.costPrice?.[currentBranchId] ?? matchedPart.costPrice?.default ?? 0) : 0;
+          const retail = priceMap[name] ?? 0;
+          const isService = !matchedPart || matchedPart.category?.toLowerCase().includes("dich") || (cost === 0 && retail > 0);
+          return {
+            name,
+            quantity: qty,
+            price: retail,
+            cost: isService ? 0 : cost,
+            isService,
+            marginPercentage: retail > 0 ? Math.round(((retail - (isService ? 0 : cost)) / retail) * 100) : 100,
+          };
+        })
         .sort((a, b) => b.quantity - a.quantity)
         .slice(0, 20);
 
@@ -234,7 +254,6 @@ export const AiAdvisor: React.FC = () => {
       };
     } else if (tabKey === "marketing") {
       featureName = "marketing_advisor";
-      const branchWorkOrders = workOrders.filter((w) => (w.branchId || w.branchid) === currentBranchId);
       const vehicleCount: Record<string, number> = {};
       branchWorkOrders.forEach((w) => {
         if (w.vehicleModel) {
@@ -275,20 +294,34 @@ export const AiAdvisor: React.FC = () => {
           return days > 90;
         })
         .slice(0, 15)
-        .map((c) => ({
-          name: c.name,
-          phone: c.phone || "",
-          lastVisit: c.lastVisit || "Chưa có",
-          vehicleModel: c.vehicleModel || (c.vehicles && c.vehicles[0]?.model) || "Không rõ",
-          totalSpent: c.totalSpent || 0,
-          visitCount: c.visitCount || 0,
-          segment: c.segment || "Bình thường",
-        }));
+        .map((c) => {
+          // Find the last completed work order
+          const customerWorkOrders = branchWorkOrders
+            .filter((wo) => wo.customerId === c.id || (c.phone && wo.customerPhone === c.phone))
+            .sort((a, b) => new Date(b.creationDate).getTime() - new Date(a.creationDate).getTime());
+          
+          const lastWO = customerWorkOrders[0];
+          const lastServiceDetails = lastWO ? {
+            date: lastWO.creationDate.split("T")[0],
+            parts: lastWO.partsUsed?.map((p: any) => p.partName) || [],
+            services: lastWO.additionalServices?.map((s: any) => s.description) || [],
+            laborCost: lastWO.laborCost || 0
+          } : undefined;
+
+          return {
+            name: c.name,
+            phone: c.phone || "",
+            lastVisit: c.lastVisit || "Chưa có",
+            vehicleModel: c.vehicleModel || (c.vehicles && c.vehicles[0]?.model) || "Không rõ",
+            totalSpent: c.totalSpent || 0,
+            visitCount: c.visitCount || 0,
+            segment: c.segment || "Bình thường",
+            lastService: lastServiceDetails,
+          };
+        });
       vars = { candidates: careCandidates, branchId: currentBranchId };
     } else if (tabKey === "revenue") {
       featureName = "revenue_advisor";
-      const branchSales = sales.filter((s) => (s.branchId || s.branchid) === currentBranchId);
-      const branchWorkOrders = workOrders.filter((w) => (w.branchId || w.branchid) === currentBranchId);
 
       const now = Date.now();
       const oneDayMs = 24 * 60 * 60 * 1000;
@@ -347,7 +380,6 @@ export const AiAdvisor: React.FC = () => {
       };
 
       const popularParts = parts
-        .slice(0, 15)
         .map((p) => {
           const cost = p.costPrice?.[currentBranchId] || p.costPrice?.default || Math.round((p.retailPrice?.[currentBranchId] || 0) / 1.4);
           const retail = p.retailPrice?.[currentBranchId] || p.retailPrice?.default || 0;
@@ -357,8 +389,11 @@ export const AiAdvisor: React.FC = () => {
             costPrice: cost,
             retailPrice: retail,
             marginPercentage: retail > 0 ? Math.round(((retail - cost) / retail) * 100) : 0,
+            salesVolume: partConsumption30d[p.sku] || 0,
           };
-        });
+        })
+        .sort((a, b) => b.salesVolume - a.salesVolume)
+        .slice(0, 15);
 
       vars = { weeklyStats, popularParts, branchId: currentBranchId };
     }

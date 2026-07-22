@@ -1,6 +1,9 @@
-import { supabase } from "../../supabaseClient";
+import { supabaseV1 } from "../../supabaseClient";
 import type { CashTransaction } from "../../types";
 import { RepoResult, success, failure } from "./types";
+
+// Cash book data is shared reference data — always use V1.
+const supabase = supabaseV1;
 import { safeAudit } from "./auditLogsRepository";
 import { canonicalizeMotocareCashTxCategory } from "../finance/cashTxCategories";
 

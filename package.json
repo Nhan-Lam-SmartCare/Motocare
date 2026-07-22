@@ -13,6 +13,7 @@
     "lint:fix": "eslint src --ext ts,tsx --fix",
     "test": "vitest run --environment jsdom",
     "test:watch": "vitest --environment jsdom",
+    "test:integration": "vitest run --mode integration --environment jsdom tests/integration",
     "db:backup": "node scripts/maintenance/export-all-tables.mjs"
   },
   "dependencies": {

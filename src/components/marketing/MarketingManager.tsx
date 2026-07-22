@@ -110,6 +110,7 @@ export const MarketingManager: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabKey>("project_kanban");
   const [navKmsCategoryId, setNavKmsCategoryId] = useState("");
   const [navKmsArticleId, setNavKmsArticleId] = useState("");
+  const [navIdeaIdForScript, setNavIdeaIdForScript] = useState("");
 
   // Channel URL States
   const [tiktokUrl, setTiktokUrl] = useState(() => {
@@ -295,9 +296,23 @@ export const MarketingManager: React.FC = () => {
           <>
             {/* 1. CONTENT STUDIO TABS */}
             {activeTab === "project_kanban" && <ContentProjectManager />}
-            {activeTab === "ideas" && <IdeasManager ideas={ideas} />}
+            {activeTab === "ideas" && (
+              <IdeasManager 
+                ideas={ideas} 
+                onWriteScript={(ideaId) => {
+                  setNavIdeaIdForScript(ideaId);
+                  setActiveTab("scripts");
+                }} 
+              />
+            )}
             {activeTab === "scripts" && (
-              <ScriptsManager scripts={scripts} ideas={ideas} videos={videos} />
+              <ScriptsManager 
+                scripts={scripts} 
+                ideas={ideas} 
+                videos={videos} 
+                initialIdeaId={navIdeaIdForScript}
+                onClearInitialIdeaId={() => setNavIdeaIdForScript("")}
+              />
             )}
             {activeTab === "shot_lists" && <ShotListManager />}
             {activeTab === "checklists" && <ChecklistManager />}
